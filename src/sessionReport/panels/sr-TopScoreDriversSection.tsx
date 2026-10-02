@@ -3,7 +3,7 @@
  * flags drawn from the union of per-question redFlags arrays.
  * Pure presentation. */
 
-import { t, f, radius } from "../tokens";
+import { t, f, radius, size } from "../tokens";
 import type { Question } from "../types";
 import { SrSectionShell } from "./_primitives";
 import { Badge } from "@/components/ui/badge";
@@ -28,7 +28,7 @@ export function TopScoreDriversSection({ questions }: { questions: Question[] })
   const topN = top.length;
 
   const impactChip = (
-    <span style={{ fontFamily: f.mono, fontSize: 11, color: t.inkSoft, letterSpacing: "0.06em", textTransform: "uppercase" }}>
+    <span style={{ fontFamily: f.mono, fontSize: size.xs, color: t.inkSoft, letterSpacing: "0.06em", textTransform: "uppercase" }}>
       weighted impact · {totalImpact} pts
     </span>
   );
@@ -65,7 +65,7 @@ export function TopScoreDriversSection({ questions }: { questions: Question[] })
                 aria-hidden
                 style={{
                   fontFamily: f.mono,
-                  fontSize: 12,
+                  fontSize: size.sm,
                   fontWeight: 700,
                   color: tone,
                   minWidth: 18,
@@ -76,10 +76,10 @@ export function TopScoreDriversSection({ questions }: { questions: Question[] })
               </span>
               <div style={{ minWidth: 0 }}>
                 <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
-                  <span style={{ fontFamily: f.sans, fontSize: 14, fontWeight: 600, color: t.coal }}>{r.title}</span>
-                  <span style={{ fontFamily: f.mono, fontSize: 11, color: t.inkSoft }}>Q{r.qIdx}</span>
+                  <span style={{ fontFamily: f.sans, fontSize: size.md, fontWeight: 600, color: t.coal }}>{r.title}</span>
+                  <span style={{ fontFamily: f.mono, fontSize: size.xs, color: t.inkSoft }}>Q{r.qIdx}</span>
                 </div>
-                <p style={{ margin: "4px 0 0", fontFamily: f.sans, fontSize: 13, color: t.coal, lineHeight: 1.45, overflowWrap: "anywhere" }}>
+                <p style={{ margin: "4px 0 0", fontFamily: f.sans, fontSize: size.base, color: t.coal, lineHeight: 1.45, overflowWrap: "anywhere" }}>
                   {r.explanation}
                 </p>
               </div>
@@ -89,7 +89,7 @@ export function TopScoreDriversSection({ questions }: { questions: Question[] })
                 title={`${r.severity} severity — counts as ${impact} pt${impact === 1 ? "" : "s"}`}
                 style={{
                   fontFamily: f.mono,
-                  fontSize: 11,
+                  fontSize: size.xs,
                   fontWeight: 600,
                   color: tone,
                   background: t.white,

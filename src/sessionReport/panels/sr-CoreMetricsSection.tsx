@@ -2,7 +2,7 @@
  * Six-tile delivery metrics row. MetricBand pill comes from sr-HeroSection.
  * Pure presentation. */
 
-import { t, f, radius } from "../tokens";
+import { t, f, radius, size } from "../tokens";
 import type { DeliveryMetric } from "../types";
 import { SrSectionShell } from "./_primitives";
 import { MetricBand } from "./sr-HeroSection";
@@ -43,7 +43,7 @@ export function CoreMetricsSection({ metrics }: { metrics: DeliveryMetric[] }) {
             }}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft }}>{m.label}</span>
+              <span style={{ fontFamily: f.sans, fontSize: size.base, color: t.inkSoft }}>{m.label}</span>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={t.inkFaint} strokeWidth="2" aria-hidden="true">
                 <circle cx="12" cy="12" r="10" />
                 <line x1="12" y1="16" x2="12" y2="12" />
@@ -52,9 +52,9 @@ export function CoreMetricsSection({ metrics }: { metrics: DeliveryMetric[] }) {
             </div>
             <div style={{ fontFamily: f.serif, fontSize: 36, color: t.coal, lineHeight: 1, letterSpacing: "-0.02em" }}>
               {m.value}
-              {m.unit && <span style={{ fontSize: 18, color: t.inkSoft, marginLeft: 2, fontFamily: f.mono }}>{m.unit}</span>}
+              {m.unit && <span style={{ fontSize: size.xl, color: t.inkSoft, marginLeft: 2, fontFamily: f.mono }}>{m.unit}</span>}
             </div>
-            <div style={{ fontFamily: f.mono, fontSize: 11, color: t.inkSoft, letterSpacing: "0.04em" }}>
+            <div style={{ fontFamily: f.mono, fontSize: size.xs, color: t.inkSoft, letterSpacing: "0.04em" }}>
               {m.targetLabel}
             </div>
             <div>

@@ -7,7 +7,7 @@
  * the optimistic UI is the source of truth client-side. */
 
 import { useState, type CSSProperties } from "react";
-import { t, f } from "../tokens";
+import { t, f, size } from "../tokens";
 import { captureClientEvent } from "../../posthogClient";
 import { Button } from "@/components/ui/button";
 
@@ -56,7 +56,7 @@ export function ProductRating({ sessionId }: { sessionId: string }) {
         gap: 12,
       }}
     >
-      <p style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.coal, margin: 0 }}>
+      <p style={{ fontFamily: f.sans, fontSize: size.base, fontWeight: 600, color: t.coal, margin: 0 }}>
         {submitted ? "Thanks for the rating!" : "How would you rate HireStepX so far?"}
       </p>
       <div style={{ display: "flex", gap: 2 }}>

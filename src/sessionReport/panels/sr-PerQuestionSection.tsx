@@ -10,9 +10,9 @@
  * the shell encodes. */
 
 import { useState } from "react";
-import { t, f, shadows, radius } from "../tokens";
+import { t, f, shadows, radius, size } from "../tokens";
 import type { Question } from "../types";
-import { SectionEyebrow } from "./sr-JumpNav";
+import { SectionEyebrow } from "./_primitives";
 import { QuestionDetail } from "./sr-QuestionDetail";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -56,7 +56,7 @@ export function PerQuestionSection({ questions, onTryQuestionAgain }: { question
       }}
     >
       <div style={{ padding: "24px 28px 0" }}>
-        <SectionEyebrow num="04" label="Question by question" />
+        <SectionEyebrow num="06" label="Question by question" />
       </div>
       <header
         style={{
@@ -66,8 +66,8 @@ export function PerQuestionSection({ questions, onTryQuestionAgain }: { question
           padding: "0 28px 16px",
         }}
       >
-        <h2 id="ir-questions-heading" style={{ fontFamily: f.serif, fontSize: 22, fontWeight: 400, color: t.coal, margin: 0, letterSpacing: "-0.01em" }}>
-          Per-Question Review <span style={{ color: t.inkFaint, fontSize: 16, marginLeft: 6 }}>({questions.length} answered)</span>
+        <h2 id="ir-questions-heading" style={{ fontFamily: f.serif, fontSize: size["2xl"], fontWeight: 400, color: t.coal, margin: 0, letterSpacing: "-0.01em" }}>
+          Per-Question Review <span style={{ color: t.inkFaint, fontSize: size.lg, marginLeft: 6 }}>({questions.length} answered)</span>
         </h2>
         {showAll ? (
           <Button
@@ -119,14 +119,14 @@ export function PerQuestionSection({ questions, onTryQuestionAgain }: { question
                     alignItems: "center",
                     justifyContent: "center",
                     fontFamily: f.mono,
-                    fontSize: 13,
+                    fontSize: size.base,
                     fontWeight: 700,
                     flexShrink: 0,
                   }}
                 >
                   {q.index}
                 </span>
-                <span className="ir-q-trigger-text" style={{ flex: 1, fontFamily: f.sans, fontSize: 14, color: t.coal, fontWeight: open ? 600 : 500 }}>
+                <span className="ir-q-trigger-text" style={{ flex: 1, fontFamily: f.sans, fontSize: size.md, color: t.coal, fontWeight: open ? 600 : 500 }}>
                   {q.text}
                 </span>
                 {q.frequencyPct !== undefined && q.frequencyPct >= 70 && (
@@ -165,13 +165,13 @@ export function PerQuestionSection({ questions, onTryQuestionAgain }: { question
                     background: band.color === t.error ? t.errorTint : band.color === t.copper ? t.copperAccent : t.successTint,
                     color: band.color,
                     fontFamily: f.sans,
-                    fontSize: 11,
+                    fontSize: size.xs,
                     fontWeight: 600,
                   }}
                 >
                   {band.label}
                 </Badge>
-                <span style={{ fontFamily: f.mono, fontSize: 13, color: t.coal, fontWeight: 600, minWidth: 60, textAlign: "right" }}>
+                <span style={{ fontFamily: f.mono, fontSize: size.base, color: t.coal, fontWeight: 600, minWidth: 60, textAlign: "right" }}>
                   {/* S6-B4 — a row with no genuine per-turn score (reconstructed
                       negotiation exchange) shows a neutral "—", never a
                       misleading 0/100 or a fabricated per-turn number. */}
@@ -215,7 +215,7 @@ export function PerQuestionSection({ questions, onTryQuestionAgain }: { question
             gap: 6,
           }}
         >
-          <p style={{ margin: 0, fontSize: 12, color: t.inkFaint }}>
+          <p style={{ margin: 0, fontSize: size.sm, color: t.inkFaint }}>
             Showing top {visible.length} of {questions.length} questions
           </p>
           <Button

@@ -5,8 +5,7 @@
  * MetricBand (still consumed by sr-CoreMetricsSection).
  * Pure presentation. */
 
-import { t, f, radius } from "../tokens";
-import { formatRoleWithLevel } from "../roleLabel";
+import { t, f, radius, size } from "../tokens";
 import type { DeliveryMetric, InterviewResultData, Verdict } from "../types";
 import { ReportCardShell } from "./_primitives";
 import { Badge } from "@/components/ui/badge";
@@ -44,7 +43,7 @@ export function MetricBand({ band }: { band: DeliveryMetric["band"] }) {
         background: meta.bg,
         color: meta.color,
         fontFamily: f.sans,
-        fontSize: 11,
+        fontSize: size.xs,
         fontWeight: 600,
       }}
     >
@@ -77,9 +76,9 @@ export function HeroSection({ data }: { data: InterviewResultData }) {
       {/* Top row: company / role / level / difficulty pills */}
       <div className="ir-pill-bar" style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 20 }}>
         <span className="ir-pill">
-          <span style={{ fontSize: 13 }}>🟢</span>
+          <span style={{ fontSize: size.base }}>🟢</span>
           {data.company}
-          <span style={{ color: t.inkSoft, fontSize: 11, marginLeft: 4 }}>Company</span>
+          <span style={{ color: t.inkSoft, fontSize: size.xs, marginLeft: 4 }}>Company</span>
         </span>
         <span className="ir-pill">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={t.indigo} strokeWidth="2" aria-hidden="true">
@@ -87,7 +86,7 @@ export function HeroSection({ data }: { data: InterviewResultData }) {
             <polyline points="8 6 2 12 8 18" />
           </svg>
           {data.role}
-          <span style={{ color: t.inkSoft, fontSize: 11, marginLeft: 4 }}>Role</span>
+          <span style={{ color: t.inkSoft, fontSize: size.xs, marginLeft: 4 }}>Role</span>
         </span>
         {data.level && (
           <span className="ir-pill">
@@ -97,7 +96,7 @@ export function HeroSection({ data }: { data: InterviewResultData }) {
               <line x1="6" y1="20" x2="6" y2="16" />
             </svg>
             {data.level}
-            <span style={{ color: t.inkSoft, fontSize: 11, marginLeft: 4 }}>Level</span>
+            <span style={{ color: t.inkSoft, fontSize: size.xs, marginLeft: 4 }}>Level</span>
           </span>
         )}
         <span className="ir-pill">
@@ -107,13 +106,13 @@ export function HeroSection({ data }: { data: InterviewResultData }) {
             <line x1="6" y1="20" x2="6" y2="14" />
           </svg>
           {data.difficulty}
-          <span style={{ color: t.inkSoft, fontSize: 11, marginLeft: 4 }}>Difficulty</span>
+          <span style={{ color: t.inkSoft, fontSize: size.xs, marginLeft: 4 }}>Difficulty</span>
         </span>
       </div>
 
       <div className="ir-hero-grid" style={{ display: "grid", gridTemplateColumns: "minmax(260px, 1fr) 2fr", gap: 32, alignItems: "center" }}>
         <div>
-          <div style={{ fontFamily: f.mono, fontSize: 11, color: t.inkSoft, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 8 }}>
+          <div style={{ fontFamily: f.mono, fontSize: size.xs, color: t.inkSoft, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 8 }}>
             Overall Score
           </div>
           <div style={{ display: "inline-block" }}>
@@ -128,7 +127,7 @@ export function HeroSection({ data }: { data: InterviewResultData }) {
                 background: verdict.bg,
                 color: verdict.color,
                 fontFamily: f.sans,
-                fontSize: 13,
+                fontSize: size.base,
                 fontWeight: 600,
               }}
             >
@@ -138,7 +137,7 @@ export function HeroSection({ data }: { data: InterviewResultData }) {
               <ScoreConfidenceChip level={data.scoreConfidence} note={data.scoreConfidenceNote} />
             )}
             {data.recentScores && data.recentScores.length >= 2 ? (
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 8, fontFamily: f.sans, fontSize: 13, color: t.inkSoft }}>
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 8, fontFamily: f.sans, fontSize: size.base, color: t.inkSoft }}>
                 <Sparkline points={data.recentScores} />
                 {data.scoreDelta !== 0 && (
                   <span style={{ color: data.scoreDelta > 0 ? t.success : t.error, fontWeight: 600 }}>
@@ -147,18 +146,12 @@ export function HeroSection({ data }: { data: InterviewResultData }) {
                 )}
               </span>
             ) : data.scoreDelta !== 0 ? (
-              <span style={{ fontFamily: f.sans, fontSize: 13, color: data.scoreDelta > 0 ? t.success : t.error, fontWeight: 600 }}>
+              <span style={{ fontFamily: f.sans, fontSize: size.base, color: data.scoreDelta > 0 ? t.success : t.error, fontWeight: 600 }}>
                 {data.scoreDelta > 0 ? "↑" : "↓"} {Math.abs(data.scoreDelta)} pts
                 <span style={{ color: t.inkSoft, fontWeight: 400, marginLeft: 4 }}>vs last</span>
               </span>
             ) : null}
           </div>
-          {typeof data.percentile === "number" && (
-            <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.5, margin: "12px 0 0" }}>
-              <span style={{ color: t.coal, fontWeight: 600, fontFamily: f.serif, fontSize: 16 }}>Top {100 - data.percentile}%</span>{" "}
-              of {formatRoleWithLevel(data.level, data.role.split(" ").slice(0, 2).join(" "))} candidates targeting {data.company}.
-            </p>
-          )}
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
@@ -174,18 +167,18 @@ export function HeroSection({ data }: { data: InterviewResultData }) {
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={t.copper} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
               </svg>
-              <span style={{ fontFamily: f.mono, fontSize: 11, color: t.copper, letterSpacing: "0.12em", textTransform: "uppercase", fontWeight: 600 }}>
+              <span style={{ fontFamily: f.mono, fontSize: size.xs, color: t.copper, letterSpacing: "0.12em", textTransform: "uppercase", fontWeight: 600 }}>
                 AI Interview Verdict
               </span>
             </div>
-            <p style={{ fontFamily: f.serif, fontSize: 18, color: t.coal, lineHeight: 1.45, margin: 0 }}>
+            <p style={{ fontFamily: f.serif, fontSize: size.xl, color: t.coal, lineHeight: 1.45, margin: 0 }}>
               {data.aiVerdict}
             </p>
             {data.calibration && (
               <div style={{ marginTop: 12 }}>
                 <CalibrationBanner calibration={data.calibration} />
                 {data.calibration.note && (
-                  <p style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, lineHeight: 1.45, margin: "6px 0 0" }}>
+                  <p style={{ fontFamily: f.sans, fontSize: size.sm, color: t.inkSoft, lineHeight: 1.45, margin: "6px 0 0" }}>
                     {/* Notes may or may not already end in a period (the
                         "Generic calibration … scoring." default does). Collapse
                         any trailing period/space to exactly one so we never
@@ -201,7 +194,7 @@ export function HeroSection({ data }: { data: InterviewResultData }) {
                 role="note"
                 aria-label="India-context fairness applied during scoring"
               >
-                <div style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: f.mono, fontSize: 10.5, color: t.success, letterSpacing: "0.10em", textTransform: "uppercase", fontWeight: 600, marginBottom: 6 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: f.mono, fontSize: size.xs, color: t.success, letterSpacing: "0.10em", textTransform: "uppercase", fontWeight: 600, marginBottom: 6 }}>
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={t.success} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <path d="M9 12l2 2 4-4" />
                     <circle cx="12" cy="12" r="9" />
@@ -210,7 +203,7 @@ export function HeroSection({ data }: { data: InterviewResultData }) {
                 </div>
                 <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 5 }}>
                   {data.fairnessSignals.notes.map((n) => (
-                    <li key={n} style={{ display: "flex", gap: 8, fontFamily: f.sans, fontSize: 12.5, color: t.coal, lineHeight: 1.4 }}>
+                    <li key={n} style={{ display: "flex", gap: 8, fontFamily: f.sans, fontSize: size.sm, color: t.coal, lineHeight: 1.4 }}>
                       <span aria-hidden="true" style={{ color: t.success, flexShrink: 0 }}>✓</span>
                       {n}
                     </li>
@@ -222,31 +215,31 @@ export function HeroSection({ data }: { data: InterviewResultData }) {
 
           <div className="ir-strengths-improvements" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
             <div>
-              <div style={{ fontFamily: f.mono, fontSize: 11, color: t.success, letterSpacing: "0.10em", textTransform: "uppercase", marginBottom: 10, fontWeight: 600 }}>
+              <div style={{ fontFamily: f.mono, fontSize: size.xs, color: t.success, letterSpacing: "0.10em", textTransform: "uppercase", marginBottom: 10, fontWeight: 600 }}>
                 Top Strengths
               </div>
               <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 8 }}>
                 {data.strengths.length > 0 ? data.strengths.map((s) => (
-                  <li key={s} style={{ display: "flex", gap: 8, fontFamily: f.sans, fontSize: 14, color: t.coal, lineHeight: 1.4 }}>
+                  <li key={s} style={{ display: "flex", gap: 8, fontFamily: f.sans, fontSize: size.md, color: t.coal, lineHeight: 1.4 }}>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={t.success} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0, marginTop: 3 }}>
                       <polyline points="20 6 9 17 4 12" />
                     </svg>
                     {s}
                   </li>
                 )) : (
-                  <li style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, fontStyle: "italic" }}>
+                  <li style={{ fontFamily: f.sans, fontSize: size.base, color: t.inkSoft, fontStyle: "italic" }}>
                     Not enough signal to surface strengths — try a longer session.
                   </li>
                 )}
               </ul>
             </div>
             <div>
-              <div style={{ fontFamily: f.mono, fontSize: 11, color: t.copper, letterSpacing: "0.10em", textTransform: "uppercase", marginBottom: 10, fontWeight: 600 }}>
+              <div style={{ fontFamily: f.mono, fontSize: size.xs, color: t.copper, letterSpacing: "0.10em", textTransform: "uppercase", marginBottom: 10, fontWeight: 600 }}>
                 Top Improvements
               </div>
               <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 8 }}>
                 {data.improvements.map((s) => (
-                  <li key={s} style={{ display: "flex", gap: 8, fontFamily: f.sans, fontSize: 14, color: t.coal, lineHeight: 1.4 }}>
+                  <li key={s} style={{ display: "flex", gap: 8, fontFamily: f.sans, fontSize: size.md, color: t.coal, lineHeight: 1.4 }}>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={t.copper} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0, marginTop: 3 }}>
                       <line x1="12" y1="8" x2="12" y2="13" />
                       <line x1="12" y1="16" x2="12" y2="16.01" />

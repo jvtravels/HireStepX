@@ -12,7 +12,7 @@
  * to the referral link when shareUrl is absent. */
 
 import { useState, type CSSProperties } from "react";
-import { t, f, brand } from "../tokens";
+import { t, f, brand, size } from "../tokens";
 import { useAuth, referralSignupUrl } from "../../AuthContext";
 import { captureClientEvent } from "../../posthogClient";
 import { Button } from "@/components/ui/button";
@@ -75,13 +75,13 @@ export function ReferralInviteSection({
         padding: "22px clamp(18px, 3vw, 28px)",
       }}
     >
-      <span style={{ fontFamily: f.sans, fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: t.copper }}>
+      <span style={{ fontFamily: f.sans, fontSize: size.xs, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: t.copper }}>
         Bring a friend
       </span>
-      <div style={{ fontFamily: f.serif, fontSize: 22, color: t.coal, marginTop: 6 }}>
+      <div style={{ fontFamily: f.serif, fontSize: size["2xl"], color: t.coal, marginTop: 6 }}>
         You both get a free session
       </div>
-      <div style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft, marginTop: 6, lineHeight: 1.55, maxWidth: 560 }}>
+      <div style={{ fontFamily: f.sans, fontSize: size.md, color: t.inkSoft, marginTop: 6, lineHeight: 1.55, maxWidth: 560 }}>
         Send your link to someone prepping for interviews. When they sign up, you
         each get a free practice session — credited instantly, no purchase needed.
       </div>

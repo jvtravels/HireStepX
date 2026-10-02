@@ -3,7 +3,7 @@
  * the reason + verdict label tables.
  * Pure presentation. */
 
-import { t, f, radius } from "../tokens";
+import { t, f, radius, size } from "../tokens";
 import type { InterviewResultData } from "../types";
 import { SrSectionShell } from "./_primitives";
 
@@ -73,19 +73,19 @@ export function ReverseInterviewSection({
     <SrSectionShell
       anchorId="ir-section-reverse"
       headingId="ir-reverse-heading"
-      num="07"
+      num="08"
       label="Reverse interview"
       title={copy.title}
       subtitle={copy.oneLiner}
     >
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 14 }}>
-        <span style={{ fontFamily: f.sans, fontSize: 12, padding: "4px 10px", borderRadius: radius.pill, background: t.successTint, color: t.success, fontWeight: 600 }}>
+        <span style={{ fontFamily: f.sans, fontSize: size.sm, padding: "4px 10px", borderRadius: radius.pill, background: t.successTint, color: t.success, fontWeight: 600 }}>
           {reverse.counts.green} strong
         </span>
-        <span style={{ fontFamily: f.sans, fontSize: 12, padding: "4px 10px", borderRadius: radius.pill, background: t.warningTint, color: t.warning, fontWeight: 600 }}>
+        <span style={{ fontFamily: f.sans, fontSize: size.sm, padding: "4px 10px", borderRadius: radius.pill, background: t.warningTint, color: t.warning, fontWeight: 600 }}>
           {reverse.counts.yellow} neutral
         </span>
-        <span style={{ fontFamily: f.sans, fontSize: 12, padding: "4px 10px", borderRadius: radius.pill, background: t.errorTint, color: t.error, fontWeight: 600 }}>
+        <span style={{ fontFamily: f.sans, fontSize: size.sm, padding: "4px 10px", borderRadius: radius.pill, background: t.errorTint, color: t.error, fontWeight: 600 }}>
           {reverse.counts.red} risky
         </span>
       </div>
@@ -98,7 +98,7 @@ export function ReverseInterviewSection({
                 key={i}
                 style={{
                   fontFamily: f.sans,
-                  fontSize: 13,
+                  fontSize: size.base,
                   color: t.coal,
                   display: "flex",
                   alignItems: "center",
@@ -119,7 +119,7 @@ export function ReverseInterviewSection({
       <p
         style={{
           fontFamily: f.sans,
-          fontSize: 12,
+          fontSize: size.sm,
           color: accent,
           margin: "14px 0 0",
           fontStyle: "italic",

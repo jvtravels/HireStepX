@@ -329,9 +329,6 @@ export interface AdapterContext {
   session: DashboardSession;
   /** Score history for the inline sparkline. Most-recent-LAST. */
   recentScores?: number[];
-  /** Cohort percentile (0-100) — derived server-side or computed via
-   *  `roleBenchmarks.bucketPercentile`. Optional. */
-  percentile?: number;
   /** Days until the user's scheduled interview, if any (from
    *  AuthContext / profile). */
   daysUntilInterview?: number;
@@ -443,7 +440,6 @@ export function sessionReportToInterviewResult(
     overallScore: grounded.overallScore,
     verdict: grounded.band as Verdict,
     scoreDelta,
-    percentile: ctx.percentile,
     recentScores: groundedRecentScores,
     readiness: report.readiness
       ? {

@@ -3,7 +3,7 @@
  * Pure presentation. */
 
 import type { ReactNode } from "react";
-import { t, f } from "../tokens";
+import { t, f, size } from "../tokens";
 import type { BlindSpot, CrossSessionInsight, StoryReuseFinding } from "../types";
 import { SrSectionShell } from "./_primitives";
 import { Card, CardContent } from "@/components/ui/card";
@@ -27,12 +27,12 @@ function NoteCard({ kind, title, body, extra }: { kind: NoteKind; title: string;
       <CardContent className="px-4 py-3.5">
         <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
           <span aria-hidden style={{ width: 6, height: 6, borderRadius: "50%", background: meta.dot, flexShrink: 0 }} />
-          <span style={{ fontFamily: f.mono, fontSize: 10, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", color: meta.dot }}>
+          <span style={{ fontFamily: f.mono, fontSize: size.xs, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", color: meta.dot }}>
             {meta.eyebrow}
           </span>
         </div>
-        <h3 style={{ fontFamily: f.serif, fontSize: 16, color: t.coal, lineHeight: 1.3, margin: "0 0 6px" }}>{title}</h3>
-        <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.55, margin: 0 }}>{body}</p>
+        <h3 style={{ fontFamily: f.serif, fontSize: size.lg, color: t.coal, lineHeight: 1.3, margin: "0 0 6px" }}>{title}</h3>
+        <p style={{ fontFamily: f.sans, fontSize: size.base, color: t.inkSoft, lineHeight: 1.55, margin: 0 }}>{body}</p>
         {extra}
       </CardContent>
     </Card>
@@ -62,7 +62,7 @@ export function CoachNotesSection({
     <SrSectionShell
       anchorId="ir-section-coach-notes"
       headingId="ir-coach-notes-heading"
-      num="05"
+      num="07"
       label="What your coach would say"
       title={<>Coach&apos;s Notes</>}
       subtitle={<>Patterns we&apos;ve noticed across your last few sessions — the perspective a human coach would bring.</>}
@@ -83,7 +83,7 @@ export function CoachNotesSection({
               body={coaching!.gap.meaning}
               extra={
                 coaching!.gap.example ? (
-                  <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.55, fontStyle: "italic", margin: "6px 0 0" }}>
+                  <p style={{ fontFamily: f.sans, fontSize: size.base, color: t.inkSoft, lineHeight: 1.55, fontStyle: "italic", margin: "6px 0 0" }}>
                     {coaching!.gap.example}
                   </p>
                 ) : undefined

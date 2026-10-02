@@ -54,11 +54,11 @@ import { CoachNotesSection } from "./panels/sr-CoachNotesSection";
 import { BiasSection } from "./panels/sr-BiasSection";
 import { ReverseInterviewSection } from "./panels/sr-ReverseInterviewSection";
 import { NextStepsSection } from "./panels/sr-NextStepsSection";
+import { ScheduleNextSection } from "./panels/sr-ScheduleNextSection";
 import { FooterSection } from "./panels/sr-FooterSection";
 import { ReferralInviteSection } from "./panels/sr-ReferralInviteSection";
 import { TestimonialNudge } from "./panels/sr-TestimonialNudge";
 import { ProductRating } from "./panels/sr-ProductRating";
-import { ScoreCardDownloadButton } from "./panels/sr-ScoreCard";
 import { CampusCgpaCalibrationNote } from "./panels/sr-CampusCgpaCalibrationNote";
 import { CredibilitySection } from "./panels/sr-CredibilitySection";
 import { OfferEconomicsPanel } from "./panels/sr-OfferEconomicsPanel";
@@ -519,6 +519,9 @@ export default function SessionReportView({
   const behaviouralCrossSessionInsights = data.negotiationOutcome
     ? undefined
     : data.crossSessionInsights;
+  const weakestQuestion = data.questions.length > 0
+    ? data.questions.reduce((min, q) => (q.score < min.score ? q : min), data.questions[0])
+    : undefined;
   return (
     <>
       <style>{SESSION_REPORT_STYLES}</style>
@@ -629,16 +632,10 @@ export default function SessionReportView({
             readinessSentence={data.readinessSentence}
             weakestSkill={data.weakestSkill?.name}
             resumeImprovements={data.resumeImprovements}
-            weakestQuestionIndex={
-              data.questions.length > 0
-                ? data.questions.reduce((min, q) => q.score < min.score ? q : min, data.questions[0]).index
-                : undefined
-            }
+            weakestQuestionIndex={weakestQuestion?.index}
             onTryWeakestQuestion={
-              onTryQuestionAgain && data.questions.length > 0
-                ? () => onTryQuestionAgain(
-                    data.questions.reduce((min, q) => q.score < min.score ? q : min, data.questions[0]).index
-                  )
+              onTryQuestionAgain && weakestQuestion
+                ? () => onTryQuestionAgain(weakestQuestion.index)
                 : undefined
             }
             onDrillSkill={
@@ -647,27 +644,8 @@ export default function SessionReportView({
                 : undefined
             }
           />
-          {/* Score card download — surfaces after the report body so the
-              candidate has read their results before sharing. Guards the
-              Canvas API call client-side via typeof window check inside
-              downloadScoreCard. Only shows when we have the data needed. */}
-          <div style={{ display: "flex", justifyContent: "flex-end", paddingBottom: 8 }}>
-            <ScoreCardDownloadButton
-              score={data.overallScore}
-              role={data.role}
-              company={data.company}
-              topStrength={data.strengths[0] ?? ""}
-              topGap={data.weakestSkill?.tip ?? data.improvements[0] ?? ""}
-              verdict={data.aiVerdict}
-            />
-          </div>
-          <ReferralInviteSection score={data.overallScore} shareUrl={shareUrl} />
-          <ProductRating sessionId={sessionId ?? ""} />
+          <ScheduleNextSection todayIso={new Date().toISOString()} />
           <TestimonialNudge score={data.overallScore} priorSessionCount={data.priorSessionCount} role={data.role} />
-          <FooterSection
-            onTrustAnswer={onTrustAnswer}
-            onUsefulAnswer={onUsefulAnswer}
-          />
         </main>
       </div>
     </>

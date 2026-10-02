@@ -3,7 +3,7 @@
  * Distinct from NegotiationFullReport (which is transcript-derived).
  * Pure presentation. */
 
-import { t, f, radius } from "../tokens";
+import { t, f, radius, size } from "../tokens";
 import type { InterviewResultData } from "../types";
 import { anchorAtLabel } from "../derivations";
 import { SrSectionShell } from "./_primitives";
@@ -41,7 +41,7 @@ function KernelTacticsPanel({ m }: { m: KernelMetrics }) {
     <span style={{
       display: "inline-flex", alignItems: "center", gap: 6,
       padding: "5px 10px", borderRadius: radius.pill,
-      fontFamily: f.sans, fontSize: 12, fontWeight: 500,
+      fontFamily: f.sans, fontSize: size.sm, fontWeight: 500,
       background: tone === "good" ? t.kernelGoodBg : t.creamSoft,
       color: tone === "good" ? t.kernelGoodInk : t.inkSoft,
       border: `1px solid ${tone === "good" ? t.kernelGoodBorder : t.line}`,
@@ -51,23 +51,23 @@ function KernelTacticsPanel({ m }: { m: KernelMetrics }) {
     <div style={{ marginTop: 22, display: "grid", gap: 22 }}>
       {(used.length > 0 || missed.length > 0) && (
         <div>
-          <h3 style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.coal, margin: "0 0 8px", letterSpacing: 0.2, textTransform: "uppercase" }}>
+          <h3 style={{ fontFamily: f.sans, fontSize: size.base, fontWeight: 600, color: t.coal, margin: "0 0 8px", letterSpacing: 0.2, textTransform: "uppercase" }}>
             Tactics
           </h3>
           {used.length > 0 && (
             <>
-              <p style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, margin: "0 0 6px" }}>You used:</p>
+              <p style={{ fontFamily: f.sans, fontSize: size.sm, color: t.inkSoft, margin: "0 0 6px" }}>You used:</p>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
                 {used.map((tk) => <Chip key={tk} tone="good">{TACTIC_LABELS[tk].name}</Chip>)}
               </div>
-              <ul style={{ margin: "0 0 14px", paddingLeft: 18, fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft, lineHeight: 1.55 }}>
+              <ul style={{ margin: "0 0 14px", paddingLeft: 18, fontFamily: f.sans, fontSize: size.sm, color: t.inkSoft, lineHeight: 1.55 }}>
                 {used.map((tk) => <li key={tk}><strong style={{ color: t.coal }}>{TACTIC_LABELS[tk].name}.</strong> {TACTIC_LABELS[tk].what}</li>)}
               </ul>
             </>
           )}
           {missed.length > 0 && (
             <>
-              <p style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, margin: "0 0 6px" }}>
+              <p style={{ fontFamily: f.sans, fontSize: size.sm, color: t.inkSoft, margin: "0 0 6px" }}>
                 {used.length > 0 ? "You didn't try:" : "Tactics worth practicing next session:"}
               </p>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
@@ -79,10 +79,10 @@ function KernelTacticsPanel({ m }: { m: KernelMetrics }) {
       )}
       {asked.length > 0 && (
         <div>
-          <h3 style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.coal, margin: "0 0 8px", letterSpacing: 0.2, textTransform: "uppercase" }}>
+          <h3 style={{ fontFamily: f.sans, fontSize: size.base, fontWeight: 600, color: t.coal, margin: "0 0 8px", letterSpacing: 0.2, textTransform: "uppercase" }}>
             Questions you raised
           </h3>
-          <p style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, margin: "0 0 6px" }}>
+          <p style={{ fontFamily: f.sans, fontSize: size.sm, color: t.inkSoft, margin: "0 0 6px" }}>
             Specific levers you pried open — each is a number-mover most candidates skip.
           </p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
@@ -93,22 +93,22 @@ function KernelTacticsPanel({ m }: { m: KernelMetrics }) {
       {showCallouts && (
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {m.marketMode === "soft" && (
-            <div style={{ padding: "8px 12px", background: t.creamSoft, border: `1px solid ${t.line}`, borderRadius: radius.lg, fontFamily: f.sans, fontSize: 12, color: t.inkSoft }}>
+            <div style={{ padding: "8px 12px", background: t.creamSoft, border: `1px solid ${t.line}`, borderRadius: radius.lg, fontFamily: f.sans, fontSize: size.sm, color: t.inkSoft }}>
               Simulated <strong style={{ color: t.coal }}>soft market</strong> — recruiters concede ~30% less than baseline. Cash gains here are harder-won than the % suggests.
             </div>
           )}
           {m.marketMode === "hot" && (
-            <div style={{ padding: "8px 12px", background: t.creamSoft, border: `1px solid ${t.line}`, borderRadius: radius.lg, fontFamily: f.sans, fontSize: 12, color: t.inkSoft }}>
+            <div style={{ padding: "8px 12px", background: t.creamSoft, border: `1px solid ${t.line}`, borderRadius: radius.lg, fontFamily: f.sans, fontSize: size.sm, color: t.inkSoft }}>
               Simulated <strong style={{ color: t.coal }}>hot market</strong> — recruiters concede ~30% more than baseline. Match this anchoring discipline in a normal market.
             </div>
           )}
           {m.hardBandCap && (
-            <div style={{ padding: "8px 12px", background: t.creamSoft, border: `1px solid ${t.line}`, borderRadius: radius.lg, fontFamily: f.sans, fontSize: 12, color: t.inkSoft }}>
+            <div style={{ padding: "8px 12px", background: t.creamSoft, border: `1px solid ${t.line}`, borderRadius: radius.lg, fontFamily: f.sans, fontSize: size.sm, color: t.inkSoft }}>
               <strong style={{ color: t.coal }}>Hard band cap.</strong> The simulated company had a fixed fitment grid (services-co pattern). The kernel redirected to joining bonus, equity, and benefits — the right play.
             </div>
           )}
           {m.walkAwayReturned && (
-            <div style={{ padding: "8px 12px", background: t.kernelWarnBg, border: `1px solid ${t.kernelWarnBorder}`, borderRadius: radius.lg, fontFamily: f.sans, fontSize: 12, color: t.kernelWarnInk }}>
+            <div style={{ padding: "8px 12px", background: t.kernelWarnBg, border: `1px solid ${t.kernelWarnBorder}`, borderRadius: radius.lg, fontFamily: f.sans, fontSize: size.sm, color: t.kernelWarnInk }}>
               <strong>You walked away and came back.</strong> This works, but the recruiter prices in your reduced leverage — concession rate halves after a return.
             </div>
           )}
@@ -155,7 +155,7 @@ export function KernelNegotiationQualitySection({ m }: { m: KernelMetrics }) {
       : []),
   ];
   const outcomeChip = (
-    <span style={{ fontFamily: f.mono, fontSize: 11, color: outcomeColor, letterSpacing: "0.06em", textTransform: "uppercase" }}>
+    <span style={{ fontFamily: f.mono, fontSize: size.xs, color: outcomeColor, letterSpacing: "0.06em", textTransform: "uppercase" }}>
       {outcomeLabel}
     </span>
   );
@@ -183,15 +183,15 @@ export function KernelNegotiationQualitySection({ m }: { m: KernelMetrics }) {
               gap: 6,
             }}
           >
-            <span style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft }}>{tile.label}</span>
+            <span style={{ fontFamily: f.sans, fontSize: size.base, color: t.inkSoft }}>{tile.label}</span>
             <div style={{ fontFamily: f.serif, fontSize: 32, color: t.coal, lineHeight: 1, letterSpacing: "-0.02em" }}>
               {tile.value}
               {tile.sub && tile.label === "Execution score" && (
-                <span style={{ fontSize: 16, color: t.inkSoft, marginLeft: 2, fontFamily: f.mono }}>{tile.sub}</span>
+                <span style={{ fontSize: size.lg, color: t.inkSoft, marginLeft: 2, fontFamily: f.mono }}>{tile.sub}</span>
               )}
             </div>
             {tile.sub && tile.label !== "Quality score" && (
-              <div style={{ fontFamily: f.mono, fontSize: 11, color: t.inkSoft, letterSpacing: "0.04em" }}>{tile.sub}</div>
+              <div style={{ fontFamily: f.mono, fontSize: size.xs, color: t.inkSoft, letterSpacing: "0.04em" }}>{tile.sub}</div>
             )}
           </div>
         ))}
@@ -204,7 +204,7 @@ export function KernelNegotiationQualitySection({ m }: { m: KernelMetrics }) {
           border: `1px solid ${t.kernelBadBorder}`,
           borderRadius: radius.lg,
           fontFamily: f.sans,
-          fontSize: 12,
+          fontSize: size.sm,
           color: t.kernelBadInk,
         }}>
           Kernel anomaly: AI offered above the band ceiling on at least one turn. This shouldn't happen — please report.
@@ -218,7 +218,7 @@ export function KernelNegotiationQualitySection({ m }: { m: KernelMetrics }) {
           border: `1px solid ${t.line}`,
           borderRadius: radius.lg,
           fontFamily: f.sans,
-          fontSize: 12,
+          fontSize: size.sm,
           color: t.inkSoft,
         }}>
           <strong style={{ color: t.coal }}>CTC not shared.</strong> You never stated your current package, so the simulation used role-average band defaults. Share your actual CTC in your next session for a personalised band and hike-% read.

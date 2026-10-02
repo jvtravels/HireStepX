@@ -5,7 +5,7 @@
  * Pure presentation. */
 
 import { useState } from "react";
-import { t, f, radius, space } from "../tokens";
+import { t, f, radius, space, size } from "../tokens";
 import type { AnswerSpan, HighlightKind, Question } from "../types";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -24,13 +24,13 @@ function StarChip({ active, letter, label }: { active: boolean; letter: string; 
           alignItems: "center",
           justifyContent: "center",
           fontFamily: f.mono,
-          fontSize: 13,
+          fontSize: size.base,
           fontWeight: 700,
         }}
       >
         {letter}
       </span>
-      <span style={{ fontFamily: f.sans, fontSize: 10, color: t.inkSoft }}>{label}</span>
+      <span style={{ fontFamily: f.sans, fontSize: size.xs, color: t.inkSoft }}>{label}</span>
     </div>
   );
 }
@@ -57,7 +57,7 @@ function HighlightLegend() {
             alignItems: "center",
             gap: 6,
             fontFamily: f.sans,
-            fontSize: 11,
+            fontSize: size.xs,
             color: t.inkSoft,
           }}
         >
@@ -108,7 +108,7 @@ function AnswerBody({
         borderRadius: radius.bar,
         padding: "16px 18px",
         fontFamily: f.sans,
-        fontSize: 14,
+        fontSize: size.md,
         lineHeight: 1.7,
         color: t.coal,
       }}
@@ -181,7 +181,7 @@ export function QuestionDetail({ q, onTryQuestionAgain }: { q: Question; onTryQu
                 <CornerBadge bg={t.indigo100} color={t.indigo}>AI-RESTRUCTURED</CornerBadge>
                 <AnswerBody spans={q.restructured} bg={t.white} border={t.line} />
               </div>
-              <p style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, lineHeight: 1.55, margin: "10px 0 0" }}>
+              <p style={{ fontFamily: f.sans, fontSize: size.sm, color: t.inkSoft, lineHeight: 1.55, margin: "10px 0 0" }}>
                 Same content as your answer, reorganized into clean STAR. Save this as your reference version.
               </p>
             </TabsContent>
@@ -196,12 +196,12 @@ export function QuestionDetail({ q, onTryQuestionAgain }: { q: Question; onTryQu
                   border={t.successAccent}
                 />
               </div>
-              <p style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, lineHeight: 1.55, margin: "10px 0 0" }}>
+              <p style={{ fontFamily: f.sans, fontSize: size.sm, color: t.inkSoft, lineHeight: 1.55, margin: "10px 0 0" }}>
                 What an L4-equivalent candidate at this company would say. Use it as a reference shape, not a script — the goal is to internalize the structure.
               </p>
               {q.whatMakesItStrong && q.whatMakesItStrong.length > 0 && (
                 <>
-                  <div style={{ fontFamily: f.mono, fontSize: 11, color: t.success, letterSpacing: "0.10em", textTransform: "uppercase", fontWeight: 600, marginTop: 14 }}>
+                  <div style={{ fontFamily: f.mono, fontSize: size.xs, color: t.success, letterSpacing: "0.10em", textTransform: "uppercase", fontWeight: 600, marginTop: 14 }}>
                     What makes it strong
                   </div>
                   <ul className="ir-strong-list">
@@ -260,7 +260,7 @@ export function QuestionDetail({ q, onTryQuestionAgain }: { q: Question; onTryQu
           ).map((m) => (
             <div key={m.label} style={{ display: "flex", flexDirection: "column", minWidth: 64 }}>
               <span style={{ fontFamily: f.mono, fontSize: 9, fontWeight: 600, letterSpacing: "0.10em", textTransform: "uppercase", color: t.inkSoft }}>{m.label}</span>
-              <span style={{ fontFamily: f.mono, fontSize: 14, fontWeight: 600, color: m.tone, marginTop: 2 }}>{m.value}</span>
+              <span style={{ fontFamily: f.mono, fontSize: size.md, fontWeight: 600, color: m.tone, marginTop: 2 }}>{m.value}</span>
             </div>
           ))}
         </div>
@@ -277,10 +277,10 @@ export function QuestionDetail({ q, onTryQuestionAgain }: { q: Question; onTryQu
             gap: 12,
           }}
         >
-          <div style={{ fontFamily: f.mono, fontSize: 11, color: coachColor, letterSpacing: "0.10em", textTransform: "uppercase", fontWeight: 600 }}>
+          <div style={{ fontFamily: f.mono, fontSize: size.xs, color: coachColor, letterSpacing: "0.10em", textTransform: "uppercase", fontWeight: 600 }}>
             {coachHeading}
           </div>
-          <p style={{ fontFamily: f.sans, fontSize: 14, color: t.coal, lineHeight: 1.55, margin: 0 }}>
+          <p style={{ fontFamily: f.sans, fontSize: size.md, color: t.coal, lineHeight: 1.55, margin: 0 }}>
             {q.whyScored}
           </p>
           {q.redFlags && q.redFlags.length > 0 && (
@@ -322,7 +322,7 @@ export function QuestionDetail({ q, onTryQuestionAgain }: { q: Question; onTryQu
               <span
                 style={{
                   fontFamily: f.mono,
-                  fontSize: 10,
+                  fontSize: size.xs,
                   color: t.copper,
                   letterSpacing: "0.10em",
                   textTransform: "uppercase",
@@ -334,7 +334,7 @@ export function QuestionDetail({ q, onTryQuestionAgain }: { q: Question; onTryQu
               <p
                 style={{
                   fontFamily: f.sans,
-                  fontSize: 13,
+                  fontSize: size.base,
                   fontStyle: "italic",
                   color: t.coal,
                   lineHeight: 1.55,
@@ -348,7 +348,7 @@ export function QuestionDetail({ q, onTryQuestionAgain }: { q: Question; onTryQu
               <p
                 style={{
                   fontFamily: f.sans,
-                  fontSize: 12,
+                  fontSize: size.sm,
                   color: t.inkSoft,
                   lineHeight: 1.5,
                   margin: 0,

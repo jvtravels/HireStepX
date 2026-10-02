@@ -9,7 +9,7 @@ import {
   computeOfferNetValue,
   type OfferNetValueInput,
 } from "../derivations/offerNetValue";
-import { PanelShell, StatTile, t, f } from "./_primitives";
+import { PanelShell, StatTile, t, f, size } from "./_primitives";
 
 export interface OfferEconomicsPanelProps {
   offer: OfferNetValueInput;
@@ -56,7 +56,7 @@ export function OfferEconomicsPanel({ offer }: OfferEconomicsPanelProps) {
       </div>
       <div
         style={{
-          fontSize: 12,
+          fontSize: size.sm,
           color: t.inkSoft,
           fontStyle: "italic",
           marginTop: 14,

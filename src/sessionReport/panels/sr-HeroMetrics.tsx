@@ -5,7 +5,7 @@
  * named exports (not default) so each can be tree-shaken if the hero
  * ever stops using one. Pure presentation. */
 
-import { t, f, radius } from "../tokens";
+import { t, f, radius, size } from "../tokens";
 import { formatRoleWithLevel } from "../roleLabel";
 import type { Calibration } from "../types";
 
@@ -152,15 +152,15 @@ export function ReadinessHeadline({
       }}
     >
       <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-        <span style={{ fontFamily: f.mono, fontSize: 11, color: t.inkSoft, letterSpacing: "0.10em", textTransform: "uppercase", fontWeight: 600 }}>
+        <span style={{ fontFamily: f.mono, fontSize: size.xs, color: t.inkSoft, letterSpacing: "0.10em", textTransform: "uppercase", fontWeight: 600 }}>
           Readiness
         </span>
-        <span style={{ fontFamily: f.serif, fontSize: 28, color, lineHeight: 1, letterSpacing: "-0.01em" }}>
+        <span style={{ fontFamily: f.serif, fontSize: size["3xl"], color, lineHeight: 1, letterSpacing: "-0.01em" }}>
           {readiness.pct}%
         </span>
       </div>
       <span style={{ height: 22, width: 1, background: t.line }} aria-hidden="true" />
-      <p style={{ fontFamily: f.sans, fontSize: 13, color: t.coal, margin: 0, flex: 1, minWidth: 240, lineHeight: 1.45 }}>
+      <p style={{ fontFamily: f.sans, fontSize: size.base, color: t.coal, margin: 0, flex: 1, minWidth: 240, lineHeight: 1.45 }}>
         For <strong style={{ color: t.coal, fontWeight: 600 }}>{formatRoleWithLevel(level, role)}</strong> at <strong>{company}</strong>.
         {readiness.pct >= 80 ? (
           <> You&apos;re interview-ready — focus on consistency.</>
@@ -179,7 +179,7 @@ export function ReadinessHeadline({
             background: t.copperSoft,
             color: t.copper,
             fontFamily: f.mono,
-            fontSize: 11,
+            fontSize: size.xs,
             fontWeight: 600,
             letterSpacing: "0.06em",
           }}

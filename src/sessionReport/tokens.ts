@@ -7,7 +7,7 @@
    and radius/space below are report-specific layout scales with no
    shared-token equivalent. */
 
-import { tokens as T, fonts as F, shadows as S } from "../auth/_tokens";
+import { tokens as T, fonts as F, shadows as S, textSize as TS } from "../auth/_tokens";
 
 export const t = {
   /* Surface */
@@ -148,6 +148,26 @@ export const f = {
   serif: F.sans,
   sans: F.sans,
   mono: F.mono,
+} as const;
+
+/* Type scale — re-derives Resume's `textSize` (src/auth/_tokens.ts)
+   instead of letting the report pick its own numbers. Before this, the
+   report had 16 distinct raw fontSize literals (9–56px) doing the same
+   handful of jobs Resume does with 8 named steps — the other half of
+   the "doesn't look like Resume" gap alongside the serif/sans mismatch
+   above. Hero/display numbers above `3xl` (the big score rings, the
+   56px negotiation headline figure) stay as local literals next to
+   their call site, same exception auth/_tokens.ts itself documents for
+   textSize: "Hero display sizes (>28px) use clamp() inline." */
+export const size = {
+  xs: TS.xs,       // 11 — captions, timestamps, metadata chips, eyebrow labels
+  sm: TS.sm,       // 12 — helper text, secondary labels, legends
+  base: TS.base,   // 13 — body copy, card descriptions
+  md: TS.md,       // 14 — slightly emphasised body (list items, nav-weight text)
+  lg: TS.lg,       // 16 — sub-headings, section labels
+  xl: TS.xl,       // 18 — card headings, panel titles
+  "2xl": TS["2xl"], // 22 — section headings
+  "3xl": TS["3xl"], // 28 — page-level headings
 } as const;
 
 /* Radius scale. Prior to 2026-05-26 these were sprinkled as magic

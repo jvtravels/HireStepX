@@ -14,8 +14,9 @@
 "use client";
 
 import { useState } from "react";
-import { t, f, shadows, radius } from "../tokens";
+import { t, f, radius, size } from "../tokens";
 import { Button } from "@/components/ui/button";
+import { SrSectionShell } from "./_primitives";
 
 /* ── Date helpers ──────────────────────────────────────────────────────── */
 
@@ -121,75 +122,13 @@ export function ScheduleNextSection({
   );
 
   return (
-    <section
-      id="ir-section-schedule"
-      aria-labelledby="ir-schedule-heading"
-      style={{
-        background: t.white,
-        border: `1px solid ${t.line}`,
-        borderRadius: radius.shell,
-        padding: 28,
-        boxShadow: shadows.card,
-        scrollMarginTop: 72,
-      }}
+    <SrSectionShell
+      anchorId="ir-section-schedule"
+      headingId="ir-schedule-heading"
+      num="10"
+      label="Plan ahead"
+      title="When Is Your Next Session?"
     >
-      {/* Eyebrow */}
-      <div
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          gap: 6,
-          marginBottom: 8,
-        }}
-      >
-        <span
-          style={{
-            fontFamily: f.mono,
-            fontSize: 10,
-            fontWeight: 700,
-            letterSpacing: "0.08em",
-            color: t.inkFaint,
-            textTransform: "uppercase",
-          }}
-        >
-          07
-        </span>
-        <span
-          style={{
-            width: 1,
-            height: 10,
-            background: t.lineStrong,
-            display: "inline-block",
-          }}
-        />
-        <span
-          style={{
-            fontFamily: f.sans,
-            fontSize: 10,
-            fontWeight: 700,
-            letterSpacing: "0.08em",
-            color: t.inkFaint,
-            textTransform: "uppercase",
-          }}
-        >
-          Plan ahead
-        </span>
-      </div>
-
-      <h2
-        id="ir-schedule-heading"
-        style={{
-          fontFamily: f.serif,
-          fontSize: 22,
-          fontWeight: 400,
-          color: t.coal,
-          margin: "0 0 18px",
-          letterSpacing: "-0.01em",
-        }}
-      >
-        When is your next session?
-      </h2>
-
       {scheduled ? (
         /* ── Confirmation state ── */
         <div
@@ -225,7 +164,7 @@ export function ScheduleNextSection({
             <p
               style={{
                 fontFamily: f.sans,
-                fontSize: 13,
+                fontSize: size.base,
                 fontWeight: 600,
                 color: t.success,
                 margin: "0 0 2px",
@@ -238,7 +177,7 @@ export function ScheduleNextSection({
             <p
               style={{
                 fontFamily: f.sans,
-                fontSize: 14,
+                fontSize: size.md,
                 color: t.coal,
                 margin: 0,
                 lineHeight: 1.5,
@@ -314,7 +253,7 @@ export function ScheduleNextSection({
             <span
               style={{
                 fontFamily: f.sans,
-                fontSize: 11,
+                fontSize: size.xs,
                 color: t.inkFaint,
                 textTransform: "uppercase",
                 letterSpacing: "0.06em",
@@ -346,7 +285,7 @@ export function ScheduleNextSection({
               aria-label="Choose a custom date and time"
               style={{
                 fontFamily: f.sans,
-                fontSize: 13,
+                fontSize: size.base,
                 color: t.coal,
                 background: t.creamSoft,
                 border: `1px solid ${t.lineStrong}`,
@@ -377,6 +316,6 @@ export function ScheduleNextSection({
           </div>
         </div>
       )}
-    </section>
+    </SrSectionShell>
   );
 }

@@ -10,8 +10,8 @@
  * shell's plain inkSoft subtitle would erase the "this is a callout, not
  * metadata" affordance. */
 
-import { t, f, shadows, radius } from "../tokens";
-import { SectionEyebrow } from "./sr-JumpNav";
+import { t, f, shadows, radius, size } from "../tokens";
+import { SectionEyebrow, CalloutCard } from "./_primitives";
 import { Button } from "@/components/ui/button";
 
 export function NextStepsSection({
@@ -113,15 +113,15 @@ export function NextStepsSection({
         scrollMarginTop: 72,
       }}
     >
-      <SectionEyebrow num="06" label="What to do now" />
-      <h2 id="ir-next-heading" style={{ fontFamily: f.serif, fontSize: 22, fontWeight: 400, color: t.coal, margin: "0 0 6px", letterSpacing: "-0.01em" }}>
+      <SectionEyebrow num="09" label="What to do now" />
+      <h2 id="ir-next-heading" style={{ fontFamily: f.serif, fontSize: size["2xl"], fontWeight: 400, color: t.coal, margin: "0 0 6px", letterSpacing: "-0.01em" }}>
         Recommended Next Steps
       </h2>
       {readinessSentence && (
         <p
           style={{
             fontFamily: f.sans,
-            fontSize: 14,
+            fontSize: size.md,
             color: t.coal,
             margin: "0 0 18px",
             lineHeight: 1.55,
@@ -135,26 +135,16 @@ export function NextStepsSection({
       {/* Resume fix card — shown when AI resume analysis has improvement bullets.
           Connects interview coaching with resume quality in a single view. */}
       {resumeImprovements && resumeImprovements.length > 0 && (
-        <div
-          style={{
-            background: "#FFFBF0",
-            border: `1px solid rgba(180,83,9,0.20)`,
-            borderLeft: `3px solid ${t.copper}`,
-            borderRadius: radius.bar,
-            padding: "14px 18px",
-            marginBottom: 16,
-          }}
-        >
-          <p style={{ fontFamily: f.sans, fontSize: 12, fontWeight: 600, color: t.copper, margin: "0 0 8px", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-            📄 Resume fixes that match this interview pattern
-          </p>
-          <ul style={{ margin: 0, padding: "0 0 0 16px" }}>
-            {resumeImprovements.map((tip, i) => (
-              <li key={i} style={{ fontFamily: f.sans, fontSize: 13, color: t.coal, lineHeight: 1.55, marginBottom: i < resumeImprovements.length - 1 ? 4 : 0 }}>
-                {tip}
-              </li>
-            ))}
-          </ul>
+        <div style={{ marginBottom: 16 }}>
+          <CalloutCard eyebrow="📄 Resume fixes that match this interview pattern">
+            <ul style={{ margin: 0, padding: "0 0 0 16px" }}>
+              {resumeImprovements.map((tip, i) => (
+                <li key={i} style={{ marginBottom: i < resumeImprovements.length - 1 ? 4 : 0 }}>
+                  {tip}
+                </li>
+              ))}
+            </ul>
+          </CalloutCard>
         </div>
       )}
       <div className="ir-next-steps-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14 }}>
@@ -185,8 +175,8 @@ export function NextStepsSection({
             >
               {c.icon}
             </span>
-            <h3 style={{ fontFamily: f.sans, fontSize: 15, fontWeight: 600, color: t.coal, margin: 0 }}>{c.title}</h3>
-            <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.5, margin: 0, flex: 1 }}>
+            <h3 style={{ fontFamily: f.sans, fontSize: size.lg, fontWeight: 600, color: t.coal, margin: 0 }}>{c.title}</h3>
+            <p style={{ fontFamily: f.sans, fontSize: size.base, color: t.inkSoft, lineHeight: 1.5, margin: 0, flex: 1 }}>
               {c.desc}
             </p>
             <Button

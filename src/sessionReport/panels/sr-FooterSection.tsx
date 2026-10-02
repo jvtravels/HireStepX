@@ -3,7 +3,7 @@
  * Pure presentation. */
 
 import { useState } from "react";
-import { t, f } from "../tokens";
+import { t, f, size } from "../tokens";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 export function FooterSection({
@@ -38,14 +38,14 @@ export function FooterSection({
           gap: 12,
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: f.sans, fontSize: 12, color: t.inkSoft }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: f.sans, fontSize: size.sm, color: t.inkSoft }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={t.copper} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M12 2 4 6v6c0 5 3.5 9 8 10 4.5-1 8-5 8-10V6l-8-4z" />
             <polyline points="9 12 11 14 15 10" />
           </svg>
           Your data is private and secure.
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, fontFamily: f.sans, fontSize: 12, color: t.inkSoft }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, fontFamily: f.sans, fontSize: size.sm, color: t.inkSoft }}>
           Was this report helpful?
           <ToggleGroup
             type="single"
@@ -71,7 +71,7 @@ export function FooterSection({
           className="ir-feedback-row"
           style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 8, justifyContent: "flex-end", paddingTop: 4 }}
         >
-          <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft }}>
+          <span style={{ fontFamily: f.sans, fontSize: size.sm, color: t.inkSoft }}>
             {thumb === "down" ? "What was off?" : "What worked?"}
           </span>
           <ToggleGroup
@@ -87,7 +87,7 @@ export function FooterSection({
             ))}
           </ToggleGroup>
           {reason && (
-            <span style={{ fontFamily: f.sans, fontSize: 11, color: t.success, fontWeight: 500 }}>
+            <span style={{ fontFamily: f.sans, fontSize: size.xs, color: t.success, fontWeight: 500 }}>
               ✓ Thanks — recorded
             </span>
           )}

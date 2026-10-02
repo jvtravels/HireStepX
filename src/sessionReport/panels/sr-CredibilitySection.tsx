@@ -4,7 +4,7 @@
  * Pure presentation. */
 
 import { useState } from "react";
-import { t, f, shadows, radius } from "../tokens";
+import { t, f, shadows, radius, size } from "../tokens";
 import type { CredibilitySummary } from "../../_credibilityCallout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -46,7 +46,7 @@ export function CredibilitySection({
             background: t.error,
             color: t.white,
             fontFamily: f.sans,
-            fontSize: 12,
+            fontSize: size.sm,
             fontWeight: 700,
           }}
           aria-label={`${summary.count} credibility issue${summary.count === 1 ? "" : "s"}`}
@@ -70,7 +70,7 @@ export function CredibilitySection({
         style={{
           margin: 0,
           fontFamily: f.sans,
-          fontSize: 13,
+          fontSize: size.base,
           lineHeight: 1.55,
           color: t.coal,
           opacity: 0.85,
@@ -110,7 +110,7 @@ export function CredibilitySection({
             <div
               style={{
                 fontFamily: f.sans,
-                fontSize: 14,
+                fontSize: size.md,
                 fontWeight: 600,
                 color: t.coal,
               }}
@@ -121,7 +121,7 @@ export function CredibilitySection({
               <div
                 style={{
                   fontFamily: f.mono ?? f.sans,
-                  fontSize: 12,
+                  fontSize: size.sm,
                   color: t.coal,
                   opacity: 0.78,
                   lineHeight: 1.5,
@@ -133,7 +133,7 @@ export function CredibilitySection({
               <div
                 style={{
                   fontFamily: f.sans,
-                  fontSize: 12,
+                  fontSize: size.sm,
                   color: t.coal,
                   opacity: 0.78,
                   lineHeight: 1.5,
@@ -149,7 +149,7 @@ export function CredibilitySection({
                 borderRadius: radius.tile,
                 background: t.successWash,
                 fontFamily: f.sans,
-                fontSize: 12,
+                fontSize: size.sm,
                 color: t.success,
                 lineHeight: 1.5,
               }}
@@ -182,7 +182,7 @@ export function CredibilitySection({
                     height: "auto",
                     padding: "4px 6px",
                     fontFamily: f.sans,
-                    fontSize: 11,
+                    fontSize: size.xs,
                     color: disputed.has(item.flag) ? t.success : t.coal,
                     opacity: disputed.has(item.flag) ? 0.7 : 0.55,
                   }}

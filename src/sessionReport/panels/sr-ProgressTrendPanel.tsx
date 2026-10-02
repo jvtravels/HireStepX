@@ -15,7 +15,7 @@
 
 "use client";
 
-import { t, f, radius } from "../tokens";
+import { t, f, radius, size } from "../tokens";
 import { SrSectionShell } from "./_primitives";
 import type { SkillTrend } from "../progressTracking";
 
@@ -131,7 +131,7 @@ function TrendTile({ trend }: { trend: SkillTrend }) {
       <div
         style={{
           fontFamily: f.sans,
-          fontSize: 12,
+          fontSize: size.sm,
           color: t.inkSoft,
           letterSpacing: "0.02em",
         }}
@@ -142,7 +142,7 @@ function TrendTile({ trend }: { trend: SkillTrend }) {
         <span
           style={{
             fontFamily: f.serif,
-            fontSize: 28,
+            fontSize: size["3xl"],
             color: t.coal,
             lineHeight: 1,
             letterSpacing: "-0.02em",
@@ -153,7 +153,7 @@ function TrendTile({ trend }: { trend: SkillTrend }) {
         <span
           style={{
             fontFamily: f.mono,
-            fontSize: 10,
+            fontSize: size.xs,
             color: t.inkSoft,
             letterSpacing: "0.04em",
           }}
@@ -166,7 +166,7 @@ function TrendTile({ trend }: { trend: SkillTrend }) {
         <span
           style={{
             fontFamily: f.mono,
-            fontSize: 11,
+            fontSize: size.xs,
             color,
             letterSpacing: "0.03em",
           }}
@@ -217,7 +217,7 @@ export function ProgressTrendPanel({ trends }: { trends: SkillTrend[] }) {
             border: `1px dashed ${t.lineStrong}`,
             borderRadius: radius.bar,
             fontFamily: f.sans,
-            fontSize: 13,
+            fontSize: size.base,
             color: t.inkSoft,
           }}
         >

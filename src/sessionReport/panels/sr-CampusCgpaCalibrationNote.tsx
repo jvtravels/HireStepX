@@ -2,7 +2,7 @@
  * Tier-aware CGPA calibration note for campus-placement sessions.
  * Pure presentation. */
 
-import { t, shadows, radius } from "../tokens";
+import { t, shadows, radius, size } from "../tokens";
 
 export function CampusCgpaCalibrationNote({
   meta,
@@ -51,12 +51,12 @@ export function CampusCgpaCalibrationNote({
         gap: 6,
       }}
     >
-      <header style={{ fontSize: 13, fontWeight: 600, color: t.success, letterSpacing: 0.3, textTransform: "uppercase", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+      <header style={{ fontSize: size.base, fontWeight: 600, color: t.success, letterSpacing: 0.3, textTransform: "uppercase", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
         <span>CGPA calibration</span>
         {archetypeLabel && archetypeLabel !== "Generic campus" && (
           <span
             style={{
-              fontSize: 11,
+              fontSize: size.xs,
               fontWeight: 600,
               color: t.success,
               background: t.successTint,
@@ -71,7 +71,7 @@ export function CampusCgpaCalibrationNote({
           </span>
         )}
       </header>
-      <p style={{ fontSize: 15, color: t.coal, lineHeight: 1.5, margin: 0 }}>
+      <p style={{ fontSize: size.md, color: t.coal, lineHeight: 1.5, margin: 0 }}>
         {companyName} baseline {baseCgpaCutoff.toFixed(1)} CGPA{adjustmentText}
         {statedCgpa !== null && (
           <>
@@ -83,7 +83,7 @@ export function CampusCgpaCalibrationNote({
         )}
         .
       </p>
-      <p style={{ fontSize: 12, color: t.inkSoft, lineHeight: 1.5, margin: 0 }}>
+      <p style={{ fontSize: size.sm, color: t.inkSoft, lineHeight: 1.5, margin: 0 }}>
         {collegeLabel === "tier-1"
           ? "IIT / NIT / BITS / IIIT / IISc receive a 0.5 point adjustment reflecting their harder grading curves."
           : "Your score is benchmarked against the company's standard fresher baseline. IIT / NIT / BITS / IIIT graduates receive a 0.5 adjustment for harder grading curves."}
@@ -91,7 +91,7 @@ export function CampusCgpaCalibrationNote({
       {(aptitudeProbeExpectedType && aptitudeProbeExpectedType !== "none") || (bondProbeCount !== undefined && bondProbeCount > 0) ? (
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 6 }}>
           {aptitudeProbeExpectedType && aptitudeProbeExpectedType !== "none" && (
-            <span style={{ fontSize: 12, color: t.inkSoft, background: t.successTint, borderRadius: radius.pill, padding: "3px 10px" }}>
+            <span style={{ fontSize: size.sm, color: t.inkSoft, background: t.successTint, borderRadius: radius.pill, padding: "3px 10px" }}>
               {aptitudeProbeExpectedType === "coding"
                 ? "DSA / coding aptitude expected"
                 : aptitudeProbeExpectedType === "puzzle"
@@ -100,7 +100,7 @@ export function CampusCgpaCalibrationNote({
             </span>
           )}
           {bondProbeCount !== undefined && bondProbeCount > 0 && (
-            <span style={{ fontSize: 12, color: t.inkSoft, background: t.successTint, borderRadius: radius.pill, padding: "3px 10px" }}>
+            <span style={{ fontSize: size.sm, color: t.inkSoft, background: t.successTint, borderRadius: radius.pill, padding: "3px 10px" }}>
               {bondProbeCount === 1 ? "Bond / location commitment probed" : `Bond / location commitment probed (${bondProbeCount}×)`}
             </span>
           )}

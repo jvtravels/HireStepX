@@ -4,7 +4,7 @@
  * per channel. Renders nothing when conditions aren't met. */
 
 import { useEffect, type CSSProperties } from "react";
-import { t, f } from "../tokens";
+import { t, f, size } from "../tokens";
 import { captureClientEvent } from "../../posthogClient";
 import { SHARE_CHANNELS } from "./_shareChannels";
 
@@ -15,7 +15,7 @@ const iconStyle: CSSProperties = {
   width: 28,
   height: 28,
   borderRadius: "50%",
-  fontSize: 10,
+  fontSize: size.xs,
   fontWeight: 700,
   color: t.white,
   flexShrink: 0,
@@ -59,7 +59,7 @@ export function TestimonialNudge({
       <p
         style={{
           fontFamily: f.sans,
-          fontSize: 12,
+          fontSize: size.sm,
           fontWeight: 700,
           letterSpacing: "0.10em",
           textTransform: "uppercase",
@@ -72,7 +72,7 @@ export function TestimonialNudge({
       <p
         style={{
           fontFamily: f.sans,
-          fontSize: 15,
+          fontSize: size.lg,
           fontWeight: 600,
           color: t.coal,
           margin: "0 0 4px",
@@ -84,7 +84,7 @@ export function TestimonialNudge({
       <p
         style={{
           fontFamily: f.sans,
-          fontSize: 13,
+          fontSize: size.base,
           color: t.inkSoft,
           margin: "0 0 18px",
           lineHeight: 1.55,
@@ -111,7 +111,7 @@ export function TestimonialNudge({
               alignItems: "center",
               gap: 8,
               fontFamily: f.sans,
-              fontSize: 13,
+              fontSize: size.base,
               fontWeight: 600,
               color: t.coal,
               textDecoration: "none",

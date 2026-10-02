@@ -741,13 +741,15 @@ export const SessionReport = memo(function SessionReport({
     };
   }, [session.id]);
 
-  /* ── Derived percentile (used by adapter) ──
+  /* ── Derived percentile (behavioral-v2 report only) ──
      Production cohort data is per-skill (`bucketPercentile(skill, …)`),
-     not per-overall-score. Until a server-side aggregate lands, the
-     percentile sub-stat in the hero stays unrendered (the canvas
-     gracefully omits it when undefined). Keeping the liveCohort fetch
-     in flight so SkillBar can opt-in later without re-plumbing. */
-  const percentile: number | undefined = undefined;
+     not per-overall-score. The default report doesn't fabricate one (see
+     adapter/types — no `percentile` field there). The behavioral-v2
+     report still threads this through as an explicit `| null`, so the
+     dead value is kept narrowly for that call only. Keeping the
+     liveCohort fetch in flight so SkillBar can opt-in later without
+     re-plumbing. */
+  const behavioralPercentile: number | undefined = undefined;
   void liveCohort;
 
   /* ── Days-until-interview from auth context ── */
@@ -828,7 +830,6 @@ export const SessionReport = memo(function SessionReport({
       report,
       session,
       recentScores,
-      percentile,
       daysUntilInterview,
       /* finding #113 (2026-06-20) — a session report describes THAT
        * session. The session's own role/company must win; the profile
@@ -860,35 +861,36 @@ export const SessionReport = memo(function SessionReport({
     report,
     session,
     recentScores,
-    percentile,
     daysUntilInterview,
     user,
   ]);
 
-  /* ── Cross-session skill-progress trends (negotiation reports) ──
-     Reuses the skill_scores persisted on prior negotiation sessions to
-     show whether the user is improving on anchoring / concession strategy
-     / closing technique / etc. Keyed off the engine's persisted skill
-     keys (not the LLM report's display skills, which use a different
-     taxonomy that wouldn't match across sessions). Best-effort: any
-     failure leaves the panel hidden. Gated on negotiationOutcome to match
-     the panel's copy. */
+  /* ── Cross-session skill-progress trends (all session types) ──
+     Reuses the skill_scores persisted on prior sessions of the SAME type
+     as the one being viewed to show whether the user is improving on its
+     skill set (anchoring / concession strategy for negotiation, STAR /
+     structure for behavioral, etc). Scoped by session.type rather than a
+     negotiation-only filter so every session type gets comparable
+     cross-session trends without mixing incompatible skill taxonomies.
+     Keyed off the engine's persisted skill keys (not the LLM report's
+     display skills, which use a different taxonomy that wouldn't match
+     across sessions). Best-effort: any failure leaves the panel hidden. */
   useEffect(() => {
-    if (!viewData || !viewData.negotiationOutcome) {
+    if (!viewData) {
       setProgressTrends(undefined);
       return;
     }
     let cancelled = false;
     fetchSkillProgressTrends({
-      negotiationOnly: true,
+      sessionType: session.type,
       /* Ground THIS session's own point to its authoritative counter truth so
          the Skill Progress panel can't show "Anchoring 70" beside the same
          report's grounded Skills Breakdown "Anchor strength 35" (rows saved
-         before the write-seam fix carry raw values). */
-      currentSession: {
-        id: session.id,
-        candidateAsk: viewData.negotiationOutcome.candidateAsk,
-      },
+         before the write-seam fix carry raw values). Only meaningful for
+         negotiation sessions — candidateAsk has no equivalent elsewhere. */
+      currentSession: viewData.negotiationOutcome
+        ? { id: session.id, candidateAsk: viewData.negotiationOutcome.candidateAsk }
+        : { id: session.id, candidateAsk: null },
     })
       .then((trends) => {
         if (!cancelled) setProgressTrends(trends.length > 0 ? trends : undefined);
@@ -899,7 +901,7 @@ export const SessionReport = memo(function SessionReport({
     return () => {
       cancelled = true;
     };
-  }, [viewData, session.id]);
+  }, [viewData, session.id, session.type]);
 
   /* ── Report-derivation canary (telemetry) ──
      Fires once per rendered negotiation report with which path produced the
@@ -953,7 +955,7 @@ export const SessionReport = memo(function SessionReport({
         report,
         session,
         recentScores,
-        percentile,
+        percentile: behavioralPercentile,
         flags: behavioralFlags,
       },
       behavioralMeta ?? null,
@@ -963,7 +965,7 @@ export const SessionReport = memo(function SessionReport({
     report,
     session,
     recentScores,
-    percentile,
+    behavioralPercentile,
     behavioralMeta,
     behavioralFlags,
   ]);

@@ -15,7 +15,7 @@
  * No state, no side effects. Pure presentation. */
 
 import React from "react";
-import { t, f, radius, shadows } from "../tokens";
+import { t, f, radius, shadows, size } from "../tokens";
 import {
   Tooltip,
   TooltipContent,
@@ -48,7 +48,7 @@ export function FreshnessChip({ source, n, asOf, methodologyUrl }: {
   const baseStyle = {
     display: "inline-flex", alignItems: "center", gap: 6,
     padding: "4px 10px", background: t.cream, border: `1px solid ${t.line}`,
-    borderRadius: radius.pill, fontSize: 10, fontFamily: f.sans,
+    borderRadius: radius.pill, fontSize: size.xs, fontFamily: f.sans,
     color: t.inkSoft, letterSpacing: 0.3,
     textDecoration: "none",
   } as const;
@@ -213,7 +213,7 @@ export function EventRow({
       <div style={{ minWidth: 0 }}>
         {primary}
         {secondary !== undefined && secondary !== null && (
-          <div style={{ fontSize: 12, color: t.inkSoft, marginTop: 2, lineHeight: 1.5 }}>
+          <div style={{ fontSize: size.sm, color: t.inkSoft, marginTop: 2, lineHeight: 1.5 }}>
             {secondary}
           </div>
         )}
@@ -240,7 +240,7 @@ export function HeaderChip({
         padding: "3px 10px",
         background: isAccent ? t.indigoWash : t.creamSoft,
         color: isAccent ? t.indigo : t.inkSoft,
-        fontSize: 10,
+        fontSize: size.xs,
         fontWeight: 700,
         letterSpacing: 0.8,
         borderRadius: radius.tile,
@@ -283,7 +283,7 @@ export function SectionHeader({ index, title, subtitle, accent = t.indigo, aside
     <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
       <span
         style={{
-          fontSize: 11, fontWeight: 700, letterSpacing: 0.8,
+          fontSize: size.xs, fontWeight: 700, letterSpacing: 0.8,
           color: accent, fontFamily: f.sans,
         }}
         aria-hidden
@@ -293,14 +293,14 @@ export function SectionHeader({ index, title, subtitle, accent = t.indigo, aside
       <div>
         <h4
           style={{
-            fontSize: 18, fontWeight: 600, color: t.coal,
+            fontSize: size.xl, fontWeight: 600, color: t.coal,
             letterSpacing: -0.2, fontFamily: f.serif,
             margin: 0,
           }}
         >
           {title}
         </h4>
-        {subtitle && <div style={{ fontSize: 13, color: t.inkSoft, marginTop: 2 }}>{subtitle}</div>}
+        {subtitle && <div style={{ fontSize: size.base, color: t.inkSoft, marginTop: 2 }}>{subtitle}</div>}
       </div>
     </div>
   );
@@ -333,7 +333,7 @@ export function SectionBand({
       <div
         style={{
           padding: "5px 11px", background: accent, color: t.white,
-          fontSize: 10, fontWeight: 700, letterSpacing: 1.4,
+          fontSize: size.xs, fontWeight: 700, letterSpacing: 1.4,
           borderRadius: radius.sm, textTransform: "uppercase", fontFamily: f.sans,
           flexShrink: 0,
         }}
@@ -343,14 +343,14 @@ export function SectionBand({
       <div style={{ flex: 1, minWidth: 0 }}>
         <h3
           style={{
-            fontSize: 18, fontWeight: 600, color: t.coal,
+            fontSize: size.xl, fontWeight: 600, color: t.coal,
             letterSpacing: -0.2, fontFamily: f.serif,
             margin: 0,
           }}
         >
           {title}
         </h3>
-        <div style={{ fontSize: 13, color: t.inkSoft, marginTop: 1 }}>{subtitle}</div>
+        <div style={{ fontSize: size.base, color: t.inkSoft, marginTop: 1 }}>{subtitle}</div>
       </div>
     </section>
   );
@@ -517,31 +517,31 @@ export function StatTile(props: StatTileProps) {
           {props.value}
         </div>
         {props.phrase && (
-          <div style={{ fontSize: 18, fontWeight: 600, color, lineHeight: 1.2 }}>{props.phrase}</div>
+          <div style={{ fontSize: size.xl, fontWeight: 600, color, lineHeight: 1.2 }}>{props.phrase}</div>
         )}
       </div>
     );
   }
   return (
     <div>
-      <div style={{ fontSize: 11, color: t.inkSoft, marginBottom: 4, fontFamily: f.sans }}>
+      <div style={{ fontSize: size.xs, color: t.inkSoft, marginBottom: 4, fontFamily: f.sans }}>
         {props.label}
       </div>
       <div
         style={{
-          fontSize: 22, fontWeight: 700, fontFamily: f.sans,
+          fontSize: size["2xl"], fontWeight: 700, fontFamily: f.sans,
           color: t.coal, lineHeight: 1.1,
         }}
       >
         {props.value}
         {props.suffix && (
-          <span style={{ fontSize: 12, fontWeight: 500, color: t.inkSoft, marginLeft: 6 }}>
+          <span style={{ fontSize: size.sm, fontWeight: 500, color: t.inkSoft, marginLeft: 6 }}>
             {props.suffix}
           </span>
         )}
       </div>
       {props.footnote && (
-        <div style={{ fontSize: 10, color: t.inkSoft, marginTop: 4, fontFamily: f.sans }}>
+        <div style={{ fontSize: size.xs, color: t.inkSoft, marginTop: 4, fontFamily: f.sans }}>
           {props.footnote}
         </div>
       )}
@@ -622,7 +622,7 @@ export function SrSectionShell({
         {title}
       </h2>
       {subtitle && (
-        <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, margin: "0 0 18px", lineHeight: 1.5 }}>
+        <p style={{ fontFamily: f.sans, fontSize: size.base, color: t.inkSoft, margin: "0 0 18px", lineHeight: 1.5 }}>
           {subtitle}
         </p>
       )}
@@ -642,6 +642,46 @@ export function SrSectionShell({
   );
 }
 
+/* CalloutCard — the copper-tinted "heads up" note box used across panels
+ * (weakest-skill nudge, resume-fix tips, readiness callouts). Hoisted
+ * 2026-10-02 session-report redesign: SkillsSection and NextStepsSection
+ * each hand-rolled a near-identical copper box (icon + eyebrow + body),
+ * one of them with hardcoded hex (`#FFFBF0`, `rgba(180,83,9,0.20)`)
+ * bypassing tokens.ts entirely. One shape, one token source. */
+export function CalloutCard({
+  icon,
+  eyebrow,
+  children,
+  footer,
+}: {
+  icon?: React.ReactNode;
+  eyebrow: string;
+  children: React.ReactNode;
+  footer?: React.ReactNode;
+}) {
+  return (
+    <div
+      style={{
+        background: t.copperSoft,
+        border: `1px solid ${t.copper100}`,
+        borderRadius: radius.bar,
+        padding: "18px 20px",
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+        {icon}
+        <span style={{ fontFamily: f.mono, fontSize: size.xs, color: t.copper, letterSpacing: "0.10em", textTransform: "uppercase", fontWeight: 600 }}>
+          {eyebrow}
+        </span>
+      </div>
+      <div style={{ fontFamily: f.sans, fontSize: size.base, color: t.coal, lineHeight: 1.5 }}>
+        {children}
+      </div>
+      {footer}
+    </div>
+  );
+}
+
 /* Re-export tokens for panel files — they import everything from one
  * place so per-panel imports stay short. */
-export { t, f, radius, space } from "../tokens";
+export { t, f, radius, space, size } from "../tokens";

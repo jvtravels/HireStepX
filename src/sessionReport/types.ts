@@ -207,7 +207,6 @@ export interface InterviewResultData {
   overallScore: number;
   verdict: Verdict;
   scoreDelta: number;
-  percentile?: number;
   recentScores?: number[];
   readiness?: { pct: number; etaWeeks: number };
   daysUntilInterview?: number;
