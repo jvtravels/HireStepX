@@ -2794,8 +2794,8 @@ export function FAQV2() {
       a: "Yes. Works on any modern Chrome or Safari: phone, tablet, laptop. Optimised for Realme and Redmi-class Android on Indian 4G. No downloads, no app installs.",
     },
     {
-      q: "What if I cancel? Do I lose my reports?",
-      a: "Your reports are yours. We keep them for 90 days after cancellation so you can export or reference them before your next interview. Nothing gets deleted without warning.",
+      q: "Do plans auto-renew? What happens when my Sprint Pack runs out?",
+      a: "No. Every purchase, including the Sprint Pack, is one-time — we never store your card for recurring billing. The Sprint Pack (₹39 for 5 sessions) stays active for 30 days; if you don't use all the sessions, they expire with no auto-charge for a new pack. Buy another any time you need more.",
     },
     {
       q: "Do you share my data with my employer or target company?",
@@ -2936,7 +2936,7 @@ function StructuredData() {
     ["Will my current company know I'm practicing?", "No. HireStepX is completely private. We don't connect to LinkedIn, your employer, or your target company. Nothing you practice here is visible to anyone but you."],
     ["How long does a session take?", "18 minutes on average: one focused interview topic, real-time scoring, full report ready immediately after. You don't need an afternoon. You need 20 minutes and headphones."],
     ["Does this work on mobile?", "Yes. Works on any modern Chrome or Safari: phone, tablet, laptop. Optimised for Realme and Redmi-class Android on Indian 4G. No downloads, no app installs."],
-    ["What if I cancel? Do I lose my reports?", "Your reports are yours. We keep them for 90 days after cancellation so you can export or reference them before your next interview. Nothing gets deleted without warning."],
+    ["Do plans auto-renew? What happens when my Sprint Pack runs out?", "No. Every purchase, including the Sprint Pack, is one-time — we never store your card for recurring billing. The Sprint Pack (₹39 for 5 sessions) stays active for 30 days; if you don't use all the sessions, they expire with no auto-charge for a new pack. Buy another any time you need more."],
     ["Do you share my data with my employer or target company?", "Never. Your resume, voice, and practice answers are not shared with your current employer, your target company, or any third party. Encrypted end to end. DPDPA 2023 compliant."],
     ["How is this different from just asking ChatGPT?", "ChatGPT agrees with you. HireStepX disagrees, constructively. It scores your answer on the STAR framework, names which beat is weak, and gives you a coached model answer. You also speak out loud (voice in and out) instead of typing, so you practise the actual skill. ChatGPT has no Indian company rubrics, no role-specific question bank, and no score you can track across sessions."],
   ];

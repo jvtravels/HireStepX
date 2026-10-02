@@ -631,7 +631,7 @@ export function PricingPageV2() {
                 </a>
                 {tier.name !== "Free" && (
                   <p style={{ margin: "10px 0 0", fontFamily: fonts.sans, fontSize: 11, textAlign: "center", color: tier.featured ? t.creamFaded : t.inkSoft }}>
-                    {tier.name === "Sprint Pack" ? "7-day refund if unused · one-time purchase" : "7-day refund if unused · cancel anytime"}
+                    7-day refund if unused · one-time purchase
                   </p>
                 )}
               </div>

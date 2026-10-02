@@ -716,7 +716,7 @@ function invoiceDetails(payment: PaymentRecord) {
     : { label: payment.status, bg: c.error100, fg: c.ember, border: "rgba(185,28,28,0.28)" };
 
   // Derive a human-readable purchase title from plan + amount.
-  // payment.plan: "single" | "weekly" | "monthly"
+  // payment.plan: "single" | "weekly" (older rows may still say "monthly" — plan discontinued)
   // payment.tier: "free" | "starter" | "team" (unreliable for single — always "free")
   const isSingle = payment.plan === "single";
   const isWeekly = payment.plan === "weekly";

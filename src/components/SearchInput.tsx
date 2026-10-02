@@ -1,8 +1,9 @@
 "use client";
 
-/* Shared search-with-icon input — used by the sessions table
-   (SessionsV2.tsx) and the employer requirement detail candidates table
-   so every search box in the app looks the same. */
+/* Shared search-with-icon input — the base input rendered by
+   SearchWithSuggestions (recent-searches dropdown, used across the
+   candidate dashboard) and used directly by the employer requirement
+   detail candidates table, so every search box in the app looks the same. */
 
 import { SearchIcon } from "lucide-react";
 import { tokens as T } from "@/auth/_tokens";

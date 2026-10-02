@@ -706,14 +706,6 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
                     {loading === "verifying" ? "Verifying..." : loading === plan.id ? "Opening Razorpay..." : <>{isRepurchasable && isCurrent ? "Get another Sprint Pack" : plan.cta} <span style={{ fontSize: 16 }}>→</span></>}
                   </Button>
                 )}
-                {/* Auto-renewal disclosure — RBI / Indian payment best practice.
-                    Free plan has no billing; single-session has no subscription. */}
-                {/* Sprint Pack doesn't auto-renew — suppress the renewal disclosure for it */}
-                {!(isCurrent && !isRepurchasable) && !isLowerTier && plan.id !== "free" && !isRepurchasable && (
-                  <p style={{ margin: 0, fontFamily: font.ui, fontSize: 10, color: featured ? "rgba(250,247,240,0.45)" : c.stone, textAlign: "center", lineHeight: 1.5 }}>
-                    Renews at {plan.price} {plan.unit.replace(/^\/\s*/, "every ")} · Cancel anytime from Settings
-                  </p>
-                )}
               </div>
             );
           })}
