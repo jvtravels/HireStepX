@@ -7,6 +7,15 @@ import { captureClientEvent } from "./posthogClient";
 import { useDashboardSubscription } from "./DashboardContext";
 import { tokens as t } from "./auth/_tokens";
 import { Button } from "@/components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { TablePaginationFooter } from "@/components/TablePaginationFooter";
 
 
 /* Local token aliases — same shape as the shared `T` object so JSX
@@ -172,6 +181,8 @@ export interface AccountSectionProps {
   focusOut: (e: React.FocusEvent<HTMLInputElement>) => void;
   // Auto-save the experience select on change (no blur event)
   authUpdateUser: (updates: { experienceLevel?: string }) => void | Promise<void>;
+  // Log out this device (Figma folds this into the Account section)
+  onLogout: () => void;
 }
 
 const EXPERIENCE_OPTIONS: Array<{ value: string; label: string }> = [
@@ -286,6 +297,60 @@ export function EditorialCard({ children, density = "default" }: { children: Rea
   );
 }
 
+/* ─── Flat, single-container page shell (Figma: one bordered card,
+   sections separated by hairlines rather than individually elevated). ─── */
+export function PageHeader({ title, desc }: { title: string; desc: string }) {
+  return (
+    <div style={{ padding: "20px 28px", borderBottom: `1px solid ${c.border}` }}>
+      <h1 style={{ fontFamily: font.ui, fontSize: 20, fontWeight: 500, color: c.ink, margin: 0, letterSpacing: "-0.01em" }}>{title}</h1>
+      <p style={{ fontFamily: font.ui, fontSize: 14, color: c.inkSoft, margin: "4px 0 0" }}>{desc}</p>
+    </div>
+  );
+}
+
+export function FlatSection({ title, children, last }: { title: string; children: React.ReactNode; last?: boolean }) {
+  return (
+    <div style={{ padding: "24px 28px", borderBottom: last ? "none" : `1px solid ${c.border}` }}>
+      <h2 style={{ fontFamily: font.ui, fontSize: 16, fontWeight: 500, color: c.ink, margin: "0 0 18px" }}>{title}</h2>
+      {children}
+    </div>
+  );
+}
+
+/* Icon-box + title/desc + trailing action row — the Figma "Account"
+   row shape, reused for Change Password / Active devices / Log out. */
+export function ActionRow({ icon, tone, title, desc, action, last }: {
+  icon: React.ReactNode; tone?: "danger"; title: string; desc: string; action: React.ReactNode; last?: boolean;
+}) {
+  return (
+    <div style={{
+      display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap",
+      padding: "16px 0", borderBottom: last ? "none" : `1px solid ${c.border}`,
+    }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 0, flex: 1 }}>
+        <span aria-hidden="true" style={{
+          width: 40, height: 40, borderRadius: 10, flexShrink: 0,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          background: tone === "danger" ? "rgba(185,28,28,0.06)" : c.creamSoft,
+          border: `1px solid ${tone === "danger" ? "rgba(185,28,28,0.22)" : c.border}`,
+          color: tone === "danger" ? c.ember : c.inkSoft,
+        }}>{icon}</span>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: tone === "danger" ? c.ember : c.ink }}>{title}</div>
+          <div style={{ fontFamily: font.ui, fontSize: 12, color: c.inkSoft, marginTop: 2, lineHeight: 1.5 }}>{desc}</div>
+        </div>
+      </div>
+      <div style={{ flexShrink: 0 }}>{action}</div>
+    </div>
+  );
+}
+
+export const flatRowBtn: React.CSSProperties = {
+  fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ink,
+  background: c.creamSoft, border: `1px solid ${c.border}`, borderRadius: 8,
+  padding: "9px 14px", cursor: "pointer", minHeight: 36,
+};
+
 export function KeyValue({ label, value, right }: { label: string; value: string; right?: React.ReactNode }) {
   return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 0", gap: 16, flexWrap: "wrap" }}>
@@ -296,10 +361,6 @@ export function KeyValue({ label, value, right }: { label: string; value: string
       <div>{right}</div>
     </div>
   );
-}
-
-function ThinDivider() {
-  return <div style={{ height: 1, background: c.border, margin: "12px 0" }} role="separator" />;
 }
 
 function TinyChip({ children, tone }: { children: React.ReactNode; tone?: "success" | "warn" }) {
@@ -330,16 +391,18 @@ export const AccountSection = memo(function AccountSection(props: AccountSection
     recentDevices,
     focusOut,
     authUpdateUser,
+    onLogout,
   } = props;
 
   const initial = (userName || email || "?").trim().charAt(0).toUpperCase();
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 40, maxWidth: 880 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
       {/* ── Profile group ── */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      <SectionHead title="Profile" desc="The basics we use to personalise interview prompts and coaching." />
-      <EditorialCard>
+      <div>
+      <div style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ink, marginBottom: 2 }}>Profile</div>
+      <div style={{ fontFamily: font.ui, fontSize: 12, color: c.inkSoft, marginBottom: 14 }}>The basics we use to personalise interview prompts and coaching.</div>
+      <div style={{ border: `1px solid ${c.border}`, borderRadius: 12, padding: "20px 24px" }}>
         <div style={{ display: "flex", gap: 24, alignItems: "center", marginBottom: 24, flexWrap: "wrap" }}>
           <div aria-hidden="true" style={{
             width: 64, height: 64, borderRadius: "50%",
@@ -404,107 +467,75 @@ export const AccountSection = memo(function AccountSection(props: AccountSection
           <span aria-hidden style={{ width: 6, height: 6, borderRadius: "50%", background: c.sage }} />
           Saved automatically when you leave a field
         </div>
-      </EditorialCard>
+      </div>
       </div>
 
-      {/* ── Security group ── */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      <SectionHead title="Security" desc="Sign-in and devices currently using your account." />
-      <EditorialCard density="tight">
-        <KeyValue label="Email" value={email} right={<TinyChip tone="success">Verified</TinyChip>} />
-        <ThinDivider />
+      {/* ── Security + devices + logout — Figma's "Account" row group ── */}
+      <div style={{ display: "flex", gap: 16, marginBottom: 4, fontFamily: font.ui, fontSize: 12, color: c.inkSoft, flexWrap: "wrap" }}>
+        <span>{email} · {isOAuthOnly ? "Google sign-in" : "Email and password"}</span>
+        <TinyChip tone="success">Verified</TinyChip>
+      </div>
+
+      <div style={{ border: `1px solid ${c.border}`, borderRadius: 12, padding: "0 20px" }}>
         {!isOAuthOnly ? (
-          <KeyValue
-            label="Password"
-            value="Send a reset link to your email when you need to change it."
-            right={
+          <ActionRow
+            icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>}
+            title="Change Password"
+            desc="Send a reset link to your email when you need to change it."
+            action={
               <Button type="button" variant="outline" size="sm" onClick={handlePasswordReset} disabled={resetLoading || resetSent}
                 style={{
-                  ...accSubtleBtn,
+                  ...flatRowBtn,
                   color: resetSent ? c.sage : c.ink,
-                  background: resetSent ? c.success100 : c.graphite,
-                  borderColor: resetSent ? "rgba(21,128,61,0.3)" : c.borderStrong,
+                  background: resetSent ? c.success100 : c.creamSoft,
                   cursor: (resetLoading || resetSent) ? "default" : "pointer",
                   opacity: resetLoading ? 0.6 : 1,
                 }}
               >
-                {resetLoading ? "Sending..." : resetSent ? "Email sent" : "Send reset link"}
+                {resetLoading ? "Sending..." : resetSent ? "Email sent" : "Send Reset Link"}
               </Button>
             }
           />
         ) : (
-          <KeyValue
-            label="Password"
-            value="You signed in with Google: manage your password in your Google Account."
-            right={<TinyChip>Google</TinyChip>}
+          <ActionRow
+            icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>}
+            title="Password"
+            desc="You signed in with Google — manage your password in your Google Account."
+            action={<TinyChip>Google</TinyChip>}
           />
         )}
-        <ThinDivider />
-        <KeyValue
-          label="Sign-in method"
-          value={isOAuthOnly ? "Google" : "Email and password"}
-          right={<TinyChip tone="success">Active</TinyChip>}
+
+        <ActionRow
+          icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg>}
+            title="Active Devices"
+            desc={
+              recentDevices.length === 0
+                ? "No recent sign-ins recorded yet."
+                : recentDevices.slice(0, 2).map((d) => `${parseUserAgent(d.ua || "")}${d.isCurrent ? " (this device)" : d.at ? `, ${formatRelative(d.at)}` : ""}`).join(" · ")
+            }
+            action={
+              <Button type="button" variant="ghost" size="sm" onClick={handleSignOutOtherDevices} disabled={signOutOthersLoading || signOutOthersDone}
+                style={{
+                  ...flatRowBtn,
+                  background: "transparent", border: "none",
+                  color: signOutOthersError ? c.ember : signOutOthersDone ? c.sage : c.indigo,
+                  cursor: (signOutOthersLoading || signOutOthersDone) ? "default" : "pointer",
+                  opacity: signOutOthersLoading ? 0.6 : 1,
+                }}
+              >
+                {signOutOthersLoading ? "Signing out..." : signOutOthersDone ? "Signed out" : (signOutOthersError || "Sign out everywhere else")}
+              </Button>
+            }
+          />
+
+        <ActionRow
+          last
+          tone="danger"
+          icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>}
+          title="Logout"
+          desc="Sign out on this device. Other devices stay signed in."
+          action={<Button type="button" variant="outline" size="sm" onClick={onLogout} style={flatRowBtn}>Logout</Button>}
         />
-      </EditorialCard>
-
-      <EditorialCard density="tight">
-        <div style={{ marginBottom: 14 }}>
-          <div style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 700, color: c.ink }}>Active devices</div>
-          <div style={{ fontFamily: font.ui, fontSize: 12, color: c.inkSoft, marginTop: 4, lineHeight: 1.5 }}>
-            One device at a time. Signing in elsewhere automatically signs out this device.
-          </div>
-        </div>
-        {recentDevices.length === 0 ? (
-          <div style={{ fontFamily: font.ui, fontSize: 13, color: c.inkSoft, padding: "12px 0" }}>
-            No recent sign-ins recorded yet.
-          </div>
-        ) : (
-          recentDevices.slice(0, 2).map((d, idx, arr) => {
-            const seen = d.at ? formatRelative(d.at) : "Unknown";
-            const label = parseUserAgent(d.ua || "");
-            return (
-              <div key={d.id} style={{
-                display: "flex", alignItems: "center", justifyContent: "space-between",
-                padding: "12px 0", gap: 16, flexWrap: "wrap",
-                borderBottom: idx < arr.length - 1 ? `1px solid ${c.border}` : "none",
-              }}>
-                <div style={{ display: "flex", gap: 12, alignItems: "center", minWidth: 0 }}>
-                  <span aria-hidden style={{
-                    width: 36, height: 36, borderRadius: 8,
-                    background: c.creamSoft, color: c.inkSoft,
-                    display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-                  }}>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg>
-                  </span>
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label}</div>
-                    <div style={{ fontFamily: font.ui, fontSize: 12, color: c.inkSoft, marginTop: 2 }}>
-                      {d.isCurrent ? "Active now, this device" : seen}
-                    </div>
-                  </div>
-                </div>
-                {d.isCurrent && <TinyChip tone="success">This device</TinyChip>}
-              </div>
-            );
-          })
-        )}
-
-        <div style={{ marginTop: 18, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
-          <div style={{ fontFamily: font.ui, fontSize: 12, color: signOutOthersError ? c.ember : c.inkSoft }}>
-            {signOutOthersError || "Sign out every device except this one."}
-          </div>
-          <Button type="button" variant="ghost" size="sm" onClick={handleSignOutOtherDevices} disabled={signOutOthersLoading || signOutOthersDone}
-            style={{
-              ...accSubtleBtnGhost,
-              color: signOutOthersDone ? c.sage : c.indigo,
-              cursor: (signOutOthersLoading || signOutOthersDone) ? "default" : "pointer",
-              opacity: signOutOthersLoading ? 0.6 : 1,
-            }}
-          >
-            {signOutOthersLoading ? "Signing out..." : signOutOthersDone ? "Signed out" : "Sign out everywhere else"}
-          </Button>
-        </div>
-      </EditorialCard>
       </div>
     </div>
   );
@@ -610,27 +641,44 @@ function ExtraSessionsInfoBox() {
    PLAN & BILLING SECTION
    ═══════════════════════════════════════════════════════════════ */
 
-export interface PlanSectionProps {
-  authUser: {
-    email?: string;
-    subscriptionTier?: string;
-    subscriptionStart?: string;
-    subscriptionEnd?: string;
-    cancelAtPeriodEnd?: boolean;
-    subscriptionPaused?: boolean;
-    hasRecurringSubscription?: boolean;
-    id?: string;
-    signedInVia?: "google" | "email";
-  } | null;
+interface PlanAuthUser {
+  email?: string;
+  subscriptionTier?: string;
+  subscriptionStart?: string;
+  subscriptionEnd?: string;
+  cancelAtPeriodEnd?: boolean;
+  subscriptionPaused?: boolean;
+  hasRecurringSubscription?: boolean;
+  id?: string;
+  signedInVia?: "google" | "email";
+}
+
+export interface PlanUsageSectionProps {
+  authUser: PlanAuthUser | null;
   tierLabel: string;
-  // Cancel / reactivate
   confirmCancel: boolean;
   setConfirmCancel: (v: boolean) => void;
   cancelLoading: boolean;
   setCancelLoading: (v: boolean) => void;
   cancelMsg: string;
   setCancelMsg: (v: string) => void;
-  // Delete account
+  authUpdateUser: (updates: Record<string, unknown>) => void;
+  showToast: (msg: string) => void;
+  setShowUpgradeModal: (v: boolean) => void;
+  authHeaders: () => Promise<Record<string, string>>;
+}
+
+export interface BillingTransactionsSectionProps {
+  authUser: PlanAuthUser | null;
+  payments: PaymentRecord[];
+  paymentsLoading: boolean;
+  exporting: boolean;
+  setExporting: (v: boolean) => void;
+  onExportCSV: () => void;
+}
+
+export interface DangerZoneSectionProps {
+  authUser: PlanAuthUser | null;
   confirmDelete: boolean;
   setConfirmDelete: (v: boolean) => void;
   deleteEmailInput: string;
@@ -639,21 +687,8 @@ export interface PlanSectionProps {
   setDeleteLoading: (v: boolean) => void;
   deleteMsg: string;
   setDeleteMsg: (v: string) => void;
-  // Export
-  exporting: boolean;
-  setExporting: (v: boolean) => void;
-  onExportCSV: () => void;
-  // Credit reconciliation
-  onReconcileCredits?: () => Promise<void>;
-  // Billing
-  payments: PaymentRecord[];
-  paymentsLoading: boolean;
-  // Actions
-  authUpdateUser: (updates: Record<string, unknown>) => void;
-  showToast: (msg: string) => void;
-  setShowUpgradeModal: (v: boolean) => void;
   onLogout: () => void;
-  // API helpers
+  showToast: (msg: string) => void;
   authHeaders: () => Promise<Record<string, string>>;
 }
 
@@ -671,7 +706,7 @@ const keyValueLabel: React.CSSProperties = { fontFamily: font.ui, fontSize: 13, 
 const keyValueValue: React.CSSProperties = { fontFamily: font.ui, fontSize: 12, color: c.inkSoft, lineHeight: 1.5, marginTop: 2 };
 
 
-function InvoiceRow({ payment, divider }: { payment: PaymentRecord; divider: boolean }) {
+function invoiceDetails(payment: PaymentRecord) {
   const d = new Date(payment.created_at);
   const dateLabel = d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
   const amountDisplay = `₹${Math.round(payment.amount / 100)}`;
@@ -704,71 +739,23 @@ function InvoiceRow({ payment, divider }: { payment: PaymentRecord; divider: boo
     subLine = `${fmt(payment.subscription_start)} – ${fmt(payment.subscription_end)}`;
   }
 
-  return (
-    <div style={{
-      padding: "14px 0", borderBottom: divider ? `1px solid ${c.border}` : "none",
-      display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16,
-    }}>
-      {/* Left: date + purchase detail */}
-      <div style={{ minWidth: 0, flex: 1 }}>
-        <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
-          <span style={{ fontFamily: font.ui, fontSize: 13, color: c.ink, fontWeight: 600, whiteSpace: "nowrap" }}>{dateLabel}</span>
-          <span style={{ fontFamily: font.ui, fontSize: 13, color: c.ink, fontWeight: 500 }}>{purchaseTitle}</span>
-        </div>
-        {subLine && (
-          <p style={{ margin: "3px 0 0", fontFamily: font.ui, fontSize: 11, color: c.inkSoft, lineHeight: 1.4 }}>{subLine}</p>
-        )}
-      </div>
-
-      {/* Right: amount + badge + receipt */}
-      <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
-        <span style={{ fontFamily: font.mono, fontSize: 13, fontWeight: 600, color: c.ink }}>{amountDisplay}</span>
-        <div style={{
-          fontFamily: font.ui, fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
-          color: tone.fg, background: tone.bg, border: `1px solid ${tone.border}`,
-          borderRadius: 6, padding: "4px 8px",
-        }}>{tone.label}</div>
-        {payment.receipt_url && (
-          <a href={payment.receipt_url} target="_blank" rel="noopener noreferrer"
-            style={{ fontFamily: font.ui, fontSize: 11, color: c.indigo, textDecoration: "none", whiteSpace: "nowrap" }}
-            onMouseEnter={e => { e.currentTarget.style.textDecoration = "underline"; }}
-            onMouseLeave={e => { e.currentTarget.style.textDecoration = "none"; }}
-          >Receipt →</a>
-        )}
-      </div>
-    </div>
-  );
+  return { dateLabel, amountDisplay, tone, purchaseTitle, subLine };
 }
 
-export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
+/* ═══════════════════════════════════════════════════════════════
+   PLAN & USAGE SECTION
+   ═══════════════════════════════════════════════════════════════ */
+
+export const PlanUsageSection = memo(function PlanUsageSection(props: PlanUsageSectionProps) {
   const {
     authUser, tierLabel,
     confirmCancel, setConfirmCancel, cancelLoading, setCancelLoading, cancelMsg, setCancelMsg,
-    confirmDelete, setConfirmDelete, deleteEmailInput, setDeleteEmailInput, deleteLoading, setDeleteLoading, deleteMsg, setDeleteMsg,
-    exporting, setExporting, onExportCSV,
-    payments, paymentsLoading,
-    authUpdateUser, showToast, onLogout, setShowUpgradeModal,
+    authUpdateUser, showToast, setShowUpgradeModal,
     authHeaders: getAuthHeaders,
   } = props;
 
-  // Re-auth gate: password re-entry before destructive identity action.
-  // Local state — not hoisted into the parent because no other section
-  // reads it, and we want it cleared the moment confirmDelete flips off.
-  const [deletePasswordInput, setDeletePasswordInput] = useState("");
-
   const tier = authUser?.subscriptionTier || "free";
   const isPaid = tier !== "free";
-  // OAuth-only accounts have no password to verify against — server-side
-  // we'd be re-auth-gating against something that doesn't exist. Detect
-  // via the auth provider on the user; if it's google-only, skip the
-  // password field and rely on the email-confirm + bearer alone.
-  const isOAuthOnlyUser = authUser?.signedInVia === "google";
-  const headline = tier === "starter"
-    ? "Starter, building the habit"
-    : "Practice on the house";
-  const headlineDesc = isPaid
-    ? "Manage your subscription, see your invoices, and export your data."
-    : "Start free. Upgrade when you want unlimited reps and the negotiation coach.";
 
   let endDateLabel = "";
   let daysLeft = 0;
@@ -842,49 +829,14 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
   }
 
 
-  async function handleConfirmDelete() {
-    setDeleteLoading(true); setDeleteMsg("");
-    try {
-      const hdrs = await Promise.race([getAuthHeaders(), new Promise<never>((_, rej) => setTimeout(() => rej(new Error("Auth timeout")), 5000))]);
-      const ctrl = new AbortController();
-      const t = setTimeout(() => ctrl.abort(), 15000);
-      // Re-auth gate: send the user's password so the server can verify
-      // possession-of-credentials, not just possession-of-bearer.
-      // OAuth-only users have no app password — server skips the check
-      // for them; sending an empty string is fine (server only verifies
-      // when present and non-empty for non-OAuth users).
-      const body = isOAuthOnlyUser ? {} : { password: deletePasswordInput };
-      const res = await fetch("/api/delete-account", { method: "POST", headers: { ...hdrs, "Content-Type": "application/json" }, body: JSON.stringify(body), signal: ctrl.signal });
-      clearTimeout(t);
-      if (res.ok || res.status === 207) {
-        const data = await res.json().catch(() => ({}));
-        if (data.scheduled) showToast("Account scheduled for deletion. Log in within 7 days to cancel.");
-        localStorage.clear();
-        onLogout();
-      } else {
-        const d = await res.json().catch(() => ({}));
-        // On failed re-auth, clear the password input so the user retypes
-        // rather than re-submitting the same wrong value.
-        if (d?.code === "reauth_required" || d?.code === "reauth_failed") setDeletePasswordInput("");
-        setDeleteMsg(d.error || "Failed. Try again."); setDeleteLoading(false);
-      }
-    } catch (err) {
-      setDeleteMsg(err instanceof DOMException && err.name === "AbortError" ? "Timed out. Try again." : "Network error.");
-      setDeleteLoading(false);
-    }
-  }
-
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 28, maxWidth: 880 }}>
-      <SectionHead title={headline} desc={headlineDesc} />
-
+    <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
       {/* Status band for paid plans (inline, not a card) */}
       {isPaid && endDateLabel && (
         <div style={{
           display: "flex", alignItems: "center", justifyContent: "space-between",
           gap: 16, flexWrap: "wrap",
-          padding: "4px 0 18px", borderBottom: `1px solid ${c.border}`,
-          marginTop: -8,
+          padding: "0 0 18px", borderBottom: `1px solid ${c.border}`,
         }}>
           <div style={{ minWidth: 0 }}>
             <div style={subHeaderTitle}>
@@ -946,19 +898,39 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
         />
         <ExtraSessionsInfoBox />
       </div>
+    </div>
+  );
+});
 
+/* ═══════════════════════════════════════════════════════════════
+   BILLING & TRANSACTIONS SECTION
+   ═══════════════════════════════════════════════════════════════ */
+
+export const BillingTransactionsSection = memo(function BillingTransactionsSection(props: BillingTransactionsSectionProps) {
+  const { authUser, payments, paymentsLoading, exporting, setExporting, onExportCSV } = props;
+  const isPaid = (authUser?.subscriptionTier || "free") !== "free";
+  const hasRecurringSubscription = !!authUser?.hasRecurringSubscription;
+
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [page, setPage] = useState(1);
+  const totalPages = Math.max(1, Math.ceil(payments.length / rowsPerPage));
+  const page_ = Math.min(page, totalPages);
+  const pageRows = payments.slice((page_ - 1) * rowsPerPage, page_ * rowsPerPage);
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
       {/* Payment method — paid plans only; copy differs for one-time vs recurring */}
       {isPaid && (
-        <div style={{ ...planCardOuter, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
           <div style={{ minWidth: 0 }}>
             <div style={keyValueLabel}>Payment method</div>
             <div style={keyValueValue}>
-              {authUser?.hasRecurringSubscription
+              {hasRecurringSubscription
                 ? "Razorpay handles every renewal. Update card or UPI from their dashboard."
                 : "We don't store your card — each purchase is a one-time Razorpay checkout."}
             </div>
           </div>
-          {authUser?.hasRecurringSubscription && (
+          {hasRecurringSubscription && (
             <a href="https://razorpay.com/support/#request/merchant" target="_blank" rel="noopener noreferrer"
               style={{ ...accSubtleBtn, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6 }}>
               Manage on Razorpay
@@ -968,9 +940,22 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
         </div>
       )}
 
+      {/* Export */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <div style={keyValueLabel}>Export sessions</div>
+          <div style={keyValueValue}>CSV of every completed session: questions, your answers, scores, and the resume snapshot used.</div>
+        </div>
+        <Button type="button" variant="outline" size="sm" disabled={exporting}
+          onClick={async () => { setExporting(true); try { await onExportCSV(); } finally { setExporting(false); } }}
+          style={{ ...accSubtleBtn, opacity: exporting ? 0.6 : 1 }}>
+          {exporting ? "Exporting…" : "Export CSV"}
+        </Button>
+      </div>
+
       {/* Payment history */}
-      <div style={{ ...planCardOuter }}>
-        <div style={{ marginBottom: 16 }}>
+      <div>
+        <div style={{ marginBottom: 12 }}>
           <div style={subHeaderTitle}>Payment history</div>
           <div style={subHeaderHint}>Every successful Razorpay charge on your account.</div>
         </div>
@@ -979,113 +964,168 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
         ) : payments.length === 0 ? (
           <div style={{ fontFamily: font.ui, fontSize: 13, color: c.inkSoft, padding: "16px 0" }}>No payments yet.</div>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            {payments.map((p, i) => (
-              <InvoiceRow key={p.id} payment={p} divider={i < payments.length - 1} />
-            ))}
+          <div style={{ border: `1px solid ${c.border}`, borderRadius: 12, overflow: "hidden" }}>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Description</TableHead>
+                  <TableHead>Transaction Date</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {pageRows.map((p) => {
+                  const { dateLabel, amountDisplay, tone, purchaseTitle, subLine } = invoiceDetails(p);
+                  return (
+                    <TableRow key={p.id}>
+                      <TableCell>
+                        <div style={{ fontFamily: font.ui, fontSize: 13, color: c.ink, fontWeight: 500 }}>{purchaseTitle}</div>
+                        {subLine && <div style={{ fontFamily: font.ui, fontSize: 11, color: c.inkSoft, marginTop: 2 }}>{subLine}</div>}
+                      </TableCell>
+                      <TableCell style={{ fontFamily: font.ui, fontSize: 13, color: c.ink, whiteSpace: "nowrap" }}>{dateLabel}</TableCell>
+                      <TableCell style={{ fontFamily: font.mono, fontSize: 13, fontWeight: 600, color: c.ink }}>{amountDisplay}</TableCell>
+                      <TableCell>
+                        <div style={{
+                          fontFamily: font.ui, fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
+                          color: tone.fg, background: tone.bg, border: `1px solid ${tone.border}`,
+                          borderRadius: 6, padding: "4px 8px", display: "inline-block",
+                        }}>{tone.label}</div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+            <TablePaginationFooter
+              entityLabel="transaction"
+              totalCount={payments.length}
+              filteredCount={payments.length}
+              rowsPerPage={rowsPerPage}
+              onRowsPerPageChange={(n) => { setRowsPerPage(n); setPage(1); }}
+              page={page_}
+              totalPages={totalPages}
+              onPageChange={setPage}
+            />
           </div>
         )}
       </div>
+    </div>
+  );
+});
 
-      {/* Data */}
-      <div style={{ ...planCardOuter }}>
-        <div style={{ marginBottom: 16 }}>
-          <div style={subHeaderTitle}>Data</div>
-          <div style={subHeaderHint}>Export your session history or sign out on this device.</div>
-        </div>
+/* ═══════════════════════════════════════════════════════════════
+   DANGER ZONE SECTION
+   ═══════════════════════════════════════════════════════════════ */
 
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, padding: "14px 0", borderBottom: `1px solid ${c.border}`, flexWrap: "wrap" }}>
+export const DangerZoneSection = memo(function DangerZoneSection(props: DangerZoneSectionProps) {
+  const {
+    authUser, confirmDelete, setConfirmDelete,
+    deleteEmailInput, setDeleteEmailInput, deleteLoading, setDeleteLoading, deleteMsg, setDeleteMsg,
+    onLogout, showToast, authHeaders: getAuthHeaders,
+  } = props;
+
+  const isOAuthOnlyUser = authUser?.signedInVia === "google";
+  const [deletePasswordInput, setDeletePasswordInput] = useState("");
+
+  async function handleConfirmDelete() {
+    setDeleteLoading(true); setDeleteMsg("");
+    try {
+      const hdrs = await Promise.race([getAuthHeaders(), new Promise<never>((_, rej) => setTimeout(() => rej(new Error("Auth timeout")), 5000))]);
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), 15000);
+      // Re-auth gate: send the user's password so the server can verify
+      // possession-of-credentials, not just possession-of-bearer.
+      // OAuth-only users have no app password — server skips the check
+      // for them; sending an empty string is fine (server only verifies
+      // when present and non-empty for non-OAuth users).
+      const body = isOAuthOnlyUser ? {} : { password: deletePasswordInput };
+      const res = await fetch("/api/delete-account", { method: "POST", headers: { ...hdrs, "Content-Type": "application/json" }, body: JSON.stringify(body), signal: ctrl.signal });
+      clearTimeout(t);
+      if (res.ok || res.status === 207) {
+        const data = await res.json().catch(() => ({}));
+        if (data.scheduled) showToast("Account scheduled for deletion. Log in within 7 days to cancel.");
+        localStorage.clear();
+        onLogout();
+      } else {
+        const d = await res.json().catch(() => ({}));
+        // On failed re-auth, clear the password input so the user retypes
+        // rather than re-submitting the same wrong value.
+        if (d?.code === "reauth_required" || d?.code === "reauth_failed") setDeletePasswordInput("");
+        setDeleteMsg(d.error || "Failed. Try again."); setDeleteLoading(false);
+      }
+    } catch (err) {
+      setDeleteMsg(err instanceof DOMException && err.name === "AbortError" ? "Timed out. Try again." : "Network error.");
+      setDeleteLoading(false);
+    }
+  }
+
+  return (
+    <div style={{
+      background: "#FFF9F9", border: "1px solid #FFE0E1", borderRadius: 12, padding: "20px 24px",
+    }}>
+      {!confirmDelete ? (
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
           <div style={{ minWidth: 0, flex: 1 }}>
-            <div style={keyValueLabel}>Export sessions</div>
-            <div style={keyValueValue}>CSV of every completed session: questions, your answers, scores, and the resume snapshot used.</div>
+            <div style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: c.ember, marginBottom: 2 }}>Delete account</div>
+            <div style={subHeaderHint}>Removes your account and all data. A 7-day grace period lets you cancel by logging in.</div>
           </div>
-          <Button type="button" variant="outline" size="sm" disabled={exporting}
-            onClick={async () => { setExporting(true); try { await onExportCSV(); } finally { setExporting(false); } }}
-            style={{ ...accSubtleBtn, opacity: exporting ? 0.6 : 1 }}>
-            {exporting ? "Exporting…" : "Export CSV"}
+          <Button type="button" variant="destructive" size="sm"
+            onClick={() => { setConfirmDelete(true); setDeleteEmailInput(""); setDeletePasswordInput(""); setDeleteMsg(""); }}
+            style={{ ...dangerSubtleBtn, flexShrink: 0 }}>
+            Begin deletion
           </Button>
         </div>
-
-        {/* Sync credits button removed — balance now updates automatically via
-            Supabase Realtime subscription in DashboardContext. The /api/credit-reconcile
-            endpoint and onReconcileCredits prop are kept as a support escape-hatch
-            but no longer surfaced in the UI for normal users. */}
-
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, padding: "14px 0", flexWrap: "wrap" }}>
-          <div style={{ minWidth: 0, flex: 1 }}>
-            <div style={keyValueLabel}>Log out</div>
-            <div style={keyValueValue}>Sign out on this device. Other devices stay signed in.</div>
+      ) : (() => {
+        const emailMatches = deleteEmailInput.toLowerCase() === (authUser?.email || "").toLowerCase();
+        // OAuth users skip the password gate (no app password exists).
+        // For everyone else, require a non-empty password before enabling submit.
+        const passwordOk = isOAuthOnlyUser || deletePasswordInput.length > 0;
+        const submitDisabled = deleteLoading || !emailMatches || !passwordOk;
+        return (
+        <div>
+          <div style={{ ...keyValueLabel, color: c.ember, marginBottom: 6 }}>Confirm deletion</div>
+          <div style={keyValueValue}>
+            Type your email ({authUser?.email})
+            {isOAuthOnlyUser ? " to confirm" : " and re-enter your password to confirm"}.
+            Reversible for 7 days after submit.
           </div>
-          <Button type="button" variant="outline" size="sm" onClick={onLogout} style={accSubtleBtn}>Log out</Button>
-        </div>
-      </div>
-
-      {/* Danger zone */}
-      <div style={{ ...planCardOuter, borderColor: "rgba(185,28,28,0.28)" }}>
-        {!confirmDelete ? (
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
-            <div style={{ minWidth: 0, flex: 1 }}>
-              <div style={{ fontFamily: font.mono, fontSize: 11, fontWeight: 700, letterSpacing: "0.18em", color: c.ember, textTransform: "uppercase", marginBottom: 4 }}>Danger zone</div>
-              <div style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: c.ember, marginBottom: 2 }}>Delete account</div>
-              <div style={subHeaderHint}>Removes your account and all data. A 7-day grace period lets you cancel by logging in.</div>
-            </div>
-            <Button type="button" variant="destructive" size="sm"
-              onClick={() => { setConfirmDelete(true); setDeleteEmailInput(""); setDeletePasswordInput(""); setDeleteMsg(""); }}
-              style={{ ...dangerSubtleBtn, flexShrink: 0 }}>
-              Begin deletion
-            </Button>
-          </div>
-        ) : (() => {
-          const emailMatches = deleteEmailInput.toLowerCase() === (authUser?.email || "").toLowerCase();
-          // OAuth users skip the password gate (no app password exists).
-          // For everyone else, require a non-empty password before enabling submit.
-          const passwordOk = isOAuthOnlyUser || deletePasswordInput.length > 0;
-          const submitDisabled = deleteLoading || !emailMatches || !passwordOk;
-          return (
-          <div>
-            <div style={{ ...keyValueLabel, color: c.ember, marginBottom: 6 }}>Confirm deletion</div>
-            <div style={keyValueValue}>
-              Type your email ({authUser?.email})
-              {isOAuthOnlyUser ? " to confirm" : " and re-enter your password to confirm"}.
-              Reversible for 7 days after submit.
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 12 }}>
-              <input type="email" value={deleteEmailInput}
-                onChange={(e) => setDeleteEmailInput(e.target.value)}
-                aria-label="Confirm email for account deletion"
-                autoComplete="off"
+          <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 12 }}>
+            <input type="email" value={deleteEmailInput}
+              onChange={(e) => setDeleteEmailInput(e.target.value)}
+              aria-label="Confirm email for account deletion"
+              autoComplete="off"
+              style={{
+                fontFamily: font.ui, fontSize: 13, color: c.ink, background: c.graphite,
+                border: `1px solid rgba(185,28,28,0.3)`, borderRadius: 9, padding: "10px 14px",
+                outline: "none", minWidth: 0, width: "100%", minHeight: 40, boxSizing: "border-box",
+              }} />
+            {!isOAuthOnlyUser && (
+              <input type="password" value={deletePasswordInput}
+                onChange={(e) => setDeletePasswordInput(e.target.value)}
+                aria-label="Re-enter password to confirm account deletion"
+                placeholder="Re-enter your password"
+                autoComplete="current-password"
                 style={{
                   fontFamily: font.ui, fontSize: 13, color: c.ink, background: c.graphite,
                   border: `1px solid rgba(185,28,28,0.3)`, borderRadius: 9, padding: "10px 14px",
                   outline: "none", minWidth: 0, width: "100%", minHeight: 40, boxSizing: "border-box",
                 }} />
-              {!isOAuthOnlyUser && (
-                <input type="password" value={deletePasswordInput}
-                  onChange={(e) => setDeletePasswordInput(e.target.value)}
-                  aria-label="Re-enter password to confirm account deletion"
-                  placeholder="Re-enter your password"
-                  autoComplete="current-password"
-                  style={{
-                    fontFamily: font.ui, fontSize: 13, color: c.ink, background: c.graphite,
-                    border: `1px solid rgba(185,28,28,0.3)`, borderRadius: 9, padding: "10px 14px",
-                    outline: "none", minWidth: 0, width: "100%", minHeight: 40, boxSizing: "border-box",
-                  }} />
-              )}
-              <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center", marginTop: 4 }}>
-                <Button type="button" variant="outline" size="sm" onClick={() => { setConfirmDelete(false); setDeleteEmailInput(""); setDeletePasswordInput(""); }} style={accSubtleBtn}>Keep account</Button>
-                <Button type="button" variant="destructive" size="sm"
-                  disabled={submitDisabled}
-                  onClick={handleConfirmDelete}
-                  style={{ ...dangerSolidBtn, opacity: submitDisabled ? 0.45 : 1 }}>
-                  {deleteLoading ? "Deleting…" : "Confirm delete"}
-                </Button>
-              </div>
+            )}
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center", marginTop: 4 }}>
+              <Button type="button" variant="outline" size="sm" onClick={() => { setConfirmDelete(false); setDeleteEmailInput(""); setDeletePasswordInput(""); }} style={accSubtleBtn}>Keep account</Button>
+              <Button type="button" variant="destructive" size="sm"
+                disabled={submitDisabled}
+                onClick={handleConfirmDelete}
+                style={{ ...dangerSolidBtn, opacity: submitDisabled ? 0.45 : 1 }}>
+                {deleteLoading ? "Deleting…" : "Confirm delete"}
+              </Button>
             </div>
-            {deleteMsg && <p style={{ fontFamily: font.ui, fontSize: 12, color: c.ember, marginTop: 10, marginBottom: 0 }}>{deleteMsg}</p>}
           </div>
-          );
-        })()}
-      </div>
+          {deleteMsg && <p style={{ fontFamily: font.ui, fontSize: 12, color: c.ember, marginTop: 10, marginBottom: 0 }}>{deleteMsg}</p>}
+        </div>
+        );
+      })()}
     </div>
   );
 });
@@ -1176,60 +1216,51 @@ export function ReferralSection({ showToast }: { showToast: (msg: string) => voi
   };
 
   if (loading) {
-    return (
-      <EditorialCard>
-        <span style={{ fontFamily: font.ui, fontSize: 13, color: c.inkSoft }}>Loading referral info...</span>
-      </EditorialCard>
-    );
+    return <span style={{ fontFamily: font.ui, fontSize: 13, color: c.inkSoft }}>Loading referral info...</span>;
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 28, maxWidth: 880 }}>
-      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      <SectionHead
-        title="Bring a friend — you both get a free session"
-        desc={`When a friend signs up with your link, you each get a free practice session, credited instantly. ${stats.rewarded} earned so far.`}
-      />
-
-      <EditorialCard>
-        <div className="settings-referral-grid" style={{ display: "grid", gap: 28, alignItems: "start" }}>
-          <div style={{ minWidth: 0 }}>
-            <div style={sectionLabel}>Your referral link</div>
-            <div style={{
-              marginTop: 12,
-              display: "inline-flex", alignItems: "center",
-              padding: "14px 18px", borderRadius: 12,
-              background: c.creamSoft, border: `1px solid ${c.border}`,
-              fontFamily: font.mono, fontSize: 15, color: c.ink,
-              maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-            }}>
-              {displayLink ? (
-                <span style={{ color: c.indigo }}>{displayLink}</span>
-              ) : "—"}
-            </div>
-            <div style={{ display: "flex", gap: 8, marginTop: 18, flexWrap: "wrap" }}>
-              <Button type="button" variant="default" size="sm" onClick={handleCopy} style={indigoPrimaryBtn}>
-                {copied ? "Copied!" : "Copy link"}
-              </Button>
-              <Button type="button" variant="ghost" size="sm" onClick={handleShareWhatsApp} style={indigoGhostBtn}>Share on WhatsApp</Button>
-              <Button type="button" variant="link" size="sm" onClick={handleShareEmail} style={linkBtn}>Email a friend</Button>
-            </div>
-          </div>
-
-          <div style={{ padding: "20px 22px", borderRadius: 12, background: c.creamSoft, border: `1px solid ${c.border}` }} aria-label="Referral rewards">
-            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 10 }}>
-              <span style={{ fontFamily: font.ui, fontSize: 13, color: c.ink, fontWeight: 600 }}>Free sessions earned</span>
-              <span style={{ fontFamily: font.mono, fontSize: 18, fontWeight: 700, color: c.reward }}>{stats.rewarded}</span>
-            </div>
-            <div style={{ fontFamily: font.ui, fontSize: 12, color: c.inkSoft, marginTop: 10, lineHeight: 1.5 }}>
-              {stats.redeemed} friend{stats.redeemed === 1 ? "" : "s"} joined with your link. You both get a free session the moment they sign up — no purchase needed.
-            </div>
-          </div>
-        </div>
-      </EditorialCard>
+    <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+      <div style={{ fontFamily: font.ui, fontSize: 12, color: c.inkSoft, lineHeight: 1.5 }}>
+        When a friend signs up with your link, you each get a free practice session, credited instantly. {stats.rewarded} earned so far.
       </div>
 
-      <EditorialCard>
+      <div className="settings-referral-grid" style={{ display: "grid", gap: 24, alignItems: "start" }}>
+        <div style={{ minWidth: 0 }}>
+          <div style={sectionLabel}>Your referral link</div>
+          <div style={{
+            marginTop: 12,
+            display: "inline-flex", alignItems: "center",
+            padding: "14px 18px", borderRadius: 12,
+            background: c.creamSoft, border: `1px solid ${c.border}`,
+            fontFamily: font.mono, fontSize: 15, color: c.ink,
+            maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+          }}>
+            {displayLink ? (
+              <span style={{ color: c.indigo }}>{displayLink}</span>
+            ) : "—"}
+          </div>
+          <div style={{ display: "flex", gap: 8, marginTop: 18, flexWrap: "wrap" }}>
+            <Button type="button" variant="default" size="sm" onClick={handleCopy} style={indigoPrimaryBtn}>
+              {copied ? "Copied!" : "Copy link"}
+            </Button>
+            <Button type="button" variant="ghost" size="sm" onClick={handleShareWhatsApp} style={indigoGhostBtn}>Share on WhatsApp</Button>
+            <Button type="button" variant="link" size="sm" onClick={handleShareEmail} style={linkBtn}>Email a friend</Button>
+          </div>
+        </div>
+
+        <div style={{ padding: "20px 22px", borderRadius: 12, background: c.creamSoft, border: `1px solid ${c.border}` }} aria-label="Referral rewards">
+          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 10 }}>
+            <span style={{ fontFamily: font.ui, fontSize: 13, color: c.ink, fontWeight: 600 }}>Free sessions earned</span>
+            <span style={{ fontFamily: font.mono, fontSize: 18, fontWeight: 700, color: c.reward }}>{stats.rewarded}</span>
+          </div>
+          <div style={{ fontFamily: font.ui, fontSize: 12, color: c.inkSoft, marginTop: 10, lineHeight: 1.5 }}>
+            {stats.redeemed} friend{stats.redeemed === 1 ? "" : "s"} joined with your link. You both get a free session the moment they sign up — no purchase needed.
+          </div>
+        </div>
+      </div>
+
+      <div style={{ borderTop: `1px solid ${c.border}`, paddingTop: 20 }}>
         <div style={{ marginBottom: 16 }}>
           <div style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 700, color: c.ink }}>Your invites</div>
           <div style={{ fontFamily: font.ui, fontSize: 12, color: c.inkSoft, marginTop: 4, lineHeight: 1.5 }}>
@@ -1247,7 +1278,7 @@ export function ReferralSection({ showToast }: { showToast: (msg: string) => voi
             ))}
           </div>
         )}
-      </EditorialCard>
+      </div>
     </div>
   );
 }
