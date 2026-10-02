@@ -42,8 +42,6 @@ import type {
   Verdict,
 } from "./types";
 
-import { Header } from "./panels/sr-Header";
-import { JumpNav } from "./panels/sr-JumpNav";
 import { HeroSection } from "./panels/sr-HeroSection";
 import { TrendStrip } from "./panels/sr-TrendStrip";
 import { TopScoreDriversSection } from "./panels/sr-TopScoreDriversSection";
@@ -486,7 +484,6 @@ export default function SessionReportView({
             className="ir-main-container"
             style={{ maxWidth: 1240, width: "100%", margin: "0 auto", display: "flex", flexDirection: "column", gap: 16 }}
           >
-            <Header onBack={onBack} backLabel={backLabel} onDownloadPdf={onDownloadPdf} onShare={onShare} />
             <HrFullReport
               overallScore={data.overallScore}
               skills={data.skills}
@@ -554,13 +551,6 @@ export default function SessionReportView({
             gap: 16,
           }}
         >
-          <Header onBack={onBack} backLabel={backLabel} onDownloadPdf={onDownloadPdf} onShare={onShare} />
-          <JumpNav showCoachNotes={
-            !!(data.coaching ||
-               (behaviouralCrossSessionInsights && behaviouralCrossSessionInsights.length > 0) ||
-               (!data.negotiationOutcome && data.storyReuseFindings && data.storyReuseFindings.length > 0) ||
-               (data.blindSpots && data.blindSpots.length > 0))
-          } />
           {data.focusBanner && <FocusBannerStrip banner={data.focusBanner} daysUntilInterview={data.daysUntilInterview} />}
           <HeroSection data={data} />
           <p
