@@ -250,7 +250,7 @@ function WorkspaceHeader({
   return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 20px", borderBottom: `1px solid ${T.line}`, flexWrap: "wrap", gap: 12 }}>
       <h1 style={{ fontFamily: font.ui, fontSize: 26, lineHeight: "32px", fontWeight: 700, color: T.coal, margin: 0, letterSpacing: "-0.01em", flexShrink: 0 }}>Sessions</h1>
-      <div style={{ display: "flex", alignItems: "center", flexWrap: "nowrap", gap: 8, justifyContent: "flex-end", overflowX: "auto" }}>
+      <div style={{ display: "flex", alignItems: "center", flexWrap: "nowrap", gap: 8, justifyContent: "flex-end", minWidth: 0 }}>
         <SearchWithSuggestions
           id="sessions-search"
           label="Search sessions"
@@ -261,37 +261,43 @@ function WorkspaceHeader({
           suggestedFilters={suggestedFilters}
           style={{ flex: "1 1 160px", minWidth: 140, maxWidth: 280 }}
         />
-        <FilterPill
-          label="Type"
-          value={typeFilter}
-          options={typeOptions.map((t) => ({ value: t, label: t }))}
-          onChange={onTypeFilterChange}
-        />
-        <FilterPill label="Score" value={scoreFilter} options={SCORE_OPTIONS} onChange={onScoreFilterChange} />
-        <FilterPill
-          label="Date"
-          value={dateFilter}
-          options={dateOptions.map((d) => ({ value: d, label: d }))}
-          onChange={onDateFilterChange}
-        />
-        <Button
-          onClick={onStartSession}
-          style={{
-            background: T.indigo,
-            color: T.white,
-            borderRadius: 8,
-            padding: "0 16px",
-            height: 36,
-            gap: 8,
-            fontSize: 13,
-            fontWeight: 600,
-            flexShrink: 0,
-            boxShadow: `0px 2px 4px color-mix(in srgb, ${T.indigo} 20%, transparent)`,
-          }}
-        >
-          <PlusIcon size={16} strokeWidth={2.5} aria-hidden="true" />
-          Start session
-        </Button>
+        {/* Only this inner group scrolls horizontally on narrow viewports —
+            keeping overflowX off the row above avoids clipping the search
+            dropdown's absolutely-positioned panel (overflow-x: auto forces
+            overflow-y to auto too, per spec, which clips it invisibly). */}
+        <div style={{ display: "flex", alignItems: "center", gap: 8, overflowX: "auto" }}>
+          <FilterPill
+            label="Type"
+            value={typeFilter}
+            options={typeOptions.map((t) => ({ value: t, label: t }))}
+            onChange={onTypeFilterChange}
+          />
+          <FilterPill label="Score" value={scoreFilter} options={SCORE_OPTIONS} onChange={onScoreFilterChange} />
+          <FilterPill
+            label="Date"
+            value={dateFilter}
+            options={dateOptions.map((d) => ({ value: d, label: d }))}
+            onChange={onDateFilterChange}
+          />
+          <Button
+            onClick={onStartSession}
+            style={{
+              background: T.indigo,
+              color: T.white,
+              borderRadius: 8,
+              padding: "0 16px",
+              height: 36,
+              gap: 8,
+              fontSize: 13,
+              fontWeight: 600,
+              flexShrink: 0,
+              boxShadow: `0px 2px 4px color-mix(in srgb, ${T.indigo} 20%, transparent)`,
+            }}
+          >
+            <PlusIcon size={16} strokeWidth={2.5} aria-hidden="true" />
+            Start session
+          </Button>
+        </div>
       </div>
     </div>
   );
