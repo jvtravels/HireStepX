@@ -82,7 +82,7 @@ const navItems = [
   { id: "sessions", path: "/sessions", label: "Sessions" },
   { id: "calendar", path: "/calendar", label: "Calendar" },
   { id: "analytics", path: "/analytics", label: "Analytics" },
-  { id: "resume", path: "/resume", label: "Resume" },
+  { id: "resume", path: "/resume", label: "Your Profile" },
   { id: "jobs", path: "/jobs", label: "Jobs" },
 ];
 const secondaryNavItems = [

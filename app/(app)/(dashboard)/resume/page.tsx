@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import ResumeV2 from "@/ResumeV2";
 
 export const metadata: Metadata = {
-  title: "Resume | HireStepX",
+  title: "Your Profile | HireStepX",
   description:
     "Upload and manage your resume for personalized interview practice.",
 };

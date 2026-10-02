@@ -1,12 +1,11 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "./AuthContext";
 import { useDocTitle } from "./useDocTitle";
 import { authHeaders, getPaymentHistory, type PaymentRecord } from "./supabase";
-import { useDashboardCore, useDashboardUI } from "./DashboardContext";
+import { useDashboardUI } from "./DashboardContext";
 import { DataLoadingSkeleton } from "./dashboardComponents";
 import {
-  focusOutBase,
   PageHeader,
   FlatSection,
   AccountSection,
@@ -25,17 +24,8 @@ const c = {
 export default function SettingsPage() {
   useDocTitle("Settings");
   const { user: authUser, logout: authLogout, updateUser: authUpdateUser, resetPassword } = useAuth();
-  const { persisted, updatePersisted: onUpdate } = useDashboardCore();
   const { dataLoading, showToast, setShowUpgradeModal } = useDashboardUI();
   const onLogout = () => { authLogout(); };
-
-  // Profile
-  const [editName, setEditName] = useState(persisted.userName);
-  const [editRole, setEditRole] = useState(persisted.targetRole);
-  const [editCompany, setEditCompany] = useState(authUser?.targetCompany || "");
-  const [editIndustry, setEditIndustry] = useState(authUser?.industry || "");
-  const [editCity, setEditCity] = useState(authUser?.city || "");
-  const [editExperience, setEditExperience] = useState(authUser?.experienceLevel || "");
 
   // Danger zone
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -59,29 +49,6 @@ export default function SettingsPage() {
     setPaymentsLoading(true);
     getPaymentHistory(authUser.id).then(setPayments).finally(() => setPaymentsLoading(false));
   }, [authUser?.id]);
-
-  const isDirty = editName !== persisted.userName || editRole !== persisted.targetRole || editCompany !== (authUser?.targetCompany || "") || editIndustry !== (authUser?.industry || "") || editCity !== (authUser?.city || "") || editExperience !== (authUser?.experienceLevel || "");
-
-  // Auto-save on blur for text fields
-  const focusOut = useCallback((e: React.FocusEvent<HTMLInputElement>) => {
-    focusOutBase(e);
-    setTimeout(() => {
-      if (editName !== persisted.userName || editRole !== persisted.targetRole || editCompany !== (authUser?.targetCompany || "") || editIndustry !== (authUser?.industry || "") || editCity !== (authUser?.city || "")) {
-        onUpdate({ userName: editName, targetRole: editRole });
-        Promise.resolve(authUpdateUser({ name: editName, targetRole: editRole, targetCompany: editCompany, industry: editIndustry, city: editCity }))
-          .then(() => showToast("Saved"))
-          .catch(() => showToast("Failed to save. Try again."));
-      }
-    }, 0);
-  }, [editName, editRole, editCompany, editIndustry, editCity, persisted.userName, persisted.targetRole, authUser?.targetCompany, authUser?.industry, authUser?.city, onUpdate, authUpdateUser, showToast]);
-
-  // beforeunload guard
-  useEffect(() => {
-    if (!isDirty) return;
-    const handler = (e: BeforeUnloadEvent) => { e.preventDefault(); };
-    window.addEventListener("beforeunload", handler);
-    return () => window.removeEventListener("beforeunload", handler);
-  }, [isDirty]);
 
   if (dataLoading) return <DataLoadingSkeleton />;
 
@@ -116,18 +83,9 @@ export default function SettingsPage() {
 
         <FlatSection title="Account">
           <AccountSection
-            editName={editName} setEditName={setEditName}
-            editRole={editRole} setEditRole={setEditRole}
-            editCompany={editCompany} setEditCompany={setEditCompany}
-            editIndustry={editIndustry} setEditIndustry={setEditIndustry}
-            editCity={editCity} setEditCity={setEditCity}
-            editExperience={editExperience} setEditExperience={setEditExperience}
-            userName={persisted.userName} email={authUser?.email || ""}
             resetLoading={resetLoading} resetSent={resetSent}
             handlePasswordReset={handlePasswordReset}
             isOAuthOnly={authUser?.signedInVia === "google"}
-            focusOut={focusOut}
-            authUpdateUser={authUpdateUser}
           />
         </FlatSection>
 

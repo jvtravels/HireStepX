@@ -62,16 +62,6 @@ export const icons = {
   plan: <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>,
 };
 
-export const focusOutBase = (e: React.FocusEvent<HTMLInputElement>) => {
-  e.currentTarget.style.borderColor = c.border;
-  e.currentTarget.style.boxShadow = "none";
-};
-
-export const focusIn = (e: React.FocusEvent<HTMLInputElement>) => {
-  e.currentTarget.style.borderColor = "oklch(0.359 0.135 278.697 / 0.5)";
-  e.currentTarget.style.boxShadow = `0 0 0 3px ${c.indigo100}`;
-};
-
 export function Divider() {
   return (
     <div style={{ height: 1, background: `linear-gradient(90deg, transparent, ${c.border}, transparent)`, margin: "28px 0" }} />
@@ -83,22 +73,6 @@ export function Divider() {
    ═══════════════════════════════════════════════════════════════ */
 
 export interface AccountSectionProps {
-  // Profile state
-  editName: string;
-  setEditName: (v: string) => void;
-  editRole: string;
-  setEditRole: (v: string) => void;
-  editCompany: string;
-  setEditCompany: (v: string) => void;
-  editIndustry: string;
-  setEditIndustry: (v: string) => void;
-  editCity: string;
-  setEditCity: (v: string) => void;
-  editExperience: string;
-  setEditExperience: (v: string) => void;
-  // Derived
-  userName: string;
-  email: string;
   // Password
   resetLoading: boolean;
   resetSent: boolean;
@@ -108,49 +82,7 @@ export interface AccountSectionProps {
    *  reset, so the section hides. Resetting via email link only
    *  changes a password they don't use, which confused users. */
   isOAuthOnly: boolean;
-  // Blur handler (auto-save)
-  focusOut: (e: React.FocusEvent<HTMLInputElement>) => void;
-  // Auto-save the experience select on change (no blur event)
-  authUpdateUser: (updates: { experienceLevel?: string }) => void | Promise<void>;
 }
-
-const EXPERIENCE_OPTIONS: Array<{ value: string; label: string }> = [
-  { value: "", label: "Select range" },
-  { value: "fresher", label: "Fresher" },
-  { value: "entry", label: "0 to 2 years" },
-  { value: "mid", label: "3 to 5 years" },
-  { value: "senior", label: "6 to 8 years" },
-  { value: "lead", label: "9 to 12 years" },
-  { value: "executive", label: "12+ years" },
-];
-
-function ExperienceLabel(value: string): string {
-  return EXPERIENCE_OPTIONS.find((o) => o.value === value)?.label || "Select range";
-}
-
-function FieldShell({ label, htmlFor, children }: { label: string; htmlFor: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <label
-        htmlFor={htmlFor}
-        style={{
-          fontFamily: font.mono, fontSize: 11, fontWeight: 600, letterSpacing: "0.12em",
-          color: c.inkSoft, textTransform: "uppercase", display: "block", marginBottom: 8,
-        }}
-      >
-        {label}
-      </label>
-      {children}
-    </div>
-  );
-}
-
-const editorialInput: React.CSSProperties = {
-  width: "100%", fontFamily: font.ui, fontSize: 14, color: c.ink,
-  background: c.graphite, border: `1px solid ${c.borderStrong}`, borderRadius: 9,
-  padding: "12px 14px", outline: "none", boxSizing: "border-box", minHeight: 44,
-  transition: "border-color 0.18s ease, box-shadow 0.18s ease",
-};
 
 export const accSubtleBtn: React.CSSProperties = {
   fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ink,
@@ -307,94 +239,11 @@ function TinyChip({ children, tone }: { children: React.ReactNode; tone?: "succe
 
 export const AccountSection = memo(function AccountSection(props: AccountSectionProps) {
   const {
-    editName, setEditName,
-    editRole, setEditRole,
-    editCompany, setEditCompany,
-    editIndustry, setEditIndustry,
-    editCity, setEditCity,
-    editExperience, setEditExperience,
-    userName, email,
     resetLoading, resetSent, handlePasswordReset, isOAuthOnly,
-    focusOut,
-    authUpdateUser,
   } = props;
-
-  const initial = (userName || email || "?").trim().charAt(0).toUpperCase();
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
-      {/* ── Profile group ── */}
-      <div>
-      <div style={subHeaderTitle}>Profile</div>
-      <div style={{ fontFamily: font.ui, fontSize: 12, color: c.inkSoft, marginBottom: 14 }}>The basics we use to personalise interview prompts and coaching.</div>
-      <div style={{ border: `1px solid ${c.border}`, borderRadius: 12, padding: "20px 24px" }}>
-        <div style={{ display: "flex", gap: 24, alignItems: "center", marginBottom: 24, flexWrap: "wrap" }}>
-          <div aria-hidden="true" style={{
-            width: 64, height: 64, borderRadius: "50%",
-            background: c.indigoDeep, color: c.cream, fontFamily: font.ui, fontSize: 28,
-            display: "flex", alignItems: "center", justifyContent: "center", letterSpacing: "0.02em", flexShrink: 0,
-          }}>{initial}</div>
-          <div style={{ minWidth: 0, flex: 1 }}>
-            <div style={{ fontFamily: font.ui, fontSize: 16, fontWeight: 700, color: c.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{userName || "Your name"}</div>
-            <div style={{ fontFamily: font.ui, fontSize: 13, color: c.inkSoft, marginTop: 4 }}>
-              {email}
-            </div>
-          </div>
-        </div>
-
-        <div style={{ display: "grid", gap: 16 }} className="settings-form-grid">
-          <FieldShell label="Full name" htmlFor="acc-name">
-            <input id="acc-name" type="text" value={editName} maxLength={60}
-              onChange={(e) => setEditName(e.target.value)}
-              onFocus={focusIn} onBlur={focusOut} style={editorialInput} />
-          </FieldShell>
-          <FieldShell label="Target role" htmlFor="acc-role">
-            <input id="acc-role" type="text" value={editRole} maxLength={80}
-              placeholder="e.g. Senior Product Manager"
-              onChange={(e) => setEditRole(e.target.value)}
-              onFocus={focusIn} onBlur={focusOut} style={editorialInput} />
-          </FieldShell>
-          <FieldShell label="Target company" htmlFor="acc-company">
-            <input id="acc-company" type="text" value={editCompany} maxLength={60}
-              placeholder="e.g. Razorpay"
-              onChange={(e) => setEditCompany(e.target.value)}
-              onFocus={focusIn} onBlur={focusOut} style={editorialInput} />
-          </FieldShell>
-          <FieldShell label="Industry" htmlFor="acc-industry">
-            <input id="acc-industry" type="text" value={editIndustry} maxLength={60}
-              placeholder="e.g. Fintech"
-              onChange={(e) => setEditIndustry(e.target.value)}
-              onFocus={focusIn} onBlur={focusOut} style={editorialInput} />
-          </FieldShell>
-          <FieldShell label="City" htmlFor="acc-city">
-            <input id="acc-city" type="text" value={editCity} maxLength={60}
-              placeholder="e.g. Bengaluru"
-              onChange={(e) => setEditCity(e.target.value)}
-              onFocus={focusIn} onBlur={focusOut} style={editorialInput} />
-          </FieldShell>
-          <FieldShell label="Years of experience" htmlFor="acc-experience">
-            <div style={{ position: "relative" }}>
-              <select id="acc-experience" value={editExperience}
-                onChange={(e) => { setEditExperience(e.target.value); void authUpdateUser({ experienceLevel: e.target.value }); }}
-                style={{ ...editorialInput, appearance: "none", WebkitAppearance: "none", MozAppearance: "none", paddingRight: 36, cursor: "pointer" }}
-                aria-label={`Years of experience, currently ${ExperienceLabel(editExperience)}`}
-              >
-                {EXPERIENCE_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>{o.label}</option>
-                ))}
-              </select>
-              <span aria-hidden style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", color: c.inkSoft, fontFamily: font.mono, fontSize: 11, pointerEvents: "none" }}>▾</span>
-            </div>
-          </FieldShell>
-        </div>
-
-        <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", marginTop: 20, gap: 10, fontFamily: font.ui, fontSize: 12, color: c.inkSoft }}>
-          <span aria-hidden style={{ width: 6, height: 6, borderRadius: "50%", background: c.sage }} />
-          Saved automatically when you leave a field
-        </div>
-      </div>
-      </div>
-
       {/* ── Security + devices + logout — Figma's "Account" row group ── */}
       <div style={{ border: `1px solid ${c.border}`, borderRadius: 12, padding: "0 20px" }}>
         {!isOAuthOnly ? (
