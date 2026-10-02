@@ -5,6 +5,7 @@ import { c, font, radius } from "./tokens";
 import { tokens as T } from "./auth/_tokens";
 import { EmptyState } from "./components/EmptyState";
 import { Button } from "./components/ui/button";
+import { SearchWithSuggestions } from "./components/SearchWithSuggestions";
 import LoadingScreen from "./_LoadingScreen";
 
 /* ─── Token-based auth ─── */
@@ -1177,16 +1178,14 @@ export default function AdminDashboard() {
       <div>
         {/* Search + export */}
         <div style={{ marginBottom: 20, display: "flex", flexWrap: "wrap", gap: 12, alignItems: "center" }}>
-          <input
-            type="text"
-            placeholder="Search by name or email..."
+          <SearchWithSuggestions
+            id="admin-users-search"
+            label="Search users"
             value={userSearch}
-            onChange={e => setUserSearch(e.target.value)}
-            style={{
-              flex: 1, minWidth: 240, maxWidth: 400, padding: "10px 16px",
-              background: c.onyx, border: `1px solid ${c.border}`, borderRadius: radius.md,
-              color: c.ivory, fontSize: 14, fontFamily: font.ui, outline: "none",
-            }}
+            onChange={setUserSearch}
+            placeholder="Search by name or email..."
+            storageKey="hirestepx-admin-users-recent-searches"
+            style={{ flex: 1, minWidth: 240, maxWidth: 400 }}
           />
           <span style={{ fontFamily: font.ui, fontSize: 12, color: c.stone }}>
             {users.length} result{users.length === 1 ? "" : "s"}

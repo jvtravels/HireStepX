@@ -13,24 +13,24 @@
    backing endpoints. Recent searches persist per-browser via localStorage
    only; there is no server-side record of search terms. */
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
 import {
-  PlusIcon, SearchIcon, SearchXIcon, ChevronDownIcon, ChevronRightIcon, BriefcaseIcon,
-  MoreVerticalIcon, PencilIcon, ArchiveIcon, ArchiveRestoreIcon, HistoryIcon, ClockIcon, XIcon,
+  PlusIcon, SearchXIcon, ChevronDownIcon, ChevronRightIcon, BriefcaseIcon,
+  MoreVerticalIcon, PencilIcon, ArchiveIcon, ArchiveRestoreIcon, HistoryIcon, XIcon,
   EyeIcon, InfoIcon, LoaderCircleIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { FilterPill } from "@/components/FilterPill";
+import { SearchWithSuggestions } from "@/components/SearchWithSuggestions";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -58,26 +58,7 @@ import { WORK_MODE_LABEL, EMPLOYMENT_TYPE_LABEL } from "@/hiringMatchFormat";
 import { formatNumber } from "@/utils";
 
 const RECENT_SEARCHES_KEY = "hirestepx-employer-jobs-recent-searches";
-const MAX_RECENT_SEARCHES = 5;
 const MotionTableRow = motion.create(TableRow);
-
-function loadRecentSearches(): string[] {
-  try {
-    const raw = window.localStorage.getItem(RECENT_SEARCHES_KEY);
-    const parsed = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? parsed.filter((v): v is string => typeof v === "string").slice(0, MAX_RECENT_SEARCHES) : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveRecentSearches(list: string[]): void {
-  try {
-    window.localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(list.slice(0, MAX_RECENT_SEARCHES)));
-  } catch {
-    // best-effort — private browsing / blocked storage just means no persistence
-  }
-}
 
 function experienceLabel(req: RequirementSummary): string | null {
   const { experienceMin, experienceMax } = req;
@@ -201,45 +182,6 @@ function matchesDueFilter(req: RequirementSummary, filter: string): boolean {
   const left = daysUntil(req.dueDate);
   if (filter === "Overdue") return left < 0;
   return left >= 0 && left <= 7;
-}
-
-function FilterPill({
-  label,
-  value,
-  options,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  options: string[];
-  onChange: (value: string) => void;
-}) {
-  const display = value ? `${label}: ${value}` : label;
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="outline"
-          style={{ borderRadius: 8, height: 44, gap: 8, background: t.white, color: value ? t.coal : t.inkFaint, fontFamily: f.sans, fontSize: 13, fontWeight: 500, flexShrink: 0, transition: `background ${dur.instant} ${ease.snap}` }}
-          onMouseEnter={(e) => { e.currentTarget.style.background = t.rowTint; }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = t.white; }}
-        >
-          {display}
-          <ChevronDownIcon size={12} aria-hidden="true" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent>
-        <DropdownMenuRadioGroup value={value} onValueChange={onChange}>
-          <DropdownMenuRadioItem value="">All</DropdownMenuRadioItem>
-          {options.map((o) => (
-            <DropdownMenuRadioItem key={o} value={o}>
-              {o}
-            </DropdownMenuRadioItem>
-          ))}
-        </DropdownMenuRadioGroup>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
 }
 
 function RangeFilterPopover({
@@ -476,10 +418,6 @@ export default function EmployerJobsPage() {
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
-  const [searchFocused, setSearchFocused] = useState(false);
-  const [recentSearches, setRecentSearches] = useState<string[]>([]);
-  const searchWrapRef = useRef<HTMLDivElement>(null);
-
   const [archiveTarget, setArchiveTarget] = useState<RequirementSummary | null>(null);
   const [archiveBusy, setArchiveBusy] = useState(false);
   const [archiveReason, setArchiveReason] = useState("");
@@ -487,18 +425,6 @@ export default function EmployerJobsPage() {
   const [historyTarget, setHistoryTarget] = useState<RequirementSummary | null>(null);
   const [historyItems, setHistoryItems] = useState<RequirementActivity[] | null>(null);
   const [historyLoading, setHistoryLoading] = useState(false);
-
-  useEffect(() => { setRecentSearches(loadRecentSearches()); }, []);
-
-  const commitSearch = (term: string) => {
-    const trimmed = term.trim();
-    if (!trimmed) return;
-    setRecentSearches((prev) => {
-      const next = [trimmed, ...prev.filter((s) => s.toLowerCase() !== trimmed.toLowerCase())].slice(0, MAX_RECENT_SEARCHES);
-      saveRecentSearches(next);
-      return next;
-    });
-  };
 
   const statusOptions = useMemo(
     () => Array.from(new Set(requirements.map((r) => STATUS_LABEL[r.status]))),
@@ -780,79 +706,48 @@ export default function EmployerJobsPage() {
       {historyDialog}
       {archiveDialog}
       <div style={{ padding: "16px 18px", borderBottom: activeChips.length > 0 ? "none" : `1px solid ${t.line}`, display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}>
-        <div ref={searchWrapRef} style={{ position: "relative", flex: "1 1 240px", minWidth: 200 }}>
-          <label htmlFor="employer-jobs-search" className="sr-only">Search jobs</label>
-          <SearchIcon size={14} color={t.inkFaint} aria-hidden="true" style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)" }} />
-          <Input
-            id="employer-jobs-search"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            onFocus={() => setSearchFocused(true)}
-            onBlur={() => setTimeout(() => setSearchFocused(false), 120)}
-            onKeyDown={(e) => { if (e.key === "Enter") { commitSearch(search); (e.target as HTMLInputElement).blur(); } }}
-            placeholder="Search by job title, location, or skill"
-            style={{ paddingLeft: 32, height: 44, borderRadius: 8, background: t.white }}
-          />
-          {searchFocused && (recentSearches.length > 0 || suggestedFilters.length > 0) && (
-            <div
-              style={{
-                position: "absolute", top: "calc(100% + 6px)", left: 0, right: 0, zIndex: 20,
-                background: t.white, border: `1px solid ${t.line}`, borderRadius: 10,
-                boxShadow: "0px 8px 24px rgba(20, 20, 43, 0.12)", padding: "12px 4px",
-                maxHeight: 320, overflowY: "auto",
-              }}
-            >
-              {recentSearches.length > 0 && (
-                <div style={{ marginBottom: suggestedFilters.length > 0 ? 10 : 0 }}>
-                  <div style={{ padding: "0 12px 6px", fontFamily: f.sans, fontSize: 12, fontWeight: 700, letterSpacing: "0.06em", color: t.inkFaint, textTransform: "uppercase" }}>
-                    Recent searches
-                  </div>
-                  {recentSearches.map((term) => (
-                    <button
-                      key={term}
-                      type="button"
-                      onMouseDown={(e) => { e.preventDefault(); setSearch(term); commitSearch(term); setSearchFocused(false); }}
-                      style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "8px 12px", background: "transparent", border: "none", cursor: "pointer", textAlign: "left", fontFamily: f.sans, fontSize: textSize.base, color: t.coal, borderRadius: 6 }}
-                      onMouseEnter={(e) => { e.currentTarget.style.background = t.rowTint; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
-                    >
-                      <ClockIcon size={13} color={t.inkFaint} aria-hidden="true" />
-                      {term}
-                    </button>
-                  ))}
-                </div>
-              )}
-              {suggestedFilters.length > 0 && (
-                <div>
-                  <div style={{ padding: "0 12px 6px", fontFamily: f.sans, fontSize: 12, fontWeight: 700, letterSpacing: "0.06em", color: t.inkFaint, textTransform: "uppercase" }}>
-                    Suggested filters
-                  </div>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6, padding: "0 12px" }}>
-                    {suggestedFilters.map((s) => (
-                      <button
-                        key={s.label}
-                        type="button"
-                        onMouseDown={(e) => { e.preventDefault(); s.apply(); setSearchFocused(false); }}
-                        style={{ padding: "6px 12px", borderRadius: 999, border: `1px solid ${t.line}`, background: t.white, fontFamily: f.sans, fontSize: textSize.sm, fontWeight: 500, color: t.coal, cursor: "pointer" }}
-                        onMouseEnter={(e) => { e.currentTarget.style.background = t.rowTint; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.background = t.white; }}
-                      >
-                        + {s.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-        <FilterPill label="Status" value={statusFilter} options={statusOptions} onChange={setStatusFilter} />
-        <FilterPill label="Location" value={locationFilter} options={locationOptions} onChange={setLocationFilter} />
-        <FilterPill label="Job type" value={jobTypeFilter} options={jobTypeOptions} onChange={setJobTypeFilter} />
+        <SearchWithSuggestions
+          id="employer-jobs-search"
+          label="Search jobs"
+          value={search}
+          onChange={setSearch}
+          placeholder="Search by job title, location, or skill"
+          storageKey={RECENT_SEARCHES_KEY}
+          suggestedFilters={suggestedFilters}
+          style={{ flex: "1 1 240px", minWidth: 200 }}
+        />
+        <FilterPill
+          label="Status"
+          value={statusFilter}
+          options={[{ value: "", label: "All" }, ...statusOptions.map((o) => ({ value: o, label: o }))]}
+          onChange={setStatusFilter}
+        />
+        <FilterPill
+          label="Location"
+          value={locationFilter}
+          options={[{ value: "", label: "All" }, ...locationOptions.map((o) => ({ value: o, label: o }))]}
+          onChange={setLocationFilter}
+        />
+        <FilterPill
+          label="Job type"
+          value={jobTypeFilter}
+          options={[{ value: "", label: "All" }, ...jobTypeOptions.map((o) => ({ value: o, label: o }))]}
+          onChange={setJobTypeFilter}
+        />
         {hasAnyDepartment && (
-          <FilterPill label="Department" value={departmentFilter} options={departmentOptions} onChange={setDepartmentFilter} />
+          <FilterPill
+            label="Department"
+            value={departmentFilter}
+            options={[{ value: "", label: "All" }, ...departmentOptions.map((o) => ({ value: o, label: o }))]}
+            onChange={setDepartmentFilter}
+          />
         )}
-        <FilterPill label="Due date" value={dueFilter} options={DUE_OPTIONS} onChange={setDueFilter} />
+        <FilterPill
+          label="Due date"
+          value={dueFilter}
+          options={[{ value: "", label: "All" }, ...DUE_OPTIONS.map((o) => ({ value: o, label: o }))]}
+          onChange={setDueFilter}
+        />
         <RangeFilterPopover label="Experience" unit="yrs" range={experienceFilter} onChange={setExperienceFilter} />
         <RangeFilterPopover label="Salary" unit="LPA" range={salaryFilter} onChange={setSalaryFilter} />
       </div>

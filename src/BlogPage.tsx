@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import type { ReactNode } from "react";
 import { captureClientEvent } from "./posthogClient";
 import Image from "next/image";
@@ -14,6 +14,7 @@ import type { BlogPost } from "../data/blog-posts";
 import type { BlogMeta } from "./blog-meta";
 import { CATEGORY_BUCKET_MAP, CATEGORY_BUCKETS, bucketToSlug } from "./blog-categories";
 import { CopyEmailLink } from "./_CopyEmailLink";
+import { SearchWithSuggestions } from "@/components/SearchWithSuggestions";
 
 /* PageShell: mirrors marketing-v2 chrome so the blog inherits the
    editorial brand (cream surface, Instrument Serif + Geist Sans, copper
@@ -181,6 +182,7 @@ function CompactCard({ post }: { post: BlogMeta }) {
 
 
 const POSTS_PER_PAGE = 30;
+const RECENT_SEARCHES_KEY = "hirestepx-blog-recent-searches";
 
 /* ─── Blog index (list of all posts) ─── */
 function BlogIndex({ metas, initialPage }: { metas: BlogMeta[]; initialPage?: number }) {
@@ -242,6 +244,16 @@ function BlogIndex({ metas, initialPage }: { metas: BlogMeta[]; initialPage?: nu
 
   const resetPage = () => setPage(1);
 
+  const suggestedFilters = useMemo(() => {
+    const suggestions: Array<{ label: string; apply: () => void }> = [];
+    for (const cat of CATEGORIES) {
+      if (cat === activeCategory) continue;
+      suggestions.push({ label: `Category: ${cat}`, apply: () => { setActiveCategory(cat); resetPage(); } });
+      if (suggestions.length >= 4) break;
+    }
+    return suggestions;
+  }, [activeCategory]);
+
   /* Page number buttons — show up to 7 slots with ellipsis */
   const pageNumbers: (number | "…")[] = [];
   if (totalPages <= 7) {
@@ -271,45 +283,17 @@ function BlogIndex({ metas, initialPage }: { metas: BlogMeta[]; initialPage?: nu
           </p>
 
           {/* ── Search bar ── */}
-          <div style={{ maxWidth: 540, margin: "0 auto", position: "relative" }}>
-            <svg
-              width="17" height="17" viewBox="0 0 24 24" fill="none"
-              stroke={t.inkFaint} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"
-              style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}
-            >
-              <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
-            <input
-              type="search"
+          <div style={{ maxWidth: 540, margin: "0 auto" }}>
+            <SearchWithSuggestions
+              id="blog-search"
+              label="Search blog"
               value={searchQuery}
+              onChange={value => { setSearchQuery(value); resetPage(); }}
               placeholder="Search by company, topic, or keyword…"
-              onChange={e => { setSearchQuery(e.target.value); resetPage(); }}
-              style={{
-                width: "100%", boxSizing: "border-box",
-                fontFamily: fonts.sans, fontSize: 15, color: t.coal,
-                background: "#fff", border: `1.5px solid ${t.line}`,
-                borderRadius: 999, padding: "13px 18px 13px 46px",
-                outline: "none", boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
-                transition: "border-color 180ms",
-              }}
-              onFocus={e => { e.currentTarget.style.borderColor = t.indigo; }}
-              onBlur={e => { e.currentTarget.style.borderColor = t.line; }}
+              storageKey={RECENT_SEARCHES_KEY}
+              suggestedFilters={suggestedFilters}
+              style={{ width: "100%", textAlign: "left" }}
             />
-            {searchQuery && (
-              <button
-                onClick={() => { setSearchQuery(""); resetPage(); }}
-                aria-label="Clear search"
-                style={{
-                  position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)",
-                  background: "none", border: "none", cursor: "pointer", padding: 4,
-                  color: t.inkFaint, display: "flex", alignItems: "center",
-                }}
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                  <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
-              </button>
-            )}
           </div>
         </div>
       </header>

@@ -4,6 +4,9 @@ import React, { useState } from "react";
 import { tokens as t, fonts as f } from "../auth/_tokens";
 import { Card, EmployerWordmark, PrimaryCta, StageDot } from "./_atoms";
 import { Button } from "@/components/ui/button";
+import { SearchWithSuggestions } from "@/components/SearchWithSuggestions";
+
+const RECENT_SEARCHES_KEY = "hirestepx-employer-candidates-recent-searches";
 
 /* Proposed employer console navigation — sidebar destinations do not all
    exist as real routes yet (Saved Talent, Messages, Payments). This screen
@@ -55,11 +58,6 @@ const Icon = {
   Bell: () => (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
       <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.7 21a2 2 0 0 1-3.4 0" />
-    </svg>
-  ),
-  Search: () => (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
     </svg>
   ),
   Filter: () => (
@@ -464,28 +462,15 @@ export default function OpportunitiesScreen() {
             </div>
 
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <div style={{ position: "relative" }}>
-                <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: t.inkFaint }}>
-                  <Icon.Search />
-                </span>
-                <input
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search"
-                  aria-label="Search opportunities"
-                  style={{
-                    width: 220,
-                    padding: "9px 12px 9px 34px",
-                    borderRadius: 10,
-                    border: `1px solid ${t.line}`,
-                    background: t.white,
-                    fontFamily: f.sans,
-                    fontSize: 13,
-                    color: t.coal,
-                    boxSizing: "border-box",
-                  }}
-                />
-              </div>
+              <SearchWithSuggestions
+                id="employer-opportunities-search"
+                label="Search opportunities"
+                value={search}
+                onChange={setSearch}
+                placeholder="Search"
+                storageKey={RECENT_SEARCHES_KEY}
+                style={{ width: 220 }}
+              />
               <Button
                 type="button"
                 variant="outline"

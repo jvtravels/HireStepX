@@ -22,7 +22,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   PlusIcon,
-  SearchIcon,
   SearchXIcon,
   ChevronDownIcon,
   AlertCircleIcon,
@@ -30,7 +29,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import LoadingScreen from "@/_LoadingScreen";
-import { Input } from "@/components/ui/input";
+import { SearchWithSuggestions } from "@/components/SearchWithSuggestions";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -92,6 +91,7 @@ interface HiringActivity {
 
 type SortColumn = "company" | "title" | "location" | "experience" | "jobType" | "salary" | "interest" | "date";
 const DEFAULT_SORT: Sort<SortColumn> = { column: "date", direction: "desc" };
+const RECENT_SEARCHES_KEY = "hirestepx-candidate-jobs-recent-searches";
 
 const COLUMN_LABEL: Record<SortColumn, string> = {
   company: "Company",
@@ -284,6 +284,19 @@ export default function DashboardJobs() {
     [matches],
   );
 
+  const suggestedFilters = useMemo(() => {
+    const suggestions: Array<{ label: string; apply: () => void }> = [];
+    const firstLocation = locationOptions.find((o) => o !== locationFilter);
+    if (firstLocation) suggestions.push({ label: `Location: ${firstLocation}`, apply: () => setLocationFilter(firstLocation) });
+    const firstJobType = jobTypeOptions.find((o) => o !== jobTypeFilter);
+    if (firstJobType) suggestions.push({ label: `Job type: ${firstJobType}`, apply: () => setJobTypeFilter(firstJobType) });
+    const firstExperience = experienceOptions.find((o) => o !== experienceFilter);
+    if (firstExperience) suggestions.push({ label: `Experience: ${firstExperience}`, apply: () => setExperienceFilter(firstExperience) });
+    const firstIndustry = industryOptions.find((o) => o !== industryFilter);
+    if (firstIndustry) suggestions.push({ label: `Industry: ${firstIndustry}`, apply: () => setIndustryFilter(firstIndustry) });
+    return suggestions.slice(0, 4);
+  }, [locationOptions, jobTypeOptions, experienceOptions, industryOptions, locationFilter, jobTypeFilter, experienceFilter, industryFilter]);
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     const list = matches.filter((m) => {
@@ -391,22 +404,16 @@ export default function DashboardJobs() {
     ) : (
       <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
           <div style={{ padding: "16px 18px", borderBottom: `1px solid ${t.line}`, display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}>
-            <div style={{ position: "relative", flex: "1 1 240px", minWidth: 200 }}>
-              <label htmlFor="jobs-search" className="sr-only">Search jobs</label>
-              <SearchIcon
-                size={14}
-                color={t.inkFaint}
-                aria-hidden="true"
-                style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)" }}
-              />
-              <Input
-                id="jobs-search"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search by job title, company, or location"
-                style={{ paddingLeft: 32, height: 44, borderRadius: 8, background: t.white }}
-              />
-            </div>
+            <SearchWithSuggestions
+              id="jobs-search"
+              label="Search jobs"
+              value={search}
+              onChange={setSearch}
+              placeholder="Search by job title, company, or location"
+              storageKey={RECENT_SEARCHES_KEY}
+              suggestedFilters={suggestedFilters}
+              style={{ flex: "1 1 240px", minWidth: 200 }}
+            />
             <FilterPill label="Location" value={locationFilter} options={locationOptions} onChange={setLocationFilter} />
             <FilterPill label="Job type" value={jobTypeFilter} options={jobTypeOptions} onChange={setJobTypeFilter} />
             <FilterPill label="Experience" value={experienceFilter} options={experienceOptions} onChange={setExperienceFilter} />

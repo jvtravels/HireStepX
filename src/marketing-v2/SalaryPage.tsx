@@ -5,7 +5,7 @@
  * Client component so the hub can use search/filter/pagination.
  * All data still flows from server-side route files as props.
  */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import type { CSSProperties } from "react";
 import { tokens as t, fonts } from "../auth/_tokens";
@@ -23,6 +23,7 @@ import { pickVariant } from "../../data/_content-variants";
 import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription, EmptyContent } from "@/components/ui/empty";
+import { SearchWithSuggestions } from "@/components/SearchWithSuggestions";
 
 /* PRI-150: rotate a few hand-written phrasings for the templated sentences
    below so 224 salary pages built from one skeleton don't read as
@@ -1009,6 +1010,7 @@ function tierBadge(entryMax?: number): { label: string; tier: "faang" | "startup
 const MAX_CTC_SCALE = 70; // LPA — bar fills at ₹70L+
 const CARDS_PER_PAGE = 30;
 const TIER_TABS = ["All", "FAANG", "Startup", "Service"] as const;
+const RECENT_SEARCHES_KEY = "hirestepx-salary-recent-searches";
 
 /* Curated "in-demand" rail. The hub grid sorts by pay and paginates, which
    buries our lowest-competition, highest-opportunity pages (AI-frontier +
@@ -1064,6 +1066,16 @@ export function SalaryHubPage({
   const paginated = filtered.slice((safePage - 1) * CARDS_PER_PAGE, safePage * CARDS_PER_PAGE);
 
   const resetPage = () => setPage(1);
+
+  const suggestedFilters = useMemo(() => {
+    const suggestions: Array<{ label: string; apply: () => void }> = [];
+    for (const tier of TIER_TABS) {
+      if (tier === activeTier) continue;
+      suggestions.push({ label: `Tier: ${tier}`, apply: () => { setActiveTier(tier); resetPage(); } });
+      if (suggestions.length >= 4) break;
+    }
+    return suggestions;
+  }, [activeTier]);
 
   /* Featured rail — resolved from the entries we were handed, in curated
      order, silently skipping any slug without a live page. Shown only in the
@@ -1191,46 +1203,17 @@ export function SalaryHubPage({
             </p>
 
             {/* Search bar — centered */}
-            <div style={{ maxWidth: 520, margin: "0 auto", position: "relative" }}>
-              <svg
-                aria-hidden="true"
-                width="16" height="16" viewBox="0 0 24 24" fill="none"
-                stroke={t.inkFaint} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"
-                style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}
-              >
-                <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-              </svg>
-              <input
-                type="search"
+            <div style={{ maxWidth: 520, margin: "0 auto" }}>
+              <SearchWithSuggestions
+                id="salary-search"
+                label="Search company"
                 value={search}
+                onChange={value => { setSearch(value); resetPage(); }}
                 placeholder="Search company…"
-                aria-label="Search company"
-                onChange={e => { setSearch(e.target.value); resetPage(); }}
-                style={{
-                  width: "100%", boxSizing: "border-box" as const,
-                  fontFamily: fonts.sans, fontSize: 15, color: t.coal,
-                  background: "#fff", border: `1.5px solid ${t.line}`,
-                  borderRadius: 999, padding: "13px 18px 13px 44px",
-                  boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
-                  transition: "border-color 180ms, box-shadow 180ms",
-                }}
-                onFocus={e => { e.currentTarget.style.borderColor = t.indigo; e.currentTarget.style.boxShadow = `0 0 0 3px ${t.indigo}33`; }}
-                onBlur={e => { e.currentTarget.style.borderColor = t.line; e.currentTarget.style.boxShadow = "0 1px 4px rgba(0,0,0,0.06)"; }}
+                storageKey={RECENT_SEARCHES_KEY}
+                suggestedFilters={suggestedFilters}
+                style={{ width: "100%", textAlign: "left" }}
               />
-              {search && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-xs"
-                  onClick={() => { setSearch(""); resetPage(); }}
-                  aria-label="Clear search"
-                  style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)" }}
-                >
-                  <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                    <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-                  </svg>
-                </Button>
-              )}
             </div>
           </div>
         </div>

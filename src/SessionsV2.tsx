@@ -18,18 +18,8 @@ import { useDashboardSessions } from "./DashboardContext";
 import type { DashboardSession } from "./dashboardTypes";
 import { captureClientEvent } from "./posthogClient";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  ChevronDownIcon,
   PlusIcon,
-  SearchIcon,
   SearchXIcon,
   Loader2Icon,
   MicIcon,
@@ -45,6 +35,8 @@ import {
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { SortableHead, type Sort as SharedSort } from "@/components/SortableHead";
 import { TablePaginationFooter } from "@/components/TablePaginationFooter";
+import { FilterPill } from "@/components/FilterPill";
+import { SearchWithSuggestions } from "@/components/SearchWithSuggestions";
 
 const font = { ui: F.sans, mono: F.mono };
 
@@ -212,45 +204,6 @@ function PageHeader({ onStartSession }: { onStartSession: () => void }) {
   );
 }
 
-function FilterPill<V extends string>({
-  label,
-  value,
-  options,
-  onChange,
-}: {
-  label: string;
-  value: V;
-  options: { value: V; label: string }[];
-  onChange: (value: V) => void;
-}) {
-  const current = options.find((o) => o.value === value);
-  const display = `${label}: ${current?.label ?? value}`;
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="outline"
-          style={{ borderRadius: 8, height: 36, gap: 8, background: T.white, color: value === "All" ? T.inkFaint : T.coal, fontFamily: font.ui, fontSize: 13, fontWeight: 500, flexShrink: 0, transition: `background ${dur.instant} ${ease.snap}` }}
-          onMouseEnter={(e) => { e.currentTarget.style.background = T.rowTint; }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = T.white; }}
-        >
-          {display}
-          <ChevronDownIcon size={12} aria-hidden="true" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent>
-        <DropdownMenuRadioGroup value={value} onValueChange={(v) => onChange(v as V)}>
-          {options.map((opt) => (
-            <DropdownMenuRadioItem key={opt.value} value={opt.value}>
-              {opt.label}
-            </DropdownMenuRadioItem>
-          ))}
-        </DropdownMenuRadioGroup>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}
-
 /* Merges the page title + the search/filter toolbar + the primary
    CTA into one row (previously two separate bordered rows) — saves the
    height of a whole row on the Sessions screen without moving the CTA
@@ -281,27 +234,33 @@ function WorkspaceHeader({
   dateFilter: string;
   onDateFilterChange: (value: string) => void;
 }) {
-  const dateOptions = ["All", ...GROUP_ORDER];
+  const dateOptions = useMemo(() => ["All", ...GROUP_ORDER], []);
+
+  const suggestedFilters = useMemo(() => {
+    const suggestions: Array<{ label: string; apply: () => void }> = [];
+    const firstType = typeOptions.find((o) => o !== "All" && o !== typeFilter);
+    if (firstType) suggestions.push({ label: `Type: ${firstType}`, apply: () => onTypeFilterChange(firstType) });
+    const firstScore = SCORE_OPTIONS.find((o) => o.value !== "All" && o.value !== scoreFilter);
+    if (firstScore) suggestions.push({ label: `Score: ${firstScore.label}`, apply: () => onScoreFilterChange(firstScore.value) });
+    const firstDate = dateOptions.find((o) => o !== "All" && o !== dateFilter);
+    if (firstDate) suggestions.push({ label: `Date: ${firstDate}`, apply: () => onDateFilterChange(firstDate) });
+    return suggestions.slice(0, 4);
+  }, [typeOptions, typeFilter, onTypeFilterChange, scoreFilter, onScoreFilterChange, dateOptions, dateFilter, onDateFilterChange]);
+
   return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 20px", borderBottom: `1px solid ${T.line}`, flexWrap: "wrap", gap: 12 }}>
       <h1 style={{ fontFamily: font.ui, fontSize: 26, lineHeight: "32px", fontWeight: 700, color: T.coal, margin: 0, letterSpacing: "-0.01em", flexShrink: 0 }}>Sessions</h1>
       <div style={{ display: "flex", alignItems: "center", flexWrap: "nowrap", gap: 8, justifyContent: "flex-end", overflowX: "auto" }}>
-        <div style={{ position: "relative", flex: "1 1 160px", minWidth: 140, maxWidth: 280 }}>
-          <label htmlFor="sessions-search" className="sr-only">Search sessions</label>
-          <SearchIcon
-            size={14}
-            color={T.inkFaint}
-            aria-hidden="true"
-            style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)" }}
-          />
-          <Input
-            id="sessions-search"
-            placeholder="Search sessions..."
-            value={search}
-            onChange={(e) => onSearchChange(e.target.value)}
-            style={{ paddingLeft: 34, height: 36, borderRadius: 8, background: T.white }}
-          />
-        </div>
+        <SearchWithSuggestions
+          id="sessions-search"
+          label="Search sessions"
+          value={search}
+          onChange={onSearchChange}
+          placeholder="Search sessions..."
+          storageKey="hirestepx-sessions-recent-searches"
+          suggestedFilters={suggestedFilters}
+          style={{ flex: "1 1 160px", minWidth: 140, maxWidth: 280 }}
+        />
         <FilterPill
           label="Type"
           value={typeFilter}

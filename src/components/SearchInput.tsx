@@ -15,6 +15,10 @@ export function SearchInput({
   onChange,
   placeholder,
   style,
+  inputStyle,
+  onFocus,
+  onBlur,
+  onKeyDown,
 }: {
   id: string;
   label: string;
@@ -22,6 +26,10 @@ export function SearchInput({
   onChange: (value: string) => void;
   placeholder: string;
   style?: React.CSSProperties;
+  inputStyle?: React.CSSProperties;
+  onFocus?: React.FocusEventHandler<HTMLInputElement>;
+  onBlur?: React.FocusEventHandler<HTMLInputElement>;
+  onKeyDown?: React.KeyboardEventHandler<HTMLInputElement>;
 }) {
   return (
     <div style={{ position: "relative", ...style }}>
@@ -37,7 +45,10 @@ export function SearchInput({
         placeholder={placeholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        style={{ paddingLeft: 34, height: 36, width: "100%" }}
+        onFocus={onFocus}
+        onBlur={onBlur}
+        onKeyDown={onKeyDown}
+        style={{ paddingLeft: 34, height: 36, width: "100%", ...inputStyle }}
       />
     </div>
   );
