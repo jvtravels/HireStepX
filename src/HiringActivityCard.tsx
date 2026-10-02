@@ -9,6 +9,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "./AuthContext";
 import { authHeaders } from "./supabase";
 import { tokens as t, fonts as f, textSize } from "./auth/_tokens";
 import { daysAgo, formatComp, formatExperience, WORK_MODE_LABEL, type SalaryType } from "./hiringMatchFormat";
@@ -42,22 +43,37 @@ interface HiringActivity {
 
 export default function HiringActivityCard() {
   const router = useRouter();
-  const [data, setData] = useState<HiringActivity | null>(null);
+  const { user: authUser } = useAuth();
+  // Cache-first like DashboardContext's sessions/events: a tab switch back
+  // to the dashboard shows the last-known teaser instantly instead of the
+  // whole card vanishing (data === null) and reappearing on every remount.
+  const [data, setData] = useState<HiringActivity | null>(() => {
+    if (!authUser?.id) return null;
+    try {
+      const cached = localStorage.getItem(`hirestepx_cache_hiring_activity_teaser_${authUser.id}`);
+      return cached ? JSON.parse(cached) : null;
+    } catch { return null; }
+  });
 
   useEffect(() => {
+    if (!authUser?.id) return;
     let cancelled = false;
+    const cacheKey = `hirestepx_cache_hiring_activity_teaser_${authUser.id}`;
     (async () => {
       try {
         const headers = await authHeaders();
         const res = await fetch("/api/candidate-hiring-activity", { headers });
         const json = await res.json().catch(() => null);
-        if (!cancelled && res.ok && json) setData(json as HiringActivity);
+        if (!cancelled && res.ok && json) {
+          setData(json as HiringActivity);
+          try { localStorage.setItem(cacheKey, JSON.stringify(json)); } catch { /* expected: localStorage may be unavailable */ }
+        }
       } catch {
         // stay quiet on transient failure — this is a nice-to-have, not core flow
       }
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [authUser?.id]);
 
   if (!data) return null;
 

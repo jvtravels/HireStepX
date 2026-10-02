@@ -7,9 +7,14 @@ vi.mock("../supabase", () => ({
   authHeaders: vi.fn(() => Promise.resolve({ "Content-Type": "application/json" })),
 }));
 
+vi.mock("../AuthContext", () => ({
+  useAuth: () => ({ user: { id: "u1" } }),
+}));
+
 describe("HiringActivityCard", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    localStorage.clear();
   });
 
   it("renders nothing before the fetch resolves", () => {

@@ -39,6 +39,7 @@ import {
 } from "@/components/ui/table";
 import { SortableHead, type Sort } from "@/components/SortableHead";
 import { TablePaginationFooter } from "@/components/TablePaginationFooter";
+import { useAuth } from "./AuthContext";
 import { authHeaders } from "./supabase";
 import { tokens as t, fonts as f, textSize } from "./auth/_tokens";
 import { dur, ease } from "./_motion";
@@ -171,8 +172,18 @@ function Badge({ tone, title, children }: { tone: BadgeTone; title?: string; chi
 
 export default function DashboardJobs() {
   const router = useRouter();
-  const [data, setData] = useState<HiringActivity | null>(null);
-  const [loaded, setLoaded] = useState(false);
+  const { user: authUser } = useAuth();
+  // Cache-first like DashboardContext's sessions/events: a tab switch back
+  // into Jobs shows the last-known list instantly instead of a spinner,
+  // then refreshes from the network in the background.
+  const [data, setData] = useState<HiringActivity | null>(() => {
+    if (!authUser?.id) return null;
+    try {
+      const cached = localStorage.getItem(`hirestepx_cache_hiring_activity_full_${authUser.id}`);
+      return cached ? JSON.parse(cached) : null;
+    } catch { return null; }
+  });
+  const [loaded, setLoaded] = useState(data !== null);
   const [fetchError, setFetchError] = useState(false);
   const [fetchStatus, setFetchStatus] = useState<number | null>(null);
   const [selected, setSelected] = useState<JobMatch | null>(null);
@@ -187,6 +198,8 @@ export default function DashboardJobs() {
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
   const loadMatches = useCallback(async (signal: { cancelled: boolean }) => {
+    if (!authUser?.id) return;
+    const cacheKey = `hirestepx_cache_hiring_activity_full_${authUser.id}`;
     try {
       const headers = await authHeaders();
       const res = await fetch("/api/candidate-hiring-activity?full=1", { headers });
@@ -194,6 +207,7 @@ export default function DashboardJobs() {
       if (signal.cancelled) return;
       if (res.ok && json) {
         setData(json as HiringActivity);
+        try { localStorage.setItem(cacheKey, JSON.stringify(json)); } catch { /* expected: localStorage may be unavailable */ }
         setFetchError(false);
         setFetchStatus(null);
       } else {
@@ -208,7 +222,7 @@ export default function DashboardJobs() {
         setLoaded(true);
       }
     }
-  }, []);
+  }, [authUser?.id]);
 
   useEffect(() => {
     const signal = { cancelled: false };

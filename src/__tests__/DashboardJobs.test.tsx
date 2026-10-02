@@ -7,9 +7,14 @@ vi.mock("../supabase", () => ({
   authHeaders: vi.fn(() => Promise.resolve({ "Content-Type": "application/json" })),
 }));
 
+vi.mock("../AuthContext", () => ({
+  useAuth: () => ({ user: { id: "u1" } }),
+}));
+
 describe("DashboardJobs", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    localStorage.clear();
   });
 
   it("fetches the uncapped ?full=1 list", async () => {
