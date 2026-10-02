@@ -361,7 +361,6 @@ export interface DangerZoneSectionProps {
   authHeaders: () => Promise<Record<string, string>>;
 }
 
-const subHeaderTitle: React.CSSProperties = { fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: c.ink };
 const subHeaderHint: React.CSSProperties = { fontFamily: font.ui, fontSize: 12, color: c.inkSoft, marginTop: 4, lineHeight: 1.5 };
 const keyValueLabel: React.CSSProperties = { fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ink };
 const keyValueValue: React.CSSProperties = { fontFamily: font.ui, fontSize: 12, color: c.inkSoft, lineHeight: 1.5, marginTop: 2 };
@@ -622,8 +621,7 @@ export const PlanUsageSection = memo(function PlanUsageSection(props: PlanUsageS
           lives in one section rather than a separate "Billing" block. */}
       <div>
         <div style={{ marginBottom: 12 }}>
-          <div style={subHeaderTitle}>Payment history</div>
-          <div style={subHeaderHint}>Every successful Razorpay charge on your account.</div>
+          <div style={{ fontFamily: font.ui, fontSize: 16, fontWeight: 600, color: c.ink }}>Payment history</div>
         </div>
         {paymentsLoading ? (
           <div style={{ fontFamily: font.ui, fontSize: 13, color: c.inkSoft, padding: "16px 0" }}>Loading payment history…</div>
