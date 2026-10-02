@@ -440,10 +440,6 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
             <SettingsIcon size={14} aria-hidden="true" />
             Settings
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => nav.push("/settings?tab=plan")}>
-            <CreditCardIcon size={14} aria-hidden="true" />
-            Billing
-          </DropdownMenuItem>
           <DropdownMenuItem onClick={() => nav.push("/settings?tab=referral")}>
             <UserPlusIcon size={14} aria-hidden="true" />
             Referral
