@@ -1,8 +1,8 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
-import { useAuth, getStoredDeviceToken } from "./AuthContext";
+import { useAuth } from "./AuthContext";
 import { useDocTitle } from "./useDocTitle";
-import { authHeaders, getPaymentHistory, getSupabase, type PaymentRecord } from "./supabase";
+import { authHeaders, getPaymentHistory, type PaymentRecord } from "./supabase";
 import { useDashboardCore, useDashboardUI } from "./DashboardContext";
 import { DataLoadingSkeleton } from "./dashboardComponents";
 import {
@@ -13,7 +13,6 @@ import {
   PlanUsageSection,
   BillingTransactionsSection,
   DangerZoneSection,
-  ReferralSection,
 } from "./settingsSections";
 
 /* Cream-mode tokens — derive from the single source of truth so a WCAG
@@ -51,39 +50,6 @@ export default function SettingsPage() {
   // Password
   const [resetSent, setResetSent] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
-
-  // Sessions — sign out other devices
-  const [signOutOthersLoading, setSignOutOthersLoading] = useState(false);
-  const [signOutOthersDone, setSignOutOthersDone] = useState(false);
-  const [signOutOthersError, setSignOutOthersError] = useState<string | null>(
-    null,
-  );
-  // Recent devices read from user_metadata. The first entry matches
-  // the current active_device_token (this is the device we're on now).
-  const [recentDevices, setRecentDevices] = useState<
-    Array<{ id: string; ua?: string; at?: number; isCurrent: boolean }>
-  >([]);
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const client = await getSupabase();
-        const { data, error } = await client.auth.getUser();
-        if (cancelled || error || !data?.user) return;
-        const meta = data.user.user_metadata as
-          | { recent_devices?: Array<{ id: string; ua?: string; at?: number }>; active_device_token?: string }
-          | undefined;
-        const list = meta?.recent_devices || [];
-        const current = meta?.active_device_token;
-        setRecentDevices(
-          list.map((d) => ({ ...d, isCurrent: d.id === current })),
-        );
-      } catch {
-        /* non-fatal — devices list just stays empty */
-      }
-    })();
-    return () => { cancelled = true; };
-  }, []);
 
   // Export
   const [exporting, setExporting] = useState(false);
@@ -131,57 +97,10 @@ export default function SettingsPage() {
     else showToast(result.error || "Failed to send reset email");
   };
 
-  const handleSignOutOtherDevices = async () => {
-    if (signOutOthersLoading || signOutOthersDone) return;
-    setSignOutOthersLoading(true);
-    setSignOutOthersError(null);
-    try {
-      // Route through the server so user_metadata.active_device_token
-      // is rotated in the same transaction as the session revocation.
-      // The client-only path (supabase.auth.signOut({ scope: "others" }))
-      // revoked tokens but left this device's metadata snapshot stale,
-      // which let a refreshed Settings page show kicked-off devices as
-      // still active until the next sign-in rotated metadata.
-      const headers = await authHeaders();
-      const deviceToken = getStoredDeviceToken();
-      if (!deviceToken) {
-        setSignOutOthersError("Missing device token");
-        showToast("Couldn't sign out other devices. Try again.");
-        return;
-      }
-      const res = await fetch("/api/signout-other-devices", {
-        method: "POST",
-        headers: { ...headers, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          deviceToken,
-          userAgent: typeof navigator !== "undefined" ? navigator.userAgent.slice(0, 200) : "",
-        }),
-      });
-      if (!res.ok) {
-        const data = (await res.json().catch(() => ({}))) as { error?: string };
-        setSignOutOthersError(data.error || `HTTP ${res.status}`);
-        showToast("Couldn't sign out other devices. Try again.");
-        return;
-      }
-      // Reflect the trimmed device list locally — the server pinned
-      // recent_devices to just this device.
-      setRecentDevices((prev) => prev.filter((d) => d.isCurrent));
-      setSignOutOthersDone(true);
-      showToast("All other devices signed out");
-      setTimeout(() => setSignOutOthersDone(false), 5000);
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "Unknown error";
-      setSignOutOthersError(msg);
-      showToast("Couldn't sign out other devices. Try again.");
-    } finally {
-      setSignOutOthersLoading(false);
-    }
-  };
-
   const tierLabel = (authUser?.subscriptionTier || "free").charAt(0).toUpperCase() + (authUser?.subscriptionTier || "free").slice(1);
 
   return (
-    <div style={{ width: "100%", maxWidth: 880, margin: "0 auto" }}>
+    <div style={{ width: "100%" }}>
       <div style={{ background: c.graphite, border: `1px solid ${c.border}`, borderRadius: 16, overflow: "hidden" }}>
         <PageHeader title="Settings" desc="Manage your subscription, payments, and account security." />
 
@@ -218,19 +137,9 @@ export default function SettingsPage() {
             resetLoading={resetLoading} resetSent={resetSent}
             handlePasswordReset={handlePasswordReset}
             isOAuthOnly={authUser?.signedInVia === "google"}
-            signOutOthersLoading={signOutOthersLoading}
-            signOutOthersDone={signOutOthersDone}
-            signOutOthersError={signOutOthersError}
-            handleSignOutOtherDevices={handleSignOutOtherDevices}
-            recentDevices={recentDevices}
             focusOut={focusOut}
             authUpdateUser={authUpdateUser}
-            onLogout={onLogout}
           />
-        </FlatSection>
-
-        <FlatSection title="Referrals">
-          <ReferralSection showToast={showToast} />
         </FlatSection>
 
         <FlatSection title="Danger Zone" last>

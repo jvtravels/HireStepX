@@ -73,38 +73,6 @@ export const focusIn = (e: React.FocusEvent<HTMLInputElement>) => {
   e.currentTarget.style.boxShadow = `0 0 0 3px ${c.indigo100}`;
 };
 
-/** Render a Unix-ms timestamp as a relative phrase ("3h ago"). */
-function formatRelative(ts: number): string {
-  const diff = Date.now() - ts;
-  if (diff < 60_000) return "Just now";
-  if (diff < 3_600_000) return `${Math.floor(diff / 60_000)}m ago`;
-  if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)}h ago`;
-  if (diff < 7 * 86_400_000) return `${Math.floor(diff / 86_400_000)}d ago`;
-  return new Date(ts).toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-  });
-}
-
-/** Best-effort UA → "Browser on OS" label. Matches major browsers + OS
-    so the audit list reads as something the user recognizes. */
-function parseUserAgent(ua: string): string {
-  if (!ua) return "Unknown device";
-  let browser = "Browser";
-  if (/Edg\//i.test(ua)) browser = "Edge";
-  else if (/OPR\//i.test(ua)) browser = "Opera";
-  else if (/Chrome\//i.test(ua)) browser = "Chrome";
-  else if (/Firefox\//i.test(ua)) browser = "Firefox";
-  else if (/Safari\//i.test(ua) && !/Chrome\//i.test(ua)) browser = "Safari";
-  let os = "Unknown";
-  if (/Windows NT/i.test(ua)) os = "Windows";
-  else if (/Mac OS X/i.test(ua)) os = "Mac";
-  else if (/Android/i.test(ua)) os = "Android";
-  else if (/iPhone|iPad|iPod/i.test(ua)) os = "iOS";
-  else if (/Linux/i.test(ua)) os = "Linux";
-  return `${browser} on ${os}`;
-}
-
 export function Divider() {
   return (
     <div style={{ height: 1, background: `linear-gradient(90deg, transparent, ${c.border}, transparent)`, margin: "28px 0" }} />
@@ -141,24 +109,10 @@ export interface AccountSectionProps {
    *  reset, so the section hides. Resetting via email link only
    *  changes a password they don't use, which confused users. */
   isOAuthOnly: boolean;
-  // Sessions — sign out every device except the current one
-  signOutOthersLoading: boolean;
-  signOutOthersDone: boolean;
-  signOutOthersError: string | null;
-  handleSignOutOtherDevices: () => void;
-  // Recent devices history (last 5 logins). Read-only audit list.
-  recentDevices: Array<{
-    id: string;
-    ua?: string;
-    at?: number;
-    isCurrent: boolean;
-  }>;
   // Blur handler (auto-save)
   focusOut: (e: React.FocusEvent<HTMLInputElement>) => void;
   // Auto-save the experience select on change (no blur event)
   authUpdateUser: (updates: { experienceLevel?: string }) => void | Promise<void>;
-  // Log out this device (Figma folds this into the Account section)
-  onLogout: () => void;
 }
 
 const EXPERIENCE_OPTIONS: Array<{ value: string; label: string }> = [
@@ -362,12 +316,8 @@ export const AccountSection = memo(function AccountSection(props: AccountSection
     editExperience, setEditExperience,
     userName, email,
     resetLoading, resetSent, handlePasswordReset, isOAuthOnly,
-    signOutOthersLoading, signOutOthersDone, signOutOthersError,
-    handleSignOutOtherDevices,
-    recentDevices,
     focusOut,
     authUpdateUser,
-    onLogout,
   } = props;
 
   const initial = (userName || email || "?").trim().charAt(0).toUpperCase();
@@ -455,6 +405,7 @@ export const AccountSection = memo(function AccountSection(props: AccountSection
       <div style={{ border: `1px solid ${c.border}`, borderRadius: 12, padding: "0 20px" }}>
         {!isOAuthOnly ? (
           <ActionRow
+            last
             icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>}
             title="Change Password"
             desc="Send a reset link to your email when you need to change it."
@@ -474,44 +425,13 @@ export const AccountSection = memo(function AccountSection(props: AccountSection
           />
         ) : (
           <ActionRow
+            last
             icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>}
             title="Password"
             desc="You signed in with Google — manage your password in your Google Account."
             action={<TinyChip>Google</TinyChip>}
           />
         )}
-
-        <ActionRow
-          icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg>}
-            title="Active Devices"
-            desc={
-              recentDevices.length === 0
-                ? "No recent sign-ins recorded yet."
-                : recentDevices.slice(0, 2).map((d) => `${parseUserAgent(d.ua || "")}${d.isCurrent ? " (this device)" : d.at ? `, ${formatRelative(d.at)}` : ""}`).join(" · ")
-            }
-            action={
-              <Button type="button" variant="ghost" size="sm" onClick={handleSignOutOtherDevices} disabled={signOutOthersLoading || signOutOthersDone}
-                style={{
-                  ...flatRowBtn,
-                  background: "transparent", border: "none",
-                  color: signOutOthersError ? c.ember : signOutOthersDone ? c.sage : c.indigo,
-                  cursor: (signOutOthersLoading || signOutOthersDone) ? "default" : "pointer",
-                  opacity: signOutOthersLoading ? 0.6 : 1,
-                }}
-              >
-                {signOutOthersLoading ? "Signing out..." : signOutOthersDone ? "Signed out" : (signOutOthersError || "Sign out everywhere else")}
-              </Button>
-            }
-          />
-
-        <ActionRow
-          last
-          tone="danger"
-          icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>}
-          title="Logout"
-          desc="Sign out on this device. Other devices stay signed in."
-          action={<Button type="button" variant="outline" size="sm" onClick={onLogout} style={flatRowBtn}>Logout</Button>}
-        />
       </div>
     </div>
   );
@@ -883,9 +803,7 @@ export const PlanUsageSection = memo(function PlanUsageSection(props: PlanUsageS
    ═══════════════════════════════════════════════════════════════ */
 
 export const BillingTransactionsSection = memo(function BillingTransactionsSection(props: BillingTransactionsSectionProps) {
-  const { authUser, payments, paymentsLoading, exporting, setExporting, onExportCSV } = props;
-  const isPaid = (authUser?.subscriptionTier || "free") !== "free";
-  const hasRecurringSubscription = !!authUser?.hasRecurringSubscription;
+  const { payments, paymentsLoading, exporting, setExporting, onExportCSV } = props;
 
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [page, setPage] = useState(1);
@@ -895,27 +813,6 @@ export const BillingTransactionsSection = memo(function BillingTransactionsSecti
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-      {/* Payment method — paid plans only; copy differs for one-time vs recurring */}
-      {isPaid && (
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
-          <div style={{ minWidth: 0 }}>
-            <div style={keyValueLabel}>Payment method</div>
-            <div style={keyValueValue}>
-              {hasRecurringSubscription
-                ? "Razorpay handles every renewal. Update card or UPI from their dashboard."
-                : "We don't store your card — each purchase is a one-time Razorpay checkout."}
-            </div>
-          </div>
-          {hasRecurringSubscription && (
-            <a href="https://razorpay.com/support/#request/merchant" target="_blank" rel="noopener noreferrer"
-              style={{ ...accSubtleBtn, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6 }}>
-              Manage on Razorpay
-              <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-            </a>
-          )}
-        </div>
-      )}
-
       {/* Export */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
         <div style={{ minWidth: 0, flex: 1 }}>
