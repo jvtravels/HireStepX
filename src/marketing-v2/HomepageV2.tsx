@@ -2463,11 +2463,6 @@ export function PricingV2() {
       href: "/signup?plan=weekly",
       featured: true,
     },
-    // Monthly plan temporarily hidden — re-enable by removing hidden:true
-    // { name: "Monthly", price: "₹149", unit: "/ 30 days", sub: "Most loved during placement season",
-    //   features: ["40 sessions · 30 days", "Everything in Weekly", "Interview calendar + countdown",
-    //     "Performance analytics & trends", "Export PDF, CSV, JSON", "Priority coach feedback"],
-    //   cta: "Go monthly", href: "/signup?plan=monthly", featured: true },
   ];
   return (
     <section ref={sectionRef} className="mv2-section" aria-labelledby="hd-pricing" style={{ ...sectionBase, background: t.creamSoft, borderTop: `1px solid ${t.line}` }}>
@@ -2969,8 +2964,8 @@ function StructuredData() {
       "@type": "AggregateOffer",
       priceCurrency: "INR",
       lowPrice: "0",
-      highPrice: "149",
-      offerCount: "4",
+      highPrice: "39",
+      offerCount: "3",
     },
   };
   const faqPage = {

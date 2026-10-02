@@ -109,11 +109,10 @@ export function DataLoadingSkeleton() {
 
 /* ─── Upgrade Modal ─── */
 const PLANS_ALL = [
-  { id: "free",    tier: "free",    name: "Free",        price: "\u20B90",   unit: "forever",   sub: "Try before you pay a rupee",         cta: "Start free",       features: [`${FREE_SESSION_LIMIT} mock sessions`, "Behavioural rounds + basic STAR score", "Email report", "Saved report for 7 days", "No credit card required"],                                                                                               featured: false, hidden: false },
-  { id: "single",  tier: "free",    name: "Per session", price: "\u20B99",   unit: "/ session", sub: "One mock, zero commitment",           cta: "Buy one session",  features: ["1 mock session", "Voice in & out, all round types", "Full STAR score + report", "Credit never expires"],                                                                                                                                       featured: false, hidden: false },
-  { id: "weekly",  tier: "starter", name: "Sprint Pack", price: "\u20B939",  compareAt: "\u20B945", unit: "/ 5 sessions", sub: "Prep for your next interview",     cta: "Get Sprint Pack",  features: [`${STARTER_WEEKLY_LIMIT} sessions \u00B7 30-day validity`, "Voice in & out, all round types", "Company-specific rounds", "Skill-decay tracking", "90-day report history"],                                                                                                featured: true,  hidden: false },
+  { id: "free",    tier: "free",    name: "Free",        price: "\u20B90",   unit: "forever",   sub: "Try before you pay a rupee",         cta: "Start free",       features: [`${FREE_SESSION_LIMIT} mock sessions`, "Behavioural rounds + basic STAR score", "Email report", "Saved report for 7 days", "No credit card required"],                                                                                               featured: false },
+  { id: "single",  tier: "free",    name: "Per session", price: "\u20B99",   unit: "/ session", sub: "One mock, zero commitment",           cta: "Buy one session",  features: ["1 mock session", "Voice in & out, all round types", "Full STAR score + report", "Credit never expires"],                                                                                                                                       featured: false },
+  { id: "weekly",  tier: "starter", name: "Sprint Pack", price: "\u20B939",  compareAt: "\u20B945", unit: "/ 5 sessions", sub: "Prep for your next interview",     cta: "Get Sprint Pack",  features: [`${STARTER_WEEKLY_LIMIT} sessions \u00B7 30-day validity`, "Voice in & out, all round types", "Company-specific rounds", "Skill-decay tracking", "90-day report history"],                                                                                                featured: true },
 ];
-const PLANS_MONTHLY = PLANS_ALL.filter(p => !p.hidden);
 
 // Rank used to determine if a plan card is "below" the user's current subscription.
 // Cards at a lower rank show a non-interactive indicator instead of a checkout button
@@ -136,7 +135,7 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
     ui: "'Geist Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
     mono: "'Geist Mono', 'SF Mono', monospace",
   };
-  const PLANS = PLANS_MONTHLY;
+  const PLANS = PLANS_ALL;
   // Exclude the "single" plan from the regular card loop — the null slot below
   // renders it as the interactive slider card. Keeping it in would produce a
   // duplicate "Per session" card alongside the slider.
@@ -227,8 +226,8 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
             // GA4 ecommerce — revenue visibility independent of PostHog
             {
               const planId = pendingVerification?.plan ?? "";
-              const planValue = planId === "monthly" ? 149 : 39;
-              sendGtagEvent("purchase", { currency: "INR", transaction_id: pendingVerification?.razorpay_payment_id ?? "", value: planValue, items: [{ item_id: planId, item_name: planId === "monthly" ? "Monthly Plan" : "Sprint Pack", price: planValue, quantity: 1 }] });
+              const planValue = 39;
+              sendGtagEvent("purchase", { currency: "INR", transaction_id: pendingVerification?.razorpay_payment_id ?? "", value: planValue, items: [{ item_id: planId, item_name: "Sprint Pack", price: planValue, quantity: 1 }] });
             }
             onPaymentSuccess(verifyData.subscriptionTier, verifyData.subscriptionStart, verifyData.subscriptionEnd);
           } else {

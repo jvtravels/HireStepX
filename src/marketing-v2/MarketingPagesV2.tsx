@@ -396,7 +396,7 @@ export function PricingPageV2() {
     captureClientEvent("pricing_page_viewed", { surface: "marketing_v2" });
   }, []);
 
-  const tiersMonthly = [
+  const tiers = [
     {
       name: "Free",
       price: "₹0",
@@ -411,7 +411,6 @@ export function PricingPageV2() {
       cta: "Start free",
       href: "/signup?plan=free",
       featured: false,
-      hidden: false,
     },
     {
       name: "Per session",
@@ -427,7 +426,6 @@ export function PricingPageV2() {
       cta: "Buy one session",
       href: "/signup?plan=single",
       featured: false,
-      hidden: false,
     },
     {
       name: "Sprint Pack",
@@ -444,32 +442,9 @@ export function PricingPageV2() {
       cta: "Get Sprint Pack",
       href: "/signup?plan=weekly",
       featured: true,
-      hidden: false,
-    },
-    {
-      /* Monthly plan — hidden until re-enabled. Keep all data intact. */
-      name: "Monthly",
-      price: "₹149",
-      unit: "/ 30 days",
-      sub: "Most loved during placement season",
-      features: [
-        "40 sessions · 30 days",
-        "Everything in Weekly",
-        "Interview calendar + countdown",
-        "Session history & score trends",
-        "Export PDF, CSV, JSON",
-        "AI coach notes on every session",
-      ],
-      cta: "Go monthly",
-      href: "/signup?plan=monthly",
-      featured: false,
-      hidden: true, // temporarily hidden — re-enable when monthly plan returns
     },
   ];
 
-  const tiers = tiersMonthly.filter(t => !t.hidden);
-
-  // Monthly column hidden — 3 visible tiers: Free, Per session, Sprint Pack
   const compareRows: Array<[string, string, string, string]> = [
     ["Mock sessions included", "2 (one-time)", "1 (one-time)", "5 / pack (30 days)"],
     ["Voice in & out", "Yes", "Yes", "Yes"],
