@@ -40,7 +40,7 @@ export const PaceMeter = memo(function PaceMeter({ seconds, ideal = { min: 60, m
   return (
     <div role="meter" aria-label="Answer length pace" aria-valuemin={0} aria-valuemax={ceiling} aria-valuenow={Math.round(seconds)} className="iv-pace-meter" style={{ display: "flex", flexDirection: "column", gap: 6, width: "100%", maxWidth: 280 }}>
       <div style={{ position: "relative", height: 4, background: "rgba(20,17,10,0.04)", borderRadius: 999, overflow: "hidden" }}>
-        <span aria-hidden style={{ position: "absolute", left: `${idealStartPct}%`, width: `${idealEndPct - idealStartPct}%`, top: 0, bottom: 0, background: "rgba(21,128,61,0.22)" }} />
+        <span aria-hidden style={{ position: "absolute", left: `${idealStartPct}%`, width: `${idealEndPct - idealStartPct}%`, top: 0, bottom: 0, background: e.success100 }} />
         <span aria-hidden style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${pct}%`, background: tint, opacity: 0.9, transition: "width 240ms ease, background 240ms ease" }} />
       </div>
       <div style={{ display: "flex", justifyContent: "space-between", fontFamily: ef.mono, fontSize: 9, textTransform: "uppercase", letterSpacing: 1.2, color: e.inkSoft }}>

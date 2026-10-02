@@ -190,7 +190,7 @@ Glassdoor for "${role}" at companies similar to ${company} this quarter. A defen
         style={{
           display: "flex", alignItems: "center", gap: 8,
           padding: "8px 14px", marginBottom: 10,
-          background: "#FEF3C7", border: `1px solid ${t.warning}`,
+          background: t.warning100, border: `1px solid ${t.warning}`,
           borderRadius: radius.lg, fontSize: 12, color: t.coal,
         }}
       >

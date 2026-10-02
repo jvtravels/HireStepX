@@ -107,7 +107,7 @@ export default function SharedReportView({ token }: { token: string }) {
         )}
 
         {error && (
-          <div role="alert" style={{ background: c.graphite, border: `1px solid rgba(185,28,28,0.25)`, borderRadius: 14, padding: "32px", textAlign: "center" }}>
+          <div role="alert" style={{ background: c.graphite, border: `1px solid ${T.errorLine}`, borderRadius: 14, padding: "32px", textAlign: "center" }}>
             <p style={{ fontFamily: font.ui, fontSize: 22, color: c.ivory, margin: "0 0 8px", fontWeight: 600, letterSpacing: "-0.01em" }}>This link isn&apos;t available</p>
             <p style={{ fontFamily: font.ui, fontSize: 14, color: c.stone, margin: 0 }}>{error}</p>
             <p style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, marginTop: 16 }}>

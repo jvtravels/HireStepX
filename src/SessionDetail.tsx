@@ -17,6 +17,7 @@ import { loadLocalSession, type LocalSession } from "./sessionDetailHelpers";
 import type { DashboardSession } from "./dashboardTypes";
 import { Button } from "@/components/ui/button";
 import LoadingScreen from "./_LoadingScreen";
+import { tokens as T, fonts as F } from "./auth/_tokens";
 
 // Lazy-load the report so the dashboard route stays slim.
 const SessionReport = dynamic(
@@ -30,10 +31,10 @@ function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div
       style={{
-        background: "#FAF7F0",
+        background: T.cream,
         minHeight: "100vh",
-        fontFamily: "'Geist Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-        color: "#0E0C08",
+        fontFamily: F.sans,
+        color: T.coal,
         padding: "20px 32px",
       }}
     >
@@ -46,20 +47,20 @@ export function LoadErrorScreen({ message, onRetry, onBack }: { message: string;
   return (
     <Shell>
       <div style={{ maxWidth: 560, margin: "120px auto 0", textAlign: "center" }}>
-        <h1 style={{ fontFamily: "'Geist Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", fontSize: 28, color: "#0E0C08", margin: "0 0 12px", fontWeight: 600 }}>
+        <h1 style={{ fontFamily: F.sans, fontSize: 28, color: T.coal, margin: "0 0 12px", fontWeight: 600 }}>
           Couldn&apos;t load this session
         </h1>
-        <p style={{ fontSize: 14, color: "#6E6759", margin: "0 0 8px", lineHeight: 1.55 }}>
+        <p style={{ fontSize: 14, color: T.inkSoft, margin: "0 0 8px", lineHeight: 1.55 }}>
           Something went wrong fetching your report. This is usually temporary.
         </p>
-        <p style={{ fontSize: 12, color: "#988E7E", margin: "0 0 24px", fontFamily: "ui-monospace, SFMono-Regular, monospace" }}>
+        <p style={{ fontSize: 12, color: T.inkFaint, margin: "0 0 24px", fontFamily: F.mono }}>
           {message}
         </p>
         <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
           <Button
             type="button"
             onClick={onRetry}
-            style={{ background: "#312E81", color: "#FAF7F0", fontWeight: 600 }}
+            style={{ background: T.indigo, color: T.cream, fontWeight: 600 }}
           >
             Try again
           </Button>
@@ -67,7 +68,7 @@ export function LoadErrorScreen({ message, onRetry, onBack }: { message: string;
             type="button"
             variant="outline"
             onClick={onBack}
-            style={{ color: "#312E81", borderColor: "#312E81", fontWeight: 600 }}
+            style={{ color: T.indigo, borderColor: T.indigo, fontWeight: 600 }}
           >
             Back to Sessions
           </Button>
@@ -81,16 +82,16 @@ export function NotFoundScreen({ onBack }: { onBack: () => void }) {
   return (
     <Shell>
       <div style={{ maxWidth: 560, margin: "120px auto 0", textAlign: "center" }}>
-        <h1 style={{ fontFamily: "'Geist Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", fontSize: 28, color: "#0E0C08", margin: "0 0 12px", fontWeight: 600 }}>
+        <h1 style={{ fontFamily: F.sans, fontSize: 28, color: T.coal, margin: "0 0 12px", fontWeight: 600 }}>
           Session not found
         </h1>
-        <p style={{ fontSize: 14, color: "#6E6759", margin: "0 0 24px", lineHeight: 1.55 }}>
+        <p style={{ fontSize: 14, color: T.inkSoft, margin: "0 0 24px", lineHeight: 1.55 }}>
           We couldn&apos;t locate this session. It may have been deleted or hasn&apos;t synced yet.
         </p>
         <Button
           type="button"
           onClick={onBack}
-          style={{ background: "#312E81", color: "#FAF7F0", fontWeight: 600 }}
+          style={{ background: T.indigo, color: T.cream, fontWeight: 600 }}
         >
           Back to Sessions
         </Button>

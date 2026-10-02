@@ -449,7 +449,7 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
         {/* ── Sprint Pack exhausted banner — only shown when sessions are used up */}
         {currentTier === "starter" && starterExhausted && (
           <div style={{ display: "flex", alignItems: "center", gap: 12,
-            background: "oklch(0.359 0.135 278.697 / 0.06)", border: "1px solid oklch(0.359 0.135 278.697 / 0.18)",
+            background: T.indigo100, border: `1px solid ${T.indigoRing}`,
             borderRadius: 12, padding: "12px 16px", marginBottom: 20 }}>
             <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none"
               stroke={T.indigo} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -470,24 +470,24 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
 
         {/* Payment.failed inline card — keeps users in context with reassurance + retry */}
         {paymentFailed && (
-          <div style={{ background: "#FFFBEB", border: "1px solid #FCD34D", borderRadius: 12, padding: "20px 20px 16px", marginBottom: 16 }}>
+          <div style={{ background: T.warning100, border: `1px solid ${T.warningLine}`, borderRadius: 12, padding: "20px 20px 16px", marginBottom: 16 }}>
             <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
-              <div style={{ flexShrink: 0, width: 36, height: 36, borderRadius: "50%", background: "#FEF3C7", border: "1px solid #FCD34D", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D97706" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <div style={{ flexShrink: 0, width: 36, height: 36, borderRadius: "50%", background: T.warning100, border: `1px solid ${T.warningLine}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={T.warning} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
                   <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
                 </svg>
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: "#92400E", margin: "0 0 2px" }}>Payment didn&apos;t go through</p>
-                <p style={{ fontFamily: font.ui, fontSize: 12, color: "#78350F", margin: "0 0 8px", lineHeight: 1.5 }}>{paymentFailed.reason}</p>
-                <p style={{ fontFamily: font.ui, fontSize: 11, color: "#92400E", margin: "0 0 12px", fontWeight: 500 }}>
+                <p style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: T.warningInk, margin: "0 0 2px" }}>Payment didn&apos;t go through</p>
+                <p style={{ fontFamily: font.ui, fontSize: 12, color: T.warningInk, margin: "0 0 8px", lineHeight: 1.5 }}>{paymentFailed.reason}</p>
+                <p style={{ fontFamily: font.ui, fontSize: 11, color: T.warningInk, margin: "0 0 12px", fontWeight: 500 }}>
                   ✓ No money was debited from your account.
                 </p>
                 <Button
                   size="sm"
                   onClick={() => { setPaymentFailed(null); handleCheckout(paymentFailed.plan); }}
-                  style={{ background: "#D97706", color: "#fff" }}
+                  style={{ background: T.warning, color: T.white }}
                 >
                   Try again
                 </Button>
@@ -497,7 +497,7 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
         )}
 
         {error && (
-          <div style={{ background: "#FBEAE7", border: `1px solid #F2C9C2`, borderRadius: 8, padding: "10px 14px", marginBottom: 16, textAlign: "center" }}>
+          <div style={{ background: T.error100, border: `1px solid ${T.errorLine}`, borderRadius: 8, padding: "10px 14px", marginBottom: 16, textAlign: "center" }}>
             <span style={{ fontFamily: font.ui, fontSize: 12, color: c.ember, display: "block", marginBottom: 8 }}>{error}</span>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
               {verifyRetries > 0 && (
@@ -563,9 +563,9 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
                   {/* Slider thumb styles — scoped to .upgrade-session-slider */}
                   <style>{`
                     .upgrade-session-slider { -webkit-appearance: none; appearance: none; width: 100%; height: 3px; border-radius: 2px; outline: none; cursor: pointer; }
-                    .upgrade-session-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: #B45309; border: 2.5px solid #1A1712; box-shadow: 0 1px 4px rgba(0,0,0,0.25); cursor: pointer; }
-                    .upgrade-session-slider::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: #B45309; border: 2.5px solid #1A1712; cursor: pointer; }
-                    .upgrade-session-slider:focus-visible::-webkit-slider-thumb { outline: 2px solid #B45309; outline-offset: 2px; }
+                    .upgrade-session-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: ${T.copper}; border: 2.5px solid ${T.coal}; box-shadow: 0 1px 4px rgba(0,0,0,0.25); cursor: pointer; }
+                    .upgrade-session-slider::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: ${T.copper}; border: 2.5px solid ${T.coal}; cursor: pointer; }
+                    .upgrade-session-slider:focus-visible::-webkit-slider-thumb { outline: 2px solid ${T.copper}; outline-offset: 2px; }
                   `}</style>
                   <div style={{
                     position: "relative", padding: 22, borderRadius: 20,
@@ -576,7 +576,7 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
                   }}>
                     {creditSuccess !== null ? (
                       <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, padding: "32px 0" }}>
-                        <div style={{ width: 44, height: 44, borderRadius: "50%", background: "#E8F2EA", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <div style={{ width: 44, height: 44, borderRadius: "50%", background: T.success100, display: "flex", alignItems: "center", justifyContent: "center" }}>
                           <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c.sage} strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
                         </div>
                         <p style={{ margin: 0, fontFamily: font.ui, fontSize: 22, fontWeight: 400, color: c.ivory, textAlign: "center" }}>
@@ -612,7 +612,7 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
                             <Button variant="outline" size="icon" onClick={() => setSingleQty(q => Math.max(1, q - 1))} disabled={singleQty <= 1 || !!loading} aria-label="Remove one session"
                               style={{ flexShrink: 0, background: c.carbon, color: singleQty <= 1 ? c.stone : c.ivory, fontSize: 18, fontWeight: 300 }}>&#8722;</Button>
                             <input type="range" min={1} max={10} step={1} value={singleQty} onChange={e => setSingleQty(Number(e.target.value))} disabled={!!loading} aria-label="Number of sessions" aria-valuenow={singleQty} aria-valuemin={1} aria-valuemax={10} className="upgrade-session-slider"
-                              style={{ flex: 1, background: `linear-gradient(to right, #B45309 0%, #B45309 ${((singleQty - 1) / 9) * 100}%, ${c.border} ${((singleQty - 1) / 9) * 100}%, ${c.border} 100%)` }} />
+                              style={{ flex: 1, background: `linear-gradient(to right, ${T.copper} 0%, ${T.copper} ${((singleQty - 1) / 9) * 100}%, ${c.border} ${((singleQty - 1) / 9) * 100}%, ${c.border} 100%)` }} />
                             <Button variant="outline" size="icon" onClick={() => setSingleQty(q => Math.min(10, q + 1))} disabled={singleQty >= 10 || !!loading} aria-label="Add one session"
                               style={{ flexShrink: 0, background: singleQty >= 10 ? c.carbon : `oklch(0.359 0.135 278.697 / 0.10)`, color: singleQty >= 10 ? c.stone : T.indigo, fontSize: 18, fontWeight: 300 }}>&#43;</Button>
                           </div>
@@ -623,7 +623,7 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
                         </div>
                         <Button onClick={() => handleCheckout("single")} disabled={!!loading}
                           className="w-full"
-                          style={{ background: c.slate, color: "#FFFFFF", opacity: loading && loading !== "single" ? 0.5 : 1 }}
+                          style={{ background: c.slate, color: T.white, opacity: loading && loading !== "single" ? 0.5 : 1 }}
                         >
                           {loading === "single" ? "Opening Razorpay..." : loading === "verifying" ? "Verifying..."
                             : <>{singleQty === 1 ? "Buy 1 session" : `Buy ${singleQty} sessions`} &#xB7; &#x20B9;{SINGLE_SESSION_PRICE * singleQty} <span style={{ fontSize: 16 }}>&#8594;</span></>}
@@ -1015,11 +1015,11 @@ export const SessionDetailView = memo(function SessionDetailView({ session, onBa
         </div>
 
         <div className="session-detail-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-          <div style={{ padding: "14px 16px", borderRadius: 10, background: "rgba(21,128,61,0.04)", border: `1px solid rgba(21,128,61,0.12)` }}>
+          <div style={{ padding: "14px 16px", borderRadius: 10, background: T.success100, border: `1px solid ${T.successLine}` }}>
             <span style={{ fontFamily: font.ui, fontSize: 10, fontWeight: 600, color: c.sage, letterSpacing: "0.06em", textTransform: "uppercase", display: "block", marginBottom: 6 }}>Top Strength</span>
             <span style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 500, color: c.ivory }}>{session.topStrength}</span>
           </div>
-          <div style={{ padding: "14px 16px", borderRadius: 10, background: "rgba(185,28,28,0.04)", border: `1px solid rgba(185,28,28,0.12)` }}>
+          <div style={{ padding: "14px 16px", borderRadius: 10, background: T.error100, border: `1px solid ${T.errorLine}` }}>
             <span style={{ fontFamily: font.ui, fontSize: 10, fontWeight: 600, color: c.ember, letterSpacing: "0.06em", textTransform: "uppercase", display: "block", marginBottom: 6 }}>To Improve</span>
             <span style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 500, color: c.ivory }}>{session.topWeakness}</span>
           </div>

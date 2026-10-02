@@ -17,7 +17,7 @@ const iconStyle: CSSProperties = {
   borderRadius: "50%",
   fontSize: 10,
   fontWeight: 700,
-  color: "#fff",
+  color: t.white,
   flexShrink: 0,
   letterSpacing: 0,
 };
@@ -118,7 +118,7 @@ export function TestimonialNudge({
               border: `1px solid ${t.line}`,
               borderRadius: 8,
               padding: "8px 14px",
-              background: "#fff",
+              background: t.white,
               cursor: "pointer",
             }}
           >

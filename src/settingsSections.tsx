@@ -5,7 +5,7 @@ import { authHeaders, type PaymentRecord } from "./supabase";
 import { useAuth, referralSignupUrl } from "./AuthContext";
 import { captureClientEvent } from "./posthogClient";
 import { useDashboardSubscription } from "./DashboardContext";
-import { tokens as t } from "./auth/_tokens";
+import { tokens as t, fonts, shadows } from "./auth/_tokens";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -47,14 +47,12 @@ const c = {
   creamSoft: t.creamSoft,
 };
 const font = {
-  display: "'Instrument Serif', Georgia, serif",
-  ui: "'Geist Sans', -apple-system, system-ui, sans-serif",
-  mono: "'Geist Mono', monospace",
+  display: fonts.serif,
+  ui: fonts.sans,
+  mono: fonts.mono,
 };
 const shadow = {
-  sm: "0 1px 0 rgba(20,17,10,.03), 0 1px 2px rgba(20,17,10,.04), 0 12px 32px -16px rgba(20,17,10,.10)",
-  glow: "0 1px 2px rgba(49,46,129,.18), 0 4px 12px -4px rgba(49,46,129,.24)",
-  glowStrong: "0 2px 4px rgba(49,46,129,.22), 0 10px 24px -6px rgba(49,46,129,.30)",
+  sm: shadows.card,
 };
 
 /* ─── Section Icons (shared) ─── */
@@ -110,28 +108,6 @@ function parseUserAgent(ua: string): string {
 export function Divider() {
   return (
     <div style={{ height: 1, background: `linear-gradient(90deg, transparent, ${c.border}, transparent)`, margin: "28px 0" }} />
-  );
-}
-
-export function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
-  // Bespoke pill/knob switch, not a generic button — the sliding-knob
-  // visual (absolute-positioned inner circle + transform animation) has
-  // no shadcn Button equivalent, so this intentionally stays a raw
-  // <button> rather than being forced into the Button component.
-  return (
-    <button onClick={onToggle} aria-pressed={on} style={{
-      width: 44, height: 24, borderRadius: 12, border: "none", cursor: "pointer",
-      background: on ? c.indigo : c.border,
-      padding: 3, transition: "background 0.25s ease", position: "relative",
-    }}>
-      <div style={{
-        width: 18, height: 18, borderRadius: "50%",
-        background: on ? c.surface : c.inkSoft,
-        transition: "transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
-        transform: on ? "translateX(20px)" : "translateX(0)",
-        boxShadow: on ? "0 1px 3px rgba(0,0,0,0.3)" : "none",
-      }} />
-    </button>
   );
 }
 
@@ -237,7 +213,7 @@ export const accSubtleBtnGhost: React.CSSProperties = {
 
 export const dangerSubtleBtn: React.CSSProperties = {
   fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ember,
-  background: "transparent", border: `1px solid rgba(185,28,28,0.3)`,
+  background: "transparent", border: `1px solid ${t.errorLine}`,
   borderRadius: 9, padding: "10px 14px", cursor: "pointer", minHeight: 40,
 };
 
@@ -331,8 +307,8 @@ export function ActionRow({ icon, tone, title, desc, action, last }: {
         <span aria-hidden="true" style={{
           width: 40, height: 40, borderRadius: 10, flexShrink: 0,
           display: "flex", alignItems: "center", justifyContent: "center",
-          background: tone === "danger" ? "rgba(185,28,28,0.06)" : c.creamSoft,
-          border: `1px solid ${tone === "danger" ? "rgba(185,28,28,0.22)" : c.border}`,
+          background: tone === "danger" ? t.error100 : c.creamSoft,
+          border: `1px solid ${tone === "danger" ? t.errorLine : c.border}`,
           color: tone === "danger" ? c.ember : c.inkSoft,
         }}>{icon}</span>
         <div style={{ minWidth: 0 }}>
@@ -617,8 +593,8 @@ function ExtraSessionsInfoBox() {
     <div style={{
       display: "flex", alignItems: "center", justifyContent: "space-between",
       padding: "10px 14px", borderRadius: 8, marginTop: 4,
-      background: hasCredits ? c.success100 : "rgba(180,83,9,0.06)",
-      border: hasCredits ? `1px solid rgba(21,128,61,0.25)` : "1px solid rgba(180,83,9,0.18)",
+      background: hasCredits ? c.success100 : t.copperWash,
+      border: hasCredits ? `1px solid ${t.successLine}` : `1px solid ${t.copperMid}`,
     }}>
       <span style={{ fontFamily: font.ui, fontSize: 13, display: "flex", alignItems: "center", gap: 6,
         color: hasCredits ? t.successInk : c.reward }}>
@@ -712,8 +688,8 @@ function invoiceDetails(payment: PaymentRecord) {
   const amountDisplay = `₹${Math.round(payment.amount / 100)}`;
   const paid = payment.status === "completed";
   const tone = paid
-    ? { label: "Paid", bg: c.success100, fg: c.sage, border: "rgba(21,128,61,0.28)" }
-    : { label: payment.status, bg: c.error100, fg: c.ember, border: "rgba(185,28,28,0.28)" };
+    ? { label: "Paid", bg: c.success100, fg: c.sage, border: t.successLine }
+    : { label: payment.status, bg: c.error100, fg: c.ember, border: t.errorLine };
 
   // Derive a human-readable purchase title from plan + amount.
   // payment.plan: "single" | "weekly" (older rows may still say "monthly" — plan discontinued)
@@ -1062,7 +1038,7 @@ export const DangerZoneSection = memo(function DangerZoneSection(props: DangerZo
 
   return (
     <div style={{
-      background: "#FFF9F9", border: "1px solid #FFE0E1", borderRadius: 12, padding: "20px 24px",
+      background: t.error100, border: `1px solid ${t.errorLine}`, borderRadius: 12, padding: "20px 24px",
     }}>
       {!confirmDelete ? (
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
@@ -1097,7 +1073,7 @@ export const DangerZoneSection = memo(function DangerZoneSection(props: DangerZo
               autoComplete="off"
               style={{
                 fontFamily: font.ui, fontSize: 13, color: c.ink, background: c.graphite,
-                border: `1px solid rgba(185,28,28,0.3)`, borderRadius: 9, padding: "10px 14px",
+                border: `1px solid ${t.errorLine}`, borderRadius: 9, padding: "10px 14px",
                 outline: "none", minWidth: 0, width: "100%", minHeight: 40, boxSizing: "border-box",
               }} />
             {!isOAuthOnlyUser && (
@@ -1108,7 +1084,7 @@ export const DangerZoneSection = memo(function DangerZoneSection(props: DangerZo
                 autoComplete="current-password"
                 style={{
                   fontFamily: font.ui, fontSize: 13, color: c.ink, background: c.graphite,
-                  border: `1px solid rgba(185,28,28,0.3)`, borderRadius: 9, padding: "10px 14px",
+                  border: `1px solid ${t.errorLine}`, borderRadius: 9, padding: "10px 14px",
                   outline: "none", minWidth: 0, width: "100%", minHeight: 40, boxSizing: "border-box",
                 }} />
             )}
@@ -1293,10 +1269,10 @@ function ReferRow({ invite, divider }: { invite: ReferralInviteRow; divider: boo
     .toUpperCase() || "?";
   const ts = invite.createdAt ? relativeTime(invite.createdAt) : "";
   const tone = invite.status === "rewarded"
-    ? { label: "Rewarded", bg: c.success100, fg: c.sage, border: "rgba(21,128,61,0.28)" }
+    ? { label: "Rewarded", bg: c.success100, fg: c.sage, border: t.successLine }
     : invite.status === "redeemed"
-      ? { label: "Joined", bg: c.indigo100, fg: c.indigo, border: "rgba(49,46,129,0.28)" }
-      : { label: "Pending", bg: c.warning100, fg: t.warning, border: "rgba(161,98,7,0.28)" };
+      ? { label: "Joined", bg: c.indigo100, fg: c.indigo, border: t.indigoRing }
+      : { label: "Pending", bg: c.warning100, fg: t.warning, border: t.warningLine };
   return (
     <div className="settings-refer-row" style={{
       display: "grid", gap: 16, alignItems: "center",

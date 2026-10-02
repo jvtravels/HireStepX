@@ -461,7 +461,7 @@ export const DealSummaryCard = memo(function DealSummaryCard({ transcript, negot
 
       {/* Improvement */}
       {improvement !== 0 && (
-        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", borderRadius: 10, background: improvement > 0 ? "rgba(21,128,61,0.10)" : "rgba(185,28,28,0.10)", border: `1px solid ${improvement > 0 ? "rgba(21,128,61,0.18)" : "rgba(185,28,28,0.18)"}` }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", borderRadius: 10, background: improvement > 0 ? e.success100 : e.error100, border: `1px solid ${improvement > 0 ? e.successLine : e.errorLine}` }}>
           <span style={{ fontFamily: ef.sans, fontSize: 18, fontWeight: 700, color: improvement > 0 ? e.success : e.error }}>
             {improvement > 0 ? "+" : ""}{improvement}%
           </span>
@@ -851,9 +851,9 @@ export const NegotiationLiveDashboard = memo(function NegotiationLiveDashboard({
           {liveState.topicsCovered.map(t => (
             <span key={t.topic} style={{
               fontFamily: ef.sans, fontSize: 9, padding: "2px 6px", borderRadius: 4,
-              background: t.covered ? "rgba(21,128,61,0.14)" : "rgba(20,17,10,0.04)",
+              background: t.covered ? e.success100 : "rgba(20,17,10,0.04)",
               color: t.covered ? e.success : e.inkSoft,
-              border: `1px solid ${t.covered ? "rgba(21,128,61,0.24)" : "rgba(20,17,10,0.04)"}`,
+              border: `1px solid ${t.covered ? e.successLine : "rgba(20,17,10,0.04)"}`,
               textDecoration: t.covered ? "none" : "none",
               opacity: t.covered ? 1 : 0.6,
             }}>

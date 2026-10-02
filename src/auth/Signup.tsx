@@ -376,6 +376,7 @@ export default function Signup() {
 
   // Post-signup state: "Check your email" instead of the form
   if (signupSent) {
+    const emailProvider = detectEmailProvider(email);
     return (
       <>
         <style>{AUTH_STYLES}</style>
@@ -463,12 +464,9 @@ export default function Signup() {
                   alignItems: "center",
                 }}
               >
-                {(() => {
-                  const provider = detectEmailProvider(email);
-                  if (!provider) return null;
-                  return (
+                {emailProvider && (
                     <a
-                      href={provider.url}
+                      href={emailProvider.url}
                       target="_blank"
                       rel="noopener noreferrer"
                       style={{
@@ -489,7 +487,7 @@ export default function Signup() {
                         minWidth: 200,
                       }}
                     >
-                      Open {provider.name}
+                      Open {emailProvider.name}
                       <svg
                         width="14"
                         height="14"
@@ -505,16 +503,19 @@ export default function Signup() {
                         <polyline points="7 7 17 7 17 17" />
                       </svg>
                     </a>
-                  );
-                })()}
+                )}
 
-                {/* Resend verification email — styled to match the white
-                    "Resend link" button on /forgot-password (sent state)
-                    so the two transactional-email flows feel consistent.
+                {/* Resend verification email. When we can deep-link to the
+                    provider's webmail, that link is the primary action and
+                    this is a secondary fallback — styled to match the white
+                    "Resend link" button on /forgot-password (sent state).
+                    When there's no provider link, this is the only action
+                    on screen, so it takes the same solid-indigo primary
+                    styling used for every other primary CTA in the app.
                     60s cooldown matches the server rate limit. */}
                 <Button
                   type="button"
-                  variant="outline"
+                  variant={emailProvider ? "outline" : "default"}
                   size="lg"
                   onClick={handleResendVerification}
                   disabled={resendCooldown > 0 || resending}
@@ -524,9 +525,9 @@ export default function Signup() {
                     height: "auto",
                     fontFamily: f.sans,
                     fontSize: 15,
-                    fontWeight: 500,
+                    fontWeight: emailProvider ? 500 : 600,
                     gap: 10,
-                    boxShadow: shadows.card,
+                    boxShadow: emailProvider ? shadows.card : shadows.cta,
                     opacity: resendCooldown > 0 || resending ? 0.6 : 1,
                   }}
                 >

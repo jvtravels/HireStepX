@@ -722,7 +722,7 @@ export const JDCoverageSection = memo(function JDCoverageSection({
           <div style={{ fontFamily: font.ui, fontSize: 12, fontWeight: 600, color: c.sage, marginBottom: 8 }}>Skills You Demonstrated</div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
             {jdAnalysis.matchedSkills.map((skill, i) => (
-              <span key={i} style={{ fontFamily: font.ui, fontSize: 11, padding: "4px 10px", borderRadius: 6, background: "rgba(21,128,61,0.1)", color: c.sage, border: "1px solid rgba(21,128,61,0.2)" }}>{skill}</span>
+              <span key={i} style={{ fontFamily: font.ui, fontSize: 11, padding: "4px 10px", borderRadius: 6, background: "rgba(21,128,61,0.1)", color: c.sage, border: `1px solid ${T.successLine}` }}>{skill}</span>
             ))}
           </div>
         </div>
@@ -734,7 +734,7 @@ export const JDCoverageSection = memo(function JDCoverageSection({
           <div style={{ fontFamily: font.ui, fontSize: 12, fontWeight: 600, color: c.ember, marginBottom: 8 }}>Skills to Strengthen</div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
             {jdAnalysis.missingSkills.map((skill, i) => (
-              <span key={i} style={{ fontFamily: font.ui, fontSize: 11, padding: "4px 10px", borderRadius: 6, background: "rgba(185,28,28,0.1)", color: c.ember, border: "1px solid rgba(185,28,28,0.2)" }}>{skill}</span>
+              <span key={i} style={{ fontFamily: font.ui, fontSize: 11, padding: "4px 10px", borderRadius: 6, background: "rgba(185,28,28,0.1)", color: c.ember, border: `1px solid ${T.errorLine}` }}>{skill}</span>
             ))}
           </div>
         </div>

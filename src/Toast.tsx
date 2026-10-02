@@ -66,7 +66,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             {toasts.map((t) => {
               // Info toasts are general notification UI, not a score/reward — indigo, not copper
               const color = t.type === "success" ? c.sage : t.type === "error" ? c.ember : T.indigo;
-              const borderColor = t.type === "success" ? "rgba(21,128,61,0.25)" : t.type === "error" ? "rgba(185,28,28,0.25)" : "rgba(49,46,129,0.25)";
+              const borderColor = t.type === "success" ? T.successLine : t.type === "error" ? T.errorLine : T.indigoRing;
               return (
                 <motion.div
                   key={t.id}

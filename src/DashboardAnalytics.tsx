@@ -104,7 +104,7 @@ export default function AnalyticsPage() {
   if (sessions.length === 0) {
     return (
       <div style={{ maxWidth: 560, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "60vh", margin: "0 auto", textAlign: "center", padding: "20px" }}>
-        <div style={{ width: 64, height: 64, borderRadius: 16, margin: "0 auto 24px", background: "rgba(21,128,61,0.06)", border: `1px solid rgba(21,128,61,0.15)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ width: 64, height: 64, borderRadius: 16, margin: "0 auto 24px", background: T.success100, border: `1px solid ${T.successLine}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
           <svg aria-hidden="true" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke={c.sage} strokeWidth="1.5" strokeLinecap="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
         </div>
         <h2 style={{ fontFamily: font.ui, fontSize: 22, fontWeight: 600, color: c.ivory, marginBottom: 8 }}>Analytics</h2>
@@ -278,7 +278,7 @@ export default function AnalyticsPage() {
           </div>
           {/* Best score */}
           <div style={{ background: c.carbon, boxShadow: shadow.md, borderRadius: 14, border: `1px solid ${c.border}`, padding: "18px 20px", flex: 1, display: "flex", alignItems: "center", gap: 16 }}>
-            <div style={{ width: 44, height: 44, borderRadius: 10, background: "rgba(21,128,61,0.08)", border: `1px solid rgba(21,128,61,0.15)`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <div style={{ width: 44, height: 44, borderRadius: 10, background: T.success100, border: `1px solid ${T.successLine}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
               <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c.sage} strokeWidth="1.5" strokeLinecap="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
             </div>
             <div>
@@ -455,8 +455,8 @@ export default function AnalyticsPage() {
               return (
                 <span key={i} style={{
                   fontFamily: font.ui, fontSize: 11, padding: "5px 12px", borderRadius: 100,
-                  background: isStrength ? "rgba(21,128,61,0.08)" : isGap ? "rgba(185,28,28,0.06)" : "rgba(14,12,8,0.04)",
-                  border: `1px solid ${isStrength ? "rgba(21,128,61,0.2)" : isGap ? "rgba(185,28,28,0.12)" : c.border}`,
+                  background: isStrength ? T.success100 : isGap ? T.error100 : "rgba(14,12,8,0.04)",
+                  border: `1px solid ${isStrength ? T.successLine : isGap ? T.errorLine : c.border}`,
                   color: isStrength ? c.sage : isGap ? c.ember : c.chalk,
                 }}>{skill}</span>
               );

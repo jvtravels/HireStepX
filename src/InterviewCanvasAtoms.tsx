@@ -46,10 +46,10 @@ export function CanvasWordmark({ size = 18 }: { size?: number }) {
 export type CanvasConnectionStatus = "good" | "fair" | "poor" | "offline";
 export function CanvasStatusPill({ status }: { status: CanvasConnectionStatus }) {
   const map: Record<CanvasConnectionStatus, { color: string; bg: string; label: string }> = {
-    good:    { color: e.success, bg: "rgba(21, 128, 61, 0.08)", label: "Connection good" },
-    fair:    { color: e.warning, bg: "rgba(161, 98, 7, 0.10)",  label: "Connection fair" },
-    poor:    { color: e.error,   bg: "rgba(185, 28, 28, 0.08)", label: "Connection poor" },
-    offline: { color: e.error,   bg: "rgba(185, 28, 28, 0.10)", label: "You're offline" },
+    good:    { color: e.success, bg: e.success100, label: "Connection good" },
+    fair:    { color: e.warning, bg: e.warning100,  label: "Connection fair" },
+    poor:    { color: e.error,   bg: e.error100, label: "Connection poor" },
+    offline: { color: e.error,   bg: e.error100, label: "You're offline" },
   };
   const { color, bg, label } = map[status];
   return (
@@ -514,7 +514,7 @@ export function CanvasSelfViewTile({ videoRef, initials = "You", stream = null }
         fontFamily: ef.mono, fontSize: 9, textTransform: "uppercase", letterSpacing: 1,
         color: e.cream,
       }}>
-        <span style={{ width: 5, height: 5, borderRadius: 999, background: "#EF4444" }} />
+        <span style={{ width: 5, height: 5, borderRadius: 999, background: e.error }} />
         Live
       </span>
     </div>

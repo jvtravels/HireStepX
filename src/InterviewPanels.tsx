@@ -280,7 +280,7 @@ export const AvatarStage = memo(function AvatarStage({ phase, interviewerName, i
       {phase === "listening" && !isMuted && !speechUnavailable && (
         <div style={{
           display: "flex", alignItems: "center", gap: 6, padding: "4px 12px",
-          borderRadius: 100, background: "rgba(21,128,61,0.13)", border: "1px solid rgba(21,128,61,0.18)",
+          borderRadius: 100, background: e.success100, border: `1px solid ${e.successLine}`,
           animation: "fadeUp 0.3s ease",
         }}>
           <div className="hsx-rec-pip" style={{ width: 6, height: 6, borderRadius: "50%", background: e.success, animation: "recordPulse 1s ease-in-out infinite" }} />
@@ -418,7 +418,7 @@ export const PanelAvatarStage = memo(function PanelAvatarStage({ phase, panelMem
       {phase === "listening" && !isMuted && !speechUnavailable && (
         <div style={{
           display: "flex", alignItems: "center", gap: 6, padding: "4px 12px",
-          borderRadius: 100, background: "rgba(21,128,61,0.13)", border: "1px solid rgba(21,128,61,0.18)",
+          borderRadius: 100, background: e.success100, border: `1px solid ${e.successLine}`,
           animation: "fadeUp 0.3s ease",
         }}>
           <div className="hsx-rec-pip" style={{ width: 6, height: 6, borderRadius: "50%", background: e.success, animation: "recordPulse 1s ease-in-out infinite" }} />
@@ -576,8 +576,8 @@ export const UserAnswerArea = memo(function UserAnswerArea({ currentTranscript, 
   return (
     <div style={{
       width: "100%", borderRadius: 16,
-      background: "rgba(21,128,61,0.07)",
-      border: "1px solid rgba(21,128,61,0.14)",
+      background: e.success100,
+      border: `1px solid ${e.successLine}`,
       padding: "18px 24px", animation: "fadeUp 0.3s ease",
     }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
@@ -809,7 +809,7 @@ export const CompletionCard = memo(function CompletionCard({ currentQuestionNum,
     }}>
       <div style={{
         width: 56, height: 56, borderRadius: 999,
-        background: e.success100, border: `1px solid rgba(21,128,61,0.22)`,
+        background: e.success100, border: `1px solid ${e.successLine}`,
         display: "inline-flex", alignItems: "center", justifyContent: "center",
         marginBottom: 4,
       }}>
@@ -969,8 +969,8 @@ export const MicroFeedbackPanel = memo(function MicroFeedbackPanel({ transcript,
           style={{
             marginTop: 8, padding: "5px 10px", borderRadius: 999,
             display: "inline-flex", alignItems: "center", gap: 6,
-            background: isStrong ? "rgba(21,128,61,0.10)" : "oklch(0.359 0.135 278.697 / 0.10)",
-            border: `1px solid ${isStrong ? "rgba(21,128,61,0.20)" : "oklch(0.359 0.135 278.697 / 0.20)"}`,
+            background: isStrong ? e.success100 : "oklch(0.359 0.135 278.697 / 0.10)",
+            border: `1px solid ${isStrong ? e.successLine : "oklch(0.359 0.135 278.697 / 0.20)"}`,
           }}>
           <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={isStrong ? e.success : e.indigo} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
             {isStrong ? <polyline points="20 6 9 17 4 12" /> : <><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></>}
@@ -1003,9 +1003,9 @@ export const MicroFeedbackPanel = memo(function MicroFeedbackPanel({ transcript,
  * the alarm. Surfacing them in a distinct red strip below the row makes
  * them noticeable without screaming at every candidate. */
 function chipColors(state: CpChipState) {
-  if (state === "pass") return { bg: "rgba(21,128,61,0.10)", border: "rgba(21,128,61,0.20)", fg: e.success };
-  if (state === "warn") return { bg: "rgba(180,83,9,0.10)", border: "rgba(180,83,9,0.20)", fg: e.copper };
-  if (state === "alert") return { bg: "rgba(185,28,28,0.10)", border: "rgba(185,28,28,0.25)", fg: "#b91c1c" };
+  if (state === "pass") return { bg: e.success100, border: e.successLine, fg: e.success };
+  if (state === "warn") return { bg: e.copperTint, border: "rgba(180,83,9,0.20)", fg: e.copper };
+  if (state === "alert") return { bg: e.error100, border: e.errorLine, fg: e.error };
   return { bg: e.creamSoft, border: e.line, fg: e.inkFaint };
 }
 
@@ -1407,7 +1407,7 @@ export const EndModal = memo(function EndModal({ currentQuestionNum, totalQuesti
           </AlertDialogDescription>
         </AlertDialogHeader>
         {isOffline && (
-          <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 10, background: "rgba(185,28,28,0.08)", border: "1px solid rgba(185,28,28,0.20)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 10, background: e.error100, border: `1px solid ${e.errorLine}` }}>
             <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={e.error} strokeWidth="2"><line x1="1" y1="1" x2="23" y2="23"/><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/></svg>
             <span style={{ fontFamily: ef.sans, fontSize: 12, color: e.error }}>You&rsquo;re offline — AI evaluation may fail. Your answers will be saved locally.</span>
           </div>
@@ -1508,7 +1508,7 @@ export const EvaluatingOverlay = memo(function EvaluatingOverlay({ usedFallbackS
         </>
       )}
       {saveWarning && !(usedFallbackScore || evalTimedOut) && (
-        <div role="alert" style={{ marginTop: 12, padding: "12px 20px", borderRadius: 10, background: "rgba(185,28,28,0.16)", border: "1px solid rgba(185,28,28,0.24)", maxWidth: 400 }}>
+        <div role="alert" style={{ marginTop: 12, padding: "12px 20px", borderRadius: 10, background: e.error100, border: `1px solid ${e.errorLine}`, maxWidth: 400 }}>
           <p style={{ fontFamily: ef.sans, fontSize: 12, color: e.error, margin: 0 }}>{saveWarning}</p>
         </div>
       )}

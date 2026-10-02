@@ -44,7 +44,7 @@ export function CredibilitySection({
             padding: "0 8px",
             borderRadius: radius.pill,
             background: t.error,
-            color: "#fff",
+            color: t.white,
             fontFamily: f.sans,
             fontSize: 12,
             fontWeight: 700,

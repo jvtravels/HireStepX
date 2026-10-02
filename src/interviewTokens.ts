@@ -36,14 +36,21 @@ export const e = {
   copperDark:   T.copperDark,
   copperSoft:   T.copperSoft,
   copper100:    T.copper100,
+  copperWash:   T.copperWash,
+  copperTint:   T.copperTint,
+  copperMid:    T.copperMid,
+  copperBorder: T.copperBorder,
 
   /* Status */
   success:      T.success,
   success100:   T.success100,
+  successLine:  T.successLine,
   error:        T.error,
   error100:     T.error100,
+  errorLine:    T.errorLine,
   warning:      T.warning,
   warning100:   T.warning100,
+  warningLine:  T.warningLine,
 
   /* Lines */
   line:         T.line,

@@ -332,7 +332,7 @@ export function SectionBand({
     >
       <div
         style={{
-          padding: "5px 11px", background: accent, color: "#FFFFFF",
+          padding: "5px 11px", background: accent, color: t.white,
           fontSize: 10, fontWeight: 700, letterSpacing: 1.4,
           borderRadius: radius.sm, textTransform: "uppercase", fontFamily: f.mono,
           flexShrink: 0,

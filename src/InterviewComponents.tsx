@@ -230,9 +230,9 @@ export function getPanelMembers(seed: string): PanelMember[] {
   //   Technical Lead → indigo (interactive — the "challenger" voice)
   //   HR Partner     → success (warm green — the "supportive" voice)
   const roles: { title: string; color: string }[] = [
-    { title: "Hiring Manager", color: "#B45309" },   // copper
-    { title: "Technical Lead", color: "#312E81" },   // indigo
-    { title: "HR Partner",     color: "#15803D" },   // success green
+    { title: "Hiring Manager", color: e.copper },    // copper
+    { title: "Technical Lead", color: e.indigo },    // indigo
+    { title: "HR Partner",     color: e.success },   // success green
   ];
   // Distribute genders: use hash bits to decide. At least 1 male, 1 female.
   // Bit 0 → role[0] gender, bit 1 → role[1] gender, but clamp so we get mix

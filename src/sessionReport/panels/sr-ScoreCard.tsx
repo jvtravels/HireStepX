@@ -15,6 +15,7 @@
  */
 
 import { t } from "../tokens";
+import { fonts } from "../../auth/_tokens";
 import { Button } from "@/components/ui/button";
 
 /* ── Token values used for canvas drawing ─────────────────────────── */
@@ -28,6 +29,7 @@ const C = {
   inkSoft:   t.inkSoft,
   line:      t.line,
   success:   t.success,
+  font:      fonts.sans,
 } as const;
 
 const W = 1200;
@@ -98,7 +100,7 @@ export async function downloadScoreCard(props: ScoreCardProps): Promise<void> {
 
   /* ── HireStepX wordmark (top-left) ─────────────────────────────── */
   ctx.fillStyle = C.indigo;
-  ctx.font = `700 28px 'Geist Sans', system-ui, -apple-system, sans-serif`;
+  ctx.font = `700 28px ${C.font}`;
   ctx.fillText("HireStepX", PADDING, ACCENT_BAR_H + 54);
 
   /* ── Role + Company (top-right) ─────────────────────────────────── */
@@ -106,10 +108,10 @@ export async function downloadScoreCard(props: ScoreCardProps): Promise<void> {
   const roleText = trunc(props.role, 40);
   const compText = trunc(props.company, 40);
   ctx.fillStyle = C.coal;
-  ctx.font = `600 22px 'Geist Sans', system-ui, -apple-system, sans-serif`;
+  ctx.font = `600 22px ${C.font}`;
   ctx.fillText(roleText, W - PADDING, ACCENT_BAR_H + 48);
   ctx.fillStyle = C.inkSoft;
-  ctx.font = `400 18px 'Geist Sans', system-ui, -apple-system, sans-serif`;
+  ctx.font = `400 18px ${C.font}`;
   ctx.fillText(compText, W - PADDING, ACCENT_BAR_H + 76);
   ctx.textAlign = "left";
 
@@ -124,18 +126,18 @@ export async function downloadScoreCard(props: ScoreCardProps): Promise<void> {
   /* ── Large score (centre) ───────────────────────────────────────── */
   ctx.textAlign = "center";
   ctx.fillStyle = C.indigo;
-  ctx.font = `700 160px 'Geist Sans', system-ui, -apple-system, sans-serif`;
+  ctx.font = `700 160px ${C.font}`;
   ctx.fillText(String(props.score), W / 2, 370);
 
   /* ── "/100" sub-label ────────────────────────────────────────────── */
   ctx.fillStyle = C.inkSoft;
-  ctx.font = `400 28px 'Geist Sans', system-ui, -apple-system, sans-serif`;
+  ctx.font = `400 28px ${C.font}`;
   ctx.fillText("/ 100", W / 2, 410);
 
   /* ── Score label ─────────────────────────────────────────────────── */
   const label = props.verdict || scoreLabel(props.score);
   ctx.fillStyle = labelColor(props.score);
-  ctx.font = `700 26px 'Geist Sans', system-ui, -apple-system, sans-serif`;
+  ctx.font = `700 26px ${C.font}`;
   ctx.fillText(label.toUpperCase(), W / 2, 460);
 
   /* ── Divider ────────────────────────────────────────────────────── */
@@ -151,25 +153,25 @@ export async function downloadScoreCard(props: ScoreCardProps): Promise<void> {
   if (props.topStrength) {
     ctx.textAlign = "left";
     ctx.fillStyle = C.success;
-    ctx.font = `700 16px 'Geist Sans', system-ui, -apple-system, sans-serif`;
+    ctx.font = `700 16px ${C.font}`;
     ctx.fillText("✓", PADDING, 526);
     ctx.fillStyle = C.coal;
-    ctx.font = `400 16px 'Geist Sans', system-ui, -apple-system, sans-serif`;
+    ctx.font = `400 16px ${C.font}`;
     ctx.fillText(trunc(props.topStrength, maxLineLen), PADDING + 26, 526);
   }
   if (props.topGap) {
     ctx.fillStyle = C.copper;
-    ctx.font = `700 16px 'Geist Sans', system-ui, -apple-system, sans-serif`;
+    ctx.font = `700 16px ${C.font}`;
     ctx.fillText("↑", PADDING, 556);
     ctx.fillStyle = C.coal;
-    ctx.font = `400 16px 'Geist Sans', system-ui, -apple-system, sans-serif`;
+    ctx.font = `400 16px ${C.font}`;
     ctx.fillText(trunc(props.topGap, maxLineLen), PADDING + 26, 556);
   }
 
   /* ── Footer ─────────────────────────────────────────────────────── */
   ctx.textAlign = "center";
   ctx.fillStyle = C.inkSoft;
-  ctx.font = `400 15px 'Geist Sans', system-ui, -apple-system, sans-serif`;
+  ctx.font = `400 15px ${C.font}`;
   ctx.fillText("Practice at hirestepx.com", W / 2, H - 22);
 
   /* ── Export as PNG ───────────────────────────────────────────────── */
@@ -206,7 +208,7 @@ export function ScoreCardDownloadButton(props: ScoreCardProps & { className?: st
       aria-label="Download score card as image"
       style={{
         color: t.coal,
-        fontFamily: "'Geist Sans', system-ui, -apple-system, sans-serif",
+        fontFamily: fonts.sans,
         fontWeight: 600,
       }}
     >

@@ -32,7 +32,7 @@ export function NextRoundCTA({
     <div
       style={{
         marginTop: 24, padding: "24px 26px",
-        background: t.indigo, color: "#FFFFFF",
+        background: t.indigo, color: t.white,
         borderRadius: radius.card, display: "flex",
         alignItems: "center", justifyContent: "space-between",
         gap: 20, flexWrap: "wrap",
@@ -50,7 +50,7 @@ export function NextRoundCTA({
         type="button"
         size="lg"
         style={{
-          background: "#FFFFFF",
+          background: t.white,
           color: t.indigo,
           fontFamily: f.sans,
           fontWeight: 600,

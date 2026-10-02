@@ -109,7 +109,7 @@ export default function OutcomePromptBanner() {
   if (stage === "error") {
     return (
       <div style={{
-        background: "rgba(220,38,38,0.06)", border: `1px solid rgba(220,38,38,0.3)`,
+        background: T.error100, border: `1px solid ${T.errorLine}`,
         borderRadius: 12, padding: "14px 18px", display: "flex", alignItems: "center", gap: 10,
       }}>
         <p style={{ fontFamily: font.ui, fontSize: 13, color: c.chalk, margin: 0, flex: 1 }}>
@@ -123,7 +123,7 @@ export default function OutcomePromptBanner() {
   if (stage === "submitted") {
     return (
       <div style={{
-        background: "rgba(21,128,61,0.06)", border: `1px solid rgba(21,128,61,0.22)`,
+        background: T.success100, border: `1px solid ${T.successLine}`,
         borderRadius: 12, padding: "14px 18px", display: "flex", alignItems: "center", gap: 10,
       }}>
         <span style={{ fontSize: 18 }}>🎉</span>

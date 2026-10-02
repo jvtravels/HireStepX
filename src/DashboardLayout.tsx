@@ -356,13 +356,13 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between",
                       marginBottom: 10, marginTop: planExhausted ? 6 : 2,
                       padding: "8px 11px",
-                      background: hasCredits ? T.success100 : "rgba(180,83,9,0.06)",
-                      border: hasCredits ? "1px solid rgba(21,128,61,0.22)" : "1px solid rgba(180,83,9,0.18)",
+                      background: hasCredits ? T.success100 : T.copperWash,
+                      border: hasCredits ? `1px solid ${T.successLine}` : `1px solid ${T.copperMid}`,
                       borderRadius: 8 }}>
                       <span style={{ fontFamily: font.ui, fontSize: 11, display: "flex", alignItems: "center", gap: 5,
                         color: hasCredits ? T.successInk : T.copper }}>
                         {hasCredits ? (
-                          <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#15803D" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                          <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={T.successInk} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                         ) : (
                           <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                         )}
@@ -451,7 +451,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
           <Alert
             variant={paymentBanner === "success" ? "default" : "destructive"}
             className="mb-4 flex flex-row items-center justify-between"
-            style={{ background: paymentBanner === "success" ? T.success100 : T.error100, borderColor: paymentBanner === "success" ? "rgba(21,128,61,0.22)" : "rgba(185,28,28,0.22)", animation: "slideDown 0.2s ease" }}
+            style={{ background: paymentBanner === "success" ? T.success100 : T.error100, borderColor: paymentBanner === "success" ? T.successLine : T.errorLine, animation: "slideDown 0.2s ease" }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               {paymentBanner === "success" ? (
@@ -471,7 +471,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
 
         {/* Sync error banner */}
         {syncError && (
-          <Alert variant="destructive" className="mb-4 flex flex-row items-center justify-between" style={{ background: T.error100, borderColor: "rgba(185,28,28,0.2)", animation: "slideDown 0.2s ease" }}>
+          <Alert variant="destructive" className="mb-4 flex flex-row items-center justify-between" style={{ background: T.error100, borderColor: T.errorLine, animation: "slideDown 0.2s ease" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c.ember} strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
               <AlertDescription style={{ fontFamily: font.ui, fontSize: 12, color: c.ember }}>{syncError}</AlertDescription>
