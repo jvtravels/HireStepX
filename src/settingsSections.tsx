@@ -230,7 +230,7 @@ export function EditorialCard({ children, density = "default" }: { children: Rea
    sections separated by hairlines rather than individually elevated). ─── */
 export function PageHeader({ title, desc }: { title: string; desc: string }) {
   return (
-    <div style={{ padding: "20px clamp(16px, 5vw, 104px)", borderBottom: `1px solid ${c.border}` }}>
+    <div style={{ padding: "20px 28px", borderBottom: `1px solid ${c.border}` }}>
       <h1 style={{ fontFamily: font.ui, fontSize: 20, fontWeight: 500, color: c.ink, margin: 0, letterSpacing: "-0.01em" }}>{title}</h1>
       <p style={{ fontFamily: font.ui, fontSize: 14, color: c.inkSoft, margin: "4px 0 0" }}>{desc}</p>
     </div>
