@@ -279,9 +279,9 @@ export default function AppShellFrame({
           </Breadcrumb>
         </header>
 
-        <div ref={scrollRef} style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", overflowY: "auto", paddingBottom: isMobile ? 16 : 24 }}>
+        <div ref={scrollRef} style={{ flex: 1, minHeight: 0, minWidth: 0, display: "flex", flexDirection: "column", overflowY: "auto", overflowX: "hidden", paddingBottom: isMobile ? 16 : 24 }}>
           {banners}
-          <div key={pageKey ?? undefined} className="dash-page-enter" style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
+          <div key={pageKey ?? undefined} className="dash-page-enter" style={{ flex: 1, minHeight: 0, minWidth: 0, display: "flex", flexDirection: "column" }}>
             {children}
           </div>
         </div>
