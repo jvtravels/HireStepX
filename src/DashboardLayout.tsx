@@ -236,6 +236,10 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
   const activeNav = (() => {
     const path = pathname;
     if (path === "/dashboard" || path === "/dashboard/") return "dashboard";
+    // /session/[id] is the Sessions detail view, not its own nav item —
+    // treat it as a sub-route of "/sessions" so the sidebar highlights
+    // Sessions instead of silently falling back to Dashboard.
+    if (path?.startsWith("/session/")) return "sessions";
     const match = allNavItems.find(item => item.path !== "/dashboard" && path === item.path);
     return match?.id || "dashboard";
   })();
