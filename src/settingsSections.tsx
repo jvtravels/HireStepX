@@ -230,7 +230,7 @@ export function EditorialCard({ children, density = "default" }: { children: Rea
    sections separated by hairlines rather than individually elevated). ─── */
 export function PageHeader({ title, desc }: { title: string; desc: string }) {
   return (
-    <div style={{ padding: "20px 28px", borderBottom: `1px solid ${c.border}` }}>
+    <div style={{ padding: "20px clamp(16px, 5vw, 104px)", borderBottom: `1px solid ${c.border}` }}>
       <h1 style={{ fontFamily: font.ui, fontSize: 20, fontWeight: 500, color: c.ink, margin: 0, letterSpacing: "-0.01em" }}>{title}</h1>
       <p style={{ fontFamily: font.ui, fontSize: 14, color: c.inkSoft, margin: "4px 0 0" }}>{desc}</p>
     </div>
@@ -239,7 +239,7 @@ export function PageHeader({ title, desc }: { title: string; desc: string }) {
 
 export function FlatSection({ title, children, last }: { title: string; children: React.ReactNode; last?: boolean }) {
   return (
-    <div style={{ padding: "24px 28px", borderBottom: last ? "none" : `1px solid ${c.border}` }}>
+    <div style={{ padding: "24px clamp(16px, 5vw, 104px)", borderBottom: last ? "none" : `1px solid ${c.border}` }}>
       <h2 style={{ fontFamily: font.ui, fontSize: 16, fontWeight: 500, color: c.ink, margin: "0 0 18px" }}>{title}</h2>
       {children}
     </div>
@@ -325,7 +325,7 @@ export const AccountSection = memo(function AccountSection(props: AccountSection
     <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
       {/* ── Profile group ── */}
       <div>
-      <div style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ink, marginBottom: 2 }}>Profile</div>
+      <div style={subHeaderTitle}>Profile</div>
       <div style={{ fontFamily: font.ui, fontSize: 12, color: c.inkSoft, marginBottom: 14 }}>The basics we use to personalise interview prompts and coaching.</div>
       <div style={{ border: `1px solid ${c.border}`, borderRadius: 12, padding: "20px 24px" }}>
         <div style={{ display: "flex", gap: 24, alignItems: "center", marginBottom: 24, flexWrap: "wrap" }}>
@@ -512,7 +512,7 @@ export interface DangerZoneSectionProps {
   authHeaders: () => Promise<Record<string, string>>;
 }
 
-const subHeaderTitle: React.CSSProperties = { fontFamily: font.ui, fontSize: 14, fontWeight: 700, color: c.ink };
+const subHeaderTitle: React.CSSProperties = { fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: c.ink };
 const subHeaderHint: React.CSSProperties = { fontFamily: font.ui, fontSize: 12, color: c.inkSoft, marginTop: 4, lineHeight: 1.5 };
 const keyValueLabel: React.CSSProperties = { fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ink };
 const keyValueValue: React.CSSProperties = { fontFamily: font.ui, fontSize: 12, color: c.inkSoft, lineHeight: 1.5, marginTop: 2 };
@@ -701,7 +701,7 @@ export const PlanUsageSection = memo(function PlanUsageSection(props: PlanUsageS
     <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
       {/* Plan status + usage, and extra-session credits — one card, two
           panels, since both describe the same subscription. */}
-      <div style={{ display: "flex", flexWrap: "wrap", border: `1px solid ${c.border}`, borderRadius: 14, overflow: "hidden", boxShadow: shadow.sm }}>
+      <div style={{ display: "flex", flexWrap: "wrap", border: `1px solid ${c.border}`, borderRadius: 14, overflow: "hidden" }}>
         <div style={{ flex: "1 1 320px", minWidth: 0, background: c.graphite, padding: "24px 28px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 6, flexWrap: "wrap" }}>
             <span style={{ fontFamily: font.ui, fontSize: 22, fontWeight: 700, color: c.ink }}>{tierLabel}</span>
