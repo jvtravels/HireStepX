@@ -657,7 +657,7 @@ export default function DashboardHome() {
            bears all the shrink. Collapses to 1fr at ≤1180px via the
            media query below. */
         gridTemplateColumns: "minmax(0, 1fr) minmax(280px, 360px)",
-        gap: 32, maxWidth: 1280, margin: "0 auto",
+        gap: 32, width: "100%",
         background: t.white, border: `1px solid ${t.line}`, borderRadius: 12,
         padding: 24, boxSizing: "border-box",
       }}>

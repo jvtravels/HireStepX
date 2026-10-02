@@ -778,7 +778,7 @@ export default function CalendarPage() {
   const canSave = !!formDate && !!formTime && !saving;
 
   return (
-    <div style={{ fontFamily: font.ui, color: c.ivory, maxWidth: 1280, margin: "0 auto" }}>
+    <div style={{ fontFamily: font.ui, color: c.ivory, width: "100%" }}>
       <style>{STYLE}</style>
 
       {/* app-shell main container — same raised-card treatment as the other

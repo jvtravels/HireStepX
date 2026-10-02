@@ -23,20 +23,13 @@ import { useRouter } from "next/navigation";
 import {
   PlusIcon,
   SearchXIcon,
-  ChevronDownIcon,
   AlertCircleIcon,
   BriefcaseIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import LoadingScreen from "@/_LoadingScreen";
 import { SearchWithSuggestions } from "@/components/SearchWithSuggestions";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { FilterPill } from "@/components/FilterPill";
 import {
   Table,
   TableBody,
@@ -133,6 +126,10 @@ function compareRows(a: JobMatch, b: JobMatch, sort: Sort<SortColumn>): number {
   }
 }
 
+function filterPillOptions(options: string[]): Array<{ value: string; label: string }> {
+  return [{ value: "", label: "All" }, ...options.map((o) => ({ value: o, label: o }))];
+}
+
 function experienceBucket(m: JobMatch): string | null {
   const min = m.experienceMin ?? m.experienceMax;
   if (min == null) return null;
@@ -140,45 +137,6 @@ function experienceBucket(m: JobMatch): string | null {
   if (min < 5) return "2-5 years";
   if (min < 8) return "5-8 years";
   return "8+ years";
-}
-
-function FilterPill({
-  label,
-  value,
-  options,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  options: string[];
-  onChange: (value: string) => void;
-}) {
-  const display = value ? `${label}: ${value}` : label;
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="outline"
-          style={{ borderRadius: 8, height: 44, gap: 8, background: t.white, color: value ? t.coal : t.inkFaint, fontFamily: f.sans, fontSize: 13, fontWeight: 500, flexShrink: 0, transition: `background ${dur.instant} ${ease.snap}` }}
-          onMouseEnter={(e) => { e.currentTarget.style.background = t.rowTint; }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = t.white; }}
-        >
-          {display}
-          <ChevronDownIcon size={12} aria-hidden="true" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent>
-        <DropdownMenuRadioGroup value={value} onValueChange={onChange}>
-          <DropdownMenuRadioItem value="">All</DropdownMenuRadioItem>
-          {options.map((o) => (
-            <DropdownMenuRadioItem key={o} value={o}>
-              {o}
-            </DropdownMenuRadioItem>
-          ))}
-        </DropdownMenuRadioGroup>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
 }
 
 // One pill treatment for every status/category badge in this table, so
@@ -401,10 +359,10 @@ export default function DashboardJobs() {
               suggestedFilters={suggestedFilters}
               style={{ flex: "1 1 240px", minWidth: 200 }}
             />
-            <FilterPill label="Location" value={locationFilter} options={locationOptions} onChange={setLocationFilter} />
-            <FilterPill label="Job type" value={jobTypeFilter} options={jobTypeOptions} onChange={setJobTypeFilter} />
-            <FilterPill label="Experience" value={experienceFilter} options={experienceOptions} onChange={setExperienceFilter} />
-            <FilterPill label="Industry" value={industryFilter} options={industryOptions} onChange={setIndustryFilter} />
+            <FilterPill label="Location" value={locationFilter} options={filterPillOptions(locationOptions)} onChange={setLocationFilter} />
+            <FilterPill label="Job type" value={jobTypeFilter} options={filterPillOptions(jobTypeOptions)} onChange={setJobTypeFilter} />
+            <FilterPill label="Experience" value={experienceFilter} options={filterPillOptions(experienceOptions)} onChange={setExperienceFilter} />
+            <FilterPill label="Industry" value={industryFilter} options={filterPillOptions(industryOptions)} onChange={setIndustryFilter} />
           </div>
 
           <div className="[&>div]:h-full [&>div]:overflow-y-auto" style={{ overflow: "hidden", flex: 1, minHeight: 0 }}>

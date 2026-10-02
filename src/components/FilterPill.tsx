@@ -28,7 +28,11 @@ export function FilterPill<V extends string>({
   options: Array<{ value: V; label: string }>;
   onChange: (value: V) => void;
 }) {
-  const active = options.find((o) => o.value === value);
+  // An empty string is the "no filter applied" sentinel some callers use
+  // (vs. Sessions' literal "All" option) — treat it as unset rather than
+  // matching an { value: "", label: "All" } entry, so the pill reads as
+  // its bare label instead of "Location: All".
+  const active = value ? options.find((o) => o.value === value) : undefined;
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
