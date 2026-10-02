@@ -231,7 +231,7 @@ export function EditorialCard({ children, density = "default" }: { children: Rea
 export function PageHeader({ title, desc }: { title: string; desc: string }) {
   return (
     <div style={{ padding: "20px 28px", borderBottom: `1px solid ${c.border}` }}>
-      <h1 style={{ fontFamily: font.ui, fontSize: 20, fontWeight: 500, color: c.ink, margin: 0, letterSpacing: "-0.01em" }}>{title}</h1>
+      <h1 style={{ fontFamily: font.ui, fontSize: 20, fontWeight: 600, color: c.ink, margin: 0, letterSpacing: "-0.01em" }}>{title}</h1>
       <p style={{ fontFamily: font.ui, fontSize: 14, color: c.inkSoft, margin: "4px 0 0" }}>{desc}</p>
     </div>
   );
@@ -240,7 +240,7 @@ export function PageHeader({ title, desc }: { title: string; desc: string }) {
 export function FlatSection({ title, children, last }: { title: string; children: React.ReactNode; last?: boolean }) {
   return (
     <div style={{ padding: "24px clamp(16px, 5vw, 104px)", borderBottom: last ? "none" : `1px solid ${c.border}` }}>
-      <h2 style={{ fontFamily: font.ui, fontSize: 16, fontWeight: 500, color: c.ink, margin: "0 0 18px" }}>{title}</h2>
+      <h2 style={{ fontFamily: font.ui, fontSize: 16, fontWeight: 600, color: c.ink, margin: "0 0 18px" }}>{title}</h2>
       {children}
     </div>
   );
