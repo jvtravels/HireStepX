@@ -259,7 +259,7 @@ function WorkspaceHeader({
           placeholder="Search sessions..."
           storageKey="hirestepx-sessions-recent-searches"
           suggestedFilters={suggestedFilters}
-          style={{ flex: "1 1 160px", minWidth: 140, maxWidth: 280 }}
+          style={{ flex: "1 1 200px", minWidth: 140, maxWidth: 560 }}
         />
         {/* Only this inner group scrolls horizontally on narrow viewports —
             keeping overflowX off the row above avoids clipping the search
@@ -279,21 +279,7 @@ function WorkspaceHeader({
             options={dateOptions.map((d) => ({ value: d, label: d }))}
             onChange={onDateFilterChange}
           />
-          <Button
-            onClick={onStartSession}
-            style={{
-              background: T.indigo,
-              color: T.white,
-              borderRadius: 8,
-              padding: "0 16px",
-              height: 36,
-              gap: 8,
-              fontSize: 13,
-              fontWeight: 600,
-              flexShrink: 0,
-              boxShadow: `0px 2px 4px color-mix(in srgb, ${T.indigo} 20%, transparent)`,
-            }}
-          >
+          <Button size="lg" className="gap-2 px-4" onClick={onStartSession}>
             <PlusIcon size={16} strokeWidth={2.5} aria-hidden="true" />
             Start session
           </Button>
