@@ -72,6 +72,7 @@
     "@eslint/js": "^9.39.4",
     "@playwright/test": "^1.59.1",
     "@tailwindcss/vite": "^4.0.0",
+    "@testing-library/dom": "^10.4.2",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@types/node": "^25.5.0",
@@ -80,8 +81,8 @@
     "@vercel/edge": "^1.2.2",
     "@vercel/node": "^5.7.0",
     "@vitejs/plugin-react": "^5.0.0",
-    "@vitest/coverage-v8": "^4.1.5",
-    "csv-parse": "^7.0.1",
+    "@vitest/coverage-v8": "^4.1.11",
+    "csv-parse": "^7.0.2",
     "eslint": "^9.39.4",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-jsx-a11y": "^6.10.2",
@@ -96,12 +97,13 @@
     "typescript-eslint": "^8.58.1",
     "vite": "^7.0.0",
     "vite-tsconfig-paths": "^6.0.0",
-    "vitest": "^4.1.2"
+    "vitest": "^4.1.11"
   },
   "overrides": {
     "canvas": "npm:empty-npm-package@1.0.0",
-    "undici": "^7.29.0",
+    "undici": "^7.29.1",
     "postcss": "^8.5.23",
-    "sharp": "^0.35.3"
+    "sharp": "^0.35.3",
+    "esbuild": "^0.28.1"
   }
 }
