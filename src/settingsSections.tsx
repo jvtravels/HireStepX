@@ -361,7 +361,6 @@ export interface DangerZoneSectionProps {
   authHeaders: () => Promise<Record<string, string>>;
 }
 
-const subHeaderHint: React.CSSProperties = { fontFamily: font.ui, fontSize: 12, color: c.inkSoft, marginTop: 4, lineHeight: 1.5 };
 const keyValueLabel: React.CSSProperties = { fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ink };
 const keyValueValue: React.CSSProperties = { fontFamily: font.ui, fontSize: 12, color: c.inkSoft, lineHeight: 1.5, marginTop: 2 };
 
@@ -682,6 +681,14 @@ export const PlanUsageSection = memo(function PlanUsageSection(props: PlanUsageS
    DANGER ZONE SECTION
    ═══════════════════════════════════════════════════════════════ */
 
+/* Figma spec (node 786:650) uses a cleaner, more saturated pink than
+   the shared error100/errorLine tokens render at — raw per the file's
+   existing "faint tint fills ... stay raw" convention above. */
+const dangerCardBg = "#fff9f9";
+const dangerCardBorder = "#ffe0e1";
+const dangerBtnBg = "#fdf0f0";
+const dangerText = "#d92d20";
+
 export const DangerZoneSection = memo(function DangerZoneSection(props: DangerZoneSectionProps) {
   const {
     authUser, confirmDelete, setConfirmDelete,
@@ -723,18 +730,31 @@ export const DangerZoneSection = memo(function DangerZoneSection(props: DangerZo
 
   return (
     <div style={{
-      background: t.error100, border: `1px solid ${t.errorLine}`, borderRadius: 12, padding: "20px 24px",
+      background: dangerCardBg, border: `1px solid ${dangerCardBorder}`, borderRadius: 16, padding: "32px clamp(16px, 4vw, 48px)",
     }}>
       {!confirmDelete ? (
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
-          <div style={{ minWidth: 0, flex: 1 }}>
-            <div style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: c.ember, marginBottom: 2 }}>Delete account</div>
-            <div style={subHeaderHint}>Removes your account and all data. A 7-day grace period lets you cancel by logging in.</div>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 32, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 16, minWidth: 0, flex: 1 }}>
+            <span aria-hidden="true" style={{
+              width: 44, height: 44, borderRadius: 8, flexShrink: 0,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              background: c.graphite, border: `1px solid ${dangerCardBorder}`, color: dangerText,
+            }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
+            </span>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontFamily: font.ui, fontSize: 16, fontWeight: 600, color: dangerText }}>Delete Account</div>
+              <div style={{ fontFamily: font.ui, fontSize: 12, color: c.inkSoft, marginTop: 4, lineHeight: 1.5 }}>Removes your account and all data. A 7-day grace period lets you cancel by logging in.</div>
+            </div>
           </div>
           <Button type="button" variant="destructive" size="sm"
             onClick={() => { setConfirmDelete(true); setDeleteEmailInput(""); setDeletePasswordInput(""); setDeleteMsg(""); }}
-            style={{ ...dangerSubtleBtn, flexShrink: 0 }}>
-            Begin deletion
+            style={{
+              fontFamily: font.ui, fontSize: 16, fontWeight: 600, color: dangerText,
+              background: dangerBtnBg, border: `1px solid ${dangerCardBorder}`, borderRadius: 8,
+              padding: "10px 18px", cursor: "pointer", flexShrink: 0,
+            }}>
+            Begin Deletion
           </Button>
         </div>
       ) : (() => {
@@ -745,7 +765,7 @@ export const DangerZoneSection = memo(function DangerZoneSection(props: DangerZo
         const submitDisabled = deleteLoading || !emailMatches || !passwordOk;
         return (
         <div>
-          <div style={{ ...keyValueLabel, color: c.ember, marginBottom: 6 }}>Confirm deletion</div>
+          <div style={{ ...keyValueLabel, color: dangerText, marginBottom: 6 }}>Confirm deletion</div>
           <div style={keyValueValue}>
             Type your email ({authUser?.email})
             {isOAuthOnlyUser ? " to confirm" : " and re-enter your password to confirm"}.
@@ -758,7 +778,7 @@ export const DangerZoneSection = memo(function DangerZoneSection(props: DangerZo
               autoComplete="off"
               style={{
                 fontFamily: font.ui, fontSize: 13, color: c.ink, background: c.graphite,
-                border: `1px solid ${t.errorLine}`, borderRadius: 9, padding: "10px 14px",
+                border: `1px solid ${dangerCardBorder}`, borderRadius: 9, padding: "10px 14px",
                 outline: "none", minWidth: 0, width: "100%", minHeight: 40, boxSizing: "border-box",
               }} />
             {!isOAuthOnlyUser && (
@@ -769,7 +789,7 @@ export const DangerZoneSection = memo(function DangerZoneSection(props: DangerZo
                 autoComplete="current-password"
                 style={{
                   fontFamily: font.ui, fontSize: 13, color: c.ink, background: c.graphite,
-                  border: `1px solid ${t.errorLine}`, borderRadius: 9, padding: "10px 14px",
+                  border: `1px solid ${dangerCardBorder}`, borderRadius: 9, padding: "10px 14px",
                   outline: "none", minWidth: 0, width: "100%", minHeight: 40, boxSizing: "border-box",
                 }} />
             )}
