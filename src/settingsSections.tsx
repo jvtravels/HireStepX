@@ -1,9 +1,7 @@
 import type React from "react";
 import { memo, useEffect, useState } from "react";
 import { track } from "@vercel/analytics";
-import { authHeaders, type PaymentRecord } from "./supabase";
-import { useAuth, referralSignupUrl } from "./AuthContext";
-import { captureClientEvent } from "./posthogClient";
+import { type PaymentRecord } from "./supabase";
 import { useDashboardSubscription } from "./DashboardContext";
 import { tokens as t, fonts, shadows } from "./auth/_tokens";
 import { Button } from "@/components/ui/button";
@@ -43,6 +41,7 @@ const c = {
   success100: t.success100,
   error100: t.error100,
   warning100: t.warning100,
+  warningInk: t.warningInk,
   cream: t.cream,
   creamSoft: t.creamSoft,
   rowTint: t.rowTint,
@@ -61,7 +60,6 @@ export const icons = {
   account: <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
   interview: <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>,
   plan: <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>,
-  referral: <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>,
 };
 
 export const focusOutBase = (e: React.FocusEvent<HTMLInputElement>) => {
@@ -297,7 +295,7 @@ export function KeyValue({ label, value, right }: { label: string; value: string
 function TinyChip({ children, tone }: { children: React.ReactNode; tone?: "success" | "warn" }) {
   const palette =
     tone === "success" ? { bg: c.success100, fg: c.sage } :
-    tone === "warn" ? { bg: c.warning100, fg: c.indigoDeep } :
+    tone === "warn" ? { bg: c.warning100, fg: c.warningInk } :
     { bg: c.indigo100, fg: c.indigo };
   return (
     <span style={{
@@ -452,7 +450,7 @@ interface UsageResponse {
 function PlanStatusChip({ label, tone }: { label: string; tone: "success" | "warn" | "danger" }) {
   const palette =
     tone === "danger" ? { bg: c.error100, fg: c.ember } :
-    tone === "warn" ? { bg: c.indigo100, fg: c.indigo } :
+    tone === "warn" ? { bg: c.warning100, fg: c.warningInk } :
     { bg: c.success100, fg: c.sage };
   return (
     <span style={{
@@ -519,6 +517,25 @@ const subHeaderHint: React.CSSProperties = { fontFamily: font.ui, fontSize: 12, 
 const keyValueLabel: React.CSSProperties = { fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ink };
 const keyValueValue: React.CSSProperties = { fontFamily: font.ui, fontSize: 12, color: c.inkSoft, lineHeight: 1.5, marginTop: 2 };
 
+
+/** Shared by every Plan/Danger-zone mutation: resolve auth headers with a
+ * 5s timeout, then run `fn` with an AbortSignal that aborts at 15s. */
+async function withAuthedAbort<T>(
+  getAuthHeaders: () => Promise<Record<string, string>>,
+  fn: (hdrs: Record<string, string>, signal: AbortSignal) => Promise<T>,
+): Promise<T> {
+  const hdrs = await Promise.race([
+    getAuthHeaders(),
+    new Promise<never>((_, rej) => setTimeout(() => rej(new Error("Auth timeout")), 5000)),
+  ]);
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 15000);
+  try {
+    return await fn(hdrs, ctrl.signal);
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 function invoiceDetails(payment: PaymentRecord) {
   const d = new Date(payment.created_at);
@@ -623,11 +640,8 @@ export const PlanUsageSection = memo(function PlanUsageSection(props: PlanUsageS
   async function handleReactivate() {
     setCancelLoading(true); setCancelMsg("");
     try {
-      const hdrs = await Promise.race([getAuthHeaders(), new Promise<never>((_, rej) => setTimeout(() => rej(new Error("Auth timeout")), 5000))]);
-      const ctrl = new AbortController();
-      const timer = setTimeout(() => ctrl.abort(), 15000);
-      const res = await fetch("/api/reactivate-subscription", { method: "POST", headers: hdrs, signal: ctrl.signal });
-      clearTimeout(timer);
+      const res = await withAuthedAbort(getAuthHeaders, (hdrs, signal) =>
+        fetch("/api/reactivate-subscription", { method: "POST", headers: hdrs, signal }));
       if (res.ok) {
         const data = await res.json();
         if (data.success) { authUpdateUser({ cancelAtPeriodEnd: false }); showToast("Plan reactivated"); }
@@ -644,10 +658,10 @@ export const PlanUsageSection = memo(function PlanUsageSection(props: PlanUsageS
   async function handlePauseToggle() {
     setCancelLoading(true);
     try {
-      const hdrs = await Promise.race([getAuthHeaders(), new Promise<never>((_, rej) => setTimeout(() => rej(new Error("Auth timeout")), 5000))]);
       const isPaused = !!authUser?.subscriptionPaused;
       const action = isPaused ? "resume" : "pause";
-      const res = await fetch("/api/pause-subscription", { method: "POST", headers: hdrs, body: JSON.stringify({ action }) });
+      const res = await withAuthedAbort(getAuthHeaders, (hdrs, signal) =>
+        fetch("/api/pause-subscription", { method: "POST", headers: hdrs, body: JSON.stringify({ action }), signal }));
       if (res.ok) {
         const data = await res.json();
         if (data.success) { authUpdateUser({ subscriptionPaused: action === "pause" }); showToast(action === "pause" ? "Subscription paused" : "Subscription resumed"); }
@@ -655,17 +669,16 @@ export const PlanUsageSection = memo(function PlanUsageSection(props: PlanUsageS
       } else {
         const d = await res.json().catch(() => ({})); showToast(d.error || "Failed");
       }
-    } catch { showToast("Network error"); } finally { setCancelLoading(false); }
+    } catch (err) {
+      showToast(err instanceof DOMException && err.name === "AbortError" ? "Request timed out." : "Network error.");
+    } finally { setCancelLoading(false); }
   }
 
   async function handleConfirmCancel() {
     setCancelLoading(true); setCancelMsg("");
     try {
-      const hdrs = await Promise.race([getAuthHeaders(), new Promise<never>((_, rej) => setTimeout(() => rej(new Error("Auth timeout")), 5000))]);
-      const ctrl = new AbortController();
-      const timer = setTimeout(() => ctrl.abort(), 15000);
-      const res = await fetch("/api/cancel-subscription", { method: "POST", headers: hdrs, signal: ctrl.signal });
-      clearTimeout(timer);
+      const res = await withAuthedAbort(getAuthHeaders, (hdrs, signal) =>
+        fetch("/api/cancel-subscription", { method: "POST", headers: hdrs, signal }));
       if (res.ok) {
         const data = await res.json();
         if (data.success) {
@@ -835,17 +848,14 @@ export const DangerZoneSection = memo(function DangerZoneSection(props: DangerZo
   async function handleConfirmDelete() {
     setDeleteLoading(true); setDeleteMsg("");
     try {
-      const hdrs = await Promise.race([getAuthHeaders(), new Promise<never>((_, rej) => setTimeout(() => rej(new Error("Auth timeout")), 5000))]);
-      const ctrl = new AbortController();
-      const t = setTimeout(() => ctrl.abort(), 15000);
       // Re-auth gate: send the user's password so the server can verify
       // possession-of-credentials, not just possession-of-bearer.
       // OAuth-only users have no app password — server skips the check
       // for them; sending an empty string is fine (server only verifies
       // when present and non-empty for non-OAuth users).
       const body = isOAuthOnlyUser ? {} : { password: deletePasswordInput };
-      const res = await fetch("/api/delete-account", { method: "POST", headers: { ...hdrs, "Content-Type": "application/json" }, body: JSON.stringify(body), signal: ctrl.signal });
-      clearTimeout(t);
+      const res = await withAuthedAbort(getAuthHeaders, (hdrs, signal) =>
+        fetch("/api/delete-account", { method: "POST", headers: { ...hdrs, "Content-Type": "application/json" }, body: JSON.stringify(body), signal }));
       if (res.ok || res.status === 207) {
         const data = await res.json().catch(() => ({}));
         if (data.scheduled) showToast("Account scheduled for deletion. Log in within 7 days to cancel.");
@@ -934,208 +944,4 @@ export const DangerZoneSection = memo(function DangerZoneSection(props: DangerZo
   );
 });
 
-/* ═══════════════════════════════════════════════════════════════
-   REFERRAL SECTION
-   ═══════════════════════════════════════════════════════════════ */
-
-interface ReferralInviteRow {
-  id: string;
-  name: string;
-  email: string;
-  status: "pending" | "redeemed" | "rewarded";
-  createdAt: string;
-}
-
-
-export function ReferralSection({ showToast }: { showToast: (msg: string) => void }) {
-  const { user } = useAuth();
-  const [referralCode, setReferralCode] = useState<string | null>(null);
-  const [stats, setStats] = useState({ total: 0, redeemed: 0, rewarded: 0 });
-  const [invites, setInvites] = useState<ReferralInviteRow[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [copied, setCopied] = useState(false);
-
-  useEffect(() => {
-    if (!user?.id) return;
-    (async () => {
-      try {
-        const headers = await authHeaders();
-        const [codeRes, invitesRes] = await Promise.all([
-          fetch("/api/referral", { headers }),
-          fetch("/api/referral-invites", { headers }),
-        ]);
-        if (codeRes.ok) {
-          const data = await codeRes.json();
-          setReferralCode(data.code);
-          setStats(data.stats);
-        }
-        if (invitesRes.ok) {
-          const data = await invitesRes.json();
-          if (Array.isArray(data.invites)) setInvites(data.invites as ReferralInviteRow[]);
-        }
-      } catch {
-        // silent
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [user?.id]);
-
-  const referralLink = referralCode ? referralSignupUrl(referralCode) : "";
-  // Display the real, working link (sans protocol) rather than a prettier
-  // hirestepx.com/r/<code> short link that has no redirect behind it — a link
-  // we show must be a link that actually resolves.
-  const displayLink = referralLink.replace(/^https?:\/\//, "");
-
-  const handleCopy = () => {
-    if (!referralLink) return;
-    navigator.clipboard.writeText(referralLink);
-    setCopied(true);
-    showToast("Referral link copied!");
-    setTimeout(() => setCopied(false), 2000);
-    captureClientEvent("referral_invite_sent", { surface: "settings", channel: "copy" });
-  };
-
-  const handleShareWhatsApp = () => {
-    if (!referralLink) return;
-    const text = `Hey! I've been practising interviews on HireStepX with an AI that scores your answers. Sign up with my link and we each get a free session: ${referralLink}`;
-    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
-    captureClientEvent("referral_invite_sent", { surface: "settings", channel: "whatsapp" });
-  };
-
-  const handleShareEmail = () => {
-    if (!referralLink) return;
-    const subject = "Try HireStepX - AI Mock Interviews";
-    const body = `Hey!\n\nI've been using HireStepX to practice for interviews with AI interviewers. It gives detailed feedback on STAR method, speech analytics, and more.\n\nSign up with my link and we each get a free practice session: ${referralLink}`;
-    window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
-    captureClientEvent("referral_invite_sent", { surface: "settings", channel: "email" });
-  };
-
-  const sectionLabel: React.CSSProperties = { fontFamily: font.ui, fontSize: 11, fontWeight: 600, color: c.inkSoft, letterSpacing: "0.08em", textTransform: "uppercase" };
-
-  const linkBtn: React.CSSProperties = {
-    fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ink,
-    background: "transparent", border: "none",
-    padding: "10px 8px", cursor: "pointer",
-  };
-
-  if (loading) {
-    return <span style={{ fontFamily: font.ui, fontSize: 13, color: c.inkSoft }}>Loading referral info...</span>;
-  }
-
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-      <div style={{ fontFamily: font.ui, fontSize: 12, color: c.inkSoft, lineHeight: 1.5 }}>
-        When a friend signs up with your link, you each get a free practice session, credited instantly. {stats.rewarded} earned so far.
-      </div>
-
-      <div className="settings-referral-grid" style={{ display: "grid", gap: 24, alignItems: "start" }}>
-        <div style={{ minWidth: 0 }}>
-          <div style={sectionLabel}>Your referral link</div>
-          <div style={{
-            marginTop: 12,
-            display: "inline-flex", alignItems: "center",
-            padding: "14px 18px", borderRadius: 12,
-            background: c.creamSoft, border: `1px solid ${c.border}`,
-            fontFamily: font.mono, fontSize: 15, color: c.ink,
-            maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-          }}>
-            {displayLink ? (
-              <span style={{ color: c.indigo }}>{displayLink}</span>
-            ) : "—"}
-          </div>
-          <div style={{ display: "flex", gap: 8, marginTop: 18, flexWrap: "wrap" }}>
-            <Button type="button" variant="default" size="sm" onClick={handleCopy} style={indigoPrimaryBtn}>
-              {copied ? "Copied!" : "Copy link"}
-            </Button>
-            <Button type="button" variant="ghost" size="sm" onClick={handleShareWhatsApp} style={indigoGhostBtn}>Share on WhatsApp</Button>
-            <Button type="button" variant="link" size="sm" onClick={handleShareEmail} style={linkBtn}>Email a friend</Button>
-          </div>
-        </div>
-
-        <div style={{ padding: "20px 22px", borderRadius: 12, background: c.creamSoft, border: `1px solid ${c.border}` }} aria-label="Referral rewards">
-          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 10 }}>
-            <span style={{ fontFamily: font.ui, fontSize: 13, color: c.ink, fontWeight: 600 }}>Free sessions earned</span>
-            <span style={{ fontFamily: font.mono, fontSize: 18, fontWeight: 700, color: c.reward }}>{stats.rewarded}</span>
-          </div>
-          <div style={{ fontFamily: font.ui, fontSize: 12, color: c.inkSoft, marginTop: 10, lineHeight: 1.5 }}>
-            {stats.redeemed} friend{stats.redeemed === 1 ? "" : "s"} joined with your link. You both get a free session the moment they sign up — no purchase needed.
-          </div>
-        </div>
-      </div>
-
-      <div style={{ borderTop: `1px solid ${c.border}`, paddingTop: 20 }}>
-        <div style={{ marginBottom: 16 }}>
-          <div style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 700, color: c.ink }}>Your invites</div>
-          <div style={{ fontFamily: font.ui, fontSize: 12, color: c.inkSoft, marginTop: 4, lineHeight: 1.5 }}>
-            We tell you the moment a friend joins with your link.
-          </div>
-        </div>
-        {invites.length === 0 ? (
-          <div style={{ fontFamily: font.ui, fontSize: 13, color: c.inkSoft, padding: "20px 0" }}>
-            No invites yet. Share your link to see them here.
-          </div>
-        ) : (
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            {invites.map((inv, i) => (
-              <ReferRow key={inv.id} invite={inv} divider={i < invites.length - 1} />
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function ReferRow({ invite, divider }: { invite: ReferralInviteRow; divider: boolean }) {
-  const initials = invite.name
-    .split(/\s+/)
-    .map(w => w[0])
-    .filter(Boolean)
-    .slice(0, 2)
-    .join("")
-    .toUpperCase() || "?";
-  const ts = invite.createdAt ? relativeTime(invite.createdAt) : "";
-  const tone = invite.status === "rewarded"
-    ? { label: "Rewarded", bg: c.success100, fg: c.sage, border: t.successLine }
-    : invite.status === "redeemed"
-      ? { label: "Joined", bg: c.indigo100, fg: c.indigo, border: t.indigoRing }
-      : { label: "Pending", bg: c.warning100, fg: t.warning, border: t.warningLine };
-  return (
-    <div className="settings-refer-row" style={{
-      display: "grid", gap: 16, alignItems: "center",
-      padding: "14px 0", borderBottom: divider ? `1px solid ${c.border}` : "none",
-    }}>
-      <div style={{
-        width: 36, height: 36, borderRadius: "50%",
-        background: c.indigo, color: c.cream,
-        display: "flex", alignItems: "center", justifyContent: "center",
-        fontFamily: font.ui, fontSize: 12, fontWeight: 700, letterSpacing: "0.04em",
-      }}>{initials}</div>
-      <div style={{ minWidth: 0 }}>
-        <div style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: c.ink, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{invite.name}</div>
-        <div style={{ fontFamily: font.ui, fontSize: 12, color: c.inkSoft, marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{invite.email}</div>
-      </div>
-      <div style={{ fontFamily: font.ui, fontSize: 12, color: c.inkSoft }}>{ts}</div>
-      <div style={{
-        fontFamily: font.ui, fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
-        color: tone.fg, background: tone.bg, border: `1px solid ${tone.border}`,
-        borderRadius: 6, padding: "4px 8px",
-      }}>{tone.label}</div>
-    </div>
-  );
-}
-
-function relativeTime(iso: string): string {
-  const then = new Date(iso).getTime();
-  if (!Number.isFinite(then)) return "";
-  const diff = Date.now() - then;
-  const day = 86_400_000;
-  const days = Math.floor(diff / day);
-  if (days < 1) return "today";
-  if (days < 7) return `${days}d ago`;
-  if (days < 30) return `${Math.floor(days / 7)}w ago`;
-  if (days < 365) return `${Math.floor(days / 30)}mo ago`;
-  return `${Math.floor(days / 365)}y ago`;
-}
 

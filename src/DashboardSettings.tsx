@@ -68,8 +68,9 @@ export default function SettingsPage() {
     setTimeout(() => {
       if (editName !== persisted.userName || editRole !== persisted.targetRole || editCompany !== (authUser?.targetCompany || "") || editIndustry !== (authUser?.industry || "") || editCity !== (authUser?.city || "")) {
         onUpdate({ userName: editName, targetRole: editRole });
-        authUpdateUser({ name: editName, targetRole: editRole, targetCompany: editCompany, industry: editIndustry, city: editCity });
-        showToast("Saved");
+        Promise.resolve(authUpdateUser({ name: editName, targetRole: editRole, targetCompany: editCompany, industry: editIndustry, city: editCity }))
+          .then(() => showToast("Saved"))
+          .catch(() => showToast("Failed to save. Try again."));
       }
     }, 0);
   }, [editName, editRole, editCompany, editIndustry, editCity, persisted.userName, persisted.targetRole, authUser?.targetCompany, authUser?.industry, authUser?.city, onUpdate, authUpdateUser, showToast]);
