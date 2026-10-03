@@ -272,6 +272,24 @@ export default function ResumeV2Screen() {
     }));
   }, [profile]);
 
+  const practiceFocusItems = useMemo(() => {
+    if (!profile) return [];
+    const items: string[] = [];
+    if (profile.topSkills.length > 0) {
+      items.push(`Technical depth on ${profile.topSkills.slice(0, 3).join(", ")}`);
+    }
+    if (profile.interviewGaps.length > 0) {
+      items.push("Behavioural stories at scale");
+    }
+    if (profile.seniorityLevel) {
+      items.push(`${profile.seniorityLevel}-level system-design questions`);
+    }
+    if (items.length === 0) {
+      items.push("Personalised question mix based on your profile");
+    }
+    return items.slice(0, 3);
+  }, [profile]);
+
   let body: React.ReactNode;
   if (authLoading) {
     body = <ResumeSkeleton />;
@@ -600,6 +618,26 @@ export default function ResumeV2Screen() {
               </div>
             </SectionCard>
           )}
+
+          {/* Practice focus — same recommendation shown once at onboarding,
+              recomputed here so it's not a one-time-only screen. */}
+          <SectionCard padding={16}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <CompassIcon size={16} color={T.coal} aria-hidden="true" />
+              <h2 style={{ fontFamily: font.ui, fontSize: S.lg, fontWeight: 700, color: T.coal, margin: 0 }}>Practice Focus</h2>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {practiceFocusItems.map((text, i) => (
+                <div key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+                  <CheckIcon size={16} color={T.indigo} aria-hidden="true" style={{ flexShrink: 0, marginTop: 2 }} />
+                  <p style={{ fontFamily: font.ui, fontSize: S.md, lineHeight: "21px", color: T.inkFaint, margin: 0, flex: 1 }}>{text}</p>
+                </div>
+              ))}
+            </div>
+            <p style={{ fontFamily: font.mono, fontSize: S.xs, letterSpacing: "0.08em", textTransform: "uppercase", color: T.inkFaintWeak, margin: 0 }}>
+              {user?.name ? `Tuned to ${user.name.trim().split(/\s+/)[0]}'s profile` : "Tuned to your profile"}
+            </p>
+          </SectionCard>
 
           {/* ATS readiness */}
           <SectionCard padding={0} style={{ gap: 0, overflow: "hidden" }}>
