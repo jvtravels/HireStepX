@@ -1786,7 +1786,9 @@ Requirements:
     const isTimeout = err instanceof Error && (err.name === "AbortError" || err.message.includes("abort"));
     const errMsg = err instanceof Error ? err.message : String(err);
     console.error("[generate-questions] Error:", errMsg.slice(0, 300));
-    void captureServerException(err, undefined, { endpoint: "generate-questions", isTimeout });
+    // Awaited per _posthog.ts's documented contract: a short-lived handler can
+    // tear down before an unawaited capture's network call completes.
+    await captureServerException(err, undefined, { endpoint: "generate-questions", isTimeout });
 
     /* Static fallback — when both LLM providers fail (Groq + Gemini cascade,
      * provider 5xx, TPM exhaustion), return curated questions from the seed

@@ -1332,7 +1332,11 @@ export default async function handler(
 
     return new Response(JSON.stringify({ error: "Unknown action" }), { status: 400, headers });
   } catch (err) {
-    void captureServerException(err, undefined, { endpoint: "negotiate-turn" });
+    // Awaited: an unawaited capture here races the Response return and can
+    // be silently dropped if the invocation tears down first (see the
+    // evaluate-session.ts fix for the confirmed 2026-10-03 incident this
+    // same pattern caused).
+    await captureServerException(err, undefined, { endpoint: "negotiate-turn" });
     return new Response(JSON.stringify({ error: "An error occurred — please try again or contact support@hirestepx.com" }), { status: 500, headers });
   }
 }

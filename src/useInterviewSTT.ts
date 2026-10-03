@@ -275,6 +275,14 @@ export function useInterviewSTT(
         }
         let finalText = "";
         recognition.onresult = (event: SpeechRecognitionEvent) => {
+          // `.stop()` (unlike `.abort()`) is specified to let one more
+          // trailing result through asynchronously, sometimes seconds later
+          // (worse under tab-backgrounding). Without this guard, that stray
+          // event writes into this closure's `finalText` from a turn that's
+          // already over, silently overwriting the next question's answer
+          // box with the previous question's text — confirmed as the cause
+          // of duplicate back-to-back answers in production transcripts.
+          if (stopped) return;
           let interim = "";
           for (let i = event.resultIndex; i < event.results.length; i++) {
             const result = event.results[i];
@@ -359,7 +367,9 @@ export function useInterviewSTT(
         }
         deepgramCleanup?.();
         sarvamCleanup?.();
-        refs.recognitionRef.current?.stop();
+        // abort(), not stop(): stop() is specified to flush one trailing
+        // result asynchronously; abort() suppresses it outright.
+        refs.recognitionRef.current?.abort();
         refs.recognitionRef.current = null;
       };
     } else {

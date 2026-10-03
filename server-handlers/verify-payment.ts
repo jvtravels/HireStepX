@@ -757,7 +757,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
   } catch (err) {
     console.error("Payment verification error:", err);
-    void captureServerException(err, undefined, { endpoint: "verify-payment" });
+    // Awaited: an unawaited capture here races the response and can be
+    // silently dropped if the invocation tears down first (see the
+    // evaluate-session.ts fix for the confirmed 2026-10-03 incident this
+    // same pattern caused) — worst possible endpoint to lose crash visibility on.
+    await captureServerException(err, undefined, { endpoint: "verify-payment" });
     return res.status(500).json({ error: "Internal error" });
   }
 }
