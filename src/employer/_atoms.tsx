@@ -219,7 +219,7 @@ export function PrimaryCta({
       type={type}
       variant="default"
       size="lg"
-      className={size === "sm" ? "gap-2 px-4.5" : "gap-2 px-5 h-11"}
+      className={size === "sm" ? "gap-2 px-4.5" : "gap-2 px-4"}
       onClick={onClick}
       disabled={disabled}
     >
