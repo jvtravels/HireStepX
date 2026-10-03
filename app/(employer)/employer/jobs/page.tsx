@@ -890,7 +890,7 @@ export default function EmployerJobsPage() {
         placeholder="Search by job title, location, or skill"
         storageKey={RECENT_SEARCHES_KEY}
         suggestedFilters={suggestedFilters}
-        style={{ flex: "1 1 240px", minWidth: 200 }}
+        style={{ flex: "1 1 240px", minWidth: 200, maxWidth: "50%" }}
       />
       <AdvancedFiltersPopover
         statusOptions={statusOptions}
