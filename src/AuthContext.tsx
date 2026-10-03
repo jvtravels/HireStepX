@@ -395,6 +395,7 @@ function logAuditEvent(event: string, details?: Record<string, unknown>) {
     }).catch(() => {});
     // 2. Function-log backup (for events that arrive before the table exists)
     const payload = {
+      level: "info",
       message: `[audit] ${event}`,
       timestamp: new Date().toISOString(),
       url: window.location.pathname,
