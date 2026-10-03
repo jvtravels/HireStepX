@@ -124,8 +124,8 @@ function rangesOverlap(reqMin: number | null, reqMax: number | null, filter: Num
   if (reqMin == null && reqMax == null) return false;
   const filterMin = filter.min.trim() ? Number(filter.min) : -Infinity;
   const filterMax = filter.max.trim() ? Number(filter.max) : Infinity;
-  const lo = reqMin ?? reqMax ?? -Infinity;
-  const hi = reqMax ?? reqMin ?? Infinity;
+  const lo = reqMin ?? -Infinity;
+  const hi = reqMax ?? Infinity;
   return lo <= filterMax && hi >= filterMin;
 }
 
