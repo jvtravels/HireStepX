@@ -69,7 +69,7 @@ export function TestimonialNudge({
       >
         You're in the top range
       </p>
-      <p
+      <h2
         style={{
           fontFamily: f.sans,
           fontSize: size.lg,
@@ -80,7 +80,7 @@ export function TestimonialNudge({
         }}
       >
         {score}/100 after {priorSessionCount! + 1} sessions — tell someone
-      </p>
+      </h2>
       <p
         style={{
           fontFamily: f.sans,

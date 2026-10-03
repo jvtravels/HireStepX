@@ -977,9 +977,12 @@ export default function SessionSetup() {
 
   // Launch
   const [starting, setStarting] = useState(false);
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  // Match the server's initial markup; read the live network state after
+  // hydration to avoid rendering different CTA state on the first client pass.
+  const [isOnline, setIsOnline] = useState(true);
 
   useEffect(() => {
+    setIsOnline(navigator.onLine);
     const goOnline = () => setIsOnline(true);
     const goOffline = () => setIsOnline(false);
     window.addEventListener("online", goOnline);

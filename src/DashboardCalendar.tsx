@@ -301,7 +301,19 @@ function PrepRunwayRail({ interview, all, onStart, onBuild, building }: {
 
 /* ─── Mini month grid (real events, real navigation) ─── */
 function MiniMonth({ events, focusedId, onDateClick }: { events: InterviewEvent[]; focusedId: string | null; onDateClick: (date: string) => void }) {
-  const [viewDate, setViewDate] = useState(() => new Date());
+  // Seed from UTC so SSR and the first browser render choose the same month.
+  // After hydration, switch to the candidate's local date and keep navigation
+  // in local time.
+  const [viewDate, setViewDate] = useState(() => {
+    const now = new Date();
+    return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 15, 12));
+  });
+  const [todayStr, setTodayStr] = useState(() => new Date().toISOString().slice(0, 10));
+  useEffect(() => {
+    const now = new Date();
+    setViewDate(now);
+    setTodayStr(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`);
+  }, []);
   const year = viewDate.getFullYear();
   const month = viewDate.getMonth();
 
@@ -317,8 +329,6 @@ function MiniMonth({ events, focusedId, onDateClick }: { events: InterviewEvent[
 
   const firstDay = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const today = new Date();
-  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
   const monthLabel = viewDate.toLocaleDateString("en-US", { month: "long", year: "numeric" });
   const dow = ["S", "M", "T", "W", "T", "F", "S"];
 

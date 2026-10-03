@@ -199,7 +199,7 @@ export function ReadinessHeadline({
 
 export function CalibrationBanner({ calibration }: { calibration: Calibration }) {
   return (
-    <span className="ir-calibration" role="note" aria-label="Calibration context">
+    <span className="ir-calibration" role="region" aria-label="Calibration context">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
         <path d="M12 2v20M2 12h20" />
       </svg>

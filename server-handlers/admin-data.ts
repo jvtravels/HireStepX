@@ -5,7 +5,7 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { createHmac, timingSafeEqual } from "crypto";
 import { categorizeLlmError, emptyBreakdown } from "./_admin-llm-categorizer";
 import { createAdminToken, verifyAdminToken } from "./_admin-auth";
-import { costBreakdown, kFactor, DEFAULT_COST_RATES, llmInr } from "./_cost-helpers";
+import { costBreakdown, kFactor, DEFAULT_COST_RATES, llmInr, RATES_LAST_VERIFIED_AT, RATE_STALENESS_THRESHOLD_DAYS, rateCardAgeDays, isRateCardStale } from "./_cost-helpers";
 import { getSarvamMonthlySpend } from "./_sarvam-credit-guard";
 import { getDeepgramMonthlySpend } from "./_deepgram-credit-guard";
 
@@ -107,6 +107,11 @@ async function fetchCount(table: string, filter = ""): Promise<number> {
 function daysAgo(n: number): string {
   return new Date(Date.now() - n * 86400000).toISOString();
 }
+
+/* Shared with getCostData's modeled-vs-actual reconciliation below, so both
+ * places classify provider usage rows identically. */
+const TTS_SERVICES = new Set(["azure_tts", "cartesia_tts", "sarvam_tts"]);
+const STT_SERVICES = new Set(["deepgram_stt", "sarvam_stt"]);
 
 /* Employer accounts share the `profiles` table with candidates (see
    contactEmail derivation in the "employers" list case below) — the
@@ -246,8 +251,6 @@ async function getOverview() {
   // 30-day window so the per-session number isn't whipsawed by a quiet day.
   // llmRecent is capped at LIMIT_LLM; on high volume this undercounts and the
   // estimate reads low — acceptable for a dashboard signal, flagged in the UI.
-  const TTS_SERVICES = new Set(["azure_tts", "cartesia_tts", "sarvam_tts"]);
-  const STT_SERVICES = new Set(["deepgram_stt", "sarvam_stt"]);
   let llmTokens30dPrimary = 0, llmTokens30dFallback = 0;
   for (const u of llmRecent) {
     if (!u.created_at || u.created_at < monthAgo) continue;
@@ -1456,6 +1459,66 @@ async function getOutcomes() {
 
 /* ─── Cost Analytics ─── */
 
+/** Roll the same rate-card math `getOverview`/`getCostData` use for live
+ * estimates over one closed calendar month, for comparison against a real
+ * invoice total entered via the "save-cost-reconciliation" action below. */
+async function modeledCostForMonth(month: string): Promise<number> {
+  const start = `${month}-01`;
+  const startDate = new Date(`${start}T00:00:00Z`);
+  const end = new Date(Date.UTC(startDate.getUTCFullYear(), startDate.getUTCMonth() + 1, 1)).toISOString().slice(0, 10);
+  const [llmUsage, serviceUsage] = await Promise.all([
+    fetchJSON<{ total_tokens: number; is_fallback: boolean }>(
+      `llm_usage?select=total_tokens,is_fallback&created_at=gte.${start}&created_at=lt.${end}&limit=20000`,
+    ),
+    fetchJSON<{ service: string; request_chars: number | null; status: string }>(
+      `service_usage?select=service,request_chars,status&created_at=gte.${start}&created_at=lt.${end}&limit=20000`,
+    ),
+  ]);
+  let primaryTok = 0, fallbackTok = 0;
+  for (const u of llmUsage) {
+    if (u.is_fallback) fallbackTok += u.total_tokens || 0;
+    else primaryTok += u.total_tokens || 0;
+  }
+  let ttsChars = 0, sttCalls = 0;
+  for (const r of serviceUsage) {
+    if (TTS_SERVICES.has(r.service)) ttsChars += r.request_chars || 0;
+    else if (STT_SERVICES.has(r.service) && r.status === "success") sttCalls += 1;
+  }
+  return costBreakdown({ llmTokensPrimary: primaryTok, llmTokensFallback: fallbackTok, ttsChars, sttCalls, sessions: 1 }).totalInr;
+}
+
+interface CostReconciliationRow {
+  month: string;
+  actual_invoice_inr: number;
+  modeled_inr: number;
+  note: string | null;
+  created_at: string;
+}
+
+/** Record a real, closed-period invoice total against this month's modeled
+ * estimate — the "financial clock vs. operational clock" check the rate
+ * card's own comments ask for but nothing previously tracked. Upserts by
+ * month so re-entering a correction overwrites, not duplicates. */
+async function saveCostReconciliation(month: string, actualInvoiceInr: number, note?: string): Promise<CostReconciliationRow> {
+  const modeledInr = await modeledCostForMonth(month);
+  const res = await supa("cost_rate_reconciliations", {
+    method: "POST",
+    headers: { Prefer: "resolution=merge-duplicates,return=representation" },
+    body: JSON.stringify({
+      month,
+      actual_invoice_inr: actualInvoiceInr,
+      modeled_inr: modeledInr,
+      note: note ? note.slice(0, 500) : null,
+    }),
+  });
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`cost_rate_reconciliations upsert failed: HTTP ${res.status}: ${body.slice(0, 200)}`);
+  }
+  const rows = await res.json() as CostReconciliationRow[];
+  return rows[0];
+}
+
 async function getCostData() {
   const round2 = (n: number) => Math.round(n * 100) / 100;
   const now = Date.now();
@@ -1464,7 +1527,7 @@ async function getCostData() {
   const sevenDaysAgo = daysAgo(7);
   const fourteenDaysAgo = daysAgo(14);
 
-  const [recentSessions, topSessions, endpointUsage, lastWeekSessions] = await Promise.all([
+  const [recentSessions, topSessions, endpointUsage, lastWeekSessions, reconciliations] = await Promise.all([
     // All sessions last 30d with cost fields — includes user_id for per-user aggregation
     fetchJSON<{
       id: string; user_id: string; type: string; focus: string; score: number; duration: number;
@@ -1485,6 +1548,8 @@ async function getCostData() {
     fetchJSON<{ llm_cost_inr: number | null }>(
       `sessions?select=llm_cost_inr&created_at=gte.${fourteenDaysAgo}&created_at=lt.${sevenDaysAgo}&limit=2000`,
     ),
+    // Real invoice totals entered against modeled estimates — see saveCostReconciliation.
+    fetchJSON<CostReconciliationRow>(`cost_rate_reconciliations?select=month,actual_invoice_inr,modeled_inr,note,created_at&order=month.desc&limit=12`),
   ]);
 
   const costedSessions = recentSessions.filter(s => s.llm_cost_inr != null && s.llm_cost_inr > 0);
@@ -1607,6 +1672,24 @@ async function getCostData() {
     perDay,
     byEndpoint,
     topUsersByCost,
+    // Rate-card provenance — see _cost-helpers.ts's own "list estimates, not
+    // billed amounts" caveat. Surfaced here so staleness is visible wherever
+    // the modeled cost figures are, not just in the health-alerts tab.
+    ratesLastVerifiedAt: RATES_LAST_VERIFIED_AT,
+    rateCardAgeDays: rateCardAgeDays(now),
+    rateCardIsStale: isRateCardStale(now),
+    // Real invoice totals vs. this tool's own modeled estimate, entered via
+    // the "save-cost-reconciliation" action — the FinOps "operational clock
+    // vs. financial clock" split applied concretely.
+    costReconciliations: reconciliations
+      .map(r => ({
+        month: r.month,
+        actualInvoiceInr: r.actual_invoice_inr,
+        modeledInr: r.modeled_inr,
+        variancePct: r.modeled_inr > 0 ? Math.round(((r.actual_invoice_inr - r.modeled_inr) / r.modeled_inr) * 1000) / 10 : null,
+        note: r.note,
+      }))
+      .sort((a, b) => b.month.localeCompare(a.month)),
     topExpensiveSessions: topSessions.map(s => ({
       id: s.id,
       userId: s.user_id,
@@ -1760,6 +1843,21 @@ async function getHealthAlerts(): Promise<{ alerts: HealthAlert[]; checkedAt: st
     }
   }
 
+  // ── Signal 5: Rate-card staleness ──
+  // _cost-helpers.ts is explicit that DEFAULT_COST_RATES are list estimates,
+  // not billed amounts — this is the recurring check that stops that caveat
+  // from being a comment nobody re-reads. Mirrors the e2e.yml "P1-1" shape:
+  // name the gap loudly, escalate only once it's old enough to matter.
+  const ageDays = rateCardAgeDays(now);
+  if (isRateCardStale(now)) {
+    alerts.push({
+      severity: ageDays > RATE_STALENESS_THRESHOLD_DAYS * 2 ? "critical" : "warning",
+      code: "cost_rate_card_stale",
+      message: `LLM/TTS/STT rate card hasn't been reverified in ${ageDays} days (last verified ${RATES_LAST_VERIFIED_AT}). The admin cost dashboard and both Sarvam/Deepgram credit guardrails all read this same rate card.`,
+      action: "Check current Groq/Sarvam/Deepgram list prices (or your negotiated invoice rate) against DEFAULT_COST_RATES in _cost-helpers.ts, update the rate + RATES_LAST_VERIFIED_AT together, and log an actual invoice total via the Cost tab's reconciliation form.",
+    });
+  }
+
   return {
     alerts,
     checkedAt: new Date(now).toISOString(),
@@ -1780,7 +1878,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(503).json({ error: "Not configured" });
   }
 
-  const body = req.body as { section?: string; action?: string; search?: string; offset?: number; userId?: string; sessionId?: string; id?: string; status?: string; tier?: string; days?: number; qty?: number; note?: string; paymentId?: string; amountPaise?: number; subject?: string; htmlBody?: string } | undefined;
+  const body = req.body as { section?: string; action?: string; search?: string; offset?: number; userId?: string; sessionId?: string; id?: string; status?: string; tier?: string; days?: number; qty?: number; note?: string; paymentId?: string; amountPaise?: number; subject?: string; htmlBody?: string; month?: string; actualInvoiceInr?: number } | undefined;
   const section = body?.section || body?.action || "overview";
 
   try {
@@ -1806,6 +1904,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         case "outcomes": return getOutcomes();
         case "costs": return getCostData();
         case "health": return getHealthAlerts();
+        case "save-cost-reconciliation": {
+          if (!body?.month || !/^\d{4}-\d{2}$/.test(body.month)) throw new Error("month required, format YYYY-MM");
+          const actualInvoiceInr = Number(body.actualInvoiceInr);
+          if (!Number.isFinite(actualInvoiceInr) || actualInvoiceInr < 0) throw new Error("actualInvoiceInr must be a non-negative number");
+          const row = await saveCostReconciliation(body.month, actualInvoiceInr, body.note);
+          return { ok: true, reconciliation: row };
+        }
         case "update-support-status": {
           if (!body?.id) throw new Error("id required");
           const s = body.status;

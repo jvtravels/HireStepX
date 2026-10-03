@@ -358,7 +358,7 @@ create table if not exists llm_usage (
   id uuid primary key default gen_random_uuid(),
   user_id uuid references profiles(id) on delete set null,
   endpoint text not null,          -- 'generate' | 'follow-up' | 'evaluate' | 'analyze-resume'
-  model text not null,             -- 'llama-3.3-70b-versatile' | 'gemini-2.0-flash' etc.
+  model text not null,             -- e.g. 'openai/gpt-oss-20b' | 'gemini-2.5-flash'
   is_fallback boolean default false,
   prompt_tokens integer default 0,
   completion_tokens integer default 0,
@@ -1836,3 +1836,22 @@ alter table employer_unlock_payments
 
 alter table employer_unlock_payments enable row level security;
 
+-- Growth/CRO audit follow-up: `_cost-helpers.ts`'s DEFAULT_COST_RATES are
+-- admittedly "list estimates, not billed amounts" (see its own header
+-- comment). This table is where a real, closed-period invoice total gets
+-- recorded once and compared against that period's modeled estimate — the
+-- FinOps "operational clock vs. financial clock" split. One row per
+-- calendar month; re-saving the same month overwrites (see
+-- saveCostReconciliation's upsert in admin-data.ts), it doesn't accumulate
+-- duplicates. Admin-only: no client ever reads or writes this table
+-- directly, so — mirroring promo_codes below — there is no anon/authenticated
+-- policy at all; all access is via admin-data.ts's service-role key.
+create table if not exists cost_rate_reconciliations (
+  month text primary key check (month ~ '^\d{4}-\d{2}$'),
+  actual_invoice_inr numeric not null check (actual_invoice_inr >= 0),
+  modeled_inr numeric not null,
+  note text,
+  created_at timestamptz default now()
+);
+
+alter table cost_rate_reconciliations enable row level security;

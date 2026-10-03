@@ -41,6 +41,26 @@ export const DEFAULT_COST_RATES: CostRates = {
   usdToInr: 84,
 };
 
+/** ISO date DEFAULT_COST_RATES was last deliberately checked against a real
+ * provider price signal — bump this (alongside the rate itself) whenever a
+ * rate changes for a KNOWN reason, e.g. the bulbul:v2→v3 migration above.
+ * Read by the admin health-alert staleness check (admin-data.ts) so a quiet
+ * vendor repricing or expired volume-discount tier the team never hears
+ * about doesn't go unnoticed indefinitely — see RATE_STALENESS_THRESHOLD_DAYS. */
+export const RATES_LAST_VERIFIED_AT = "2026-08-08";
+
+/** Days after which an unconfirmed rate card is flagged stale. */
+export const RATE_STALENESS_THRESHOLD_DAYS = 45;
+
+export function rateCardAgeDays(now: number = Date.now()): number {
+  const verified = new Date(RATES_LAST_VERIFIED_AT).getTime();
+  return Math.max(0, Math.floor((now - verified) / 86_400_000));
+}
+
+export function isRateCardStale(now: number = Date.now()): boolean {
+  return rateCardAgeDays(now) > RATE_STALENESS_THRESHOLD_DAYS;
+}
+
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
 export function llmInr(tokens: number, fallback: boolean, rates: CostRates = DEFAULT_COST_RATES): number {

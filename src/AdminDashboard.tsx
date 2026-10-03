@@ -126,6 +126,12 @@ interface CostData {
     id: string; userId: string; focus: string; score: number; duration: number;
     llmCostInr: number; promptTokens: number; completionTokens: number; date: string;
   }>;
+  ratesLastVerifiedAt: string;
+  rateCardAgeDays: number;
+  rateCardIsStale: boolean;
+  costReconciliations: Array<{
+    month: string; actualInvoiceInr: number; modeledInr: number; variancePct: number | null; note: string | null;
+  }>;
 }
 
 interface HealthAlert {
@@ -667,6 +673,11 @@ export default function AdminDashboard() {
   const [qaBusy, setQaBusy] = useState(false);
   const [qaDeleteConfirm, setQaDeleteConfirm] = useState(false);
   const [liveData, setLiveData] = useState<{ sessions: Array<{ id: string; user_id: string; type: string; difficulty: string; score: number | null; created_at: string }>; since: string } | null>(null);
+  const [recMonth, setRecMonth] = useState(() => new Date().toISOString().slice(0, 7));
+  const [recAmount, setRecAmount] = useState("");
+  const [recNote, setRecNote] = useState("");
+  const [recBusy, setRecBusy] = useState(false);
+  const [recStatus, setRecStatus] = useState<{ ok: boolean; msg: string } | null>(null);
 
   const fetchSection = useCallback(async (section: string, extra?: Record<string, unknown>, skipCache = false): Promise<unknown> => {
     if (!authed) return null;
@@ -2667,6 +2678,106 @@ export default function AdminDashboard() {
               <p style={{ ...bigNum, fontSize: 20 }}>₹{(overview.cost.month.ttsInr + overview.cost.month.sttInr).toFixed(2)}</p>
               <p style={{ margin: "4px 0 0", fontSize: 11, color: c.stone }}>TTS ₹{overview.cost.month.ttsInr} · STT ₹{overview.cost.month.sttInr}</p>
             </div>
+          )}
+        </div>
+
+        {/* Rate-card provenance — these modeled figures are list-rate estimates,
+            not billed amounts (see _cost-helpers.ts's own header comment). */}
+        <div style={{
+          background: cd.rateCardIsStale ? "rgba(180,83,9,0.08)" : "rgba(14,12,8,0.04)",
+          border: `1px solid ${cd.rateCardIsStale ? "rgba(180,83,9,0.25)" : "rgba(14,12,8,0.1)"}`,
+          borderRadius: 8, padding: "10px 16px", marginBottom: 16, fontSize: 12,
+          color: cd.rateCardIsStale ? c.ember : c.stone,
+        }}>
+          {cd.rateCardIsStale ? "⚠️ " : ""}Rate card last verified <strong>{cd.ratesLastVerifiedAt}</strong> ({cd.rateCardAgeDays} days ago)
+          {cd.rateCardIsStale && " — overdue for a recheck against current Groq/Sarvam/Deepgram pricing"}. All figures on this tab are
+          modeled from <code style={{ fontFamily: font.mono }}>DEFAULT_COST_RATES</code>, not real invoices — log an actual month below to check them.
+        </div>
+
+        {/* Actual invoice vs. modeled estimate */}
+        <div style={{ ...card, marginBottom: 24 }}>
+          <p style={{ ...labelStyle, marginBottom: 12 }}>Actual Invoice vs. Modeled Estimate</p>
+          {cd.costReconciliations.length > 0 ? (
+            <div style={{ marginBottom: 14 }}>
+              {cd.costReconciliations.map(r => (
+                <div key={r.month} style={{ display: "flex", alignItems: "center", gap: 12, padding: "6px 0", borderBottom: "1px solid rgba(14,12,8,0.06)", fontSize: 12 }}>
+                  <span style={{ width: 70, color: c.ivory }}>{r.month}</span>
+                  <span style={{ color: c.stone }}>Modeled ₹{r.modeledInr.toFixed(2)}</span>
+                  <span style={{ color: c.stone }}>Actual ₹{r.actualInvoiceInr.toFixed(2)}</span>
+                  {r.variancePct != null && (
+                    <span style={{ color: Math.abs(r.variancePct) > 20 ? c.ember : c.sage, fontWeight: 600 }}>
+                      {r.variancePct > 0 ? "+" : ""}{r.variancePct}%
+                    </span>
+                  )}
+                  {r.note && <span style={{ color: c.stone, fontStyle: "italic" }}>{r.note}</span>}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p style={{ fontSize: 12, color: c.stone, marginBottom: 14 }}>No invoice totals logged yet — the modeled figures above have never been checked against a real bill.</p>
+          )}
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
+            <input
+              type="month"
+              value={recMonth}
+              onChange={(e) => setRecMonth(e.target.value)}
+              disabled={recBusy}
+              style={{ background: "#fff", color: "#0E0C08", border: "1px solid rgba(14,12,8,0.18)", borderRadius: 6, padding: "7px 10px", fontSize: 13, fontFamily: font.ui, outline: "none" }}
+            />
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              value={recAmount}
+              onChange={(e) => setRecAmount(e.target.value)}
+              disabled={recBusy}
+              placeholder="actual invoice ₹"
+              style={{ width: 140, background: "#fff", color: "#0E0C08", border: "1px solid rgba(14,12,8,0.18)", borderRadius: 6, padding: "7px 10px", fontSize: 13, fontFamily: font.ui, outline: "none" }}
+            />
+            <input
+              type="text"
+              value={recNote}
+              onChange={(e) => setRecNote(e.target.value)}
+              disabled={recBusy}
+              placeholder="note (optional)"
+              maxLength={500}
+              style={{ flex: 1, minWidth: 140, background: "#fff", color: "#0E0C08", border: "1px solid rgba(14,12,8,0.18)", borderRadius: 6, padding: "7px 10px", fontSize: 13, fontFamily: font.ui, outline: "none" }}
+            />
+            <Button
+              variant="outline"
+              disabled={recBusy}
+              onClick={async () => {
+                const amount = parseFloat(recAmount);
+                if (!recMonth || isNaN(amount) || amount < 0) {
+                  setRecStatus({ ok: false, msg: "Enter a month and a non-negative amount." });
+                  return;
+                }
+                setRecBusy(true);
+                setRecStatus(null);
+                try {
+                  const res = await fetchSection("save-cost-reconciliation", { month: recMonth, actualInvoiceInr: amount, note: recNote || undefined }, true);
+                  const r = res as { ok?: boolean; error?: string } | null;
+                  if (r?.ok) {
+                    setRecStatus({ ok: true, msg: "Saved." });
+                    setRecNote("");
+                    const fresh = await fetchSection("costs", undefined, true) as CostData | null;
+                    if (fresh) setCostData(fresh);
+                  } else {
+                    setRecStatus({ ok: false, msg: r?.error ?? "Save failed" });
+                  }
+                } catch (err) {
+                  setRecStatus({ ok: false, msg: String(err) });
+                } finally {
+                  setRecBusy(false);
+                }
+              }}
+              style={{ background: "rgba(21,128,61,0.12)", color: "#166534", border: "1px solid rgba(21,128,61,0.3)" }}
+            >
+              Log invoice
+            </Button>
+          </div>
+          {recStatus && (
+            <p style={{ marginTop: 8, fontSize: 12, color: recStatus.ok ? c.sage : c.ember }}>{recStatus.msg}</p>
           )}
         </div>
 

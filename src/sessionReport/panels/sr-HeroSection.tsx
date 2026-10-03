@@ -191,7 +191,7 @@ export function HeroSection({ data }: { data: InterviewResultData }) {
             {data.fairnessSignals && data.fairnessSignals.notes.length > 0 && (
               <div
                 style={{ marginTop: 12, padding: "10px 12px", borderRadius: 8, background: t.successWash, border: `1px solid ${t.successAccent}` }}
-                role="note"
+                role="region"
                 aria-label="India-context fairness applied during scoring"
               >
                 <div style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: f.mono, fontSize: size.xs, color: t.success, letterSpacing: "0.10em", textTransform: "uppercase", fontWeight: 600, marginBottom: 6 }}>

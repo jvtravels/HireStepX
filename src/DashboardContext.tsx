@@ -311,15 +311,9 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   const [sessionsLoading, setSessionsLoading] = useState(true);
   const [eventsLoading, setEventsLoading] = useState(true);
   const dataLoading = sessionsLoading || eventsLoading;
-  /* Synchronous initial value — without it, every mobile visitor saw a
-     desktop-shaped paint (sidebar visible, two-column grid) then a layout
-     flash to the mobile shape after the useEffect fired. matchMedia is
-     synchronous and available pre-hydration on the client; on the server
-     we fall back to false (desktop default) so SSR markup matches the
-     initial-paint assumption. */
-  const [isMobile, setIsMobile] = useState(() =>
-    typeof window !== "undefined" && window.matchMedia("(max-width: 1023px)").matches
-  );
+  // Keep the server render and the browser's first render identical. The
+  // breakpoint is applied in the mount effect below once hydration completes.
+  const [isMobile, setIsMobile] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [paymentBanner, setPaymentBanner] = useState<"success" | "cancelled" | null>(null);
   const [creditBalance, setCreditBalance] = useState(0);
@@ -440,7 +434,13 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   // ─── Google Calendar sync state ───
   const [googleSyncStatus, setGoogleSyncStatus] = useState<"idle" | "syncing" | "done" | "error">("idle");
   const [googleSyncError, setGoogleSyncError] = useState<string | null>(null);
-  const [hasGoogleToken, setHasGoogleToken] = useState(() => !!getGoogleProviderToken());
+  // localStorage is browser-only; read it after hydration so the first client
+  // render matches the server render.
+  const [hasGoogleToken, setHasGoogleToken] = useState(false);
+
+  useEffect(() => {
+    setHasGoogleToken(!!getGoogleProviderToken());
+  }, []);
 
   const syncGoogleCalendar = useCallback(async () => {
     if (!user?.id || googleSyncStatus === "syncing") return;

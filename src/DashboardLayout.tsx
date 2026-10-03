@@ -76,21 +76,23 @@ const prefetchMap: Record<string, () => void> = {
 };
 
 /* ─── Sidebar Nav Items ───
- * Matches the Figma sidebar's two clusters: a primary route list, and a
- * secondary list (Help & Support, Settings) pinned above the plan card.
+ * Two-tier IA (Duolingo/Linear pattern): `navItems` is the core loop —
+ * the three routes a candidate returns to every session — rendered at
+ * full weight. `secondaryNavItems` are utility routes used less often;
+ * AppShellFrame renders them in their own lower-emphasis group below
+ * the primary list (smaller text, muted color, no active rail accent).
  * Figma's active-item color is the old editorial orange; kept indigo
  * here per the documented copper→indigo
  * retirement (tempo/CLAUDE.md), not a missed detail. */
 const navItems = [
   { id: "dashboard", path: "/dashboard", label: "Dashboard" },
   { id: "sessions", path: "/sessions", label: "Sessions" },
-  { id: "calendar", path: "/calendar", label: "Calendar" },
   { id: "analytics", path: "/analytics", label: "Analytics" },
-  { id: "resume", path: "/resume", label: "Your Profile" },
-  { id: "jobs", path: "/jobs", label: "Jobs" },
 ];
 const secondaryNavItems = [
-  { id: "settings", path: "/settings", label: "Settings" },
+  { id: "calendar", path: "/calendar", label: "Calendar" },
+  { id: "resume", path: "/resume", label: "Your Profile" },
+  { id: "jobs", path: "/jobs", label: "Jobs" },
 ];
 const allNavItems = [...navItems, ...secondaryNavItems];
 
@@ -179,11 +181,15 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
     [calendarEvents]
   );
 
-  const [isOffline, setIsOffline] = useState(!navigator.onLine);
+  // Use the same initial state on the server and browser, then sync to the
+  // browser's actual network state after hydration.
+  const [isOffline, setIsOffline] = useState(false);
 
   useEffect(() => {
+    const syncNetworkState = () => setIsOffline(!navigator.onLine);
     const goOffline = () => setIsOffline(true);
     const goOnline = () => setIsOffline(false);
+    syncNetworkState();
     window.addEventListener("offline", goOffline);
     window.addEventListener("online", goOnline);
     return () => { window.removeEventListener("offline", goOffline); window.removeEventListener("online", goOnline); };
@@ -262,6 +268,11 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
       homeHref="/"
       navAriaLabel="Main navigation"
       navItems={navItems.map((item) => ({
+        ...item,
+        icon: <NavIcon id={item.id} />,
+        alert: item.id === "calendar" && hasUrgentInterview,
+      }))}
+      secondaryNavItems={secondaryNavItems.map((item) => ({
         ...item,
         icon: <NavIcon id={item.id} />,
         alert: item.id === "calendar" && hasUrgentInterview,
@@ -508,7 +519,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
         <CommandList>
           <CommandEmpty>No results found.</CommandEmpty>
           <CommandGroup heading="Pages">
-            {navItems.map((item) => (
+            {allNavItems.map((item) => (
               <CommandItem
                 key={item.id}
                 onSelect={() => { setPaletteOpen(false); nav.push(item.path); }}

@@ -51,8 +51,10 @@ export function CampusCgpaCalibrationNote({
         gap: 6,
       }}
     >
-      <header style={{ fontSize: size.base, fontWeight: 600, color: t.success, letterSpacing: 0.3, textTransform: "uppercase", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-        <span>CGPA calibration</span>
+      <header style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+        <h2 style={{ margin: 0, fontSize: size.base, fontWeight: 600, color: t.success, letterSpacing: 0.3, textTransform: "uppercase" }}>
+          CGPA calibration
+        </h2>
         {archetypeLabel && archetypeLabel !== "Generic campus" && (
           <span
             style={{

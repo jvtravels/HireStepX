@@ -56,9 +56,9 @@ export function ProductRating({ sessionId }: { sessionId: string }) {
         gap: 12,
       }}
     >
-      <p style={{ fontFamily: f.sans, fontSize: size.base, fontWeight: 600, color: t.coal, margin: 0 }}>
+      <h2 style={{ fontFamily: f.sans, fontSize: size.base, fontWeight: 600, color: t.coal, margin: 0 }}>
         {submitted ? "Thanks for the rating!" : "How would you rate HireStepX so far?"}
-      </p>
+      </h2>
       <div style={{ display: "flex", gap: 2 }}>
         {[1, 2, 3, 4, 5].map((star) => {
           const active = (hovered ?? rating ?? 0) >= star;

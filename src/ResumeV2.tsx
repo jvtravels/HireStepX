@@ -334,6 +334,30 @@ export default function ResumeV2Screen() {
             <p style={{ fontFamily: font.ui, fontSize: S.sm, color: T.errorInk, margin: 0 }}>{errorMsg}</p>
           </div>
         )}
+        {analysisSource === "fallback" && phase !== "extracting" && phase !== "analyzing" && (
+          <div role="status" style={{ display: "flex", alignItems: "flex-start", gap: 10, background: T.warning100, border: `1px solid ${T.warningLine}`, borderRadius: 10, padding: "12px 16px" }}>
+            <AlertCircleIcon size={16} color={T.warningInk} aria-hidden="true" style={{ flexShrink: 0, marginTop: 2 }} />
+            <div style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1, minWidth: 0 }}>
+              <p style={{ fontFamily: font.ui, fontSize: S.sm, fontWeight: 600, color: T.warningInk, margin: 0 }}>
+                Basic parse — not AI-reviewed
+              </p>
+              <p style={{ fontFamily: font.ui, fontSize: S.sm, color: T.warningInk, margin: 0, lineHeight: 1.5 }}>
+                Our AI couldn't read this resume (often a scanned PDF or unusual formatting), so the
+                summary below comes from a simpler keyword scan. Scores and skill coverage may be
+                less accurate than an AI-parsed resume.
+              </p>
+              <Button
+                type="button"
+                variant="link"
+                size="sm"
+                onClick={triggerUpload}
+                style={{ fontFamily: font.ui, color: T.warningInk, height: "auto", padding: 0, alignSelf: "flex-start", textDecoration: "underline" }}
+              >
+                Try a different file
+              </Button>
+            </div>
+          </div>
+        )}
         <div style={{ display: "flex", flexWrap: "wrap", gap: 16, alignItems: "flex-start" }}>
         <div style={{ flex: "1 1 640px", minWidth: 0, display: "flex", flexDirection: "column", gap: 16 }}>
           {/* Resume summary */}

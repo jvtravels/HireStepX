@@ -78,9 +78,9 @@ export function ReferralInviteSection({
       <span style={{ fontFamily: f.sans, fontSize: size.xs, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: t.copper }}>
         Bring a friend
       </span>
-      <div style={{ fontFamily: f.serif, fontSize: size["2xl"], color: t.coal, marginTop: 6 }}>
+      <h2 style={{ fontFamily: f.serif, fontSize: size["2xl"], fontWeight: 400, color: t.coal, marginTop: 6, marginBottom: 0 }}>
         You both get a free session
-      </div>
+      </h2>
       <div style={{ fontFamily: f.sans, fontSize: size.md, color: t.inkSoft, marginTop: 6, lineHeight: 1.55, maxWidth: 560 }}>
         Send your link to someone prepping for interviews. When they sign up, you
         each get a free practice session — credited instantly, no purchase needed.

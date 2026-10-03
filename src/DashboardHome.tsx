@@ -485,6 +485,17 @@ export default function DashboardHome() {
   const core = useDashboardSessions();
   const { isFree, sessionsRemaining, creditBalance } = useDashboardSubscription();
   const { setShowUpgradeModal } = useDashboardUIActions();
+  // Start identically during SSR and hydration, then use the actual viewport
+  // breakpoint once the browser mounts.
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const query = window.matchMedia("(max-width: 719px)");
+    const sync = () => setIsMobile(query.matches);
+    sync();
+    query.addEventListener("change", sync);
+    return () => query.removeEventListener("change", sync);
+  }, []);
 
   const displayName = useMemo(() => {
     const name = user?.name?.trim();
@@ -817,7 +828,7 @@ export default function DashboardHome() {
               has scheduled events ahead. Empty list returns null. */}
           <UpcomingInterviews
             events={core.calendarEvents}
-            isMobile={typeof window !== "undefined" && window.innerWidth < 720}
+            isMobile={isMobile}
             onNavigate={(path) => router.push(path)}
           />
 
@@ -1373,4 +1384,3 @@ function DailyGoalStub() {
     </div>
   );
 }
-
