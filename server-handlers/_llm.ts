@@ -27,7 +27,7 @@ if (!USAGE_LOGGING_ENABLED) {
  * empty despite LLM calls succeeding.)
  */
 /** Map a model id OR a bare provider name to the provider label. Success rows
- *  carry the real model id ("openai/gpt-oss-120b", "gemini-2.5-flash",
+ *  carry the real model id ("openai/gpt-oss-120b", "gemini-3.5-flash-lite",
  *  "cerebras-llama-3.3-70b"); error rows carry the provider name directly. */
 function providerFromModel(model: string): string {
   const m = model.toLowerCase();
@@ -139,7 +139,7 @@ interface LLMOptions {
   // Output budget for the FALLBACK providers (Gemini/Cerebras) only. Groq is
   // primary and bounded by a tight free-tier TPM ceiling that counts
   // (prompt + max_tokens), so its budget must stay small. The fallbacks have
-  // ~10× higher TPM, and at least one (gemini-2.5-flash) is materially more
+  // ~10× higher TPM, and at least one (the Gemini model) is materially more
   // verbose on the same JSON schema — at the Groq-sized cap it truncates large
   // reports (e.g. the HR-round report) mid-object, yielding an empty/degenerate
   // result. Give the fallbacks more room so a Groq outage still produces a
@@ -196,12 +196,12 @@ async function callGroq(opts: LLMOptions, signal?: AbortSignal): Promise<LLMResu
 
 async function callGemini(opts: LLMOptions, signal?: AbortSignal): Promise<LLMResult> {
   if (!GEMINI_API_KEY) throw new Error("Gemini not configured");
-  // Switched from gemini-2.5-flash-lite (free tier 20 RPM) to gemini-2.5-flash
-  // because the -lite model was returning 429 RESOURCE_EXHAUSTED during
-  // fallover bursts. 2.5-flash has lower RPM (10) but ~10× higher TPM, which
-  // matters more for our prompts — eval prompts are large but the call rate
-  // on the fallback path is naturally low.
-  const model = "gemini-2.5-flash";
+  // gemini-2.5-flash is Google's limited-access/legacy tier as of Oct 2026
+  // (retiring 2026-10-16) — Google was already throttling it with 429s
+  // ahead of the hard cutoff. Google's own migration guidance for 2.5 Flash
+  // is 3.5 Flash-Lite or 3.8 Flash; 3.5-flash-lite is the same per-token
+  // price as the retiring model, so it's a straight swap, not a cost change.
+  const model = "gemini-3.5-flash-lite";
   const start = Date.now();
   const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
     method: "POST",

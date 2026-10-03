@@ -14,9 +14,13 @@
  * per-turn seconds once analytics ingestion is live. */
 
 export interface CostRates {
-  /** Blended (in+out) USD per million tokens, primary LLM (Groq Llama-class). */
+  /** Blended (in+out) USD per million tokens for calls logged with
+   *  is_fallback=false. Since Gemini became primary for big/slow calls,
+   *  this bucket mixes Gemini (slow-path primary) and Groq (fast-path
+   *  primary) token volume — see the rate derivation note below. */
   llmUsdPerMToken: number;
-  /** Blended USD per million tokens, fallback LLM (Gemini Flash). */
+  /** Blended USD per million tokens for calls logged with is_fallback=true
+   *  (mixes Gemini fast-path fallback and Groq slow-path fallback). */
   llmFallbackUsdPerMToken: number;
   /** USD per million characters, TTS — primary provider (Sarvam bulbul:v3). */
   ttsUsdPerMChar: number;
@@ -26,10 +30,25 @@ export interface CostRates {
   usdToInr: number;
 }
 
-/** Defaults: public list rates as of mid-2026. VERIFY before locking price. */
+/** Defaults: public list rates as of 2026-10-03. VERIFY before locking price.
+ *
+ * Both LLM numbers below are volume-weighted blends, not a single model's
+ * rate — re-derive the weights from llm_usage/PostHog model-volume mix
+ * whenever the provider chain or call-routing (fast vs slow) changes
+ * materially, not just when a vendor reprices:
+ *  - llmUsdPerMToken (is_fallback=false, last 7d mix ~84% Gemini 3.5
+ *    Flash-Lite slow-path-primary @ $0.30 in/$2.50 out ≈ $1.40/M avg,
+ *    ~16% Groq GPT-OSS 20B fast-path-primary @ $0.075 in/$0.30 out ≈
+ *    $0.1875/M avg) → weighted ≈ $1.20/M.
+ *  - llmFallbackUsdPerMToken (is_fallback=true, ~97% Gemini fast-path
+ *    fallback ≈ $1.40/M, ~3% Groq GPT-OSS 120B slow-path fallback @
+ *    $0.15 in/$0.60 out ≈ $0.375/M avg) → weighted ≈ $1.37/M.
+ * The previous constants (0.7 / 0.3) predated Gemini becoming primary for
+ * slow calls and modeled Gemini at its input-only price, undercounting its
+ * real (output-heavy) blended cost by ~4-5x on the fallback bucket. */
 export const DEFAULT_COST_RATES: CostRates = {
-  llmUsdPerMToken: 0.7, // Groq Llama 3.3 70B, blended ~$0.59 in / $0.79 out
-  llmFallbackUsdPerMToken: 0.3, // Gemini 2.x Flash, blended
+  llmUsdPerMToken: 1.2,
+  llmFallbackUsdPerMToken: 1.37,
   // Sarvam bulbul:v3 (primary TTS as of Aug 2026 migration): ₹30/10K chars
   // = ₹3000/1M chars ≈ $35.71/1M @ usdToInr below. bulbul:v2 was ₹15/10K
   // (~$16.7/1M, coincidentally close to the old Azure-list-price placeholder
@@ -47,7 +66,7 @@ export const DEFAULT_COST_RATES: CostRates = {
  * Read by the admin health-alert staleness check (admin-data.ts) so a quiet
  * vendor repricing or expired volume-discount tier the team never hears
  * about doesn't go unnoticed indefinitely — see RATE_STALENESS_THRESHOLD_DAYS. */
-export const RATES_LAST_VERIFIED_AT = "2026-08-08";
+export const RATES_LAST_VERIFIED_AT = "2026-10-03";
 
 /** Days after which an unconfirmed rate card is flagged stale. */
 export const RATE_STALENESS_THRESHOLD_DAYS = 45;

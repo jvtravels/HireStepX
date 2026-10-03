@@ -912,8 +912,8 @@ async function buildServiceDetails(
     {
       name: "Google Gemini",
       type: "LLM",
-      role: "Fallback",
-      model: "gemini-2.5-flash",
+      role: "Primary (slow calls) / Fallback (fast calls)",
+      model: "gemini-3.5-flash-lite",
       status: geminiWindowErrors > geminiCalls.length * 0.2 ? "degraded" : "healthy",
       usage: {
         callsTotal: geminiCallsTotal,
@@ -925,7 +925,7 @@ async function buildServiceDetails(
         avgLatencyMs: geminiAvgLatency,
       },
       limits: { requestsPerDay: 250, requestsPerMinute: 10, tokensPerMinute: 250_000 },
-      notes: "Free tier (gemini-2.5-flash): 10 RPM, 250 RPD, 250K TPM. Lower RPM than the -lite variant but ~10× higher TPM, which is what large eval prompts need on the fallback path. Upgrade at aistudio.google.com to lift RPD.",
+      notes: "Migrated off gemini-2.5-flash (2026-10-03): Google restricted the 2.5 series to limited access ahead of its 2026-10-16 retirement and was already returning 429s. 3.5-flash-lite is same-priced and is Google's own recommended replacement — verify free-tier RPM/RPD/TPM caps at aistudio.google.com, as they may differ from the 2.5-flash figures below.",
     },
     {
       name: "Azure TTS",

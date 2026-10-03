@@ -92,7 +92,7 @@ describe("happy path", () => {
 
     const result = await callLLM({ prompt: "Evaluate." });
 
-    expect(result.model).toBe("gemini-2.5-flash");
+    expect(result.model).toBe("gemini-3.5-flash-lite");
     expect(result.text).toBe('{"score":85}');
     expect(result.fallback).toBe(false);
     const geminiCalls = fetchSpy.mock.calls.filter((args: unknown[]) => String(args[0]).includes("generativelanguage"));
@@ -172,7 +172,7 @@ describe("transient rate limiting", () => {
     await vi.runAllTimersAsync(); // advance past 800ms retry delay
     const result = await promise;
 
-    expect(result.model).toBe("gemini-2.5-flash");
+    expect(result.model).toBe("gemini-3.5-flash-lite");
     expect(geminiCallCount).toBe(2); // 1 fail + 1 retry on same provider
   });
 
@@ -215,7 +215,7 @@ describe("transient rate limiting", () => {
     await vi.runAllTimersAsync();
     const result = await promise;
 
-    expect(result.model).toBe("gemini-2.5-flash");
+    expect(result.model).toBe("gemini-3.5-flash-lite");
     expect(geminiCallCount).toBe(2);
   });
 });
@@ -305,7 +305,7 @@ describe("totalBudgetMs", () => {
 
     const result = await callLLM({ prompt: "Evaluate." }, 15000, { totalBudgetMs: 20000 });
 
-    expect(result.model).toBe("gemini-2.5-flash");
+    expect(result.model).toBe("gemini-3.5-flash-lite");
     expect(result.fallback).toBe(false);
   });
 

@@ -340,7 +340,7 @@ export function skillsCoverAxes(
 }
 
 /* A parsed LLM response can be syntactically valid JSON yet semantically
-   empty — e.g. a verbose fallback model (gemini-2.5-flash) truncates the large
+   empty — e.g. a verbose fallback model (the Gemini model) truncates the large
    report at its token cap, closing the object after the early fields but before
    `skills`/`hrReport`. extractJSON happily returns that object, and the report
    builder then defaults the missing arrays to [] and the score to 50 — surfacing
