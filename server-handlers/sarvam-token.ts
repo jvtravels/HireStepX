@@ -5,6 +5,7 @@ export const config = { runtime: "edge" };
 
 import { handleCorsPreflightOrMethod, corsHeaders, isRateLimited, getClientIp, rateLimitResponse, verifyAuth, unauthorizedResponse, validateOrigin, withRequestId, logServiceUsage, redisIncrByWithExpiry, getSubscriptionTier } from "./_shared";
 import { recordSttSpendAndCheckCap } from "./_sarvam-credit-guard";
+import { parseBoolEnv } from "./_sarvam-token-helpers";
 
 declare const process: { env: Record<string, string | undefined> };
 const SARVAM_API_KEY = process.env.SARVAM_API_KEY || "";
@@ -14,7 +15,7 @@ const SARVAM_API_KEY = process.env.SARVAM_API_KEY || "";
 // STT is only a *fallback* (Deepgram is primary, and Deepgram now mints scoped
 // keys), and voice is text-only for the MVP, so leaving this disabled costs
 // nothing. An operator who accepts the risk can opt in explicitly.
-const SARVAM_ALLOW_CLIENT_KEY = (process.env.SARVAM_ALLOW_CLIENT_KEY || "").trim() === "true";
+const SARVAM_ALLOW_CLIENT_KEY = parseBoolEnv(process.env.SARVAM_ALLOW_CLIENT_KEY);
 const SARVAM_TOKEN_DAILY_CAP = 30;
 const SECONDS_PER_DAY = 86_400;
 
