@@ -4,9 +4,9 @@ import { useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/AuthContext";
 import { useEmployerData } from "@/employer/EmployerDataContext";
-import { tokens as t, fonts as f, shadows } from "@/auth/_tokens";
+import { tokens as t, fonts as f } from "@/auth/_tokens";
 import {
-  Card,
+  Card as AtomCard,
   Eyebrow,
   FieldLabel,
   HelpText,
@@ -15,6 +15,7 @@ import {
   StatCell,
   EmployerIcon,
 } from "@/employer/_atoms";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   LOGO_MAX_MB,
   LOGO_ACCEPTED_TYPES,
@@ -70,7 +71,7 @@ function CompanyOnboarding() {
           You'll get instant access to the candidate roster — no waiting on approval.
         </p>
       </div>
-      <Card>
+      <AtomCard>
         <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
           <div>
             <FieldLabel required>Company name</FieldLabel>
@@ -188,7 +189,7 @@ function CompanyOnboarding() {
             )}
           </div>
         </div>
-      </Card>
+      </AtomCard>
 
       <div style={{ marginTop: 48 }}>
         <div style={{ textAlign: "center", marginBottom: 20 }}>
@@ -250,8 +251,8 @@ function CompanyRejected() {
    requirements list lives on /employer/jobs; this screen is the "how's it
    going" glance (greeting, next move, stat strip, company profile rail).
    Reuses DashboardHome's (src/DashboardHome.tsx) grid proportions
-   (minmax(0,1fr) / minmax(280px,360px), 1280 max width) so the employer
-   surface reads as the same product. */
+   (minmax(0,1fr) / minmax(280px,360px)), full width with no max-width cap,
+   so the employer surface reads as the same product. */
 function EmployerDashboard() {
   const { user } = useAuth();
   const { requirements, companyLogoUrl } = useEmployerData();
@@ -265,8 +266,6 @@ function EmployerDashboard() {
         display: "grid",
         gridTemplateColumns: "minmax(0, 1fr) minmax(280px, 360px)",
         gap: 32,
-        maxWidth: 1280,
-        margin: "0 auto",
         width: "100%",
       }}
     >
@@ -283,24 +282,26 @@ function EmployerDashboard() {
           </p>
         </section>
 
-        <Card pad={28}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 24, flexWrap: "wrap" }}>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <Eyebrow tone="indigo">Your next move</Eyebrow>
-              <p style={{ fontFamily: f.sans, fontSize: 28, fontWeight: 400, lineHeight: 1.2, letterSpacing: "-0.01em", color: t.coal, margin: "8px 0 10px" }}>
-                Post a requirement
-              </p>
-              <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft, margin: 0, maxWidth: 520, lineHeight: 1.55 }}>
-                Tell us the role, location, and notice-period preference — we'll return a scored shortlist
-                from candidates actively practicing on HireStepX.
-              </p>
-              <div style={{ marginTop: 18 }}>
-                <Link href="/employer/requirements/new" style={{ textDecoration: "none" }}>
-                  <PrimaryCta icon={<EmployerIcon.Plus />}>Post a requirement</PrimaryCta>
-                </Link>
+        <Card>
+          <CardContent>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 24, flexWrap: "wrap" }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <Eyebrow tone="indigo">Your next move</Eyebrow>
+                <p style={{ fontFamily: f.sans, fontSize: 28, fontWeight: 400, lineHeight: 1.2, letterSpacing: "-0.01em", color: t.coal, margin: "8px 0 10px" }}>
+                  Post a requirement
+                </p>
+                <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft, margin: 0, maxWidth: 520, lineHeight: 1.55 }}>
+                  Tell us the role, location, and notice-period preference — we'll return a scored shortlist
+                  from candidates actively practicing on HireStepX.
+                </p>
+                <div style={{ marginTop: 18 }}>
+                  <Link href="/employer/requirements/new" style={{ textDecoration: "none" }}>
+                    <PrimaryCta icon={<EmployerIcon.Plus />}>Post a requirement</PrimaryCta>
+                  </Link>
+                </div>
               </div>
             </div>
-          </div>
+          </CardContent>
         </Card>
 
         <section>
@@ -319,37 +320,41 @@ function EmployerDashboard() {
       {/* ─── Rail ─── */}
       <aside style={{ display: "flex", flexDirection: "column", gap: 24, minWidth: 0 }}>
         <Card>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-            {companyLogoUrl ? (
-              <img
-                src={companyLogoUrl}
-                alt="Company logo"
-                style={{ width: 22, height: 22, borderRadius: 6, objectFit: "cover" }}
-              />
-            ) : (
-              <span style={{ color: t.indigo }}><EmployerIcon.Building /></span>
-            )}
-            <h2 style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.coal, margin: 0 }}>
-              Company profile
-            </h2>
-          </div>
-          <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.55, margin: "0 0 12px" }}>
-            You're approved to browse the candidate roster and view contact details.
-          </p>
-          <Link href="/employer/settings" style={{ textDecoration: "none" }}>
-            <OutlineCta full size="sm">Edit company details</OutlineCta>
-          </Link>
+          <CardContent>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+              {companyLogoUrl ? (
+                <img
+                  src={companyLogoUrl}
+                  alt="Company logo"
+                  style={{ width: 22, height: 22, borderRadius: 6, objectFit: "cover" }}
+                />
+              ) : (
+                <span style={{ color: t.indigo }}><EmployerIcon.Building /></span>
+              )}
+              <h2 style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.coal, margin: 0 }}>
+                Company profile
+              </h2>
+            </div>
+            <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.55, margin: "0 0 12px" }}>
+              You're approved to browse the candidate roster and view contact details.
+            </p>
+            <Link href="/employer/settings" style={{ textDecoration: "none" }}>
+              <OutlineCta full size="sm">Edit company details</OutlineCta>
+            </Link>
+          </CardContent>
         </Card>
 
-        <div style={{ background: t.white, border: `1px solid ${t.line}`, borderRadius: 16, padding: 20, boxShadow: shadows.card }}>
-          <h2 style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.coal, margin: "0 0 8px" }}>
-            How matching works
-          </h2>
-          <p style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft, lineHeight: 1.6, margin: 0 }}>
-            Match score reflects fit against this requirement; roster score reflects lifetime interview
-            performance across a candidate's practice sessions.
-          </p>
-        </div>
+        <Card>
+          <CardContent>
+            <h2 style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.coal, margin: "0 0 8px" }}>
+              How matching works
+            </h2>
+            <p style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft, lineHeight: 1.6, margin: 0 }}>
+              Match score reflects fit against this requirement; roster score reflects lifetime interview
+              performance across a candidate's practice sessions.
+            </p>
+          </CardContent>
+        </Card>
       </aside>
     </div>
   );

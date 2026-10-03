@@ -203,7 +203,7 @@ function RangeFilterPopover({
       <PopoverTrigger asChild>
         <Button
           variant="outline"
-          style={{ borderRadius: 8, height: 44, gap: 8, background: t.white, color: active ? t.coal : t.inkFaint, fontFamily: f.sans, fontSize: 13, fontWeight: 500, flexShrink: 0, transition: `background ${dur.instant} ${ease.snap}` }}
+          style={{ borderRadius: 8, height: 36, gap: 8, background: t.white, color: t.coal, fontFamily: f.sans, fontSize: 13, fontWeight: 500, flexShrink: 0, transition: `background ${dur.instant} ${ease.snap}` }}
           onMouseEnter={(e) => { e.currentTarget.style.background = t.rowTint; }}
           onMouseLeave={(e) => { e.currentTarget.style.background = t.white; }}
         >
@@ -542,13 +542,11 @@ export default function EmployerJobsPage() {
     if (!ok) toast("Couldn't update the stage — please try again", "error");
   };
 
-  const heading = (
+  const renderHeading = (filters?: React.ReactNode) => (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: `1px solid ${t.line}`, flexWrap: "wrap", gap: 12 }}>
-      <div>
-        <h1 style={{ fontFamily: f.sans, fontSize: 26, fontWeight: 700, color: t.coal, margin: 0, letterSpacing: "-0.01em", lineHeight: "32px" }}>Jobs</h1>
-        <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkFaint, margin: "2px 0 0" }}>
-          Every requirement you've posted, with the candidates HireStepX has matched to each.
-        </p>
+      <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap", flex: 1, minWidth: 0 }}>
+        <h1 style={{ fontFamily: f.sans, fontSize: 26, fontWeight: 700, color: t.coal, margin: 0, letterSpacing: "-0.01em", lineHeight: "32px", flexShrink: 0 }}>Jobs</h1>
+        {filters}
       </div>
       <Button size="lg" className="gap-2 px-5 h-11" onClick={() => router.push("/employer/requirements/new")}>
         <PlusIcon size={16} strokeWidth={2.5} aria-hidden="true" />
@@ -557,9 +555,9 @@ export default function EmployerJobsPage() {
     </div>
   );
 
-  const shell = (body: React.ReactNode) => (
+  const shell = (body: React.ReactNode, filters?: React.ReactNode) => (
     <div style={{ background: t.white, display: "flex", flexDirection: "column", flex: 1, minHeight: 0, borderRadius: 12, border: `1px solid ${t.line}`, overflow: "hidden" }}>
-      {heading}
+      {renderHeading(filters)}
       {body}
     </div>
   );
@@ -682,56 +680,59 @@ export default function EmployerJobsPage() {
     );
   }
 
+  const filterControls = (
+    <>
+      <SearchWithSuggestions
+        id="employer-jobs-search"
+        label="Search jobs"
+        value={search}
+        onChange={setSearch}
+        placeholder="Search by job title, location, or skill"
+        storageKey={RECENT_SEARCHES_KEY}
+        suggestedFilters={suggestedFilters}
+        style={{ flex: "1 1 240px", minWidth: 200 }}
+      />
+      <FilterPill
+        label="Status"
+        value={statusFilter}
+        options={[{ value: "", label: "All" }, ...statusOptions.map((o) => ({ value: o, label: o }))]}
+        onChange={setStatusFilter}
+      />
+      <FilterPill
+        label="Location"
+        value={locationFilter}
+        options={[{ value: "", label: "All" }, ...locationOptions.map((o) => ({ value: o, label: o }))]}
+        onChange={setLocationFilter}
+      />
+      <FilterPill
+        label="Job type"
+        value={jobTypeFilter}
+        options={[{ value: "", label: "All" }, ...jobTypeOptions.map((o) => ({ value: o, label: o }))]}
+        onChange={setJobTypeFilter}
+      />
+      {hasAnyDepartment && (
+        <FilterPill
+          label="Department"
+          value={departmentFilter}
+          options={[{ value: "", label: "All" }, ...departmentOptions.map((o) => ({ value: o, label: o }))]}
+          onChange={setDepartmentFilter}
+        />
+      )}
+      <FilterPill
+        label="Due date"
+        value={dueFilter}
+        options={[{ value: "", label: "All" }, ...DUE_OPTIONS.map((o) => ({ value: o, label: o }))]}
+        onChange={setDueFilter}
+      />
+      <RangeFilterPopover label="Experience" unit="yrs" range={experienceFilter} onChange={setExperienceFilter} />
+      <RangeFilterPopover label="Salary" unit="LPA" range={salaryFilter} onChange={setSalaryFilter} />
+    </>
+  );
+
   return shell(
     <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
       {historyDialog}
       {archiveDialog}
-      <div style={{ padding: "16px 18px", borderBottom: activeChips.length > 0 ? "none" : `1px solid ${t.line}`, display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}>
-        <SearchWithSuggestions
-          id="employer-jobs-search"
-          label="Search jobs"
-          value={search}
-          onChange={setSearch}
-          placeholder="Search by job title, location, or skill"
-          storageKey={RECENT_SEARCHES_KEY}
-          suggestedFilters={suggestedFilters}
-          style={{ flex: "1 1 240px", minWidth: 200 }}
-        />
-        <FilterPill
-          label="Status"
-          value={statusFilter}
-          options={[{ value: "", label: "All" }, ...statusOptions.map((o) => ({ value: o, label: o }))]}
-          onChange={setStatusFilter}
-        />
-        <FilterPill
-          label="Location"
-          value={locationFilter}
-          options={[{ value: "", label: "All" }, ...locationOptions.map((o) => ({ value: o, label: o }))]}
-          onChange={setLocationFilter}
-        />
-        <FilterPill
-          label="Job type"
-          value={jobTypeFilter}
-          options={[{ value: "", label: "All" }, ...jobTypeOptions.map((o) => ({ value: o, label: o }))]}
-          onChange={setJobTypeFilter}
-        />
-        {hasAnyDepartment && (
-          <FilterPill
-            label="Department"
-            value={departmentFilter}
-            options={[{ value: "", label: "All" }, ...departmentOptions.map((o) => ({ value: o, label: o }))]}
-            onChange={setDepartmentFilter}
-          />
-        )}
-        <FilterPill
-          label="Due date"
-          value={dueFilter}
-          options={[{ value: "", label: "All" }, ...DUE_OPTIONS.map((o) => ({ value: o, label: o }))]}
-          onChange={setDueFilter}
-        />
-        <RangeFilterPopover label="Experience" unit="yrs" range={experienceFilter} onChange={setExperienceFilter} />
-        <RangeFilterPopover label="Salary" unit="LPA" range={salaryFilter} onChange={setSalaryFilter} />
-      </div>
 
       {activeChips.length > 0 && (
         <div style={{ padding: "0 18px 14px", borderBottom: `1px solid ${t.line}`, display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8 }}>
@@ -1021,5 +1022,6 @@ export default function EmployerJobsPage() {
         onPageChange={setPage}
       />
     </div>,
+    filterControls,
   );
 }

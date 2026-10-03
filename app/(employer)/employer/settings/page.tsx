@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useEmployerData } from "@/employer/EmployerDataContext";
 import { tokens as t, fonts as f } from "@/auth/_tokens";
-import { Card, FieldLabel, HelpText, PrimaryCta, EmployerIcon } from "@/employer/_atoms";
+import { FieldLabel, HelpText, PrimaryCta, EmployerIcon } from "@/employer/_atoms";
+import { PageHeader, FlatSection } from "@/settingsSections";
 import {
   LOGO_MAX_MB,
   LOGO_ACCEPTED_TYPES,
@@ -66,112 +67,107 @@ export default function EmployerSettingsPage() {
   };
 
   return (
-    <div style={{ maxWidth: 560, margin: "0 auto", width: "100%" }}>
-      <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontFamily: f.sans, fontSize: "clamp(24px, 5vw, 34px)", fontWeight: 400, letterSpacing: "-0.02em", color: t.coal, margin: "0 0 6px" }}>
-          Settings
-        </h1>
-        <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft, margin: 0 }}>
-          Update your company profile.
-        </p>
-      </div>
+    <div style={{ width: "100%" }}>
+      <div style={{ background: t.white, border: `1px solid ${t.line}`, borderRadius: 16, overflow: "hidden" }}>
+        <PageHeader title="Settings" desc="Update your company profile." />
 
-      <Card>
-        <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-          <div>
-            <FieldLabel required>Company name</FieldLabel>
-            <input
-              value={companyName}
-              onChange={(e) => setCompanyName(e.target.value)}
-              style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: `1px solid ${t.line}`, fontFamily: f.sans, fontSize: 14, boxSizing: "border-box" }}
-            />
-          </div>
-          <div>
-            <FieldLabel required>Company website</FieldLabel>
-            <input
-              value={website}
-              onChange={(e) => setWebsite(e.target.value)}
-              onBlur={() => setWebsiteTouched(true)}
-              placeholder="https://acme.com"
-              style={{
-                width: "100%",
-                padding: "12px 14px",
-                borderRadius: 10,
-                border: `1px solid ${websiteFormatError ? t.error : t.line}`,
-                fontFamily: f.sans,
-                fontSize: 14,
-                boxSizing: "border-box",
-              }}
-            />
-            {websiteFormatError && (
-              <HelpText tone="error">Include the full address, starting with https:// — e.g. https://acme.com</HelpText>
-            )}
-          </div>
-          <div>
-            <FieldLabel>Company logo (optional)</FieldLabel>
-            <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-              <div
-                style={{
-                  width: 56,
-                  height: 56,
-                  borderRadius: 12,
-                  border: `1px solid ${t.line}`,
-                  background: t.creamSoft,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  overflow: "hidden",
-                  flexShrink: 0,
-                }}
-              >
-                {logoDataUrl || companyLogoUrl ? (
-                  <img src={logoDataUrl ?? companyLogoUrl ?? undefined} alt="Company logo" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                ) : (
-                  <span style={{ color: t.inkFaint }}><EmployerIcon.Building /></span>
-                )}
-              </div>
-              <label
-                htmlFor="company-logo-input"
-                style={{
-                  padding: "9px 16px",
-                  borderRadius: 10,
-                  border: `1px solid ${t.lineStrong}`,
-                  fontFamily: f.sans,
-                  fontSize: 13,
-                  fontWeight: 600,
-                  color: t.coal,
-                  cursor: "pointer",
-                }}
-              >
-                {logoDataUrl || companyLogoUrl ? "Change logo" : "Upload logo"}
-                <input
-                  id="company-logo-input"
-                  type="file"
-                  accept={LOGO_ACCEPTED_TYPES}
-                  onChange={(e) => handleLogoChange(e.target.files?.[0])}
-                  style={{ position: "absolute", width: 1, height: 1, padding: 0, margin: -1, overflow: "hidden", clip: "rect(0,0,0,0)", whiteSpace: "nowrap", border: 0 }}
-                />
-              </label>
+        <FlatSection title="Company profile" last>
+          <div style={{ display: "flex", flexDirection: "column", gap: 18, maxWidth: 480 }}>
+            <div>
+              <FieldLabel required>Company name</FieldLabel>
+              <input
+                value={companyName}
+                onChange={(e) => setCompanyName(e.target.value)}
+                style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: `1px solid ${t.line}`, fontFamily: f.sans, fontSize: 14, boxSizing: "border-box" }}
+              />
             </div>
-            {logoError ? (
-              <HelpText tone="error">{logoError}</HelpText>
-            ) : (
-              <HelpText>PNG, JPG, or WEBP · up to {LOGO_MAX_MB} MB.</HelpText>
+            <div>
+              <FieldLabel required>Company website</FieldLabel>
+              <input
+                value={website}
+                onChange={(e) => setWebsite(e.target.value)}
+                onBlur={() => setWebsiteTouched(true)}
+                placeholder="https://acme.com"
+                style={{
+                  width: "100%",
+                  padding: "12px 14px",
+                  borderRadius: 10,
+                  border: `1px solid ${websiteFormatError ? t.error : t.line}`,
+                  fontFamily: f.sans,
+                  fontSize: 14,
+                  boxSizing: "border-box",
+                }}
+              />
+              {websiteFormatError && (
+                <HelpText tone="error">Include the full address, starting with https:// — e.g. https://acme.com</HelpText>
+              )}
+            </div>
+            <div>
+              <FieldLabel>Company logo (optional)</FieldLabel>
+              <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                <div
+                  style={{
+                    width: 56,
+                    height: 56,
+                    borderRadius: 12,
+                    border: `1px solid ${t.line}`,
+                    background: t.creamSoft,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    overflow: "hidden",
+                    flexShrink: 0,
+                  }}
+                >
+                  {logoDataUrl || companyLogoUrl ? (
+                    <img src={logoDataUrl ?? companyLogoUrl ?? undefined} alt="Company logo" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  ) : (
+                    <span style={{ color: t.inkFaint }}><EmployerIcon.Building /></span>
+                  )}
+                </div>
+                <label
+                  htmlFor="company-logo-input"
+                  style={{
+                    padding: "9px 16px",
+                    borderRadius: 10,
+                    border: `1px solid ${t.lineStrong}`,
+                    fontFamily: f.sans,
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: t.coal,
+                    cursor: "pointer",
+                  }}
+                >
+                  {logoDataUrl || companyLogoUrl ? "Change logo" : "Upload logo"}
+                  <input
+                    id="company-logo-input"
+                    type="file"
+                    accept={LOGO_ACCEPTED_TYPES}
+                    onChange={(e) => handleLogoChange(e.target.files?.[0])}
+                    style={{ position: "absolute", width: 1, height: 1, padding: 0, margin: -1, overflow: "hidden", clip: "rect(0,0,0,0)", whiteSpace: "nowrap", border: 0 }}
+                  />
+                </label>
+              </div>
+              {logoError ? (
+                <HelpText tone="error">{logoError}</HelpText>
+              ) : (
+                <HelpText>PNG, JPG, or WEBP · up to {LOGO_MAX_MB} MB.</HelpText>
+              )}
+            </div>
+
+            {saveError && (
+              <p style={{ fontFamily: f.sans, fontSize: 13, color: t.error, margin: 0 }}>{saveError}</p>
             )}
+            {saved && (
+              <p style={{ fontFamily: f.sans, fontSize: 13, color: t.success, margin: 0 }}>Saved.</p>
+            )}
+
+            <PrimaryCta full disabled={!canSave} onClick={handleSave}>
+              {saving ? "Saving…" : "Save changes"}
+            </PrimaryCta>
           </div>
-
-          {saveError && (
-            <p style={{ fontFamily: f.sans, fontSize: 13, color: t.error, margin: 0 }}>{saveError}</p>
-          )}
-          {saved && (
-            <p style={{ fontFamily: f.sans, fontSize: 13, color: t.success, margin: 0 }}>Saved.</p>
-          )}
-
-          <PrimaryCta full disabled={!canSave} onClick={handleSave}>
-            {saving ? "Saving…" : "Save changes"}
-          </PrimaryCta>
-        </div>
-      </Card>
+        </FlatSection>
+      </div>
     </div>
   );
 }
