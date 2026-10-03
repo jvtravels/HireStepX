@@ -1,8 +1,11 @@
 /* Vercel Edge Function — Employer Profile
  *
- * GET  /api/employer-profile  → current employer row (or { status: "none" }
- *      if the authenticated user has never submitted one). Includes
- *      logoUrl, a public Storage URL, when a logo was uploaded.
+ * GET  /api/employer-profile  → current employer row. If the authenticated
+ *      user has no row yet (e.g. never went through the signup-time
+ *      company-profile capture), one is auto-provisioned with a placeholder
+ *      name so the CompanyOnboarding screen is never a dead end — the
+ *      employer edits the real name/website from /employer/settings.
+ *      Includes logoUrl, a public Storage URL, when a logo was uploaded.
  * POST /api/employer-profile  { companyName, website, logoBase64?,
  *      logoContentType? } → upserts an approved employer row (fresh
  *      submission or resubmission after rejection). logoBase64 is optional;
@@ -187,12 +190,37 @@ async function fetchEmployer(userId: string): Promise<EmployerRow | null> {
   return Array.isArray(rows) && rows[0] ? rows[0] : null;
 }
 
+/** Any account can reach /employer without ever going through the
+    signup-time company-profile capture (an existing candidate account
+    switching roles, a direct login without ?next=/employer, email
+    verification completed in a different browser, ...). Rather than
+    bouncing those accounts to the CompanyOnboarding screen, auto-provision
+    a placeholder row so companyStatus always resolves to "approved" — the
+    employer can fill in the real company name/website later from
+    /employer/settings. */
+async function provisionDefaultEmployer(userId: string): Promise<EmployerRow> {
+  const now = new Date().toISOString();
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/employers?on_conflict=id`, {
+    method: "POST",
+    headers: { ...serviceHeaders(), "Content-Type": "application/json", Prefer: "resolution=merge-duplicates,return=representation" },
+    body: JSON.stringify([{
+      id: userId,
+      company_name: "My Company",
+      website: "",
+      status: "approved",
+      submitted_at: now,
+      approved_at: now,
+    }]),
+  });
+  if (!res.ok) throw new Error(`employer auto-provision failed: ${res.status}`);
+  const rows = (await res.json().catch(() => [])) as EmployerRow[];
+  if (!rows[0]) throw new Error("employer auto-provision returned no row");
+  return rows[0];
+}
+
 async function handleGet(userId: string, headers: Record<string, string>): Promise<Response> {
   try {
-    const row = await fetchEmployer(userId);
-    if (!row) {
-      return new Response(JSON.stringify({ status: "none" }), { status: 200, headers });
-    }
+    const row = (await fetchEmployer(userId)) ?? (await provisionDefaultEmployer(userId));
 
     return new Response(
       JSON.stringify({
