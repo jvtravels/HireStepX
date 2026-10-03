@@ -76,11 +76,8 @@ const prefetchMap: Record<string, () => void> = {
 };
 
 /* ─── Sidebar Nav Items ───
- * Two-tier IA (Duolingo/Linear pattern): `navItems` is the core loop —
- * the three routes a candidate returns to every session — rendered at
- * full weight. `secondaryNavItems` are utility routes used less often;
- * AppShellFrame renders them in their own lower-emphasis group below
- * the primary list (smaller text, muted color, no active rail accent).
+ * One continuous list, rendered at full weight — matches the Figma
+ * sidebar's single route list.
  * Figma's active-item color is the old editorial orange; kept indigo
  * here per the documented copper→indigo
  * retirement (tempo/CLAUDE.md), not a missed detail. */
@@ -88,13 +85,10 @@ const navItems = [
   { id: "dashboard", path: "/dashboard", label: "Dashboard" },
   { id: "sessions", path: "/sessions", label: "Sessions" },
   { id: "analytics", path: "/analytics", label: "Analytics" },
-];
-const secondaryNavItems = [
   { id: "calendar", path: "/calendar", label: "Calendar" },
   { id: "resume", path: "/resume", label: "Your Profile" },
   { id: "jobs", path: "/jobs", label: "Jobs" },
 ];
-const allNavItems = [...navItems, ...secondaryNavItems];
 
 function NavIcon({ id }: { id: string }) {
   const props = { size: 18, "aria-hidden": true as const };
@@ -250,7 +244,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
     // treat it as a sub-route of "/sessions" so the sidebar highlights
     // Sessions instead of silently falling back to Dashboard.
     if (path?.startsWith("/session/")) return "sessions";
-    const match = allNavItems.find(item => item.path !== "/dashboard" && path === item.path);
+    const match = navItems.find(item => item.path !== "/dashboard" && path === item.path);
     return match?.id || "dashboard";
   })();
 
@@ -272,16 +266,11 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
         icon: <NavIcon id={item.id} />,
         alert: item.id === "calendar" && hasUrgentInterview,
       }))}
-      secondaryNavItems={secondaryNavItems.map((item) => ({
-        ...item,
-        icon: <NavIcon id={item.id} />,
-        alert: item.id === "calendar" && hasUrgentInterview,
-      }))}
       activeId={activeNav}
       onNavigate={(path) => nav.push(path)}
       onNavHover={(id) => {
         prefetchMap[id]?.();
-        const path = allNavItems.find((item) => item.id === id)?.path;
+        const path = navItems.find((item) => item.id === id)?.path;
         if (path) nav.prefetch(path);
       }}
       sidebarFooterExtra={
@@ -458,7 +447,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
       }
       onLogout={() => { authLogout(); }}
       breadcrumbRoot={{ label: "HireStepX", path: "/dashboard" }}
-      pageLabel={allNavItems.find((item) => item.id === activeNav)?.label || "Dashboard"}
+      pageLabel={navItems.find((item) => item.id === activeNav)?.label || "Dashboard"}
       isMobile={isMobile}
       mainId="dashboard-main"
       pageKey={pathname}
@@ -518,7 +507,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
         <CommandList>
           <CommandEmpty>No results found.</CommandEmpty>
           <CommandGroup heading="Pages">
-            {allNavItems.map((item) => (
+            {navItems.map((item) => (
               <CommandItem
                 key={item.id}
                 onSelect={() => { setPaletteOpen(false); nav.push(item.path); }}

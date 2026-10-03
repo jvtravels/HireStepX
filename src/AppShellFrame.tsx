@@ -67,10 +67,6 @@ interface AppShellFrameProps {
   homeHref: string;
   navAriaLabel: string;
   navItems: ShellNavItem[];
-  /** Lower-emphasis nav tier rendered below the primary list (smaller
-   *  text, no active rail accent) — utility routes that aren't part of
-   *  the core loop. Candidate side: Calendar, Jobs, Your Profile. */
-  secondaryNavItems?: ShellNavItem[];
   activeId: string;
   onNavigate: (path: string) => void;
   onNavHover?: (id: string) => void;
@@ -94,7 +90,7 @@ interface AppShellFrameProps {
 }
 
 export default function AppShellFrame({
-  homeHref, navAriaLabel, navItems, secondaryNavItems, activeId, onNavigate, onNavHover,
+  homeHref, navAriaLabel, navItems, activeId, onNavigate, onNavHover,
   sidebarFooterExtra, account, accountMenuItems, onLogout,
   breadcrumbRoot, pageLabel, isMobile, mainId, pageKey, banners, overlays, children,
 }: AppShellFrameProps) {
@@ -189,49 +185,6 @@ export default function AppShellFrame({
             </SidebarMenu>
             </nav>
           </SidebarGroup>
-
-          {secondaryNavItems && secondaryNavItems.length > 0 && (
-            <SidebarGroup className="mt-auto">
-              <nav aria-label={`${navAriaLabel} — more`}>
-              <SidebarMenu className="gap-0.5">
-                {secondaryNavItems.map((item) => {
-                  const active = activeId === item.id;
-                  return (
-                    <SidebarMenuItem key={item.id} style={{ position: "relative" }}>
-                      <SidebarMenuButton
-                        isActive={active}
-                        aria-current={active ? "page" : undefined}
-                        onClick={() => onNavigate(item.path)}
-                        onMouseEnter={(e) => { onNavHover?.(item.id); if (!active) e.currentTarget.style.background = c.border; }}
-                        onMouseLeave={(e) => { if (!active) e.currentTarget.style.background = "transparent"; }}
-                        onTouchStart={() => onNavHover?.(item.id)}
-                        aria-label={item.label}
-                        tooltip={item.label}
-                        style={{
-                          height: 30, gap: 10, fontFamily: F.sans, fontSize: 13,
-                          fontWeight: 500,
-                          color: active ? c.accent : c.inkSoft,
-                          background: active ? c.border : "transparent",
-                          borderRadius: 8,
-                          opacity: active ? 1 : 0.8,
-                          transition: `background ${dur.instant} ${ease.snap}, color ${dur.instant} ${ease.snap}`,
-                        }}
-                      >
-                        {item.icon}
-                        <span className="group-data-[collapsible=icon]:hidden" style={{ position: "relative" }}>
-                          {item.label}
-                          {item.alert && (
-                            <span style={{ position: "absolute", top: -2, right: -10, width: 7, height: 7, borderRadius: "50%", background: T.error, border: `2px solid ${c.graphite}` }} />
-                          )}
-                        </span>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  );
-                })}
-              </SidebarMenu>
-              </nav>
-            </SidebarGroup>
-          )}
         </SidebarContent>
 
         <SidebarFooter className="gap-2">
