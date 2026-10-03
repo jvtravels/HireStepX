@@ -521,8 +521,10 @@ export default function Signup() {
                   disabled={resendCooldown > 0 || resending}
                   aria-busy={resending || undefined}
                   style={{
-                    width: "100%",
+                    minWidth: 200,
                     height: "auto",
+                    borderRadius: 10,
+                    padding: "12px 20px",
                     fontFamily: f.sans,
                     fontSize: 15,
                     fontWeight: emailProvider ? 500 : 600,
