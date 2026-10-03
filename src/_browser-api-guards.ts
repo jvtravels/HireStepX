@@ -68,11 +68,13 @@ export function yieldToMainThread(): Promise<void> {
   return new Promise((r) => setTimeout(r, 0));
 }
 
-/* ─── gtag — GA4, only present once the user accepts cookie consent
+/* ─── gtag — GA4, loaded for every visitor via Consent Mode v2
  *
- * ConsentGatedAnalytics/MarketingAnalytics only mount the gtag.js <Script>
- * after consent, so window.gtag is undefined pre-consent — that's the
- * gate, not a separate consent check here. */
+ * ConsentGatedAnalytics/MarketingAnalytics always mount the gtag.js
+ * <Script>; the inline init script sets Consent Mode's default storage
+ * state from localStorage directly (see _ga4-script.ts), so window.gtag
+ * exists immediately regardless of consent. sendGtagEvent still no-ops
+ * safely via optional chaining if it somehow hasn't loaded yet. */
 
 type GtagFn = (...args: unknown[]) => void;
 
@@ -80,4 +82,10 @@ export function sendGtagEvent(name: string, params?: Record<string, unknown>): v
   if (typeof window === "undefined") return;
   const w = window as Window & { gtag?: GtagFn };
   w.gtag?.("event", name, params);
+}
+
+export function updateGtagConsent(granted: boolean): void {
+  if (typeof window === "undefined") return;
+  const w = window as Window & { gtag?: GtagFn };
+  w.gtag?.("consent", "update", { analytics_storage: granted ? "granted" : "denied" });
 }

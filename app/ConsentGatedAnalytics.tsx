@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import Script from "next/script";
 import { getCookieConsent } from "./CookieConsent";
 import { initPostHog, upgradePostHogPersistence } from "../src/posthogClient";
+import { updateGtagConsent } from "../src/_browser-api-guards";
 import { buildGa4InitScript } from "./_ga4-script";
 
 const GA_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
@@ -13,7 +14,7 @@ const GA_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
 const Analytics = dynamic(() => import("@vercel/analytics/next").then(m => m.Analytics), { ssr: false });
 const SpeedInsights = dynamic(() => import("@vercel/speed-insights/next").then(m => m.SpeedInsights), { ssr: false });
 
-export default function ConsentGatedAnalytics({ nonce }: { nonce: string }) {
+export default function ConsentGatedAnalytics({ nonce, ga4 = true }: { nonce: string; ga4?: boolean }) {
   const [accepted, setAccepted] = useState(false);
 
   useEffect(() => {
@@ -34,18 +35,18 @@ export default function ConsentGatedAnalytics({ nonce }: { nonce: string }) {
       if (nowAccepted) {
         void initPostHog("localStorage+cookie");
         upgradePostHogPersistence();
+        updateGtagConsent(true);
       }
     };
     window.addEventListener("hirestepx:cookie-consent", handler);
     return () => window.removeEventListener("hirestepx:cookie-consent", handler);
   }, []);
 
-  if (!accepted) return null;
   return (
     <>
-      <Analytics />
-      <SpeedInsights />
-      {GA_ID && (
+      {accepted && <Analytics />}
+      {accepted && <SpeedInsights />}
+      {ga4 && GA_ID && (
         <>
           <Script
             src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}

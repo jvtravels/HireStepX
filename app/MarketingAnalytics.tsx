@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import Script from "next/script";
 import { getCookieConsent } from "./CookieConsent";
 import { initPostHog, upgradePostHogPersistence } from "../src/posthogClient";
+import { updateGtagConsent } from "../src/_browser-api-guards";
 import { buildGa4InitScript } from "./_ga4-script";
 
 const GA_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
@@ -15,12 +16,10 @@ const SpeedInsights = dynamic(() => import("@vercel/speed-insights/next").then(m
 
 /* Marketing-route counterpart to ConsentGatedAnalytics — no live per-request
    nonce (marketing pages are static/ISR, so there's no headers() call to mint
-   one). The GTM loader is allowlisted by host (proxy.ts drops 'strict-dynamic'
-   for these routes so the host allowlist actually applies), and the ga4-init
-   inline script is allowlisted by a build-time content hash instead
-   (data/generated/jsonld-csp-hashes.json, key "__global__") since its content
-   is deterministic — only NEXT_PUBLIC_GA_MEASUREMENT_ID varies, and that's a
-   build-time env var, not per-request. */
+   one). Both the GTM loader and the ga4-init inline script are allowed via
+   proxy.ts's 'unsafe-inline' + host allowlist for these routes (see the
+   doc comment on buildGa4InitScript in _ga4-script.ts for why the earlier
+   content-hash allowlist for this script was abandoned). */
 export default function MarketingAnalytics() {
   const [accepted, setAccepted] = useState(false);
 
@@ -35,17 +34,17 @@ export default function MarketingAnalytics() {
       if (nowAccepted) {
         void initPostHog("localStorage+cookie");
         upgradePostHogPersistence();
+        updateGtagConsent(true);
       }
     };
     window.addEventListener("hirestepx:cookie-consent", handler);
     return () => window.removeEventListener("hirestepx:cookie-consent", handler);
   }, []);
 
-  if (!accepted) return null;
   return (
     <>
-      <Analytics />
-      <SpeedInsights />
+      {accepted && <Analytics />}
+      {accepted && <SpeedInsights />}
       {GA_ID && (
         <>
           <Script src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`} strategy="afterInteractive" />

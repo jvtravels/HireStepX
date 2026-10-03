@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 export default function AdminLoginLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
-      <AnalyticsNonce />
+      <AnalyticsNonce ga4={false} />
       {children}
     </>
   );
