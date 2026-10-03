@@ -171,6 +171,14 @@ async function callGroq(opts: LLMOptions, signal?: AbortSignal): Promise<LLMResu
       messages: [{ role: "user", content: opts.prompt }],
       temperature: opts.temperature ?? 0.3,
       max_tokens: opts.maxTokens ?? 2000,
+      // GPT-OSS is a reasoning model — unlike the retired llama-3.1-8b-instant,
+      // it spends part of max_tokens on an internal reasoning pass before the
+      // final answer. Our per-call budgets (500-2500 tokens) were sized for
+      // the old non-reasoning model and left no room for that overhead, so
+      // reasoning-heavy calls got cut off mid-JSON and Groq rejected them with
+      // "Failed to validate JSON" (400). Capping reasoning effort to "low"
+      // keeps the overhead small enough to fit the existing budgets.
+      reasoning_effort: "low",
       ...(opts.jsonMode ? { response_format: { type: "json_object" } } : {}),
     }),
   });
