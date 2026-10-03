@@ -99,13 +99,13 @@ describe("classifyRequirementStatus", () => {
 });
 
 describe("rankAndCap", () => {
-  it("filters out candidates below the floor and sorts descending", () => {
+  it("sorts descending without a minimum-score floor", () => {
     const scored = [
       { candidateId: "a", matchScore: 30, rosterScore: 50 },
       { candidateId: "b", matchScore: 90, rosterScore: 50 },
       { candidateId: "c", matchScore: 55, rosterScore: 50 },
     ];
-    expect(rankAndCap(scored).map((s) => s.candidateId)).toEqual(["b", "c"]);
+    expect(rankAndCap(scored).map((s) => s.candidateId)).toEqual(["b", "c", "a"]);
   });
 
   it("caps the result at the given size", () => {

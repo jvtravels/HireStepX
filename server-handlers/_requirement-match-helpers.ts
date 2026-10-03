@@ -166,7 +166,7 @@ export const STRONG_MATCH_THRESHOLD = 85;
     `matches` is expected to already be floor-filtered (rankAndCap), so
     "zero" means literally no candidate cleared that floor — not merely
     "no strong (85+) match" — otherwise a requirement with several real,
-    reviewable 40-84 matches gets mislabeled "zero" and the employer UI
+    reviewable matches gets mislabeled "zero" and the employer UI
     (which keys the candidates table's visibility off this status) hides
     a non-empty shortlist entirely. */
 export function classifyRequirementStatus(matches: Array<{ matchScore: number }>): RequirementMatchStatus {
@@ -177,10 +177,14 @@ export function classifyRequirementStatus(matches: Array<{ matchScore: number }>
 }
 
 /** Keeps only candidates worth surfacing, ranked best first, capped so a
-    requirement never returns an unbounded shortlist. */
+    requirement never returns an unbounded shortlist.
+
+    The minimum-score floor is disabled for now (2026-10-04) while the
+    candidate pool is small — most profiles lack a completed target_role /
+    resume_data and can never clear a nonzero floor, which was hiding
+    otherwise-reviewable matches entirely. Revisit once the pool grows. */
 export function rankAndCap(scored: ScoredCandidate[], cap = 20): ScoredCandidate[] {
   return scored
-    .filter((s) => s.matchScore >= 40)
     .sort((a, b) => b.matchScore - a.matchScore)
     .slice(0, cap);
 }
