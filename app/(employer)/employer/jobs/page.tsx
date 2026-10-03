@@ -628,10 +628,7 @@ export default function EmployerJobsPage() {
     [requirements],
   );
   const hasAnyDepartment = departmentOptions.length > 0;
-  const experienceCap = useMemo(
-    () => Math.max(1, ...requirements.map((r) => r.experienceMax ?? r.experienceMin ?? 0)),
-    [requirements],
-  );
+  const experienceCap = 40;
 
   const suggestedFilters = useMemo(() => {
     const suggestions: Array<{ label: string; apply: () => void }> = [];
