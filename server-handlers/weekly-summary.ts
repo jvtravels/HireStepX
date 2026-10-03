@@ -159,6 +159,36 @@ async function markSent(userId: string): Promise<void> {
   });
 }
 
+// Each user needs ~4 sequential network round-trips (2 Supabase reads, a
+// Resend send, a mark-sent patch). Run users in bounded-concurrency batches
+// instead of one at a time — 50 users x 4 serial round-trips routinely blew
+// past the edge function's 25s initial-response limit.
+const USER_CONCURRENCY = 8;
+
+async function processUser(user: ProfileRow): Promise<"sent" | "skipped"> {
+  const [sessions, total] = await Promise.all([recentSessions(user.id), totalSessionCount(user.id)]);
+  const digest = buildDigest(user, sessions, total);
+  if (!digest) return "skipped";
+  const ok = await sendEmail(user.email, digest.subject, digest.html);
+  if (!ok) return "skipped";
+  await markSent(user.id);
+  return "sent";
+}
+
+async function processInBatches(users: ProfileRow[]): Promise<{ sent: number; skipped: number }> {
+  let sent = 0;
+  let skipped = 0;
+  for (let i = 0; i < users.length; i += USER_CONCURRENCY) {
+    const batch = users.slice(i, i + USER_CONCURRENCY);
+    const results = await Promise.all(batch.map(processUser));
+    for (const result of results) {
+      if (result === "sent") sent++;
+      else skipped++;
+    }
+  }
+  return { sent, skipped };
+}
+
 export default async function handler(req: Request): Promise<Response> {
   // Authenticate: Vercel cron attaches the secret as a bearer token.
   const auth = req.headers.get("authorization") || "";
@@ -170,21 +200,7 @@ export default async function handler(req: Request): Promise<Response> {
   }
 
   const users = await candidateUsers();
-  let sent = 0;
-  let skipped = 0;
-  for (const user of users) {
-    const sessions = await recentSessions(user.id);
-    const total = await totalSessionCount(user.id);
-    const digest = buildDigest(user, sessions, total);
-    if (!digest) { skipped++; continue; }
-    const ok = await sendEmail(user.email, digest.subject, digest.html);
-    if (ok) {
-      await markSent(user.id);
-      sent++;
-    } else {
-      skipped++;
-    }
-  }
+  const { sent, skipped } = await processInBatches(users);
 
   return new Response(
     JSON.stringify({ sent, skipped, total: users.length, emailEnabled: !!RESEND_API_KEY }),
