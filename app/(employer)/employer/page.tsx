@@ -263,10 +263,17 @@ function EmployerDashboard() {
   return (
     <div
       style={{
+        width: "100%",
+        maxWidth: 1280,
+        margin: "0 auto",
+        boxSizing: "border-box",
+        background: t.white,
+        border: `1px solid ${t.line}`,
+        borderRadius: 12,
+        padding: 24,
         display: "grid",
         gridTemplateColumns: "minmax(0, 1fr) minmax(280px, 360px)",
         gap: 32,
-        width: "100%",
       }}
     >
       {/* ─── Main stage ─── */}
