@@ -88,7 +88,7 @@ interface ServiceInfo {
 
 interface LLMData {
   totalCalls: number; totalTokens: number; todayTokens: number; fallbackRate: number; errorRate: number;
-  errorBreakdown?: { rateLimit: number; contextLength: number; timeout: number; serverError: number; auth: number; safety: number; other: number };
+  errorBreakdown?: { rateLimit: number; contextLength: number; timeout: number; serverError: number; modelAccess: number; auth: number; safety: number; other: number };
   byEndpoint: Record<string, { calls: number; tokens: number; avgLatency: number; errors: number }>;
   byModel: Record<string, { calls: number; tokens: number }>;
   tokensPerDay: Record<string, number>;
@@ -2503,6 +2503,7 @@ export default function AdminDashboard() {
                 ["Context length", llm.errorBreakdown.contextLength],
                 ["Timeout", llm.errorBreakdown.timeout],
                 ["Provider 5xx", llm.errorBreakdown.serverError],
+                ["Model access", llm.errorBreakdown.modelAccess],
                 ["Auth/key", llm.errorBreakdown.auth],
                 ["Safety block", llm.errorBreakdown.safety],
                 ["Other", llm.errorBreakdown.other],
@@ -2514,7 +2515,7 @@ export default function AdminDashboard() {
               ))}
             </div>
             <p style={{ margin: "12px 0 0", fontSize: 11, color: c.stone, lineHeight: 1.5 }}>
-              Counts come from the most recent {formatNum(llm.totalCalls)} llm_usage rows. If "Rate limit" or "Context length" dominate, daily token quota isn't the bottleneck — per-minute caps or oversized prompts are.
+              Counts come from the most recent {formatNum(llm.totalCalls)} llm_usage rows. If "Rate limit" or "Context length" dominate, daily token quota isn't the bottleneck — per-minute caps or oversized prompts are. "Model access" means the provider account itself has that model gated (fix in the provider console) — don't confuse it with "Auth/key" (a bad or expired credential).
             </p>
           </div>
         )}
@@ -2829,7 +2830,7 @@ export default function AdminDashboard() {
         )}
 
         <p style={{ marginTop: 16, fontSize: 11, color: c.stone }}>
-          LLM costs: list-rate estimates (Groq Llama 70B ~$0.70/M tok, Gemini Flash ~$0.30/M tok · 1 USD = ₹84).
+          LLM costs: list-rate estimates (Groq GPT-OSS 20B $0.075/M input + $0.30/M output; 120B $0.15/M + $0.60/M · 1 USD = ₹84).
           Voice costs (TTS/STT) are aggregate rate-card estimates with no per-session breakdown.
           Reconcile against actual Groq/Azure/Deepgram invoices before any pricing decision.
         </p>
