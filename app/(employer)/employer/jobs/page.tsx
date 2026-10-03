@@ -319,7 +319,7 @@ function AdvancedFiltersPopover({
         <div style={{ padding: "14px 16px", borderBottom: `1px solid ${t.line}` }}>
           <span style={{ fontFamily: f.sans, fontSize: 16, fontWeight: 700, color: t.coal }}>Advanced filters</span>
         </div>
-        <ScrollArea style={{ maxHeight: 420 }}>
+        <ScrollArea style={{ height: "min(420px, calc(100vh - 160px))" }}>
         <div style={{ padding: "16px", display: "flex", flexDirection: "column", gap: 16 }}>
           <div>
             <div style={sectionLabelStyle}>Status</div>
@@ -360,7 +360,12 @@ function AdvancedFiltersPopover({
           <div>
             <div style={sectionLabelStyle}>Location</div>
             <Select value={draftLocation || "__all"} onValueChange={(v) => setDraftLocation(v === "__all" ? "" : v)}>
-              <SelectTrigger className="w-full"><SelectValue placeholder="All locations" /></SelectTrigger>
+              <SelectTrigger
+                className="w-full border-border"
+                style={{ height: 36, borderRadius: 8, background: t.white, color: t.coal, fontFamily: f.sans, fontSize: 13, fontWeight: 500 }}
+              >
+                <SelectValue placeholder="All locations" />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="__all">All locations</SelectItem>
                 {locationOptions.map((o) => (
@@ -373,7 +378,12 @@ function AdvancedFiltersPopover({
             <div>
               <div style={sectionLabelStyle}>Department</div>
               <Select value={draftDepartment || "__all"} onValueChange={(v) => setDraftDepartment(v === "__all" ? "" : v)}>
-                <SelectTrigger className="w-full"><SelectValue placeholder="All departments" /></SelectTrigger>
+                <SelectTrigger
+                  className="w-full border-border"
+                  style={{ height: 36, borderRadius: 8, background: t.white, color: t.coal, fontFamily: f.sans, fontSize: 13, fontWeight: 500 }}
+                >
+                  <SelectValue placeholder="All departments" />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__all">All departments</SelectItem>
                   {departmentOptions.map((o) => (
@@ -744,14 +754,14 @@ export default function EmployerJobsPage() {
 
   const renderHeading = (filters?: React.ReactNode) => (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: `1px solid ${t.line}`, flexWrap: "wrap", gap: 12 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap", flex: 1, minWidth: 0 }}>
-        <h1 style={{ fontFamily: f.sans, fontSize: 26, fontWeight: 700, color: t.coal, margin: 0, letterSpacing: "-0.01em", lineHeight: "32px", flexShrink: 0 }}>Jobs</h1>
+      <h1 style={{ fontFamily: f.sans, fontSize: 26, fontWeight: 700, color: t.coal, margin: 0, letterSpacing: "-0.01em", lineHeight: "32px", flexShrink: 0 }}>Jobs</h1>
+      <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap", justifyContent: "flex-end", flex: 1, minWidth: 0 }}>
         {filters}
+        <Button size="lg" className="gap-2 px-4" onClick={() => router.push("/employer/requirements/new")}>
+          <PlusIcon size={16} strokeWidth={2.5} aria-hidden="true" />
+          Post a requirement
+        </Button>
       </div>
-      <Button size="lg" className="gap-2 px-4" onClick={() => router.push("/employer/requirements/new")}>
-        <PlusIcon size={16} strokeWidth={2.5} aria-hidden="true" />
-        Post a requirement
-      </Button>
     </div>
   );
 
