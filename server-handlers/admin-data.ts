@@ -906,8 +906,8 @@ async function buildServiceDetails(
         errorsToday: groqToday.filter(u => u.status === "error" || u.status === "timeout").length,
         avgLatencyMs: groqAvgLatency,
       },
-      limits: { requestsPerDay: 1000, requestsPerMinute: 30, tokensPerMinute: 12000 },
-      notes: "Free tier: 30 RPM, 1,000 RPD, 12,000 TPM (verified via x-ratelimit headers). Per-minute token cap is the bottleneck during interviews — upgrade at console.groq.com to lift TPM.",
+      limits: { requestsPerDay: 1000, requestsPerMinute: 30, tokensPerMinute: 8000 },
+      notes: "Free tier: 30 RPM, 1,000 RPD, 8,000 TPM (corrected 2026-10-03 from live 413 error bodies — both openai/gpt-oss-20b and -120b cite 'Limit 8000'; the previous 12,000 figure was stale). Per-minute token cap is the bottleneck during interviews — our own prompt+max_tokens budget (~8.8K) exceeds this on prompt-heavy sessions, so 413s recur independent of any traffic spike. Upgrade at console.groq.com to lift TPM, or shrink the prompt/maxTokens budget in evaluate-session.ts.",
     },
     {
       name: "Google Gemini",
