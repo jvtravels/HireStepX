@@ -3553,16 +3553,19 @@ export function useInterviewEngine() {
 
     // Global escape hatch — no matter what hangs below (eval, auth refresh,
     // supabase save, service-worker intercept), navigate to the session
-    // detail after 35s so the user never stares at a dead spinner. The
+    // detail after 58s so the user never stares at a dead spinner. The
     // rich v6 report will regenerate server-side when SessionReportView
     // mounts, and partial local saves survive page navigation.
+    // Set above the 45s eval abort below (+ ~13s margin for auth refresh
+    // and the save round-trip) so a real evaluation isn't cut off by this
+    // outer guard before its own timeout even has a chance to fire.
     const escapeHatch = setTimeout(() => {
-      console.warn("[interview] handleEnd exceeded 35s — forcing navigation to session detail");
+      console.warn("[interview] handleEnd exceeded 58s — forcing navigation to session detail");
       // replace not push — same reasoning as the success path: back-button
       // from /session/[id] must not land on /interview.
       try { router.replace(`/session/${sessionId}`); } catch { /* best effort */ }
       setEvaluating(false);
-    }, 35_000);
+    }, 58_000);
     let score = 0;
     let aiFeedback = "";
     let skillScores: Record<string, number> | null = null;
@@ -3577,17 +3580,22 @@ export function useInterviewEngine() {
       setCurrentTranscript("");
     }
 
-    // Evaluation timeout controller — shortened from 40s to 18s.
-    // The *rich* per-question evaluation now runs via /api/evaluate-session when
-    // the user opens their report, so this quick pre-save eval only needs to
-    // produce a usable score. Fallback scores are honest and the user lands
-    // on the report faster; SessionReportView computes the full v6 report
-    // there with proper caching.
+    // Evaluation timeout controller — raised from 18s to 45s (2026-10-04).
+    // Production llm_usage logs showed evaluate-session calls that fall back
+    // from Groq to Gemini (common: Groq's on_demand tier caps at 8000 TPM)
+    // routinely take 34-38s — always past the old 18s budget, which meant
+    // the Gemini-fallback path got a fake heuristic score and canned
+    // "Evaluation unavailable" message on effectively every request it
+    // served. 45s clears that observed latency with headroom. The *rich*
+    // per-question evaluation still runs separately via /api/evaluate-session
+    // when the user opens their report (with its own caching + retry), but
+    // candidates who never reopen the report should still get a real score
+    // from this quick pre-save eval whenever possible.
     const evalAbort = new AbortController();
     const safetyTimer = setTimeout(() => {
-      console.warn("[interview] handleEnd evaluation timeout (18s) — aborting fetch, using fallback scores");
+      console.warn("[interview] handleEnd evaluation timeout (45s) — aborting fetch, using fallback scores");
       evalAbort.abort();
-    }, 18_000);
+    }, 45_000);
 
     try {
     /* End-of-session evaluation — see ./_evaluation-flow.ts. The flow is

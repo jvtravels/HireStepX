@@ -142,10 +142,10 @@ function raceWithAbort<T>(promise: Promise<T>, evalAbort: AbortController): Prom
     promise,
     new Promise<T>((_, reject) => {
       if (evalAbort.signal.aborted) {
-        reject(new Error("Evaluation timed out after 18 seconds."));
+        reject(new Error("Evaluation timed out after 45 seconds."));
         return;
       }
-      const onAbort = () => reject(new Error("Evaluation timed out after 18 seconds."));
+      const onAbort = () => reject(new Error("Evaluation timed out after 45 seconds."));
       evalAbort.signal.addEventListener("abort", onAbort, { once: true });
     }),
   ]);
