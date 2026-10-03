@@ -53,8 +53,8 @@ import LoadingScreen from "@/_LoadingScreen";
 import { useToast } from "@/Toast";
 import { useEmployerData } from "@/employer/EmployerDataContext";
 import type { RequirementActivity } from "@/employer/EmployerDataContext";
-import { RequirementSummary, RequirementStatus, RequirementStage, ArchiveDisposition } from "@/employer/mockData";
-import { Badge, type BadgeTone, StageCell, STAGE_LABEL } from "@/employer/_atoms";
+import { RequirementSummary, RequirementStage, ArchiveDisposition } from "@/employer/mockData";
+import { Badge, type BadgeTone, StageCell, STAGE_LABEL, STAGE_OPTIONS } from "@/employer/_atoms";
 import { tokens as t, fonts as f, textSize } from "@/auth/_tokens";
 import { dur, ease } from "@/_motion";
 import { WORK_MODE_LABEL, EMPLOYMENT_TYPE_LABEL } from "@/hiringMatchFormat";
@@ -96,15 +96,6 @@ function daysUntil(dueDate: string): number {
 function locationText(req: RequirementSummary): string {
   return req.locations.length > 0 ? req.locations.join(", ") : req.location;
 }
-
-const STATUS_LABEL: Record<RequirementStatus, string> = {
-  generating: "Generating",
-  ready: "Shortlist ready",
-  partial: "Partial match",
-  zero: "No matches yet",
-  failed: "Generation failed",
-  closed: "Closed",
-};
 
 const ACTIVITY_LABEL: Record<RequirementActivity["action"], string> = {
   created: "Job posted",
@@ -188,15 +179,15 @@ function matchesDueFilter(req: RequirementSummary, filter: string): boolean {
 }
 
 /* Single "Filters" trigger replacing the old row of six separate pills —
-   everything (Status/Job type/Due date as multi-select checkboxes,
+   everything (Stage/Job type/Due date as multi-select checkboxes,
    Location/Department as single-select, Experience as a range slider,
    Salary as min/max inputs) lives in one popover with a staged Apply, so
    nothing re-filters the table until the employer commits. Local to this
    page since no other screen shares this exact filter set. */
 function AdvancedFiltersPopover({
-  statusOptions,
-  status,
-  onStatusChange,
+  stageOptions,
+  stage,
+  onStageChange,
   jobTypeOptions,
   jobType,
   onJobTypeChange,
@@ -216,9 +207,9 @@ function AdvancedFiltersPopover({
   onSalaryChange,
   activeCount,
 }: {
-  statusOptions: string[];
-  status: string[];
-  onStatusChange: (v: string[]) => void;
+  stageOptions: string[];
+  stage: string[];
+  onStageChange: (v: string[]) => void;
   jobTypeOptions: string[];
   jobType: string[];
   onJobTypeChange: (v: string[]) => void;
@@ -239,7 +230,7 @@ function AdvancedFiltersPopover({
   activeCount: number;
 }) {
   const [open, setOpen] = useState(false);
-  const [draftStatus, setDraftStatus] = useState(status);
+  const [draftStage, setDraftStage] = useState(stage);
   const [draftJobType, setDraftJobType] = useState(jobType);
   const [draftDue, setDraftDue] = useState(due);
   const [draftLocation, setDraftLocation] = useState(location);
@@ -248,7 +239,7 @@ function AdvancedFiltersPopover({
   const [draftSalary, setDraftSalary] = useState<NumberRange>(salary);
 
   const seedDraft = () => {
-    setDraftStatus(status);
+    setDraftStage(stage);
     setDraftJobType(jobType);
     setDraftDue(due);
     setDraftLocation(location);
@@ -267,7 +258,7 @@ function AdvancedFiltersPopover({
   ];
 
   const handleReset = () => {
-    setDraftStatus([]);
+    setDraftStage([]);
     setDraftJobType([]);
     setDraftDue([]);
     setDraftLocation("");
@@ -277,7 +268,7 @@ function AdvancedFiltersPopover({
   };
 
   const handleApply = () => {
-    onStatusChange(draftStatus);
+    onStageChange(draftStage);
     onJobTypeChange(draftJobType);
     onDueChange(draftDue);
     onLocationChange(draftLocation);
@@ -322,11 +313,11 @@ function AdvancedFiltersPopover({
         <ScrollArea style={{ height: "min(720px, calc(100vh - 160px))", minHeight: 0, overflow: "hidden" }}>
         <div style={{ padding: "16px", display: "flex", flexDirection: "column", gap: 16 }}>
           <div>
-            <div style={sectionLabelStyle}>Status</div>
+            <div style={sectionLabelStyle}>Stage</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {statusOptions.map((o) => (
+              {stageOptions.map((o) => (
                 <label key={o} style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: f.sans, fontSize: 13, color: t.coal, cursor: "pointer" }}>
-                  <Checkbox checked={draftStatus.includes(o)} onCheckedChange={() => toggle(draftStatus, o, setDraftStatus)} />
+                  <Checkbox checked={draftStage.includes(o)} onCheckedChange={() => toggle(draftStage, o, setDraftStage)} />
                   {o}
                 </label>
               ))}
@@ -601,7 +592,7 @@ export default function EmployerJobsPage() {
   const { requirements, requirementsLoading, archiveRequirement, reopenRequirement, updateRequirementStage, fetchRequirementActivity } = useEmployerData();
 
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string[]>([]);
+  const [stageFilter, setStageFilter] = useState<string[]>([]);
   const [locationFilter, setLocationFilter] = useState("");
   const [jobTypeFilter, setJobTypeFilter] = useState<string[]>([]);
   const [departmentFilter, setDepartmentFilter] = useState("");
@@ -620,8 +611,8 @@ export default function EmployerJobsPage() {
   const [historyItems, setHistoryItems] = useState<RequirementActivity[] | null>(null);
   const [historyLoading, setHistoryLoading] = useState(false);
 
-  const statusOptions = useMemo(
-    () => Array.from(new Set(requirements.map((r) => STATUS_LABEL[r.status]))),
+  const stageOptions = useMemo(
+    () => STAGE_OPTIONS.filter((s) => requirements.some((r) => r.stage === s)).map((s) => STAGE_LABEL[s]),
     [requirements],
   );
   const locationOptions = useMemo(
@@ -644,20 +635,20 @@ export default function EmployerJobsPage() {
 
   const suggestedFilters = useMemo(() => {
     const suggestions: Array<{ label: string; apply: () => void }> = [];
-    const firstStatus = statusOptions.find((o) => !statusFilter.includes(o));
-    if (firstStatus) suggestions.push({ label: `Status: ${firstStatus}`, apply: () => setStatusFilter((prev) => [...prev, firstStatus]) });
+    const firstStage = stageOptions.find((o) => !stageFilter.includes(o));
+    if (firstStage) suggestions.push({ label: `Stage: ${firstStage}`, apply: () => setStageFilter((prev) => [...prev, firstStage]) });
     const firstJobType = jobTypeOptions.find((o) => !jobTypeFilter.includes(o));
     if (firstJobType) suggestions.push({ label: `Type: ${firstJobType}`, apply: () => setJobTypeFilter((prev) => [...prev, firstJobType]) });
     const firstLocation = locationOptions.find((o) => o !== locationFilter);
     if (firstLocation) suggestions.push({ label: `Location: ${firstLocation}`, apply: () => setLocationFilter(firstLocation) });
     return suggestions.slice(0, 4);
-  }, [statusOptions, jobTypeOptions, locationOptions, statusFilter, jobTypeFilter, locationFilter]);
+  }, [stageOptions, jobTypeOptions, locationOptions, stageFilter, jobTypeFilter, locationFilter]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     const list = requirements.filter((r) => {
       if (q && !`${r.title} ${locationText(r)} ${r.skills.join(" ")}`.toLowerCase().includes(q)) return false;
-      if (statusFilter.length > 0 && !statusFilter.includes(STATUS_LABEL[r.status])) return false;
+      if (stageFilter.length > 0 && !stageFilter.includes(STAGE_LABEL[r.stage])) return false;
       if (locationFilter && !(r.locations.length > 0 ? r.locations : [r.location]).includes(locationFilter)) return false;
       if (jobTypeFilter.length > 0) {
         const jt = r.employmentType ? EMPLOYMENT_TYPE_LABEL[r.employmentType] || r.employmentType : null;
@@ -670,9 +661,9 @@ export default function EmployerJobsPage() {
       return true;
     });
     return [...list].sort((a, b) => compareRows(a, b, sort));
-  }, [requirements, search, statusFilter, locationFilter, jobTypeFilter, departmentFilter, dueFilter, experienceFilter, salaryFilter, sort]);
+  }, [requirements, search, stageFilter, locationFilter, jobTypeFilter, departmentFilter, dueFilter, experienceFilter, salaryFilter, sort]);
 
-  useEffect(() => { setPage(1); }, [search, statusFilter, locationFilter, jobTypeFilter, departmentFilter, dueFilter, experienceFilter, salaryFilter, sort, rowsPerPage]);
+  useEffect(() => { setPage(1); }, [search, stageFilter, locationFilter, jobTypeFilter, departmentFilter, dueFilter, experienceFilter, salaryFilter, sort, rowsPerPage]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / rowsPerPage));
   const pageSafe = Math.min(page, totalPages);
@@ -680,7 +671,7 @@ export default function EmployerJobsPage() {
 
   const clearFilters = () => {
     setSearch("");
-    setStatusFilter([]);
+    setStageFilter([]);
     setLocationFilter("");
     setJobTypeFilter([]);
     setDepartmentFilter("");
@@ -691,7 +682,7 @@ export default function EmployerJobsPage() {
 
   const activeChips: Array<{ label: string; remove: () => void }> = [];
   if (search.trim()) activeChips.push({ label: `Search: "${search.trim()}"`, remove: () => setSearch("") });
-  if (statusFilter.length > 0) activeChips.push({ label: `Status: ${statusFilter.join(", ")}`, remove: () => setStatusFilter([]) });
+  if (stageFilter.length > 0) activeChips.push({ label: `Stage: ${stageFilter.join(", ")}`, remove: () => setStageFilter([]) });
   if (locationFilter) activeChips.push({ label: `Location: ${locationFilter}`, remove: () => setLocationFilter("") });
   if (jobTypeFilter.length > 0) activeChips.push({ label: `Job type: ${jobTypeFilter.join(", ")}`, remove: () => setJobTypeFilter([]) });
   if (departmentFilter) activeChips.push({ label: `Department: ${departmentFilter}`, remove: () => setDepartmentFilter("") });
@@ -705,11 +696,11 @@ export default function EmployerJobsPage() {
 
   const onlySearchActive =
     search.trim() !== "" &&
-    statusFilter.length === 0 && !locationFilter && jobTypeFilter.length === 0 && !departmentFilter && dueFilter.length === 0 &&
+    stageFilter.length === 0 && !locationFilter && jobTypeFilter.length === 0 && !departmentFilter && dueFilter.length === 0 &&
     !experienceFilter.min && !experienceFilter.max && !salaryFilter.min && !salaryFilter.max;
 
   const activeFilterCount =
-    (statusFilter.length > 0 ? 1 : 0) +
+    (stageFilter.length > 0 ? 1 : 0) +
     (jobTypeFilter.length > 0 ? 1 : 0) +
     (dueFilter.length > 0 ? 1 : 0) +
     (locationFilter ? 1 : 0) +
@@ -903,9 +894,9 @@ export default function EmployerJobsPage() {
         style={{ flex: "1 1 240px", minWidth: 200, maxWidth: "50%" }}
       />
       <AdvancedFiltersPopover
-        statusOptions={statusOptions}
-        status={statusFilter}
-        onStatusChange={setStatusFilter}
+        stageOptions={stageOptions}
+        stage={stageFilter}
+        onStageChange={setStageFilter}
         jobTypeOptions={jobTypeOptions}
         jobType={jobTypeFilter}
         onJobTypeChange={setJobTypeFilter}
