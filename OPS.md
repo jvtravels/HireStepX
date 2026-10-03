@@ -185,7 +185,7 @@ ORDER BY blocked DESC LIMIT 20;
 ```sh
 curl -sS -D - -X POST https://api.groq.com/openai/v1/chat/completions \
   -H "Authorization: Bearer $GROQ_API_KEY" -H "Content-Type: application/json" \
-  -d '{"model":"llama-3.3-70b-versatile","messages":[{"role":"user","content":"ok"}],"max_tokens":1}' \
+  -d '{"model":"openai/gpt-oss-20b","messages":[{"role":"user","content":"ok"}],"max_tokens":1}' \
   -o /dev/null | grep -i "^x-ratelimit"
 ```
 

@@ -99,7 +99,7 @@ describe("happy path", () => {
     expect(geminiCalls).toHaveLength(1);
   });
 
-  it("uses llama-3.1-8b-instant when opts.fast is true (Groq primary for fast calls)", async () => {
+  it("uses GPT-OSS 20B when opts.fast is true (Groq primary for fast calls)", async () => {
     fetchSpy.mockImplementation(async (url: string) => {
       if (String(url).includes("api.groq.com")) return groqOk("quick");
       return new Response("{}", { status: 200 });
@@ -109,7 +109,7 @@ describe("happy path", () => {
 
     const groqCall = fetchSpy.mock.calls.find((args: unknown[]) => String(args[0]).includes("api.groq.com"));
     const body = JSON.parse(groqCall?.[1]?.body as string);
-    expect(body.model).toBe("llama-3.1-8b-instant");
+    expect(body.model).toBe("openai/gpt-oss-20b");
   });
 });
 
@@ -131,7 +131,7 @@ describe("quota exhaustion 429", () => {
     await vi.runAllTimersAsync();
     const result = await promise;
 
-    expect(result.model).toBe("llama-3.3-70b-specdec");
+    expect(result.model).toBe("openai/gpt-oss-120b");
     expect(geminiCallCount).toBe(1); // quota exhaustion = no retry
   });
 
@@ -195,7 +195,7 @@ describe("transient rate limiting", () => {
     await vi.runAllTimersAsync();
     const result = await promise;
 
-    expect(result.model).toBe("llama-3.3-70b-specdec");
+    expect(result.model).toBe("openai/gpt-oss-120b");
     expect(geminiCallCount).toBe(2); // 1 initial + 1 retry, then fail over
     expect(groqCallCount).toBe(1);
   });

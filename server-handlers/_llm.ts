@@ -27,13 +27,13 @@ if (!USAGE_LOGGING_ENABLED) {
  * empty despite LLM calls succeeding.)
  */
 /** Map a model id OR a bare provider name to the provider label. Success rows
- *  carry the real model id ("llama-3.3-70b-specdec", "gemini-2.5-flash",
+ *  carry the real model id ("openai/gpt-oss-120b", "gemini-2.5-flash",
  *  "cerebras-llama-3.3-70b"); error rows carry the provider name directly. */
 function providerFromModel(model: string): string {
   const m = model.toLowerCase();
   if (m.includes("cerebras")) return "cerebras";
   if (m.includes("gemini")) return "gemini";
-  if (m.includes("groq") || m.includes("llama")) return "groq";
+  if (m.includes("groq") || m.includes("llama") || m.includes("gpt-oss")) return "groq";
   return m;
 }
 
@@ -158,7 +158,9 @@ interface LLMResult {
 }
 
 async function callGroq(opts: LLMOptions, signal?: AbortSignal): Promise<LLMResult> {
-  const model = opts.fast ? "llama-3.1-8b-instant" : "llama-3.3-70b-specdec";
+  // Groq shut down llama-3.1-8b-instant (Aug 16, 2026) and
+  // llama-3.3-70b-specdec (Apr 14, 2025). Use their supported successors.
+  const model = opts.fast ? "openai/gpt-oss-20b" : "openai/gpt-oss-120b";
   const start = Date.now();
   const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
@@ -250,10 +252,12 @@ async function callCerebras(opts: LLMOptions, signal?: AbortSignal): Promise<LLM
 
 export async function callLLM(opts: LLMOptions, timeoutMs = 15000, meta?: { userId?: string; endpoint?: string; groqTimeoutMs?: number; sessionId?: string; totalBudgetMs?: number }): Promise<LLMResult> {
   const providers: { name: string; call: (s: AbortSignal) => Promise<LLMResult> }[] = [];
-  // Fast calls (opts.fast=true) use Groq llama-3.1-8b-instant — fast, free, not deprecated.
+  // Fast calls use Groq GPT-OSS 20B, the recommended replacement for
+  // llama-3.1-8b-instant. Slow calls use Gemini first; Groq GPT-OSS 120B is
+  // the large-model fallback after llama-3.3-70b-specdec was retired.
   // Slow/big-model calls use Gemini 2.5 Flash first: free tier (250 req/day = ~125 sessions),
-  // negligible cost if exceeded (~₹29/month at 270 sessions). Groq 70b stays as fallback
-  // until it is decommissioned on 2026-08-16, then Cerebras picks up.
+  // negligible cost if exceeded (~₹29/month at 270 sessions). Groq is the
+  // second-tier fallback; Cerebras remains third.
   if (opts.fast) {
     if (GROQ_API_KEY) providers.push({ name: "groq", call: (s) => callGroq(opts, s) });
     if (GEMINI_API_KEY) providers.push({ name: "gemini", call: (s) => callGemini(opts, s) });
@@ -270,7 +274,7 @@ export async function callLLM(opts: LLMOptions, timeoutMs = 15000, meta?: { user
   // response on llama-3.3-70b regularly takes 6-9s — the previous 6s cap
   // was sized for short responses and killed legitimate calls, sending
   // them to Gemini where Google-side "high demand" 503s would surface to
-  // the user). Fast 8B-instant calls finish well under 10s.
+  // the user). Fast 20B calls normally finish well under 10s.
   // Per-call Groq cap override — evaluate-session's full-transcript
   // prompts regularly take 6-9s; the global 10s cap kicks Groq out under
   // p95 spike and the user pays the Gemini fallback latency. Callers can
