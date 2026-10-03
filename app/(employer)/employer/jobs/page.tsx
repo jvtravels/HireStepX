@@ -45,6 +45,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { SortableHead, type Sort } from "@/components/SortableHead";
 import { TablePaginationFooter } from "@/components/TablePaginationFooter";
@@ -318,7 +319,8 @@ function AdvancedFiltersPopover({
         <div style={{ padding: "14px 16px", borderBottom: `1px solid ${t.line}` }}>
           <span style={{ fontFamily: f.sans, fontSize: 16, fontWeight: 700, color: t.coal }}>Advanced filters</span>
         </div>
-        <div style={{ maxHeight: 420, overflowY: "auto", padding: "16px", display: "flex", flexDirection: "column", gap: 16 }}>
+        <ScrollArea style={{ maxHeight: 420 }}>
+        <div style={{ padding: "16px", display: "flex", flexDirection: "column", gap: 16 }}>
           <div>
             <div style={sectionLabelStyle}>Status</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -421,6 +423,7 @@ function AdvancedFiltersPopover({
             </div>
           </div>
         </div>
+        </ScrollArea>
         <div style={{ display: "flex", gap: 8, padding: "12px 16px", borderTop: `1px solid ${t.line}` }}>
           <Button type="button" variant="outline" className="flex-1" onClick={handleReset}>
             Reset
