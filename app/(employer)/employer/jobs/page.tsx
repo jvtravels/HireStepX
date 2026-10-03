@@ -1,7 +1,7 @@
 "use client";
 
 /* /employer/jobs — the requirements console. Same card shell, toolbar,
-   shadcn Table + SortableHead, FilterPill, and TablePaginationFooter as the
+   shadcn Table + SortableHead, and TablePaginationFooter as the
    candidate-side Jobs table (src/DashboardJobs.tsx) so both sides of the
    marketplace read as one product. Filtering, sorting, and pagination all
    run client-side over the requirements already loaded by EmployerDataContext.
@@ -17,13 +17,15 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
 import {
-  PlusIcon, SearchXIcon, ChevronDownIcon, ChevronRightIcon, BriefcaseIcon,
+  PlusIcon, SearchXIcon, ChevronRightIcon, BriefcaseIcon, SlidersHorizontalIcon,
   MoreVerticalIcon, PencilIcon, ArchiveIcon, ArchiveRestoreIcon, HistoryIcon, XIcon,
   EyeIcon, InfoIcon, LoaderCircleIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { FilterPill } from "@/components/FilterPill";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Slider } from "@/components/ui/slider";
+import { Separator } from "@/components/ui/separator";
 import { SearchWithSuggestions } from "@/components/SearchWithSuggestions";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
@@ -184,22 +186,113 @@ function matchesDueFilter(req: RequirementSummary, filter: string): boolean {
   return left >= 0 && left <= 7;
 }
 
-function RangeFilterPopover({
-  label,
-  unit,
-  range,
-  onChange,
+/* Single "Filters" trigger replacing the old row of six separate pills —
+   everything (Status/Job type/Due date as multi-select checkboxes,
+   Location/Department as single-select, Experience as a range slider,
+   Salary as min/max inputs) lives in one popover with a staged Apply, so
+   nothing re-filters the table until the employer commits. Local to this
+   page since no other screen shares this exact filter set. */
+function AdvancedFiltersPopover({
+  statusOptions,
+  status,
+  onStatusChange,
+  jobTypeOptions,
+  jobType,
+  onJobTypeChange,
+  dueOptions,
+  due,
+  onDueChange,
+  locationOptions,
+  location,
+  onLocationChange,
+  departmentOptions,
+  department,
+  onDepartmentChange,
+  experience,
+  onExperienceChange,
+  experienceCap,
+  salary,
+  onSalaryChange,
+  activeCount,
 }: {
-  label: string;
-  unit: string;
-  range: NumberRange;
-  onChange: (range: NumberRange) => void;
+  statusOptions: string[];
+  status: string[];
+  onStatusChange: (v: string[]) => void;
+  jobTypeOptions: string[];
+  jobType: string[];
+  onJobTypeChange: (v: string[]) => void;
+  dueOptions: string[];
+  due: string[];
+  onDueChange: (v: string[]) => void;
+  locationOptions: string[];
+  location: string;
+  onLocationChange: (v: string) => void;
+  departmentOptions: string[];
+  department: string;
+  onDepartmentChange: (v: string) => void;
+  experience: NumberRange;
+  onExperienceChange: (v: NumberRange) => void;
+  experienceCap: number;
+  salary: NumberRange;
+  onSalaryChange: (v: NumberRange) => void;
+  activeCount: number;
 }) {
-  const [draft, setDraft] = useState<NumberRange>(range);
-  const active = range.min.trim() !== "" || range.max.trim() !== "";
-  const display = active ? `${label}: ${range.min || "0"}–${range.max || "∞"} ${unit}` : label;
+  const [open, setOpen] = useState(false);
+  const [draftStatus, setDraftStatus] = useState(status);
+  const [draftJobType, setDraftJobType] = useState(jobType);
+  const [draftDue, setDraftDue] = useState(due);
+  const [draftLocation, setDraftLocation] = useState(location);
+  const [draftDepartment, setDraftDepartment] = useState(department);
+  const [draftExperience, setDraftExperience] = useState<NumberRange>(experience);
+  const [draftSalary, setDraftSalary] = useState<NumberRange>(salary);
+
+  const seedDraft = () => {
+    setDraftStatus(status);
+    setDraftJobType(jobType);
+    setDraftDue(due);
+    setDraftLocation(location);
+    setDraftDepartment(department);
+    setDraftExperience(experience);
+    setDraftSalary(salary);
+  };
+
+  const toggle = (list: string[], value: string, setList: (v: string[]) => void) => {
+    setList(list.includes(value) ? list.filter((v) => v !== value) : [...list, value]);
+  };
+
+  const experienceRange: [number, number] = [
+    draftExperience.min.trim() ? Number(draftExperience.min) : 0,
+    draftExperience.max.trim() ? Number(draftExperience.max) : experienceCap,
+  ];
+
+  const handleReset = () => {
+    setDraftStatus([]);
+    setDraftJobType([]);
+    setDraftDue([]);
+    setDraftLocation("");
+    setDraftDepartment("");
+    setDraftExperience(EMPTY_RANGE);
+    setDraftSalary(EMPTY_RANGE);
+  };
+
+  const handleApply = () => {
+    onStatusChange(draftStatus);
+    onJobTypeChange(draftJobType);
+    onDueChange(draftDue);
+    onLocationChange(draftLocation);
+    onDepartmentChange(draftDepartment);
+    onExperienceChange(draftExperience);
+    onSalaryChange(draftSalary);
+    setOpen(false);
+  };
+
+  const sectionLabelStyle: React.CSSProperties = {
+    fontFamily: f.sans, fontSize: 11, fontWeight: 600, letterSpacing: "0.06em",
+    textTransform: "uppercase", color: t.inkFaint, marginBottom: 10,
+  };
+
   return (
-    <Popover onOpenChange={(open) => { if (open) setDraft(range); }}>
+    <Popover open={open} onOpenChange={(next) => { setOpen(next); if (next) seedDraft(); }}>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
@@ -207,46 +300,134 @@ function RangeFilterPopover({
           onMouseEnter={(e) => { e.currentTarget.style.background = t.rowTint; }}
           onMouseLeave={(e) => { e.currentTarget.style.background = t.white; }}
         >
-          {display}
-          <ChevronDownIcon size={12} aria-hidden="true" />
+          <SlidersHorizontalIcon size={14} aria-hidden="true" />
+          Filters
+          {activeCount > 0 && (
+            <span
+              style={{
+                display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: 18, height: 18,
+                borderRadius: 9, background: t.indigo, color: t.white, fontFamily: f.sans, fontSize: 11, fontWeight: 600, padding: "0 5px",
+              }}
+            >
+              {activeCount}
+            </span>
+          )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="start" style={{ width: 220 }}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          <div style={{ display: "flex", gap: 8 }}>
-            <div style={{ flex: 1 }}>
-              <Label htmlFor={`${label}-min`} className="text-xs">Min</Label>
+      <PopoverContent align="start" style={{ width: 320, padding: 0 }}>
+        <div style={{ padding: "14px 16px", borderBottom: `1px solid ${t.line}` }}>
+          <span style={{ fontFamily: f.sans, fontSize: 16, fontWeight: 700, color: t.coal }}>Advanced filters</span>
+        </div>
+        <div style={{ maxHeight: 420, overflowY: "auto", padding: "16px", display: "flex", flexDirection: "column", gap: 16 }}>
+          <div>
+            <div style={sectionLabelStyle}>Status</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {statusOptions.map((o) => (
+                <label key={o} style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: f.sans, fontSize: 13, color: t.coal, cursor: "pointer" }}>
+                  <Checkbox checked={draftStatus.includes(o)} onCheckedChange={() => toggle(draftStatus, o, setDraftStatus)} />
+                  {o}
+                </label>
+              ))}
+            </div>
+          </div>
+          <Separator />
+          <div>
+            <div style={sectionLabelStyle}>Job type</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {jobTypeOptions.map((o) => (
+                <label key={o} style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: f.sans, fontSize: 13, color: t.coal, cursor: "pointer" }}>
+                  <Checkbox checked={draftJobType.includes(o)} onCheckedChange={() => toggle(draftJobType, o, setDraftJobType)} />
+                  {o}
+                </label>
+              ))}
+            </div>
+          </div>
+          <Separator />
+          <div>
+            <div style={sectionLabelStyle}>Due date</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {dueOptions.map((o) => (
+                <label key={o} style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: f.sans, fontSize: 13, color: t.coal, cursor: "pointer" }}>
+                  <Checkbox checked={draftDue.includes(o)} onCheckedChange={() => toggle(draftDue, o, setDraftDue)} />
+                  {o}
+                </label>
+              ))}
+            </div>
+          </div>
+          <Separator />
+          <div>
+            <div style={sectionLabelStyle}>Location</div>
+            <Select value={draftLocation || "__all"} onValueChange={(v) => setDraftLocation(v === "__all" ? "" : v)}>
+              <SelectTrigger className="w-full"><SelectValue placeholder="All locations" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all">All locations</SelectItem>
+                {locationOptions.map((o) => (
+                  <SelectItem key={o} value={o}>{o}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {departmentOptions.length > 0 && (
+            <div>
+              <div style={sectionLabelStyle}>Department</div>
+              <Select value={draftDepartment || "__all"} onValueChange={(v) => setDraftDepartment(v === "__all" ? "" : v)}>
+                <SelectTrigger className="w-full"><SelectValue placeholder="All departments" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all">All departments</SelectItem>
+                  {departmentOptions.map((o) => (
+                    <SelectItem key={o} value={o}>{o}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          <Separator />
+          <div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+              <span style={sectionLabelStyle}>Experience required</span>
+              <span style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.coal }}>
+                {experienceRange[0]} – {experienceRange[1]} yrs
+              </span>
+            </div>
+            <Slider
+              min={0}
+              max={experienceCap}
+              step={1}
+              value={experienceRange}
+              onValueChange={([lo, hi]) =>
+                setDraftExperience({ min: lo > 0 ? String(lo) : "", max: hi < experienceCap ? String(hi) : "" })
+              }
+            />
+          </div>
+          <Separator />
+          <div>
+            <div style={sectionLabelStyle}>Salary (LPA)</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <Input
-                id={`${label}-min`}
                 type="number"
-                value={draft.min}
-                onChange={(e) => setDraft((d) => ({ ...d, min: e.target.value }))}
-                placeholder="0"
+                value={draftSalary.min}
+                onChange={(e) => setDraftSalary((d) => ({ ...d, min: e.target.value }))}
+                placeholder="Min"
                 style={{ height: 36 }}
               />
-            </div>
-            <div style={{ flex: 1 }}>
-              <Label htmlFor={`${label}-max`} className="text-xs">Max</Label>
+              <span style={{ fontFamily: f.sans, fontSize: 13, color: t.inkFaint, flexShrink: 0 }}>to</span>
               <Input
-                id={`${label}-max`}
                 type="number"
-                value={draft.max}
-                onChange={(e) => setDraft((d) => ({ ...d, max: e.target.value }))}
-                placeholder="Any"
+                value={draftSalary.max}
+                onChange={(e) => setDraftSalary((d) => ({ ...d, max: e.target.value }))}
+                placeholder="Max"
                 style={{ height: 36 }}
               />
             </div>
           </div>
-          <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-            {active && (
-              <Button type="button" variant="ghost" size="sm" onClick={() => { setDraft(EMPTY_RANGE); onChange(EMPTY_RANGE); }}>
-                Clear
-              </Button>
-            )}
-            <Button type="button" size="sm" onClick={() => onChange(draft)}>
-              Apply
-            </Button>
-          </div>
+        </div>
+        <div style={{ display: "flex", gap: 8, padding: "12px 16px", borderTop: `1px solid ${t.line}` }}>
+          <Button type="button" variant="outline" className="flex-1" onClick={handleReset}>
+            Reset
+          </Button>
+          <Button type="button" className="flex-1" onClick={handleApply}>
+            Apply filter
+          </Button>
         </div>
       </PopoverContent>
     </Popover>
@@ -407,11 +588,11 @@ export default function EmployerJobsPage() {
   const { requirements, requirementsLoading, archiveRequirement, reopenRequirement, updateRequirementStage, fetchRequirementActivity } = useEmployerData();
 
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string[]>([]);
   const [locationFilter, setLocationFilter] = useState("");
-  const [jobTypeFilter, setJobTypeFilter] = useState("");
+  const [jobTypeFilter, setJobTypeFilter] = useState<string[]>([]);
   const [departmentFilter, setDepartmentFilter] = useState("");
-  const [dueFilter, setDueFilter] = useState("");
+  const [dueFilter, setDueFilter] = useState<string[]>([]);
   const [experienceFilter, setExperienceFilter] = useState<NumberRange>(EMPTY_RANGE);
   const [salaryFilter, setSalaryFilter] = useState<NumberRange>(EMPTY_RANGE);
   const [sort, setSort] = useState<Sort<SortColumn>>(DEFAULT_SORT);
@@ -443,13 +624,17 @@ export default function EmployerJobsPage() {
     [requirements],
   );
   const hasAnyDepartment = departmentOptions.length > 0;
+  const experienceCap = useMemo(
+    () => Math.max(10, ...requirements.map((r) => r.experienceMax ?? r.experienceMin ?? 0)),
+    [requirements],
+  );
 
   const suggestedFilters = useMemo(() => {
     const suggestions: Array<{ label: string; apply: () => void }> = [];
-    const firstStatus = statusOptions.find((o) => o !== statusFilter);
-    if (firstStatus) suggestions.push({ label: `Status: ${firstStatus}`, apply: () => setStatusFilter(firstStatus) });
-    const firstJobType = jobTypeOptions.find((o) => o !== jobTypeFilter);
-    if (firstJobType) suggestions.push({ label: `Type: ${firstJobType}`, apply: () => setJobTypeFilter(firstJobType) });
+    const firstStatus = statusOptions.find((o) => !statusFilter.includes(o));
+    if (firstStatus) suggestions.push({ label: `Status: ${firstStatus}`, apply: () => setStatusFilter((prev) => [...prev, firstStatus]) });
+    const firstJobType = jobTypeOptions.find((o) => !jobTypeFilter.includes(o));
+    if (firstJobType) suggestions.push({ label: `Type: ${firstJobType}`, apply: () => setJobTypeFilter((prev) => [...prev, firstJobType]) });
     const firstLocation = locationOptions.find((o) => o !== locationFilter);
     if (firstLocation) suggestions.push({ label: `Location: ${firstLocation}`, apply: () => setLocationFilter(firstLocation) });
     return suggestions.slice(0, 4);
@@ -459,11 +644,14 @@ export default function EmployerJobsPage() {
     const q = search.trim().toLowerCase();
     const list = requirements.filter((r) => {
       if (q && !`${r.title} ${locationText(r)} ${r.skills.join(" ")}`.toLowerCase().includes(q)) return false;
-      if (statusFilter && STATUS_LABEL[r.status] !== statusFilter) return false;
+      if (statusFilter.length > 0 && !statusFilter.includes(STATUS_LABEL[r.status])) return false;
       if (locationFilter && !(r.locations.length > 0 ? r.locations : [r.location]).includes(locationFilter)) return false;
-      if (jobTypeFilter && (r.employmentType ? EMPLOYMENT_TYPE_LABEL[r.employmentType] || r.employmentType : null) !== jobTypeFilter) return false;
+      if (jobTypeFilter.length > 0) {
+        const jt = r.employmentType ? EMPLOYMENT_TYPE_LABEL[r.employmentType] || r.employmentType : null;
+        if (!jt || !jobTypeFilter.includes(jt)) return false;
+      }
       if (departmentFilter && r.department !== departmentFilter) return false;
-      if (!matchesDueFilter(r, dueFilter)) return false;
+      if (dueFilter.length > 0 && !dueFilter.some((f) => matchesDueFilter(r, f))) return false;
       if (!rangesOverlap(r.experienceMin, r.experienceMax, experienceFilter)) return false;
       if (!rangesOverlap(r.budgetMin, r.budgetMax, salaryFilter)) return false;
       return true;
@@ -479,22 +667,22 @@ export default function EmployerJobsPage() {
 
   const clearFilters = () => {
     setSearch("");
-    setStatusFilter("");
+    setStatusFilter([]);
     setLocationFilter("");
-    setJobTypeFilter("");
+    setJobTypeFilter([]);
     setDepartmentFilter("");
-    setDueFilter("");
+    setDueFilter([]);
     setExperienceFilter(EMPTY_RANGE);
     setSalaryFilter(EMPTY_RANGE);
   };
 
   const activeChips: Array<{ label: string; remove: () => void }> = [];
   if (search.trim()) activeChips.push({ label: `Search: "${search.trim()}"`, remove: () => setSearch("") });
-  if (statusFilter) activeChips.push({ label: `Status: ${statusFilter}`, remove: () => setStatusFilter("") });
+  if (statusFilter.length > 0) activeChips.push({ label: `Status: ${statusFilter.join(", ")}`, remove: () => setStatusFilter([]) });
   if (locationFilter) activeChips.push({ label: `Location: ${locationFilter}`, remove: () => setLocationFilter("") });
-  if (jobTypeFilter) activeChips.push({ label: `Job type: ${jobTypeFilter}`, remove: () => setJobTypeFilter("") });
+  if (jobTypeFilter.length > 0) activeChips.push({ label: `Job type: ${jobTypeFilter.join(", ")}`, remove: () => setJobTypeFilter([]) });
   if (departmentFilter) activeChips.push({ label: `Department: ${departmentFilter}`, remove: () => setDepartmentFilter("") });
-  if (dueFilter) activeChips.push({ label: `Due: ${dueFilter}`, remove: () => setDueFilter("") });
+  if (dueFilter.length > 0) activeChips.push({ label: `Due: ${dueFilter.join(", ")}`, remove: () => setDueFilter([]) });
   if (experienceFilter.min || experienceFilter.max) {
     activeChips.push({ label: `Experience: ${experienceFilter.min || "0"}–${experienceFilter.max || "∞"} yrs`, remove: () => setExperienceFilter(EMPTY_RANGE) });
   }
@@ -504,8 +692,17 @@ export default function EmployerJobsPage() {
 
   const onlySearchActive =
     search.trim() !== "" &&
-    !statusFilter && !locationFilter && !jobTypeFilter && !departmentFilter && !dueFilter &&
+    statusFilter.length === 0 && !locationFilter && jobTypeFilter.length === 0 && !departmentFilter && dueFilter.length === 0 &&
     !experienceFilter.min && !experienceFilter.max && !salaryFilter.min && !salaryFilter.max;
+
+  const activeFilterCount =
+    (statusFilter.length > 0 ? 1 : 0) +
+    (jobTypeFilter.length > 0 ? 1 : 0) +
+    (dueFilter.length > 0 ? 1 : 0) +
+    (locationFilter ? 1 : 0) +
+    (departmentFilter ? 1 : 0) +
+    (experienceFilter.min || experienceFilter.max ? 1 : 0) +
+    (salaryFilter.min || salaryFilter.max ? 1 : 0);
 
   const openHistory = async (r: RequirementSummary) => {
     setHistoryTarget(r);
@@ -548,7 +745,7 @@ export default function EmployerJobsPage() {
         <h1 style={{ fontFamily: f.sans, fontSize: 26, fontWeight: 700, color: t.coal, margin: 0, letterSpacing: "-0.01em", lineHeight: "32px", flexShrink: 0 }}>Jobs</h1>
         {filters}
       </div>
-      <Button size="lg" className="gap-2 px-5 h-11" onClick={() => router.push("/employer/requirements/new")}>
+      <Button size="lg" className="gap-2 px-4" onClick={() => router.push("/employer/requirements/new")}>
         <PlusIcon size={16} strokeWidth={2.5} aria-hidden="true" />
         Post a requirement
       </Button>
@@ -692,40 +889,29 @@ export default function EmployerJobsPage() {
         suggestedFilters={suggestedFilters}
         style={{ flex: "1 1 240px", minWidth: 200 }}
       />
-      <FilterPill
-        label="Status"
-        value={statusFilter}
-        options={[{ value: "", label: "All" }, ...statusOptions.map((o) => ({ value: o, label: o }))]}
-        onChange={setStatusFilter}
+      <AdvancedFiltersPopover
+        statusOptions={statusOptions}
+        status={statusFilter}
+        onStatusChange={setStatusFilter}
+        jobTypeOptions={jobTypeOptions}
+        jobType={jobTypeFilter}
+        onJobTypeChange={setJobTypeFilter}
+        dueOptions={DUE_OPTIONS}
+        due={dueFilter}
+        onDueChange={setDueFilter}
+        locationOptions={locationOptions}
+        location={locationFilter}
+        onLocationChange={setLocationFilter}
+        departmentOptions={departmentOptions}
+        department={departmentFilter}
+        onDepartmentChange={setDepartmentFilter}
+        experience={experienceFilter}
+        onExperienceChange={setExperienceFilter}
+        experienceCap={experienceCap}
+        salary={salaryFilter}
+        onSalaryChange={setSalaryFilter}
+        activeCount={activeFilterCount}
       />
-      <FilterPill
-        label="Location"
-        value={locationFilter}
-        options={[{ value: "", label: "All" }, ...locationOptions.map((o) => ({ value: o, label: o }))]}
-        onChange={setLocationFilter}
-      />
-      <FilterPill
-        label="Job type"
-        value={jobTypeFilter}
-        options={[{ value: "", label: "All" }, ...jobTypeOptions.map((o) => ({ value: o, label: o }))]}
-        onChange={setJobTypeFilter}
-      />
-      {hasAnyDepartment && (
-        <FilterPill
-          label="Department"
-          value={departmentFilter}
-          options={[{ value: "", label: "All" }, ...departmentOptions.map((o) => ({ value: o, label: o }))]}
-          onChange={setDepartmentFilter}
-        />
-      )}
-      <FilterPill
-        label="Due date"
-        value={dueFilter}
-        options={[{ value: "", label: "All" }, ...DUE_OPTIONS.map((o) => ({ value: o, label: o }))]}
-        onChange={setDueFilter}
-      />
-      <RangeFilterPopover label="Experience" unit="yrs" range={experienceFilter} onChange={setExperienceFilter} />
-      <RangeFilterPopover label="Salary" unit="LPA" range={salaryFilter} onChange={setSalaryFilter} />
     </>
   );
 
