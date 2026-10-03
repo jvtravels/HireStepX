@@ -655,7 +655,6 @@ export default function DashboardHome() {
   return (
     <div className="hsx-dh-root" style={{
       minHeight: "100%",
-      background: t.cream,
       fontFamily: f.sans, color: t.coal,
       /* Padding lives in CSS classes — the media queries below own all
          three width tiers (≥1181, ≤1180, ≤720). An inline value here would

@@ -429,7 +429,6 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                An exhausted Sprint Pack gets a pack-consistent "Buy more sessions"
                (opens the pack/credit modal), not a mismatched "Upgrade to Pro". */
             <Button
-              size="sm"
               className="w-full"
               onClick={() => setShowUpgradeModal(true)}
               title={primaryCtaTitle}
