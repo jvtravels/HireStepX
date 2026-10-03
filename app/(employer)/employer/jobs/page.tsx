@@ -319,7 +319,7 @@ function AdvancedFiltersPopover({
         <div style={{ padding: "14px 16px", borderBottom: `1px solid ${t.line}` }}>
           <span style={{ fontFamily: f.sans, fontSize: 16, fontWeight: 700, color: t.coal }}>Advanced filters</span>
         </div>
-        <ScrollArea style={{ height: "min(420px, calc(100vh - 160px))", minHeight: 0, overflow: "hidden" }}>
+        <ScrollArea style={{ height: "min(720px, calc(100vh - 160px))", minHeight: 0, overflow: "hidden" }}>
         <div style={{ padding: "16px", display: "flex", flexDirection: "column", gap: 16 }}>
           <div>
             <div style={sectionLabelStyle}>Status</div>
