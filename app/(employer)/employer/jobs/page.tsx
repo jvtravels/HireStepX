@@ -315,7 +315,7 @@ function AdvancedFiltersPopover({
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="start" style={{ width: 320, padding: 0 }}>
+      <PopoverContent align="end" collisionPadding={16} className="gap-0" style={{ width: 320, padding: 0 }}>
         <div style={{ padding: "14px 16px", borderBottom: `1px solid ${t.line}` }}>
           <span style={{ fontFamily: f.sans, fontSize: 16, fontWeight: 700, color: t.coal }}>Advanced filters</span>
         </div>
@@ -424,7 +424,7 @@ function AdvancedFiltersPopover({
           </div>
         </div>
         </ScrollArea>
-        <div style={{ display: "flex", gap: 8, padding: "12px 16px", borderTop: `1px solid ${t.line}` }}>
+        <div style={{ display: "flex", gap: 8, padding: "14px 16px", borderTop: `1px solid ${t.line}` }}>
           <Button type="button" variant="outline" className="flex-1" onClick={handleReset}>
             Reset
           </Button>
