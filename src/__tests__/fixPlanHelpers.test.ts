@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildFixPlanPrompt, parseFixPlan, isFileGrounded } from "../../server-handlers/_fix-plan-helpers";
+import { buildFixPlanPrompt, parseFixPlan, isFileGrounded, buildDedupKey } from "../../server-handlers/_fix-plan-helpers";
 
 describe("isFileGrounded", () => {
   it("accepts exact known paths", () => {
@@ -113,5 +113,45 @@ describe("parseFixPlan", () => {
     }));
     const out = parseFixPlan(JSON.stringify({ summary: "x", items, cautions: [] }));
     expect(out.items).toHaveLength(10);
+  });
+});
+
+describe("buildDedupKey", () => {
+  it("collides across reworded titles for the same file + flags", () => {
+    const a = buildDedupKey({
+      target_file: "server-handlers/analyzers/salary-negotiation.ts",
+      affected_flags: ["implausible_salary_claim", "off_topic_drift"],
+      title: "Fix negotiation off-topic drift",
+    });
+    const b = buildDedupKey({
+      target_file: "server-handlers/analyzers/salary-negotiation.ts",
+      affected_flags: ["off_topic_drift", "implausible_salary_claim"],
+      title: "Address salary claim plausibility and topic drift",
+    });
+    expect(a).toBe(b);
+  });
+
+  it("differs across different target files", () => {
+    const a = buildDedupKey({ target_file: "a.ts", affected_flags: ["x"], title: "same title" });
+    const b = buildDedupKey({ target_file: "b.ts", affected_flags: ["x"], title: "same title" });
+    expect(a).not.toBe(b);
+  });
+
+  it("differs across different flag sets on the same file", () => {
+    const a = buildDedupKey({ target_file: "a.ts", affected_flags: ["x"], title: "same title" });
+    const b = buildDedupKey({ target_file: "a.ts", affected_flags: ["y"], title: "same title" });
+    expect(a).not.toBe(b);
+  });
+
+  it("falls back to title when no flags are given, so distinct no-flag fixes don't collide", () => {
+    const a = buildDedupKey({ target_file: "a.ts", affected_flags: [], title: "Fix one thing" });
+    const b = buildDedupKey({ target_file: "a.ts", affected_flags: [], title: "Fix a different thing" });
+    expect(a).not.toBe(b);
+  });
+
+  it("is case-insensitive", () => {
+    const a = buildDedupKey({ target_file: "A.TS", affected_flags: ["X"], title: "t" });
+    const b = buildDedupKey({ target_file: "a.ts", affected_flags: ["x"], title: "t" });
+    expect(a).toBe(b);
   });
 });

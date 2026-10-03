@@ -34,7 +34,7 @@ import { computeSeverity } from "./_digest-helpers";
 import { callLLM } from "./_llm";
 import { computeOutcome, countFlagInWindow, primaryFlagFor } from "./_fix-outcome-helpers";
 import { captureServerEvent } from "./_posthog";
-import { buildFixPlanPrompt, parseFixPlan, type FixPlanInput } from "./_fix-plan-helpers";
+import { buildFixPlanPrompt, parseFixPlan, buildDedupKey, type FixPlanInput } from "./_fix-plan-helpers";
 import { fetchResumeForAnalyzer } from "./_resume-versioning";
 import { freshnessSnapshot } from "./_data-freshness";
 
@@ -585,7 +585,7 @@ async function generateRecommendations(): Promise<number> {
   let written = 0;
   const nowIso = new Date().toISOString();
   for (const item of plan.items.slice(0, 8)) {
-    const dedup = `${item.target_file || "_"}::${item.title}`.slice(0, 400).toLowerCase();
+    const dedup = buildDedupKey(item);
     const focusGuess = (item.affected_flags || []).map((f) => focusForFlag.get(f)).find(Boolean) || "";
 
     const row = {
