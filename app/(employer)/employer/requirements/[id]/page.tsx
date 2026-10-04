@@ -58,6 +58,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Label } from "@/components/ui/label";
@@ -370,13 +371,11 @@ function CandidateTableRow({
     >
       {!readOnly && (
         <TableCell style={{ width: 32, verticalAlign: "middle" }}>
-          <input
-            type="checkbox"
+          <Checkbox
             checked={selected}
-            onChange={onToggleSelected}
+            onCheckedChange={onToggleSelected}
             title="Select candidate"
             aria-label={`Select ${candidate.unlocked ? candidate.name : `candidate #${candidate.id.slice(0, 6)}`}`}
-            style={{ width: 16, height: 16 }}
           />
         </TableCell>
       )}
@@ -1552,16 +1551,16 @@ export default function RequirementDetailPage() {
                     <Table style={{ minWidth: 1120 }}>
                       <TableHeader style={{ position: "sticky", top: 0, zIndex: 1 }}>
                         <TableRow style={{ background: t.rowTint, height: 40 }}>
-                          {!readOnly && <TableHead></TableHead>}
-                          <SortableHead column="name" columnLabel={COLUMN_LABEL.name} defaultDirection="asc" sort={sort} onSortChange={setSort}>Candidate</SortableHead>
-                          <SortableHead column="match" columnLabel={COLUMN_LABEL.match} sort={sort} onSortChange={setSort}>Match</SortableHead>
-                          <SortableHead column="sessions" columnLabel={COLUMN_LABEL.sessions} sort={sort} onSortChange={setSort}>Practice history</SortableHead>
-                          <TableHead style={HEADER_CELL_STYLE}>Notice period</TableHead>
-                          <TableHead style={HEADER_CELL_STYLE}>Current CTC</TableHead>
-                          <TableHead style={HEADER_CELL_STYLE}>Skills</TableHead>
-                          <SortableHead column="pipeline" columnLabel={COLUMN_LABEL.pipeline} defaultDirection="asc" sort={sort} onSortChange={setSort}>Pipeline</SortableHead>
-                          <SortableHead column="contact" columnLabel={COLUMN_LABEL.contact} sort={sort} onSortChange={setSort}>Contact</SortableHead>
-                          <TableHead style={HEADER_CELL_STYLE}></TableHead>
+                          {!readOnly && <TableHead style={{ width: 32 }}></TableHead>}
+                          <SortableHead column="name" columnLabel={COLUMN_LABEL.name} defaultDirection="asc" width="26%" minWidth={240} sort={sort} onSortChange={setSort}>Candidate</SortableHead>
+                          <SortableHead column="match" columnLabel={COLUMN_LABEL.match} width="7%" minWidth={80} sort={sort} onSortChange={setSort}>Match</SortableHead>
+                          <SortableHead column="sessions" columnLabel={COLUMN_LABEL.sessions} width="13%" minWidth={150} sort={sort} onSortChange={setSort}>Practice history</SortableHead>
+                          <TableHead style={{ ...HEADER_CELL_STYLE, width: "9%", minWidth: 110 }}>Notice period</TableHead>
+                          <TableHead style={{ ...HEADER_CELL_STYLE, width: "10%", minWidth: 120 }}>Current CTC</TableHead>
+                          <TableHead style={{ ...HEADER_CELL_STYLE, width: "17%", minWidth: 190 }}>Skills</TableHead>
+                          <SortableHead column="pipeline" columnLabel={COLUMN_LABEL.pipeline} defaultDirection="asc" width="10%" minWidth={140} sort={sort} onSortChange={setSort}>Pipeline</SortableHead>
+                          <SortableHead column="contact" columnLabel={COLUMN_LABEL.contact} width="8%" minWidth={170} sort={sort} onSortChange={setSort}>Contact</SortableHead>
+                          <TableHead style={{ ...HEADER_CELL_STYLE, width: 48 }}></TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
