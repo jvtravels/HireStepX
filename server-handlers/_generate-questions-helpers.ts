@@ -362,10 +362,25 @@ export function hrDimensionsForSeniority(
    their own affinity-tagged questions, but so the sampler STEERS them out
    of other disciplines' locked questions (a marketer was observed live to
    draw an engineer's "complex codebase" onboarding probe on the LLM-down
-   path, 2026-06). Families with genuinely no analogue (finance, legal,
-   civil-services…) still return undefined → the sampler keeps its
-   universal/standard mix, which is the correct neutral behaviour. */
-function toBehavioralRole(roleFamily: string): BehavioralRole | undefined {
+   path, 2026-06).
+   Families with genuinely no analogue (finance, legal, civil-services,
+   healthcare, consultant, quant, scientist, campus, bfsi-sales, hr, …) map
+   to the "general" sentinel rather than `undefined`. This used to return
+   `undefined`, on the theory that the sampler would then fall back to a
+   universal/standard mix — but `sampleBehavioralQuestions` only runs its
+   role-partition step `if (opts.role)` (behavioral-question-bank.ts), so a
+   falsy `undefined` skipped partitioning ENTIRELY: other-discipline-tagged
+   questions (e.g. an "engineer"-tagged "pushback on your technical
+   decision" conflict question) competed on equal footing with genuinely
+   universal ones instead of being deprioritised. "general" is never a tag
+   on any bank entry, so passing it still activates the partition — only
+   true-universal (untagged) questions and the sentinel itself match, every
+   other-discipline-tagged question is pushed to the back — which is the
+   neutral behaviour the old comment intended but the old code didn't
+   deliver (live QA: a Chartered Accountant candidate drew an engineer-
+   tagged conflict question and an untagged "production incident" probe,
+   2026-Q3). */
+function toBehavioralRole(roleFamily: string): BehavioralRole {
   switch (roleFamily) {
     case "swe": case "ml": case "psu-engineer": return "engineer";
     case "pm": return "pm";
@@ -375,7 +390,7 @@ function toBehavioralRole(roleFamily: string): BehavioralRole | undefined {
     case "ops": return "ops";
     case "marketing": return "marketing";
     case "sales": return "sales";
-    default: return undefined;
+    default: return "general";
   }
 }
 

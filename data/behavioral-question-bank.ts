@@ -87,8 +87,18 @@ export type StarFocus = "action" | "result" | "situation-task" | "action+result"
 export type BehavioralDifficulty = "warmup" | "standard" | "hard";
 
 /** Role families used for tilt, keep deliberately coarse so tagging
- *  stays cheap and the sampler's role match doesn't over-fit. */
-export type BehavioralRole = "pm" | "engineer" | "designer" | "manager" | "data" | "ops" | "marketing" | "sales";
+ *  stays cheap and the sampler's role match doesn't over-fit.
+ *  "general" is NOT a taggable affinity (see BEHAVIORAL_ROLES below) — it's
+ *  a sentinel the sampler's `role` param accepts for a candidate whose
+ *  discipline has no affinity-tagged questions of its own (finance, legal,
+ *  healthcare, civil-services, …). Passing it still activates the
+ *  role-partition step in sampleBehavioralQuestions (since no question is
+ *  ever tagged "general", only genuinely-universal untagged questions and
+ *  this sentinel match), instead of the `undefined` that used to make the
+ *  sampler skip partitioning entirely and let other-discipline-tagged
+ *  questions compete on equal footing (live QA: a CA candidate drew an
+ *  engineer-tagged "technical decision" conflict question, 2026-Q3). */
+export type BehavioralRole = "pm" | "engineer" | "designer" | "manager" | "data" | "ops" | "marketing" | "sales" | "general";
 
 export const BEHAVIORAL_ROLES: ReadonlyArray<BehavioralRole> = [
   "pm",
@@ -147,7 +157,7 @@ export const BEHAVIORAL_50: ReadonlyArray<BehavioralQuestion> = [
   // ── pressure-deadlines (4)
   { id: "prs-01", text: "Tell me about a time you had to deliver under a tight deadline.",                                     competency: "pressure-deadlines", starFocus: "action",          difficulty: "standard", frequencyPct: 82 },
   { id: "prs-02", text: "Tell me about a time you had to juggle multiple high-priority tasks.",                                competency: "pressure-deadlines", starFocus: "action",          difficulty: "standard", frequencyPct: 75 },
-  { id: "prs-03", text: "Tell me about a time you had to deliver something during a production incident.",                     competency: "pressure-deadlines", starFocus: "action+result",   difficulty: "hard",     frequencyPct: 58 },
+  { id: "prs-03", text: "Tell me about a time you had to deliver something during a production incident.",                     competency: "pressure-deadlines", starFocus: "action+result",   difficulty: "hard",     frequencyPct: 58, roleAffinity: ["engineer", "ops", "data", "pm", "manager"] },
   { id: "prs-04", text: "Tell me about a time the scope changed mid-sprint and you had to ship anyway.",                       competency: "pressure-deadlines", starFocus: "action",          difficulty: "hard",     frequencyPct: 52 },
 
   // ── conflict (5)
@@ -225,7 +235,7 @@ export const BEHAVIORAL_50: ReadonlyArray<BehavioralQuestion> = [
   { id: "adp-03", text: "Tell me about a time you had to switch context between very different problems in a single day.",    competency: "adaptability",       starFocus: "action",          difficulty: "hard",     frequencyPct: 45, seniorityFloor: 3 },
 
   // ── execution-rigor (3)
-  { id: "exr-01", text: "Tell me about a time you caught a bug or issue in your own work before it shipped.",                  competency: "execution-rigor",    starFocus: "action+result",   difficulty: "warmup",   frequencyPct: 60 },
+  { id: "exr-01", text: "Tell me about a time you caught a bug or issue in your own work before it shipped.",                  competency: "execution-rigor",    starFocus: "action+result",   difficulty: "warmup",   frequencyPct: 60, roleAffinity: ["engineer", "ops", "data", "designer"] },
   { id: "exr-02", text: "Tell me about a time a missed detail came back to bite you.",                                         competency: "execution-rigor",    starFocus: "result",          difficulty: "standard", frequencyPct: 55 },
   { id: "exr-03", text: "Tell me about a time you traded thoroughness for speed and had to defend the call later.",            competency: "execution-rigor",    starFocus: "action+result",   difficulty: "hard",     frequencyPct: 48, seniorityFloor: 3 },
 
