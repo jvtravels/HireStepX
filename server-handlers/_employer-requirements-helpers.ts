@@ -42,6 +42,7 @@ export interface RequirementRow {
   hours_per_week: number | null;
   min_readiness_band: string | null;
   min_star_completeness: number | null;
+  matched_pool_size: number;
 }
 
 /** The four hiring-pipeline stages an employer can move a posting through,
@@ -226,6 +227,11 @@ export interface StrongMatchCandidate {
 
 export interface AiScreeningSummary {
   evaluated: number;
+  /** True size of the matched-candidate pool before rankAndCap's 20-cap —
+   *  from employer_requirements.matched_pool_size. Equal to `evaluated`
+   *  unless the real pool exceeded the cap, in which case the Jobs table
+   *  shows "Top N (of M matched)" instead of just "N evaluated". */
+  totalMatched: number;
   scoreLow: number | null;
   scoreHigh: number | null;
   topMatches: number;
@@ -237,6 +243,7 @@ export interface AiScreeningSummary {
 
 export const EMPTY_AI_SCREENING: AiScreeningSummary = {
   evaluated: 0,
+  totalMatched: 0,
   scoreLow: null,
   scoreHigh: null,
   topMatches: 0,
@@ -263,13 +270,27 @@ export interface RequirementMatchStats {
 /** Groups requirement_matches rows by requirement and reduces each group to
  *  the stats the Jobs table's AI Screening column needs. Candidate names
  *  aren't resolved here — callers batch-fetch names for topCandidateIds
- *  only, then pass the result to buildAiScreeningByRequirement. */
+ *  only, then pass the result to buildAiScreeningByRequirement.
+ *
+ *  `hasEvidenceById`, when passed, re-applies the same no-resume/no-session
+ *  evidence rule employer-requirement-detail.ts's GET handler applies at
+ *  read time (see its `hasEvidence` check): a stale requirement_matches row
+ *  surviving from before that filter existed — or carried over untouched by
+ *  runMatching's preserve-on-edit logic — is excluded here too, so the Jobs
+ *  list's evaluated/strong-match counts never disagree with the detail
+ *  page's, and a candidate with zero evidence can never be classified a
+ *  "Strong Match" on fit score alone. A candidate id absent from the map
+ *  (no profile row at all) is treated the same as "no evidence". */
 export function computeMatchStats(
   matchRows: Array<{ requirement_id: string; candidate_user_id: string; match_score: number }>,
   strongThreshold: number,
+  hasEvidenceById?: Map<string, boolean>,
 ): Map<string, RequirementMatchStats> {
+  const withEvidence = hasEvidenceById
+    ? matchRows.filter((m) => hasEvidenceById.get(m.candidate_user_id) === true)
+    : matchRows;
   const byRequirement = new Map<string, Array<{ candidate_user_id: string; match_score: number }>>();
-  for (const m of matchRows) {
+  for (const m of withEvidence) {
     const existing = byRequirement.get(m.requirement_id);
     if (existing) existing.push(m);
     else byRequirement.set(m.requirement_id, [m]);
@@ -325,6 +346,11 @@ export function buildAiScreeningByRequirement(
     });
     result.set(requirementId, {
       evaluated: s.evaluated,
+      // Overwritten in buildRequirementsListResponse with the requirement's
+      // real matched_pool_size (the true pre-cap pool) — defaulted to
+      // `evaluated` here so this map stays a complete AiScreeningSummary on
+      // its own for any other caller/test.
+      totalMatched: s.evaluated,
       scoreLow: s.scoreLow,
       scoreHigh: s.scoreHigh,
       topMatches: s.topMatches,
@@ -396,7 +422,13 @@ export function buildRequirementsListResponse(
     salaryType: r.salary_type ?? null,
     createdAt: r.created_at.slice(0, 10),
     candidateCount: countsByRequirement.get(r.id) || 0,
-    aiScreening: aiScreeningByRequirement.get(r.id) ?? EMPTY_AI_SCREENING,
+    aiScreening: {
+      ...(aiScreeningByRequirement.get(r.id) ?? EMPTY_AI_SCREENING),
+      // matched_pool_size is the true pre-cap pool; floor it at `evaluated`
+      // so a requirement matched before this column existed (defaults to 0)
+      // never reports fewer matched than it has actually-evaluated rows.
+      totalMatched: Math.max(r.matched_pool_size ?? 0, (aiScreeningByRequirement.get(r.id) ?? EMPTY_AI_SCREENING).evaluated),
+    },
     durationWeeks: r.duration_weeks ?? null,
     hoursPerWeek: r.hours_per_week ?? null,
     minReadinessBand: r.min_readiness_band ?? null,

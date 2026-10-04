@@ -1730,6 +1730,14 @@ alter table employer_requirements add column if not exists archive_disposition t
 -- default: no quality bar unless the employer opts in.
 alter table employer_requirements add column if not exists min_readiness_band text check (min_readiness_band in ('strongHire', 'hire', 'leanHire'));
 alter table employer_requirements add column if not exists min_star_completeness smallint check (min_star_completeness between 0 and 100);
+-- True size of the floor-filtered matched-candidate pool at the last
+-- matching pass (rankAndCap's totalMatched), before the pool gets capped
+-- at 20 and persisted to requirement_matches. Lets the Jobs/detail UI show
+-- "Top 20 (of 45 matched)" instead of reporting the post-cap count as if
+-- it were the whole pool. Set alongside `status` in runMatching
+-- (employer-requirements.ts); defaults to 0 for any row from before this
+-- column existed, until the next create/edit re-runs matching.
+alter table employer_requirements add column if not exists matched_pool_size integer not null default 0;
 
 create index if not exists idx_employer_requirements_employer on employer_requirements(employer_id, created_at desc);
 

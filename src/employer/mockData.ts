@@ -93,6 +93,9 @@ export interface StrongMatchCandidate {
  *  server-handlers/_employer-requirements-helpers.ts. */
 export interface AiScreeningSummary {
   evaluated: number;
+  /** True size of the matched-candidate pool before the 20-candidate cap —
+   *  equal to `evaluated` unless the real pool exceeded the cap. */
+  totalMatched: number;
   scoreLow: number | null;
   scoreHigh: number | null;
   topMatches: number;
@@ -175,6 +178,9 @@ export interface Requirement {
   minStarCompleteness: number | null;
   createdAt: string;
   candidates: Candidate[];
+  /** True size of the matched-candidate pool before the 20-candidate cap —
+   *  equal to candidates.length unless the real pool exceeded the cap. */
+  totalMatched: number;
 }
 
 /** Shape the create/edit requirement form submits — mirrors what

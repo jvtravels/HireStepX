@@ -73,6 +73,7 @@ interface EmployerDataContextValue {
   companyWebsite: string;
   requirements: RequirementSummary[];
   requirementsLoading: boolean;
+  requirementsError: boolean;
   submitCompanyProfile: (fields: { companyName: string; website: string; logoBase64?: string; logoContentType?: string }) => Promise<boolean>;
   resetCompanyProfile: () => void;
   addRequirement: (r: RequirementFormValues) => Promise<string | null>;
@@ -110,6 +111,7 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
   const [companyWebsite, setCompanyWebsite] = useState("");
   const [requirements, setRequirements] = useState<RequirementSummary[]>([]);
   const [requirementsLoading, setRequirementsLoading] = useState(false);
+  const [requirementsError, setRequirementsError] = useState(false);
 
   const refreshCompanyStatus = useCallback(async () => {
     try {
@@ -140,9 +142,16 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
       const headers = await authHeaders();
       const res = await fetch("/api/employer-requirements", { headers });
       const data = await res.json().catch(() => null);
-      if (res.ok && data?.requirements) setRequirements(data.requirements);
+      if (res.ok && data?.requirements) {
+        setRequirements(data.requirements);
+        setRequirementsError(false);
+      } else {
+        // leave previous list in place on a transient failure, but surface it
+        setRequirementsError(true);
+      }
     } catch {
-      // leave previous list in place on a transient failure
+      // leave previous list in place on a transient failure, but surface it
+      setRequirementsError(true);
     } finally {
       setRequirementsLoading(false);
     }
@@ -312,6 +321,7 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
     companyWebsite,
     requirements,
     requirementsLoading,
+    requirementsError,
     submitCompanyProfile,
     resetCompanyProfile,
     addRequirement,

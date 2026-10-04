@@ -1010,10 +1010,21 @@ export default function RequirementDetailPage() {
     (c) => c.candidateStatus === "interview_invited" || c.candidateStatus === "interviewing",
   ).length;
   const hiredCount = requirement.candidates.filter((c) => c.candidateStatus === "hired").length;
-  const pipelineStages: Array<{ label: string; value: number; filterValue: "all" | "interviewing" | "hired" }> = [
-    { label: "evaluated", value: requirement.candidates.length, filterValue: "all" },
-    { label: "interviewing", value: interviewingCount, filterValue: "interviewing" },
-    { label: "hired", value: hiredCount, filterValue: "hired" },
+  // totalMatched is the true pre-cap matched-candidate pool size (see
+  // rankAndCap's totalMatched in _requirement-match-helpers.ts); once it
+  // exceeds the 20-candidate cap, "N evaluated" understates the real pool,
+  // so the pill switches to "Top N (of M matched)".
+  const totalMatched = Math.max(requirement.totalMatched ?? 0, requirement.candidates.length);
+  const evaluatedCapped = totalMatched > requirement.candidates.length;
+  const pipelineStages: Array<{ kind: "evaluated" | "interviewing" | "hired"; label: string; valueLabel: string; filterValue: "all" | "interviewing" | "hired" }> = [
+    {
+      kind: "evaluated",
+      label: evaluatedCapped ? `(of ${totalMatched} matched)` : "evaluated",
+      valueLabel: evaluatedCapped ? `Top ${requirement.candidates.length}` : String(requirement.candidates.length),
+      filterValue: "all",
+    },
+    { kind: "interviewing", label: "interviewing", valueLabel: String(interviewingCount), filterValue: "interviewing" },
+    { kind: "hired", label: "hired", valueLabel: String(hiredCount), filterValue: "hired" },
   ];
   const handlePipelineStageClick = (filterValue: "all" | "interviewing" | "hired") => {
     setPipelineFilter((prev) => (prev === filterValue ? "all" : filterValue));
@@ -1236,7 +1247,7 @@ export default function RequirementDetailPage() {
           <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 12, marginTop: 14, paddingTop: 14, borderTop: `1px solid ${t.line}` }}>
             <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 6, fontFamily: f.sans, fontSize: 13, color: t.inkFaint }}>
               {pipelineStages.map((stage, i) => (
-                <span key={stage.label} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                <span key={stage.kind} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
                   {i > 0 && <ChevronRightIcon size={14} color={t.inkFaintWeak} aria-hidden="true" />}
                   <Button
                     type="button"
@@ -1252,9 +1263,9 @@ export default function RequirementDetailPage() {
                       fontWeight: pipelineFilter === stage.filterValue && stage.filterValue !== "all" ? 600 : 400,
                     }}
                   >
-                    <span style={{ color: t.coal, fontWeight: 600 }}>{stage.value}</span> {stage.label}
+                    <span style={{ color: t.coal, fontWeight: 600 }}>{stage.valueLabel}</span> {stage.label}
                   </Button>
-                  {stage.label === "evaluated" && (
+                  {stage.kind === "evaluated" && (
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <span style={{ display: "inline-flex", color: t.inkFaintWeak }}>
@@ -1271,7 +1282,7 @@ export default function RequirementDetailPage() {
             </div>
             <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontFamily: f.sans, fontSize: 13, color: t.inkFaint }}>
               <span>
-                <span style={{ color: t.indigo, fontWeight: 600 }}>{avgMatch}%</span> avg evidence score ({evidenceTier}), spanning{" "}
+                <span style={{ color: t.indigo, fontWeight: 600 }}>{avgMatch}%</span> avg match score ({evidenceTier}), spanning{" "}
                 <span style={{ color: t.coal, fontWeight: 500 }}>{scoreLow}–{scoreHigh}%</span>
               </span>
               <Tooltip>

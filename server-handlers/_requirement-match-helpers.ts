@@ -415,10 +415,15 @@ export function classifyRequirementStatus(matches: Array<{ matchScore: number }>
     nothing else behind the profile (no resume, no sessions) — that's a
     name and a guessed score an employer can't actually screen, not a
     reviewable match. These are pool noise the same way irrelevant
-    candidates are, just along a different axis. */
-export function rankAndCap(scored: ScoredCandidate[], cap = 20): ScoredCandidate[] {
-  return scored
+    candidates are, just along a different axis.
+
+    Returns `totalMatched` alongside the capped `ranked` list — the true
+    size of the floor-filtered pool *before* the `cap` slice, so a caller
+    can tell "Top 20" apart from "20 (all of them)" instead of reporting
+    the post-cap count as if it were the whole matched pool. */
+export function rankAndCap(scored: ScoredCandidate[], cap = 20): { ranked: ScoredCandidate[]; totalMatched: number } {
+  const floorFiltered = scored
     .filter((s) => s.hasRelevance && s.hasEvidence && s.meetsQualityBar !== false)
-    .sort((a, b) => b.matchScore - a.matchScore)
-    .slice(0, cap);
+    .sort((a, b) => b.matchScore - a.matchScore);
+  return { ranked: floorFiltered.slice(0, cap), totalMatched: floorFiltered.length };
 }

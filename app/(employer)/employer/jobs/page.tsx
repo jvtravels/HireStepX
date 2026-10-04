@@ -19,7 +19,7 @@ import { motion } from "motion/react";
 import {
   PlusIcon, SearchXIcon, ChevronRightIcon, BriefcaseIcon, SlidersHorizontalIcon,
   MoreVerticalIcon, PencilIcon, ArchiveIcon, ArchiveRestoreIcon, HistoryIcon, XIcon,
-  EyeIcon, InfoIcon, LoaderCircleIcon,
+  EyeIcon, InfoIcon, LoaderCircleIcon, AlertTriangleIcon, RefreshCwIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -589,7 +589,7 @@ function FilterChip({ label, onRemove }: { label: string; onRemove: () => void }
 export default function EmployerJobsPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const { requirements, requirementsLoading, archiveRequirement, reopenRequirement, updateRequirementStage, fetchRequirementActivity } = useEmployerData();
+  const { requirements, requirementsLoading, requirementsError, refreshRequirements, archiveRequirement, reopenRequirement, updateRequirementStage, fetchRequirementActivity } = useEmployerData();
 
   const [search, setSearch] = useState("");
   const [stageFilter, setStageFilter] = useState<string[]>([]);
@@ -851,6 +851,29 @@ export default function EmployerJobsPage() {
     );
   }
 
+  if (requirementsError && requirements.length === 0) {
+    return shell(
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, padding: "72px 24px", flex: 1, textAlign: "center" }}>
+        <div style={{
+          width: 64, height: 64, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
+          background: t.error100, color: t.error,
+        }}>
+          <AlertTriangleIcon size={24} aria-hidden="true" />
+        </div>
+        <div>
+          <p style={{ fontFamily: f.sans, fontSize: 18, fontWeight: 700, color: t.coal, margin: 0, letterSpacing: "-0.01em" }}>Couldn't load your jobs</p>
+          <p style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.inkFaint, margin: "6px 0 0", lineHeight: 1.5, maxWidth: 380 }}>
+            Something went wrong fetching your job listings. Your data is safe — check your connection and try again.
+          </p>
+        </div>
+        <Button size="lg" className="gap-2 px-4" onClick={() => refreshRequirements()}>
+          <RefreshCwIcon size={14} aria-hidden="true" />
+          Retry
+        </Button>
+      </div>,
+    );
+  }
+
   if (requirements.length === 0) {
     return shell(
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, padding: "72px 24px", flex: 1, textAlign: "center" }}>
@@ -921,6 +944,24 @@ export default function EmployerJobsPage() {
       {historyDialog}
       {archiveDialog}
 
+      {requirementsError && requirements.length > 0 && (
+        <div style={{
+          padding: "10px 18px", borderBottom: `1px solid ${t.line}`, background: t.error100, color: t.error,
+          display: "flex", alignItems: "center", gap: 8, fontFamily: f.sans, fontSize: textSize.sm, fontWeight: 500,
+        }}>
+          <AlertTriangleIcon size={14} aria-hidden="true" />
+          Couldn't refresh your jobs — showing the last loaded list.
+          <Button
+            type="button"
+            variant="link"
+            onClick={() => refreshRequirements()}
+            style={{ fontFamily: f.sans, fontSize: textSize.sm, fontWeight: 600, padding: "2px 4px", height: "auto", color: t.error }}
+          >
+            Retry
+          </Button>
+        </div>
+      )}
+
       {activeChips.length > 0 && (
         <div style={{ padding: "0 18px 14px", borderBottom: `1px solid ${t.line}`, display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8 }}>
           <span style={{ fontFamily: f.sans, fontSize: textSize.sm, fontWeight: 600, color: t.inkFaint }}>Active filters:</span>
@@ -986,7 +1027,7 @@ export default function EmployerJobsPage() {
                 width={160}
                 sort={sort}
                 onSortChange={setSort}
-                after={<HeadInfo label="About Top Matches">The curated shortlist of highest-scoring candidates, with their average evidence score.</HeadInfo>}
+                after={<HeadInfo label="About Top Matches">The curated shortlist of highest-scoring candidates, with their average match score.</HeadInfo>}
               >
                 Top Matches
               </SortableHead>
@@ -1123,7 +1164,9 @@ export default function EmployerJobsPage() {
                       <>
                         <div style={{ display: "flex", alignItems: "center", gap: 5, fontFamily: f.sans, fontSize: textSize.md, fontWeight: 500, color: t.coal }}>
                           <EyeIcon size={13} color={t.inkFaint} aria-hidden="true" />
-                          {r.aiScreening.evaluated} evaluated
+                          {r.aiScreening.totalMatched > r.aiScreening.evaluated
+                            ? `Top ${r.aiScreening.evaluated} (of ${r.aiScreening.totalMatched} matched)`
+                            : `${r.aiScreening.evaluated} evaluated`}
                         </div>
                         {r.aiScreening.scoreLow != null && r.aiScreening.scoreHigh != null && (
                           <div style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.inkFaint, marginTop: 1 }}>
@@ -1140,7 +1183,7 @@ export default function EmployerJobsPage() {
                       <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-start" }}>
                         <Badge tone="info">Top {r.aiScreening.topMatches}</Badge>
                         {r.aiScreening.strongAvgScore != null && (
-                          <div style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.successInk }}>{r.aiScreening.strongAvgScore}% avg evidence score</div>
+                          <div style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.successInk }}>{r.aiScreening.strongAvgScore}% avg match score</div>
                         )}
                       </div>
                     ) : (

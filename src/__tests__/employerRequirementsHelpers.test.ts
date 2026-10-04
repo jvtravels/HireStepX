@@ -158,8 +158,8 @@ describe("asBoundedWorkMode", () => {
 
 describe("buildRequirementsListResponse", () => {
   const rows = [
-    { id: "req_1", title: "SDE II", location: "Bengaluru", notice_period_pref: "30 days", status: "ready", stage: "ai_matching", department: "Engineering", archive_reason: null, archive_disposition: null, experience_min: 3, experience_max: 6, due_date: "2026-09-01", budget_min: 18, budget_max: 22, locations: ["Bengaluru"], open_positions: 2, work_mode: "hybrid", employment_type: "full-time", salary_type: "per-annum", preferred_domain: null, work_schedule: null, availability: null, relevant_experience: null, portfolio_required: false, custom_skill_sets: [], skills: ["React", "Node"], responsibilities: null, nice_to_have: null, preferred_industry: null, preferred_colleges: [], target_companies: [], perks_and_benefits: [], created_at: "2026-08-01T10:00:00Z", duration_weeks: null, hours_per_week: null, min_readiness_band: null, min_star_completeness: null },
-    { id: "req_2", title: "PM", location: "Remote", notice_period_pref: "Any", status: "zero", stage: "ready_for_review", department: null, archive_reason: null, archive_disposition: null, experience_min: null, experience_max: null, due_date: null, budget_min: null, budget_max: null, locations: [], open_positions: null, work_mode: null, employment_type: null, salary_type: null, preferred_domain: null, work_schedule: null, availability: null, relevant_experience: null, portfolio_required: false, custom_skill_sets: [], skills: [], responsibilities: null, nice_to_have: null, preferred_industry: null, preferred_colleges: [], target_companies: [], perks_and_benefits: [], created_at: "2026-08-02T10:00:00Z", duration_weeks: 12, hours_per_week: 20, min_readiness_band: "hire", min_star_completeness: 60 },
+    { id: "req_1", title: "SDE II", location: "Bengaluru", notice_period_pref: "30 days", status: "ready", stage: "ai_matching", department: "Engineering", archive_reason: null, archive_disposition: null, experience_min: 3, experience_max: 6, due_date: "2026-09-01", budget_min: 18, budget_max: 22, locations: ["Bengaluru"], open_positions: 2, work_mode: "hybrid", employment_type: "full-time", salary_type: "per-annum", preferred_domain: null, work_schedule: null, availability: null, relevant_experience: null, portfolio_required: false, custom_skill_sets: [], skills: ["React", "Node"], responsibilities: null, nice_to_have: null, preferred_industry: null, preferred_colleges: [], target_companies: [], perks_and_benefits: [], created_at: "2026-08-01T10:00:00Z", duration_weeks: null, hours_per_week: null, min_readiness_band: null, min_star_completeness: null, matched_pool_size: 0 },
+    { id: "req_2", title: "PM", location: "Remote", notice_period_pref: "Any", status: "zero", stage: "ready_for_review", department: null, archive_reason: null, archive_disposition: null, experience_min: null, experience_max: null, due_date: null, budget_min: null, budget_max: null, locations: [], open_positions: null, work_mode: null, employment_type: null, salary_type: null, preferred_domain: null, work_schedule: null, availability: null, relevant_experience: null, portfolio_required: false, custom_skill_sets: [], skills: [], responsibilities: null, nice_to_have: null, preferred_industry: null, preferred_colleges: [], target_companies: [], perks_and_benefits: [], created_at: "2026-08-02T10:00:00Z", duration_weeks: 12, hours_per_week: 20, min_readiness_band: "hire", min_star_completeness: 60, matched_pool_size: 0 },
   ];
 
   it("joins requirement rows with their match counts", () => {
@@ -179,10 +179,18 @@ describe("buildRequirementsListResponse", () => {
   });
 
   it("uses the given aiScreening summary for a requirement when present", () => {
-    const summary = { evaluated: 5, scoreLow: 42, scoreHigh: 88, topMatches: 2, strongAvgScore: 80, strongMatchInitials: ["AK"], strongMatchExtra: 1, strongMatches: [{ id: "c1", name: "Aisha Khan", initials: "AK", yearsExperience: 4, skills: ["React"] }] };
+    const summary = { evaluated: 5, totalMatched: 5, scoreLow: 42, scoreHigh: 88, topMatches: 2, strongAvgScore: 80, strongMatchInitials: ["AK"], strongMatchExtra: 1, strongMatches: [{ id: "c1", name: "Aisha Khan", initials: "AK", yearsExperience: 4, skills: ["React"] }] };
     const result = buildRequirementsListResponse(rows, new Map(), new Map([["req_1", summary]]));
     expect(result[0].aiScreening).toEqual(summary);
     expect(result[1].aiScreening).toEqual(EMPTY_AI_SCREENING);
+  });
+
+  it("reports totalMatched from matched_pool_size when it exceeds the evaluated (post-cap) count", () => {
+    const rowsWithPool = [{ ...rows[0], matched_pool_size: 45 }];
+    const summary = { evaluated: 20, totalMatched: 20, scoreLow: 42, scoreHigh: 88, topMatches: 2, strongAvgScore: 80, strongMatchInitials: ["AK"], strongMatchExtra: 1, strongMatches: [] };
+    const result = buildRequirementsListResponse(rowsWithPool, new Map(), new Map([["req_1", summary]]));
+    expect(result[0].aiScreening.totalMatched).toBe(45);
+    expect(result[0].aiScreening.evaluated).toBe(20);
   });
 });
 
@@ -346,6 +354,60 @@ describe("computeMatchStats", () => {
   it("returns an empty map for no rows", () => {
     expect(computeMatchStats([], 60).size).toBe(0);
   });
+
+  it("excludes a no-evidence candidate from strong-match classification even with a high fit score", () => {
+    const stats = computeMatchStats(
+      [
+        { requirement_id: "req_1", candidate_user_id: "no-evidence", match_score: 95 },
+        { requirement_id: "req_1", candidate_user_id: "with-evidence", match_score: 90 },
+      ],
+      60,
+      new Map([
+        ["no-evidence", false],
+        ["with-evidence", true],
+      ]),
+    );
+    const s = stats.get("req_1")!;
+    expect(s.topCandidateIds).toEqual(["with-evidence"]);
+    expect(s.topMatches).toBe(1);
+  });
+
+  it("treats a candidate id absent from hasEvidenceById as having no evidence", () => {
+    const stats = computeMatchStats(
+      [{ requirement_id: "req_1", candidate_user_id: "untracked", match_score: 95 }],
+      60,
+      new Map([["with-evidence", true]]),
+    );
+    // Every row for req_1 is filtered out for lacking evidence, so the
+    // requirement never gets a group at all — same as if it had no matches.
+    expect(stats.get("req_1")).toBeUndefined();
+  });
+
+  it("agrees with the detail-page read-time filter: a no-evidence candidate is excluded from evaluated too", () => {
+    const stats = computeMatchStats(
+      [
+        { requirement_id: "req_1", candidate_user_id: "no-evidence", match_score: 70 },
+        { requirement_id: "req_1", candidate_user_id: "with-evidence", match_score: 65 },
+      ],
+      60,
+      new Map([
+        ["no-evidence", false],
+        ["with-evidence", true],
+      ]),
+    );
+    const s = stats.get("req_1")!;
+    expect(s.evaluated).toBe(1);
+  });
+
+  it("without hasEvidenceById, behaves exactly as before (no filtering)", () => {
+    const stats = computeMatchStats(
+      [{ requirement_id: "req_1", candidate_user_id: "c1", match_score: 95 }],
+      60,
+    );
+    const s = stats.get("req_1")!;
+    expect(s.evaluated).toBe(1);
+    expect(s.topMatches).toBe(1);
+  });
 });
 
 describe("nameInitials", () => {
@@ -382,7 +444,7 @@ describe("buildAiScreeningByRequirement", () => {
     ]);
     const result = buildAiScreeningByRequirement(stats, details);
     expect(result.get("req_1")).toEqual({
-      evaluated: 5, scoreLow: 40, scoreHigh: 90, topMatches: 2, strongAvgScore: 82,
+      evaluated: 5, totalMatched: 5, scoreLow: 40, scoreHigh: 90, topMatches: 2, strongAvgScore: 82,
       strongMatchInitials: ["AK", "RS"], strongMatchExtra: 0,
       strongMatches: [
         { id: "c1", name: "Aisha Khan", initials: "AK", yearsExperience: 4, skills: ["React"] },

@@ -128,7 +128,7 @@ export default async function handler(req: Request): Promise<Response> {
 async function handleGet(userId: string, headers: Record<string, string>): Promise<Response> {
   try {
     const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/employer_requirements?employer_id=eq.${encodeURIComponent(userId)}&select=id,title,location,notice_period_pref,status,stage,department,archive_reason,archive_disposition,experience_min,experience_max,due_date,budget_min,budget_max,locations,open_positions,work_mode,skills,employment_type,salary_type,duration_weeks,hours_per_week,min_readiness_band,min_star_completeness,created_at&order=created_at.desc`,
+      `${SUPABASE_URL}/rest/v1/employer_requirements?employer_id=eq.${encodeURIComponent(userId)}&select=id,title,location,notice_period_pref,status,stage,department,archive_reason,archive_disposition,experience_min,experience_max,due_date,budget_min,budget_max,locations,open_positions,work_mode,skills,employment_type,salary_type,duration_weeks,hours_per_week,min_readiness_band,min_star_completeness,matched_pool_size,created_at&order=created_at.desc`,
       { headers: serviceHeaders() },
     );
     if (!res.ok) throw new Error(`requirements read failed: ${res.status}`);
@@ -149,27 +149,48 @@ async function handleGet(userId: string, headers: Record<string, string>): Promi
           candidate_user_id: string;
           match_score: number;
         }>;
-        countsByRequirement = countMatchesByRequirement(matchRows);
 
-        const matchStats = computeMatchStats(matchRows, STRONG_MATCH_THRESHOLD);
-        const topCandidateIds = Array.from(new Set(Array.from(matchStats.values()).flatMap((s) => s.topCandidateIds)));
-        let detailsById = new Map<string, { name: string; yearsExperience: number | null; skills: string[] }>();
-        if (topCandidateIds.length > 0) {
-          const idParam2 = topCandidateIds.map((id) => encodeURIComponent(id)).join(",");
-          const profilesRes = await fetch(
-            `${SUPABASE_URL}/rest/v1/profiles?id=in.(${idParam2})&select=id,name,resume_data`,
-            { headers: serviceHeaders() },
-          );
+        // Re-applies the same no-resume/no-session evidence rule
+        // employer-requirement-detail.ts's GET handler applies at read time
+        // (added in 3c83c1e3), so this list's evaluated/strong-match stats
+        // never disagree with the detail page's over a stale
+        // requirement_matches row. Needs resume_data + session counts for
+        // every matched candidate, not just the strong-match subset, so
+        // profiles are fetched up front for the full candidate_user_id set
+        // and reused below for topCandidateIds' display detail too.
+        const candidateIds = Array.from(new Set(matchRows.map((m) => m.candidate_user_id)));
+        let profileById = new Map<string, { name: string; resume_data: unknown }>();
+        let hasEvidenceById = new Map<string, boolean>();
+        if (candidateIds.length > 0) {
+          const idParamC = candidateIds.map((id) => encodeURIComponent(id)).join(",");
+          const [profilesRes, sessionsRes] = await Promise.all([
+            fetch(`${SUPABASE_URL}/rest/v1/profiles?id=in.(${idParamC})&select=id,name,resume_data`, { headers: serviceHeaders() }),
+            fetch(`${SUPABASE_URL}/rest/v1/sessions?user_id=in.(${idParamC})&select=user_id`, { headers: serviceHeaders() }),
+          ]);
           if (profilesRes.ok) {
             const profileRows = (await profilesRes.json().catch(() => [])) as Array<{ id: string; name: string; resume_data: unknown }>;
-            detailsById = new Map(
-              profileRows.map((row) => [
-                row.id,
-                { name: row.name, yearsExperience: extractResumeDetail(row.resume_data).yearsExperience, skills: extractSkills(row.resume_data) },
-              ]),
-            );
+            profileById = new Map(profileRows.map((row) => [row.id, row]));
           }
+          const sessionCounts = new Map<string, number>();
+          if (sessionsRes.ok) {
+            const sessionRows = (await sessionsRes.json().catch(() => [])) as Array<{ user_id: string }>;
+            for (const s of sessionRows) sessionCounts.set(s.user_id, (sessionCounts.get(s.user_id) || 0) + 1);
+          }
+          hasEvidenceById = new Map(
+            candidateIds.map((id) => [id, profileById.get(id)?.resume_data != null || (sessionCounts.get(id) || 0) > 0]),
+          );
         }
+
+        countsByRequirement = countMatchesByRequirement(matchRows.filter((m) => hasEvidenceById.get(m.candidate_user_id) === true));
+
+        const matchStats = computeMatchStats(matchRows, STRONG_MATCH_THRESHOLD, hasEvidenceById);
+        const topCandidateIds = Array.from(new Set(Array.from(matchStats.values()).flatMap((s) => s.topCandidateIds)));
+        const detailsById = new Map<string, { name: string; yearsExperience: number | null; skills: string[] }>(
+          topCandidateIds.map((id) => {
+            const profile = profileById.get(id);
+            return [id, { name: profile?.name ?? "", yearsExperience: extractResumeDetail(profile?.resume_data).yearsExperience, skills: extractSkills(profile?.resume_data) }];
+          }),
+        );
         aiScreeningByRequirement = buildAiScreeningByRequirement(matchStats, detailsById);
       }
     }
@@ -436,7 +457,7 @@ export async function runMatching(requirementId: string, req: RequirementInput, 
     });
 
     const scored = candidateRows.map((c) => scoreCandidateMatch(c, req));
-    const deterministicRanked = rankAndCap(scored);
+    const { ranked: deterministicRanked, totalMatched: freshTotalMatched } = rankAndCap(scored);
 
     // LLM re-ranking augments only the already-capped shortlist (cheap: one
     // call per requirement create/edit, not one per candidate). Best-effort —
@@ -471,10 +492,14 @@ export async function runMatching(requirementId: string, req: RequirementInput, 
       ...preservedMatches.map((m) => ({ matchScore: m.match_score })),
       ...ranked,
     ]);
+    // Preserved (touched) matches are real matched candidates too — they're
+    // just excluded from this pass's re-scoring (see isTouched above) — so
+    // they count toward the true pool size alongside the freshly-scored ones.
+    const matchedPoolSize = freshTotalMatched + preservedMatches.length;
     await fetch(`${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}`, {
       method: "PATCH",
       headers: { ...serviceHeaders(), "Content-Type": "application/json", Prefer: "return=minimal" },
-      body: JSON.stringify({ status: finalStatus }),
+      body: JSON.stringify({ status: finalStatus, matched_pool_size: matchedPoolSize }),
     });
 
     // Screening produced something worth looking at — auto-advance out of

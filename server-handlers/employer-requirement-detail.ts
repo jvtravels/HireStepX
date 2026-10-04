@@ -139,7 +139,7 @@ export default async function handler(req: Request): Promise<Response> {
 
   try {
     const reqRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&employer_id=eq.${encodeURIComponent(auth.userId)}&select=id,title,location,notice_period_pref,description,status,stage,department,archive_reason,archive_disposition,experience_min,experience_max,due_date,budget_min,budget_max,locations,open_positions,work_mode,skills,responsibilities,nice_to_have,preferred_industry,preferred_colleges,target_companies,perks_and_benefits,employment_type,salary_type,duration_weeks,hours_per_week,preferred_domain,work_schedule,availability,relevant_experience,portfolio_required,custom_skill_sets,min_readiness_band,min_star_completeness,created_at`,
+      `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&employer_id=eq.${encodeURIComponent(auth.userId)}&select=id,title,location,notice_period_pref,description,status,stage,department,archive_reason,archive_disposition,experience_min,experience_max,due_date,budget_min,budget_max,locations,open_positions,work_mode,skills,responsibilities,nice_to_have,preferred_industry,preferred_colleges,target_companies,perks_and_benefits,employment_type,salary_type,duration_weeks,hours_per_week,preferred_domain,work_schedule,availability,relevant_experience,portfolio_required,custom_skill_sets,min_readiness_band,min_star_completeness,matched_pool_size,created_at`,
       { headers: serviceHeaders() },
     );
     if (!reqRes.ok) throw new Error(`requirement read failed: ${reqRes.status}`);
@@ -157,6 +157,7 @@ export default async function handler(req: Request): Promise<Response> {
       custom_skill_sets: string[] | null;
       duration_weeks: number | null; hours_per_week: number | null;
       min_readiness_band: string | null; min_star_completeness: number | null;
+      matched_pool_size: number | null;
       created_at: string;
     }>;
     const requirement = reqRows[0];
@@ -301,6 +302,11 @@ export default async function handler(req: Request): Promise<Response> {
         minStarCompleteness: requirement.min_star_completeness,
         createdAt: requirement.created_at.slice(0, 10),
         candidates,
+        // True pre-cap matched-pool size (see rankAndCap's totalMatched in
+        // _requirement-match-helpers.ts) — floored at candidates.length so a
+        // requirement matched before this column existed (defaults to 0)
+        // never reports fewer matched than it has actual candidates.
+        totalMatched: Math.max(requirement.matched_pool_size ?? 0, candidates.length),
       }),
       { status: 200, headers },
     );
