@@ -185,8 +185,20 @@ describe("interviewScripts", () => {
       expect(closing.aiText).toMatch(/report/i);
     });
 
-    it("adds resume context when user has resume", () => {
+    it("omits the resume-personalization promise when no parseable resume data is available", () => {
+      // A filename alone (no resumeData) carries no title/headline to draw
+      // from, so the "I'll reference your background" promise must not fire
+      // — the question swap it would promise has nothing to swap in.
       const user = { resumeFileName: "cv.pdf" } as any;
+      const script = getScript("behavioral", null, user);
+      expect(script[0].aiText).not.toContain("resume");
+    });
+
+    it("adds resume context when an AI-parsed resume has a headline", () => {
+      const user = {
+        resumeFileName: "cv.pdf",
+        resumeData: { _type: "ai", headline: "Senior Product Designer with 5+ years in B2B SaaS" },
+      } as any;
       const script = getScript("behavioral", null, user);
       expect(script[0].aiText).toContain("resume");
     });

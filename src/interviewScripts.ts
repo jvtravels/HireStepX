@@ -315,11 +315,22 @@ export function getMiniScript(user: User | null, company?: string, interviewType
   const latestRole = resumeData && resumeData._type === "fallback"
     ? resumeData.experience?.[0]
     : undefined;
-  const title = latestRole?.title || "";
+  // The AI-parsed variant (the common path — see analyze-resume.ts) carries
+  // no structured job-history rows, but its `headline` is prompted as "a
+  // compelling one-line professional identity" (e.g. "Senior Product
+  // Designer with 5+ years in B2B SaaS") — a noun phrase that drops into
+  // the same "as {title}" bank-template slots as a fallback-parsed job
+  // title. Without this, only the narrow fallback-parse variant ever
+  // personalized, so most candidates got generic questions while the intro
+  // still claimed "I'll reference your background" (live QA, 2026-Q3).
+  const aiHeadline = resumeData && resumeData._type === "ai" ? resumeData.headline : undefined;
+  const title = latestRole?.title || aiHeadline || "";
 
   const companyContext = targetCompany ? ` at ${targetCompany}` : "";
   const resumeContext = hasResume && latestRole
     ? ` I've reviewed your resume — I can see you were ${latestRole.title}${latestRole.company ? ` at ${latestRole.company}` : ""}. I'll reference your background in my questions.`
+    : hasResume && aiHeadline
+    ? ` I've reviewed your resume — I can see your background: ${aiHeadline}. I'll reference it in my questions.`
     : "";
 
   const typeKey = interviewType && miniQuestionsByType[interviewType] ? interviewType : "behavioral";
@@ -397,11 +408,21 @@ export function getScript(type: string | null, difficulty: string | null, user: 
   const latestRole = resumeData2 && resumeData2._type === "fallback"
     ? resumeData2.experience?.[0]
     : undefined;
-  const title = latestRole?.title || "";
+  // See the matching note in getMiniScript above: the AI-parsed variant's
+  // `headline` is the only resume-derived signal available for the common
+  // (non-fallback) resume-parse path, and it reads naturally in the same
+  // "as {title}" template slots as a fallback-parsed job title.
+  const aiHeadline = resumeData2 && resumeData2._type === "ai" ? resumeData2.headline : undefined;
+  const title = latestRole?.title || aiHeadline || "";
 
   const companyContext = company ? ` at ${company}` : "";
   const industryContext = industry ? ` in the ${industry} space` : "";
-  const resumeContext = hasResume ? " I've reviewed your resume, so these questions will draw from your actual experience." : "";
+  // Gated on `title` (not just `hasResume`): this promise must only be made
+  // when the question swap below can actually honor it — an AI-parsed
+  // resume with no headline, or a resume we couldn't parse at all, got this
+  // promise unconditionally before, while makeQ silently fell back to the
+  // generic bank.q template (live QA, 2026-Q3 — false personalization claim).
+  const resumeContext = hasResume && title ? " I've reviewed your resume, so these questions will draw from your actual experience." : "";
 
   const isPanel = typeKey === "panel";
 
