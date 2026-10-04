@@ -868,7 +868,7 @@ export default function EmployerJobsPage() {
         </div>
         <Button
           size="lg"
-          className="gap-2 px-[22px] h-11 mt-1"
+          className="gap-2 px-4"
           onClick={() => router.push("/employer/requirements/new")}
         >
           <PlusIcon size={16} strokeWidth={2.5} aria-hidden="true" />
