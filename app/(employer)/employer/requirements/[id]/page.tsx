@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo, type CSSProperties } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import {
   LockIcon,
   RefreshCwIcon,
@@ -20,6 +20,9 @@ import {
   CalendarIcon,
   GraduationCapIcon,
   FolderIcon,
+  MoreVerticalIcon,
+  FileTextIcon,
+  MessageCircleIcon,
 } from "lucide-react";
 import { useEmployerData, Requirement, CandidateEvidence, UnlockPurchase } from "@/employer/EmployerDataContext";
 import { useToast } from "@/Toast";
@@ -58,9 +61,17 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { FilterPill } from "@/components/FilterPill";
-import { SearchInput } from "@/components/SearchInput";
+import { SearchWithSuggestions } from "@/components/SearchWithSuggestions";
 import { TablePaginationFooter } from "@/components/TablePaginationFooter";
+
+const CANDIDATES_RECENT_SEARCHES_KEY = "hirestepx-employer-candidates-recent-searches";
 
 function experienceLabel(min: number | null, max: number | null): string | null {
   if (min == null && max == null) return null;
@@ -240,6 +251,7 @@ function CandidateTableRow({
 }) {
   const { createUnlockOrder, verifyUnlockPayment } = useEmployerData();
   const { toast } = useToast();
+  const router = useRouter();
   const [confirming, setConfirming] = useState(false);
   const [unlocking, setUnlocking] = useState(false);
 
@@ -352,9 +364,6 @@ function CandidateTableRow({
         {candidate.rosterScore} roster · {candidate.sessionsCompleted} sessions
       </TableCell>
       <TableCell style={{ ...td, color: t.inkSoft }}>
-        {candidate.lastActiveDaysAgo < 0 ? "—" : `${candidate.lastActiveDaysAgo}d ago`}
-      </TableCell>
-      <TableCell style={{ ...td, color: t.inkSoft }}>
         {candidate.resume?.noticePeriod || <span style={{ color: t.inkFaint }}>—</span>}
       </TableCell>
       <TableCell style={{ ...td, color: t.inkSoft }}>
@@ -384,53 +393,66 @@ function CandidateTableRow({
         )}
       </TableCell>
       <TableCell style={td}>
-        <Pill tone={candidate.unlocked ? "success" : "neutral"}>{candidate.unlocked ? "Unlocked" : "Locked"}</Pill>
-      </TableCell>
-      <TableCell style={td}>
         <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-start" }}>
           <CandidateStatusChip status={candidate.candidateStatus} />
           {interviewSubstep(candidate) && (
             <span style={{ fontFamily: f.sans, fontSize: textSize.sm, color: t.inkFaint }}>{interviewSubstep(candidate)}</span>
           )}
-          <Button
-            type="button"
-            variant="link"
-            onClick={onViewEvidence}
-            style={{ padding: 0, height: "auto", fontFamily: f.sans, fontSize: textSize.sm, fontWeight: 600 }}
-          >
-            View evidence report
-          </Button>
         </div>
       </TableCell>
-      <TableCell style={{ ...td, minWidth: 200 }}>
+      <TableCell style={{ ...td, minWidth: 180 }}>
         {candidate.unlocked ? (
-          <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "flex-start" }}>
-            <span style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.coal }}>{candidate.contact?.email}</span>
-            {!readOnly && (
-              <Link href={`/employer/requirements/${requirementId}/outcome?candidate=${candidate.id}`} style={{ textDecoration: "none" }}>
-                <OutlineCta size="sm">How did it go?</OutlineCta>
-              </Link>
-            )}
-          </div>
+          <span style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.coal }}>{candidate.contact?.email}</span>
         ) : readOnly ? (
           <HelpText>Unlocking closed</HelpText>
-        ) : confirming ? (
-          <div style={{ background: t.creamSoft, borderRadius: 10, padding: 10 }}>
-            <div style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.coal, marginBottom: 8 }}>
-              Unlock for <strong>{displayPrice}</strong>?
-            </div>
-            <div style={{ display: "flex", gap: 6 }}>
-              <PrimaryCta size="sm" onClick={handleConfirmUnlock} disabled={unlocking}>
+        ) : (
+          <span style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.inkFaint }}>Locked</span>
+        )}
+      </TableCell>
+      <TableCell style={{ ...td, width: 48, textAlign: "right" }} onClick={(e) => e.stopPropagation()}>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label={`Actions for ${candidate.unlocked ? candidate.name : `candidate #${candidate.id.slice(0, 6)}`}`}
+              style={{ height: 36, width: 36, color: t.inkFaint }}
+            >
+              <MoreVerticalIcon size={16} aria-hidden="true" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-52">
+            {!candidate.unlocked && !readOnly && (
+              <DropdownMenuItem onSelect={() => setConfirming(true)}>
+                <LockIcon className="size-4" aria-hidden="true" /> Unlock — {displayPrice}
+              </DropdownMenuItem>
+            )}
+            <DropdownMenuItem onSelect={onViewEvidence}>
+              <FileTextIcon className="size-4" aria-hidden="true" /> View evidence report
+            </DropdownMenuItem>
+            {candidate.unlocked && !readOnly && (
+              <DropdownMenuItem onSelect={() => router.push(`/employer/requirements/${requirementId}/outcome?candidate=${candidate.id}`)}>
+                <MessageCircleIcon className="size-4" aria-hidden="true" /> How did it go?
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+        <Dialog open={confirming} onOpenChange={(open) => { if (!unlocking) setConfirming(open); }}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Unlock contact for {displayPrice}?</DialogTitle>
+              <DialogDescription>
+                Reveals {candidate.unlocked ? candidate.name : "this candidate"}&apos;s contact details.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <OutlineCta onClick={() => setConfirming(false)}>Cancel</OutlineCta>
+              <PrimaryCta onClick={handleConfirmUnlock} disabled={unlocking}>
                 {unlocking ? "Unlocking…" : "Confirm"}
               </PrimaryCta>
-              <OutlineCta size="sm" onClick={() => setConfirming(false)}>Cancel</OutlineCta>
-            </div>
-          </div>
-        ) : (
-          <PrimaryCta size="sm" icon={<LockIcon size={13} aria-hidden="true" />} onClick={() => setConfirming(true)}>
-            Unlock — {displayPrice}
-          </PrimaryCta>
-        )}
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </TableCell>
     </TableRow>
   );
@@ -677,6 +699,17 @@ export default function RequirementDetailPage() {
     const cities = new Set((requirement?.candidates ?? []).map((c) => c.city).filter((c) => c && c !== "Not specified"));
     return Array.from(cities).sort();
   }, [requirement]);
+
+  const suggestedFilters = useMemo(() => {
+    const suggestions: Array<{ label: string; apply: () => void }> = [];
+    const firstContact = contactFilterOptions.find((o) => o.value !== "all" && o.value !== contactFilter);
+    if (firstContact) suggestions.push({ label: `Contact: ${firstContact.label}`, apply: () => setContactFilter(firstContact.value) });
+    const firstLocation = locationOptions.find((loc) => loc !== locationFilter);
+    if (firstLocation) suggestions.push({ label: `Location: ${firstLocation}`, apply: () => setLocationFilter(firstLocation) });
+    const firstSort = sortOptions.find((o) => o.value !== sortKey);
+    if (firstSort) suggestions.push({ label: `Sort: ${firstSort.label}`, apply: () => setSortKey(firstSort.value) });
+    return suggestions.slice(0, 4);
+  }, [contactFilter, locationOptions, locationFilter, sortKey]);
 
   const filteredSorted = useMemo(() => {
     const candidates = requirement?.candidates ?? [];
@@ -1428,13 +1461,15 @@ export default function RequirementDetailPage() {
                 </DialogContent>
               </Dialog>
               <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 16, alignItems: "center" }}>
-                <SearchInput
+                <SearchWithSuggestions
                   id="candidates-search"
                   label="Search candidates"
                   value={search}
                   onChange={setSearch}
                   placeholder="Search by name, role, skill, or notice period…"
-                  style={{ flex: "1 1 220px", minWidth: 200 }}
+                  storageKey={CANDIDATES_RECENT_SEARCHES_KEY}
+                  suggestedFilters={suggestedFilters}
+                  style={{ flex: "1 1 220px", minWidth: 200, maxWidth: 420 }}
                 />
                 <FilterPill label="Contact" value={contactFilter} options={contactFilterOptions} onChange={setContactFilter} />
                 {locationOptions.length > 1 && (
@@ -1474,13 +1509,12 @@ export default function RequirementDetailPage() {
                           <TableHead style={HEADER_CELL_STYLE}>Candidate</TableHead>
                           <TableHead style={HEADER_CELL_STYLE}>Match</TableHead>
                           <TableHead style={HEADER_CELL_STYLE}>Practice history</TableHead>
-                          <TableHead style={HEADER_CELL_STYLE}>Last active</TableHead>
                           <TableHead style={HEADER_CELL_STYLE}>Notice period</TableHead>
                           <TableHead style={HEADER_CELL_STYLE}>Current CTC</TableHead>
                           <TableHead style={HEADER_CELL_STYLE}>Skills</TableHead>
-                          <TableHead style={HEADER_CELL_STYLE}>Status</TableHead>
                           <TableHead style={HEADER_CELL_STYLE}>Pipeline</TableHead>
                           <TableHead style={HEADER_CELL_STYLE}>Contact</TableHead>
+                          <TableHead style={HEADER_CELL_STYLE}></TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
