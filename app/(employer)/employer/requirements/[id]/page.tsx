@@ -142,7 +142,7 @@ const HEADER_CELL_STYLE: CSSProperties = {
 };
 
 type ContactFilter = "all" | "locked" | "unlocked";
-type SortColumn = "name" | "match" | "sessions" | "pipeline" | "contact";
+type SortColumn = "name" | "match" | "sessions" | "pipeline";
 
 const contactFilterOptions: Array<{ value: ContactFilter; label: string }> = [
   { value: "all", label: "All candidates" },
@@ -157,7 +157,6 @@ const COLUMN_LABEL: Record<SortColumn, string> = {
   match: "Match",
   sessions: "Practice history",
   pipeline: "Pipeline",
-  contact: "Contact",
 };
 
 // Funnel order, not alphabetical — "hired" should sort ahead of
@@ -188,8 +187,6 @@ function compareCandidates(a: Candidate, b: Candidate, sort: Sort<SortColumn>): 
       return dir * (a.sessionsCompleted - b.sessionsCompleted);
     case "pipeline":
       return dir * (PIPELINE_RANK[a.candidateStatus] - PIPELINE_RANK[b.candidateStatus]);
-    case "contact":
-      return dir * (Number(a.unlocked) - Number(b.unlocked));
   }
 }
 
@@ -446,15 +443,6 @@ function CandidateTableRow({
             <span style={{ fontFamily: f.sans, fontSize: textSize.sm, color: t.inkFaint }}>{interviewSubstep(candidate)}</span>
           )}
         </div>
-      </TableCell>
-      <TableCell style={{ ...tdSortable, minWidth: 180 }}>
-        {candidate.unlocked ? (
-          <span style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.coal }}>{candidate.contact?.email}</span>
-        ) : readOnly ? (
-          <HelpText>Unlocking closed</HelpText>
-        ) : (
-          <span style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.inkFaint }}>Locked</span>
-        )}
       </TableCell>
       <TableCell style={{ ...td, width: 48, textAlign: "right" }} onClick={(e) => e.stopPropagation()}>
         <DropdownMenu>
@@ -1555,18 +1543,17 @@ export default function RequirementDetailPage() {
               ) : (
                 <Card pad={0} style={{ overflow: "hidden" }}>
                   <div style={{ overflowX: "auto" }}>
-                    <Table style={{ minWidth: 1120 }}>
+                    <Table style={{ minWidth: 950 }}>
                       <TableHeader style={{ position: "sticky", top: 0, zIndex: 1 }}>
                         <TableRow style={{ background: t.rowTint, height: 40 }}>
                           {!readOnly && <TableHead style={{ width: 32 }}></TableHead>}
-                          <SortableHead column="name" columnLabel={COLUMN_LABEL.name} defaultDirection="asc" width="26%" minWidth={240} sort={sort} onSortChange={setSort}>Candidate</SortableHead>
+                          <SortableHead column="name" columnLabel={COLUMN_LABEL.name} defaultDirection="asc" width="30%" minWidth={240} sort={sort} onSortChange={setSort}>Candidate</SortableHead>
                           <SortableHead column="match" columnLabel={COLUMN_LABEL.match} width="7%" minWidth={80} sort={sort} onSortChange={setSort}>Match</SortableHead>
                           <SortableHead column="sessions" columnLabel={COLUMN_LABEL.sessions} width="13%" minWidth={150} sort={sort} onSortChange={setSort}>Practice history</SortableHead>
                           <TableHead style={{ ...HEADER_CELL_STYLE, width: "9%", minWidth: 110 }}>Notice period</TableHead>
                           <TableHead style={{ ...HEADER_CELL_STYLE, width: "10%", minWidth: 120 }}>Current CTC</TableHead>
-                          <TableHead style={{ ...HEADER_CELL_STYLE, width: "17%", minWidth: 190 }}>Skills</TableHead>
+                          <TableHead style={{ ...HEADER_CELL_STYLE, width: "21%", minWidth: 190 }}>Skills</TableHead>
                           <SortableHead column="pipeline" columnLabel={COLUMN_LABEL.pipeline} defaultDirection="asc" width="10%" minWidth={140} sort={sort} onSortChange={setSort}>Pipeline</SortableHead>
-                          <SortableHead column="contact" columnLabel={COLUMN_LABEL.contact} width="8%" minWidth={170} sort={sort} onSortChange={setSort}>Contact</SortableHead>
                           <TableHead style={{ ...HEADER_CELL_STYLE, width: 48 }}></TableHead>
                         </TableRow>
                       </TableHeader>
