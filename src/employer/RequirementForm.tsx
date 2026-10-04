@@ -84,7 +84,7 @@ export type { RequirementFormValues } from "./mockData";
 
 function StepProgress({ step }: { step: 1 | 2 }) {
   return (
-    <div style={{ display: "flex", gap: 6, margin: "10px 0 20px" }}>
+    <div style={{ display: "flex", gap: 6, margin: "10px 0 0" }}>
       {[1, 2].map((n) => (
         <div
           key={n}
@@ -449,8 +449,8 @@ export function RequirementForm({
                 {initial?.title || "Edit opportunity"}
               </h1>
             </div>
-            <div style={{ display: "flex", gap: 12, flexShrink: 0 }}>
-              <OutlineCta onClick={() => router.back()}>Cancel</OutlineCta>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
+              <OutlineCta size="sm" onClick={() => router.back()}>Cancel</OutlineCta>
               <PrimaryCta type="submit" disabled={!basicInfoValid || submitting}>
                 {submitting ? "Saving…" : "Save changes"}
               </PrimaryCta>
@@ -472,18 +472,21 @@ export function RequirementForm({
   return (
     <form onSubmit={handleSubmit}>
       <div style={{ background: t.white, borderRadius: 12, border: `1px solid ${t.line}`, overflow: "hidden" }}>
-        <div style={{ padding: "16px 20px", borderBottom: `1px solid ${t.line}` }}>
+        <div style={{ padding: "12px 20px", borderBottom: `1px solid ${t.line}` }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
             <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
-              <h1 style={{ fontFamily: f.sans, fontSize: 26, fontWeight: 700, color: t.coal, margin: 0, letterSpacing: "-0.01em", lineHeight: "32px" }}>
+              <h1 style={{ fontFamily: f.sans, fontSize: 22, fontWeight: 700, color: t.coal, margin: 0, letterSpacing: "-0.01em", lineHeight: "28px" }}>
                 {step === 1 ? "Basic information" : "Preferences & perks"}
               </h1>
               <span style={{ fontFamily: f.mono, fontSize: 11, letterSpacing: 1.2, textTransform: "uppercase", color: t.indigo, fontWeight: 600 }}>
                 Step {step} of 2
               </span>
             </div>
-            <div style={{ display: "flex", gap: 12, flexShrink: 0 }}>
-              <OutlineCta onClick={() => router.back()}>Cancel</OutlineCta>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
+              {step === 2 && (
+                <OutlineCta size="sm" onClick={() => setStep(1)}>Back</OutlineCta>
+              )}
+              <OutlineCta size="sm" onClick={() => router.back()}>Cancel</OutlineCta>
               {step === 1 ? (
                 <PrimaryCta type="button" disabled={!basicInfoValid} onClick={() => setStep(2)}>
                   Continue
@@ -502,10 +505,6 @@ export function RequirementForm({
           {step === 2 && preferencesFields}
 
           {submitError && <p role="alert" style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.error, margin: 0 }}>{submitError}</p>}
-
-          {step === 2 && (
-            <OutlineCta onClick={() => setStep(1)}>Back</OutlineCta>
-          )}
         </div>
       </div>
     </form>
