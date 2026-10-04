@@ -224,6 +224,21 @@ describe("scoreCandidateMatch", () => {
     const result = scoreCandidateMatch(candidate({ target_role: "Business Analyst", resume_data: {} }), bizReq);
     expect(result.matchScore).toBeGreaterThan(0);
   });
+
+  it("marks hasEvidence true when the candidate has resume data, even with zero sessions", () => {
+    const result = scoreCandidateMatch(candidate({ resume_data: { skills: [] }, sessions_completed: 0 }), req);
+    expect(result.hasEvidence).toBe(true);
+  });
+
+  it("marks hasEvidence true when the candidate has completed sessions, even with no resume", () => {
+    const result = scoreCandidateMatch(candidate({ resume_data: null, sessions_completed: 1 }), req);
+    expect(result.hasEvidence).toBe(true);
+  });
+
+  it("marks hasEvidence false when the candidate has neither a resume nor any completed sessions", () => {
+    const result = scoreCandidateMatch(candidate({ resume_data: null, sessions_completed: 0 }), req);
+    expect(result.hasEvidence).toBe(false);
+  });
 });
 
 describe("classifyRequirementStatus", () => {
@@ -247,33 +262,46 @@ describe("classifyRequirementStatus", () => {
 describe("rankAndCap", () => {
   it("sorts descending", () => {
     const scored = [
-      { candidateId: "a", matchScore: 30, rosterScore: 50, hasRelevance: true },
-      { candidateId: "b", matchScore: 90, rosterScore: 50, hasRelevance: true },
-      { candidateId: "c", matchScore: 55, rosterScore: 50, hasRelevance: true },
+      { candidateId: "a", matchScore: 30, rosterScore: 50, hasRelevance: true, hasEvidence: true },
+      { candidateId: "b", matchScore: 90, rosterScore: 50, hasRelevance: true, hasEvidence: true },
+      { candidateId: "c", matchScore: 55, rosterScore: 50, hasRelevance: true, hasEvidence: true },
     ];
     expect(rankAndCap(scored).map((s) => s.candidateId)).toEqual(["b", "c", "a"]);
   });
 
   it("caps the result at the given size", () => {
-    const scored = Array.from({ length: 30 }, (_, i) => ({ candidateId: String(i), matchScore: 80, rosterScore: 50, hasRelevance: true }));
+    const scored = Array.from({ length: 30 }, (_, i) => ({ candidateId: String(i), matchScore: 80, rosterScore: 50, hasRelevance: true, hasEvidence: true }));
     expect(rankAndCap(scored, 5)).toHaveLength(5);
   });
 
   it("filters out candidates with no real relevance, even under the cap", () => {
     const scored = [
-      { candidateId: "relevant", matchScore: 45, rosterScore: 50, hasRelevance: true },
-      { candidateId: "noise-1", matchScore: 25, rosterScore: 90, hasRelevance: false },
-      { candidateId: "noise-2", matchScore: 6, rosterScore: 50, hasRelevance: false },
+      { candidateId: "relevant", matchScore: 45, rosterScore: 50, hasRelevance: true, hasEvidence: true },
+      { candidateId: "noise-1", matchScore: 25, rosterScore: 90, hasRelevance: false, hasEvidence: true },
+      { candidateId: "noise-2", matchScore: 6, rosterScore: 50, hasRelevance: false, hasEvidence: true },
     ];
     expect(rankAndCap(scored, 20).map((s) => s.candidateId)).toEqual(["relevant"]);
   });
 
   it("can legitimately return fewer than cap, including zero, when nothing is relevant", () => {
     const scored = [
-      { candidateId: "noise-1", matchScore: 10, rosterScore: 50, hasRelevance: false },
-      { candidateId: "noise-2", matchScore: 6, rosterScore: 50, hasRelevance: false },
+      { candidateId: "noise-1", matchScore: 10, rosterScore: 50, hasRelevance: false, hasEvidence: true },
+      { candidateId: "noise-2", matchScore: 6, rosterScore: 50, hasRelevance: false, hasEvidence: true },
     ];
     expect(rankAndCap(scored, 20)).toEqual([]);
+  });
+
+  it("filters out relevant candidates with no real evidence (no resume, no sessions)", () => {
+    // Regression for the user-reported case: a candidate with "Not
+    // specified" everywhere and a score of 12 showed up in the shortlist
+    // because they cleared the relevance floor on a loose target_role
+    // token alone, despite having nothing an employer could actually
+    // review behind the profile.
+    const scored = [
+      { candidateId: "real", matchScore: 45, rosterScore: 50, hasRelevance: true, hasEvidence: true },
+      { candidateId: "zero-evidence", matchScore: 12, rosterScore: 50, hasRelevance: true, hasEvidence: false },
+    ];
+    expect(rankAndCap(scored, 20).map((s) => s.candidateId)).toEqual(["real"]);
   });
 });
 

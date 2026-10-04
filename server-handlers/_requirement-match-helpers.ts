@@ -46,6 +46,14 @@ export interface ScoredCandidate {
       employer never sees a forced, padded-out list of irrelevant candidates
       just to hit the cap. */
   hasRelevance: boolean;
+  /** Whether this candidate has any real evidence behind their profile —
+      resume data on file, or at least one completed practice session.
+      rankAndCap filters on this alongside hasRelevance: a candidate who
+      merely shares a loose role/skill token with the requirement but has
+      neither a resume nor any practice history is pure noise in an
+      employer's shortlist, not a reviewable match (see rankAndCap doc
+      comment). */
+  hasEvidence: boolean;
 }
 
 /** 0-100 read-outs for the three inputs that drive matchScore, for
@@ -253,7 +261,9 @@ export function scoreCandidateMatch(candidate: CandidatePoolRow, req: Requiremen
     clamp(fitComponent * 70 + rosterCredit, 0, 100) * recencyPenalty * expFit,
   );
 
-  return { candidateId: candidate.id, matchScore: clamp(matchScore, 0, 100), rosterScore, hasRelevance };
+  const hasEvidence = candidate.resume_data != null || hasRosterEvidence;
+
+  return { candidateId: candidate.id, matchScore: clamp(matchScore, 0, 100), rosterScore, hasRelevance, hasEvidence };
 }
 
 /** Human-readable 0-100 read-outs of the same three inputs scoreCandidateMatch
@@ -342,10 +352,19 @@ export function classifyRequirementStatus(matches: Array<{ matchScore: number }>
     engineers shortlisted for a Sales Executive opening) sorted purely by
     roster/activity noise — exactly the "forced candidate" failure mode
     employers shouldn't see. A requirement can now legitimately return
-    fewer than `cap` candidates, including zero. */
+    fewer than `cap` candidates, including zero.
+
+    2026-10-04: also filters out candidates with no real evidence
+    (hasEvidence false — no resume on file and zero completed practice
+    sessions), independent of hasRelevance. A candidate can clear the
+    relevance floor on a loose target_role token match alone while having
+    nothing else behind the profile (no resume, no sessions) — that's a
+    name and a guessed score an employer can't actually screen, not a
+    reviewable match. These are pool noise the same way irrelevant
+    candidates are, just along a different axis. */
 export function rankAndCap(scored: ScoredCandidate[], cap = 20): ScoredCandidate[] {
   return scored
-    .filter((s) => s.hasRelevance)
+    .filter((s) => s.hasRelevance && s.hasEvidence)
     .sort((a, b) => b.matchScore - a.matchScore)
     .slice(0, cap);
 }
