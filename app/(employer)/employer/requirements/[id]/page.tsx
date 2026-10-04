@@ -24,7 +24,7 @@ import {
 import { useEmployerData, Requirement, CandidateEvidence, UnlockPurchase } from "@/employer/EmployerDataContext";
 import { useToast } from "@/Toast";
 import { Candidate, RequirementStage, ArchiveDisposition } from "@/employer/mockData";
-import { tokens as t, fonts as f } from "@/auth/_tokens";
+import { tokens as t, fonts as f, textSize } from "@/auth/_tokens";
 import LoadingScreen from "@/_LoadingScreen";
 import { UNLOCK_BUNDLE_SIZE } from "../../../../../server-handlers/_unlock-pricing";
 import { WORK_MODE_LABEL, EMPLOYMENT_TYPE_LABEL } from "@/hiringMatchFormat";
@@ -60,6 +60,7 @@ import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { FilterPill } from "@/components/FilterPill";
 import { SearchInput } from "@/components/SearchInput";
+import { TablePaginationFooter } from "@/components/TablePaginationFooter";
 
 function experienceLabel(min: number | null, max: number | null): string | null {
   if (min == null && max == null) return null;
@@ -100,11 +101,22 @@ const STAGE_HINT: Record<RequirementStage, string> = {
   hired: "This posting resulted in a hire.",
 };
 
+/* Base body-cell style — mirrors the secondary-text convention shared by
+   the Jobs table (app/(employer)/employer/jobs/page.tsx) and Sessions
+   table (src/SessionsV2.tsx): textSize.base (13), rather than this
+   column's former off-scale 13.5. */
 const td: CSSProperties = {
   fontFamily: f.sans,
-  fontSize: 13.5,
+  fontSize: textSize.base,
   color: t.coal,
   verticalAlign: "top",
+};
+
+const HEADER_CELL_STYLE: CSSProperties = {
+  fontFamily: f.sans,
+  fontSize: textSize.base,
+  fontWeight: 600,
+  color: t.inkSoft,
 };
 
 type ContactFilter = "all" | "locked" | "unlocked";
@@ -298,7 +310,11 @@ function CandidateTableRow({
   };
 
   return (
-    <TableRow>
+    <TableRow
+      style={{ height: 64, borderBottom: `1px solid ${t.line}` }}
+      onMouseEnter={(e) => { e.currentTarget.style.background = t.rowTint; }}
+      onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+    >
       {!readOnly && (
         <TableCell style={{ width: 32 }}>
           <input
@@ -317,13 +333,13 @@ function CandidateTableRow({
           <div>
             <Link
               href={`/employer/requirements/${requirementId}/candidates/${candidate.id}`}
-              style={{ fontWeight: 700, fontSize: 14, color: t.coal, textDecoration: "none" }}
+              style={{ fontWeight: 500, fontSize: textSize.md, color: t.coal, textDecoration: "none" }}
               onMouseOver={(e) => { e.currentTarget.style.textDecoration = "underline"; }}
               onMouseOut={(e) => { e.currentTarget.style.textDecoration = "none"; }}
             >
               {candidate.unlocked ? candidate.name : `Candidate #${candidate.id.slice(0, 6)}`}
             </Link>
-            <div style={{ fontSize: 12.5, color: t.inkFaint, marginTop: 2 }}>
+            <div style={{ fontSize: textSize.base, color: t.inkFaint, marginTop: 2 }}>
               {candidate.targetRole} · {candidate.city}
             </div>
           </div>
@@ -345,7 +361,7 @@ function CandidateTableRow({
         {candidate.resume?.currentCtc ? (
           <>
             {candidate.resume.currentCtc}
-            <div style={{ fontFamily: f.sans, fontSize: 10.5, color: t.inkFaint, marginTop: 2 }}>self-reported</div>
+            <div style={{ fontFamily: f.sans, fontSize: textSize.xs, color: t.inkFaint, marginTop: 2 }}>self-reported</div>
           </>
         ) : (
           <span style={{ color: t.inkFaint }}>—</span>
@@ -358,7 +374,7 @@ function CandidateTableRow({
               <SkillTag key={s}>{s}</SkillTag>
             ))}
             {candidate.skills.length > 3 && (
-              <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkFaint, alignSelf: "center" }}>
+              <span style={{ fontFamily: f.sans, fontSize: textSize.sm, color: t.inkFaint, alignSelf: "center" }}>
                 +{candidate.skills.length - 3}
               </span>
             )}
@@ -374,13 +390,13 @@ function CandidateTableRow({
         <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-start" }}>
           <CandidateStatusChip status={candidate.candidateStatus} />
           {interviewSubstep(candidate) && (
-            <span style={{ fontFamily: f.sans, fontSize: 11.5, color: t.inkFaint }}>{interviewSubstep(candidate)}</span>
+            <span style={{ fontFamily: f.sans, fontSize: textSize.sm, color: t.inkFaint }}>{interviewSubstep(candidate)}</span>
           )}
           <Button
             type="button"
             variant="link"
             onClick={onViewEvidence}
-            style={{ padding: 0, height: "auto", fontFamily: f.sans, fontSize: 11.5, fontWeight: 600 }}
+            style={{ padding: 0, height: "auto", fontFamily: f.sans, fontSize: textSize.sm, fontWeight: 600 }}
           >
             View evidence report
           </Button>
@@ -389,7 +405,7 @@ function CandidateTableRow({
       <TableCell style={{ ...td, minWidth: 200 }}>
         {candidate.unlocked ? (
           <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "flex-start" }}>
-            <span style={{ fontFamily: f.sans, fontSize: 12.5, color: t.coal }}>{candidate.contact?.email}</span>
+            <span style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.coal }}>{candidate.contact?.email}</span>
             {!readOnly && (
               <Link href={`/employer/requirements/${requirementId}/outcome?candidate=${candidate.id}`} style={{ textDecoration: "none" }}>
                 <OutlineCta size="sm">How did it go?</OutlineCta>
@@ -400,7 +416,7 @@ function CandidateTableRow({
           <HelpText>Unlocking closed</HelpText>
         ) : confirming ? (
           <div style={{ background: t.creamSoft, borderRadius: 10, padding: 10 }}>
-            <div style={{ fontFamily: f.sans, fontSize: 12.5, color: t.coal, marginBottom: 8 }}>
+            <div style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.coal, marginBottom: 8 }}>
               Unlock for <strong>{displayPrice}</strong>?
             </div>
             <div style={{ display: "flex", gap: 6 }}>
@@ -624,6 +640,8 @@ export default function RequirementDetailPage() {
   const [locationFilter, setLocationFilter] = useState<string>("all");
   const [pipelineFilter, setPipelineFilter] = useState<"all" | "interviewing" | "hired">("all");
   const [sortKey, setSortKey] = useState<SortKey>("match");
+  const [page, setPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [evidenceMatchId, setEvidenceMatchId] = useState<string | null>(null);
   const [undoBanner, setUndoBanner] = useState<{ message: string; run: () => void } | null>(null);
   const [archiveOpen, setArchiveOpen] = useState(false);
@@ -676,6 +694,14 @@ export default function RequirementDetailPage() {
     const recency = (c: Candidate) => (c.lastActiveDaysAgo < 0 ? Number.POSITIVE_INFINITY : c.lastActiveDaysAgo);
     return filtered.sort((a, b) => (sortKey === "match" ? b.matchScore - a.matchScore : recency(a) - recency(b)));
   }, [requirement, search, contactFilter, locationFilter, pipelineFilter, sortKey]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [search, contactFilter, locationFilter, pipelineFilter, sortKey, rowsPerPage]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredSorted.length / rowsPerPage));
+  const pageSafe = Math.min(page, totalPages);
+  const pageRows = filteredSorted.slice((pageSafe - 1) * rowsPerPage, pageSafe * rowsPerPage);
 
   const handleUnlocked = (candidateId: string, name: string, email: string) => {
     setRequirement((prev) =>
@@ -1442,23 +1468,23 @@ export default function RequirementDetailPage() {
                 <Card pad={0} style={{ overflow: "hidden" }}>
                   <div style={{ overflowX: "auto" }}>
                     <Table style={{ minWidth: 1120 }}>
-                      <TableHeader>
-                        <TableRow>
+                      <TableHeader style={{ position: "sticky", top: 0, zIndex: 1 }}>
+                        <TableRow style={{ background: t.rowTint, height: 40 }}>
                           {!readOnly && <TableHead></TableHead>}
-                          <TableHead>Candidate</TableHead>
-                          <TableHead>Match</TableHead>
-                          <TableHead>Practice history</TableHead>
-                          <TableHead>Last active</TableHead>
-                          <TableHead>Notice period</TableHead>
-                          <TableHead>Current CTC</TableHead>
-                          <TableHead>Skills</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>Pipeline</TableHead>
-                          <TableHead>Contact</TableHead>
+                          <TableHead style={HEADER_CELL_STYLE}>Candidate</TableHead>
+                          <TableHead style={HEADER_CELL_STYLE}>Match</TableHead>
+                          <TableHead style={HEADER_CELL_STYLE}>Practice history</TableHead>
+                          <TableHead style={HEADER_CELL_STYLE}>Last active</TableHead>
+                          <TableHead style={HEADER_CELL_STYLE}>Notice period</TableHead>
+                          <TableHead style={HEADER_CELL_STYLE}>Current CTC</TableHead>
+                          <TableHead style={HEADER_CELL_STYLE}>Skills</TableHead>
+                          <TableHead style={HEADER_CELL_STYLE}>Status</TableHead>
+                          <TableHead style={HEADER_CELL_STYLE}>Pipeline</TableHead>
+                          <TableHead style={HEADER_CELL_STYLE}>Contact</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {filteredSorted.map((c) => (
+                        {pageRows.map((c) => (
                           <CandidateTableRow
                             key={c.id}
                             candidate={c}
@@ -1473,6 +1499,17 @@ export default function RequirementDetailPage() {
                       </TableBody>
                     </Table>
                   </div>
+                  <TablePaginationFooter
+                    entityLabel="candidate"
+                    entityLabelPlural="candidates"
+                    totalCount={requirement.candidates.length}
+                    filteredCount={filteredSorted.length}
+                    rowsPerPage={rowsPerPage}
+                    onRowsPerPageChange={setRowsPerPage}
+                    page={pageSafe}
+                    totalPages={totalPages}
+                    onPageChange={setPage}
+                  />
                 </Card>
               )}
               <EvidenceDialog matchId={evidenceMatchId} onClose={() => setEvidenceMatchId(null)} />
