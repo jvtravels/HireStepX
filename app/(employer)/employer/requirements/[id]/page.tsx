@@ -48,6 +48,7 @@ import {
   StageCell,
   STAGE_LABEL,
 } from "@/employer/_atoms";
+import { SortableHead, type Sort } from "@/components/SortableHead";
 import {
   Dialog,
   DialogContent,
@@ -133,7 +134,7 @@ const HEADER_CELL_STYLE: CSSProperties = {
 };
 
 type ContactFilter = "all" | "locked" | "unlocked";
-type SortKey = "match" | "recent";
+type SortColumn = "name" | "match" | "sessions" | "pipeline" | "contact";
 
 const contactFilterOptions: Array<{ value: ContactFilter; label: string }> = [
   { value: "all", label: "All candidates" },
@@ -141,10 +142,48 @@ const contactFilterOptions: Array<{ value: ContactFilter; label: string }> = [
   { value: "locked", label: "Locked" },
 ];
 
-const sortOptions: Array<{ value: SortKey; label: string }> = [
-  { value: "match", label: "Best match" },
-  { value: "recent", label: "Most recently active" },
-];
+const DEFAULT_SORT: Sort<SortColumn> = { column: "match", direction: "desc" };
+
+const COLUMN_LABEL: Record<SortColumn, string> = {
+  name: "Candidate",
+  match: "Match",
+  sessions: "Practice history",
+  pipeline: "Pipeline",
+  contact: "Contact",
+};
+
+// Funnel order, not alphabetical — "hired" should sort ahead of
+// "interviewing" ahead of "shortlisted" when sorting by pipeline stage.
+// Rejected/declined outcomes sort last regardless of direction intent.
+const PIPELINE_RANK: Record<Candidate["candidateStatus"], number> = {
+  shortlisted: 0,
+  interview_invited: 1,
+  interviewing: 2,
+  hired: 3,
+  not_a_fit: 4,
+  no_response: 5,
+  rejected: 6,
+};
+
+function candidateDisplayName(c: Candidate): string {
+  return c.unlocked ? c.name : `Candidate #${c.id.slice(0, 6)}`;
+}
+
+function compareCandidates(a: Candidate, b: Candidate, sort: Sort<SortColumn>): number {
+  const dir = sort.direction === "asc" ? 1 : -1;
+  switch (sort.column) {
+    case "name":
+      return dir * candidateDisplayName(a).localeCompare(candidateDisplayName(b));
+    case "match":
+      return dir * (a.matchScore - b.matchScore);
+    case "sessions":
+      return dir * (a.sessionsCompleted - b.sessionsCompleted);
+    case "pipeline":
+      return dir * (PIPELINE_RANK[a.candidateStatus] - PIPELINE_RANK[b.candidateStatus]);
+    case "contact":
+      return dir * (Number(a.unlocked) - Number(b.unlocked));
+  }
+}
 
 function initials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -663,7 +702,7 @@ export default function RequirementDetailPage() {
   const [contactFilter, setContactFilter] = useState<ContactFilter>("all");
   const [locationFilter, setLocationFilter] = useState<string>("all");
   const [pipelineFilter, setPipelineFilter] = useState<"all" | "interviewing" | "hired">("all");
-  const [sortKey, setSortKey] = useState<SortKey>("match");
+  const [sort, setSort] = useState<Sort<SortColumn>>(DEFAULT_SORT);
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [evidenceMatchId, setEvidenceMatchId] = useState<string | null>(null);
@@ -708,10 +747,8 @@ export default function RequirementDetailPage() {
     if (firstContact) suggestions.push({ label: `Contact: ${firstContact.label}`, apply: () => setContactFilter(firstContact.value) });
     const firstLocation = locationOptions.find((loc) => loc !== locationFilter);
     if (firstLocation) suggestions.push({ label: `Location: ${firstLocation}`, apply: () => setLocationFilter(firstLocation) });
-    const firstSort = sortOptions.find((o) => o.value !== sortKey);
-    if (firstSort) suggestions.push({ label: `Sort: ${firstSort.label}`, apply: () => setSortKey(firstSort.value) });
     return suggestions.slice(0, 4);
-  }, [contactFilter, locationOptions, locationFilter, sortKey]);
+  }, [contactFilter, locationOptions, locationFilter]);
 
   const filteredSorted = useMemo(() => {
     const candidates = requirement?.candidates ?? [];
@@ -726,13 +763,12 @@ export default function RequirementDetailPage() {
       const haystack = [c.unlocked ? c.name : "", c.targetRole, c.city, c.resume?.noticePeriod || "", ...c.skills].join(" ").toLowerCase();
       return haystack.includes(q);
     });
-    const recency = (c: Candidate) => (c.lastActiveDaysAgo < 0 ? Number.POSITIVE_INFINITY : c.lastActiveDaysAgo);
-    return filtered.sort((a, b) => (sortKey === "match" ? b.matchScore - a.matchScore : recency(a) - recency(b)));
-  }, [requirement, search, contactFilter, locationFilter, pipelineFilter, sortKey]);
+    return filtered.sort((a, b) => compareCandidates(a, b, sort));
+  }, [requirement, search, contactFilter, locationFilter, pipelineFilter, sort]);
 
   useEffect(() => {
     setPage(1);
-  }, [search, contactFilter, locationFilter, pipelineFilter, sortKey, rowsPerPage]);
+  }, [search, contactFilter, locationFilter, pipelineFilter, sort, rowsPerPage]);
 
   const totalPages = Math.max(1, Math.ceil(filteredSorted.length / rowsPerPage));
   const pageSafe = Math.min(page, totalPages);
@@ -1492,7 +1528,6 @@ export default function RequirementDetailPage() {
                     onChange={setLocationFilter}
                   />
                 )}
-                <FilterPill label="Sort" value={sortKey} options={sortOptions} onChange={setSortKey} />
                 {(search.trim() !== "" || contactFilter !== "all" || locationFilter !== "all") && (
                   <Button
                     type="button"
@@ -1518,14 +1553,14 @@ export default function RequirementDetailPage() {
                       <TableHeader style={{ position: "sticky", top: 0, zIndex: 1 }}>
                         <TableRow style={{ background: t.rowTint, height: 40 }}>
                           {!readOnly && <TableHead></TableHead>}
-                          <TableHead style={HEADER_CELL_STYLE}>Candidate</TableHead>
-                          <TableHead style={HEADER_CELL_STYLE}>Match</TableHead>
-                          <TableHead style={HEADER_CELL_STYLE}>Practice history</TableHead>
+                          <SortableHead column="name" columnLabel={COLUMN_LABEL.name} defaultDirection="asc" sort={sort} onSortChange={setSort}>Candidate</SortableHead>
+                          <SortableHead column="match" columnLabel={COLUMN_LABEL.match} sort={sort} onSortChange={setSort}>Match</SortableHead>
+                          <SortableHead column="sessions" columnLabel={COLUMN_LABEL.sessions} sort={sort} onSortChange={setSort}>Practice history</SortableHead>
                           <TableHead style={HEADER_CELL_STYLE}>Notice period</TableHead>
                           <TableHead style={HEADER_CELL_STYLE}>Current CTC</TableHead>
                           <TableHead style={HEADER_CELL_STYLE}>Skills</TableHead>
-                          <TableHead style={HEADER_CELL_STYLE}>Pipeline</TableHead>
-                          <TableHead style={HEADER_CELL_STYLE}>Contact</TableHead>
+                          <SortableHead column="pipeline" columnLabel={COLUMN_LABEL.pipeline} defaultDirection="asc" sort={sort} onSortChange={setSort}>Pipeline</SortableHead>
+                          <SortableHead column="contact" columnLabel={COLUMN_LABEL.contact} sort={sort} onSortChange={setSort}>Contact</SortableHead>
                           <TableHead style={HEADER_CELL_STYLE}></TableHead>
                         </TableRow>
                       </TableHeader>
