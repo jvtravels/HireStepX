@@ -127,6 +127,13 @@ const td: CSSProperties = {
   verticalAlign: "middle",
 };
 
+/* SortableHead (src/components/SortableHead.tsx) renders its own 20px
+   horizontal padding on the sort button rather than relying on the
+   th's default — body cells under a SortableHead column must match
+   that 20px explicitly, same convention as SessionsV2.tsx/DashboardJobs.tsx,
+   or the header text sits 12px right of the data below it. */
+const tdSortable: CSSProperties = { ...td, padding: "0 20px" };
+
 const HEADER_CELL_STYLE: CSSProperties = {
   fontFamily: f.sans,
   fontSize: textSize.base,
@@ -379,7 +386,7 @@ function CandidateTableRow({
           />
         </TableCell>
       )}
-      <TableCell style={td}>
+      <TableCell style={tdSortable}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <CandidateAvatar name={candidate.name} unlocked={candidate.unlocked} />
           <div>
@@ -397,11 +404,11 @@ function CandidateTableRow({
           </div>
         </div>
       </TableCell>
-      <TableCell style={td}>
+      <TableCell style={tdSortable}>
         <ScoreChip score={candidate.matchScore} />
       </TableCell>
-      <TableCell style={{ ...td, color: t.inkSoft }}>
-        {candidate.rosterScore} roster · {candidate.sessionsCompleted} sessions
+      <TableCell style={{ ...tdSortable, color: t.inkSoft }}>
+        {candidate.rosterScore} roster · {candidate.sessionsCompleted} {candidate.sessionsCompleted === 1 ? "session" : "sessions"}
       </TableCell>
       <TableCell style={{ ...td, color: t.inkSoft }}>
         {candidate.resume?.noticePeriod || <span style={{ color: t.inkFaint }}>—</span>}
@@ -432,7 +439,7 @@ function CandidateTableRow({
           <span style={{ color: t.inkFaint }}>—</span>
         )}
       </TableCell>
-      <TableCell style={td}>
+      <TableCell style={tdSortable}>
         <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-start" }}>
           <CandidateStatusChip status={candidate.candidateStatus} />
           {interviewSubstep(candidate) && (
@@ -440,7 +447,7 @@ function CandidateTableRow({
           )}
         </div>
       </TableCell>
-      <TableCell style={{ ...td, minWidth: 180 }}>
+      <TableCell style={{ ...tdSortable, minWidth: 180 }}>
         {candidate.unlocked ? (
           <span style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.coal }}>{candidate.contact?.email}</span>
         ) : readOnly ? (
