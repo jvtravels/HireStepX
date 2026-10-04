@@ -53,7 +53,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -656,7 +655,6 @@ export default function RequirementDetailPage() {
   const [bulkRejectNote, setBulkRejectNote] = useState("");
   const [bulkRejectSubmitting, setBulkRejectSubmitting] = useState(false);
   const [descExpanded, setDescExpanded] = useState(false);
-  const [activeTab, setActiveTab] = useState<"candidates" | "description">("candidates");
   const [search, setSearch] = useState("");
   const [contactFilter, setContactFilter] = useState<ContactFilter>("all");
   const [locationFilter, setLocationFilter] = useState<string>("all");
@@ -1270,14 +1268,7 @@ export default function RequirementDetailPage() {
       </Card>
       </div>
 
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "candidates" | "description")} style={{ margin: "20px 0 16px" }}>
-        <TabsList variant="line" className="border-b" style={{ borderColor: t.line, width: "100%", justifyContent: "flex-start", gap: 24 }}>
-          <TabsTrigger value="candidates" style={{ fontFamily: f.sans, fontSize: 13.5, fontWeight: 600 }}>Candidates</TabsTrigger>
-          <TabsTrigger value="description" style={{ fontFamily: f.sans, fontSize: 13.5, fontWeight: 600 }}>Job Description</TabsTrigger>
-        </TabsList>
-      </Tabs>
-
-      {activeTab === "description" && (
+      <div style={{ marginTop: 24 }}>
         <Card>
           <h2 style={{ fontFamily: f.sans, fontSize: 18, color: t.coal, margin: "0 0 10px" }}>Description</h2>
           <p style={{ fontFamily: f.sans, fontSize: 13.5, color: t.inkSoft, lineHeight: 1.7, margin: 0, whiteSpace: "pre-wrap" }}>
@@ -1382,9 +1373,10 @@ export default function RequirementDetailPage() {
             </div>
           )}
         </Card>
-      )}
+      </div>
 
-      {activeTab === "candidates" && (
+      <div style={{ marginTop: 24 }}>
+        <h2 style={{ fontFamily: f.sans, fontSize: 18, color: t.coal, margin: "0 0 16px" }}>Candidates</h2>
         <>
           {requirement.status === "generating" && <GeneratingState />}
           {requirement.status === "failed" && <FailedState />}
@@ -1550,7 +1542,7 @@ export default function RequirementDetailPage() {
             </>
           )}
         </>
-      )}
+      </div>
     </div>
   );
 }
