@@ -89,6 +89,9 @@ function EvidencePanel({ evidence, loading }: { evidence: CandidateEvidence | nu
   if (!evidence || evidence.skills.length === 0) {
     return <HelpText>No practice session data yet.</HelpText>;
   }
+  const readinessLabel: Record<string, string> = { strongHire: "Strong hire readiness", hire: "Hire readiness", leanHire: "Lean-hire readiness" };
+  const readinessTone: Record<string, "success" | "indigo" | "neutral"> = { strongHire: "success", hire: "indigo", leanHire: "neutral" };
+
   return (
     <div>
       {evidence.sessionDate && (
@@ -96,6 +99,22 @@ function EvidencePanel({ evidence, loading }: { evidence: CandidateEvidence | nu
           From most recent practice session · {new Date(evidence.sessionDate).toLocaleDateString()}
         </div>
       )}
+
+      {(evidence.readiness || evidence.starCompleteness) && (
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
+          {evidence.readiness && (
+            <Pill tone={readinessTone[evidence.readiness.band]}>
+              {readinessLabel[evidence.readiness.band]} · {evidence.readiness.confidence} confidence
+            </Pill>
+          )}
+          {evidence.starCompleteness && (
+            <Pill tone={evidence.starCompleteness.pct >= 70 ? "success" : evidence.starCompleteness.pct >= 40 ? "neutral" : "indigo"}>
+              STAR completeness: {evidence.starCompleteness.pct}%
+            </Pill>
+          )}
+        </div>
+      )}
+
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         {evidence.skills.map((s) => (
           <div key={s.name}>
@@ -115,6 +134,32 @@ function EvidencePanel({ evidence, loading }: { evidence: CandidateEvidence | nu
           </div>
         ))}
       </div>
+
+      {evidence.quotes.length > 0 && (
+        <div style={{ marginTop: 20 }}>
+          <SectionTitle>What they said</SectionTitle>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {evidence.quotes.map((q, i) => (
+              <div
+                key={i}
+                style={{
+                  padding: "10px 12px",
+                  borderRadius: 8,
+                  background: q.kind === "redFlag" ? t.error + "0d" : t.success + "0d",
+                  border: `1px solid ${q.kind === "redFlag" ? t.error + "33" : t.success + "33"}`,
+                }}
+              >
+                <div style={{ fontFamily: f.sans, fontSize: 12, fontWeight: 700, color: q.kind === "redFlag" ? t.error : t.success, marginBottom: 4 }}>
+                  {q.kind === "redFlag" ? "Flag" : "Win"} · {q.text}
+                </div>
+                <div style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, fontStyle: "italic" }}>
+                  &ldquo;{q.quote}&rdquo;
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -613,6 +658,23 @@ export default function CandidateDetailPage() {
                   <HelpText>Self-reported by the candidate's resume text — not independently verified.</HelpText>
                 </div>
               </>
+            )}
+          </Card>
+
+          <Card>
+            <SectionTitle>Portfolio &amp; work samples</SectionTitle>
+            {!candidate.unlocked ? (
+              <HelpText>Portfolio links are locked until this candidate is unlocked.</HelpText>
+            ) : candidate.portfolioLinks?.length ? (
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                {candidate.portfolioLinks.map((link) => (
+                  <a key={link.url} href={link.url} target="_blank" rel="noreferrer" style={{ textDecoration: "none" }}>
+                    <SkillTag>{link.title}</SkillTag>
+                  </a>
+                ))}
+              </div>
+            ) : (
+              <HelpText>No portfolio or project links on file for this candidate.</HelpText>
             )}
           </Card>
         </div>

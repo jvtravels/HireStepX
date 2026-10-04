@@ -30,6 +30,12 @@ import {
   type RequirementInput,
 } from "./_requirement-match-helpers";
 import { extractResumeDetail } from "./_resume-detail-helpers";
+import {
+  extractReadinessForecast,
+  extractStarCompleteness,
+  latestSessionByUser,
+  type SessionRow,
+} from "./_employer-candidate-evidence-helpers";
 import { llmRerankCandidates, blendScore } from "./_requirement-match-llm";
 import {
   asBoundedString,
@@ -44,6 +50,8 @@ import {
   asBoundedBoolean,
   asBoundedDurationWeeks,
   asBoundedHoursPerWeek,
+  asBoundedReadinessBand,
+  asBoundedStarCompleteness,
   isValidRequirementInput,
   isValidRange,
   isFutureDueDate,
@@ -120,7 +128,7 @@ export default async function handler(req: Request): Promise<Response> {
 async function handleGet(userId: string, headers: Record<string, string>): Promise<Response> {
   try {
     const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/employer_requirements?employer_id=eq.${encodeURIComponent(userId)}&select=id,title,location,notice_period_pref,status,stage,department,archive_reason,archive_disposition,experience_min,experience_max,due_date,budget_min,budget_max,locations,open_positions,work_mode,skills,employment_type,salary_type,duration_weeks,hours_per_week,created_at&order=created_at.desc`,
+      `${SUPABASE_URL}/rest/v1/employer_requirements?employer_id=eq.${encodeURIComponent(userId)}&select=id,title,location,notice_period_pref,status,stage,department,archive_reason,archive_disposition,experience_min,experience_max,due_date,budget_min,budget_max,locations,open_positions,work_mode,skills,employment_type,salary_type,duration_weeks,hours_per_week,min_readiness_band,min_star_completeness,created_at&order=created_at.desc`,
       { headers: serviceHeaders() },
     );
     if (!res.ok) throw new Error(`requirements read failed: ${res.status}`);
@@ -189,6 +197,7 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
     availability?: unknown; relevantExperience?: unknown; portfolioRequired?: unknown;
     customSkillSets?: unknown;
     durationWeeks?: unknown; hoursPerWeek?: unknown;
+    minReadinessBand?: unknown; minStarCompleteness?: unknown;
   };
   try {
     body = await req.json();
@@ -225,6 +234,8 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
   const customSkillSets = asBoundedStringArray(body.customSkillSets, 40, 60);
   const durationWeeks = asBoundedDurationWeeks(body.durationWeeks);
   const hoursPerWeek = asBoundedHoursPerWeek(body.hoursPerWeek);
+  const minReadinessBand = asBoundedReadinessBand(body.minReadinessBand);
+  const minStarCompleteness = asBoundedStarCompleteness(body.minStarCompleteness);
   const location = locations.join(", ");
 
   if (!isValidRequirementInput(title, locations, description)) {
@@ -265,6 +276,7 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
         availability, relevant_experience: relevantExperience, portfolio_required: portfolioRequired,
         custom_skill_sets: customSkillSets,
         duration_weeks: durationWeeks, hours_per_week: hoursPerWeek,
+        min_readiness_band: minReadinessBand, min_star_completeness: minStarCompleteness,
       }]),
     });
     if (!insertRes.ok) {
@@ -275,7 +287,11 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
     const inserted = (await insertRes.json()) as RequirementRow[];
     const requirement = inserted[0];
 
-    const finalStatus = await runMatching(requirement.id, { title, location, description, skills, experienceMin, experienceMax }, userId);
+    const finalStatus = await runMatching(
+      requirement.id,
+      { title, location, description, skills, experienceMin, experienceMax, minReadinessBand, minStarCompleteness },
+      userId,
+    );
     await logRequirementActivity(requirement.id, userId, "created");
 
     return new Response(
@@ -299,6 +315,8 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
         salaryType: requirement.salary_type ?? null,
         durationWeeks: requirement.duration_weeks ?? null,
         hoursPerWeek: requirement.hours_per_week ?? null,
+        minReadinessBand: requirement.min_readiness_band ?? null,
+        minStarCompleteness: requirement.min_star_completeness ?? null,
         createdAt: requirement.created_at.slice(0, 10),
       }),
       { status: 200, headers },
@@ -375,16 +393,28 @@ export async function runMatching(requirementId: string, req: RequirementInput, 
 
     const scores = new Map<string, number>();
     const sessionCounts = new Map<string, number>();
+    const readinessByUser = new Map<string, "strongHire" | "hire" | "leanHire">();
+    const starByUser = new Map<string, number>();
     if (pool.length > 0) {
       const idParam = pool.map((p) => encodeURIComponent(p.id)).join(",");
       const sessionsRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/sessions?user_id=in.(${idParam})&select=user_id,score`,
+        `${SUPABASE_URL}/rest/v1/sessions?user_id=in.(${idParam})&select=user_id,score,created_at,report_json,type&order=created_at.desc`,
         { headers: serviceHeaders() },
       );
       if (sessionsRes.ok) {
-        const sessionRows = (await sessionsRes.json().catch(() => [])) as Array<{ user_id: string; score: number }>;
+        const sessionRows = (await sessionsRes.json().catch(() => [])) as Array<SessionRow & { score: number }>;
         for (const [uid, avg] of averageScoresByUser(sessionRows)) scores.set(uid, avg);
         for (const s of sessionRows) sessionCounts.set(s.user_id, (sessionCounts.get(s.user_id) || 0) + 1);
+
+        // Reuses the same "most recent real interview-evidence session"
+        // picker the employer evidence panel uses, so the quality bar is
+        // judged on the same session an employer would actually be shown.
+        for (const [uid, row] of latestSessionByUser(sessionRows)) {
+          const readiness = extractReadinessForecast(row.report_json);
+          if (readiness) readinessByUser.set(uid, readiness.band);
+          const star = extractStarCompleteness(row.report_json);
+          if (star) starByUser.set(uid, star.pct);
+        }
       }
     }
 
@@ -400,6 +430,8 @@ export async function runMatching(requirementId: string, req: RequirementInput, 
         sessions_completed: sessionCounts.get(p.id) || 0,
         last_active_days_ago: daysSinceLastActive(timestamps, Date.now()),
         years_experience: extractResumeDetail(p.resume_data).yearsExperience,
+        readiness_band: readinessByUser.get(p.id) ?? null,
+        star_completeness_pct: starByUser.get(p.id) ?? null,
       };
     });
 

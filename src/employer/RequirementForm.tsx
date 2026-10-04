@@ -150,6 +150,8 @@ export function RequirementForm({
   const [dueDate, setDueDate] = useState(initial?.dueDate ?? "");
   const [durationWeeks, setDurationWeeks] = useState(initial?.durationWeeks != null ? String(initial.durationWeeks) : "");
   const [hoursPerWeek, setHoursPerWeek] = useState(initial?.hoursPerWeek != null ? String(initial.hoursPerWeek) : "");
+  const [minReadinessBand, setMinReadinessBand] = useState<"" | "strongHire" | "hire" | "leanHire">(initial?.minReadinessBand ?? "");
+  const [minStarCompleteness, setMinStarCompleteness] = useState(initial?.minStarCompleteness != null ? String(initial.minStarCompleteness) : "");
 
   const [submitting, setSubmitting] = useState(false);
 
@@ -178,6 +180,7 @@ export function RequirementForm({
     const parsedOpenPositions = openPositions.trim() ? Number(openPositions) : undefined;
     const parsedDurationWeeks = durationWeeks.trim() ? Number(durationWeeks) : undefined;
     const parsedHoursPerWeek = hoursPerWeek.trim() ? Number(hoursPerWeek) : undefined;
+    const parsedMinStarCompleteness = minStarCompleteness.trim() ? Number(minStarCompleteness) : undefined;
     const ok = await onSubmit({
       title: title.trim(),
       department: department.trim() || undefined,
@@ -208,6 +211,8 @@ export function RequirementForm({
       portfolioRequired,
       durationWeeks: Number.isFinite(parsedDurationWeeks) ? parsedDurationWeeks : undefined,
       hoursPerWeek: Number.isFinite(parsedHoursPerWeek) ? parsedHoursPerWeek : undefined,
+      minReadinessBand: minReadinessBand || undefined,
+      minStarCompleteness: Number.isFinite(parsedMinStarCompleteness) ? parsedMinStarCompleteness : undefined,
     });
     if (!ok) {
       setSubmitting(false);
@@ -350,6 +355,34 @@ export function RequirementForm({
         </div>
         <div style={{ display: "flex", alignItems: "center", paddingTop: 28 }}>
           <Checkbox label="Portfolio required" checked={portfolioRequired} onChange={setPortfolioRequired} />
+        </div>
+      </div>
+
+      <div style={grid2}>
+        <div>
+          <FieldLabel>Minimum readiness (optional)</FieldLabel>
+          <select
+            value={minReadinessBand}
+            onChange={(e) => setMinReadinessBand(e.target.value as "" | "strongHire" | "hire" | "leanHire")}
+            style={{ ...inputStyle, background: t.white }}
+          >
+            <option value="">No minimum</option>
+            <option value="leanHire">Lean hire or better</option>
+            <option value="hire">Hire or better</option>
+            <option value="strongHire">Strong hire only</option>
+          </select>
+        </div>
+        <div>
+          <FieldLabel>Minimum STAR completeness % (optional)</FieldLabel>
+          <input
+            type="number"
+            min={0}
+            max={100}
+            value={minStarCompleteness}
+            onChange={(e) => setMinStarCompleteness(e.target.value)}
+            placeholder="e.g. 60"
+            style={inputStyle}
+          />
         </div>
       </div>
     </FormSection>

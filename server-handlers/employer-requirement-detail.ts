@@ -54,6 +54,8 @@ import {
   asBoundedStage,
   asBoundedDurationWeeks,
   asBoundedHoursPerWeek,
+  asBoundedReadinessBand,
+  asBoundedStarCompleteness,
   asArchiveDisposition,
   isValidRequirementInput,
   isValidRange,
@@ -74,6 +76,28 @@ function extractSkills(resumeData: unknown): string[] {
   if (!resumeData || typeof resumeData !== "object") return [];
   const skills = (resumeData as Record<string, unknown>).skills;
   return Array.isArray(skills) ? skills.filter((s): s is string => typeof s === "string").slice(0, 8) : [];
+}
+
+interface PortfolioLink {
+  title: string;
+  url: string;
+}
+
+/** Narrows profiles.portfolio_links (jsonb, default '[]') to a clean
+ *  { title, url } array, dropping any malformed entry rather than
+ *  propagating garbage to the client. */
+function extractPortfolioLinks(raw: unknown): PortfolioLink[] {
+  if (!Array.isArray(raw)) return [];
+  const out: PortfolioLink[] = [];
+  for (const entry of raw) {
+    if (!entry || typeof entry !== "object") continue;
+    const title = (entry as { title?: unknown }).title;
+    const url = (entry as { url?: unknown }).url;
+    if (typeof title === "string" && title.trim() && typeof url === "string" && url.trim()) {
+      out.push({ title: title.trim(), url: url.trim() });
+    }
+  }
+  return out;
 }
 
 export default async function handler(req: Request): Promise<Response> {
@@ -115,7 +139,7 @@ export default async function handler(req: Request): Promise<Response> {
 
   try {
     const reqRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&employer_id=eq.${encodeURIComponent(auth.userId)}&select=id,title,location,notice_period_pref,description,status,stage,department,archive_reason,archive_disposition,experience_min,experience_max,due_date,budget_min,budget_max,locations,open_positions,work_mode,skills,responsibilities,nice_to_have,preferred_industry,preferred_colleges,target_companies,perks_and_benefits,employment_type,salary_type,duration_weeks,hours_per_week,preferred_domain,work_schedule,availability,relevant_experience,portfolio_required,custom_skill_sets,created_at`,
+      `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&employer_id=eq.${encodeURIComponent(auth.userId)}&select=id,title,location,notice_period_pref,description,status,stage,department,archive_reason,archive_disposition,experience_min,experience_max,due_date,budget_min,budget_max,locations,open_positions,work_mode,skills,responsibilities,nice_to_have,preferred_industry,preferred_colleges,target_companies,perks_and_benefits,employment_type,salary_type,duration_weeks,hours_per_week,preferred_domain,work_schedule,availability,relevant_experience,portfolio_required,custom_skill_sets,min_readiness_band,min_star_completeness,created_at`,
       { headers: serviceHeaders() },
     );
     if (!reqRes.ok) throw new Error(`requirement read failed: ${reqRes.status}`);
@@ -132,6 +156,7 @@ export default async function handler(req: Request): Promise<Response> {
       availability: string | null; relevant_experience: string | null; portfolio_required: boolean | null;
       custom_skill_sets: string[] | null;
       duration_weeks: number | null; hours_per_week: number | null;
+      min_readiness_band: string | null; min_star_completeness: number | null;
       created_at: string;
     }>;
     const requirement = reqRows[0];
@@ -150,16 +175,16 @@ export default async function handler(req: Request): Promise<Response> {
     }>;
 
     const candidateIds = matches.map((m) => m.candidate_user_id);
-    const profileById = new Map<string, { name: string; email: string; target_role: string; resume_data: unknown; practice_timestamps: string[] }>();
+    const profileById = new Map<string, { name: string; email: string; target_role: string; resume_data: unknown; practice_timestamps: string[]; portfolio_links: unknown }>();
     if (candidateIds.length > 0) {
       const idParam = candidateIds.map((id) => encodeURIComponent(id)).join(",");
       const profilesRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/profiles?id=in.(${idParam})&select=id,name,email,target_role,resume_data,practice_timestamps`,
+        `${SUPABASE_URL}/rest/v1/profiles?id=in.(${idParam})&select=id,name,email,target_role,resume_data,practice_timestamps,portfolio_links`,
         { headers: serviceHeaders() },
       );
       if (profilesRes.ok) {
         const rows = (await profilesRes.json().catch(() => [])) as Array<{
-          id: string; name: string; email: string; target_role: string; resume_data: unknown; practice_timestamps: string[];
+          id: string; name: string; email: string; target_role: string; resume_data: unknown; practice_timestamps: string[]; portfolio_links: unknown;
         }>;
         for (const r of rows) profileById.set(r.id, r);
       }
@@ -210,6 +235,11 @@ export default async function handler(req: Request): Promise<Response> {
         skills: extractSkills(profile?.resume_data),
         unlocked,
         contact: unlocked && profile ? { email: profile.email, phone: resumeDetail.phone || undefined } : undefined,
+        /* Same identity-leak rule as contact/resume above: a personal
+           site/GitHub link lets an employer identify or reach a candidate
+           outside HireStepX without paying to unlock, so it's withheld
+           entirely — not just scrubbed — for a locked match. */
+        portfolioLinks: unlocked ? extractPortfolioLinks(profile?.portfolio_links) : [],
         resume,
         candidateStatus: m.candidate_status,
         candidateStatusNote: m.candidate_status_note,
@@ -254,6 +284,8 @@ export default async function handler(req: Request): Promise<Response> {
         salaryType: requirement.salary_type,
         durationWeeks: requirement.duration_weeks,
         hoursPerWeek: requirement.hours_per_week,
+        minReadinessBand: asBoundedReadinessBand(requirement.min_readiness_band),
+        minStarCompleteness: requirement.min_star_completeness,
         createdAt: requirement.created_at.slice(0, 10),
         candidates,
       }),
@@ -276,10 +308,10 @@ async function handleStatusAction(
 ): Promise<Response> {
   try {
     const existingRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&employer_id=eq.${encodeURIComponent(userId)}&select=id,status,title,location,description,skills,experience_min,experience_max`,
+      `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&employer_id=eq.${encodeURIComponent(userId)}&select=id,status,title,location,description,skills,experience_min,experience_max,min_readiness_band,min_star_completeness`,
       { headers: serviceHeaders() },
     );
-    const existingRows = (await existingRes.json().catch(() => [])) as Array<{ id: string; status: string; title: string; location: string; description: string | null; skills: string[] | null; experience_min: number | null; experience_max: number | null }>;
+    const existingRows = (await existingRes.json().catch(() => [])) as Array<{ id: string; status: string; title: string; location: string; description: string | null; skills: string[] | null; experience_min: number | null; experience_max: number | null; min_readiness_band: string | null; min_star_completeness: number | null }>;
     if (!existingRes.ok || !existingRows[0]) {
       return new Response(JSON.stringify({ error: "Requirement not found" }), { status: 404, headers });
     }
@@ -344,6 +376,8 @@ async function handleStatusAction(
           skills: current.skills ?? [],
           experienceMin: current.experience_min,
           experienceMax: current.experience_max,
+          minReadinessBand: asBoundedReadinessBand(current.min_readiness_band),
+          minStarCompleteness: asBoundedStarCompleteness(current.min_star_completeness),
         },
         userId,
       );
@@ -425,6 +459,7 @@ async function handlePatch(req: Request, requirementId: string, userId: string, 
     availability?: unknown; relevantExperience?: unknown; portfolioRequired?: unknown;
     customSkillSets?: unknown;
     durationWeeks?: unknown; hoursPerWeek?: unknown;
+    minReadinessBand?: unknown; minStarCompleteness?: unknown;
   };
   try {
     body = await req.json();
@@ -494,6 +529,8 @@ async function handlePatch(req: Request, requirementId: string, userId: string, 
     const customSkillSets = body.customSkillSets !== undefined ? asBoundedStringArray(body.customSkillSets, 40, 60) : existing.custom_skill_sets;
     const durationWeeks = body.durationWeeks !== undefined ? asBoundedDurationWeeks(body.durationWeeks) : existing.duration_weeks;
     const hoursPerWeek = body.hoursPerWeek !== undefined ? asBoundedHoursPerWeek(body.hoursPerWeek) : existing.hours_per_week;
+    const minReadinessBand = body.minReadinessBand !== undefined ? asBoundedReadinessBand(body.minReadinessBand) : asBoundedReadinessBand(existing.min_readiness_band);
+    const minStarCompleteness = body.minStarCompleteness !== undefined ? asBoundedStarCompleteness(body.minStarCompleteness) : existing.min_star_completeness;
     const location = locations.join(", ");
 
     if (!isValidRequirementInput(title, locations, description)) {
@@ -524,6 +561,7 @@ async function handlePatch(req: Request, requirementId: string, userId: string, 
         availability, relevant_experience: relevantExperience, portfolio_required: portfolioRequired,
         custom_skill_sets: customSkillSets,
         duration_weeks: durationWeeks, hours_per_week: hoursPerWeek,
+        min_readiness_band: minReadinessBand, min_star_completeness: minStarCompleteness,
       }),
     });
     if (!patchRes.ok) {
@@ -534,7 +572,7 @@ async function handlePatch(req: Request, requirementId: string, userId: string, 
     const updated = (await patchRes.json()) as RequirementRow[];
     const requirement = updated[0];
 
-    const finalStatus = await runMatching(requirementId, { title, location, description, skills, experienceMin, experienceMax }, userId);
+    const finalStatus = await runMatching(requirementId, { title, location, description, skills, experienceMin, experienceMax, minReadinessBand, minStarCompleteness }, userId);
     await logRequirementActivity(requirementId, userId, "updated");
 
     return new Response(
@@ -570,6 +608,8 @@ async function handlePatch(req: Request, requirementId: string, userId: string, 
         salaryType: requirement.salary_type ?? null,
         durationWeeks: requirement.duration_weeks ?? null,
         hoursPerWeek: requirement.hours_per_week ?? null,
+        minReadinessBand: requirement.min_readiness_band ?? null,
+        minStarCompleteness: requirement.min_star_completeness ?? null,
         createdAt: requirement.created_at.slice(0, 10),
       }),
       { status: 200, headers },

@@ -34,10 +34,16 @@ export interface UnlockOrder {
 /** A candidate's actual per-skill scores from their most recent completed
  *  practice session — mirrors EvidenceSkill in
  *  server-handlers/_employer-candidate-evidence-helpers.ts. Empty `skills`
- *  means no completed session has skill data yet, not a zero score. */
+ *  means no completed session has skill data yet, not a zero score.
+ *  `quotes`/`readiness`/`starCompleteness` mirror the same file's
+ *  EvidenceQuote / EvidenceReadiness / StarCompleteness — all `null`/empty
+ *  when the session's report predates that data or has none to show. */
 export interface CandidateEvidence {
   matchId: string;
   skills: Array<{ name: string; score: number }>;
+  quotes: Array<{ kind: "win" | "redFlag"; text: string; quote: string }>;
+  readiness: { band: "strongHire" | "hire" | "leanHire"; confidence: "low" | "medium" | "high" } | null;
+  starCompleteness: { pct: number; questionsConsidered: number } | null;
   sessionDate: string | null;
 }
 

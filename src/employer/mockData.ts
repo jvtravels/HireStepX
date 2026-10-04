@@ -60,6 +60,7 @@ export interface Candidate {
   unlocked: boolean;
   contact?: { email: string; phone?: string };
   resume?: CandidateResumeDetail;
+  portfolioLinks?: Array<{ title: string; url: string }>;
   candidateStatus: CandidateStatus;
   candidateStatusNote: string | null;
   interviewScheduledAt: string | null;
@@ -127,6 +128,8 @@ export interface RequirementSummary {
   employmentType: EmploymentType | null;
   durationWeeks: number | null;
   hoursPerWeek: number | null;
+  minReadinessBand: "strongHire" | "hire" | "leanHire" | null;
+  minStarCompleteness: number | null;
   createdAt: string;
   candidateCount: number;
   aiScreening: AiScreeningSummary;
@@ -168,6 +171,8 @@ export interface Requirement {
   employmentType: EmploymentType | null;
   durationWeeks: number | null;
   hoursPerWeek: number | null;
+  minReadinessBand: "strongHire" | "hire" | "leanHire" | null;
+  minStarCompleteness: number | null;
   createdAt: string;
   candidates: Candidate[];
 }
@@ -207,4 +212,6 @@ export interface RequirementFormValues {
   customSkillSets?: string[];
   durationWeeks?: number;
   hoursPerWeek?: number;
+  minReadinessBand?: "strongHire" | "hire" | "leanHire";
+  minStarCompleteness?: number;
 }

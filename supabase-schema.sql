@@ -1723,6 +1723,13 @@ alter table employer_requirements add column if not exists department text;
 -- handleStatusAction) or left as-is for the employer to keep working.
 alter table employer_requirements add column if not exists archive_reason text;
 alter table employer_requirements add column if not exists archive_disposition text check (archive_disposition in ('keep_candidates', 'reject_remaining'));
+-- Quality-bar hard filter (2026-10-04) — lets an employer require candidates
+-- to clear a minimum readiness band and/or STAR-completeness percentage
+-- from their latest practice session before they're surfaced as a match at
+-- all (see meetsQualityBar in _requirement-match-helpers.ts). Both null by
+-- default: no quality bar unless the employer opts in.
+alter table employer_requirements add column if not exists min_readiness_band text check (min_readiness_band in ('strongHire', 'hire', 'leanHire'));
+alter table employer_requirements add column if not exists min_star_completeness smallint check (min_star_completeness between 0 and 100);
 
 create index if not exists idx_employer_requirements_employer on employer_requirements(employer_id, created_at desc);
 

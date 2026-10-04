@@ -40,6 +40,8 @@ export interface RequirementRow {
   stage: string;
   duration_weeks: number | null;
   hours_per_week: number | null;
+  min_readiness_band: string | null;
+  min_star_completeness: number | null;
 }
 
 /** The four hiring-pipeline stages an employer can move a posting through,
@@ -191,6 +193,23 @@ export function asBoundedDurationWeeks(v: unknown): number | null {
 export function asBoundedHoursPerWeek(v: unknown): number | null {
   if (typeof v !== "number" || !Number.isFinite(v) || !Number.isInteger(v)) return null;
   if (v < 1 || v > 80) return null;
+  return v;
+}
+
+/** Validated read of a client-supplied minimum readiness band: must be one
+ *  of the three values the DB check constraint allows. Returns null for
+ *  anything else (including "no bar set") so the quality-bar filter in
+ *  _requirement-match-helpers.ts treats it as unset rather than invalid. */
+export function asBoundedReadinessBand(v: unknown): "strongHire" | "hire" | "leanHire" | null {
+  return v === "strongHire" || v === "hire" || v === "leanHire" ? v : null;
+}
+
+/** Validated read of a client-supplied minimum STAR-completeness percentage:
+ *  whole numbers only, clamped to 0–100. Returns null for anything else so
+ *  it stores as a real SQL NULL ("no bar set"), not a fabricated 0. */
+export function asBoundedStarCompleteness(v: unknown): number | null {
+  if (typeof v !== "number" || !Number.isFinite(v) || !Number.isInteger(v)) return null;
+  if (v < 0 || v > 100) return null;
   return v;
 }
 
@@ -351,6 +370,8 @@ export function buildRequirementsListResponse(
   stage: string;
   durationWeeks: number | null;
   hoursPerWeek: number | null;
+  minReadinessBand: string | null;
+  minStarCompleteness: number | null;
 }> {
   return rows.map((r) => ({
     id: r.id,
@@ -378,6 +399,8 @@ export function buildRequirementsListResponse(
     aiScreening: aiScreeningByRequirement.get(r.id) ?? EMPTY_AI_SCREENING,
     durationWeeks: r.duration_weeks ?? null,
     hoursPerWeek: r.hours_per_week ?? null,
+    minReadinessBand: r.min_readiness_band ?? null,
+    minStarCompleteness: r.min_star_completeness ?? null,
   }));
 }
 

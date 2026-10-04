@@ -19,6 +19,13 @@ export interface CandidatePoolRow {
       re-deriving it here, since _resume-detail-helpers.ts already owns
       that parsing. */
   years_experience?: number | null;
+  /** Band + STAR-completeness %% from extractReadinessForecast/
+      extractStarCompleteness (_employer-candidate-evidence-helpers.ts)
+      against the candidate's latest practice session. null/undefined when
+      no session has been evaluated yet — treated as "unknown", never as
+      failing a quality bar the employer set (see meetsQualityBar below). */
+  readiness_band?: "strongHire" | "hire" | "leanHire" | null;
+  star_completeness_pct?: number | null;
 }
 
 export interface RequirementInput {
@@ -32,7 +39,19 @@ export interface RequirementInput {
   skills?: string[];
   experienceMin?: number | null;
   experienceMax?: number | null;
+  /** Optional hard quality bar: a candidate must have a readiness forecast
+      at least this strong (strongHire > hire > leanHire) and/or a
+      STAR-completeness percentage at least this high to be surfaced at
+      all — see meetsQualityBar/rankAndCap below. */
+  minReadinessBand?: "strongHire" | "hire" | "leanHire" | null;
+  minStarCompleteness?: number | null;
 }
+
+const READINESS_RANK: Record<"strongHire" | "hire" | "leanHire", number> = {
+  strongHire: 2,
+  hire: 1,
+  leanHire: 0,
+};
 
 export interface ScoredCandidate {
   candidateId: string;
@@ -54,6 +73,34 @@ export interface ScoredCandidate {
       employer's shortlist, not a reviewable match (see rankAndCap doc
       comment). */
   hasEvidence: boolean;
+  /** Whether this candidate clears the requirement's optional minReadinessBand/
+      minStarCompleteness quality bar. A candidate with no evaluated session
+      yet (readiness_band/star_completeness_pct both null) is treated as NOT
+      meeting a bar the employer explicitly set — unproven isn't the same as
+      qualifying — but is true when the requirement sets no bar at all.
+      Optional so existing test fixtures / call sites built before this field
+      existed keep compiling; rankAndCap treats an absent value as true. */
+  meetsQualityBar?: boolean;
+}
+
+/** Checks a candidate's readiness band + STAR completeness against a
+    requirement's optional quality-bar fields. Either side of the bar can be
+    unset independently; a candidate must clear whichever side(s) ARE set.
+    Missing candidate data only fails a bar that's actually configured — it
+    never fails a requirement with no bar set. */
+export function meetsQualityBar(
+  candidate: Pick<CandidatePoolRow, "readiness_band" | "star_completeness_pct">,
+  req: Pick<RequirementInput, "minReadinessBand" | "minStarCompleteness">,
+): boolean {
+  if (req.minReadinessBand) {
+    if (!candidate.readiness_band) return false;
+    if (READINESS_RANK[candidate.readiness_band] < READINESS_RANK[req.minReadinessBand]) return false;
+  }
+  if (req.minStarCompleteness != null) {
+    if (candidate.star_completeness_pct == null) return false;
+    if (candidate.star_completeness_pct < req.minStarCompleteness) return false;
+  }
+  return true;
 }
 
 /** 0-100 read-outs for the three inputs that drive matchScore, for
@@ -263,7 +310,14 @@ export function scoreCandidateMatch(candidate: CandidatePoolRow, req: Requiremen
 
   const hasEvidence = candidate.resume_data != null || hasRosterEvidence;
 
-  return { candidateId: candidate.id, matchScore: clamp(matchScore, 0, 100), rosterScore, hasRelevance, hasEvidence };
+  return {
+    candidateId: candidate.id,
+    matchScore: clamp(matchScore, 0, 100),
+    rosterScore,
+    hasRelevance,
+    hasEvidence,
+    meetsQualityBar: meetsQualityBar(candidate, req),
+  };
 }
 
 /** Human-readable 0-100 read-outs of the same three inputs scoreCandidateMatch
@@ -364,7 +418,7 @@ export function classifyRequirementStatus(matches: Array<{ matchScore: number }>
     candidates are, just along a different axis. */
 export function rankAndCap(scored: ScoredCandidate[], cap = 20): ScoredCandidate[] {
   return scored
-    .filter((s) => s.hasRelevance && s.hasEvidence)
+    .filter((s) => s.hasRelevance && s.hasEvidence && s.meetsQualityBar !== false)
     .sort((a, b) => b.matchScore - a.matchScore)
     .slice(0, cap);
 }

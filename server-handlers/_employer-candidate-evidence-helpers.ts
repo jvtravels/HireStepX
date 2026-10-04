@@ -31,6 +31,109 @@ export function extractEvidenceSkills(reportJson: unknown): EvidenceSkill[] {
   return out;
 }
 
+export interface EvidenceQuote {
+  kind: "win" | "redFlag";
+  text: string;
+  quote: string;
+}
+
+/** Pulls up to 2 "win" quotes and 1 red-flag quote straight off the already-
+ *  validated report_json.wins / report_json.redFlags arrays (see
+ *  filterGroundedItems/filterGroundedRedFlags in evaluate-session.ts — every
+ *  quote admitted there is already checked to be a real substring of the
+ *  candidate's transcript, so this doesn't re-validate grounding). Entries
+ *  missing a usable quote are skipped rather than surfaced with empty text. */
+export function extractEvidenceQuotes(reportJson: unknown): EvidenceQuote[] {
+  if (!reportJson || typeof reportJson !== "object") return [];
+  const r = reportJson as { wins?: unknown; redFlags?: unknown };
+  const out: EvidenceQuote[] = [];
+
+  const wins = Array.isArray(r.wins) ? r.wins : [];
+  for (const w of wins) {
+    if (out.filter((q) => q.kind === "win").length >= 2) break;
+    if (!w || typeof w !== "object") continue;
+    const text = (w as { text?: unknown }).text;
+    const quote = (w as { quote?: unknown }).quote;
+    if (typeof text === "string" && text.trim() && typeof quote === "string" && quote.trim()) {
+      out.push({ kind: "win", text: text.trim(), quote: quote.trim() });
+    }
+  }
+
+  const redFlags = Array.isArray(r.redFlags) ? r.redFlags : [];
+  for (const rf of redFlags) {
+    if (!rf || typeof rf !== "object") continue;
+    const title = (rf as { title?: unknown }).title;
+    const quote = (rf as { quote?: unknown }).quote;
+    if (typeof title === "string" && title.trim() && typeof quote === "string" && quote.trim()) {
+      out.push({ kind: "redFlag", text: title.trim(), quote: quote.trim() });
+      break;
+    }
+  }
+
+  return out;
+}
+
+export type ReadinessBand = "strongHire" | "hire" | "leanHire";
+const READINESS_BANDS: ReadinessBand[] = ["strongHire", "hire", "leanHire"];
+
+export interface EvidenceReadiness {
+  band: ReadinessBand;
+  confidence: "low" | "medium" | "high";
+}
+
+/** Narrows report_json.readiness (see ReadinessForecast in
+ *  evaluate-session.ts) to the band + confidence an employer card needs —
+ *  drops estimatedHours/estimatedSessions/rationale, which are candidate-
+ *  facing coaching detail with no meaning in an employer's shortlist. */
+export function extractReadinessForecast(reportJson: unknown): EvidenceReadiness | null {
+  if (!reportJson || typeof reportJson !== "object") return null;
+  const readiness = (reportJson as { readiness?: unknown }).readiness;
+  if (!readiness || typeof readiness !== "object") return null;
+  const band = (readiness as { targetBand?: unknown }).targetBand;
+  const confidence = (readiness as { confidence?: unknown }).confidence;
+  if (typeof band !== "string" || !READINESS_BANDS.includes(band as ReadinessBand)) return null;
+  return {
+    band: band as ReadinessBand,
+    confidence: confidence === "low" || confidence === "medium" || confidence === "high" ? confidence : "low",
+  };
+}
+
+export interface StarCompleteness {
+  /** % of scored questions whose answer covered all of Situation/Task/
+   *  Action/Result — intentionally excludes the Learning (L) letter some
+   *  sessions also track, since "STAR completeness" names the 4-part model. */
+  pct: number;
+  questionsConsidered: number;
+}
+
+/** Averages per-question STAR presence (report_json.perQuestion[].starPresence,
+ *  the { S, T, A, R, L } shape evaluate-session.ts persists) into a single
+ *  0-100 completeness figure. Questions with no starPresence block at all
+ *  (e.g. a salary-negotiation session, or a pre-STAR-detection report
+ *  version) are skipped rather than counted as 0% — absence of data isn't
+ *  evidence of a weak answer. */
+export function extractStarCompleteness(reportJson: unknown): StarCompleteness | null {
+  if (!reportJson || typeof reportJson !== "object") return null;
+  const perQuestion = (reportJson as { perQuestion?: unknown }).perQuestion;
+  if (!Array.isArray(perQuestion)) return null;
+
+  let consideredCount = 0;
+  let totalRatio = 0;
+  for (const q of perQuestion) {
+    if (!q || typeof q !== "object") continue;
+    const sp = (q as { starPresence?: unknown }).starPresence;
+    if (!sp || typeof sp !== "object") continue;
+    const letters = ["S", "T", "A", "R"] as const;
+    const present = letters.filter((l) => (sp as Record<string, unknown>)[l] === true).length;
+    const hasAnyBoolean = letters.some((l) => typeof (sp as Record<string, unknown>)[l] === "boolean");
+    if (!hasAnyBoolean) continue;
+    consideredCount++;
+    totalRatio += present / letters.length;
+  }
+  if (consideredCount === 0) return null;
+  return { pct: Math.round((totalRatio / consideredCount) * 100), questionsConsidered: consideredCount };
+}
+
 export interface SessionRow {
   user_id: string;
   created_at: string;

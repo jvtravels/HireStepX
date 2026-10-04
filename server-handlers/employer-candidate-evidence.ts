@@ -17,7 +17,14 @@
 export const config = { runtime: "edge" };
 
 import { withAuthAndRateLimit, corsHeaders, withRequestId, slog } from "./_shared";
-import { extractEvidenceSkills, latestSessionByUser, type SessionRow } from "./_employer-candidate-evidence-helpers";
+import {
+  extractEvidenceSkills,
+  extractEvidenceQuotes,
+  extractReadinessForecast,
+  extractStarCompleteness,
+  latestSessionByUser,
+  type SessionRow,
+} from "./_employer-candidate-evidence-helpers";
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
@@ -96,6 +103,9 @@ export default async function handler(req: Request): Promise<Response> {
       JSON.stringify({
         matchId,
         skills: latest ? extractEvidenceSkills(latest.report_json) : [],
+        quotes: latest ? extractEvidenceQuotes(latest.report_json) : [],
+        readiness: latest ? extractReadinessForecast(latest.report_json) : null,
+        starCompleteness: latest ? extractStarCompleteness(latest.report_json) : null,
         sessionDate: latest?.created_at ?? null,
       }),
       { status: 200, headers },
