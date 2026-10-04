@@ -281,6 +281,123 @@ export const AccountSection = memo(function AccountSection(props: AccountSection
 });
 
 
+/* ═══════════════════════════════════════════════════════════════
+   PORTFOLIO LINKS SECTION
+   ═══════════════════════════════════════════════════════════════ */
+
+const MAX_PORTFOLIO_LINKS = 5;
+
+export interface PortfolioLinksSectionProps {
+  portfolioLinks: Array<{ title: string; url: string }> | undefined;
+  authUpdateUser: (updates: Record<string, unknown>) => void | Promise<void>;
+  showToast: (msg: string) => void;
+}
+
+/* What employers see as "proof of work" traces back only to what's saved
+ * here — never anything synthesized. One title + one URL per row, capped
+ * so the profile doesn't turn into a link farm (mirrors
+ * server-handlers/update-profile.ts's MAX_PORTFOLIO_LINKS). */
+export const PortfolioLinksSection = memo(function PortfolioLinksSection(props: PortfolioLinksSectionProps) {
+  const { portfolioLinks, authUpdateUser, showToast } = props;
+
+  const [rows, setRows] = useState<Array<{ title: string; url: string }>>(() => portfolioLinks && portfolioLinks.length > 0 ? portfolioLinks : [{ title: "", url: "" }]);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  function updateRow(i: number, field: "title" | "url", value: string) {
+    setSaved(false);
+    setRows(prev => prev.map((r, idx) => idx === i ? { ...r, [field]: value } : r));
+  }
+
+  function removeRow(i: number) {
+    setSaved(false);
+    setRows(prev => prev.filter((_, idx) => idx !== i));
+  }
+
+  function addRow() {
+    setRows(prev => prev.length >= MAX_PORTFOLIO_LINKS ? prev : [...prev, { title: "", url: "" }]);
+  }
+
+  async function handleSave() {
+    const cleaned = rows
+      .map(r => ({ title: r.title.trim(), url: r.url.trim() }))
+      .filter(r => r.title && /^https?:\/\//i.test(r.url));
+    setSaving(true);
+    try {
+      await authUpdateUser({ portfolioLinks: cleaned });
+      setRows(cleaned.length > 0 ? cleaned : [{ title: "", url: "" }]);
+      setSaved(true);
+      showToast("Portfolio links saved");
+      setTimeout(() => setSaved(false), 4000);
+    } catch {
+      showToast("Failed to save — try again");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <p style={subHeaderHint}>
+        Add links to work employers can review — GitHub, Behance, Notion, a personal site.
+        Only what you add here is ever shown; nothing is invented on your behalf.
+      </p>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {rows.map((row, i) => (
+          <div key={i} style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+            <input
+              type="text"
+              value={row.title}
+              onChange={(e) => updateRow(i, "title", e.target.value)}
+              placeholder="Title (e.g. GitHub)"
+              maxLength={120}
+              aria-label={`Portfolio link ${i + 1} title`}
+              style={{
+                fontFamily: font.ui, fontSize: 13, color: c.ink, background: c.graphite,
+                border: `1px solid ${c.borderStrong}`, borderRadius: 9, padding: "10px 14px",
+                outline: "none", minHeight: 40, boxSizing: "border-box", flex: "1 1 180px", minWidth: 0,
+              }}
+            />
+            <input
+              type="url"
+              value={row.url}
+              onChange={(e) => updateRow(i, "url", e.target.value)}
+              placeholder="https://..."
+              maxLength={500}
+              aria-label={`Portfolio link ${i + 1} URL`}
+              style={{
+                fontFamily: font.ui, fontSize: 13, color: c.ink, background: c.graphite,
+                border: `1px solid ${c.borderStrong}`, borderRadius: 9, padding: "10px 14px",
+                outline: "none", minHeight: 40, boxSizing: "border-box", flex: "2 1 240px", minWidth: 0,
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => removeRow(i)}
+              aria-label={`Remove portfolio link ${i + 1}`}
+              style={{ ...accSubtleBtnGhost, color: c.ember, flexShrink: 0 }}
+            >
+              Remove
+            </button>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+        <button type="button" onClick={addRow} disabled={rows.length >= MAX_PORTFOLIO_LINKS} style={{ ...flatRowBtn, opacity: rows.length >= MAX_PORTFOLIO_LINKS ? 0.5 : 1 }}>
+          Add link
+        </button>
+        <Button type="button" variant="default" size="sm" onClick={handleSave} disabled={saving}
+          style={{ ...indigoPrimaryBtn, opacity: saving ? 0.6 : 1 }}>
+          {saving ? "Saving..." : saved ? "Saved" : "Save"}
+        </Button>
+        <span style={{ fontFamily: font.ui, fontSize: 12, color: c.inkSoft }}>{rows.length} / {MAX_PORTFOLIO_LINKS}</span>
+      </div>
+    </div>
+  );
+});
+
 
 /* ─── Usage this month ─── */
 interface UsageRow { count: number; cap: number | null }

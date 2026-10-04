@@ -9,6 +9,7 @@ import {
   FlatSection,
   AccountSection,
   PlanUsageSection,
+  PortfolioLinksSection,
   DangerZoneSection,
 } from "./settingsSections";
 
@@ -95,6 +96,14 @@ export default function SettingsPage() {
             resetLoading={resetLoading} resetSent={resetSent}
             handlePasswordReset={handlePasswordReset}
             isOAuthOnly={authUser?.signedInVia === "google"}
+          />
+        </FlatSection>
+
+        <FlatSection title="Portfolio & work samples">
+          <PortfolioLinksSection
+            portfolioLinks={authUser?.portfolioLinks}
+            authUpdateUser={authUpdateUser}
+            showToast={showToast}
           />
         </FlatSection>
 

@@ -45,7 +45,39 @@ export const ALLOWED_COLUMNS = new Set<string>([
   "session_length",
   "feedback_style",
   "is_profile_public",
+  "portfolio_links",
 ]);
+
+/** Max portfolio links a candidate can attach — enough for GitHub, Behance,
+ *  a personal site, etc. without turning the profile into a link farm. */
+const MAX_PORTFOLIO_LINKS = 5;
+
+/**
+ * Validates the shape of each portfolio link so only well-formed,
+ * candidate-entered { title, url } pairs ever reach the DB (and, from
+ * there, an employer's screen). Malformed items are dropped rather than
+ * rejecting the whole update — a typo in one link shouldn't block the
+ * other four from saving.
+ */
+export function sanitizePortfolioLinks(raw: unknown): Array<{ title: string; url: string }> {
+  if (!Array.isArray(raw)) return [];
+  const out: Array<{ title: string; url: string }> = [];
+  for (const item of raw) {
+    if (out.length >= MAX_PORTFOLIO_LINKS) break;
+    if (!item || typeof item !== "object") continue;
+    const title = typeof (item as Record<string, unknown>).title === "string"
+      ? (item as Record<string, unknown>).title as string
+      : "";
+    const url = typeof (item as Record<string, unknown>).url === "string"
+      ? (item as Record<string, unknown>).url as string
+      : "";
+    const trimmedTitle = title.trim().slice(0, 120);
+    const trimmedUrl = url.trim().slice(0, 500);
+    if (!trimmedTitle || !/^https?:\/\//i.test(trimmedUrl)) continue;
+    out.push({ title: trimmedTitle, url: trimmedUrl });
+  }
+  return out;
+}
 
 export interface ProfileUpdate {
   [key: string]: unknown;
@@ -56,6 +88,10 @@ export function sanitizeUpdate(raw: unknown): ProfileUpdate {
   const out: ProfileUpdate = {};
   for (const [key, value] of Object.entries(raw as Record<string, unknown>)) {
     if (!ALLOWED_COLUMNS.has(key)) continue;
+    if (key === "portfolio_links") {
+      out[key] = sanitizePortfolioLinks(value);
+      continue;
+    }
     // Cap string fields at reasonable sizes.
     if (typeof value === "string") {
       const max = key === "resume_text" ? 50000 : key === "resume_file_name" ? 255 : 500;

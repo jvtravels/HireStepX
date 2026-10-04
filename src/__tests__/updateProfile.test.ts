@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { sanitizeUpdate, ALLOWED_COLUMNS, stampResumeParsedAt } from "../../server-handlers/update-profile";
+import { sanitizeUpdate, ALLOWED_COLUMNS, stampResumeParsedAt, sanitizePortfolioLinks } from "../../server-handlers/update-profile";
 
 /**
  * sanitizeUpdate is the allow-list filter that stands between an
@@ -92,6 +92,7 @@ describe("sanitizeUpdate", () => {
       "is_profile_public",
       "learning_style",
       "name",
+      "portfolio_links",
       "practice_timestamps",
       "preferred_session_length",
       "resume_data",
@@ -108,6 +109,77 @@ describe("sanitizeUpdate", () => {
     const result = sanitizeUpdate({ id: "attacker-user-id", name: "Jay" });
     expect("id" in result).toBe(false);
     expect(result.name).toBe("Jay");
+  });
+
+  it("validates portfolio_links items through sanitizePortfolioLinks rather than passing the raw array", () => {
+    const result = sanitizeUpdate({
+      portfolio_links: [
+        { title: "My GitHub", url: "https://github.com/jay" },
+        { title: "Bad one", url: "javascript:alert(1)" },
+      ],
+    });
+    expect(result.portfolio_links).toEqual([{ title: "My GitHub", url: "https://github.com/jay" }]);
+  });
+});
+
+/**
+ * sanitizePortfolioLinks is the only thing standing between a candidate's
+ * raw input and what an employer sees as "proof of work" — it must only
+ * ever pass through real, well-formed, candidate-entered links.
+ */
+describe("sanitizePortfolioLinks", () => {
+  it("keeps well-formed http(s) links with a title", () => {
+    const result = sanitizePortfolioLinks([
+      { title: "Portfolio site", url: "https://jay.dev" },
+      { title: "GitHub", url: "http://github.com/jay" },
+    ]);
+    expect(result).toEqual([
+      { title: "Portfolio site", url: "https://jay.dev" },
+      { title: "GitHub", url: "http://github.com/jay" },
+    ]);
+  });
+
+  it("drops items with a non-http(s) url (javascript:, data:, bare strings)", () => {
+    const result = sanitizePortfolioLinks([
+      { title: "XSS attempt", url: "javascript:alert(1)" },
+      { title: "Data URI", url: "data:text/html,<script>1</script>" },
+      { title: "No protocol", url: "github.com/jay" },
+    ]);
+    expect(result).toEqual([]);
+  });
+
+  it("drops items with an empty or missing title", () => {
+    const result = sanitizePortfolioLinks([
+      { title: "", url: "https://jay.dev" },
+      { title: "   ", url: "https://jay.dev" },
+      { url: "https://jay.dev" },
+    ]);
+    expect(result).toEqual([]);
+  });
+
+  it("caps at 5 links, dropping the rest", () => {
+    const many = Array.from({ length: 8 }, (_, i) => ({ title: `Link ${i}`, url: `https://example.com/${i}` }));
+    const result = sanitizePortfolioLinks(many);
+    expect(result).toHaveLength(5);
+    expect(result[0].title).toBe("Link 0");
+    expect(result[4].title).toBe("Link 4");
+  });
+
+  it("trims and caps title/url length", () => {
+    const result = sanitizePortfolioLinks([
+      { title: `  ${"x".repeat(200)}  `, url: `https://example.com/${"y".repeat(600)}` },
+    ]);
+    expect(result[0].title.length).toBe(120);
+    expect(result[0].url.length).toBe(500);
+  });
+
+  it("ignores non-array input and non-object items", () => {
+    expect(sanitizePortfolioLinks(null)).toEqual([]);
+    expect(sanitizePortfolioLinks(undefined)).toEqual([]);
+    expect(sanitizePortfolioLinks("not an array")).toEqual([]);
+    expect(sanitizePortfolioLinks([null, "string", 42, { title: "ok", url: "https://a.com" }])).toEqual([
+      { title: "ok", url: "https://a.com" },
+    ]);
   });
 });
 

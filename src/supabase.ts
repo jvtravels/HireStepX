@@ -119,6 +119,9 @@ export interface Profile {
   /** UUID pointer to resume_versions.id — the canonical version row
       whose AI parse populated resume_data. Soft FK (no DB constraint). */
   resume_version_id: string | null;
+  /** Candidate-submitted proof-of-work links (GitHub, portfolio site, etc).
+      Only what the candidate entered — never synthesized. */
+  portfolio_links?: Array<{ title: string; url: string }> | null;
   practice_timestamps: string[];
   avatar_url: string;
   subscription_tier: "free" | "starter" | "team";

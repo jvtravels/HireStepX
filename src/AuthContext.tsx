@@ -564,6 +564,10 @@ export interface User {
   referralCode?: string;
   emailVerified: boolean;
   deletedAt?: string | null;
+  /** Candidate-submitted proof-of-work links (GitHub, portfolio site, case
+   *  studies, etc). Only what the candidate entered — never synthesized —
+   *  surfaced to employers alongside practice-session evidence. */
+  portfolioLinks?: Array<{ title: string; url: string }>;
 }
 
 export interface AuthContextType {
@@ -623,6 +627,7 @@ export function profileToUser(profile: Profile, session: Session): User {
     // undefined — callers use isAiResume/isFallbackResume to narrow.
     resumeData: (profile.resume_data as StoredResume | null | undefined) || undefined,
     resumeVersionId: (profile.resume_version_id as string | null | undefined) || null,
+    portfolioLinks: (profile.portfolio_links as Array<{ title: string; url: string }> | null | undefined) || undefined,
     subscriptionTier: (() => {
       const tier = (profile.subscription_tier as "free" | "starter" | "team") || "free";
       // Auto-downgrade expired subscriptions
@@ -1919,6 +1924,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (updates.practiceTimestamps !== undefined) payload.practice_timestamps = updates.practiceTimestamps;
     if (updates.cancelAtPeriodEnd !== undefined) payload.cancel_at_period_end = updates.cancelAtPeriodEnd;
     if (updates.hasCompletedOnboarding !== undefined) payload.has_completed_onboarding = updates.hasCompletedOnboarding;
+    if (updates.portfolioLinks !== undefined) payload.portfolio_links = updates.portfolioLinks;
 
     if (Object.keys(payload).length === 0) return;
 

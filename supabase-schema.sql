@@ -39,11 +39,17 @@ create table if not exists profiles (
   -- FK (no foreign key constraint) so a deleted version doesn't cascade
   -- to the profile; readers should tolerate dangling pointers.
   resume_version_id uuid,
+  -- Candidate-submitted proof-of-work links (GitHub, Behance, Notion,
+  -- personal site, etc). Array of { title, url }, capped and validated at
+  -- the update-profile API boundary (ALLOWED_COLUMNS + sanitizePortfolioLinks)
+  -- — never synthesized or inferred, only what the candidate entered.
+  portfolio_links jsonb default '[]'::jsonb,
   created_at timestamptz default now()
 );
 
 -- Backfill column on existing deployments. Idempotent — safe to re-run.
 alter table profiles add column if not exists resume_version_id uuid;
+alter table profiles add column if not exists portfolio_links jsonb default '[]'::jsonb;
 
 -- 2. Interview sessions
 create table if not exists sessions (
