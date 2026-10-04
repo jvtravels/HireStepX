@@ -195,7 +195,7 @@ function CandidateAvatar({ name, unlocked }: { name: string; unlocked: boolean }
   return (
     <Avatar>
       <AvatarFallback style={{ background: unlocked ? t.indigo100 : t.creamSoft, color: unlocked ? t.indigoDeep : t.inkFaint, fontFamily: f.sans, fontWeight: 700 }}>
-        {unlocked ? initials(name) : "?"}
+        {unlocked ? initials(name) : <LockIcon size={14} aria-hidden="true" />}
       </AvatarFallback>
     </Avatar>
   );
