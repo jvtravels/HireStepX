@@ -3,6 +3,7 @@ import {
   scoreCandidateMatch,
   classifyRequirementStatus,
   rankAndCap,
+  hasMatchSignal,
   extractResumeLocation,
   extractSkills,
   describeMatch,
@@ -111,6 +112,28 @@ describe("rankAndCap", () => {
   it("caps the result at the given size", () => {
     const scored = Array.from({ length: 30 }, (_, i) => ({ candidateId: String(i), matchScore: 80, rosterScore: 50 }));
     expect(rankAndCap(scored, 5)).toHaveLength(5);
+  });
+});
+
+describe("hasMatchSignal", () => {
+  it("is true when only target_role is set", () => {
+    expect(hasMatchSignal(candidate({ target_role: "Backend Engineer", resume_data: null }))).toBe(true);
+  });
+
+  it("is true when only resume_data is set", () => {
+    expect(hasMatchSignal(candidate({ target_role: null, resume_data: { skills: ["Go"] } }))).toBe(true);
+  });
+
+  it("is false when neither target_role nor resume_data is set", () => {
+    expect(hasMatchSignal(candidate({ target_role: null, resume_data: null }))).toBe(false);
+  });
+
+  it("is false when target_role is whitespace-only and resume_data is unset", () => {
+    expect(hasMatchSignal(candidate({ target_role: "   ", resume_data: null }))).toBe(false);
+  });
+
+  it("is true when both are set", () => {
+    expect(hasMatchSignal(candidate())).toBe(true);
   });
 });
 

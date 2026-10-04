@@ -585,7 +585,7 @@ export function ResumeLoadingState({
             {onTargetRoleChange && (
               <div onBlur={onTargetRoleBlur}>
                 <Field
-                  label="Target role (optional)"
+                  label="Target role"
                   type="text"
                   name="target-role"
                   value={targetRole || ""}
@@ -681,6 +681,21 @@ export function ProfileReadyState({
   useEffect(() => {
     setRoleDraft(targetRole || "");
   }, [targetRole]);
+  // Target role drives 55% of the employer-matching fit score — an empty
+  // one guarantees this candidate can never surface in a job's Top Matches
+  // no matter how strong the resume is. Required before either CTA
+  // proceeds; a blocked click opens the inline editor instead of silently
+  // doing nothing.
+  const [roleMissingHint, setRoleMissingHint] = useState(false);
+  const roleRequired = !targetRole || !targetRole.trim();
+  const requireRoleThen = (fn?: () => void) => () => {
+    if (roleRequired) {
+      setRoleEditing(true);
+      setRoleMissingHint(true);
+      return;
+    }
+    fn?.();
+  };
 
   // Score count-up (rAF, reduced-motion respected).
   const targetScore = aiProfile.resumeScore;
@@ -786,7 +801,7 @@ export function ProfileReadyState({
                 blur commits. Lets users override the AI's role guess
                 without re-analyzing. */}
             {onTargetRoleChange && (
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14, flexWrap: "wrap" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: roleMissingHint && roleRequired ? 4 : 14, flexWrap: "wrap" }}>
                 <span style={{ fontFamily: f.mono, fontSize: 10, letterSpacing: "0.10em", textTransform: "uppercase", color: t.inkFaint }}>
                   Target role
                 </span>
@@ -801,6 +816,7 @@ export function ProfileReadyState({
                     onBlur={() => {
                       setRoleEditing(false);
                       if (roleDraft !== (targetRole || "")) onTargetRoleChange(roleDraft);
+                      if (roleDraft.trim()) setRoleMissingHint(false);
                     }}
                     onKeyDown={(e) => {
                       if (e.key === "Enter") (e.currentTarget as HTMLInputElement).blur();
@@ -849,6 +865,15 @@ export function ProfileReadyState({
                   </Button>
                 )}
               </div>
+            )}
+            {roleMissingHint && roleRequired && (
+              <p
+                role="status"
+                aria-live="polite"
+                style={{ marginTop: 0, marginBottom: 14, fontFamily: f.sans, fontSize: 12, color: t.copper, lineHeight: 1.4 }}
+              >
+                Add a target role to continue — it's how we match you to the right interview questions and job openings.
+              </p>
             )}
 
             {aiProfile.summary && (
@@ -905,8 +930,8 @@ export function ProfileReadyState({
             tone={scoreTone as "success" | "warning" | "error" | "muted"}
             yearsExperience={aiProfile.yearsExperience}
             industries={aiProfile.industries}
-            onStartInterview={onStartInterview}
-            onGoToDashboard={onGoToDashboard}
+            onStartInterview={onStartInterview && requireRoleThen(onStartInterview)}
+            onGoToDashboard={onGoToDashboard && requireRoleThen(onGoToDashboard)}
             starting={starting}
           />
         </div>

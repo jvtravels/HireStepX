@@ -427,7 +427,7 @@ export default function Onboarding() {
     const handler = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement)?.tagName;
       if (tag === "INPUT" || tag === "TEXTAREA" || tag === "BUTTON") return;
-      if (e.key === "Enter" && resumeParsed && aiPhase === "done" && userName.trim()) {
+      if (e.key === "Enter" && resumeParsed && aiPhase === "done" && userName.trim() && targetRole.trim()) {
         e.preventDefault();
         handleStart();
       }
@@ -743,7 +743,7 @@ export default function Onboarding() {
       if (e.key === "u" || e.key === "U") {
         if (!resumeParsing) { e.preventDefault(); fileInputRef.current?.click(); }
       } else if (e.key === "Enter") {
-        if (resumeParsed && aiPhase === "done" && userName.trim() && !starting) {
+        if (resumeParsed && aiPhase === "done" && userName.trim() && targetRole.trim() && !starting) {
           e.preventDefault();
           handleStartInterview();
         }
@@ -758,7 +758,11 @@ export default function Onboarding() {
   const isBusy = resumeParsing || aiPhase === "analyzing";
   const noResume = !resumeParsed && !resumeParsing && aiPhase !== "analyzing";
   const nameEmpty = aiPhase === "done" && !userName.trim();
-  const isContinueDisabled = isBusy || noResume || nameEmpty;
+  // Required (not just suggested) once a resume is in — roleOverlap drives 55%
+  // of the employer-matching fit score, and an empty target_role guarantees a
+  // candidate can never clear it regardless of resume quality.
+  const roleEmpty = aiPhase === "done" && !targetRole.trim();
+  const isContinueDisabled = isBusy || noResume || nameEmpty || roleEmpty;
 
   const handleReanalyze = () => {
     setAiPhase("analyzing");

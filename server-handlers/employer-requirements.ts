@@ -23,11 +23,13 @@ import {
   scoreCandidateMatch,
   classifyRequirementStatus,
   rankAndCap,
+  hasMatchSignal,
   STRONG_MATCH_THRESHOLD,
   extractSkills,
   type CandidatePoolRow,
 } from "./_requirement-match-helpers";
 import { extractResumeDetail } from "./_resume-detail-helpers";
+import { llmRerankCandidates, blendScore } from "./_requirement-match-llm";
 import {
   asBoundedString,
   asBoundedStringArray,
@@ -365,7 +367,10 @@ export async function runMatching(requirementId: string, req: { title: string; l
     }>;
     // Candidates already touched (unlocked, or with pipeline progress) keep
     // their existing match row untouched — they're excluded from re-scoring.
-    const pool = poolRows.filter((p) => !preservedCandidateIds.has(p.id));
+    // hasMatchSignal additionally drops zero-signal profiles (no target_role,
+    // no resume_data) outright — see its doc comment in
+    // _requirement-match-helpers.ts.
+    const pool = poolRows.filter((p) => !preservedCandidateIds.has(p.id) && hasMatchSignal(p));
 
     const scores = new Map<string, number>();
     const sessionCounts = new Map<string, number>();
@@ -397,7 +402,21 @@ export async function runMatching(requirementId: string, req: { title: string; l
     });
 
     const scored = candidateRows.map((c) => scoreCandidateMatch(c, req));
-    const ranked = rankAndCap(scored);
+    const deterministicRanked = rankAndCap(scored);
+
+    // LLM re-ranking augments only the already-capped shortlist (cheap: one
+    // call per requirement create/edit, not one per candidate). Best-effort —
+    // llmRerankCandidates returns an empty map on any failure, in which case
+    // blendScore is a no-op and `ranked` is identical to the deterministic pass.
+    const byId = new Map(candidateRows.map((c) => [c.id, c]));
+    const shortlistCandidates = deterministicRanked
+      .map((m) => byId.get(m.candidateId))
+      .filter((c): c is CandidatePoolRow => !!c);
+    const llmScores = await llmRerankCandidates(req, shortlistCandidates, { userId: ownerUserId });
+    const ranked = deterministicRanked.map((m) => ({
+      ...m,
+      matchScore: blendScore(m.matchScore, llmScores.get(m.candidateId)),
+    }));
 
     if (ranked.length > 0) {
       const rows = ranked.map((m) => ({

@@ -75,6 +75,16 @@ export function extractResumeLocation(resumeData: unknown): string {
   return typeof loc === "string" ? loc : "";
 }
 
+/** A profile with neither a target_role nor resume_data has nothing for
+    roleOverlap/skillOverlap to match against — it's pure noise in a
+    requirement's shortlist, not a real candidate to screen (see the
+    rankAndCap floor-disable note below). Candidate-pool callers should
+    exclude these before scoring rather than let them occupy slots in the
+    capped, ranked result with a meaningless low score. */
+export function hasMatchSignal(candidate: Pick<CandidatePoolRow, "target_role" | "resume_data">): boolean {
+  return !!(candidate.target_role && candidate.target_role.trim()) || candidate.resume_data != null;
+}
+
 function fitInputs(candidate: Pick<CandidatePoolRow, "target_role" | "resume_data">, req: RequirementInput) {
   const reqTokens = new Set([...tokenize(req.title), ...tokenize(req.description)]);
   const roleTokens = new Set(tokenize(candidate.target_role || ""));
