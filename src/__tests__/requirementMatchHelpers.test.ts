@@ -112,6 +112,35 @@ describe("scoreCandidateMatch", () => {
     expect(relevant.matchScore).toBeGreaterThan(sameButNoRoster.matchScore);
   });
 
+  it("gives no roster credit to a candidate with zero completed sessions, even past the relevance floor", () => {
+    // Regression for a 2026-10-04 production report: a candidate with zero
+    // practice sessions (avg_score null, falling back to a "neutral" 50)
+    // outranked candidates with real, lower-scoring practice history purely
+    // because the neutral default was credited as if it were evidence.
+    const noEvidence = scoreCandidateMatch(candidate({ avg_score: null, sessions_completed: 0 }), req);
+    const withWeakEvidence = scoreCandidateMatch(candidate({ avg_score: 40, sessions_completed: 1 }), req);
+    expect(withWeakEvidence.matchScore).toBeGreaterThan(noEvidence.matchScore);
+  });
+
+  it("ranks a candidate with real (even modest) practice evidence above a same-fit candidate with none", () => {
+    const salesReq = {
+      title: "Sales Executive",
+      location: "Mumbai",
+      description: "Drive new business across SMB and mid-market accounts, manage a CRM pipeline.",
+    };
+    // Mirrors the production case: neither candidate has a strong role/skill
+    // match (weak, generic overlap only), but one has actually practiced.
+    const zeroEvidenceCandidate = scoreCandidateMatch(
+      candidate({ target_role: "", resume_data: { skills: ["Business Transformation", "Growth"] }, avg_score: null, sessions_completed: 0 }),
+      salesReq,
+    );
+    const realEvidenceCandidate = scoreCandidateMatch(
+      candidate({ target_role: "Customer Support Executive", resume_data: { skills: ["Customer Service", "Marketing"] }, avg_score: 92, sessions_completed: 1 }),
+      salesReq,
+    );
+    expect(realEvidenceCandidate.matchScore).toBeGreaterThan(zeroEvidenceCandidate.matchScore);
+  });
+
   it("does not mark a candidate relevant on a location match alone", () => {
     const salesReq = {
       title: "Sales Executive",

@@ -101,8 +101,8 @@ describe("llmRerankCandidates", () => {
 });
 
 describe("blendScore", () => {
-  it("averages the deterministic and LLM scores 50/50", () => {
-    expect(blendScore(60, 80)).toBe(70);
+  it("weights the deterministic score over the LLM's opinion (65/35)", () => {
+    expect(blendScore(60, 80)).toBe(67);
   });
 
   it("falls back to the deterministic score when the LLM has no opinion", () => {

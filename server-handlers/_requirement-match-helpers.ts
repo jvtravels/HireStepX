@@ -171,7 +171,11 @@ function fitInputs(candidate: Pick<CandidatePoolRow, "target_role" | "resume_dat
   const reqLocation = req.location.toLowerCase();
   const candidateLocation = extractResumeLocation(candidate.resume_data).toLowerCase();
   const isRemote = reqLocation.includes("remote");
-  let locationFit = 0.6; // neutral when we can't tell
+  // 2026-10-04: lowered the "can't tell" default from 0.6 to 0.4 — missing
+  // location data isn't positive signal and shouldn't read as closer to a
+  // real match (1) than a real mismatch (0.35). See the fitComponent weight
+  // comment below for why this axis is capped low regardless.
+  let locationFit = 0.4;
   if (isRemote) {
     locationFit = 1;
   } else if (reqLocation && candidateLocation) {
@@ -207,7 +211,11 @@ export function scoreCandidateMatch(candidate: CandidatePoolRow, req: Requiremen
   const recencyPenalty = candidate.last_active_days_ago > 30 ? 0.85 : 1;
   const expFit = experienceFit(candidate.years_experience, req.experienceMin, req.experienceMax);
 
-  const fitComponent = roleOverlap * 0.55 + skillOverlap * 0.3 + locationFit * 0.15;
+  /* Skill/role fit outweighs location — location moved from 0.15 to 0.08 so
+     it can never meaningfully outrank real skill/role signal the way a
+     neutral-default locationFit previously could. roleOverlap/skillOverlap
+     absorb the difference (0.55->0.58, 0.30->0.34). */
+  const fitComponent = roleOverlap * 0.58 + skillOverlap * 0.34 + locationFit * 0.08;
   /* Must come from actual role/skill overlap, never from locationFit alone —
      a candidate sharing the employer's city but nothing else about the job
      (e.g. a Design Engineer living in the same city as a Sales Executive
@@ -230,7 +238,17 @@ export function scoreCandidateMatch(candidate: CandidatePoolRow, req: Requiremen
      Expansion" alongside "Business Transformation"). */
   const RELEVANCE_RATIO_FLOOR = 0.15;
   const hasRelevance = roleOverlap >= RELEVANCE_RATIO_FLOOR || skillOverlap >= RELEVANCE_RATIO_FLOOR;
-  const rosterCredit = hasRelevance ? rosterScore * 0.2 + activityBoost * 10 : 0;
+  /* rosterScore defaults to 50 (candidate.avg_score ?? 50) for anyone with
+     zero completed practice sessions — a "neutral, unknown" placeholder,
+     not evidence of being an average performer. Crediting that default as
+     if it were real roster-performance evidence let a candidate with
+     literally zero practice history (zero evidence, per a 2026-10-04
+     employer report) outrank candidates who'd actually practiced and
+     scored lower on avg_score but had real sessions behind that number.
+     Only a candidate with at least one completed session gets any roster
+     credit; the activity term is already naturally 0 for zero sessions. */
+  const hasRosterEvidence = candidate.sessions_completed > 0;
+  const rosterCredit = hasRelevance && hasRosterEvidence ? rosterScore * 0.2 + activityBoost * 10 : 0;
   const matchScore = Math.round(
     clamp(fitComponent * 70 + rosterCredit, 0, 100) * recencyPenalty * expFit,
   );
