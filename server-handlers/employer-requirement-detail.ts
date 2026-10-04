@@ -276,10 +276,10 @@ async function handleStatusAction(
 ): Promise<Response> {
   try {
     const existingRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&employer_id=eq.${encodeURIComponent(userId)}&select=id,status,title,location,description`,
+      `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&employer_id=eq.${encodeURIComponent(userId)}&select=id,status,title,location,description,skills,experience_min,experience_max`,
       { headers: serviceHeaders() },
     );
-    const existingRows = (await existingRes.json().catch(() => [])) as Array<{ id: string; status: string; title: string; location: string; description: string | null }>;
+    const existingRows = (await existingRes.json().catch(() => [])) as Array<{ id: string; status: string; title: string; location: string; description: string | null; skills: string[] | null; experience_min: number | null; experience_max: number | null }>;
     if (!existingRes.ok || !existingRows[0]) {
       return new Response(JSON.stringify({ error: "Requirement not found" }), { status: 404, headers });
     }
@@ -335,7 +335,18 @@ async function handleStatusAction(
 
     let finalStatus = updated[0]?.status ?? nextStatus;
     if (action === "reopen") {
-      finalStatus = await runMatching(requirementId, { title: current.title, location: current.location, description: current.description || "" }, userId);
+      finalStatus = await runMatching(
+        requirementId,
+        {
+          title: current.title,
+          location: current.location,
+          description: current.description || "",
+          skills: current.skills ?? [],
+          experienceMin: current.experience_min,
+          experienceMax: current.experience_max,
+        },
+        userId,
+      );
     }
 
     return new Response(JSON.stringify({ id: requirementId, status: finalStatus }), { status: 200, headers });
@@ -523,7 +534,7 @@ async function handlePatch(req: Request, requirementId: string, userId: string, 
     const updated = (await patchRes.json()) as RequirementRow[];
     const requirement = updated[0];
 
-    const finalStatus = await runMatching(requirementId, { title, location, description }, userId);
+    const finalStatus = await runMatching(requirementId, { title, location, description, skills, experienceMin, experienceMax }, userId);
     await logRequirementActivity(requirementId, userId, "updated");
 
     return new Response(

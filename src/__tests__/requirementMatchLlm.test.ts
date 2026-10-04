@@ -81,6 +81,23 @@ describe("llmRerankCandidates", () => {
     const metaArg = callLLMMock.mock.calls[0][2];
     expect(metaArg.userId).toBe("user-123");
   });
+
+  it("includes the requirement's structured skills and experience band in the prompt", async () => {
+    callLLMMock.mockResolvedValue({ text: "[]", model: "gemini" });
+    const withSkills: RequirementInput = { ...req, skills: ["Node.js", "Postgres"], experienceMin: 2, experienceMax: 5 };
+    await llmRerankCandidates(withSkills, [candidate()], {});
+    const prompt = callLLMMock.mock.calls[0][0].prompt as string;
+    expect(prompt).toContain("Node.js");
+    expect(prompt).toContain("2-5 years");
+  });
+
+  it("degrades gracefully when skills/experience are omitted", async () => {
+    callLLMMock.mockResolvedValue({ text: "[]", model: "gemini" });
+    await llmRerankCandidates(req, [candidate()], {});
+    const prompt = callLLMMock.mock.calls[0][0].prompt as string;
+    expect(prompt).toContain("not specified");
+    expect(prompt).toContain("any-any years");
+  });
 });
 
 describe("blendScore", () => {

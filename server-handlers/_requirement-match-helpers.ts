@@ -13,12 +13,25 @@ export interface CandidatePoolRow {
   avg_score: number | null;
   sessions_completed: number;
   last_active_days_ago: number;
+  /** From extractResumeDetail(resume_data).yearsExperience — null for
+      fallback (regex-parsed) resumes, which never populate it. Callers
+      building CandidatePoolRow should pass that through rather than
+      re-deriving it here, since _resume-detail-helpers.ts already owns
+      that parsing. */
+  years_experience?: number | null;
 }
 
 export interface RequirementInput {
   title: string;
   location: string;
   description: string;
+  /** The employer's structured skill picks (e.g. ["React", "Node.js"]) —
+      distinct from whatever skill words happen to appear in the free-text
+      title/description. Optional only for callers (tests, older call
+      sites) that haven't been updated yet; treated as empty when absent. */
+  skills?: string[];
+  experienceMin?: number | null;
+  experienceMax?: number | null;
 }
 
 export interface ScoredCandidate {
@@ -39,8 +52,53 @@ export interface MatchBreakdown {
   locationMatch: number;
 }
 
-function tokenize(text: string): string[] {
-  return (text || "").toLowerCase().match(/[a-z0-9+.#]+/g) || [];
+/* Cheap suffix-stripping, not a real stemmer — just enough to fold common
+   plural/gerund/ing variants ("prototyping" / "prototypes" -> "prototyp",
+   "systems" -> "system") onto the same token so skill/role overlap isn't
+   defeated by surface-form mismatches. Words ending "ss" (e.g. "business")
+   are excluded from the plural-"s" strip so they aren't corrupted. Words
+   ending "ering" (e.g. "engineering") are excluded from the "-ing" strip:
+   unlike "prototyping" -> "prototype", "-ering" nouns name a field/activity
+   rather than an in-progress verb, and folding them onto their "-er" actor
+   noun ("engineering" -> "engineer") produces false role-overlap hits —
+   any JD that merely mentions working "with engineering" would otherwise
+   look like a role match for every Software Engineer in the pool. */
+function stem(token: string): string {
+  if (token.length > 4 && token.endsWith("ing") && !token.endsWith("ering")) return token.slice(0, -3);
+  if (token.length > 3 && token.endsWith("ies")) return token.slice(0, -3) + "y";
+  if (token.length > 3 && token.endsWith("es") && !token.endsWith("ss")) return token.slice(0, -2);
+  if (token.length > 3 && token.endsWith("s") && !token.endsWith("ss")) return token.slice(0, -1);
+  return token;
+}
+
+/* Generic connective/filler words that show up in almost any job
+   description ("own", "ship", "closely", "partner", ...) and carry no
+   role/skill signal — left in, they inflate roleOverlap/skillOverlap for
+   any candidate whose target_role or skills happen to share one, which is
+   pure noise rather than a real match. Only applied to requirement text
+   (title/description), never to a candidate's own (already terse)
+   target_role/skills tokens, which have no filler to strip. */
+const STOPWORDS = new Set([
+  "a", "an", "the", "and", "or", "of", "to", "in", "on", "for", "with", "at", "by", "from",
+  "is", "are", "was", "were", "be", "been", "being", "as", "we", "you", "your", "our", "us",
+  "ll", "re", "ve", "it", "its", "this", "that", "these", "those", "across", "into", "through",
+  "own", "owns", "ship", "ships", "closely", "partner", "partners", "partnering", "fast", "moving",
+  "looking", "hiring", "drive", "driving", "build", "building", "work", "working", "end", "full",
+  "cycle", "core", "new", "team", "teams", "startup", "environment", "together",
+  // Generic seniority/rank words that appear as a suffix on almost any
+  // Indian job title ("Sales Executive", "Customer Support Executive",
+  // "Marketing Executive", ...) and so carry no domain signal on their
+  // own — without stripping these, a candidate from a totally unrelated
+  // field can clear a meaningful roleOverlap purely by sharing the rank
+  // word, not the actual role.
+  "executive", "officer", "associate", "specialist", "manager", "lead", "senior", "junior",
+  "intern", "trainee", "head", "chief",
+]);
+
+function tokenize(text: string, opts: { stripStopwords?: boolean } = {}): string[] {
+  const words = (text || "").toLowerCase().match(/[a-z0-9+.#]+/g) || [];
+  const stemmed = words.map(stem);
+  return opts.stripStopwords ? stemmed.filter((w) => !STOPWORDS.has(w)) : stemmed;
 }
 
 function clamp(n: number, lo: number, hi: number): number {
@@ -86,12 +144,21 @@ export function hasMatchSignal(candidate: Pick<CandidatePoolRow, "target_role" |
 }
 
 function fitInputs(candidate: Pick<CandidatePoolRow, "target_role" | "resume_data">, req: RequirementInput) {
-  const reqTokens = new Set([...tokenize(req.title), ...tokenize(req.description)]);
+  const reqTokens = new Set([
+    ...tokenize(req.title, { stripStopwords: true }),
+    ...tokenize(req.description, { stripStopwords: true }),
+  ]);
+  // The employer's structured skill picks are the single most reliable
+  // signal for skillOverlap — free-text title/description often omit them
+  // (a "Sales Executive" posting may never spell out "CRM" or "B2B Sales"
+  // in prose even though the employer picked those exact skill chips), so
+  // they're folded into the skill-matching token set on top of the prose.
+  const reqSkillTokens = new Set([...reqTokens, ...(req.skills || []).flatMap((s) => tokenize(s))]);
   const roleTokens = new Set(tokenize(candidate.target_role || ""));
-  const skillTokens = new Set(extractSkills(candidate.resume_data).flatMap(tokenize));
+  const skillTokens = new Set(extractSkills(candidate.resume_data).flatMap((s) => tokenize(s)));
 
   const roleOverlap = intersectionRatio(reqTokens, roleTokens);
-  const skillOverlap = intersectionRatio(reqTokens, skillTokens);
+  const skillOverlap = intersectionRatio(reqSkillTokens, skillTokens);
 
   const reqLocation = req.location.toLowerCase();
   const candidateLocation = extractResumeLocation(candidate.resume_data).toLowerCase();
@@ -107,6 +174,29 @@ function fitInputs(candidate: Pick<CandidatePoolRow, "target_role" | "resume_dat
   return { roleOverlap, skillOverlap, locationFit };
 }
 
+/* A candidate outside the requirement's experience band isn't automatically
+   wrong — "min 2, max 5" doesn't hard-disqualify a 6-year candidate the way
+   zero role/skill overlap should — so this is a penalty, not an exclusion,
+   and a tolerance band absorbs boundary noise. Unknown experience (fallback-
+   parsed resumes never populate yearsExperience) is treated as neutral: we
+   have no basis to penalize what we can't read. */
+function experienceFit(yearsExperience: number | null | undefined, min: number | null | undefined, max: number | null | undefined): number {
+  if (yearsExperience == null || (min == null && max == null)) return 1;
+  const tolerance = 1;
+  const lo = (min ?? 0) - tolerance;
+  const hi = (max ?? Infinity) + tolerance;
+  return yearsExperience >= lo && yearsExperience <= hi ? 1 : 0.6;
+}
+
+/** Below this fitComponent, a candidate has essentially no real role/skill
+    relevance to the requirement — the ~0.09 a candidate gets from location-
+    only neutral fit (0.6 * 0.15) sits well under it. Without this floor,
+    roster/activity (session-performance, practice frequency — signals about
+    the candidate as an interview-practice user, not as a fit for *this* job)
+    could carry an entirely irrelevant candidate to a respectable score, which
+    is exactly the "noise candidates crowd out real matches" failure mode. */
+const MIN_FIT_FOR_ROSTER_CREDIT = 0.15;
+
 /** Deterministic 0-100 fit score for one candidate against one requirement,
     plus the candidate's lifetime roster score (session-performance based,
     independent of this specific requirement). */
@@ -116,10 +206,12 @@ export function scoreCandidateMatch(candidate: CandidatePoolRow, req: Requiremen
   const rosterScore = Math.round(clamp(candidate.avg_score ?? 50, 0, 100));
   const activityBoost = clamp(candidate.sessions_completed, 0, 10) / 10;
   const recencyPenalty = candidate.last_active_days_ago > 30 ? 0.85 : 1;
+  const expFit = experienceFit(candidate.years_experience, req.experienceMin, req.experienceMax);
 
   const fitComponent = roleOverlap * 0.55 + skillOverlap * 0.3 + locationFit * 0.15;
+  const rosterCredit = fitComponent >= MIN_FIT_FOR_ROSTER_CREDIT ? rosterScore * 0.2 + activityBoost * 10 : 0;
   const matchScore = Math.round(
-    clamp(fitComponent * 70 + rosterScore * 0.2 + activityBoost * 10, 0, 100) * recencyPenalty,
+    clamp(fitComponent * 70 + rosterCredit, 0, 100) * recencyPenalty * expFit,
   );
 
   return { candidateId: candidate.id, matchScore: clamp(matchScore, 0, 100), rosterScore };
@@ -169,8 +261,22 @@ export type RequirementMatchStatus = "ready" | "partial" | "zero";
     (_employer-requirements-helpers.ts), and the requirement-detail page's
     ScoreChip / scoreTiers (src/employer/_atoms.tsx). Must stay in sync with
     those — a candidate the Jobs list calls "strong" but the detail page
-    colors as merely "fair" is the exact bug this constant exists to avoid. */
-export const STRONG_MATCH_THRESHOLD = 85;
+    colors as merely "fair" is the exact bug this constant exists to avoid.
+
+    2026-10-04: re-derived from a real-data recalibration, not picked. The
+    old value (85) was set for a formula that let roster/activity carry an
+    unrelated candidate to a high score regardless of real fit (see the
+    fit-floor/skills/stopword fixes above) — under that formula 85 was
+    reachable by noise, so it wasn't measuring quality at all. Re-scoring
+    the 3 real production requirements against the full candidate pool with
+    the corrected formula put every candidate with genuine direct-role or
+    real-skill alignment at 38-70, and every candidate without it at 31 or
+    below with a sharp drop to single digits past ~20 — including the
+    requirement (Sales Executive) whose pool has no real salesperson, which
+    correctly produces zero "strong" matches rather than a false one. 40
+    sits just above that top cluster's floor. Revisit once the candidate
+    pool grows enough to shift the distribution meaningfully. */
+export const STRONG_MATCH_THRESHOLD = 40;
 
 /** Classifies the overall requirement outcome from its scored candidates.
     `matches` is expected to already be floor-filtered (rankAndCap), so

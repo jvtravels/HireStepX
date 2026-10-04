@@ -79,6 +79,74 @@ describe("scoreCandidateMatch", () => {
     );
     expect(result.matchScore).toBeGreaterThanOrEqual(60);
   });
+
+  it("credits skill overlap against the requirement's structured skills, not just title/description prose", () => {
+    const skillsReq = { title: "Sales Executive", location: "Mumbai", description: "Drive new business for our team.", skills: ["B2B Sales", "CRM", "Negotiation"] };
+    const matchingSkills = scoreCandidateMatch(
+      candidate({ target_role: "Sales Executive", resume_data: { skills: ["B2B Sales", "CRM"], location: "Mumbai" } }),
+      skillsReq,
+    );
+    const noSkillsField = scoreCandidateMatch(
+      candidate({ target_role: "Sales Executive", resume_data: { skills: ["B2B Sales", "CRM"], location: "Mumbai" } }),
+      { ...skillsReq, skills: undefined },
+    );
+    expect(matchingSkills.matchScore).toBeGreaterThan(noSkillsField.matchScore);
+  });
+
+  it("gates roster/activity credit behind a minimum fit floor so an irrelevant candidate can't score well on activity alone", () => {
+    const irrelevant = scoreCandidateMatch(
+      candidate({
+        target_role: "Product Manager",
+        resume_data: { skills: ["Roadmapping", "Stakeholder Management"] },
+        avg_score: 95,
+        sessions_completed: 10,
+      }),
+      req,
+    );
+    expect(irrelevant.matchScore).toBeLessThan(30);
+  });
+
+  it("does not gate roster/activity credit for a candidate who clears the fit floor", () => {
+    const relevant = scoreCandidateMatch(candidate({ avg_score: 95, sessions_completed: 10 }), req);
+    const sameButNoRoster = scoreCandidateMatch(candidate({ avg_score: 50, sessions_completed: 0 }), req);
+    expect(relevant.matchScore).toBeGreaterThan(sameButNoRoster.matchScore);
+  });
+
+  it("applies a soft penalty when a candidate's experience is well outside the requirement's band", () => {
+    const bandedReq = { ...req, experienceMin: 5, experienceMax: 8 };
+    const junior = scoreCandidateMatch(candidate({ years_experience: 0 }), bandedReq);
+    const inBand = scoreCandidateMatch(candidate({ years_experience: 6 }), bandedReq);
+    expect(junior.matchScore).toBeLessThan(inBand.matchScore);
+  });
+
+  it("does not penalize unknown experience against an experience band", () => {
+    const bandedReq = { ...req, experienceMin: 5, experienceMax: 8 };
+    const unknown = scoreCandidateMatch(candidate({ years_experience: null }), bandedReq);
+    const inBand = scoreCandidateMatch(candidate({ years_experience: 6 }), bandedReq);
+    expect(unknown.matchScore).toBe(inBand.matchScore);
+  });
+
+  it("tolerates small overshoots at the edge of the experience band without penalty", () => {
+    const bandedReq = { ...req, experienceMin: 2, experienceMax: 5 };
+    const justOver = scoreCandidateMatch(candidate({ years_experience: 6 }), bandedReq);
+    const inBand = scoreCandidateMatch(candidate({ years_experience: 5 }), bandedReq);
+    expect(justOver.matchScore).toBe(inBand.matchScore);
+  });
+
+  it("matches plural/gerund skill variants via stemming (e.g. prototyping vs prototypes)", () => {
+    const designReq = { title: "Product Designer", location: "Bengaluru", description: "Own prototyping and design systems work.", skills: ["Prototyping", "Design Systems"] };
+    const result = scoreCandidateMatch(
+      candidate({ target_role: "Product Designer", resume_data: { skills: ["Prototypes", "Design System"], location: "Bengaluru" } }),
+      designReq,
+    );
+    expect(result.matchScore).toBeGreaterThanOrEqual(60);
+  });
+
+  it("does not corrupt words ending in 'ss' via the plural-stripping stem (e.g. business)", () => {
+    const bizReq = { title: "Business Analyst", location: "Remote", description: "Own core business processes." };
+    const result = scoreCandidateMatch(candidate({ target_role: "Business Analyst", resume_data: {} }), bizReq);
+    expect(result.matchScore).toBeGreaterThan(0);
+  });
 });
 
 describe("classifyRequirementStatus", () => {

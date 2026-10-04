@@ -114,8 +114,15 @@ export function Pill({ children, tone = "neutral", filled = false }: { children:
   );
 }
 
+/* Mid tier floor, same 2026-10-04 recalibration as STRONG_MATCH_THRESHOLD
+   (see its doc comment in _requirement-match-helpers.ts): real-score
+   candidates with some genuine but partial overlap clustered 20-39, with a
+   sharp drop into single digits below that for candidates with no real
+   relevance — so 20 is "worth a look," not "strong." */
+const FAIR_MATCH_THRESHOLD = 20;
+
 export function ScoreChip({ score }: { score: number }) {
-  const tone: PillTone = score >= STRONG_MATCH_THRESHOLD ? "success" : score >= 70 ? "copper" : "neutral";
+  const tone: PillTone = score >= STRONG_MATCH_THRESHOLD ? "success" : score >= FAIR_MATCH_THRESHOLD ? "copper" : "neutral";
   return (
     <div
       style={{

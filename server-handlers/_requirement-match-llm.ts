@@ -36,6 +36,8 @@ export async function llmRerankCandidates(
 JOB OPENING:
 Title: ${req.title}
 Location: ${req.location}
+Required skills: ${req.skills && req.skills.length > 0 ? req.skills.join(", ") : "not specified"}
+Experience range: ${req.experienceMin ?? "any"}-${req.experienceMax ?? "any"} years
 Description: ${req.description.slice(0, 2000)}
 
 CANDIDATES (role/skills are self-reported, may be incomplete):

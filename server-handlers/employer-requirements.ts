@@ -27,6 +27,7 @@ import {
   STRONG_MATCH_THRESHOLD,
   extractSkills,
   type CandidatePoolRow,
+  type RequirementInput,
 } from "./_requirement-match-helpers";
 import { extractResumeDetail } from "./_resume-detail-helpers";
 import { llmRerankCandidates, blendScore } from "./_requirement-match-llm";
@@ -274,7 +275,7 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
     const inserted = (await insertRes.json()) as RequirementRow[];
     const requirement = inserted[0];
 
-    const finalStatus = await runMatching(requirement.id, { title, location, description }, userId);
+    const finalStatus = await runMatching(requirement.id, { title, location, description, skills, experienceMin, experienceMax }, userId);
     await logRequirementActivity(requirement.id, userId, "created");
 
     return new Response(
@@ -327,7 +328,7 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
     just because the requirement changed — only never-unlocked matches are
     replaced with a fresh scoring pass. On first creation there are no
     existing matches, so this is just the create path. */
-export async function runMatching(requirementId: string, req: { title: string; location: string; description: string }, ownerUserId: string): Promise<string> {
+export async function runMatching(requirementId: string, req: RequirementInput, ownerUserId: string): Promise<string> {
   try {
     const existingRes = await fetch(
       `${SUPABASE_URL}/rest/v1/requirement_matches?requirement_id=eq.${encodeURIComponent(requirementId)}&select=id,candidate_user_id,match_score,unlocked,candidate_status,candidate_status_note,interview_scheduled_at`,
@@ -398,6 +399,7 @@ export async function runMatching(requirementId: string, req: { title: string; l
         avg_score: scores.get(p.id) ?? null,
         sessions_completed: sessionCounts.get(p.id) || 0,
         last_active_days_ago: daysSinceLastActive(timestamps, Date.now()),
+        years_experience: extractResumeDetail(p.resume_data).yearsExperience,
       };
     });
 
