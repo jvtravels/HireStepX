@@ -277,6 +277,31 @@ describe("jsonMode", () => {
   });
 });
 
+/* ── Gemini thinkingConfig ────────────────────────────────────────────
+ *
+ * Production 400 INVALID_ARGUMENT on every Gemini call (2026-10-04):
+ * gemini-3.5-flash-lite is a Gemini 3-family model and rejects
+ * `thinkingBudget` outright (thinking can't be disabled that way on
+ * Gemini 3 — only on 2.x). `thinkingLevel: "minimal"` is the supported
+ * equivalent, and it's mutually exclusive with `thinkingBudget` — never
+ * send both. Pin the request body shape so this can't regress silently. */
+
+describe("Gemini thinkingConfig", () => {
+  it("sends thinkingLevel: minimal, never thinkingBudget, on the Gemini request body", async () => {
+    fetchSpy.mockImplementation(async (url: string) => {
+      if (String(url).includes("generativelanguage")) return geminiOk('{"score":85}');
+      return new Response("{}", { status: 200 });
+    });
+
+    await callLLM({ prompt: "Evaluate." });
+
+    const geminiCall = fetchSpy.mock.calls.find((args: unknown[]) => String(args[0]).includes("generativelanguage"));
+    const body = JSON.parse(geminiCall?.[1]?.body as string);
+    expect(body.generationConfig.thinkingConfig).toEqual({ thinkingLevel: "minimal" });
+    expect(body.generationConfig.thinkingConfig.thinkingBudget).toBeUndefined();
+  });
+});
+
 /* ── totalBudgetMs — whole-chain wall-clock ceiling ──────────────────
  *
  * analyze-resume's real worst case (gemini → groq → cerebras, each with

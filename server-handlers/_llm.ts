@@ -201,6 +201,17 @@ async function callGemini(opts: LLMOptions, signal?: AbortSignal): Promise<LLMRe
   // ahead of the hard cutoff. Google's own migration guidance for 2.5 Flash
   // is 3.5 Flash-Lite or 3.8 Flash; 3.5-flash-lite is the same per-token
   // price as the retiring model, so it's a straight swap, not a cost change.
+  //
+  // NOT a straight swap for `thinkingConfig`, though (production 400s,
+  // 2026-10-04): 2.5-flash could disable thinking outright via
+  // `thinkingBudget: 0`. The Gemini 3 family (3.5-flash-lite included)
+  // can't — it's thinking-only — and rejects `thinkingBudget` on every
+  // call with a generic 400 INVALID_ARGUMENT that carries no
+  // field-level detail. `thinkingLevel: "minimal"` is Gemini 3's
+  // equivalent of "as close to zero thinking as this model allows";
+  // `thinkingLevel` and `thinkingBudget` are also mutually exclusive —
+  // sending both is itself a 400, so don't add thinkingBudget back
+  // "for safety".
   const model = "gemini-3.5-flash-lite";
   const start = Date.now();
   const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
@@ -213,7 +224,7 @@ async function callGemini(opts: LLMOptions, signal?: AbortSignal): Promise<LLMRe
         temperature: opts.temperature ?? 0.3,
         maxOutputTokens: opts.fallbackMaxTokens ?? opts.maxTokens ?? 2000,
         ...(opts.jsonMode ? { responseMimeType: "application/json" } : {}),
-        thinkingConfig: { thinkingBudget: 0 },
+        thinkingConfig: { thinkingLevel: "minimal" },
       },
     }),
   });
