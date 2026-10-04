@@ -203,7 +203,20 @@ export default async function handler(req: Request): Promise<Response> {
       }
     }
 
-    const candidates = matches.map((m) => {
+    /* Defense in depth against stale rows: rankAndCap (_requirement-match-helpers.ts)
+       already excludes no-resume/no-session candidates when a requirement is
+       created or re-matched, but a row written before that filter existed — or
+       one "touched" by the employer (unlocked/status-changed/noted/scheduled),
+       which runMatching's preserve-on-edit logic carries over without
+       re-scoring — never gets cleaned up by re-running matching alone. Re-apply
+       the same evidence rule here at read time so it can't resurface, while
+       never hiding a row the employer has actually interacted with. */
+    const isTouchedMatch = (m: (typeof matches)[number]) =>
+      m.unlocked || m.candidate_status !== "shortlisted" || !!m.candidate_status_note || !!m.interview_scheduled_at;
+    const hasEvidence = (m: (typeof matches)[number]) =>
+      profileById.get(m.candidate_user_id)?.resume_data != null || (sessionCounts.get(m.candidate_user_id) || 0) > 0;
+
+    const candidates = matches.filter((m) => isTouchedMatch(m) || hasEvidence(m)).map((m) => {
       const profile = profileById.get(m.candidate_user_id);
       const timestamps = Array.isArray(profile?.practice_timestamps) ? profile!.practice_timestamps : [];
       const lastActive = timestamps.length ? timestamps[timestamps.length - 1] : null;
