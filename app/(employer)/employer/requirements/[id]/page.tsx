@@ -931,7 +931,7 @@ export default function RequirementDetailPage() {
   return (
     <div>
       <div style={{ display: "flex", alignItems: "flex-start", gap: 16, flexWrap: "wrap" }}>
-      <Card style={{ flex: "3 1 560px" }}>
+      <Card style={{ flex: "3 1 560px", boxShadow: "none" }}>
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
           <div>
             <Eyebrow tone="indigo">{requirement.noticePeriodPref} notice</Eyebrow>
@@ -1193,7 +1193,7 @@ export default function RequirementDetailPage() {
         )}
       </Card>
 
-      <Card style={{ minWidth: 260, maxWidth: 340, flex: "1 1 260px" }}>
+      <Card style={{ minWidth: 260, maxWidth: 340, flex: "1 1 260px", boxShadow: "none" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
           <h2 style={{ fontFamily: f.sans, fontSize: 15, fontWeight: 600, color: t.coal, margin: 0 }}>Talent preferences</h2>
           {requirement.status !== "closed" && (
