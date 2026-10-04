@@ -23,6 +23,9 @@ import {
   MoreVerticalIcon,
   FileTextIcon,
   MessageCircleIcon,
+  BriefcaseIcon,
+  PencilIcon,
+  InfoIcon,
 } from "lucide-react";
 import { useEmployerData, Requirement, CandidateEvidence, UnlockPurchase } from "@/employer/EmployerDataContext";
 import { useToast } from "@/Toast";
@@ -119,7 +122,7 @@ const td: CSSProperties = {
   fontFamily: f.sans,
   fontSize: textSize.base,
   color: t.coal,
-  verticalAlign: "top",
+  verticalAlign: "middle",
 };
 
 const HEADER_CELL_STYLE: CSSProperties = {
@@ -327,7 +330,7 @@ function CandidateTableRow({
       onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
     >
       {!readOnly && (
-        <TableCell style={{ width: 32 }}>
+        <TableCell style={{ width: 32, verticalAlign: "middle" }}>
           <input
             type="checkbox"
             checked={selected}
@@ -637,6 +640,7 @@ function UndoBanner({ message, onUndo, onDismiss }: { message: string; onUndo: (
 
 export default function RequirementDetailPage() {
   const params = useParams<{ id: string }>();
+  const router = useRouter();
   const {
     fetchRequirementDetail,
     updateRequirementStage,
@@ -940,6 +944,9 @@ export default function RequirementDetailPage() {
   const avgMatch = requirement.candidates.length
     ? Math.round(requirement.candidates.reduce((sum, c) => sum + c.matchScore, 0) / requirement.candidates.length)
     : 0;
+  const scoreLow = requirement.candidates.length ? Math.min(...requirement.candidates.map((c) => c.matchScore)) : 0;
+  const scoreHigh = requirement.candidates.length ? Math.max(...requirement.candidates.map((c) => c.matchScore)) : 0;
+  const evidenceTier = avgMatch >= 90 ? "Strong signal" : avgMatch >= 75 ? "Solid signal" : "Mixed signal";
   const expLabel = experienceLabel(requirement.experienceMin, requirement.experienceMax);
   const dueDaysLeft = requirement.dueDate ? daysUntil(requirement.dueDate) : null;
   const hasCandidates = requirement.candidates.length > 0 && requirement.status !== "generating";
@@ -951,7 +958,7 @@ export default function RequirementDetailPage() {
   ).length;
   const hiredCount = requirement.candidates.filter((c) => c.candidateStatus === "hired").length;
   const pipelineStages: Array<{ label: string; value: number; filterValue: "all" | "interviewing" | "hired" }> = [
-    { label: "shortlisted", value: requirement.candidates.length, filterValue: "all" },
+    { label: "evaluated", value: requirement.candidates.length, filterValue: "all" },
     { label: "interviewing", value: interviewingCount, filterValue: "interviewing" },
     { label: "hired", value: hiredCount, filterValue: "hired" },
   ];
@@ -964,104 +971,60 @@ export default function RequirementDetailPage() {
       <div style={{ display: "flex", alignItems: "flex-start", gap: 16, flexWrap: "wrap" }}>
       <Card style={{ flex: "3 1 560px", boxShadow: "none" }}>
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
-          <div>
-            <Eyebrow tone="indigo">{requirement.noticePeriodPref} notice</Eyebrow>
-            <h1 style={{ fontFamily: f.sans, fontSize: 28, color: t.coal, margin: "6px 0 0" }}>{requirement.title}</h1>
-            <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", columnGap: 12, rowGap: 4, marginTop: 8, fontFamily: f.sans, fontSize: 13.5, fontWeight: 500, color: t.coal }}>
-              {budget && (
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
+            <div
+              style={{
+                width: 48,
+                height: 48,
+                borderRadius: 12,
+                background: t.indigo100,
+                color: t.indigo,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+              }}
+            >
+              <BriefcaseIcon size={22} aria-hidden="true" />
+            </div>
+            <div>
+              <Eyebrow tone="indigo">{requirement.noticePeriodPref} notice</Eyebrow>
+              <h1 style={{ fontFamily: f.sans, fontSize: 28, color: t.coal, margin: "6px 0 0" }}>{requirement.title}</h1>
+              <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", columnGap: 12, rowGap: 4, marginTop: 8, fontFamily: f.sans, fontSize: 13.5, fontWeight: 500, color: t.coal }}>
+                {budget && (
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                    <IndianRupeeIcon size={14} color={t.inkFaint} aria-hidden="true" /> {budget}
+                  </span>
+                )}
                 <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-                  <IndianRupeeIcon size={14} color={t.inkFaint} aria-hidden="true" /> {budget}
+                  <MapPinIcon size={14} color={t.inkFaint} aria-hidden="true" />
+                  {(requirement.locations.length > 0 ? requirement.locations.join(", ") : requirement.location)}
+                  {workModeLabel ? ` · ${workModeLabel}` : ""}
                 </span>
-              )}
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-                <MapPinIcon size={14} color={t.inkFaint} aria-hidden="true" />
-                {(requirement.locations.length > 0 ? requirement.locations.join(", ") : requirement.location)}
-                {workModeLabel ? ` · ${workModeLabel}` : ""}
-              </span>
-              {expLabel && (
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-                  <GraduationCapIcon size={14} color={t.inkFaint} aria-hidden="true" /> {expLabel}
-                </span>
-              )}
-              {(jobType || requirement.durationWeeks != null || requirement.hoursPerWeek != null) && (
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-                  <ClockIcon size={14} color={t.inkFaint} aria-hidden="true" />
-                  {[
-                    jobType,
-                    requirement.durationWeeks != null ? `${requirement.durationWeeks} ${requirement.durationWeeks === 1 ? "week" : "weeks"}` : null,
-                    requirement.hoursPerWeek != null ? `${requirement.hoursPerWeek} hrs/week` : null,
-                  ].filter(Boolean).join(" · ")}
-                </span>
-              )}
+                {expLabel && (
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                    <GraduationCapIcon size={14} color={t.inkFaint} aria-hidden="true" /> {expLabel}
+                  </span>
+                )}
+                {(jobType || requirement.durationWeeks != null || requirement.hoursPerWeek != null) && (
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                    <ClockIcon size={14} color={t.inkFaint} aria-hidden="true" />
+                    {[
+                      jobType,
+                      requirement.durationWeeks != null ? `${requirement.durationWeeks} ${requirement.durationWeeks === 1 ? "week" : "weeks"}` : null,
+                      requirement.hoursPerWeek != null ? `${requirement.hoursPerWeek} hrs/week` : null,
+                    ].filter(Boolean).join(" · ")}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-            {requirement.status !== "closed" && (
-              <>
-                <Link
-                  href={`/employer/requirements/${requirement.id}/edit`}
-                  style={{
-                    fontFamily: f.sans,
-                    fontSize: 12.5,
-                    fontWeight: 600,
-                    color: t.indigo,
-                    textDecoration: "none",
-                    border: `1px solid ${t.line}`,
-                    borderRadius: 8,
-                    padding: "6px 12px",
-                  }}
-                >
-                  Edit
-                </Link>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setArchiveOpen(true)}
-                  style={{
-                    fontFamily: f.sans,
-                    fontSize: 12.5,
-                    fontWeight: 600,
-                    color: t.inkSoft,
-                    background: "none",
-                    border: `1px solid ${t.line}`,
-                    borderRadius: 8,
-                    padding: "6px 12px",
-                    height: "auto",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
-                  }}
-                >
-                  <ArchiveIcon size={13} aria-hidden="true" /> Archive
-                </Button>
-              </>
-            )}
             {requirement.status === "closed" && (
               <Button type="button" variant="outline" onClick={handleReopen} disabled={reopenSaving} style={{ fontFamily: f.sans, fontSize: 12.5, fontWeight: 600, height: "auto", padding: "6px 12px" }}>
                 {reopenSaving ? "Reopening…" : "Reopen"}
               </Button>
             )}
-            <Button
-              type="button"
-              variant="outline"
-              onClick={openUnlockHistory}
-              style={{
-                fontFamily: f.sans,
-                fontSize: 12.5,
-                fontWeight: 600,
-                color: t.inkSoft,
-                background: "none",
-                border: `1px solid ${t.line}`,
-                borderRadius: 8,
-                padding: "6px 12px",
-                height: "auto",
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
-              }}
-            >
-              <HistoryIcon size={13} aria-hidden="true" /> Unlock history
-            </Button>
             <Tooltip>
               <TooltipTrigger asChild>
                 <span>
@@ -1075,6 +1038,36 @@ export default function RequirementDetailPage() {
               </TooltipTrigger>
               <TooltipContent side="bottom" className="max-w-64">{STAGE_HINT[requirement.stage]}</TooltipContent>
             </Tooltip>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  aria-label={`Actions for ${requirement.title}`}
+                  style={{ width: 36, height: 36, padding: 0, display: "flex", alignItems: "center", justifyContent: "center", color: t.inkFaint }}
+                >
+                  <MoreVerticalIcon size={16} aria-hidden="true" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-44">
+                {requirement.status !== "closed" && (
+                  <DropdownMenuItem onSelect={() => router.push(`/employer/requirements/${requirement.id}/edit`)}>
+                    <PencilIcon size={14} aria-hidden="true" /> Edit
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuItem onSelect={openUnlockHistory}>
+                  <HistoryIcon size={14} aria-hidden="true" /> Unlock history
+                </DropdownMenuItem>
+                {requirement.status !== "closed" && (
+                  <DropdownMenuItem
+                    className="text-destructive focus:bg-destructive/10 focus:text-destructive [&_svg]:text-destructive"
+                    onSelect={() => setArchiveOpen(true)}
+                  >
+                    <ArchiveIcon size={14} aria-hidden="true" /> Archive
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 
@@ -1208,11 +1201,36 @@ export default function RequirementDetailPage() {
                   >
                     <span style={{ color: t.coal, fontWeight: 600 }}>{stage.value}</span> {stage.label}
                   </Button>
+                  {stage.label === "evaluated" && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span style={{ display: "inline-flex", color: t.inkFaintWeak }}>
+                          <InfoIcon size={12} aria-hidden="true" />
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" className="max-w-64">
+                        Candidates HireStepX matched to this posting from candidates&rsquo; practice-session history.
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
                 </span>
               ))}
             </div>
-            <span style={{ fontFamily: f.sans, fontSize: 13, color: t.inkFaint }}>
-              <span style={{ color: t.indigo, fontWeight: 600 }}>{avgMatch}%</span> avg match score
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontFamily: f.sans, fontSize: 13, color: t.inkFaint }}>
+              <span>
+                <span style={{ color: t.indigo, fontWeight: 600 }}>{avgMatch}%</span> avg evidence score ({evidenceTier}), spanning{" "}
+                <span style={{ color: t.coal, fontWeight: 500 }}>{scoreLow}–{scoreHigh}%</span>
+              </span>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span style={{ display: "inline-flex", color: t.inkFaintWeak }}>
+                    <InfoIcon size={12} aria-hidden="true" />
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="max-w-64">
+                  The average match score across evaluated candidates, and the range it spans.
+                </TooltipContent>
+              </Tooltip>
             </span>
           </div>
         ) : (
@@ -1463,6 +1481,7 @@ export default function RequirementDetailPage() {
                   suggestedFilters={suggestedFilters}
                   style={{ flex: "1 1 220px", minWidth: 200, maxWidth: 420 }}
                   inputStyle={{ background: t.white }}
+                  inputClassName="focus-visible:ring-0"
                 />
                 <FilterPill label="Contact" value={contactFilter} options={contactFilterOptions} onChange={setContactFilter} />
                 {locationOptions.length > 1 && (

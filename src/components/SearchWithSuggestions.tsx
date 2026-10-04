@@ -28,6 +28,7 @@ export function SearchWithSuggestions({
   suggestedFilters = [],
   style,
   inputStyle,
+  inputClassName,
 }: {
   id: string;
   label: string;
@@ -38,6 +39,7 @@ export function SearchWithSuggestions({
   suggestedFilters?: SuggestedFilter[];
   style?: React.CSSProperties;
   inputStyle?: React.CSSProperties;
+  inputClassName?: string;
 }) {
   const { recentSearches, commitSearch } = useRecentSearches(storageKey);
   const [focused, setFocused] = useState(false);
@@ -57,6 +59,7 @@ export function SearchWithSuggestions({
         }}
         placeholder={placeholder}
         inputStyle={inputStyle}
+        inputClassName={inputClassName}
       />
       {focused && (recentSearches.length > 0 || suggestedFilters.length > 0) && (
         <div

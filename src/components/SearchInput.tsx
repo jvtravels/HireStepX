@@ -17,6 +17,7 @@ export function SearchInput({
   placeholder,
   style,
   inputStyle,
+  inputClassName,
   onFocus,
   onBlur,
   onKeyDown,
@@ -28,6 +29,7 @@ export function SearchInput({
   placeholder: string;
   style?: React.CSSProperties;
   inputStyle?: React.CSSProperties;
+  inputClassName?: string;
   onFocus?: React.FocusEventHandler<HTMLInputElement>;
   onBlur?: React.FocusEventHandler<HTMLInputElement>;
   onKeyDown?: React.KeyboardEventHandler<HTMLInputElement>;
@@ -49,6 +51,7 @@ export function SearchInput({
         onFocus={onFocus}
         onBlur={onBlur}
         onKeyDown={onKeyDown}
+        className={inputClassName}
         style={{ paddingLeft: 34, height: 36, width: "100%", ...inputStyle }}
       />
     </div>
