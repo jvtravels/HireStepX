@@ -31,6 +31,7 @@ import { saveSessionResult, fetchLLMQuestions, fetchFollowUp, retryQueuedEvals, 
 import { initLiveSession, saveInterviewTurn, getLatestSessionInsightFlags } from "./supabase";
 import { deriveCandidateState } from "./_emotional-state";
 import { checkFollowUpCap } from "./_follow-up-cap";
+import { isDuplicateQuestionText } from "./_duplicate-question-guard";
 import { extractNounPhrases, appendToMemory } from "./_noun-phrase-memory";
 import type { NegotiationBandData } from "./interviewAPI";
 import type { DeepgramSTTHandle } from "./deepgramSTT";
@@ -2349,6 +2350,14 @@ export function useInterviewEngine() {
                   console.warn(`[interview] Skipping follow-up — turn cap reached (${cap.currentTurns}/${cap.maxTurns})`);
                   return prev;
                 }
+              }
+              // See src/_duplicate-question-guard.ts — nothing above this
+              // point checks TEXT, only turn count, so a stale-ref race or
+              // a confused LLM echoing an earlier prompt can otherwise
+              // insert a question identical to one already asked (BUG C).
+              if (isDuplicateQuestionText(followUpStep.aiText, prev, currentStep)) {
+                console.warn("[interview] Skipping follow-up — duplicate of an already-asked question");
+                return prev;
               }
               return [
                 ...prev.slice(0, currentStep),
