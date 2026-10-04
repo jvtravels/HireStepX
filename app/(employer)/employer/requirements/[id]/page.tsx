@@ -1341,45 +1341,16 @@ export default function RequirementDetailPage() {
 
       <div style={{ marginTop: 24 }}>
         <Card>
-          <h2 style={{ fontFamily: f.sans, fontSize: 18, color: t.coal, margin: "0 0 10px" }}>Description</h2>
-          <p style={{ fontFamily: f.sans, fontSize: 13.5, color: t.inkSoft, lineHeight: 1.7, margin: 0, whiteSpace: "pre-wrap" }}>
-            {requirement.description || "No description was added for this requirement."}
-          </p>
+          <h2 style={{ fontFamily: f.sans, fontSize: 18, color: t.coal, margin: "0 0 10px" }}>Details</h2>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 14, marginTop: 20, paddingTop: 20, borderTop: `1px solid ${t.line}` }}>
-            <div>
-              <div style={{ fontFamily: f.mono, fontSize: 10, letterSpacing: 0.6, textTransform: "uppercase", color: t.inkFaint }}>Location</div>
-              <div style={{ fontFamily: f.sans, fontSize: 13.5, color: t.coal, marginTop: 4 }}>
-                {requirement.locations.length > 0 ? requirement.locations.join(", ") : requirement.location}
-              </div>
-            </div>
-            <div>
-              <div style={{ fontFamily: f.mono, fontSize: 10, letterSpacing: 0.6, textTransform: "uppercase", color: t.inkFaint }}>Work mode</div>
-              <div style={{ fontFamily: f.sans, fontSize: 13.5, color: t.coal, marginTop: 4, textTransform: "capitalize" }}>{requirement.workMode || "Not specified"}</div>
-            </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 14 }}>
             <div>
               <div style={{ fontFamily: f.mono, fontSize: 10, letterSpacing: 0.6, textTransform: "uppercase", color: t.inkFaint }}>Open positions</div>
               <div style={{ fontFamily: f.sans, fontSize: 13.5, color: t.coal, marginTop: 4 }}>{requirement.openPositions ?? "Not specified"}</div>
             </div>
             <div>
-              <div style={{ fontFamily: f.mono, fontSize: 10, letterSpacing: 0.6, textTransform: "uppercase", color: t.inkFaint }}>Experience</div>
-              <div style={{ fontFamily: f.sans, fontSize: 13.5, color: t.coal, marginTop: 4 }}>{expLabel || "Any"}</div>
-            </div>
-            <div>
-              <div style={{ fontFamily: f.mono, fontSize: 10, letterSpacing: 0.6, textTransform: "uppercase", color: t.inkFaint }}>Notice period</div>
-              <div style={{ fontFamily: f.sans, fontSize: 13.5, color: t.coal, marginTop: 4 }}>{requirement.noticePeriodPref}</div>
-            </div>
-            <div>
-              <div style={{ fontFamily: f.mono, fontSize: 10, letterSpacing: 0.6, textTransform: "uppercase", color: t.inkFaint }}>Preferred industry</div>
-              <div style={{ fontFamily: f.sans, fontSize: 13.5, color: t.coal, marginTop: 4 }}>{requirement.preferredIndustry || "Not specified"}</div>
-            </div>
-            <div>
               <div style={{ fontFamily: f.mono, fontSize: 10, letterSpacing: 0.6, textTransform: "uppercase", color: t.inkFaint }}>Due date</div>
               <div style={{ fontFamily: f.sans, fontSize: 13.5, color: t.coal, marginTop: 4 }}>{requirement.dueDate || "No due date set"}</div>
-            </div>
-            <div>
-              <div style={{ fontFamily: f.mono, fontSize: 10, letterSpacing: 0.6, textTransform: "uppercase", color: t.inkFaint }}>Posted</div>
-              <div style={{ fontFamily: f.sans, fontSize: 13.5, color: t.coal, marginTop: 4 }}>{requirement.createdAt}</div>
             </div>
             <div>
               <div style={{ fontFamily: f.mono, fontSize: 10, letterSpacing: 0.6, textTransform: "uppercase", color: t.inkFaint }}>Pipeline stage</div>
