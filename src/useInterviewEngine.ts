@@ -565,7 +565,15 @@ export function useInterviewEngine() {
       drill: drillKey || undefined,
       priorFlags: priorFlagsRef.current.length > 0 ? priorFlagsRef.current : undefined,
     });
-    const timeoutMs = isMiniMode ? 12_000 : 30_000;
+    // hr-round's prompt is the heaviest of the mini-tier types (persona
+    // selection, prior-flag prebias, CSV bias, grounding rules,
+    // hrPersonaContext — see generate-questions.ts) but FOCUS_MINUTES
+    // (SessionSetup.tsx) makes it the ONE mini focus that always has 7
+    // questions to generate, not 3. The tight 12s mini budget was timing
+    // this out disproportionately, falling through to the static fallback
+    // and leaving the spoken 3-question intro mismatched with a 7-question
+    // fallback script. Give it the full budget like non-mini sessions.
+    const timeoutMs = isMiniMode && interviewType !== "hr-round" ? 12_000 : 30_000;
     const timeoutPromise = new Promise<null>((_, reject) => {
       setTimeout(() => reject(new Error("Question generation timed out")), timeoutMs);
     });

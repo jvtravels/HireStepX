@@ -224,6 +224,11 @@ export default async function handler(req: Request): Promise<Response> {
      is invisible to the catch, so we mirror the relevant fields here. */
   let requestRole = "";
   let requestExperienceLevel = "";
+  /* Same hoist as above, so the LLM-down static fallback sizes hr-round
+     questions the same way the live path would (computeStepCount checks
+     hr-round before mini either way, but this keeps the call site honest
+     instead of hardcoding a value). */
+  let requestMini = false;
   /* Salary-negotiation deterministic band, computed BEFORE the LLM call
    * (see ~`generateNegotiationBand` below). Hoisted so the catch block can
    * still drive the kernel path when both LLM providers are exhausted —
@@ -240,6 +245,7 @@ export default async function handler(req: Request): Promise<Response> {
     if (typeof role === "string") requestRole = role;
     if (typeof experienceLevel === "string") requestExperienceLevel = experienceLevel;
     const isMini = mini === true;
+    requestMini = isMini;
 
     /* Response cache — keyed on the stable hash of the full request body.
      * Same input within the TTL window returns the cached questions without
@@ -1175,9 +1181,22 @@ The intro persona should be "Hiring Manager". Distribute questions across all th
 CROSS-PERSONA REFERENCE: at least one question (q3 or later) must reference what an earlier panelist asked: e.g. "Building on what Sarah just asked you about scaling — how would you frame that pitch to a non-technical board?" or "Picking up on the conflict story you just told my colleague — what did you learn about your own communication style?". This makes the panel feel like a real conversation, not three separate interviews.`
       : "";
 
-    const questionCount = isMini
-      ? (isSalaryType ? 5 : 3)
-      : (interviewType === "hr-round" ? 7 : 5);
+    // hr-round's 8-dimension Indian HR gate needs 7 questions regardless of
+    // mini/full — checked before isMini so a 10-minute hr-round session (the
+    // product's only length for this focus, see FOCUS_MINUTES in
+    // SessionSetup.tsx) doesn't silently collapse to the generic 3-question
+    // mini count. Previously this branch only fired for non-mini sessions,
+    // so the live LLM path asked 3 while the LLM-down static fallback
+    // (further below) deliberately hardcoded 7 — two code paths disagreeing
+    // on the same session's question count, while the client's spoken intro
+    // (getMiniScript) had already promised 3.
+    const questionCount = isSalaryType
+      ? 5
+      : interviewType === "hr-round"
+      ? 7
+      : isMini
+      ? 3
+      : 5;
     const stepCount = computeStepCount({ mini: isMini, isSalaryType, interviewType }); // intro + questions + closing
 
     const safeCandidateName = candidateName ? sanitizeForLLM(candidateName, 60) : "";
@@ -1860,11 +1879,15 @@ Requirements:
       }, req);
       // Fall through to the regular error response below.
     } else try {
-      // Pass interviewType so the HR fallback keeps its 7-question sizing — the
-      // 8-dimension Indian HR gate can't be covered in 5 turns. Omitting it here
-      // silently degraded the LLM-down path to 5 questions.
+      // Pass the real isMini + interviewType so the fallback sizing matches
+      // whatever the live LLM path would have asked for (computeStepCount
+      // checks hr-round before mini, so hr-round keeps its 7-question sizing
+      // even for the mini-only hr-round session length — the 8-dimension
+      // Indian HR gate can't be covered in 3-5 turns). A hardcoded
+      // `mini: false` here used to mask that same bug in computeStepCount;
+      // now that it's fixed at the source, this stays consistent without it.
       const stepCount = computeStepCount({
-        mini: false,
+        mini: requestMini,
         isSalaryType: requestType === "salary-negotiation",
         interviewType: requestType,
       });

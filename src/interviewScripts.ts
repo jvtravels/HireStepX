@@ -299,7 +299,8 @@ const miniQuestionsByType: Record<string, QuestionBank[]> = {
   ],
 };
 
-/** Generate a 3-question quick onboarding interview script */
+/** Generate a quick onboarding interview script: 3 questions by default,
+    5 for salary-negotiation, 7 for hr-round (see questionCount below). */
 export function getMiniScript(user: User | null, company?: string, interviewType?: string): InterviewStep[] {
   const name = user?.name?.split(" ")[0] || "";
   const role = user?.targetRole || ROLE_FALLBACK;
@@ -326,8 +327,16 @@ export function getMiniScript(user: User | null, company?: string, interviewType
   // For salary-negotiation: maintain sequential order (conversation arc), use 5 questions for richer negotiation.
   const pool = miniQuestionsByType[typeKey];
   const isSalaryNeg = typeKey === "salary-negotiation";
-  const questionCount = isSalaryNeg ? Math.min(5, pool.length) : 3;
-  const questions = isSalaryNeg ? pool.slice(0, questionCount) : shuffleAndPick(pool, 3);
+  // hr-round's only session length is this 10-minute "mini" tier (see
+  // FOCUS_MINUTES in SessionSetup.tsx), but its 8-dimension Indian HR gate
+  // needs 7 questions — matching generate-questions.ts's questionCount,
+  // which also checks hr-round before isMini. This placeholder script is
+  // what the candidate hears speaking before the LLM responds (and what
+  // gets grafted onto if the LLM times out), so it must ship the same count
+  // the real session promises, not the generic 3-question mini default.
+  const isHrRound = typeKey === "hr-round";
+  const questionCount = isSalaryNeg ? Math.min(5, pool.length) : isHrRound ? Math.min(7, pool.length) : 3;
+  const questions = isSalaryNeg ? pool.slice(0, questionCount) : shuffleAndPick(pool, questionCount);
 
   const makeQ = (bank: { q: string; qResume: string; scoreNote: string }) => {
     const raw = hasResume && title ? bank.qResume : bank.q;
@@ -342,8 +351,8 @@ export function getMiniScript(user: User | null, company?: string, interviewType
   const introText = isSalaryNeg
     ? `Hi${name ? ` ${name}` : ""}! Hope you're doing well. So we've completed all the interview rounds for the ${role} position${companyContext}, and the team was really impressed with you. I'm here to walk you through the offer we've put together. Let me get into the details.`
     : isPanel
-    ? `Hi${name ? ` ${name}` : ""}! Hope you're doing well. Welcome to your panel interview. I'm the hiring manager, and I'll be joined by our technical lead and HR partner. This is a quick 3-question practice round for the ${role} position${companyContext}.${resumeContext} We'll each ask from our side. Shall we begin?`
-    : `Hi${name ? ` ${name}` : ""}! Hope you're doing well. This is a quick 3-question ${typeLabel} practice round for the ${role} position${companyContext}.${resumeContext} I'll ask real interview questions and you'll get a detailed report at the end. Shall we begin?`;
+    ? `Hi${name ? ` ${name}` : ""}! Hope you're doing well. Welcome to your panel interview. I'm the hiring manager, and I'll be joined by our technical lead and HR partner. This is a quick ${questionCount}-question practice round for the ${role} position${companyContext}.${resumeContext} We'll each ask from our side. Shall we begin?`
+    : `Hi${name ? ` ${name}` : ""}! Hope you're doing well. This is a quick ${questionCount}-question ${typeLabel} practice round for the ${role} position${companyContext}.${resumeContext} I'll ask real interview questions and you'll get a detailed report at the end. Shall we begin?`;
 
   // Build question steps dynamically (salary-neg gets 5, others get 3)
   const questionSteps: InterviewStep[] = questions.map((bank, i) => ({

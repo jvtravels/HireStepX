@@ -71,6 +71,19 @@ describe("interviewScripts", () => {
       expect(script[0].aiText).toContain("SRE");
     });
 
+    it("hr-round generates 9 steps (intro + 7 questions + closing), and the intro's spoken count matches", () => {
+      // Regression: hr-round's only session length is the 10-minute mini
+      // tier, but its 8-dimension Indian HR gate needs 7 questions, not the
+      // generic 3-question mini default — see computeStepCount/questionCount
+      // in generate-questions.ts for the server-side counterpart of this fix.
+      const script = getMiniScript(null, undefined, "hr-round");
+      expect(script.length).toBe(9);
+      const questionSteps = script.filter((s) => s.type === "question");
+      expect(questionSteps.length).toBe(7);
+      expect(script[0].aiText).toContain("quick 7-question");
+      expect(script[0].aiText).not.toContain("3-question");
+    });
+
     it("uses generic text when no user", () => {
       const script = getMiniScript(null);
       expect(script[0].aiText).toContain("the role");
