@@ -125,6 +125,41 @@ describe("scoreCandidateMatch", () => {
     expect(sameCityDesignEngineer.hasRelevance).toBe(false);
   });
 
+  it("does not mark a candidate relevant on one generic token diluted among unrelated skills", () => {
+    const salesReq = {
+      title: "Sales Executive",
+      location: "Mumbai",
+      description: "Drive new business across SMB and mid-market accounts, manage a CRM pipeline.",
+      skills: ["B2B Sales", "CRM", "Negotiation", "Lead Generation"],
+    };
+    const backendEngineer = scoreCandidateMatch(
+      candidate({
+        target_role: "Senior Software Engineer",
+        resume_data: {
+          skills: ["Java", "Spring Boot", "MongoDB", "REST APIs", "Microservices", "B2B Partner Integrations"],
+          location: "Mumbai",
+        },
+      }),
+      salesReq,
+    );
+    expect(backendEngineer.hasRelevance).toBe(false);
+
+    const dataAnalyst = scoreCandidateMatch(
+      candidate({
+        target_role: "Data Analytics Professional",
+        resume_data: { skills: ["SQL", "Power BI", "Advanced Excel", "MIS Reporting", "Business Intelligence"], location: "Mumbai" },
+      }),
+      salesReq,
+    );
+    expect(dataAnalyst.hasRelevance).toBe(false);
+
+    const salesIntern = scoreCandidateMatch(
+      candidate({ target_role: "Sales Assistant Intern", resume_data: { skills: ["Communication", "Customer Service"], location: "Mumbai" } }),
+      salesReq,
+    );
+    expect(salesIntern.hasRelevance).toBe(true);
+  });
+
   it("applies a soft penalty when a candidate's experience is well outside the requirement's band", () => {
     const bandedReq = { ...req, experienceMin: 5, experienceMax: 8 };
     const junior = scoreCandidateMatch(candidate({ years_experience: 0 }), bandedReq);

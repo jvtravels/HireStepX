@@ -38,11 +38,13 @@ export interface ScoredCandidate {
   candidateId: string;
   matchScore: number;
   rosterScore: number;
-  /** Whether this candidate has any real role or skill overlap with the
-      requirement — as opposed to a candidate from a totally unrelated
-      field whose only "score" comes from location/roster/activity noise.
-      rankAndCap filters on this so an employer never sees a forced, padded-out list of
-      irrelevant candidates just to hit the cap. */
+  /** Whether this candidate clears RELEVANCE_RATIO_FLOOR on real role or
+      skill overlap with the requirement — as opposed to a candidate from a
+      totally unrelated field whose only "score" comes from location/roster/
+      activity noise, or whose sole overlap is one generic/ambiguous token
+      diluted among many unrelated ones. rankAndCap filters on this so an
+      employer never sees a forced, padded-out list of irrelevant candidates
+      just to hit the cap. */
   hasRelevance: boolean;
 }
 
@@ -210,8 +212,24 @@ export function scoreCandidateMatch(candidate: CandidatePoolRow, req: Requiremen
      a candidate sharing the employer's city but nothing else about the job
      (e.g. a Design Engineer living in the same city as a Sales Executive
      opening) is not "relevant" to the role just because locationFit=1 can
-     reach 0.15 (1 * 0.15) on its own and clear the blended floor below. */
-  const hasRelevance = roleOverlap > 0 || skillOverlap > 0;
+     reach 0.15 (1 * 0.15) on its own and clear the blended floor below.
+
+     2026-10-04: raised from "> 0" to a real ratio floor after production
+     data showed a single generic or ambiguous shared token (e.g. a Senior
+     Backend Engineer's "B2B Partner Integrations" skill matching a Sales
+     Executive req's "B2B Sales" chip on the word "b2b"; a Data Analytics
+     candidate's "Business Intelligence" matching the req description's
+     "new business" on the word "business") was enough to pass ">0" even
+     though it's one coincidental token diluted among a dozen unrelated
+     ones. Reusing 0.15 — the same floor this scoring already treats as
+     "the minimum fraction of a candidate's vocabulary worth crediting"
+     elsewhere in this file — filters those out while still passing a
+     candidate whose role/skills genuinely echo multiple requirement terms
+     (a Sales Assistant Intern's target_role overlapping "sales", or a
+     profile whose skills include "Sales & Service" / "Strategy & Market
+     Expansion" alongside "Business Transformation"). */
+  const RELEVANCE_RATIO_FLOOR = 0.15;
+  const hasRelevance = roleOverlap >= RELEVANCE_RATIO_FLOOR || skillOverlap >= RELEVANCE_RATIO_FLOOR;
   const rosterCredit = hasRelevance ? rosterScore * 0.2 + activityBoost * 10 : 0;
   const matchScore = Math.round(
     clamp(fitComponent * 70 + rosterCredit, 0, 100) * recencyPenalty * expFit,
