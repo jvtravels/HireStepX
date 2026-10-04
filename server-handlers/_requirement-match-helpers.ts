@@ -38,11 +38,10 @@ export interface ScoredCandidate {
   candidateId: string;
   matchScore: number;
   rosterScore: number;
-  /** Whether this candidate cleared MIN_FIT_FOR_ROSTER_CREDIT — i.e. has any
-      real role/skill/location basis for appearing in this requirement's
-      shortlist at all, as opposed to a candidate from a totally unrelated
-      field whose only "score" comes from roster/activity noise. rankAndCap
-      filters on this so an employer never sees a forced, padded-out list of
+  /** Whether this candidate has any real role or skill overlap with the
+      requirement — as opposed to a candidate from a totally unrelated
+      field whose only "score" comes from location/roster/activity noise.
+      rankAndCap filters on this so an employer never sees a forced, padded-out list of
       irrelevant candidates just to hit the cap. */
   hasRelevance: boolean;
 }
@@ -142,10 +141,10 @@ export function extractResumeLocation(resumeData: unknown): string {
 
 /** A profile with neither a target_role nor resume_data has nothing for
     roleOverlap/skillOverlap to match against — it's pure noise in a
-    requirement's shortlist, not a real candidate to screen (see the
-    rankAndCap floor-disable note below). Candidate-pool callers should
-    exclude these before scoring rather than let them occupy slots in the
-    capped, ranked result with a meaningless low score. */
+    requirement's shortlist, not a real candidate to screen (see rankAndCap's
+    hasRelevance filter below). Candidate-pool callers should exclude these
+    before scoring rather than let them occupy slots in the capped, ranked
+    result with a meaningless low score. */
 export function hasMatchSignal(candidate: Pick<CandidatePoolRow, "target_role" | "resume_data">): boolean {
   return !!(candidate.target_role && candidate.target_role.trim()) || candidate.resume_data != null;
 }
@@ -195,15 +194,6 @@ function experienceFit(yearsExperience: number | null | undefined, min: number |
   return yearsExperience >= lo && yearsExperience <= hi ? 1 : 0.6;
 }
 
-/** Below this fitComponent, a candidate has essentially no real role/skill
-    relevance to the requirement — the ~0.09 a candidate gets from location-
-    only neutral fit (0.6 * 0.15) sits well under it. Without this floor,
-    roster/activity (session-performance, practice frequency — signals about
-    the candidate as an interview-practice user, not as a fit for *this* job)
-    could carry an entirely irrelevant candidate to a respectable score, which
-    is exactly the "noise candidates crowd out real matches" failure mode. */
-const MIN_FIT_FOR_ROSTER_CREDIT = 0.15;
-
 /** Deterministic 0-100 fit score for one candidate against one requirement,
     plus the candidate's lifetime roster score (session-performance based,
     independent of this specific requirement). */
@@ -216,7 +206,12 @@ export function scoreCandidateMatch(candidate: CandidatePoolRow, req: Requiremen
   const expFit = experienceFit(candidate.years_experience, req.experienceMin, req.experienceMax);
 
   const fitComponent = roleOverlap * 0.55 + skillOverlap * 0.3 + locationFit * 0.15;
-  const hasRelevance = fitComponent >= MIN_FIT_FOR_ROSTER_CREDIT;
+  /* Must come from actual role/skill overlap, never from locationFit alone —
+     a candidate sharing the employer's city but nothing else about the job
+     (e.g. a Design Engineer living in the same city as a Sales Executive
+     opening) is not "relevant" to the role just because locationFit=1 can
+     reach 0.15 (1 * 0.15) on its own and clear the blended floor below. */
+  const hasRelevance = roleOverlap > 0 || skillOverlap > 0;
   const rosterCredit = hasRelevance ? rosterScore * 0.2 + activityBoost * 10 : 0;
   const matchScore = Math.round(
     clamp(fitComponent * 70 + rosterCredit, 0, 100) * recencyPenalty * expFit,

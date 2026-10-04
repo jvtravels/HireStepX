@@ -112,6 +112,19 @@ describe("scoreCandidateMatch", () => {
     expect(relevant.matchScore).toBeGreaterThan(sameButNoRoster.matchScore);
   });
 
+  it("does not mark a candidate relevant on a location match alone", () => {
+    const salesReq = {
+      title: "Sales Executive",
+      location: "Mumbai",
+      description: "Drive new business across SMB and mid-market accounts, manage a CRM pipeline.",
+    };
+    const sameCityDesignEngineer = scoreCandidateMatch(
+      candidate({ target_role: "Design Engineer", resume_data: { skills: ["Figma", "Canva"], location: "Mumbai" } }),
+      salesReq,
+    );
+    expect(sameCityDesignEngineer.hasRelevance).toBe(false);
+  });
+
   it("applies a soft penalty when a candidate's experience is well outside the requirement's band", () => {
     const bandedReq = { ...req, experienceMin: 5, experienceMax: 8 };
     const junior = scoreCandidateMatch(candidate({ years_experience: 0 }), bandedReq);
