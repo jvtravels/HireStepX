@@ -39,7 +39,6 @@ import {
   PrimaryCta,
   ScoreChip,
   SkillTag,
-  StatusChip,
   StageCell,
   STAGE_LABEL,
 } from "@/employer/_atoms";
@@ -1019,7 +1018,6 @@ export default function RequirementDetailPage() {
               </TooltipTrigger>
               <TooltipContent side="bottom" className="max-w-64">{STAGE_HINT[requirement.stage]}</TooltipContent>
             </Tooltip>
-            <StatusChip status={requirement.status} />
           </div>
         </div>
 
@@ -1261,10 +1259,6 @@ export default function RequirementDetailPage() {
             <div>
               <div style={{ fontFamily: f.mono, fontSize: 10, letterSpacing: 0.6, textTransform: "uppercase", color: t.inkFaint }}>Posted</div>
               <div style={{ fontFamily: f.sans, fontSize: 13.5, color: t.coal, marginTop: 4 }}>{requirement.createdAt}</div>
-            </div>
-            <div>
-              <div style={{ fontFamily: f.mono, fontSize: 10, letterSpacing: 0.6, textTransform: "uppercase", color: t.inkFaint }}>Status</div>
-              <div style={{ marginTop: 4 }}><StatusChip status={requirement.status} /></div>
             </div>
             <div>
               <div style={{ fontFamily: f.mono, fontSize: 10, letterSpacing: 0.6, textTransform: "uppercase", color: t.inkFaint }}>Pipeline stage</div>

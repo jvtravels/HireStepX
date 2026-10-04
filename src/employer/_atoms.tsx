@@ -297,19 +297,6 @@ export function SkillTag({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function StatusChip({ status }: { status: "generating" | "ready" | "partial" | "zero" | "failed" | "closed" }) {
-  const map: Record<string, { tone: PillTone; label: string }> = {
-    generating: { tone: "indigo", label: "Generating…" },
-    ready: { tone: "success", label: "Shortlist ready" },
-    partial: { tone: "warning", label: "Partial match" },
-    zero: { tone: "neutral", label: "No matches yet" },
-    failed: { tone: "error", label: "Generation failed" },
-    closed: { tone: "neutral", label: "Closed" },
-  };
-  const m = map[status];
-  return <Pill tone={m.tone}>{m.label}</Pill>;
-}
-
 /** Label + tone for a candidate's per-requirement hiring-pipeline status —
  *  single source of truth so the candidate-detail page, the requirement
  *  table column, and any future surface never drift on wording or color.
