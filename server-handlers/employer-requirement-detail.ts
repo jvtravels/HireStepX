@@ -195,7 +195,7 @@ export default async function handler(req: Request): Promise<Response> {
          is cosmetic; anyone reading the network response sees the real
          name/phone/LinkedIn regardless. Redact here, not just on render. */
       const name = unlocked ? profile?.name || "Candidate" : `Candidate #${m.id.slice(0, 6)}`;
-      const resume = unlocked ? resumeDetail : redactResumeDetailForLock(resumeDetail);
+      const resume = unlocked ? resumeDetail : redactResumeDetailForLock(resumeDetail, profile?.name || "");
 
       return {
         id: m.id,

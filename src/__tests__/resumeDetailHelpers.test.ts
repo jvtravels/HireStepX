@@ -79,7 +79,7 @@ describe("redactResumeDetailForLock", () => {
       currentCtc: "₹22 LPA",
     });
 
-    const redacted = redactResumeDetailForLock(detail);
+    const redacted = redactResumeDetailForLock(detail, "Jane Doe");
 
     expect(redacted.summary).toBe("Product Manager at Meesho, drives strategy for Valmo.");
     expect(redacted.headline).toBe("Senior PM @ Meesho");
@@ -100,7 +100,7 @@ describe("redactResumeDetailForLock", () => {
       certifications: ["Google UX Design"],
     });
 
-    expect(redactResumeDetailForLock(detail).certifications).toEqual(["Google UX Design"]);
+    expect(redactResumeDetailForLock(detail, "Jane Doe").certifications).toEqual(["Google UX Design"]);
   });
 
   it("blanks the school field in education entries without dropping degree/year", () => {
@@ -109,8 +109,51 @@ describe("redactResumeDetailForLock", () => {
       education: [{ degree: "B.Tech", school: "IIT Bombay", year: "2018" }],
     });
 
-    const redacted = redactResumeDetailForLock(detail);
+    const redacted = redactResumeDetailForLock(detail, "Jane Doe");
 
     expect(redacted.education).toEqual([{ degree: "B.Tech", school: "", year: "2018" }]);
+  });
+
+  it("strips the candidate's name out of the AI-written summary so a locked candidate stays anonymous", () => {
+    const detail = extractResumeDetail({
+      topSkills: ["React"],
+      summary: "Shaik Rukiyabi is an enthusiastic final-year student. Shaik has built several projects.",
+    });
+
+    const redacted = redactResumeDetailForLock(detail, "Shaik Rukiyabi");
+
+    expect(redacted.summary).toBe("The candidate is an enthusiastic final-year student. The candidate has built several projects.");
+    expect(redacted.summary).not.toMatch(/Shaik|Rukiyabi/);
+  });
+
+  it("strips the name out of headline, achievements, and certifications too", () => {
+    const detail = extractResumeDetail({
+      topSkills: ["React"],
+      headline: "Jane Doe — Senior Engineer",
+      keyAchievements: ["Jane Doe led a 4-person team"],
+      experiences: [],
+    });
+    const withCerts = { ...detail, certifications: ["Jane Doe Certified Scrum Master"] };
+
+    const redacted = redactResumeDetailForLock(withCerts, "Jane Doe");
+
+    expect(redacted.headline).toBe("The candidate — Senior Engineer");
+    expect(redacted.keyAchievements).toEqual(["The candidate led a 4-person team"]);
+    expect(redacted.certifications).toEqual(["The candidate Certified Scrum Master"]);
+  });
+
+  it("is a no-op on free text when the candidate's name is empty or has no usable tokens", () => {
+    const detail = extractResumeDetail({ topSkills: [], summary: "A short bio." });
+
+    expect(redactResumeDetailForLock(detail, "").summary).toBe("A short bio.");
+    expect(redactResumeDetailForLock(detail, "A").summary).toBe("A short bio.");
+  });
+
+  it("does not mangle unrelated substrings — word-bounded, not a blind substring replace", () => {
+    const detail = extractResumeDetail({ topSkills: [], summary: "Experienced with Ravi Shastri's leadership books." });
+
+    // Name "Ravi" should only match the whole word, not clobber "leadership".
+    const redacted = redactResumeDetailForLock(detail, "Ravi");
+    expect(redacted.summary).toBe("Experienced with The candidate Shastri's leadership books.");
   });
 });
