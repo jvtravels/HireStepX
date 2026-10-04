@@ -1462,6 +1462,7 @@ export default function RequirementDetailPage() {
                   storageKey={CANDIDATES_RECENT_SEARCHES_KEY}
                   suggestedFilters={suggestedFilters}
                   style={{ flex: "1 1 220px", minWidth: 200, maxWidth: 420 }}
+                  inputStyle={{ background: t.white }}
                 />
                 <FilterPill label="Contact" value={contactFilter} options={contactFilterOptions} onChange={setContactFilter} />
                 {locationOptions.length > 1 && (
