@@ -38,6 +38,13 @@ export interface ScoredCandidate {
   candidateId: string;
   matchScore: number;
   rosterScore: number;
+  /** Whether this candidate cleared MIN_FIT_FOR_ROSTER_CREDIT — i.e. has any
+      real role/skill/location basis for appearing in this requirement's
+      shortlist at all, as opposed to a candidate from a totally unrelated
+      field whose only "score" comes from roster/activity noise. rankAndCap
+      filters on this so an employer never sees a forced, padded-out list of
+      irrelevant candidates just to hit the cap. */
+  hasRelevance: boolean;
 }
 
 /** 0-100 read-outs for the three inputs that drive matchScore, for
@@ -209,12 +216,13 @@ export function scoreCandidateMatch(candidate: CandidatePoolRow, req: Requiremen
   const expFit = experienceFit(candidate.years_experience, req.experienceMin, req.experienceMax);
 
   const fitComponent = roleOverlap * 0.55 + skillOverlap * 0.3 + locationFit * 0.15;
-  const rosterCredit = fitComponent >= MIN_FIT_FOR_ROSTER_CREDIT ? rosterScore * 0.2 + activityBoost * 10 : 0;
+  const hasRelevance = fitComponent >= MIN_FIT_FOR_ROSTER_CREDIT;
+  const rosterCredit = hasRelevance ? rosterScore * 0.2 + activityBoost * 10 : 0;
   const matchScore = Math.round(
     clamp(fitComponent * 70 + rosterCredit, 0, 100) * recencyPenalty * expFit,
   );
 
-  return { candidateId: candidate.id, matchScore: clamp(matchScore, 0, 100), rosterScore };
+  return { candidateId: candidate.id, matchScore: clamp(matchScore, 0, 100), rosterScore, hasRelevance };
 }
 
 /** Human-readable 0-100 read-outs of the same three inputs scoreCandidateMatch
@@ -295,12 +303,18 @@ export function classifyRequirementStatus(matches: Array<{ matchScore: number }>
 /** Keeps only candidates worth surfacing, ranked best first, capped so a
     requirement never returns an unbounded shortlist.
 
-    The minimum-score floor is disabled for now (2026-10-04) while the
-    candidate pool is small — most profiles lack a completed target_role /
-    resume_data and can never clear a nonzero floor, which was hiding
-    otherwise-reviewable matches entirely. Revisit once the pool grows. */
+    2026-10-04: filters out candidates with no real relevance (hasRelevance
+    false — zero meaningful role/skill/location signal) before capping. A
+    prior version capped first with no floor, which meant a requirement
+    with only 2 genuinely relevant candidates in the pool still padded the
+    shortlist to 20 by scraping in unrelated profiles (e.g. software
+    engineers shortlisted for a Sales Executive opening) sorted purely by
+    roster/activity noise — exactly the "forced candidate" failure mode
+    employers shouldn't see. A requirement can now legitimately return
+    fewer than `cap` candidates, including zero. */
 export function rankAndCap(scored: ScoredCandidate[], cap = 20): ScoredCandidate[] {
   return scored
+    .filter((s) => s.hasRelevance)
     .sort((a, b) => b.matchScore - a.matchScore)
     .slice(0, cap);
 }

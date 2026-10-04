@@ -168,18 +168,35 @@ describe("classifyRequirementStatus", () => {
 });
 
 describe("rankAndCap", () => {
-  it("sorts descending without a minimum-score floor", () => {
+  it("sorts descending", () => {
     const scored = [
-      { candidateId: "a", matchScore: 30, rosterScore: 50 },
-      { candidateId: "b", matchScore: 90, rosterScore: 50 },
-      { candidateId: "c", matchScore: 55, rosterScore: 50 },
+      { candidateId: "a", matchScore: 30, rosterScore: 50, hasRelevance: true },
+      { candidateId: "b", matchScore: 90, rosterScore: 50, hasRelevance: true },
+      { candidateId: "c", matchScore: 55, rosterScore: 50, hasRelevance: true },
     ];
     expect(rankAndCap(scored).map((s) => s.candidateId)).toEqual(["b", "c", "a"]);
   });
 
   it("caps the result at the given size", () => {
-    const scored = Array.from({ length: 30 }, (_, i) => ({ candidateId: String(i), matchScore: 80, rosterScore: 50 }));
+    const scored = Array.from({ length: 30 }, (_, i) => ({ candidateId: String(i), matchScore: 80, rosterScore: 50, hasRelevance: true }));
     expect(rankAndCap(scored, 5)).toHaveLength(5);
+  });
+
+  it("filters out candidates with no real relevance, even under the cap", () => {
+    const scored = [
+      { candidateId: "relevant", matchScore: 45, rosterScore: 50, hasRelevance: true },
+      { candidateId: "noise-1", matchScore: 25, rosterScore: 90, hasRelevance: false },
+      { candidateId: "noise-2", matchScore: 6, rosterScore: 50, hasRelevance: false },
+    ];
+    expect(rankAndCap(scored, 20).map((s) => s.candidateId)).toEqual(["relevant"]);
+  });
+
+  it("can legitimately return fewer than cap, including zero, when nothing is relevant", () => {
+    const scored = [
+      { candidateId: "noise-1", matchScore: 10, rosterScore: 50, hasRelevance: false },
+      { candidateId: "noise-2", matchScore: 6, rosterScore: 50, hasRelevance: false },
+    ];
+    expect(rankAndCap(scored, 20)).toEqual([]);
   });
 });
 
