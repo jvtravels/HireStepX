@@ -302,6 +302,92 @@ describe("Gemini thinkingConfig", () => {
   });
 });
 
+/* ── Groq TPM-cap-aware sizing (callGroq) ────────────────────────────
+ *
+ * Groq's free tier caps openai/gpt-oss-20b/120b at a flat 8,000
+ * tokens/minute, counting (prompt + max_tokens) against it regardless
+ * of actual output length. callGroq() sizes max_tokens off the actual
+ * prompt size and skips the call outright (no network round trip) when
+ * even its minimum usable completion floor doesn't fit under the cap.
+ * These tests pin that behavior so it can't silently regress back to a
+ * fixed max_tokens that 413s once a prompt grows large. */
+
+function tokenPaddedPrompt(tokens: number): string {
+  // No whitespace → countTokens' word-based upper bound collapses to a
+  // small constant, so the char-based lower bound (ceil(len/4)) decides
+  // the count alone — length = tokens * 4 yields exactly `tokens`.
+  return "a".repeat(tokens * 4);
+}
+
+describe("Groq TPM-cap-aware sizing", () => {
+  it("shrinks max_tokens to fit the remaining TPM budget on a large prompt", async () => {
+    fetchSpy.mockImplementation(async (url: string) => {
+      if (String(url).includes("api.groq.com")) return groqOk("ok");
+      return new Response("{}", { status: 200 });
+    });
+
+    // 6000-token prompt leaves 8000 - 400 - 6000 = 1600 available, below
+    // the default 2000 maxTokens but above the 256-token default floor.
+    await callLLM({ prompt: tokenPaddedPrompt(6000), fast: true });
+
+    const groqCall = fetchSpy.mock.calls.find((args: unknown[]) => String(args[0]).includes("api.groq.com"));
+    const body = JSON.parse(groqCall?.[1]?.body as string);
+    expect(body.max_tokens).toBe(1600);
+  });
+
+  it("passes requestedMaxTokens through unmodified when the prompt is small", async () => {
+    fetchSpy.mockImplementation(async (url: string) => {
+      if (String(url).includes("api.groq.com")) return groqOk("ok");
+      return new Response("{}", { status: 200 });
+    });
+
+    await callLLM({ prompt: "Short prompt.", fast: true });
+
+    const groqCall = fetchSpy.mock.calls.find((args: unknown[]) => String(args[0]).includes("api.groq.com"));
+    const body = JSON.parse(groqCall?.[1]?.body as string);
+    expect(body.max_tokens).toBe(2000); // default requestedMaxTokens, untouched
+  });
+
+  it("skips Groq outright (no fetch) and fails over when the prompt alone leaves less than the default floor", async () => {
+    let groqCallCount = 0;
+    fetchSpy.mockImplementation(async (url: string) => {
+      if (String(url).includes("api.groq.com")) { groqCallCount++; return groqOk("ok"); }
+      if (String(url).includes("generativelanguage")) return geminiOk("fallback result");
+      return new Response("{}", { status: 200 });
+    });
+
+    // 7500-token prompt leaves 8000 - 400 - 7500 = 100 available, below
+    // the default 256-token floor — callGroq() must throw before any fetch.
+    const promise = callLLM({ prompt: tokenPaddedPrompt(7500), fast: true });
+    await vi.runAllTimersAsync();
+    const result = await promise;
+
+    expect(groqCallCount).toBe(0);
+    expect(result.model).toBe("gemini-3.5-flash-lite");
+    expect(result.text).toBe("fallback result");
+  });
+
+  it("skips Groq when a caller's custom groqMinCompletionTokens floor isn't met, even though the default floor would have allowed it", async () => {
+    let groqCallCount = 0;
+    fetchSpy.mockImplementation(async (url: string) => {
+      if (String(url).includes("api.groq.com")) { groqCallCount++; return groqOk("ok"); }
+      if (String(url).includes("generativelanguage")) return geminiOk("fallback result");
+      return new Response("{}", { status: 200 });
+    });
+
+    // 7000-token prompt leaves 8000 - 400 - 7000 = 600 available — above
+    // the default 256-token floor (so the previous test's prompt wouldn't
+    // have skipped here) but below a caller-specified 1800-token floor,
+    // mirroring evaluate-session's real requirement.
+    const promise = callLLM({ prompt: tokenPaddedPrompt(7000), fast: true, groqMinCompletionTokens: 1800 });
+    await vi.runAllTimersAsync();
+    const result = await promise;
+
+    expect(groqCallCount).toBe(0);
+    expect(result.model).toBe("gemini-3.5-flash-lite");
+  });
+});
+
 /* ── totalBudgetMs — whole-chain wall-clock ceiling ──────────────────
  *
  * analyze-resume's real worst case (gemini → groq → cerebras, each with

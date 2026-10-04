@@ -1,6 +1,7 @@
 /* Unified LLM caller — Gemini primary for big-model calls, Groq for fast (8b) calls */
 
 import { captureServerEvent } from "./_posthog";
+import { countTokens } from "./_tokenizer";
 
 declare const process: { env: Record<string, string | undefined> };
 
@@ -147,6 +148,16 @@ interface LLMOptions {
   fallbackMaxTokens?: number;
   jsonMode?: boolean;
   fast?: boolean;
+  // Groq-only: the smallest completion a caller considers usable, in tokens.
+  // callGroq() skips the API call outright (no network round trip) when the
+  // prompt alone leaves less than this much room under the free-tier TPM cap
+  // — a request that small would almost certainly truncate mid-response
+  // anyway, so failing over immediately beats waiting out a doomed call.
+  // Defaults to a small generic floor (GROQ_DEFAULT_MIN_COMPLETION_TOKENS)
+  // that only guards against degenerate near-zero budgets; set this higher
+  // when a caller knows its real completions run larger (e.g. a multi-field
+  // JSON report needs ~1000+ tokens and a 300-token budget is never enough).
+  groqMinCompletionTokens?: number;
 }
 
 interface LLMResult {
@@ -157,10 +168,32 @@ interface LLMResult {
   latencyMs?: number;
 }
 
+// Confirmed directly from the Groq console's Organization Limits table
+// (2026-10-03, matches a 413 body's "Limit 8000"): openai/gpt-oss-20b AND
+// -120b share a flat 8,000 tokens/minute free-tier cap, counting
+// (prompt + max_tokens) against it regardless of actual output length. A
+// fixed max_tokens guarantees a 413 once the prompt alone grows past
+// ~(cap - margin - max_tokens); sizing max_tokens off the ACTUAL prompt size
+// keeps every call under the cap, and skipping outright when even the floor
+// doesn't fit saves a doomed round trip instead of waiting out its 413.
+const GROQ_TPM_CAP = 8000;
+const GROQ_TPM_SAFETY_MARGIN = 400; // estimator slack + response-format overhead
+const GROQ_DEFAULT_MIN_COMPLETION_TOKENS = 256;
+
 async function callGroq(opts: LLMOptions, signal?: AbortSignal): Promise<LLMResult> {
   // Groq shut down llama-3.1-8b-instant (Aug 16, 2026) and
   // llama-3.3-70b-specdec (Apr 14, 2025). Use their supported successors.
   const model = opts.fast ? "openai/gpt-oss-20b" : "openai/gpt-oss-120b";
+  const requestedMaxTokens = opts.maxTokens ?? 2000;
+  const promptTokens = countTokens(opts.prompt);
+  const availableCompletionBudget = GROQ_TPM_CAP - GROQ_TPM_SAFETY_MARGIN - promptTokens;
+  const minCompletionTokens = opts.groqMinCompletionTokens ?? GROQ_DEFAULT_MIN_COMPLETION_TOKENS;
+  if (availableCompletionBudget < minCompletionTokens) {
+    throw new Error(
+      `Groq skipped — prompt (~${promptTokens} tokens) leaves ~${Math.max(0, availableCompletionBudget)} tokens under the ${GROQ_TPM_CAP} TPM free-tier cap, below the ${minCompletionTokens}-token floor for a usable response`,
+    );
+  }
+  const maxTokens = Math.min(requestedMaxTokens, availableCompletionBudget);
   const start = Date.now();
   const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
@@ -170,7 +203,7 @@ async function callGroq(opts: LLMOptions, signal?: AbortSignal): Promise<LLMResu
       model,
       messages: [{ role: "user", content: opts.prompt }],
       temperature: opts.temperature ?? 0.3,
-      max_tokens: opts.maxTokens ?? 2000,
+      max_tokens: maxTokens,
       // GPT-OSS is a reasoning model — unlike the retired llama-3.1-8b-instant,
       // it spends part of max_tokens on an internal reasoning pass before the
       // final answer. Our per-call budgets (500-2500 tokens) were sized for
