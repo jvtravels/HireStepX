@@ -953,9 +953,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // has aged past 24h (unchecked) or 30d (checked), force re-auth.
           if (isSessionExpiredByPreference()) {
             console.info("[auth] session expired by Stay-signed-in TTL — signing out");
+            const staleAccessToken = session.access_token;
             setUser(null);
             clearSessionStart();
-            await client.auth.signOut().catch(() => {});
+            // Don't route this through client.auth.signOut() — it acts on
+            // the shared client's CURRENT session, not the stale one we
+            // captured above. This init flow runs on every mount including
+            // /login, so a user submitting the login form while this await
+            // was still in flight would have their brand-new session
+            // silently wiped the moment the stale signOut() finally
+            // resolved (reproduced live: login succeeded, a delayed global
+            // logout fired right after, every following authed call —
+            // including analyze-resume — came back 401). Guard the local
+            // wipe on the stale token still being current, and revoke it
+            // server-side with a direct call scoped to that exact token so
+            // it can never touch a session established after this check
+            // started.
+            if (readSessionFromLocalStorage()?.access_token === staleAccessToken) {
+              try {
+                const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+                const ref = url ? new URL(url).hostname.split(".")[0] : null;
+                if (ref) localStorage.removeItem(`sb-${ref}-auth-token`);
+              } catch { /* ignore */ }
+              const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+              const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+              if (supabaseUrl && anonKey) {
+                fetch(`${supabaseUrl}/auth/v1/logout?scope=global`, {
+                  method: "POST",
+                  headers: { apikey: anonKey, Authorization: `Bearer ${staleAccessToken}` },
+                }).catch(() => {});
+              }
+            }
             clearTimeout(safetyTimer);
             setLoading(false);
             return;

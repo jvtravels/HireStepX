@@ -335,8 +335,19 @@ export default function Onboarding() {
         const autoRole = extractRoleFromExperience(data.experience);
         const { analyzeResumeWithAI } = await import("./dashboardData");
         analysisAbortRef.current?.abort();
-        analysisAbortRef.current = new AbortController();
-        analyzeResumeWithAI(rText, targetRole || autoRole, analysisAbortRef.current.signal)
+        const ac = new AbortController();
+        analysisAbortRef.current = ac;
+        // A hung connection (dropped network, an interfering browser
+        // extension) left this call never settling, which left aiPhase
+        // stuck on "analyzing" forever — isBusy derives from it, so
+        // Continue never re-enabled and onboarding couldn't be finished.
+        // This restore-on-mount path fires on every refresh until a real
+        // AI profile lands, making it the most-triggered of the three
+        // analyze-resume call sites; the other two already carry this same
+        // ceiling (see the re-analyze effect below and handleFileChange's
+        // Promise.race) — this one was missed.
+        const timer = setTimeout(() => ac.abort(), 20000);
+        analyzeResumeWithAI(rText, targetRole || autoRole, ac.signal)
           .then(result => {
             if (result && "profile" in result) {
               setAiProfile(result.profile);
@@ -350,7 +361,7 @@ export default function Onboarding() {
             }
           })
           .catch(err => { console.error("[onboarding] AI analysis error:", err instanceof Error ? err.message : err); })
-          .finally(() => setAiPhase("done"));
+          .finally(() => { clearTimeout(timer); setAiPhase("done"); });
       }
       if (!targetRole) {
         const aiRole = savedAiProfile?.headline && savedAiProfile.headline !== "Analyzing..." ? savedAiProfile.headline.split(/\s+with\s+/i)[0] : "";
