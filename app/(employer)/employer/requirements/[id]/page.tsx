@@ -190,6 +190,29 @@ function compareCandidates(a: Candidate, b: Candidate, sort: Sort<SortColumn>): 
   }
 }
 
+/** Info-icon tooltip trigger for a table column header — mirrors the Jobs
+ *  table's HeadInfo (app/(employer)/employer/jobs/page.tsx) so both tables
+ *  give the same explain-this-column affordance. */
+function HeadInfo({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          type="button"
+          onClick={(e) => e.stopPropagation()}
+          style={{ display: "inline-flex", alignItems: "center", color: t.inkFaint, background: "transparent", border: "none", cursor: "pointer", padding: 8, margin: -6 }}
+        >
+          <InfoIcon size={12} aria-hidden="true" />
+          <span className="sr-only">{label}</span>
+        </button>
+      </TooltipTrigger>
+      <TooltipContent side="bottom" className="max-w-64">
+        {children}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
 function initials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0) return "?";
@@ -1548,12 +1571,43 @@ export default function RequirementDetailPage() {
                         <TableRow style={{ background: t.rowTint, height: 40 }}>
                           {!readOnly && <TableHead style={{ width: 32 }}></TableHead>}
                           <SortableHead column="name" columnLabel={COLUMN_LABEL.name} defaultDirection="asc" width="30%" minWidth={240} sort={sort} onSortChange={setSort}>Candidate</SortableHead>
-                          <SortableHead column="match" columnLabel={COLUMN_LABEL.match} width="7%" minWidth={80} sort={sort} onSortChange={setSort}>Match</SortableHead>
-                          <SortableHead column="sessions" columnLabel={COLUMN_LABEL.sessions} width="13%" minWidth={150} sort={sort} onSortChange={setSort}>Practice history</SortableHead>
+                          <SortableHead
+                            column="match"
+                            columnLabel={COLUMN_LABEL.match}
+                            width="7%"
+                            minWidth={80}
+                            sort={sort}
+                            onSortChange={setSort}
+                            after={<HeadInfo label="About Match">How well this candidate's role, skills, and location fit this requirement — out of 100. Candidates with no practice sessions can still score on resume fit alone.</HeadInfo>}
+                          >
+                            Match
+                          </SortableHead>
+                          <SortableHead
+                            column="sessions"
+                            columnLabel={COLUMN_LABEL.sessions}
+                            width="13%"
+                            minWidth={150}
+                            sort={sort}
+                            onSortChange={setSort}
+                            after={<HeadInfo label="About Practice history">&quot;Roster&quot; is this candidate's average score (0–100) across all their completed practice interviews on HireStepX, not specific to this requirement. &quot;Sessions&quot; is how many practice interviews they've completed in total.</HeadInfo>}
+                          >
+                            Practice history
+                          </SortableHead>
                           <TableHead style={{ ...HEADER_CELL_STYLE, width: "9%", minWidth: 110 }}>Notice period</TableHead>
                           <TableHead style={{ ...HEADER_CELL_STYLE, width: "10%", minWidth: 120 }}>Current CTC</TableHead>
                           <TableHead style={{ ...HEADER_CELL_STYLE, width: "21%", minWidth: 190 }}>Skills</TableHead>
-                          <SortableHead column="pipeline" columnLabel={COLUMN_LABEL.pipeline} defaultDirection="asc" width="10%" minWidth={140} sort={sort} onSortChange={setSort}>Pipeline</SortableHead>
+                          <SortableHead
+                            column="pipeline"
+                            columnLabel={COLUMN_LABEL.pipeline}
+                            defaultDirection="asc"
+                            width="10%"
+                            minWidth={140}
+                            sort={sort}
+                            onSortChange={setSort}
+                            after={<HeadInfo label="About Pipeline">Where this candidate currently stands in your hiring process for this requirement.</HeadInfo>}
+                          >
+                            Pipeline
+                          </SortableHead>
                           <TableHead style={{ ...HEADER_CELL_STYLE, width: 48 }}></TableHead>
                         </TableRow>
                       </TableHeader>
