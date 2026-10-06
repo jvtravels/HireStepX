@@ -2,7 +2,7 @@
 /* Creates a recurring subscription instead of a one-time order for auto-renewal */
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { withNodeAuthAndRateLimit } from "./_shared";
+import { withNodeAuthAndRateLimit, slog } from "./_shared";
 import { razorpayBasicAuth } from "./_razorpay-auth";
 
 const RAZORPAY_KEY_ID = (process.env.RAZORPAY_KEY_ID || "").trim();
@@ -29,7 +29,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     const planConfig = PLAN_MAP[plan];
     if (!planConfig || !planConfig.planId) {
-      console.error(`[create-subscription] Missing Razorpay plan ID for "${plan}". Set RAZORPAY_PLAN_WEEKLY env var.`);
+      slog.error("create-subscription: missing Razorpay plan ID", { plan });
       return res.status(503).json({ error: "Subscription plans not configured. Please contact support@hirestepx.com" });
     }
 
@@ -68,7 +68,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (!response.ok) {
       const errText = await response.text().catch(() => "");
-      console.error("Razorpay subscription error:", response.status, errText);
+      slog.error("create-subscription: razorpay error", { status: response.status, body: errText.slice(0, 200) });
       return res.status(502).json({ error: "Could not create subscription. Please try again or contact support@hirestepx.com" });
     }
 
@@ -84,7 +84,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       status: subscription.status,
     });
   } catch (err) {
-    console.error("Subscription creation error:", err);
+    slog.error("create-subscription: unexpected error", { error: err instanceof Error ? err.message : String(err) });
     return res.status(500).json({ error: "Internal error" });
   }
 }

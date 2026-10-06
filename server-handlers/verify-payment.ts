@@ -11,6 +11,7 @@ import {
   escapeHtml,
   supabaseUrl,
   supabaseAnonKey,
+  slog,
 } from "./_shared";
 import { grantSessionCredits } from "./_session-credits";
 import { razorpayBasicAuth } from "./_razorpay-auth";
@@ -96,7 +97,7 @@ async function sendPaymentEmail(
   if (!RESEND_API_KEY) return;
   // Basic email format validation
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
-    console.error("Invalid email format, skipping payment email");
+    slog.error("verify-payment: invalid email format, skipping payment email", {});
     return;
   }
   const planLabel = PLAN_LABEL[plan] || tier;
@@ -145,14 +146,14 @@ async function sendPaymentEmail(
     clearTimeout(emailTimer);
     if (!emailRes.ok) {
       const errBody = await emailRes.text().catch(() => "");
-      console.error("Resend API error:", emailRes.status, errBody);
+      slog.error("verify-payment: resend API error", { status: emailRes.status, body: errBody.slice(0, 200) });
       logPaymentResendUsage("error", `HTTP ${emailRes.status}`);
       throw new Error(`Resend error ${emailRes.status}: ${errBody}`);
     }
     logPaymentResendUsage("success");
   } catch (err) {
     // Non-blocking — don't fail the payment if email fails
-    console.error("Failed to send payment email:", err);
+    slog.error("verify-payment: failed to send payment email", { error: err instanceof Error ? err.message : String(err) });
     logPaymentResendUsage("error", err instanceof Error ? err.message : "Unknown");
     throw err; // re-throw so Promise.allSettled captures it
   }
@@ -265,7 +266,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       paymentId: razorpay_payment_id,
     });
     if (!verifyRazorpaySignature(signPayload, razorpay_signature, RAZORPAY_KEY_SECRET)) {
-      console.error("Payment signature mismatch for", (razorpay_order_id || razorpay_subscription_id || "").slice(0, 8) + "...");
+      slog.error("verify-payment: signature mismatch", { ref: (razorpay_order_id || razorpay_subscription_id || "").slice(0, 8) });
       return res.status(400).json({ error: "Payment signature verification failed", code: "SIGNATURE_MISMATCH" });
     }
 
@@ -354,7 +355,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const baseAmount = plan === "single" ? PLAN_AMOUNT[plan] * sessionQuantity : PLAN_AMOUNT[plan];
       const expectedAmount = Math.max(0, baseAmount - promoDiscount);
       if (orderData.amount !== expectedAmount) {
-        console.error("Plan/amount mismatch for order", razorpay_order_id.slice(0, 8) + "...");
+        slog.error("verify-payment: plan/amount mismatch", { orderRef: razorpay_order_id.slice(0, 8) });
         return res.status(400).json({ error: "Plan does not match payment amount", code: "AMOUNT_MISMATCH" });
       }
     } else if (razorpay_subscription_id) {
@@ -377,7 +378,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // deploys that aren't using subscription billing yet.
       const expectedRzpPlanId = RAZORPAY_PLAN_ID_MAP[plan];
       if (expectedRzpPlanId && subData.plan_id && subData.plan_id !== expectedRzpPlanId) {
-        console.error("[verify-payment] Subscription plan_id mismatch — possible forgery:", {
+        slog.error("verify-payment: subscription plan_id mismatch — possible forgery", {
           claimed_plan: plan,
           expected_plan_id: expectedRzpPlanId,
           actual_plan_id: subData.plan_id,
@@ -460,7 +461,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // Non-201, non-409: Supabase error (500, timeout, etc.)
       // Fallback: check payments table (legacy check) to avoid blocking legitimate retries
       // of payments that were already fully processed before the dedup table existed
-      console.error("[verify-payment] Dedup INSERT returned unexpected status:", dedupRes.status);
+      slog.error("verify-payment: dedup INSERT returned unexpected status", { status: dedupRes.status });
       const dupCheck = await fetchWithTimeout(
         `${SUPABASE_URL}/rest/v1/payments?razorpay_payment_id=eq.${encodeURIComponent(razorpay_payment_id)}&select=id`,
         { headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` } },
@@ -521,14 +522,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         body: JSON.stringify({ id: crypto.randomUUID(), user_id: userId, razorpay_payment_id, razorpay_order_id, plan: "single", tier: "free", amount: purchaseAmount, currency: "INR", status: "completed", subscription_start: nowSingle.toISOString(), subscription_end: nowSingle.toISOString() }),
       });
       if (!paymentRecordRes.ok) {
-        console.error("[verify-payment] single payment record save failed:", paymentRecordRes.status);
+        slog.error("verify-payment: single payment record save failed", { status: paymentRecordRes.status });
         return res.status(500).json({ error: "Failed to save payment record" });
       }
       // Money-critical: the payment is already captured, so retry the grant
       // through transient Supabase failures before giving up.
       const newBalance = await grantSessionCredits(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, userId, sessionQuantity, fetch, 3, { paymentId: razorpay_payment_id });
       if (newBalance === null) {
-        console.error("[verify-payment] credit grant failed after retries for", userId.slice(0, 8));
+        slog.error("verify-payment: credit grant failed after retries", { userHash: userId.slice(0, 8) });
         // The dedup row was inserted BEFORE this grant, so leaving it in place
         // would make a client retry short-circuit at the 409/idempotent path and
         // return "success" without ever granting the credit — a permanent loss.
@@ -615,7 +616,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (!paymentRecordRes.ok) {
       const errText = await paymentRecordRes.text().catch(() => "");
-      console.error("Payment record save failed:", paymentRecordRes.status, errText);
+      slog.error("verify-payment: payment record save failed", { status: paymentRecordRes.status, body: errText.slice(0, 200) });
       // The dedup row from step 3 was already inserted. Left in place, a
       // client retry would short-circuit at the 409/idempotent path and
       // report "success" against the user's stale pre-upgrade profile,
@@ -666,7 +667,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     if (!updateRes || !updateRes.ok) {
-      console.error("Supabase update error after retries:", updateRes?.status, updateErrText);
+      slog.error("verify-payment: supabase update error after retries", { status: updateRes?.status, body: (updateErrText || "").slice(0, 200) });
       void captureServerEvent("verify_payment_activation_failed", userId, {
         payment_id_hash: hashPaymentId(razorpay_payment_id), plan, tier,
       });
@@ -713,12 +714,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           emailSent = true;
           break;
         } catch (emailErr) {
-          console.error(`Confirmation email attempt ${attempt + 1} failed:`, emailErr);
+          slog.error("verify-payment: confirmation email attempt failed", { attempt: attempt + 1, error: emailErr instanceof Error ? emailErr.message : String(emailErr) });
           if (attempt === 0) await new Promise(r => setTimeout(r, 1000));
         }
       }
       if (!emailSent) {
-        console.error(`[verify-payment] Email permanently failed for user ${userId.slice(0, 8)}, payment ${razorpay_payment_id.slice(0, 8)}`);
+        slog.error("verify-payment: confirmation email permanently failed", { userHash: userId.slice(0, 8), paymentRef: razorpay_payment_id.slice(0, 8) });
       }
     }
 
@@ -783,7 +784,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       ...(proratedDays > 0 ? { proratedBonusDays: proratedDays } : {}),
     });
   } catch (err) {
-    console.error("Payment verification error:", err);
+    slog.error("verify-payment: unexpected error", { error: err instanceof Error ? err.message : String(err) });
     // Awaited: an unawaited capture here races the response and can be
     // silently dropped if the invocation tears down first (see the
     // evaluate-session.ts fix for the confirmed 2026-10-03 incident this

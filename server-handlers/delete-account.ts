@@ -6,6 +6,7 @@ import {
   supabaseUrl,
   supabaseAnonKey,
   escapeHtml,
+  slog,
 } from "./_shared";
 import { captureServerEvent } from "./_posthog";
 import { emailShell, title, para, link, dataCard, graveEyebrow } from "./_email-theme";
@@ -110,7 +111,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (!restoreRes.ok) return res.status(500).json({ error: "Failed to restore account" });
         return res.status(200).json({ success: true, restored: true });
       } catch (err) {
-        console.error("[delete-account] Restore failed:", err);
+        slog.error("delete-account: restore failed", { error: err instanceof Error ? err.message : String(err) });
         return res.status(500).json({ error: "Failed to restore account" });
       }
     }
@@ -141,7 +142,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           });
         }
       } catch (err) {
-        console.error("[delete-account] Soft-delete failed:", err);
+        slog.error("delete-account: soft-delete failed", { error: err instanceof Error ? err.message : String(err) });
         // Fall through to hard delete
       }
     }
@@ -257,7 +258,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const userHash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(userId))
         .then(buf => Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("").slice(0, 12))
         .catch(() => "unknown");
-      console.error("Partial delete failure:", failures.join(", "), "for user hash", userHash);
+      slog.error("delete-account: partial delete failure", { failures: failures.join(", "), userHash });
       return res.status(500).json({ error: `Failed to delete data from: ${failures.join(", ")}. Account not deleted. Please try again or contact support.` });
     }
 
@@ -272,7 +273,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (!authDeleteRes.ok) {
       const statusCode = authDeleteRes.status;
-      console.error("Auth user delete failed:", statusCode);
+      slog.error("delete-account: auth user delete failed", { statusCode });
       // Data already deleted but auth record remains — report partial failure
       return res.status(207).json({ success: true, partial: true, warning: "Account data deleted but auth cleanup incomplete. You can still sign up again with the same email." });
     }
@@ -281,7 +282,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     return res.status(200).json({ success: true });
   } catch (err) {
-    console.error("Delete account error:", err);
+    slog.error("delete-account: delete account error", { error: err instanceof Error ? err.message : String(err) });
     return res.status(500).json({ error: "Failed to delete account" });
   }
 }

@@ -2,7 +2,7 @@
 
 export const config = { runtime: "edge" };
 
-import { withAuthAndRateLimit, sanitizeForLLM, corsHeaders, withRequestId, logServiceUsage, redisIncrByWithExpiry, getSubscriptionTier } from "./_shared";
+import { withAuthAndRateLimit, sanitizeForLLM, corsHeaders, withRequestId, logServiceUsage, redisIncrByWithExpiry, getSubscriptionTier, slog } from "./_shared";
 import { capsForTier } from "./_usage-this-month-helpers";
 import { captureServerEvent, captureServerException, distinctIdFrom } from "./_posthog";
 import { callLLM, extractJSON } from "./_llm";
@@ -434,7 +434,7 @@ CRITICAL RULES:
 
     const rawProfile = extractJSON<Record<string, unknown>>(result.text);
     if (!rawProfile) {
-      console.error(`[analyze-resume] JSON parse failed. Model: ${result.model}, text length: ${result.text.length}, first 200 chars: ${result.text.slice(0, 200)}`);
+      slog.error("analyze-resume: JSON parse failed", { model: result.model, textLength: result.text.length, preview: result.text.slice(0, 200) });
       return new Response(JSON.stringify({ error: "Failed to parse analysis" }), { status: 500, headers });
     }
 
@@ -573,7 +573,7 @@ CRITICAL RULES:
     const totalMs = Date.now() - t0;
     const isTimeout = err instanceof Error && (err.name === "AbortError" || err.message.includes("abort"));
     const errMsg = err instanceof Error ? err.message : String(err);
-    console.error(`[analyze-resume] FAILED after ${totalMs}ms (${isTimeout ? "timeout" : "error"}): ${errMsg.slice(0, 200)}`);
+    slog.error("analyze-resume: failed", { totalMs, isTimeout, error: errMsg.slice(0, 200) });
     // Roll back the monthly slot — no successful LLM parse happened.
     if (resumeParseKey) {
       redisIncrByWithExpiry(resumeParseKey, -1, 32 * 24 * 3600).catch(() => {/* fail silently */});

@@ -5,7 +5,7 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { createHmac, timingSafeEqual } from "crypto";
 import { categorizeLlmError, emptyBreakdown } from "./_admin-llm-categorizer";
 import { createAdminToken, verifyAdminToken } from "./_admin-auth";
-import { isRateLimited, getClientIp } from "./_shared";
+import { isRateLimited, getClientIp, slog } from "./_shared";
 import { costBreakdown, kFactor, DEFAULT_COST_RATES, llmInr, RATES_LAST_VERIFIED_AT, rateCardAgeDays, isRateCardStale } from "./_cost-helpers";
 import { getSarvamMonthlySpend } from "./_sarvam-credit-guard";
 import { getDeepgramMonthlySpend } from "./_deepgram-credit-guard";
@@ -107,7 +107,7 @@ async function fetchJSON<T = unknown>(path: string): Promise<T[]> {
   const res = await supa(path);
   if (!res.ok) {
     const body = await res.text().catch(() => "");
-    console.error(`[admin-data] supabase query failed: ${path.slice(0, 120)} → HTTP ${res.status}: ${body.slice(0, 200)}`);
+    slog.error("admin-data: supabase query failed", { path: path.slice(0, 120), status: res.status, body: body.slice(0, 200) });
     return [];
   }
   const data = await res.json();
@@ -162,10 +162,10 @@ async function notifyEmployerStatus(employerId: string, status: "approved" | "re
     });
     if (!emailRes.ok) {
       const txt = await emailRes.text().catch(() => "");
-      console.error(`[admin-data] employer status email failed: HTTP ${emailRes.status}: ${txt.slice(0, 200)}`);
+      slog.error("admin-data: employer status email failed", { status: emailRes.status, body: txt.slice(0, 200) });
     }
   } catch (err) {
-    console.error(`[admin-data] notifyEmployerStatus threw: ${err instanceof Error ? err.message : String(err)}`);
+    slog.error("admin-data: notifyEmployerStatus threw", { error: err instanceof Error ? err.message : String(err) });
   }
 }
 
@@ -2022,7 +2022,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json({ ...data as object, _token: createAdminToken() });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Failed to fetch admin data";
-    console.error("Admin data error:", msg);
+    slog.error("admin-data: unexpected error", { error: msg });
     const status = err instanceof ValidationError ? 400 : 500;
     return res.status(status).json({ error: status === 400 ? "Bad request" : "Internal server error" });
   }

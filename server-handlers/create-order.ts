@@ -1,7 +1,7 @@
 /* Vercel Serverless Function — Razorpay Order Creation */
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { withNodeAuthAndRateLimit, supabaseUrl } from "./_shared";
+import { withNodeAuthAndRateLimit, supabaseUrl, slog } from "./_shared";
 import { captureServerEvent } from "./_posthog";
 import { razorpayBasicAuth } from "./_razorpay-auth";
 import { checkPromoValidity, computeDiscountAmount } from "./_promo";
@@ -30,7 +30,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const { userId: authenticatedUserId } = pre;
 
   if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
-    console.error("Missing Razorpay env vars:", { hasKeyId: !!RAZORPAY_KEY_ID, hasKeySecret: !!RAZORPAY_KEY_SECRET });
+    slog.error("create-order: missing Razorpay env vars", { hasKeyId: !!RAZORPAY_KEY_ID, hasKeySecret: !!RAZORPAY_KEY_SECRET });
     return res.status(503).json({ error: "Payments not configured. Please contact support@hirestepx.com" });
   }
 
@@ -184,7 +184,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (!response.ok) {
       const errText = await response.text().catch(() => "");
-      console.error("Razorpay error:", response.status, errText);
+      slog.error("create-order: razorpay error", { status: response.status, body: errText.slice(0, 200) });
       const detail = response.status === 401
         ? "Payment gateway credentials are invalid. Please contact support."
         : "Could not create payment order. Please try again or contact support@hirestepx.com";
@@ -235,7 +235,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       description: finalDescription,
     });
   } catch (err) {
-    console.error("Order creation error:", err);
+    slog.error("create-order: unexpected error", { error: err instanceof Error ? err.message : String(err) });
     return res.status(500).json({ error: "Internal error" });
   }
 }

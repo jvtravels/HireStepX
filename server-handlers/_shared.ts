@@ -905,13 +905,60 @@ export function withRequestId(headers: Record<string, string>): Record<string, s
   return { ...headers, "X-Request-ID": crypto.randomUUID() };
 }
 
-/* ─── Structured Logging ─── */
+/* ─── Structured Logging + error capture ───────────────────────────────────
+ *
+ * slog.error both prints a JSON log line (Vercel's log viewer parses these)
+ * AND best-effort-forwards to Sentry when SENTRY_DSN is set, so a server-side
+ * failure is actually visible somewhere queryable instead of only in logs
+ * nobody is watching. No SDK dependency — Edge runtime can't rely on
+ * `@sentry/node`, and `@sentry/browser`'s client-side init doesn't apply
+ * here — so this posts a minimal envelope directly to the DSN's ingest URL,
+ * same fire-and-forget-with-timeout shape as the Resend email helpers. */
 
 type LogLevel = "info" | "warn" | "error";
+
+const SENTRY_DSN = process.env.SENTRY_DSN || process.env.NEXT_PUBLIC_SENTRY_DSN || "";
+
+/** Parse a Sentry DSN into its envelope-ingest store URL. Returns null if malformed/unset. */
+function sentryStoreUrl(dsn: string): string | null {
+  try {
+    const u = new URL(dsn);
+    const projectId = u.pathname.replace(/^\//, "");
+    if (!u.username || !projectId) return null;
+    return `${u.protocol}//${u.host}/api/${projectId}/store/`;
+  } catch {
+    return null;
+  }
+}
+
+function captureServerError(message: string, fields: Record<string, unknown>): void {
+  if (!SENTRY_DSN) return;
+  const storeUrl = sentryStoreUrl(SENTRY_DSN);
+  if (!storeUrl) return;
+  const dsnKey = SENTRY_DSN.split("://")[1]?.split("@")[0] || "";
+  const ac = new AbortController();
+  const timer = setTimeout(() => ac.abort(), 3000);
+  fetch(storeUrl, {
+    method: "POST",
+    signal: ac.signal,
+    headers: {
+      "Content-Type": "application/json",
+      "X-Sentry-Auth": `Sentry sentry_version=7, sentry_key=${dsnKey}, sentry_client=hirestepx-edge/1.0`,
+    },
+    body: JSON.stringify({
+      message,
+      level: "error",
+      platform: "node",
+      timestamp: Date.now() / 1000,
+      extra: fields,
+    }),
+  }).then(() => clearTimeout(timer)).catch(() => clearTimeout(timer));
+}
 
 /**
  * Emit a single structured log line (JSON) with consistent fields.
  * Vercel's log viewer can parse these for filtering/aggregation.
+ * `error`-level calls also best-effort-forward to Sentry (see above).
  */
 export function structuredLog(level: LogLevel, message: string, fields: Record<string, unknown> = {}): void {
   const line = JSON.stringify({
@@ -920,7 +967,10 @@ export function structuredLog(level: LogLevel, message: string, fields: Record<s
     msg: message,
     ...fields,
   });
-  if (level === "error") console.error(line);
+  if (level === "error") {
+    console.error(line);
+    captureServerError(message, fields);
+  }
   else if (level === "warn") console.warn(line);
   else console.log(line);
 }
