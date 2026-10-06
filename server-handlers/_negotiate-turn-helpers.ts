@@ -2703,7 +2703,12 @@ function compactTurnBrief(state: NegotiationState, move: AiMove): string {
       const { formatNonSalaryConstraintsBrief } = require("./_non-salary-constraints") as typeof import("./_non-salary-constraints");
       const line = formatNonSalaryConstraintsBrief(state.nonSalaryConstraints);
       if (line) parts.push(line);
-    } catch { /* defensive */ }
+    } catch (err) {
+      // A failure here means the non-salary-constraints advisory silently
+      // disappears from the brief with no trace — log it, this require()
+      // should never fail except on a real packaging/bundling bug.
+      console.error("[negotiate-turn] formatNonSalaryConstraintsBrief failed:", err);
+    }
   }
   /* Tier-1 ship (2026-05-15) — counter-offer-at-current risk advisory. The
    * detector only fires high when the candidate's currentCtc + target +
@@ -2738,8 +2743,11 @@ function compactTurnBrief(state: NegotiationState, move: AiMove): string {
     if (risk.risk === "high") {
       parts.push(`[COUNTER-OFFER RISK: high — reasons: ${risk.reasons.join("; ")}]`);
     }
-  } catch {
-    /* Defensive: if the module fails to load, do not break the brief. */
+  } catch (err) {
+    // Defensive: if the module fails to load, do not break the brief — but
+    // log it, since this silently drops the counter-offer-risk advisory
+    // with no trace otherwise.
+    console.error("[negotiate-turn] estimateCounterOfferRisk failed:", err);
   }
   parts.push(`rationale=${move.rationale}`);
   /* Architectural bug-prevention (2026-05-15) — extract bracket-tag names

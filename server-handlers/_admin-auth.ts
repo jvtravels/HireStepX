@@ -56,7 +56,11 @@ export function verifyAdminToken(token: string): boolean {
     const payload = JSON.parse(data);
     if (typeof payload?.exp !== "number" || Date.now() > payload.exp) return false;
     return true;
-  } catch {
+  } catch (err) {
+    // A malformed admin token (bad base64/JSON) on an admin-only surface is
+    // worth a trace — it's either a tampering attempt or a client bug, and
+    // previously this failed silently with no record either way.
+    console.warn("[admin-auth] verifyAdminToken rejected a malformed token:", err);
     return false;
   }
 }

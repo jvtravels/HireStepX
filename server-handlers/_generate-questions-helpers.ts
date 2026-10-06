@@ -297,9 +297,10 @@ export function buildSalaryNegotiationFallbackQuestions(opts: {
       { kind: "open-with-offer" } as Parameters<typeof renderCanonicalProse>[0],
       kernelState,
     );
-  } catch {
+  } catch (err) {
     // Prose render should never throw, but if it does, ship a safe greeting
     // rather than a blank turn — the kernel re-renders on its first reply.
+    console.error("[generate-questions] renderCanonicalProse opener failed:", err);
     opener = "Thanks for taking the time today. Let's get into it — to start, can you walk me through your current compensation structure?";
   }
   const introText = "Thanks for making time today — let's keep this conversational. Take your time, and feel free to type if that's easier.";

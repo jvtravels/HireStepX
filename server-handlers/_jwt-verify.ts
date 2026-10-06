@@ -135,7 +135,12 @@ export async function importEs256VerifyKey(
       false,
       ["verify"],
     );
-  } catch {
+  } catch (err) {
+    // Importing a key straight from Supabase's own JWKS should never throw —
+    // if it does, the JWKS response shape changed or the key is corrupt, and
+    // every request silently falls back to the slower network path without a
+    // trace of why. Log it so that regression is visible.
+    console.error("[jwt-verify] importEs256VerifyKey failed:", err);
     return null;
   }
 }
@@ -165,7 +170,12 @@ export async function verifyJwtLocally(
   let key: CryptoKey | null;
   try {
     key = await opts.resolveKey(decoded.header.kid);
-  } catch {
+  } catch (err) {
+    // resolveKey() hitting the JWKS endpoint is the one network call left in
+    // this "local" path — if it throws, every request is silently falling
+    // back to the slower introspection path. Log so a JWKS outage is visible
+    // instead of just showing up as a latency regression.
+    console.error("[jwt-verify] resolveKey threw, deferring to network path:", err);
     return { kind: "defer" };
   }
   if (!key) return { kind: "defer" };
@@ -179,7 +189,11 @@ export async function verifyJwtLocally(
       decoded.signature,
       new TextEncoder().encode(decoded.signingInput),
     );
-  } catch {
+  } catch (err) {
+    // A resolved, well-formed key that still fails to verify is an anomaly
+    // (vs. a merely-expired or malformed token, which is normal traffic) —
+    // worth a trace since it can indicate a JWKS/key-rotation mismatch.
+    console.error("[jwt-verify] subtle.verify threw, deferring to network path:", err);
     return { kind: "defer" };
   }
   if (!signatureOk) return { kind: "defer" };
