@@ -946,9 +946,12 @@ export function applyCorsHeaders(req: VercelRequest, res: VercelResponse): strin
 }
 
 /** Handle OPTIONS preflight and reject non-POST methods for VercelRequest. Returns true if handled. */
-export function handlePreflightAndMethod(req: VercelRequest, res: VercelResponse): boolean {
+export function handlePreflightAndMethod(req: VercelRequest, res: VercelResponse, opts?: { allowGet?: boolean }): boolean {
   if (req.method === "OPTIONS") { res.status(204).end(); return true; }
-  if (req.method !== "POST") { res.status(405).json({ error: "Method not allowed" }); return true; }
+  if (req.method !== "POST" && !(opts?.allowGet && req.method === "GET")) {
+    res.status(405).json({ error: "Method not allowed" });
+    return true;
+  }
   return false;
 }
 
@@ -1011,6 +1014,102 @@ export async function verifyEmployerAuthToken(
     result = await tryOnce();
   }
   return result;
+}
+
+/**
+ * Node-runtime counterpart to withAuthAndRateLimit() for the Vercel
+ * serverless (non-edge) handlers — payment/account endpoints that need
+ * Node's Buffer/crypto and so can't run on the edge. Runs the same shape
+ * of preamble (CORS/method, body size, origin/CSRF, per-IP rate limit,
+ * Bearer-token verification against Supabase) that cancel-subscription.ts,
+ * create-subscription.ts, create-order.ts, delete-account.ts,
+ * export-user-data.ts, and pause-subscription.ts each used to hand-roll
+ * independently. Returns `{ handled: true }` once it has already written
+ * a response (caller should just `return`), or the verified user on
+ * success — including the raw Supabase user object, since callers read
+ * different fields off it (email, app_metadata.provider for OAuth
+ * detection, etc.).
+ *
+ * The 5s abort timeout on the auth fetch mirrors delete-account.ts /
+ * export-user-data.ts's existing fix for a hung Supabase call otherwise
+ * stalling the whole request — applied uniformly here rather than only
+ * on the two handlers that had already been patched for it.
+ */
+export async function withNodeAuthAndRateLimit(
+  req: VercelRequest,
+  res: VercelResponse,
+  opts: { endpoint: string; ipLimit: number; maxBytes?: number; allowGet?: boolean },
+): Promise<
+  | { handled: true }
+  | { handled: false; userId: string; userEmail?: string; userData: Record<string, unknown> }
+> {
+  const origin = applyCorsHeaders(req, res);
+  if (handlePreflightAndMethod(req, res, { allowGet: opts.allowGet })) return { handled: true };
+
+  const bodyContentLength = parseInt((req.headers["content-length"] as string) || "0", 10);
+  if (bodyContentLength > (opts.maxBytes ?? 1048576)) {
+    res.status(413).json({ error: "Request too large" });
+    return { handled: true };
+  }
+
+  if (!origin) {
+    res.status(403).json({ error: "Forbidden" });
+    return { handled: true };
+  }
+
+  const ip = getVercelClientIp(req);
+  if (await isRateLimited(ip, opts.endpoint, opts.ipLimit, 60_000)) {
+    res.setHeader("Retry-After", "60");
+    res.status(429).json({ error: "Too many requests. Please try again shortly.", retryAfter: 60 });
+    return { handled: true };
+  }
+
+  const SUPABASE_URL_STR = supabaseUrl();
+  const SUPABASE_ANON_KEY_STR = supabaseAnonKey();
+  if (!SUPABASE_URL_STR || !SUPABASE_ANON_KEY_STR) {
+    res.status(503).json({ error: "Not configured" });
+    return { handled: true };
+  }
+
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    res.status(401).json({ error: "Unauthorized" });
+    return { handled: true };
+  }
+  const token = authHeader.slice(7);
+
+  const ac = new AbortController();
+  const timer = setTimeout(() => ac.abort(), 5000);
+  try {
+    const userRes = await fetch(`${SUPABASE_URL_STR}/auth/v1/user`, {
+      headers: { Authorization: `Bearer ${token}`, apikey: SUPABASE_ANON_KEY_STR },
+      signal: ac.signal,
+    });
+    clearTimeout(timer);
+    if (!userRes.ok) {
+      res.status(401).json({ error: "Invalid auth token" });
+      return { handled: true };
+    }
+    const userData = await userRes.json();
+    if (!userData || typeof userData.id !== "string") {
+      res.status(401).json({ error: "Auth verification failed" });
+      return { handled: true };
+    }
+    return {
+      handled: false,
+      userId: userData.id,
+      userEmail: typeof userData.email === "string" ? userData.email : undefined,
+      userData,
+    };
+  } catch (err) {
+    clearTimeout(timer);
+    if (err instanceof Error && err.name === "AbortError") {
+      res.status(504).json({ error: "Auth verification timed out" });
+    } else {
+      res.status(401).json({ error: "Auth verification failed" });
+    }
+    return { handled: true };
+  }
 }
 
 /* ─── Shared HTML Utilities ─── */

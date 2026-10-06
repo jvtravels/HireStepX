@@ -1,14 +1,7 @@
 /* Vercel Serverless Function — Razorpay Order Creation */
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import {
-  applyCorsHeaders,
-  handlePreflightAndMethod,
-  isRateLimited,
-  getVercelClientIp,
-  supabaseUrl,
-  supabaseAnonKey,
-} from "./_shared";
+import { withNodeAuthAndRateLimit, supabaseUrl } from "./_shared";
 import { captureServerEvent } from "./_posthog";
 import { checkPromoValidity, computeDiscountAmount } from "./_promo";
 
@@ -27,59 +20,20 @@ const PRICE_MAP: Record<string, { amount: number; name: string; description: str
 };
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  const origin = applyCorsHeaders(req, res);
-  if (handlePreflightAndMethod(req, res)) return;
-
-  // Body size check — also inspect the parsed body since chunked transfer
-  // encoding can omit Content-Length, making the header-only check bypassable.
-  const bodyContentLength = parseInt((req.headers["content-length"] as string) || "0", 10);
-  const bodyBytes = req.body != null ? Buffer.byteLength(JSON.stringify(req.body), "utf8") : 0;
-  if (bodyContentLength > 1048576 || bodyBytes > 1048576) {
-    return res.status(413).json({ error: "Request too large" });
-  }
-
-  // CSRF: validate Origin header on state-changing requests
-  if (!origin) {
-    return res.status(403).json({ error: "Forbidden" });
-  }
-
-  // Rate limiting: 5 order creations per minute per IP
-  const ip = getVercelClientIp(req);
-  if (await isRateLimited(ip, "create-order", 5, 60_000)) {
-    res.setHeader("Retry-After", "60");
-    return res.status(429).json({ error: "Too many requests. Please try again shortly.", retryAfter: 60 });
-  }
+  // Verify auth — always required. Never fall back to a client-supplied userId;
+  // if Supabase is unreachable or misconfigured, fail hard so an attacker
+  // cannot forge orders under another user's identity by supplying their UUID
+  // in the request body (C-1 fix).
+  const pre = await withNodeAuthAndRateLimit(req, res, { endpoint: "create-order", ipLimit: 5 });
+  if (pre.handled) return;
+  const { userId: authenticatedUserId } = pre;
 
   if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
     console.error("Missing Razorpay env vars:", { hasKeyId: !!RAZORPAY_KEY_ID, hasKeySecret: !!RAZORPAY_KEY_SECRET });
     return res.status(503).json({ error: "Payments not configured. Please contact support@hirestepx.com" });
   }
 
-  // Verify auth — always required. Never fall back to a client-supplied userId;
-  // if Supabase is unreachable or misconfigured, fail hard so an attacker
-  // cannot forge orders under another user's identity by supplying their UUID
-  // in the request body (C-1 fix).
   const SUPABASE_URL = supabaseUrl();
-  const SUPABASE_ANON_KEY = supabaseAnonKey();
-  let authenticatedUserId: string | undefined;
-  const authToken = (req.headers.authorization || "").replace("Bearer ", "");
-  if (authToken && SUPABASE_URL && SUPABASE_ANON_KEY) {
-    const authRes = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
-      headers: { Authorization: `Bearer ${authToken}`, apikey: SUPABASE_ANON_KEY },
-    });
-    if (!authRes.ok) return res.status(401).json({ error: "Unauthorized" });
-    try {
-      const userData = await authRes.json();
-      authenticatedUserId = userData.id;
-    } catch {
-      return res.status(401).json({ error: "Auth verification failed" });
-    }
-  }
-  // Guard: reject if auth was not satisfied — covers missing token, missing env
-  // vars, or any soft-failure path above. No fallback to req.body.userId.
-  if (!authenticatedUserId) {
-    return res.status(401).json({ error: "Authentication required" });
-  }
 
   try {
     // userId is intentionally omitted — we use authenticatedUserId (server-verified)

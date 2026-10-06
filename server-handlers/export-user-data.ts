@@ -3,66 +3,25 @@
  */
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import {
-  applyCorsHeaders,
-  handlePreflightAndMethod,
-  supabaseUrl,
-  supabaseAnonKey,
-  isRateLimited,
-  getVercelClientIp,
-} from "./_shared";
+import { withNodeAuthAndRateLimit, supabaseUrl } from "./_shared";
 import { buildExportEnvelope, buildExportFilename } from "./_export-user-data-helpers";
 
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  const origin = applyCorsHeaders(req, res);
   res.setHeader("X-Request-ID", crypto.randomUUID());
 
-  if (handlePreflightAndMethod(req, res)) return;
-  if (req.method !== "GET" && req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
-  }
-
-  // CSRF: validate Origin header
-  if (!origin) return res.status(403).json({ error: "Forbidden" });
-
-  // Rate limiting
-  const ip = getVercelClientIp(req);
-  if (await isRateLimited(ip, "export-user-data", 3, 60_000)) {
-    res.setHeader("Retry-After", "60");
-    return res.status(429).json({ error: "Too many requests. Please try again shortly.", retryAfter: 60 });
-  }
+  const pre = await withNodeAuthAndRateLimit(req, res, {
+    endpoint: "export-user-data",
+    ipLimit: 3,
+    allowGet: true,
+  });
+  if (pre.handled) return;
+  const { userId, userEmail = "" } = pre;
 
   const SUPABASE_URL = supabaseUrl();
-  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+  if (!SUPABASE_SERVICE_ROLE_KEY) {
     return res.status(503).json({ error: "Not configured" });
-  }
-
-  // Verify user auth
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return res.status(401).json({ error: "Unauthorized" });
-  }
-
-  const SUPABASE_ANON_KEY = supabaseAnonKey();
-  const token = authHeader.slice(7);
-  let userId: string;
-  let userEmail: string;
-  try {
-    const ac = new AbortController();
-    const timer = setTimeout(() => ac.abort(), 5000);
-    const userRes = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
-      headers: { Authorization: `Bearer ${token}`, apikey: SUPABASE_ANON_KEY },
-      signal: ac.signal,
-    });
-    clearTimeout(timer);
-    if (!userRes.ok) return res.status(401).json({ error: "Invalid auth token" });
-    const userData = await userRes.json();
-    userId = userData.id;
-    userEmail = userData.email || "";
-  } catch {
-    return res.status(401).json({ error: "Auth verification failed" });
   }
 
   const headers = {

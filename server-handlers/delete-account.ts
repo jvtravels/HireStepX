@@ -2,13 +2,10 @@
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import {
-  applyCorsHeaders,
-  handlePreflightAndMethod,
+  withNodeAuthAndRateLimit,
   supabaseUrl,
   supabaseAnonKey,
   escapeHtml,
-  isRateLimited,
-  getVercelClientIp,
 } from "./_shared";
 import { captureServerEvent } from "./_posthog";
 import { emailShell, title, para, link, dataCard, graveEyebrow } from "./_email-theme";
@@ -19,73 +16,31 @@ const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <noreply@hirestepx.com>"
 const APP_URL = (process.env.APP_URL || "https://hirestepx.vercel.app").replace(/\/$/, "");
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  const origin = applyCorsHeaders(req, res);
   res.setHeader("X-Request-ID", crypto.randomUUID());
 
-  if (handlePreflightAndMethod(req, res)) return;
-
-  // Body size check — also inspect the parsed body since chunked transfer
-  // encoding can omit Content-Length, making the header-only check bypassable.
-  const bodyContentLength = parseInt((req.headers["content-length"] as string) || "0", 10);
-  const bodyBytes = req.body != null ? Buffer.byteLength(JSON.stringify(req.body), "utf8") : 0;
-  if (bodyContentLength > 1048576 || bodyBytes > 1048576) {
-    return res.status(413).json({ error: "Request too large" });
-  }
-
-  // CSRF: validate Origin header
-  if (!origin) {
-    return res.status(403).json({ error: "Forbidden" });
-  }
-
-  // Rate limiting
-  const ip = getVercelClientIp(req);
-  if (await isRateLimited(ip, "delete-account", 5, 60_000)) {
-    res.setHeader("Retry-After", "60");
-    return res.status(429).json({ error: "Too many requests. Please try again shortly.", retryAfter: 60 });
-  }
+  const pre = await withNodeAuthAndRateLimit(req, res, {
+    endpoint: "delete-account",
+    ipLimit: 5,
+    maxBytes: 1048576,
+  });
+  if (pre.handled) return;
+  let { userEmail } = pre;
+  const { userId, userData } = pre;
 
   const SUPABASE_URL = supabaseUrl();
-  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+  const SUPABASE_ANON_KEY = supabaseAnonKey();
+  if (!SUPABASE_SERVICE_ROLE_KEY) {
     return res.status(503).json({ error: "Not configured" });
   }
 
-  // Verify user auth
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return res.status(401).json({ error: "Unauthorized" });
-  }
-
-  const SUPABASE_ANON_KEY = supabaseAnonKey();
-  const token = authHeader.slice(7);
-  let userId: string;
-  let userEmail: string | undefined;
   // OAuth-only accounts (Google) have no app password to verify — we
   // skip the re-auth gate for them. Bearer alone is what they had in
   // the first place (Supabase Auth never stored a hash we could check).
-  let isOAuthOnly = false;
-  try {
-    const authAc = new AbortController();
-    const authTimer = setTimeout(() => authAc.abort(), 5000);
-    const userRes = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
-      headers: { Authorization: `Bearer ${token}`, apikey: SUPABASE_ANON_KEY },
-      signal: authAc.signal,
-    });
-    clearTimeout(authTimer);
-    if (!userRes.ok) return res.status(401).json({ error: "Invalid auth token" });
-    const userData = await userRes.json();
-    userId = userData.id;
-    userEmail = typeof userData.email === "string" ? userData.email : undefined;
-    const provider = userData?.app_metadata?.provider;
-    const providers: unknown = userData?.app_metadata?.providers;
-    isOAuthOnly =
-      (provider === "google" && (!Array.isArray(providers) || !providers.includes("email"))) ||
-      (Array.isArray(providers) && providers.includes("google") && !providers.includes("email"));
-  } catch (authErr) {
-    if (authErr instanceof Error && authErr.name === "AbortError") {
-      return res.status(504).json({ error: "Auth verification timed out" });
-    }
-    return res.status(401).json({ error: "Auth verification failed" });
-  }
+  const provider = (userData as { app_metadata?: { provider?: unknown; providers?: unknown } })?.app_metadata?.provider;
+  const providers = (userData as { app_metadata?: { providers?: unknown } })?.app_metadata?.providers;
+  const isOAuthOnly =
+    (provider === "google" && (!Array.isArray(providers) || !providers.includes("email"))) ||
+    (Array.isArray(providers) && providers.includes("google") && !providers.includes("email"));
 
   // Default: soft-delete with 7-day grace period. Pass { hard: true } to permanently delete immediately.
   const hardDelete = req.body && typeof req.body === "object" && "hard" in req.body ? !!(req.body as Record<string, unknown>).hard : false;

@@ -1,17 +1,9 @@
 /* Vercel Serverless Function — Cancel Subscription */
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import {
-  applyCorsHeaders,
-  handlePreflightAndMethod,
-  supabaseUrl,
-  supabaseAnonKey,
-  isRateLimited,
-  getVercelClientIp,
-} from "./_shared";
+import { withNodeAuthAndRateLimit, supabaseUrl } from "./_shared";
 import { captureServerEvent } from "./_posthog";
 import {
-  isCancellationBodyTooLarge,
   parseSubscriptionProfile,
   formatSubscriptionEndDate,
   buildCancellationEmailHtml,
@@ -25,51 +17,15 @@ const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <noreply@hirestepx.com>"
 const APP_URL = (process.env.APP_URL || "https://hirestepx.vercel.app").replace(/\/$/, "");
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  const origin = applyCorsHeaders(req, res);
   res.setHeader("X-Request-ID", crypto.randomUUID());
 
-  if (handlePreflightAndMethod(req, res)) return;
-
-  // Body size check
-  if (isCancellationBodyTooLarge(req.headers["content-length"] as string | undefined)) {
-    return res.status(413).json({ error: "Request too large" });
-  }
-
-  // CSRF: validate Origin header on state-changing requests
-  if (!origin) {
-    return res.status(403).json({ error: "Forbidden" });
-  }
-
-  // Rate limiting
-  const ip = getVercelClientIp(req);
-  if (await isRateLimited(ip, "cancel-subscription", 5, 60_000)) {
-    res.setHeader("Retry-After", "60");
-    return res.status(429).json({ error: "Too many requests. Please try again shortly.", retryAfter: 60 });
-  }
+  const pre = await withNodeAuthAndRateLimit(req, res, { endpoint: "cancel-subscription", ipLimit: 5 });
+  if (pre.handled) return;
+  const { userId } = pre;
 
   const SUPABASE_URL = supabaseUrl();
-  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+  if (!SUPABASE_SERVICE_ROLE_KEY) {
     return res.status(503).json({ error: "Not configured" });
-  }
-
-  // Verify user auth
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return res.status(401).json({ error: "Unauthorized" });
-  }
-
-  const token = authHeader.slice(7);
-  const SUPABASE_ANON_KEY = supabaseAnonKey();
-  let userId: string;
-  try {
-    const userRes = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
-      headers: { Authorization: `Bearer ${token}`, apikey: SUPABASE_ANON_KEY },
-    });
-    if (!userRes.ok) return res.status(401).json({ error: "Invalid auth token" });
-    const userData = await userRes.json();
-    userId = userData.id;
-  } catch {
-    return res.status(401).json({ error: "Auth verification failed" });
   }
 
   try {
