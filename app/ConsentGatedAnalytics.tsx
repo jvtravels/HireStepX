@@ -45,7 +45,12 @@ export default function ConsentGatedAnalytics({ nonce, ga4 = true }: { nonce: st
   return (
     <>
       {accepted && <Analytics />}
-      {accepted && <SpeedInsights />}
+      {/* Speed Insights reports anonymized, aggregate Core Web Vitals (no
+       * cookies, no per-user identity) — not gated behind cookie consent like
+       * Analytics/GA4/PostHog, which do persist per-visitor identifiers. Most
+       * India mobile visitors don't accept the cookie banner, which was
+       * leaving Web Vitals blind for the bulk of real-world traffic. */}
+      <SpeedInsights />
       {ga4 && GA_ID && (
         <>
           <Script

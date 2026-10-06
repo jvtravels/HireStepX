@@ -159,10 +159,16 @@ const defaultLlmCaller: LlmCaller = async (system, user, opts) => {
    * cannot decode. Pass jsonMode: true only when the caller's prompt
    * explicitly asks for a JSON envelope. Default false. */
   const jsonMode = opts.jsonMode === true;
+  // totalBudgetMs bounds the WHOLE groq→gemini chain (including each
+  // provider's one-shot transient-error retry) so this stays well inside
+  // Vercel's Edge ~25s ceiling — without it the real worst case is
+  // (8000 + 800ms retry backoff) × 2 providers ≈ 17.6s per provider that
+  // retries, closer to 35s if both do. 18s leaves headroom for the kernel
+  // logic / sanitization / response assembly that runs around this call.
   const result = await callLLM(
     { prompt: `${system}\n\n${user}`, temperature: 0.7, maxTokens: 320, fast: true, jsonMode },
     8000,
-    { userId: opts.userId, endpoint: "negotiate-turn" },
+    { userId: opts.userId, endpoint: "negotiate-turn", totalBudgetMs: 18000 },
   );
   return result.text;
 };

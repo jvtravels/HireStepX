@@ -93,6 +93,7 @@ export default async function handler(req: Request): Promise<Response> {
           scopes: ["usage:write"],
           time_to_live_in_seconds: STT_TOKEN_TTL_SECONDS,
         }),
+        signal: AbortSignal.timeout(15_000),
       },
     );
     if (!mintRes.ok) {

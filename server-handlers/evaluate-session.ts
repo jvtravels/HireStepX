@@ -525,7 +525,10 @@ export default async function handler(req: Request): Promise<Response> {
 
   const pre = await withAuthAndRateLimit(req, {
     endpoint: "evaluate-session",
-    ipLimit: 10,
+    // ipLimit raised from 10: shared-NAT India traffic (campus wifi, cyber
+    // cafes, carrier-grade NAT) can trip a 10/min per-IP cap during
+    // concurrent legitimate usage. userLimit stays the real abuse control.
+    ipLimit: 30,
     userLimit: 5,
     checkQuota: true,
   });
