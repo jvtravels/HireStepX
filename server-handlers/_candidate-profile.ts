@@ -185,6 +185,8 @@ function readWaveDisables(): { w2: boolean; w3: boolean; w4: boolean; w6: boolea
 function applyWaveDisables(result: CandidateProfileResult): CandidateProfileResult {
   const { w2, w3, w4, w6, w7, w8, w9 } = readWaveDisables();
   if (!w2 && !w3 && !w4 && !w6 && !w7 && !w8 && !w9) return result;
+  // Wave flag names are typed per-field on CandidateProfileResult; writing by
+  // dynamic key (WAVE_N_FLAGS) needs the index-signature view.
   const out = result as unknown as Record<string, unknown>;
   if (w2) for (const k of WAVE_2_FLAGS) out[k] = false;
   if (w3) for (const k of WAVE_3_FLAGS) out[k] = false;
@@ -196,6 +198,7 @@ function applyWaveDisables(result: CandidateProfileResult): CandidateProfileResu
   /* Recompute hasAny against the zeroed flags so downstream code sees
    * consistent state. We check a small union — any non-null/true value
    * across the remaining surface. */
+  // Cast back now that the dynamic-key writes above are done.
   const r = out as unknown as CandidateProfileResult;
   r.hasAny =
     r.careerGapMonths != null ||
@@ -1285,7 +1288,8 @@ export function redactCandidateProfileForLogs(
 ): CandidateProfileResult {
   const out: CandidateProfileResult = { ...p };
   for (const key of SPECIAL_PERSONAL_DATA_FLAGS) {
-    /* Every listed flag is a boolean field on the interface; zero it. */
+    /* Every listed flag is a boolean field on the interface; zero it.
+     * Dynamic key from SPECIAL_PERSONAL_DATA_FLAGS needs the index-signature view. */
     (out as unknown as Record<string, unknown>)[key as string] = false;
   }
   return out;

@@ -30,6 +30,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!origin) return res.status(403).json({ error: "Forbidden" });
 
   // Rate limit: 5 reactivation attempts per IP per minute
+  // This handler is Node runtime (VercelRequest), but getClientIp is shared with edge
+  // handlers and typed against the standard Request; both expose the same .headers reads.
   const clientIp = getClientIp(req as unknown as Request);
   const corsHeaders = { "Access-Control-Allow-Origin": origin };
   if (await isRateLimited(clientIp, "reactivate-subscription", 5, 60)) {

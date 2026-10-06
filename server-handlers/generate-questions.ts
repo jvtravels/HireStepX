@@ -1440,6 +1440,8 @@ Example bad question: "Tell me about your experience." (too vague, not role-spec
             initialOffer: Math.round(negotiationBandData.initialOffer),
             maxStretch: Math.round(negotiationBandData.maxStretch),
             walkAway: Math.round(negotiationBandData.walkAway),
+            // initNegotiationState's band param has more fields than this opener-preview
+            // call needs; casting rather than inlining the full negotiation band shape here.
           } as unknown as Parameters<typeof initNegotiationState>[0]["band"],
           marketMode: (negotiationBandData as { marketMode?: "hot" | "neutral" | "soft" }).marketMode ?? "neutral",
         });

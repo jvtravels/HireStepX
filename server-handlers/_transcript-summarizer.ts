@@ -91,6 +91,8 @@ export function summarizeTranscriptIfLong<T extends TranscriptTurn>(
     if (flags.length > 0) summaryParts.push(`profile: ${flags.join(", ")}`);
   }
   const summaryText = summaryParts.join("; ");
+  // T is the caller's transcript-turn type (unconstrained generic); a synthetic
+  // system/text summary turn satisfies every concrete shape callers pass in practice.
   const summaryTurn = { role: "system", text: summaryText } as unknown as T;
   return { transcript: [summaryTurn, ...tail], summarized: true };
 }

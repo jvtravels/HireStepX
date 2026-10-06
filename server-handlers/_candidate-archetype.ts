@@ -265,6 +265,7 @@ export function classifyCandidateArchetype(
     if (
       sig.profileFlag &&
       profile != null &&
+      // sig.profileFlag is a dynamic key (from SIGNALS config) into CandidateProfileResult's boolean flags.
       (profile as unknown as Record<string, unknown>)[sig.profileFlag] === true
     ) {
       score += sig.profileBoost;

@@ -1730,6 +1730,7 @@ function isAskedTopicAnswered(
    * visible to the ordered cascade. */
   if (topic.endsWith("Asked")) {
     const root = topic.slice(0, -"Asked".length);
+    // Same dynamic-key lookup as `flag` above, for the derived *Answered/*Disclosed names.
     const answered = (checklist as unknown as Record<string, boolean | undefined>)[`${root}Answered`];
     const disclosed = (checklist as unknown as Record<string, boolean | undefined>)[`${root}Disclosed`];
     return Boolean(answered || disclosed);
