@@ -40,6 +40,8 @@ export interface NetworkInformationLike {
   saveData?: boolean;
   downlink?: number;
   rtt?: number;
+  addEventListener?: (type: "change", listener: () => void) => void;
+  removeEventListener?: (type: "change", listener: () => void) => void;
 }
 
 export function getNetworkInfo(): NetworkInformationLike | null {

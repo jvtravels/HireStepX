@@ -1,16 +1,11 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { e, ef } from "./interviewTokens";
 import { stripProsodyMarkup } from "./_prosody";
+import { getNetworkInfo } from "./_browser-api-guards";
 import { Button } from "@/components/ui/button";
 import { Toggle } from "@/components/ui/toggle";
 
 /* Bridge aliases removed — call sites use e/ef directly. */
-
-declare global {
-  interface Navigator {
-    connection?: { effectiveType?: string; downlink?: number; rtt?: number; addEventListener?: (event: string, cb: () => void) => void; removeEventListener?: (event: string, cb: () => void) => void };
-  }
-}
 
 /* ─── Real Mic-Level Waveform Visualizer ─── */
 export const WaveformVisualizer = React.memo(function WaveformVisualizer({ active, color, barCount = 16, stream }: { active: boolean; color: string; barCount?: number; stream?: MediaStream | null }) {
@@ -267,7 +262,7 @@ export const NetworkIndicator = React.memo(function NetworkIndicator() {
   const [quality, setQuality] = useState<"excellent" | "good" | "poor">("excellent");
   useEffect(() => {
     const check = () => {
-      const conn = navigator.connection;
+      const conn = getNetworkInfo();
       if (conn) {
         const dl = conn.downlink ?? 10;
         const rtt = conn.rtt ?? 0;
@@ -279,7 +274,7 @@ export const NetworkIndicator = React.memo(function NetworkIndicator() {
       }
     };
     check();
-    const conn = navigator.connection;
+    const conn = getNetworkInfo();
     conn?.addEventListener?.("change", check);
     window.addEventListener("online", check);
     window.addEventListener("offline", check);
