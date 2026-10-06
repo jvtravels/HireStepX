@@ -3,7 +3,7 @@ import { useEffect, useState, useRef, type CSSProperties } from "react";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { tokens as t, fonts, shadows } from "../auth/_tokens";
-import { useAuth, hasStoredSession } from "../AuthContext";
+import { useAuth, readSessionFromLocalStorage } from "../AuthContext";
 import { captureClientEvent } from "../posthogClient";
 import { FooterDome as FinalCTAFooterV2 } from "./FooterDome";
 import { CopyEmailLink } from "../_CopyEmailLink";
@@ -343,14 +343,18 @@ export function NavV2() {
      useAuth().isLoggedIn starts `false` and flips after restore — which
      leaves logged-in users staring at "Sign in / Start free" for the
      ~1-2s of cold restore. We sidestep that by checking localStorage
-     synchronously after mount: if a Supabase auth token is present we
-     optimistically render the Dashboard CTA right away, then keep it
-     in sync with the real `isLoggedIn` once restore completes.
+     synchronously after mount: if a Supabase auth token is present AND
+     not yet expired we optimistically render the Dashboard CTA right
+     away, then keep it in sync with the real `isLoggedIn` once restore
+     completes. Using the expiry-checked reader (not the presence-only
+     hasStoredSession) avoids flashing "Dashboard" for a stale/expired
+     token that RequireAuth will just bounce back to /login — which from
+     the user's side looks like "login dumped me on the dashboard".
      SSR + first paint still render the signed-out variant to avoid
      hydration mismatch. */
   const { isLoggedIn, loading } = useAuth();
   const [hasSession, setHasSession] = useState(false);
-  useEffect(() => { setHasSession(hasStoredSession()); }, [isLoggedIn]);
+  useEffect(() => { setHasSession(readSessionFromLocalStorage() !== null); }, [isLoggedIn]);
   const showDashboard = isLoggedIn || (loading && hasSession);
   const pathname = usePathname();
   const isActive = (href: string) => {
