@@ -5,6 +5,7 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { createHmac, timingSafeEqual } from "crypto";
 import { categorizeLlmError, emptyBreakdown } from "./_admin-llm-categorizer";
 import { createAdminToken, verifyAdminToken } from "./_admin-auth";
+import { isRateLimited, getClientIp } from "./_shared";
 import { costBreakdown, kFactor, DEFAULT_COST_RATES, llmInr, RATES_LAST_VERIFIED_AT, rateCardAgeDays, isRateCardStale } from "./_cost-helpers";
 import { getSarvamMonthlySpend } from "./_sarvam-credit-guard";
 import { getDeepgramMonthlySpend } from "./_deepgram-credit-guard";
@@ -41,7 +42,7 @@ function verifyPassword(input: string): boolean {
 }
 
 /** Check auth: either password (for login) or token (for subsequent requests) */
-function verifyAuth(req: VercelRequest): { ok: boolean; isLogin?: boolean } {
+async function verifyAuth(req: VercelRequest): Promise<{ ok: boolean; isLogin?: boolean }> {
   // Check x-admin-token header (in-memory token from client state)
   const token = req.headers["x-admin-token"];
   if (token && typeof token === "string" && verifyAdminToken(token)) {
@@ -60,10 +61,21 @@ function verifyAuth(req: VercelRequest): { ok: boolean; isLogin?: boolean } {
       return { ok: true };
     }
   }
-  // Check for password (login attempt)
+  // Check for password (login attempt). This is a second path into the same
+  // password check admin-login.ts exposes, so it shares that endpoint's
+  // "admin-login" rate-limit bucket — otherwise it'd be a brute-force
+  // bypass of the 5-attempts/15-min limit enforced there.
   const key = req.headers["x-admin-key"];
-  if (key && typeof key === "string" && verifyPassword(key)) {
-    return { ok: true, isLogin: true };
+  if (key && typeof key === "string") {
+    // getClientIp is typed against the standard Request; this handler is Node
+    // runtime (VercelRequest), but both expose the same .headers reads.
+    const ip = getClientIp(req as unknown as Request);
+    if (await isRateLimited(ip, "admin-login", 5, 900_000)) {
+      return { ok: false };
+    }
+    if (verifyPassword(key)) {
+      return { ok: true, isLogin: true };
+    }
   }
   return { ok: false };
 }
@@ -1714,9 +1726,16 @@ async function getCostData() {
 /* ─── Handler ─── */
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // Scoped to the admin dashboard's own origin — mirrors admin-login.ts,
+  // which is the only other place this endpoint's credentials are usable from.
+  res.setHeader("Access-Control-Allow-Origin", "https://admin.hirestepx.com");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, x-admin-token, x-admin-key");
+  res.setHeader("Access-Control-Allow-Credentials", "true");
+
   if (req.method === "OPTIONS") return res.status(204).end();
 
-  const auth = verifyAuth(req);
+  const auth = await verifyAuth(req);
   if (!auth.ok) {
     return res.status(401).json({ error: "Unauthorized" });
   }
