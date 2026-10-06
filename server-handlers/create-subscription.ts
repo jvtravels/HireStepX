@@ -3,6 +3,7 @@
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { withNodeAuthAndRateLimit } from "./_shared";
+import { razorpayBasicAuth } from "./_razorpay-auth";
 
 const RAZORPAY_KEY_ID = (process.env.RAZORPAY_KEY_ID || "").trim();
 const RAZORPAY_KEY_SECRET = (process.env.RAZORPAY_KEY_SECRET || "").trim();
@@ -32,7 +33,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(503).json({ error: "Subscription plans not configured. Please contact support@hirestepx.com" });
     }
 
-    const auth = Buffer.from(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`).toString("base64");
+    const auth = razorpayBasicAuth(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET);
     // Never fall back to a client-supplied userId — if auth passed, we have
     // authenticatedUserId; if it didn't, we must reject, not trust the body.
     if (!authenticatedUserId) {

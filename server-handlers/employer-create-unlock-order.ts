@@ -29,6 +29,7 @@ import {
   verifyEmployerAuthToken,
 } from "./_shared";
 import { singleUnlockPrice, batchUnlockPrice, batchIndexForRank } from "./_unlock-pricing";
+import { razorpayBasicAuth } from "./_razorpay-auth";
 
 const RAZORPAY_KEY_ID = (process.env.RAZORPAY_KEY_ID || "").trim();
 const RAZORPAY_KEY_SECRET = (process.env.RAZORPAY_KEY_SECRET || "").trim();
@@ -241,7 +242,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
-    const auth = Buffer.from(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`).toString("base64");
+    const auth = razorpayBasicAuth(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET);
     const receipt = `unlock_${Date.now()}`.slice(0, 40);
 
     const ac = new AbortController();

@@ -36,21 +36,33 @@ interface SupabaseWebhookBody {
   };
 }
 
-function sendEmail(subject: string, text: string): void {
+async function sendEmail(subject: string, text: string): Promise<void> {
   if (!RESEND_API_KEY) return;
-  void fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${RESEND_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      from: FROM_EMAIL,
-      to: [FOUNDER_EMAIL],
-      subject,
-      text,
-    }),
-  }).catch(() => { /* fire-and-forget */ });
+  try {
+    const ac = new AbortController();
+    const timer = setTimeout(() => ac.abort(), 10_000);
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      signal: ac.signal,
+      headers: {
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: FROM_EMAIL,
+        to: [FOUNDER_EMAIL],
+        subject,
+        text,
+      }),
+    });
+    clearTimeout(timer);
+    if (!res.ok) {
+      const errBody = await res.text().catch(() => "");
+      console.warn(`[new-signup-notification] email failed HTTP ${res.status}: ${errBody.slice(0, 200)}`);
+    }
+  } catch (err) {
+    console.warn(`[new-signup-notification] email threw: ${(err as Error).message}`);
+  }
 }
 
 export default async function handler(req: Request): Promise<Response> {
@@ -101,7 +113,7 @@ export default async function handler(req: Request): Promise<Response> {
     `-- HireStepX`,
   ].join("\n");
 
-  sendEmail(subject, text);
+  await sendEmail(subject, text);
 
   return new Response("ok", { status: 200 });
 }

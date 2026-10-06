@@ -236,6 +236,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       fetch(`${SUPABASE_URL}/rest/v1/user_outcomes?user_id=eq.${encodedId}`, { method: "DELETE", headers, signal: ac.signal }),
       fetch(`${SUPABASE_URL}/rest/v1/llm_usage?user_id=eq.${encodedId}`, { method: "DELETE", headers, signal: ac.signal }),
       fetch(`${SUPABASE_URL}/rest/v1/google_calendar_sync?user_id=eq.${encodedId}`, { method: "DELETE", headers, signal: ac.signal }),
+      fetch(`${SUPABASE_URL}/rest/v1/product_ratings?user_id=eq.${encodedId}`, { method: "DELETE", headers, signal: ac.signal }),
+      fetch(`${SUPABASE_URL}/rest/v1/interview_turns?user_id=eq.${encodedId}`, { method: "DELETE", headers, signal: ac.signal }),
       fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodedId}`, { method: "DELETE", headers, signal: ac.signal }),
     ]);
     clearTimeout(acTimer);
@@ -244,7 +246,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       "sessions", "calendar_events", "payments", "feedback",
       "resumes", "question_feedback", "credibility_disputes",
       "referrals", "report_shares", "user_outcomes", "llm_usage",
-      "google_calendar_sync", "profiles",
+      "google_calendar_sync", "product_ratings", "interview_turns", "profiles",
     ];
     const failures = results
       .map((r, i) => (r.status === "rejected" || (r.status === "fulfilled" && !r.value.ok)) ? tableNames[i] : null)

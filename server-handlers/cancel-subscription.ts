@@ -3,6 +3,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { withNodeAuthAndRateLimit, supabaseUrl } from "./_shared";
 import { captureServerEvent } from "./_posthog";
+import { razorpayBasicAuth } from "./_razorpay-auth";
 import {
   parseSubscriptionProfile,
   formatSubscriptionEndDate,
@@ -40,7 +41,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Cancel Razorpay subscription at cycle end (if active)
     if (subscriptionId && RAZORPAY_KEY_ID && RAZORPAY_KEY_SECRET) {
-      const auth = Buffer.from(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`).toString("base64");
+      const auth = razorpayBasicAuth(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET);
       try {
         const cancelRes = await fetch(`https://api.razorpay.com/v1/subscriptions/${subscriptionId}/cancel`, {
           method: "POST",

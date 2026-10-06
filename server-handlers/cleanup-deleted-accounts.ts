@@ -69,6 +69,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           fetch(`${SUPABASE_URL}/rest/v1/payments?user_id=eq.${encodedId}`, { method: "DELETE", headers }),
           fetch(`${SUPABASE_URL}/rest/v1/feedback?user_id=eq.${encodedId}`, { method: "DELETE", headers }),
           fetch(`${SUPABASE_URL}/rest/v1/interview_turns?user_id=eq.${encodedId}`, { method: "DELETE", headers }),
+          fetch(`${SUPABASE_URL}/rest/v1/product_ratings?user_id=eq.${encodedId}`, { method: "DELETE", headers }),
         ]);
         const profileDelRes = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodedId}`, { method: "DELETE", headers });
         if (!profileDelRes.ok) {

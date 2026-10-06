@@ -13,6 +13,7 @@ import {
   supabaseAnonKey,
 } from "./_shared";
 import { grantSessionCredits } from "./_session-credits";
+import { razorpayBasicAuth } from "./_razorpay-auth";
 import {
   PLAN_TIER,
   PLAN_AMOUNT,
@@ -320,7 +321,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // 2. Verify plan matches the actual order/subscription amount with Razorpay
-    const rzpAuth = Buffer.from(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`).toString("base64");
+    const rzpAuth = razorpayBasicAuth(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET);
     const rzpAc = new AbortController();
     const rzpTimer = setTimeout(() => rzpAc.abort(), 8000);
     let sessionQuantity = 1; // For single session multi-buy
@@ -615,35 +616,61 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!paymentRecordRes.ok) {
       const errText = await paymentRecordRes.text().catch(() => "");
       console.error("Payment record save failed:", paymentRecordRes.status, errText);
+      // The dedup row from step 3 was already inserted. Left in place, a
+      // client retry would short-circuit at the 409/idempotent path and
+      // report "success" against the user's stale pre-upgrade profile,
+      // permanently losing the upgrade despite the charge having cleared.
+      // Roll it back (best-effort) so a genuine retry can re-process cleanly.
+      await fetchWithTimeout(`${SUPABASE_URL}/rest/v1/payment_dedup?razorpay_payment_id=eq.${encodeURIComponent(razorpay_payment_id)}`, {
+        method: "DELETE",
+        headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`, Prefer: "return=minimal" },
+      }).catch(() => {});
       return res.status(500).json({ error: "Failed to save payment record" });
     }
 
-    // 6. Update profile (service role key bypasses RLS)
-    const updateRes = await fetchWithTimeout(
-      `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}`,
-      {
-        method: "PATCH",
-        headers: {
-          apikey: SUPABASE_SERVICE_ROLE_KEY,
-          Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-          "Content-Type": "application/json",
-          Prefer: "return=minimal",
+    // 6. Update profile (service role key bypasses RLS).
+    // Money-critical and the payments row above is already durable (and
+    // uniquely keyed on razorpay_payment_id) — unlike the paymentRecordRes
+    // failure above, rolling back the dedup row here would make a client
+    // retry re-attempt the payments INSERT and fail on that unique
+    // constraint forever, never reaching this PATCH. Retry the PATCH
+    // itself instead, same shape as the single-plan credit-grant retry,
+    // so a transient Supabase blip doesn't leave the user charged but
+    // stuck on their pre-upgrade tier.
+    let updateRes: Response | null = null;
+    let updateErrText = "";
+    for (let attempt = 0; attempt < 3; attempt++) {
+      if (attempt > 0) await new Promise(r => setTimeout(r, 300 * attempt));
+      updateRes = await fetchWithTimeout(
+        `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}`,
+        {
+          method: "PATCH",
+          headers: {
+            apikey: SUPABASE_SERVICE_ROLE_KEY,
+            Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+            "Content-Type": "application/json",
+            Prefer: "return=minimal",
+          },
+          body: JSON.stringify({
+            subscription_tier: tier,
+            subscription_start: now.toISOString(),
+            subscription_end: end.toISOString(),
+            razorpay_payment_id,
+            ...(razorpay_subscription_id ? { razorpay_subscription_id } : {}),
+            cancel_at_period_end: false,
+          }),
         },
-        body: JSON.stringify({
-          subscription_tier: tier,
-          subscription_start: now.toISOString(),
-          subscription_end: end.toISOString(),
-          razorpay_payment_id,
-          ...(razorpay_subscription_id ? { razorpay_subscription_id } : {}),
-          cancel_at_period_end: false,
-        }),
-      },
-    );
+      );
+      if (updateRes.ok) break;
+      updateErrText = await updateRes.text().catch(() => "");
+    }
 
-    if (!updateRes.ok) {
-      const errText = await updateRes.text().catch(() => "");
-      console.error("Supabase update error:", updateRes.status, errText);
-      return res.status(500).json({ error: "Failed to activate subscription" });
+    if (!updateRes || !updateRes.ok) {
+      console.error("Supabase update error after retries:", updateRes?.status, updateErrText);
+      void captureServerEvent("verify_payment_activation_failed", userId, {
+        payment_id_hash: hashPaymentId(razorpay_payment_id), plan, tier,
+      });
+      return res.status(500).json({ error: "Payment received but activation failed — please contact support@hirestepx.com with your payment ID so we can activate your plan manually." });
     }
 
     // 6a. Consume exactly one promo use — only now, after the charge cleared and

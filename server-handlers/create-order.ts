@@ -3,6 +3,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { withNodeAuthAndRateLimit, supabaseUrl } from "./_shared";
 import { captureServerEvent } from "./_posthog";
+import { razorpayBasicAuth } from "./_razorpay-auth";
 import { checkPromoValidity, computeDiscountAmount } from "./_promo";
 
 const RAZORPAY_KEY_ID = (process.env.RAZORPAY_KEY_ID || "").trim();
@@ -151,7 +152,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       } catch (dedupErr) { console.warn("[create-order] Idempotency check failed:", dedupErr); }
     }
 
-    const auth = Buffer.from(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`).toString("base64");
+    const auth = razorpayBasicAuth(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET);
     const receipt = `${plan}_${Date.now()}`.slice(0, 40);
 
     const notes: Record<string, string> = { plan };

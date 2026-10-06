@@ -20,24 +20,38 @@ const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABAS
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const RESEND_API_KEY = process.env.RESEND_API_KEY || "";
 
-/** Fire-and-forget: send email via Resend. Errors are swallowed so they never
- *  block the API response — the DB insert is the durable record. */
-function sendResendEmail(payload: {
+/** Best-effort: send email via Resend. Errors are swallowed so they never
+ *  surface to the caller — the DB insert is the durable record. Awaited by
+ *  callers (with its own timeout) so the Edge isolate doesn't tear down the
+ *  in-flight request before it completes. */
+async function sendResendEmail(payload: {
   from: string;
   to: string[];
   subject: string;
   html: string;
   replyTo?: string;
-}): void {
+}): Promise<void> {
   if (!RESEND_API_KEY) return;
-  fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${RESEND_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
-  }).catch(() => { /* best-effort — don't surface Resend failures to users */ });
+  try {
+    const ac = new AbortController();
+    const timer = setTimeout(() => ac.abort(), 10_000);
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      signal: ac.signal,
+      headers: {
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+    clearTimeout(timer);
+    if (!res.ok) {
+      const errBody = await res.text().catch(() => "");
+      console.warn(`[support-feedback] email failed HTTP ${res.status}: ${errBody.slice(0, 200)}`);
+    }
+  } catch (err) {
+    console.warn(`[support-feedback] email threw: ${(err as Error).message}`);
+  }
 }
 
 interface SupportBody {
@@ -154,8 +168,8 @@ export default async function handler(req: Request): Promise<Response> {
 
     const timestamp = new Date().toISOString();
 
-    // Admin notification — fire and forget
-    sendResendEmail({
+    // Admin notification
+    await sendResendEmail({
       from: "HireStepX Support <noreply@hirestepx.com>",
       to: ["hello@hirestepx.com"],
       replyTo: email || undefined,
@@ -173,7 +187,7 @@ export default async function handler(req: Request): Promise<Response> {
 
     // Auto-reply to user — only when email is available
     if (email) {
-      sendResendEmail({
+      await sendResendEmail({
         from: "HireStepX Support <noreply@hirestepx.com>",
         to: [email],
         subject: "We received your message — HireStepX Support",

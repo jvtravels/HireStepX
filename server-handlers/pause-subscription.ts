@@ -3,6 +3,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { withNodeAuthAndRateLimit, supabaseUrl, escapeHtml } from "./_shared";
 import { emailShell, title, para, b, button } from "./_email-theme";
+import { razorpayBasicAuth } from "./_razorpay-auth";
 
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const RAZORPAY_KEY_ID = (process.env.RAZORPAY_KEY_ID || "").trim();
@@ -48,7 +49,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Call Razorpay to pause/resume if we have a subscription
     if (subscriptionId && RAZORPAY_KEY_ID && RAZORPAY_KEY_SECRET) {
-      const auth = Buffer.from(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`).toString("base64");
+      const auth = razorpayBasicAuth(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET);
       const endpoint = action === "pause"
         ? `https://api.razorpay.com/v1/subscriptions/${subscriptionId}/pause`
         : `https://api.razorpay.com/v1/subscriptions/${subscriptionId}/resume`;

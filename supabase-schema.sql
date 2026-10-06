@@ -994,6 +994,10 @@ alter table support_messages add column if not exists first_response_at timestam
 alter table support_messages add column if not exists resolved_at timestamptz;
 create index if not exists idx_support_messages_type on support_messages (type) where type is not null;
 create index if not exists idx_support_messages_status_created on support_messages (status, created_at desc);
+-- Audit fix (2026-10-07, migration 0024): the SELECT policy below filters
+-- on user_id with no supporting index — every "my tickets" read was a
+-- full table scan.
+create index if not exists idx_support_messages_user on support_messages (user_id);
 
 drop policy if exists "Users read own support messages" on support_messages;
 create policy "Users read own support messages" on support_messages
@@ -1832,11 +1836,14 @@ create policy "Employers view own matches" on requirement_matches
     )
   );
 
--- Defense-in-depth for candidate-hiring-activity.ts, which normally reads via
--- the service role — this is the RLS fallback if that ever changes.
+-- Audit fix (2026-10-07): "Candidates view own matches" was intentionally
+-- dropped in migration 0016 — this table carries employer-private columns
+-- (candidate_status_note, match_score, roster_score, interview_scheduled_at)
+-- that row-level RLS cannot hide at the column level, and the only
+-- legitimate candidate-facing reader (candidate-hiring-activity.ts) already
+-- uses the service role and selects a safe column subset. A later schema
+-- edit silently recreated this policy; it must stay dropped on every re-run.
 drop policy if exists "Candidates view own matches" on requirement_matches;
-create policy "Candidates view own matches" on requirement_matches
-  for select using ((auth.uid())::text = candidate_user_id::text);
 
 -- Employer contact-unlock payments (2026-08-09). A dedicated table rather
 -- than reusing `payments`: that table's user_id FK requires a `profiles`
@@ -1900,3 +1907,54 @@ create table if not exists cost_rate_reconciliations (
 );
 
 alter table cost_rate_reconciliations enable row level security;
+
+-- Audit fix (2026-10-07): product_ratings and interview_turns were live
+-- tables in production (product-rating.ts, src/supabase.ts) with no DDL
+-- anywhere in the repo. See supabase-migrations/0022-product-ratings-
+-- interview-turns.sql for the full rationale.
+create table if not exists product_ratings (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references profiles(id) on delete cascade not null,
+  session_id text references sessions(id) on delete cascade not null,
+  rating integer not null check (rating >= 1 and rating <= 5),
+  created_at timestamptz default now()
+);
+create unique index if not exists ux_product_ratings_user_session on product_ratings(user_id, session_id);
+
+alter table product_ratings enable row level security;
+drop policy if exists "Users can view own product ratings" on product_ratings;
+create policy "Users can view own product ratings" on product_ratings
+  for select using ((auth.uid())::text = user_id::text);
+drop policy if exists "Users can upsert own product ratings" on product_ratings;
+create policy "Users can upsert own product ratings" on product_ratings
+  for insert with check ((auth.uid())::text = user_id::text);
+drop policy if exists "Users can update own product ratings" on product_ratings;
+create policy "Users can update own product ratings" on product_ratings
+  for update using ((auth.uid())::text = user_id::text)
+  with check ((auth.uid())::text = user_id::text);
+
+-- src/supabase.ts (initLiveSession / saveInterviewTurn): per-turn transcript
+-- rows written in real time during a live interview. No update/delete policy
+-- for the authenticated role: transcripts are append-only from the client,
+-- matching the `sessions` DELETE-denial rationale above.
+create table if not exists interview_turns (
+  id uuid primary key,
+  session_id text references sessions(id) on delete cascade not null,
+  user_id uuid references profiles(id) on delete cascade not null,
+  turn_index integer not null,
+  turn_type text not null check (turn_type in ('session_start', 'question', 'answer', 'follow_up')),
+  speaker text not null check (speaker in ('ai', 'user', 'system')),
+  content text not null default '',
+  metadata jsonb,
+  created_at timestamptz default now()
+);
+create index if not exists idx_interview_turns_user on interview_turns(user_id);
+create index if not exists idx_interview_turns_session on interview_turns(session_id, turn_index);
+
+alter table interview_turns enable row level security;
+drop policy if exists "Users can view own interview turns" on interview_turns;
+create policy "Users can view own interview turns" on interview_turns
+  for select using ((auth.uid())::text = user_id::text);
+drop policy if exists "Users can insert own interview turns" on interview_turns;
+create policy "Users can insert own interview turns" on interview_turns
+  for insert with check ((auth.uid())::text = user_id::text);

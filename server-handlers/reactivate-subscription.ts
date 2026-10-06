@@ -13,6 +13,7 @@ import {
 } from "./_shared";
 import { captureServerEvent } from "./_posthog";
 import { emailShell, title, para, button, dataCard } from "./_email-theme";
+import { razorpayBasicAuth } from "./_razorpay-auth";
 
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const RAZORPAY_KEY_ID = (process.env.RAZORPAY_KEY_ID || "").trim();
@@ -86,7 +87,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Re-activate on Razorpay if we have a subscription ID
     if (subscriptionId && RAZORPAY_KEY_ID && RAZORPAY_KEY_SECRET) {
-      const auth = Buffer.from(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`).toString("base64");
+      const auth = razorpayBasicAuth(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET);
       try {
         // Step 1: fetch current subscription status from Razorpay
         const statusRes = await fetch(`https://api.razorpay.com/v1/subscriptions/${subscriptionId}`, {

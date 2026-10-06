@@ -23,13 +23,25 @@ interface ContactBody {
   message: string;
 }
 
-function sendEmail(payload: { from: string; to: string[]; replyTo?: string; subject: string; html: string }): void {
+async function sendEmail(payload: { from: string; to: string[]; replyTo?: string; subject: string; html: string }): Promise<void> {
   if (!RESEND_API_KEY) return;
-  void fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  }).catch(() => { /* fire-and-forget */ });
+  try {
+    const ac = new AbortController();
+    const timer = setTimeout(() => ac.abort(), 10_000);
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      signal: ac.signal,
+      headers: { Authorization: `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    clearTimeout(timer);
+    if (!res.ok) {
+      const errBody = await res.text().catch(() => "");
+      console.warn(`[contact] email failed HTTP ${res.status}: ${errBody.slice(0, 200)}`);
+    }
+  } catch (err) {
+    console.warn(`[contact] email threw: ${(err as Error).message}`);
+  }
 }
 
 export default async function handler(req: Request): Promise<Response> {
@@ -74,7 +86,7 @@ export default async function handler(req: Request): Promise<Response> {
   const ref = `HSX-${Date.now().toString(36).toUpperCase()}`;
 
   // Notify the support team
-  sendEmail({
+  await sendEmail({
     from: FROM_EMAIL,
     to: ["support@hirestepx.com"],
     replyTo: email,
@@ -89,7 +101,7 @@ export default async function handler(req: Request): Promise<Response> {
   });
 
   // Auto-reply to the submitter
-  sendEmail({
+  await sendEmail({
     from: FROM_EMAIL,
     to: [email],
     subject: `We got your message (${ref}) — HireStepX Support`,

@@ -10,8 +10,16 @@ import { costBreakdown, kFactor, DEFAULT_COST_RATES, llmInr, RATES_LAST_VERIFIED
 import { getSarvamMonthlySpend } from "./_sarvam-credit-guard";
 import { getDeepgramMonthlySpend } from "./_deepgram-credit-guard";
 import { getHealthAlerts } from "./_health-alerts";
+import { razorpayBasicAuth } from "./_razorpay-auth";
 
 /* ─── Config ─── */
+
+/** Thrown for bad client input inside the section switch below — distinct
+ * from backend/network failures so the outer catch can return 400 instead
+ * of 500 without relying on fragile message substring matching (that
+ * matching used to miss any validation message not containing "required"
+ * or "Unknown", e.g. "status must be new | seen | resolved"). */
+class ValidationError extends Error {}
 
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
@@ -1753,10 +1761,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         case "overview": return getOverview();
         case "users": return getUsers(body?.search, body?.offset);
         case "user-detail":
-          if (!body?.userId) throw new Error("userId required");
+          if (!body?.userId) throw new ValidationError("userId required");
           return getUserDetail(body.userId);
         case "session-detail":
-          if (!body?.sessionId) throw new Error("sessionId required");
+          if (!body?.sessionId) throw new ValidationError("sessionId required");
           return getSessionDetail(body.sessionId);
         case "financials": return getFinancials();
         case "llm": return getLLMUsage();
@@ -1771,24 +1779,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         case "costs": return getCostData();
         case "health": return getHealthAlerts();
         case "save-cost-reconciliation": {
-          if (!body?.month || !/^\d{4}-\d{2}$/.test(body.month)) throw new Error("month required, format YYYY-MM");
+          if (!body?.month || !/^\d{4}-\d{2}$/.test(body.month)) throw new ValidationError("month required, format YYYY-MM");
           const actualInvoiceInr = Number(body.actualInvoiceInr);
-          if (!Number.isFinite(actualInvoiceInr) || actualInvoiceInr < 0) throw new Error("actualInvoiceInr must be a non-negative number");
+          if (!Number.isFinite(actualInvoiceInr) || actualInvoiceInr < 0) throw new ValidationError("actualInvoiceInr must be a non-negative number");
           const row = await saveCostReconciliation(body.month, actualInvoiceInr, body.note);
           return { ok: true, reconciliation: row };
         }
         case "update-support-status": {
-          if (!body?.id) throw new Error("id required");
+          if (!body?.id) throw new ValidationError("id required");
           const s = body.status;
-          if (s !== "new" && s !== "seen" && s !== "resolved") throw new Error("status must be new | seen | resolved");
+          if (s !== "new" && s !== "seen" && s !== "resolved") throw new ValidationError("status must be new | seen | resolved");
           return updateSupportStatus(body.id, s);
         }
         case "extend-subscription": {
-          if (!body?.userId) throw new Error("userId required");
+          if (!body?.userId) throw new ValidationError("userId required");
           const tier = body.tier as string | undefined;
           const days = Number(body.days ?? 30);
-          if (!tier || !["free", "starter"].includes(tier)) throw new Error("tier must be free | starter");
-          if (!Number.isInteger(days) || days < 1 || days > 366) throw new Error("days must be 1–366");
+          if (!tier || !["free", "starter"].includes(tier)) throw new ValidationError("tier must be free | starter");
+          if (!Number.isInteger(days) || days < 1 || days > 366) throw new ValidationError("days must be 1–366");
           const now = new Date();
           const newEnd = new Date(now.getTime() + days * 86400000).toISOString();
           // For starter (Sprint Pack): the session limit counts sessions since subscription_start,
@@ -1821,9 +1829,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           return { ok: true, tier, days, newEnd };
         }
         case "grant-credits": {
-          if (!body?.userId) throw new Error("userId required");
+          if (!body?.userId) throw new ValidationError("userId required");
           const qty = Number(body.qty ?? 0);
-          if (!Number.isInteger(qty) || qty < 1 || qty > 100) throw new Error("qty must be 1–100");
+          if (!Number.isInteger(qty) || qty < 1 || qty > 100) throw new ValidationError("qty must be 1–100");
           const note = typeof body.note === "string" ? body.note.slice(0, 200) : "admin grant";
           const rpcRes = await fetch(
             `${SUPABASE_URL}/rest/v1/rpc/grant_session_credits`,
@@ -1845,7 +1853,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           return { ok: true, qty, note, newBalance: typeof newBalance === "number" ? newBalance : null };
         }
         case "ban-user": {
-          if (!body?.userId) throw new Error("userId required");
+          if (!body?.userId) throw new ValidationError("userId required");
           const banRes = await fetch(
             `${SUPABASE_URL}/auth/v1/admin/users/${encodeURIComponent(body.userId)}`,
             {
@@ -1858,7 +1866,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           return { ok: true };
         }
         case "approve-employer": {
-          if (!body?.id) throw new Error("id required");
+          if (!body?.id) throw new ValidationError("id required");
           const patchRes = await fetch(
             `${SUPABASE_URL}/rest/v1/employers?id=eq.${encodeURIComponent(body.id)}`,
             {
@@ -1877,7 +1885,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           return { ok: true };
         }
         case "reject-employer": {
-          if (!body?.id) throw new Error("id required");
+          if (!body?.id) throw new ValidationError("id required");
           const patchRes = await fetch(
             `${SUPABASE_URL}/rest/v1/employers?id=eq.${encodeURIComponent(body.id)}`,
             {
@@ -1896,7 +1904,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           return { ok: true };
         }
         case "unban-user": {
-          if (!body?.userId) throw new Error("userId required");
+          if (!body?.userId) throw new ValidationError("userId required");
           const unbanRes = await fetch(
             `${SUPABASE_URL}/auth/v1/admin/users/${encodeURIComponent(body.userId)}`,
             {
@@ -1909,7 +1917,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           return { ok: true };
         }
         case "delete-user": {
-          if (!body?.userId) throw new Error("userId required");
+          if (!body?.userId) throw new ValidationError("userId required");
           const encoded2 = encodeURIComponent(body.userId);
           // service_usage.user_id is declared `on delete set null` in
           // supabase-schema.sql, but the live constraint predates that and
@@ -1949,13 +1957,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           return { ok: true };
         }
         case "refund-payment": {
-          if (!body?.paymentId) throw new Error("paymentId required");
+          if (!body?.paymentId) throw new ValidationError("paymentId required");
           if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) return { ok: false, error: "Razorpay keys not configured" };
           const amountPaise = body.amountPaise ? Number(body.amountPaise) : undefined;
           if (amountPaise !== undefined && (!Number.isInteger(amountPaise) || amountPaise < 100)) {
-            throw new Error("amountPaise must be an integer ≥ 100");
+            throw new ValidationError("amountPaise must be an integer ≥ 100");
           }
-          const rzpAuth = Buffer.from(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`).toString("base64");
+          const rzpAuth = razorpayBasicAuth(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET);
           const refundBody: Record<string, unknown> = {};
           if (amountPaise) refundBody.amount = amountPaise;
           const rzpRes = await fetch(
@@ -1974,7 +1982,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           return { ok: true, refundId: refundData.id, amount: refundData.amount, status: refundData.status };
         }
         case "send-email": {
-          if (!body?.userId || !body?.subject || !body?.htmlBody) throw new Error("userId, subject, and htmlBody required");
+          if (!body?.userId || !body?.subject || !body?.htmlBody) throw new ValidationError("userId, subject, and htmlBody required");
           if (!RESEND_API_KEY) return { ok: false, error: "RESEND_API_KEY not configured" };
           const subjectStr = String(body.subject).slice(0, 200);
           const htmlStr = String(body.htmlBody).slice(0, 20000);
@@ -2006,7 +2014,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           );
           return { sessions: liveSessions, since };
         }
-        default: throw new Error(`Unknown section: ${section}`);
+        default: throw new ValidationError(`Unknown section: ${section}`);
       }
     })();
 
@@ -2015,7 +2023,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Failed to fetch admin data";
     console.error("Admin data error:", msg);
-    const status = msg.includes("required") || msg.includes("Unknown") ? 400 : 500;
+    const status = err instanceof ValidationError ? 400 : 500;
     return res.status(status).json({ error: status === 400 ? "Bad request" : "Internal server error" });
   }
 }

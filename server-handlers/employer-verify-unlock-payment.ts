@@ -29,6 +29,7 @@ import {
   verifyEmployerAuthToken,
 } from "./_shared";
 import { verifyRazorpaySignature, buildSignaturePayload } from "./_payment-verification";
+import { razorpayBasicAuth } from "./_razorpay-auth";
 import {
   validatePaymentIdsFormat,
   isOversizedRequest,
@@ -113,7 +114,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Re-fetch the order — notes.employerId/notes.matchId and the amount are
     // server-written at order-creation time and never trusted from the client.
-    const rzpAuth = Buffer.from(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`).toString("base64");
+    const rzpAuth = razorpayBasicAuth(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET);
     const rzpAc = new AbortController();
     const rzpTimer = setTimeout(() => rzpAc.abort(), 8_000);
     let orderData: { amount: number; notes?: { employerId?: string; mode?: string; matchIds?: string } };
