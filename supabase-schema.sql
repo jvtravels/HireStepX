@@ -44,12 +44,14 @@ create table if not exists profiles (
   -- the update-profile API boundary (ALLOWED_COLUMNS + sanitizePortfolioLinks)
   -- — never synthesized or inferred, only what the candidate entered.
   portfolio_links jsonb default '[]'::jsonb,
-  created_at timestamptz default now()
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
 );
 
 -- Backfill column on existing deployments. Idempotent — safe to re-run.
 alter table profiles add column if not exists resume_version_id uuid;
 alter table profiles add column if not exists portfolio_links jsonb default '[]'::jsonb;
+alter table profiles add column if not exists updated_at timestamptz default now();
 
 -- 2. Interview sessions
 create table if not exists sessions (
@@ -1060,6 +1062,10 @@ begin
       new.sessions_started_lifetime := old.sessions_started_lifetime;
     end if;
   end if;
+  -- Keep updated_at honest on every write regardless of role or which
+  -- columns changed — bumped here rather than a second BEFORE UPDATE
+  -- trigger since this one already fires unconditionally.
+  new.updated_at := now();
   return new;
 end;
 $$;
@@ -1371,6 +1377,11 @@ create table if not exists daily_quality_report (
 
 create index if not exists idx_daily_quality_report_day on daily_quality_report(day);
 alter table daily_quality_report enable row level security;
+-- Service-role-only: written by the nightly quality cron, read only via the
+-- admin dashboard using the service key. No authenticated/anon policy is
+-- intentional, not an oversight.
+comment on table daily_quality_report is
+  'Service-role-only: no authenticated/anon policy is intentional.';
 
 -- ═══════════════════════════════════════════════════════
 -- Quality v2 — resolution tracking + severity + AI digests
@@ -1429,6 +1440,8 @@ create table if not exists daily_digests (
 
 alter table daily_digests enable row level security;
 -- No user-facing select — internal admin only via service role.
+comment on table daily_digests is
+  'Service-role-only: no authenticated/anon policy is intentional.';
 
 -- ═══════════════════════════════════════════════════════
 -- Prompt revisions — A/B harness for live prompt changes
@@ -1453,6 +1466,8 @@ create index if not exists idx_prompt_revisions_deployed_at on prompt_revisions(
 
 alter table prompt_revisions enable row level security;
 -- Internal admin only — accessed via service role.
+comment on table prompt_revisions is
+  'Service-role-only: no authenticated/anon policy is intentional.';
 
 -- ═══════════════════════════════════════════════════════
 -- Quality recommendations — proactive fix suggestions
@@ -1490,6 +1505,8 @@ create index if not exists idx_quality_recs_priority on quality_recommendations(
 create index if not exists idx_quality_recs_last_seen on quality_recommendations(last_seen_at);
 
 alter table quality_recommendations enable row level security;
+comment on table quality_recommendations is
+  'Service-role-only: no authenticated/anon policy is intentional.';
 
 -- ═══════════════════════════════════════════════════════
 -- 21. Salary offers — user-reported ground truth
@@ -1759,6 +1776,9 @@ create table if not exists employer_requirement_activity (
   created_at timestamptz not null default now()
 );
 create index if not exists idx_employer_requirement_activity_requirement on employer_requirement_activity(requirement_id, created_at desc);
+-- The "Employers view own requirement activity" policy below filters on
+-- employer_id directly — index it too, not just requirement_id.
+create index if not exists idx_employer_requirement_activity_employer on employer_requirement_activity(employer_id, created_at desc);
 alter table employer_requirement_activity drop constraint if exists employer_requirement_activity_action_check;
 alter table employer_requirement_activity add constraint employer_requirement_activity_action_check check (action in ('created', 'updated', 'archived', 'reopened', 'stage_changed'));
 
@@ -1780,6 +1800,10 @@ create table if not exists requirement_matches (
 );
 
 create index if not exists idx_requirement_matches_requirement on requirement_matches(requirement_id, match_score desc);
+-- The "Candidates view own matches" policy further below filters directly
+-- on candidate_user_id — without this, every candidate-side read was a
+-- full table scan.
+create index if not exists idx_requirement_matches_candidate on requirement_matches(candidate_user_id, created_at desc);
 
 -- Per-candidate hiring-pipeline status (2026-09-29) — distinct from the
 -- requirement-level `stage` above: this tracks where THIS candidate stands
