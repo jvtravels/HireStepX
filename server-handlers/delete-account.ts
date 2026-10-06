@@ -243,6 +243,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
+    // service_usage.user_id is declared `on delete set null` in
+    // supabase-schema.sql, but the live constraint predates that and still
+    // blocks deletion (23503 on profiles via service_usage_user_id_fkey).
+    // Null it out explicitly, and sequentially before the parallel batch
+    // below — racing it alongside the profiles delete would still hit the
+    // same violation if profiles wins the race.
+    const clearUsageRes = await fetch(`${SUPABASE_URL}/rest/v1/service_usage?user_id=eq.${encodedId}`, {
+      method: "PATCH",
+      headers,
+      body: JSON.stringify({ user_id: null }),
+    });
+    if (!clearUsageRes.ok) {
+      const txt = await clearUsageRes.text().catch(() => "");
+      return res.status(500).json({ error: `Failed to clear service_usage references: HTTP ${clearUsageRes.status}: ${txt.slice(0, 200)}` });
+    }
+
     // Delete all user data in parallel with timeout (order doesn't matter — all keyed by user_id).
     // DPDP Act 2023 requires complete erasure: every table that stores PII or
     // user-generated content must be covered here. Gaps were identified in the

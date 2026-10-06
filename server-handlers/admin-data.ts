@@ -1892,6 +1892,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         case "delete-user": {
           if (!body?.userId) throw new Error("userId required");
           const encoded2 = encodeURIComponent(body.userId);
+          // service_usage.user_id is declared `on delete set null` in
+          // supabase-schema.sql, but the live constraint predates that and
+          // still blocks the cascade (23503 on profiles via
+          // service_usage_user_id_fkey). Null it out explicitly first so the
+          // auth-user delete below can cascade through profiles regardless
+          // of which constraint version is actually deployed.
+          const clearUsageRes = await fetch(
+            `${SUPABASE_URL}/rest/v1/service_usage?user_id=eq.${encoded2}`,
+            {
+              method: "PATCH",
+              headers: {
+                apikey: SUPABASE_SERVICE_ROLE_KEY,
+                Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+                "Content-Type": "application/json",
+                Prefer: "return=minimal",
+              },
+              body: JSON.stringify({ user_id: null }),
+            },
+          );
+          if (!clearUsageRes.ok) {
+            const txt = await clearUsageRes.text().catch(() => "");
+            return { ok: false, error: `Failed to clear service_usage references: HTTP ${clearUsageRes.status}: ${txt.slice(0, 200)}` };
+          }
           // Hard-delete auth user; FK cascades delete sessions, payments, etc.
           const delRes = await fetch(
             `${SUPABASE_URL}/auth/v1/admin/users/${encoded2}`,

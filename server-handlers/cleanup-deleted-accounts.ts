@@ -51,6 +51,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     for (const { id } of rows) {
       const encodedId = encodeURIComponent(id);
       try {
+        // service_usage.user_id is declared `on delete set null` in
+        // supabase-schema.sql, but the live constraint predates that and
+        // still blocks deletion (23503 on profiles via
+        // service_usage_user_id_fkey). Null it out first, sequentially —
+        // racing it alongside the profiles delete below would still hit the
+        // same violation if profiles wins the race.
+        await fetch(`${SUPABASE_URL}/rest/v1/service_usage?user_id=eq.${encodedId}`, {
+          method: "PATCH",
+          headers,
+          body: JSON.stringify({ user_id: null }),
+        });
         // Delete all user data in parallel
         await Promise.allSettled([
           fetch(`${SUPABASE_URL}/rest/v1/sessions?user_id=eq.${encodedId}`, { method: "DELETE", headers }),
@@ -59,7 +70,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           fetch(`${SUPABASE_URL}/rest/v1/feedback?user_id=eq.${encodedId}`, { method: "DELETE", headers }),
           fetch(`${SUPABASE_URL}/rest/v1/interview_turns?user_id=eq.${encodedId}`, { method: "DELETE", headers }),
         ]);
-        await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodedId}`, { method: "DELETE", headers });
+        const profileDelRes = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodedId}`, { method: "DELETE", headers });
+        if (!profileDelRes.ok) {
+          const txt = await profileDelRes.text().catch(() => "");
+          console.error(`[cleanup-deleted-accounts] profiles delete failed for ${id.slice(0, 8)}: HTTP ${profileDelRes.status}: ${txt.slice(0, 200)}`);
+          failed.push(id);
+          continue;
+        }
         await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${encodedId}`, { method: "DELETE", headers });
         deleted.push(id);
       } catch (err) {
