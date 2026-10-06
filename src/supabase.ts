@@ -175,7 +175,15 @@ export interface SessionRecord {
      column; shape is the SessionReport but we only read `coaching` here for
      the dashboard card, so it's typed loosely. The report layer is the trust
      boundary — this is just transport. */
-  report_json?: { coaching?: SessionCoaching | null; focusMetrics?: SessionFocusMetric[] | null } & Record<string, unknown> | null;
+  report_json?: {
+    coaching?: SessionCoaching | null;
+    focusMetrics?: SessionFocusMetric[] | null;
+    /* Deterministic-fallback wins/fixes — read by cardCoachingFromWinsFixes
+       (DashboardContext.tsx) to synthesize a coaching pair when coaching
+       itself is null. */
+    wins?: Array<{ text: string }> | null;
+    fixes?: Array<{ text: string }> | null;
+  } & Record<string, unknown> | null;
   /* Schema version the evaluator was on when the report was written.
      Surfaced so the client can short-circuit /api/evaluate-session
      when (report_json present, report_version === current). The

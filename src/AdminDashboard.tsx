@@ -329,7 +329,7 @@ function timeAgo(d: string | null): string {
  * Export an array of objects as a CSV download. Quotes cells containing
  * commas/quotes/newlines per RFC 4180. Browser-only — no-op on SSR.
  */
-function exportCsv<T extends Record<string, unknown>>(filename: string, rows: T[]): void {
+function exportCsv<T extends object>(filename: string, rows: T[]): void {
   if (typeof window === "undefined" || rows.length === 0) return;
   const keys = Array.from(new Set(rows.flatMap((r) => Object.keys(r))));
   const escape = (v: unknown): string => {
@@ -337,7 +337,10 @@ function exportCsv<T extends Record<string, unknown>>(filename: string, rows: T[
     const s = typeof v === "object" ? JSON.stringify(v) : String(v);
     return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
   };
-  const lines = [keys.join(","), ...rows.map((r) => keys.map((k) => escape(r[k])).join(","))];
+  // T is a caller-supplied shape, not a Record<string, unknown> — keys are
+  // derived from Object.keys() at runtime, so an index-signature cast at
+  // every call site would otherwise be required just to read r[k] here.
+  const lines = [keys.join(","), ...rows.map((r) => keys.map((k) => escape((r as Record<string, unknown>)[k])).join(","))];
   const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -1204,7 +1207,7 @@ export default function AdminDashboard() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => exportCsv("users.csv", users as unknown as Record<string, unknown>[])}
+            onClick={() => exportCsv("users.csv", users)}
             style={exportBtn}
             disabled={users.length === 0}
           >Export CSV</Button>
@@ -1378,7 +1381,7 @@ export default function AdminDashboard() {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => exportCsv(`session-${s.id.slice(0,8)}-transcript.csv`, sessionDetail.qaPairs as unknown as Record<string, unknown>[])}
+                onClick={() => exportCsv(`session-${s.id.slice(0,8)}-transcript.csv`, sessionDetail.qaPairs)}
                 style={exportBtn}
               >Export CSV</Button>
             </div>
@@ -2173,7 +2176,7 @@ export default function AdminDashboard() {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => exportCsv("top-customers.csv", financials.topSpenders as unknown as Record<string, unknown>[])}
+                onClick={() => exportCsv("top-customers.csv", financials.topSpenders)}
                 style={exportBtn}
               >Export CSV</Button>
             </div>
@@ -2212,7 +2215,7 @@ export default function AdminDashboard() {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => exportCsv("payments.csv", financials.recent as unknown as Record<string, unknown>[])}
+                onClick={() => exportCsv("payments.csv", financials.recent)}
                 style={exportBtn}
               >Export CSV</Button>
             </div>
@@ -3836,7 +3839,7 @@ export default function AdminDashboard() {
           <div style={{ ...card, padding: 0, overflow: "auto" }}>
             <div style={{ padding: "16px 24px 8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <p style={labelStyle}>Recent Reports</p>
-              <Button variant="ghost" size="sm" onClick={() => exportCsv("outcomes.csv", outcomes.recent as unknown as Record<string, unknown>[])} style={exportBtn}>Export CSV</Button>
+              <Button variant="ghost" size="sm" onClick={() => exportCsv("outcomes.csv", outcomes.recent)} style={exportBtn}>Export CSV</Button>
             </div>
             <table style={tableStyle}>
               <thead>

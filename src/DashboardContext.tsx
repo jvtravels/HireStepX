@@ -72,10 +72,7 @@ function mapSessionRecord(s: SessionRecord): RealSession {
        (S70-B1) so the card never falls back to the degenerate
        skill_scores pair (contradictory when all values are equal). */
     coaching: s.report_json?.coaching ??
-      cardCoachingFromWinsFixes(
-        (s.report_json as unknown as { wins?: Array<{text:string}>|null })?.wins,
-        (s.report_json as unknown as { fixes?: Array<{text:string}>|null })?.fixes,
-      ) ?? undefined,
+      cardCoachingFromWinsFixes(s.report_json?.wins, s.report_json?.fixes) ?? undefined,
     /* Per-focus signature strip (mvp-9+), persisted in
        report_json.focusMetrics. Empty/undefined for older rows → the
        card renders no instrument strip. */

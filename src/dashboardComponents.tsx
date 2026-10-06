@@ -363,6 +363,9 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
       // from "user is mid-typing UPI" (leave spinner alone, so they
       // can't double-fire createOrder by clicking again).
       const modalOpened = { fired: false };
+      // Razorpay's checkout.js is loaded from a <script> tag (no published
+      // types); `.on()` exists on the real instance but isn't in whatever
+      // ambient type `rzp` carries.
       (rzp as unknown as { on(event: string, cb: (r: unknown) => void): void }).on("payment.failed", function (response: unknown) {
         modalOpened.fired = true;
         const errDetail = (response as { error?: { code?: string; description?: string; reason?: string } })?.error;
