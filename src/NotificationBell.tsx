@@ -2,12 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { BellIcon } from "lucide-react";
 import { apiFetch } from "./apiClient";
@@ -18,7 +17,9 @@ import CountBadge from "./CountBadge";
  * Rendered once in AppShellFrame's header, so it appears on every candidate
  * and employer screen. Polls /api/notifications/list on an interval rather
  * than opening a socket — the feed is informational, not real-time-critical,
- * and this keeps the feature infra-free (no websocket/SSE server needed). */
+ * and this keeps the feature infra-free (no websocket/SSE server needed).
+ * Opens as a slide-out Sheet panel (not a small dropdown) so a long feed has
+ * room to breathe, matching the app shell's sidebar-style slide panels. */
 
 interface Notification {
   id: string;
@@ -95,41 +96,37 @@ export default function NotificationBell({
   }
 
   return (
-    <DropdownMenu open={open} onOpenChange={setOpen}>
-      <DropdownMenuTrigger asChild>
-        <Button
-          type="button"
-          variant="outline"
-          aria-label={unreadCount > 0 ? `Notifications (${unreadCount} unread)` : "Notifications"}
-          className="p-2 h-auto"
-          style={{ position: "relative", flexShrink: 0 }}
-        >
-          <BellIcon size={16} aria-hidden="true" style={{ color: T.coal }} />
-          <CountBadge count={unreadCount} />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" style={{ width: 340, padding: 0 }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 12px" }}>
-          <DropdownMenuLabel className="p-0 font-normal" style={{ fontFamily: F.sans, fontSize: 13.5, fontWeight: 600, color: T.coal }}>
-            Notifications
-          </DropdownMenuLabel>
+    <Sheet open={open} onOpenChange={setOpen}>
+      <Button
+        type="button"
+        variant="outline"
+        aria-label={unreadCount > 0 ? `Notifications (${unreadCount} unread)` : "Notifications"}
+        className="p-2 h-auto"
+        style={{ position: "relative", flexShrink: 0 }}
+        onClick={() => setOpen(true)}
+      >
+        <BellIcon size={16} aria-hidden="true" style={{ color: T.coal }} />
+        <CountBadge count={unreadCount} />
+      </Button>
+      <SheetContent side="right" className="w-full sm:max-w-sm p-0 flex flex-col">
+        <SheetHeader className="flex-row items-center justify-between gap-2 border-b" style={{ borderColor: T.line }}>
+          <SheetTitle style={{ fontFamily: F.sans, color: T.coal }}>Notifications</SheetTitle>
           {unreadCount > 0 && (
             <button
               type="button"
               onClick={markAllRead}
               style={{
-                background: "none", border: "none", cursor: "pointer", padding: 0,
+                background: "none", border: "none", cursor: "pointer", padding: 0, marginRight: 32,
                 fontFamily: F.sans, fontSize: 12, fontWeight: 600, color: T.indigo,
               }}
             >
               Mark all read
             </button>
           )}
-        </div>
-        <DropdownMenuSeparator className="m-0" />
-        <div style={{ maxHeight: 360, overflowY: "auto" }}>
+        </SheetHeader>
+        <div style={{ flex: 1, overflowY: "auto" }}>
           {notifications.length === 0 ? (
-            <p style={{ margin: 0, padding: "24px 12px", textAlign: "center", fontFamily: F.sans, fontSize: 13, color: T.inkSoft }}>
+            <p style={{ margin: 0, padding: "32px 16px", textAlign: "center", fontFamily: F.sans, fontSize: 13, color: T.inkSoft }}>
               You're all caught up.
             </p>
           ) : (
@@ -141,28 +138,28 @@ export default function NotificationBell({
                 style={{
                   display: "block", width: "100%", textAlign: "left", cursor: "pointer",
                   border: "none", borderBottom: `1px solid ${T.line}`, background: n.read_at ? "transparent" : T.pageBg,
-                  padding: "10px 12px",
+                  padding: "12px 16px",
                 }}
               >
-                <p style={{ margin: 0, fontFamily: F.sans, fontSize: 13, fontWeight: 600, color: T.coal, display: "flex", alignItems: "center", gap: 6 }}>
+                <p style={{ margin: 0, fontFamily: F.sans, fontSize: 13.5, fontWeight: 600, color: T.coal, display: "flex", alignItems: "center", gap: 6 }}>
                   {!n.read_at && (
                     <span aria-hidden="true" style={{ width: 6, height: 6, borderRadius: "50%", background: T.indigo, flexShrink: 0 }} />
                   )}
                   {n.title}
                 </p>
                 {n.body && (
-                  <p style={{ margin: "2px 0 0", fontFamily: F.sans, fontSize: 12.5, color: T.inkSoft, lineHeight: 1.4 }}>
+                  <p style={{ margin: "3px 0 0", fontFamily: F.sans, fontSize: 12.5, color: T.inkSoft, lineHeight: 1.4 }}>
                     {n.body}
                   </p>
                 )}
-                <p style={{ margin: "4px 0 0", fontFamily: F.sans, fontSize: 11, color: T.inkSoft }}>
+                <p style={{ margin: "5px 0 0", fontFamily: F.sans, fontSize: 11, color: T.inkSoft }}>
                   {timeAgo(n.created_at)}
                 </p>
               </button>
             ))
           )}
         </div>
-      </DropdownMenuContent>
-    </DropdownMenu>
+      </SheetContent>
+    </Sheet>
   );
 }
