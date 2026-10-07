@@ -21,6 +21,9 @@ export interface ConversationSummary {
   conversationId: string;
   role: "employer" | "candidate";
   counterpartName: string;
+  /** The employer's company name, resolved independent of `role` — always
+   *  safe for the candidate UI to display, even on a malformed row. */
+  companyName: string;
   roleTitle: string;
   lastMessageAt: string | null;
   unread: boolean;

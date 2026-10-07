@@ -263,7 +263,11 @@ export default function MessagesV2() {
 
   const list = conversations ?? [];
   const active = list.find((c) => c.matchId === activeMatchId) ?? null;
-  const groups = groupConversationsByCounterpart(list);
+  // Group by companyName, not the generic counterpartName — a candidate's
+  // "counterpart" must always be the hiring company, never a person.
+  const groups = groupConversationsByCounterpart(
+    list.map((c) => ({ ...c, counterpartName: c.companyName })),
+  );
   const lastOwnMessageId = messages.filter((mm) => mm.senderRole === "candidate").at(-1)?.id;
 
   if (list.length === 0) {
@@ -322,7 +326,7 @@ export default function MessagesV2() {
           <>
             <div style={{ padding: "12px 16px", borderBottom: `1px solid ${t.line}` }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                <span style={{ fontFamily: f.sans, fontSize: 14, fontWeight: 600, color: t.coal }}>{active.counterpartName}</span>
+                <span style={{ fontFamily: f.sans, fontSize: 14, fontWeight: 600, color: t.coal }}>{context?.companyName || active.companyName}</span>
                 <StatusBadge status={active.candidateStatus} />
               </div>
               <div style={{ fontFamily: f.sans, fontSize: 12, color: t.inkFaint, marginTop: 2 }}>
@@ -346,7 +350,7 @@ export default function MessagesV2() {
                     <MessageAvatar className="self-center">
                       <Avatar size="sm">
                         <AvatarFallback>
-                          {initialsOf(m.senderRole === "candidate" ? context?.candidateName || "Me" : active.counterpartName)}
+                          {initialsOf(m.senderRole === "candidate" ? context?.candidateName || "Me" : context?.companyName || active.companyName)}
                         </AvatarFallback>
                       </Avatar>
                     </MessageAvatar>

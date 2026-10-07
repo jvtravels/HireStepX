@@ -178,6 +178,11 @@ async function handleListConversations(headers: Record<string, string>, authUser
       conversationId: row.id,
       role,
       counterpartName: role === "employer" ? (row.profiles?.name || "Candidate") : (row.employer_requirements?.employers?.company_name || "Employer"),
+      // Independent of `role` on purpose: a candidate must never see a
+      // person's name as the other party, even if `role` mis-resolves on a
+      // malformed row (e.g. employer_id == candidate_user_id). The candidate
+      // UI reads this field instead of counterpartName.
+      companyName: row.employer_requirements?.employers?.company_name || "Employer",
       roleTitle: row.employer_requirements?.title || "Role",
       lastMessageAt: row.last_message_at,
       unread: isConversationUnread(role, row.last_message_at, row.last_sender_role, viewerLastReadAt),
