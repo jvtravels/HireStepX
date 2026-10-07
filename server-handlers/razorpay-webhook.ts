@@ -10,6 +10,7 @@ import { captureServerEvent } from "./_posthog";
 import { emailShell, title, para, b, button, dataCard } from "./_email-theme";
 import { grantSessionCredits, revokeSessionCredits } from "./_session-credits";
 import { resolveCapturedPayment } from "./_webhook-payment-helpers";
+import { notify } from "./_notify";
 
 
 const RAZORPAY_WEBHOOK_SECRET = (process.env.RAZORPAY_WEBHOOK_SECRET || "").trim();
@@ -422,6 +423,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           } catch (emailErr) { console.error("[webhook] Renewal email failed:", emailErr); }
         }
 
+        void notify({
+          userId,
+          type: "subscription_renewed",
+          title: `${tier} plan renewed`,
+          body: `Auto-renewed and active until ${end.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}.`,
+          link: "/dashboard",
+        });
+
         await captureServerEvent("subscription_renewed", userId, {
           tier,
           subscription_end: end.toISOString(),
@@ -496,6 +505,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             });
           } catch (emailErr) { console.error("[webhook] Payment-failed email failed:", emailErr); }
         }
+
+        void notify({
+          userId,
+          type: "payment_failed",
+          title: "Payment failed, your plan is paused",
+          body: `We couldn't renew your ${previousTier} plan, so it's been moved to the free tier. Update your payment method to restore it.`,
+          link: "/dashboard?tab=settings",
+        });
 
         await captureServerEvent("payment_failed", userId, {
           previous_tier: previousTier,
@@ -895,6 +912,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       if (orderId) await clearPaymentIntent(orderId);
 
+      void notify({
+        userId,
+        type: "payment_success",
+        title: "Payment received",
+        body: `${quantity} session credit${quantity === 1 ? "" : "s"} added to your account.`,
+        link: "/dashboard",
+      });
+
       if (RESEND_API_KEY && notes.email) {
         const safeName = escapeHtml(notes.userName || "there");
         try {
@@ -988,6 +1013,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }).catch(err => console.error("[webhook] Payment record insert failed:", err));
 
     if (orderId) await clearPaymentIntent(orderId);
+
+    void notify({
+      userId,
+      type: "payment_success",
+      title: `${tier} is live`,
+      body: `Your payment went through — your plan is active until ${end.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}.`,
+      link: "/dashboard",
+    });
 
     if (RESEND_API_KEY && notes.email) {
       const safeName = escapeHtml(notes.userName || "there");

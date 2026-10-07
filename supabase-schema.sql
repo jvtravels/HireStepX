@@ -1799,9 +1799,14 @@ create table if not exists requirement_matches (
   roster_score integer not null default 0,
   unlocked boolean default false,
   unlocked_at timestamptz,
+  -- Set on the employer's first evidence view (server-handlers/employer-
+  -- candidate-evidence.ts), via a conditional PATCH so the candidate gets
+  -- exactly one "an employer viewed your profile" notification per match.
+  profile_viewed_at timestamptz,
   created_at timestamptz default now(),
   unique (requirement_id, candidate_user_id)
 );
+alter table requirement_matches add column if not exists profile_viewed_at timestamptz;
 
 create index if not exists idx_requirement_matches_requirement on requirement_matches(requirement_id, match_score desc);
 -- The "Candidates view own matches" policy further below filters directly
@@ -1958,3 +1963,32 @@ create policy "Users can view own interview turns" on interview_turns
 drop policy if exists "Users can insert own interview turns" on interview_turns;
 create policy "Users can insert own interview turns" on interview_turns
   for insert with check ((auth.uid())::text = user_id::text);
+
+-- In-app notification feed (2026-10-07), shared by both candidate and
+-- employer consoles — both `profiles.id` and `employers.id` reference
+-- `auth.users(id)`, so one table keyed on `auth.users` covers either side
+-- without a separate `audience` discriminator for RLS purposes. Written
+-- server-side only (service role, via notify() in _notify.ts) from existing
+-- event sites — streak milestones, referral rewards, employer candidate
+-- status changes, unlock payment confirmations. No client insert policy:
+-- a user can read and mark their own notifications read, never create one.
+create table if not exists notifications (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users(id) on delete cascade not null,
+  type text not null,
+  title text not null,
+  body text not null default '',
+  link text,
+  read_at timestamptz,
+  created_at timestamptz not null default now()
+);
+create index if not exists idx_notifications_user on notifications(user_id, created_at desc);
+
+alter table notifications enable row level security;
+drop policy if exists "Users view own notifications" on notifications;
+create policy "Users view own notifications" on notifications
+  for select using ((auth.uid())::text = user_id::text);
+drop policy if exists "Users update own notifications" on notifications;
+create policy "Users update own notifications" on notifications
+  for update using ((auth.uid())::text = user_id::text)
+  with check ((auth.uid())::text = user_id::text);

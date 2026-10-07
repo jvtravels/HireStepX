@@ -37,6 +37,7 @@ import {
 import { ChevronsUpDownIcon, LogOutIcon } from "lucide-react";
 import { tokens as T, fonts as F } from "./auth/_tokens";
 import { dur, ease } from "./_motion";
+import NotificationBell from "./NotificationBell";
 
 /* ─── Shared app shell ───────────────────────────────────────────────────
  * The sidebar + header + scrolling body used by BOTH the candidate
@@ -278,6 +279,7 @@ export default function AppShellFrame({
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
+          <NotificationBell onNavigate={onNavigate} />
         </header>
 
         <div ref={scrollRef} style={{ flex: 1, minHeight: 0, minWidth: 0, display: "flex", flexDirection: "column", overflowY: "auto", overflowX: "hidden", paddingBottom: isMobile ? 16 : 24 }}>

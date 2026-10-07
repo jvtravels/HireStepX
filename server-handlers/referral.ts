@@ -20,6 +20,7 @@ import {
   REFERRAL_REWARD_WINDOW_MS,
 } from "./_referral-reward-helpers";
 import { emailShell, title, para, b, button } from "./_email-theme";
+import { notify } from "./_notify";
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
@@ -254,6 +255,20 @@ export default async function handler(req: Request): Promise<Response> {
 
       // Notify both sides by email — fire-and-forget after the reward is confirmed
       if (rewarded) {
+        void notify({
+          userId: referrerId,
+          type: "referral_reward",
+          title: "Your referral paid off!",
+          body: "Someone you invited joined HireStepX — a free session has been added to your account.",
+          link: "/dashboard",
+        });
+        void notify({
+          userId: userId,
+          type: "referral_reward",
+          title: "Welcome bonus unlocked",
+          body: "Your invite code was applied — a free session has been added to your account.",
+          link: "/dashboard",
+        });
         const referrerRes = await fetch(
           `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(referrerId)}&select=email,name`,
           { headers: dbHeaders },

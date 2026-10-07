@@ -37,6 +37,7 @@ import {
   parseNotedMatchIds,
   buildBatchUnlockResponsePayload,
 } from "./_employer-unlock-verify-helpers";
+import { notify } from "./_notify";
 
 const RAZORPAY_KEY_ID = (process.env.RAZORPAY_KEY_ID || "").trim();
 const RAZORPAY_KEY_SECRET = (process.env.RAZORPAY_KEY_SECRET || "").trim();
@@ -215,6 +216,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const profileByMatchId = new Map(matchRows.map((m) => [m.id, profileById.get(m.candidate_user_id)]));
 
     const payload = buildBatchUnlockResponsePayload({ matchIds: matchRows.map((m) => m.id), profileByMatchId });
+    if (!alreadyProcessed) {
+      void notify({
+        userId: employerId,
+        type: "unlock_confirmed",
+        title: isBatch ? "Candidate contacts unlocked" : "Candidate contact unlocked",
+        body: isBatch
+          ? `Payment confirmed — ${matchRows.length} candidate contact${matchRows.length === 1 ? "" : "s"} unlocked.`
+          : "Payment confirmed — the candidate's contact details are ready.",
+        link: `/employer/requirements/${requirementId}`,
+      });
+    }
     if (missingCount > 0) {
       return res.status(200).json({
         ...payload,

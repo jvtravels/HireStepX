@@ -134,6 +134,38 @@ export function extractStarCompleteness(reportJson: unknown): StarCompleteness |
   return { pct: Math.round((totalRatio / consideredCount) * 100), questionsConsidered: consideredCount };
 }
 
+type FetchImpl = typeof fetch;
+
+/** Atomically claims the "first view" of a match's evidence for notification
+ *  purposes. Implemented as a conditional PATCH (`profile_viewed_at is null`)
+ *  returning the representation: exactly one row back means THIS call flipped
+ *  it, so the candidate gets notified once per match regardless of how many
+ *  times the employer revisits the page — mirrors claimReferralReward's CAS
+ *  pattern in _referral-reward-helpers.ts. */
+export async function claimProfileView(
+  baseUrl: string,
+  serviceHeaders: Record<string, string>,
+  matchId: string,
+  nowIso: string,
+  fetchImpl: FetchImpl = fetch,
+): Promise<boolean> {
+  try {
+    const res = await fetchImpl(
+      `${baseUrl}/rest/v1/requirement_matches?id=eq.${encodeURIComponent(matchId)}&profile_viewed_at=is.null`,
+      {
+        method: "PATCH",
+        headers: { ...serviceHeaders, "Content-Type": "application/json", Prefer: "return=representation" },
+        body: JSON.stringify({ profile_viewed_at: nowIso }),
+      },
+    );
+    if (!res.ok) return false;
+    const rows = await res.json().catch(() => []);
+    return Array.isArray(rows) && rows.length === 1;
+  } catch {
+    return false;
+  }
+}
+
 export interface SessionRow {
   user_id: string;
   created_at: string;

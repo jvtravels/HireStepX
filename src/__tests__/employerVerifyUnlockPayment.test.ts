@@ -37,6 +37,10 @@ vi.mock("../../server-handlers/_shared", async (importOriginal) => {
     supabaseAnonKey: (...args: unknown[]) => supabaseAnonKey(...args),
     supabaseServiceHeaders: (...args: unknown[]) => supabaseServiceHeaders(...args),
     verifyEmployerAuthToken: actual.verifyEmployerAuthToken,
+    // notify()'s failure path (_notify.ts) logs via slog.warn when the
+    // unmocked global.fetch calls below don't match its notifications
+    // insert — stub it so that best-effort write never throws here.
+    slog: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
   };
 });
 

@@ -29,6 +29,7 @@ import { groundNoCounterSkillScores, groundGapClosureSkillScores } from "../src/
 import { computeStreakReward } from "./_streak-reward";
 import { grantSessionCredits } from "./_session-credits";
 import { computePracticeTimestamps } from "./_save-session-helpers";
+import { notify } from "./_notify";
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || "";
@@ -734,6 +735,13 @@ export default async function handler(req: Request): Promise<Response> {
               void grantSessionCredits(SUPABASE_URL, SUPABASE_SERVICE_KEY, auth.userId, bonus, fetch, 2)
                 .then(() => captureServerEvent("streak_milestone_reward", auth.userId, { milestone, bonus }))
                 .catch((e: unknown) => console.warn("[save-session] streak reward grant failed:", (e as Error).message));
+              void notify({
+                userId: auth.userId,
+                type: "streak_milestone",
+                title: `${milestone}-day streak! 🔥`,
+                body: `You've practiced ${milestone} days in a row — we've added a bonus session to your account.`,
+                link: "/dashboard",
+              });
             }
           }
         } else {

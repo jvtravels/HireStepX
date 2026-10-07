@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
-import { extractEvidenceSkills, latestSessionByUser, isNegotiationSession } from "../../server-handlers/_employer-candidate-evidence-helpers";
+import { describe, it, expect, vi } from "vitest";
+import { extractEvidenceSkills, latestSessionByUser, isNegotiationSession, claimProfileView } from "../../server-handlers/_employer-candidate-evidence-helpers";
 
 describe("extractEvidenceSkills", () => {
   it("extracts name + score pairs from a real report_json shape", () => {
@@ -99,5 +99,35 @@ describe("isNegotiationSession", () => {
     expect(isNegotiationSession("behavioral")).toBe(false);
     expect(isNegotiationSession(undefined)).toBe(false);
     expect(isNegotiationSession("")).toBe(false);
+  });
+});
+
+describe("claimProfileView", () => {
+  it("returns true when the PATCH flips exactly one row (first view)", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue({ ok: true, json: async () => [{ id: "m1" }] });
+    const claimed = await claimProfileView("https://x.supabase.co", { apikey: "k" }, "m1", "2026-01-01T00:00:00Z", fetchImpl as unknown as typeof fetch);
+    expect(claimed).toBe(true);
+    const [url, init] = fetchImpl.mock.calls[0];
+    expect(url).toContain("requirement_matches?id=eq.m1&profile_viewed_at=is.null");
+    expect(init.method).toBe("PATCH");
+    expect(JSON.parse(init.body)).toEqual({ profile_viewed_at: "2026-01-01T00:00:00Z" });
+  });
+
+  it("returns false when the row was already viewed (zero rows back)", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue({ ok: true, json: async () => [] });
+    const claimed = await claimProfileView("https://x.supabase.co", { apikey: "k" }, "m1", "2026-01-01T00:00:00Z", fetchImpl as unknown as typeof fetch);
+    expect(claimed).toBe(false);
+  });
+
+  it("returns false when the request fails", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue({ ok: false, json: async () => [] });
+    const claimed = await claimProfileView("https://x.supabase.co", { apikey: "k" }, "m1", "2026-01-01T00:00:00Z", fetchImpl as unknown as typeof fetch);
+    expect(claimed).toBe(false);
+  });
+
+  it("returns false and does not throw when fetch rejects", async () => {
+    const fetchImpl = vi.fn().mockRejectedValue(new Error("network down"));
+    const claimed = await claimProfileView("https://x.supabase.co", { apikey: "k" }, "m1", "2026-01-01T00:00:00Z", fetchImpl as unknown as typeof fetch);
+    expect(claimed).toBe(false);
   });
 });

@@ -29,6 +29,15 @@ import {
   isValidCandidateStatusTransition,
   type RequirementMatchRow,
 } from "./_employer-candidate-status-helpers";
+import { notify } from "./_notify";
+
+const STATUS_NOTIFICATION_TEXT: Record<string, { title: string; body: string }> = {
+  interview_invited: { title: "You've been invited to interview!", body: "An employer wants to move forward with you — check your dashboard for details." },
+  interviewing: { title: "Interview in progress", body: "An employer has marked your interview as in progress." },
+  hired: { title: "Congratulations — you got the offer!", body: "An employer has marked you as hired. Great work!" },
+  rejected: { title: "Application update", body: "An employer has made a decision on your application." },
+  not_a_fit: { title: "Application update", body: "An employer has made a decision on your application." },
+};
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
@@ -102,10 +111,10 @@ export default async function handler(req: Request): Promise<Response> {
     // owns. Never trust a client-supplied requirement id for this — resolve
     // it from the match row itself, then verify the parent's employer_id.
     const matchRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/requirement_matches?id=eq.${encodeURIComponent(matchId)}&select=id,requirement_id,candidate_status`,
+      `${SUPABASE_URL}/rest/v1/requirement_matches?id=eq.${encodeURIComponent(matchId)}&select=id,requirement_id,candidate_status,candidate_user_id`,
       { headers: serviceHeaders() },
     );
-    const matchRows = (await matchRes.json().catch(() => [])) as Array<{ id: string; requirement_id: string; candidate_status: string }>;
+    const matchRows = (await matchRes.json().catch(() => [])) as Array<{ id: string; requirement_id: string; candidate_status: string; candidate_user_id: string }>;
     if (!matchRes.ok || !matchRows[0]) {
       return new Response(JSON.stringify({ error: "Candidate match not found" }), { status: 404, headers });
     }
@@ -159,6 +168,17 @@ export default async function handler(req: Request): Promise<Response> {
     const row = updated[0];
     if (!row) {
       return new Response(JSON.stringify({ error: "Failed to update candidate status" }), { status: 500, headers });
+    }
+
+    const notifText = STATUS_NOTIFICATION_TEXT[candidateStatus];
+    if (notifText) {
+      void notify({
+        userId: matchRows[0].candidate_user_id,
+        type: "candidate_status_change",
+        title: notifText.title,
+        body: notifText.body,
+        link: "/jobs",
+      });
     }
 
     return new Response(JSON.stringify(toResponseShape(row)), { status: 200, headers });

@@ -14,6 +14,7 @@ import {
   slog,
 } from "./_shared";
 import { grantSessionCredits } from "./_session-credits";
+import { notify } from "./_notify";
 import { razorpayBasicAuth } from "./_razorpay-auth";
 import {
   PLAN_TIER,
@@ -554,6 +555,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         try { await sendPaymentEmail(userEmail, userName || "Customer", "single", "free", razorpay_payment_id, nowSingle.toISOString(), nowSingle.toISOString(), `₹${purchaseAmount / 100}`); } catch (e) { console.warn("[verify-payment] single email failed:", e); }
       }
       if (razorpay_order_id) await clearPaymentIntent(razorpay_order_id);
+      void notify({
+        userId,
+        type: "payment_success",
+        title: "Payment received",
+        body: `${sessionQuantity} session credit${sessionQuantity === 1 ? "" : "s"} added to your account.`,
+        link: "/dashboard",
+      });
       await captureServerEvent("payment_completed", userId, {
         // tier reflects the user's actual subscription at purchase time — credits
         // are a universal top-up available to all tiers, not just free users.
@@ -673,6 +681,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
       return res.status(500).json({ error: "Payment received but activation failed — please contact support@hirestepx.com with your payment ID so we can activate your plan manually." });
     }
+
+    void notify({
+      userId,
+      type: "payment_success",
+      title: `${PLAN_LABEL[plan] || tier} is live`,
+      body: `Your payment went through — your plan is active until ${end.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}.`,
+      link: "/dashboard",
+    });
 
     // 6a. Consume exactly one promo use — only now, after the charge cleared and
     // the subscription is live. A single RPC call (consume_promo_code) does the

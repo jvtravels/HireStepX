@@ -23,8 +23,10 @@ import {
   extractReadinessForecast,
   extractStarCompleteness,
   latestSessionByUser,
+  claimProfileView,
   type SessionRow,
 } from "./_employer-candidate-evidence-helpers";
+import { notify } from "./_notify";
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
@@ -80,12 +82,27 @@ export default async function handler(req: Request): Promise<Response> {
     const { requirement_id: requirementId, candidate_user_id: candidateUserId } = matchRows[0];
 
     const reqRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&employer_id=eq.${encodeURIComponent(auth.userId)}&select=id`,
+      `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&employer_id=eq.${encodeURIComponent(auth.userId)}` +
+        `&select=id,title,employers(company_name)`,
       { headers: serviceHeaders() },
     );
-    const reqRows = (await reqRes.json().catch(() => [])) as Array<{ id: string }>;
+    const reqRows = (await reqRes.json().catch(() => [])) as Array<{
+      id: string; title: string; employers: { company_name: string } | null;
+    }>;
     if (!reqRes.ok || !reqRows[0]) {
       return new Response(JSON.stringify({ error: "Candidate match not found" }), { status: 404, headers });
+    }
+
+    const roleTitle = reqRows[0].title || "a role";
+    const companyName = reqRows[0].employers?.company_name || "An employer";
+    if (await claimProfileView(SUPABASE_URL, serviceHeaders(), matchId, new Date().toISOString())) {
+      void notify({
+        userId: candidateUserId,
+        type: "employer_viewed_profile",
+        title: "An employer viewed your profile",
+        body: `${companyName} looked at your evidence and details for ${roleTitle}.`,
+        link: "/jobs",
+      });
     }
 
     /* limit=20, not 1: the most recent session overall is frequently a
