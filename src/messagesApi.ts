@@ -7,7 +7,7 @@ import { authHeaders } from "./supabase";
 
 export interface ConversationMessage {
   id: string;
-  senderRole: "employer" | "candidate";
+  senderRole: "employer" | "candidate" | "system";
   body: string;
   attachmentPath: string | null;
   attachmentName: string | null;
@@ -23,6 +23,26 @@ export interface ConversationSummary {
   counterpartName: string;
   roleTitle: string;
   lastMessageAt: string | null;
+  candidateStatus: string;
+  matchScore: number | null;
+}
+
+/** Thread-level context returned alongside GET /api/messages?matchId= —
+ *  the job/company/pipeline-state framing every bubble is read against, so
+ *  the thread page doesn't need a second round-trip to show it. */
+export interface ConversationContext {
+  roleTitle: string;
+  companyName: string;
+  candidateName: string;
+  matchScore: number | null;
+  candidateStatus: string;
+  interviewScheduledAt: string | null;
+  viewerRole: "employer" | "candidate";
+}
+
+export interface ThreadResult {
+  messages: ConversationMessage[];
+  context: ConversationContext | null;
 }
 
 export async function listConversations(): Promise<ConversationSummary[] | null> {
@@ -37,13 +57,16 @@ export async function listConversations(): Promise<ConversationSummary[] | null>
   }
 }
 
-export async function fetchThread(matchId: string): Promise<ConversationMessage[] | null> {
+export async function fetchThread(matchId: string): Promise<ThreadResult | null> {
   try {
     const headers = await authHeaders();
     const res = await fetch(`/api/messages?matchId=${encodeURIComponent(matchId)}`, { headers });
     const data = await res.json().catch(() => null);
     if (!res.ok || !data) return null;
-    return (data.messages ?? []) as ConversationMessage[];
+    return {
+      messages: (data.messages ?? []) as ConversationMessage[],
+      context: (data.context ?? null) as ConversationContext | null,
+    };
   } catch {
     return null;
   }

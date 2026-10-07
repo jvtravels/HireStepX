@@ -717,8 +717,8 @@ function MessagesDialog({
 
   const load = useCallback(async (mId: string, showSpinner: boolean) => {
     if (showSpinner) setLoading(true);
-    const msgs = await fetchMessages(mId);
-    if (msgs) setMessages(msgs);
+    const result = await fetchMessages(mId);
+    if (result) setMessages(result.messages);
     if (showSpinner) setLoading(false);
   }, [fetchMessages]);
 

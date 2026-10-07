@@ -30,6 +30,7 @@ import {
   type RequirementMatchRow,
 } from "./_employer-candidate-status-helpers";
 import { notify } from "./_notify";
+import { findOrCreateConversationId, postSystemMessage } from "./_messages-helpers";
 
 const STATUS_NOTIFICATION_TEXT: Record<string, { title: string; body: string }> = {
   interview_invited: { title: "You've been invited to interview!", body: "An employer wants to move forward with you — check your dashboard for details." },
@@ -38,6 +39,31 @@ const STATUS_NOTIFICATION_TEXT: Record<string, { title: string; body: string }> 
   rejected: { title: "Application update", body: "An employer has made a decision on your application." },
   not_a_fit: { title: "Application update", body: "An employer has made a decision on your application." },
 };
+
+/** Composes the system-message body posted into the thread when a status
+ *  change happens — the thread becomes the record of the hiring decision,
+ *  not just a side notification. Returns null for statuses with nothing
+ *  worth announcing in-thread (e.g. a same-status note-only update). */
+function systemMessageFor(candidateStatus: string, note: string | null, interviewScheduledAt: string | null): string | null {
+  switch (candidateStatus) {
+    case "interview_invited": {
+      const when = interviewScheduledAt ? ` for ${new Date(interviewScheduledAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}` : "";
+      return `📅 Interview invite sent${when}.${note ? ` "${note}"` : ""}`;
+    }
+    case "interviewing":
+      return "🗣️ Candidate marked as interviewing.";
+    case "hired":
+      return `🎉 Candidate marked as hired.${note ? ` "${note}"` : ""}`;
+    case "rejected":
+      return `Application status updated: Rejected.${note ? ` "${note}"` : ""}`;
+    case "not_a_fit":
+      return `Application status updated: Not a fit.${note ? ` "${note}"` : ""}`;
+    case "no_response":
+      return "Application status updated: No response.";
+    default:
+      return null;
+  }
+}
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
@@ -193,6 +219,27 @@ export default async function handler(req: Request): Promise<Response> {
         body: notifText.body,
         link: "/jobs",
       });
+    }
+
+    const systemBody = systemMessageFor(candidateStatus, note, row.interview_scheduled_at ?? interviewScheduledAt);
+    if (systemBody) {
+      void (async () => {
+        const conversationId = await findOrCreateConversationId(SUPABASE_URL, serviceHeaders(), {
+          matchId,
+          requirementId,
+          employerId: auth.userId as string,
+          candidateUserId: matchRows[0].candidate_user_id,
+        });
+        if (conversationId) {
+          await postSystemMessage(SUPABASE_URL, serviceHeaders(), {
+            conversationId,
+            employerId: auth.userId as string,
+            candidateUserId: matchRows[0].candidate_user_id,
+            senderId: auth.userId as string,
+            body: systemBody,
+          });
+        }
+      })();
     }
 
     return new Response(JSON.stringify(toResponseShape(row)), { status: 200, headers });

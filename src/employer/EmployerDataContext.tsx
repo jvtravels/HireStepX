@@ -74,7 +74,7 @@ export interface UnlockPurchase {
  *  toMessageShape() in server-handlers/messages.ts. */
 export interface ConversationMessage {
   id: string;
-  senderRole: "employer" | "candidate";
+  senderRole: "employer" | "candidate" | "system";
   body: string;
   attachmentPath: string | null;
   attachmentName: string | null;
@@ -92,6 +92,21 @@ export interface ConversationSummary {
   counterpartName: string;
   roleTitle: string;
   lastMessageAt: string | null;
+  candidateStatus: CandidateStatus;
+  matchScore: number | null;
+}
+
+/** Thread-level context returned alongside GET /api/messages?matchId= — the
+ *  job/company/pipeline-state framing the thread is read against. Mirrors
+ *  `context` in messages.ts's handleGet response. */
+export interface ConversationContext {
+  roleTitle: string;
+  companyName: string;
+  candidateName: string;
+  matchScore: number | null;
+  candidateStatus: CandidateStatus;
+  interviewScheduledAt: string | null;
+  viewerRole: "employer" | "candidate";
 }
 
 interface EmployerDataContextValue {
@@ -123,7 +138,7 @@ interface EmployerDataContextValue {
   fetchUnlockHistory: () => Promise<UnlockPurchase[] | null>;
   refreshRequirements: () => Promise<void>;
   listConversations: () => Promise<ConversationSummary[] | null>;
-  fetchMessages: (matchId: string) => Promise<ConversationMessage[] | null>;
+  fetchMessages: (matchId: string) => Promise<{ messages: ConversationMessage[]; context: ConversationContext | null } | null>;
   sendMessage: (matchId: string, payload: { body?: string; attachmentPath?: string; attachmentName?: string; attachmentMime?: string }) => Promise<ConversationMessage | null>;
   uploadMessageAttachment: (matchId: string, file: { fileName: string; contentType: string; fileBase64: string }) => Promise<{ attachmentPath: string; attachmentName: string; attachmentMime: string } | { error: string }>;
   flagMessage: (messageId: string, reason: string, note?: string) => Promise<boolean>;
@@ -360,13 +375,16 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
     }
   }, []);
 
-  const fetchMessages = useCallback(async (matchId: string): Promise<ConversationMessage[] | null> => {
+  const fetchMessages = useCallback(async (matchId: string): Promise<{ messages: ConversationMessage[]; context: ConversationContext | null } | null> => {
     try {
       const headers = await authHeaders();
       const res = await fetch(`/api/messages?matchId=${encodeURIComponent(matchId)}`, { headers });
       const data = await res.json().catch(() => null);
       if (!res.ok || !data) return null;
-      return (data.messages ?? []) as ConversationMessage[];
+      return {
+        messages: (data.messages ?? []) as ConversationMessage[],
+        context: (data.context ?? null) as ConversationContext | null,
+      };
     } catch {
       return null;
     }

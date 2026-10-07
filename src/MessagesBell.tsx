@@ -31,6 +31,8 @@ export interface ConversationSummary {
   counterpartName: string;
   roleTitle: string;
   lastMessageAt: string | null;
+  candidateStatus?: string;
+  matchScore?: number | null;
 }
 
 const POLL_MS = 60_000;

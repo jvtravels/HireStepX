@@ -9,6 +9,7 @@
  */
 
 export type MessageRole = "employer" | "candidate";
+export type MessageSenderRole = MessageRole | "system";
 
 export const MAX_MESSAGE_BODY_LEN = 4000;
 export const MAX_FLAG_NOTE_LEN = 500;
@@ -90,3 +91,73 @@ export function inferAttachmentExtension(contentType: string): string | null {
 export const MATCH_ID_RE = /^[0-9a-f-]{32,}$/i;
 export const CONVERSATION_ID_RE = /^[0-9a-f-]{32,}$/i;
 export const MESSAGE_ID_RE = /^[0-9a-f-]{32,}$/i;
+
+/** Finds (or lazily creates) the conversation id for a match, given ids the
+ *  caller already resolved and verified ownership of — used by
+ *  employer-candidate-status.ts to post a system message into the thread
+ *  without re-implementing messages.ts's own findOrCreateConversation
+ *  (which returns the full row, not just the id, for its own needs). */
+export async function findOrCreateConversationId(
+  supabaseUrl: string,
+  serviceHeaders: Record<string, string>,
+  identity: { matchId: string; requirementId: string; employerId: string; candidateUserId: string },
+): Promise<string | null> {
+  const existingRes = await fetch(
+    `${supabaseUrl}/rest/v1/conversations?match_id=eq.${encodeURIComponent(identity.matchId)}&select=id`,
+    { headers: serviceHeaders },
+  );
+  const existingRows = (await existingRes.json().catch(() => [])) as Array<{ id: string }>;
+  if (existingRes.ok && existingRows[0]) return existingRows[0].id;
+
+  const createRes = await fetch(`${supabaseUrl}/rest/v1/conversations`, {
+    method: "POST",
+    headers: { ...serviceHeaders, "Content-Type": "application/json", Prefer: "return=representation,resolution=merge-duplicates" },
+    body: JSON.stringify({
+      match_id: identity.matchId,
+      requirement_id: identity.requirementId,
+      employer_id: identity.employerId,
+      candidate_user_id: identity.candidateUserId,
+    }),
+  });
+  const createdRows = (await createRes.json().catch(() => [])) as Array<{ id: string }>;
+  if (createRes.ok && createdRows[0]) return createdRows[0].id;
+
+  // Lost the create race to a concurrent sender — re-read.
+  const retryRes = await fetch(
+    `${supabaseUrl}/rest/v1/conversations?match_id=eq.${encodeURIComponent(identity.matchId)}&select=id`,
+    { headers: serviceHeaders },
+  );
+  const retryRows = (await retryRes.json().catch(() => [])) as Array<{ id: string }>;
+  return retryRows[0]?.id ?? null;
+}
+
+/** Posts a `sender_role: "system"` message into a conversation and bumps
+ *  last_message_at — the record of a pipeline action (interview invite,
+ *  rejection, ...) landing in the thread itself rather than only as a
+ *  separate, less-discoverable notification. Best-effort: callers fire this
+ *  after their own write already succeeded and don't block the response
+ *  on it, same convention as _notify.ts's notify(). */
+export async function postSystemMessage(
+  supabaseUrl: string,
+  serviceHeaders: Record<string, string>,
+  params: { conversationId: string; employerId: string; candidateUserId: string; senderId: string; body: string },
+): Promise<void> {
+  const now = new Date().toISOString();
+  await fetch(`${supabaseUrl}/rest/v1/conversation_messages`, {
+    method: "POST",
+    headers: { ...serviceHeaders, "Content-Type": "application/json", Prefer: "return=minimal" },
+    body: JSON.stringify({
+      conversation_id: params.conversationId,
+      employer_id: params.employerId,
+      candidate_user_id: params.candidateUserId,
+      sender_id: params.senderId,
+      sender_role: "system",
+      body: params.body,
+    }),
+  });
+  await fetch(`${supabaseUrl}/rest/v1/conversations?id=eq.${encodeURIComponent(params.conversationId)}`, {
+    method: "PATCH",
+    headers: { ...serviceHeaders, "Content-Type": "application/json", Prefer: "return=minimal" },
+    body: JSON.stringify({ last_message_at: now }),
+  });
+}

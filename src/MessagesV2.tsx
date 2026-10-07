@@ -26,6 +26,7 @@ import {
   sendMessage as apiSendMessage,
   uploadMessageAttachment,
   flagMessage as apiFlagMessage,
+  type ConversationContext,
   type ConversationMessage,
   type ConversationSummary,
 } from "./messagesApi";
@@ -34,6 +35,45 @@ import { useToast } from "./Toast";
 
 const LIST_POLL_MS = 15000;
 const THREAD_POLL_MS = 6000;
+
+/** Candidate-friendly wording for a pipeline status — deliberately separate
+ *  from employer/_atoms.tsx's CANDIDATE_STATUS_LABEL (same source enum,
+ *  different audience) rather than importing an employer-only module into
+ *  candidate code. */
+const STATUS_LABEL: Record<string, string> = {
+  shortlisted: "Shortlisted",
+  interview_invited: "Interview invited",
+  interviewing: "Interviewing",
+  hired: "Hired",
+  rejected: "Not selected",
+  not_a_fit: "Not selected",
+  no_response: "Application closed",
+};
+
+const STATUS_COLOR: Record<string, string> = {
+  shortlisted: "#6366f1",
+  interview_invited: "#8b5cf6",
+  interviewing: "#d97706",
+  hired: "#16a34a",
+  rejected: "#6b7280",
+  not_a_fit: "#6b7280",
+  no_response: "#6b7280",
+};
+
+function StatusBadge({ status }: { status: string }) {
+  const label = STATUS_LABEL[status] || status;
+  const color = STATUS_COLOR[status] || t.inkFaint;
+  return (
+    <span
+      style={{
+        display: "inline-flex", alignItems: "center", fontFamily: f.sans, fontSize: 11.5, fontWeight: 600,
+        color, background: `${color}1a`, borderRadius: 999, padding: "2px 9px",
+      }}
+    >
+      {label}
+    </span>
+  );
+}
 
 export default function MessagesV2() {
   const router = useRouter();
@@ -44,6 +84,7 @@ export default function MessagesV2() {
   const [listError, setListError] = useState(false);
   const [activeMatchId, setActiveMatchId] = useState<string | null>(searchParams?.get("matchId") || null);
   const [messages, setMessages] = useState<ConversationMessage[]>([]);
+  const [context, setContext] = useState<ConversationContext | null>(null);
   const [threadLoading, setThreadLoading] = useState(false);
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
@@ -68,14 +109,18 @@ export default function MessagesV2() {
 
   const loadThread = useCallback(async (matchId: string, showSpinner: boolean) => {
     if (showSpinner) setThreadLoading(true);
-    const msgs = await fetchThread(matchId);
-    if (msgs) setMessages(msgs);
+    const result = await fetchThread(matchId);
+    if (result) {
+      setMessages(result.messages);
+      setContext(result.context);
+    }
     if (showSpinner) setThreadLoading(false);
   }, []);
 
   useEffect(() => {
     if (!activeMatchId) {
       setMessages([]);
+      setContext(null);
       return;
     }
     loadThread(activeMatchId, true);
@@ -247,48 +292,61 @@ export default function MessagesV2() {
         ) : (
           <>
             <div style={{ padding: "12px 16px", borderBottom: `1px solid ${t.line}` }}>
-              <div style={{ fontFamily: f.sans, fontSize: 14, fontWeight: 600, color: t.coal }}>{active.counterpartName}</div>
-              <div style={{ fontFamily: f.sans, fontSize: 12, color: t.inkFaint }}>{active.roleTitle}</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                <span style={{ fontFamily: f.sans, fontSize: 14, fontWeight: 600, color: t.coal }}>{active.counterpartName}</span>
+                <StatusBadge status={active.candidateStatus} />
+              </div>
+              <div style={{ fontFamily: f.sans, fontSize: 12, color: t.inkFaint, marginTop: 2 }}>
+                {active.roleTitle}{context?.companyName ? ` · ${context.companyName}` : ""}
+              </div>
             </div>
             <div ref={scrollRef} style={{ flex: 1, overflowY: "auto", padding: "14px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
               {threadLoading && <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkFaint }}>Loading messages…</p>}
               {!threadLoading && messages.length === 0 && (
                 <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkFaint }}>No messages yet — say hello.</p>
               )}
-              {messages.map((m) => (
-                <div
-                  key={m.id}
-                  style={{
-                    alignSelf: m.senderRole === "candidate" ? "flex-end" : "flex-start",
-                    maxWidth: "75%",
-                    background: m.senderRole === "candidate" ? t.indigo100 : t.creamSoft,
-                    borderRadius: 10,
-                    padding: "8px 10px",
-                  }}
-                >
-                  {m.body && <div style={{ fontFamily: f.sans, fontSize: 13.5, color: t.coal, whiteSpace: "pre-wrap" }}>{m.body}</div>}
-                  {m.attachmentPath && (
-                    <div style={{ fontFamily: f.sans, fontSize: 12.5, color: t.indigoDeep, marginTop: m.body ? 4 : 0 }}>
-                      <PaperclipIcon size={12} style={{ display: "inline", marginRight: 4 }} aria-hidden="true" />
-                      {m.attachmentName || "Attachment"}
-                    </div>
-                  )}
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4 }}>
-                    <span style={{ fontFamily: f.sans, fontSize: 11, color: t.inkFaint }}>
-                      {new Date(m.createdAt).toLocaleString()}
+              {messages.map((m) =>
+                m.senderRole === "system" ? (
+                  <div key={m.id} style={{ alignSelf: "center", textAlign: "center", maxWidth: "85%" }}>
+                    <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkFaint, background: t.creamSoft, borderRadius: 999, padding: "4px 12px", display: "inline-block" }}>
+                      {m.body}
                     </span>
-                    {m.flagged && <Badge variant="destructive">Flagged</Badge>}
-                    <Button
-                      type="button"
-                      variant="link"
-                      onClick={() => handleFlag(m.id)}
-                      style={{ fontSize: 11, height: "auto", padding: 0, color: t.inkFaint, display: "flex", alignItems: "center", gap: 2 }}
-                    >
-                      <FlagIcon size={11} aria-hidden="true" /> Report
-                    </Button>
                   </div>
-                </div>
-              ))}
+                ) : (
+                  <div
+                    key={m.id}
+                    style={{
+                      alignSelf: m.senderRole === "candidate" ? "flex-end" : "flex-start",
+                      maxWidth: "75%",
+                      background: m.senderRole === "candidate" ? t.indigo100 : t.creamSoft,
+                      borderRadius: 10,
+                      padding: "8px 10px",
+                    }}
+                  >
+                    {m.body && <div style={{ fontFamily: f.sans, fontSize: 13.5, color: t.coal, whiteSpace: "pre-wrap" }}>{m.body}</div>}
+                    {m.attachmentPath && (
+                      <div style={{ fontFamily: f.sans, fontSize: 12.5, color: t.indigoDeep, marginTop: m.body ? 4 : 0 }}>
+                        <PaperclipIcon size={12} style={{ display: "inline", marginRight: 4 }} aria-hidden="true" />
+                        {m.attachmentName || "Attachment"}
+                      </div>
+                    )}
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4 }}>
+                      <span style={{ fontFamily: f.sans, fontSize: 11, color: t.inkFaint }}>
+                        {new Date(m.createdAt).toLocaleString()}
+                      </span>
+                      {m.flagged && <Badge variant="destructive">Flagged</Badge>}
+                      <Button
+                        type="button"
+                        variant="link"
+                        onClick={() => handleFlag(m.id)}
+                        style={{ fontSize: 11, height: "auto", padding: 0, color: t.inkFaint, display: "flex", alignItems: "center", gap: 2 }}
+                      >
+                        <FlagIcon size={11} aria-hidden="true" /> Report
+                      </Button>
+                    </div>
+                  </div>
+                ),
+              )}
             </div>
             <div style={{ padding: "12px 16px", borderTop: `1px solid ${t.line}`, display: "flex", flexDirection: "column", gap: 8 }}>
               <Textarea

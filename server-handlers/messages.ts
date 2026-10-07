@@ -27,6 +27,7 @@ import {
   detectContactInfoFlag,
   MATCH_ID_RE,
   type MessageRole,
+  type MessageSenderRole,
 } from "./_messages-helpers";
 import { notify } from "./_notify";
 
@@ -42,7 +43,11 @@ interface MatchRow {
   id: string;
   requirement_id: string;
   candidate_user_id: string;
-  employer_requirements: { employer_id: string; title: string } | null;
+  match_score: number;
+  candidate_status: string;
+  interview_scheduled_at: string | null;
+  employer_requirements: { employer_id: string; title: string; employers: { company_name: string } | null } | null;
+  profiles: { name: string | null } | null;
 }
 
 interface ConversationRow {
@@ -59,7 +64,7 @@ interface MessageRow {
   id: string;
   conversation_id: string;
   sender_id: string;
-  sender_role: MessageRole;
+  sender_role: MessageSenderRole;
   body: string;
   attachment_path: string | null;
   attachment_name: string | null;
@@ -79,7 +84,8 @@ async function resolveMatchAndRole(
 ): Promise<{ match: MatchRow; role: MessageRole } | Response> {
   const matchRes = await fetch(
     `${SUPABASE_URL}/rest/v1/requirement_matches?id=eq.${encodeURIComponent(matchId)}` +
-      `&select=id,requirement_id,candidate_user_id,employer_requirements(employer_id,title)`,
+      `&select=id,requirement_id,candidate_user_id,match_score,candidate_status,interview_scheduled_at,` +
+      `employer_requirements(employer_id,title,employers(company_name)),profiles(name)`,
     { headers: serviceHeaders() },
   );
   const matchRows = (await matchRes.json().catch(() => [])) as MatchRow[];
@@ -140,6 +146,7 @@ function toMessageShape(row: MessageRow) {
 interface ConversationListRow extends ConversationRow {
   employer_requirements: { title: string; employers: { company_name: string } | null } | null;
   profiles: { name: string | null } | null;
+  requirement_matches: { candidate_status: string; match_score: number } | null;
 }
 
 /** Lists every conversation the caller is a party to, newest first — the
@@ -150,7 +157,7 @@ interface ConversationListRow extends ConversationRow {
 async function handleListConversations(headers: Record<string, string>, authUserId: string): Promise<Response> {
   const res = await fetch(
     `${SUPABASE_URL}/rest/v1/conversations?or=(employer_id.eq.${authUserId},candidate_user_id.eq.${authUserId})` +
-      `&select=*,employer_requirements(title,employers(company_name)),profiles(name)` +
+      `&select=*,employer_requirements(title,employers(company_name)),profiles(name),requirement_matches(candidate_status,match_score)` +
       `&order=last_message_at.desc.nullslast,created_at.desc`,
     { headers: serviceHeaders() },
   );
@@ -168,6 +175,8 @@ async function handleListConversations(headers: Record<string, string>, authUser
       counterpartName: role === "employer" ? (row.profiles?.name || "Candidate") : (row.employer_requirements?.employers?.company_name || "Employer"),
       roleTitle: row.employer_requirements?.title || "Role",
       lastMessageAt: row.last_message_at,
+      candidateStatus: row.requirement_matches?.candidate_status || "shortlisted",
+      matchScore: row.requirement_matches?.match_score ?? null,
     };
   });
 
@@ -186,7 +195,17 @@ async function handleGet(req: Request, headers: Record<string, string>, auth: { 
 
   const resolved = await resolveMatchAndRole(req, headers, matchId, auth.userId);
   if (resolved instanceof Response) return resolved;
-  const { match } = resolved;
+  const { match, role } = resolved;
+
+  const context = {
+    roleTitle: match.employer_requirements?.title || "Role",
+    companyName: match.employer_requirements?.employers?.company_name || "Employer",
+    candidateName: match.profiles?.name || "Candidate",
+    matchScore: match.match_score ?? null,
+    candidateStatus: match.candidate_status || "shortlisted",
+    interviewScheduledAt: match.interview_scheduled_at,
+    viewerRole: role,
+  };
 
   const convRes = await fetch(
     `${SUPABASE_URL}/rest/v1/conversations?match_id=eq.${encodeURIComponent(match.id)}&select=*`,
@@ -195,7 +214,7 @@ async function handleGet(req: Request, headers: Record<string, string>, auth: { 
   const convRows = (await convRes.json().catch(() => [])) as ConversationRow[];
   const conversation = convRows[0] ?? null;
   if (!conversation) {
-    return new Response(JSON.stringify({ conversation: null, messages: [] }), { status: 200, headers });
+    return new Response(JSON.stringify({ conversation: null, messages: [], context }), { status: 200, headers });
   }
 
   const msgRes = await fetch(
@@ -209,6 +228,7 @@ async function handleGet(req: Request, headers: Record<string, string>, auth: { 
     JSON.stringify({
       conversation: { id: conversation.id, matchId: conversation.match_id, lastMessageAt: conversation.last_message_at },
       messages: msgRows.map(toMessageShape),
+      context,
     }),
     { status: 200, headers },
   );
