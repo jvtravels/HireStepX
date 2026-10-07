@@ -22,7 +22,6 @@ import {
   SettingsIcon,
   CreditCardIcon,
   UserPlusIcon,
-  MessageSquareIcon,
 } from "lucide-react";
 import { DropdownMenuGroup, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import AppShellFrame from "./AppShellFrame";
@@ -74,7 +73,6 @@ const prefetchMap: Record<string, () => void> = {
   analytics: () => { import("./DashboardAnalytics"); },
   resume: () => { import("./ResumeV2"); },
   jobs: () => { import("./DashboardJobs"); },
-  messages: () => { import("./MessagesV2"); },
   settings: () => { import("./DashboardSettings"); },
 };
 
@@ -91,7 +89,6 @@ const navItems = [
   { id: "calendar", path: "/calendar", label: "Calendar" },
   { id: "resume", path: "/resume", label: "Your Profile" },
   { id: "jobs", path: "/jobs", label: "Jobs" },
-  { id: "messages", path: "/messages", label: "Messages" },
 ];
 
 function NavIcon({ id }: { id: string }) {
@@ -103,7 +100,6 @@ function NavIcon({ id }: { id: string }) {
     case "analytics": return <TrendingUpIcon {...props} />;
     case "resume": return <FileTextIcon {...props} />;
     case "jobs": return <BriefcaseIcon {...props} />;
-    case "messages": return <MessageSquareIcon {...props} />;
     case "settings": return <SettingsIcon {...props} />;
     default: return null;
   }
