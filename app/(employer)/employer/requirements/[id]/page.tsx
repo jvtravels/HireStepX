@@ -26,8 +26,11 @@ import {
   BriefcaseIcon,
   PencilIcon,
   InfoIcon,
+  SendIcon,
+  PaperclipIcon,
+  FlagIcon,
 } from "lucide-react";
-import { useEmployerData, Requirement, CandidateEvidence, UnlockPurchase } from "@/employer/EmployerDataContext";
+import { useEmployerData, Requirement, CandidateEvidence, UnlockPurchase, ConversationMessage } from "@/employer/EmployerDataContext";
 import { useToast } from "@/Toast";
 import { Candidate, RequirementStage, ArchiveDisposition } from "@/employer/mockData";
 import { tokens as t, fonts as f, textSize } from "@/auth/_tokens";
@@ -61,6 +64,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -232,9 +236,9 @@ function initials(name: string): string {
 
 function CandidateAvatar({ name, unlocked }: { name: string; unlocked: boolean }) {
   return (
-    <Avatar>
-      <AvatarFallback style={{ background: unlocked ? t.indigo100 : t.creamSoft, color: unlocked ? t.indigoDeep : t.inkFaint, fontFamily: f.sans, fontWeight: 700 }}>
-        {unlocked ? initials(name) : <LockIcon size={14} aria-hidden="true" />}
+    <Avatar size="lg">
+      <AvatarFallback style={{ background: unlocked ? t.indigo100 : t.creamSoft, color: unlocked ? t.indigoDeep : t.inkFaint, fontFamily: f.sans, fontWeight: 700, fontSize: 15 }}>
+        {unlocked ? initials(name) : <LockIcon size={16} aria-hidden="true" />}
       </AvatarFallback>
     </Avatar>
   );
@@ -324,6 +328,7 @@ function CandidateTableRow({
   onToggleSelected,
   onUnlocked,
   onViewEvidence,
+  onMessage,
 }: {
   candidate: Candidate;
   requirementId: string;
@@ -332,6 +337,7 @@ function CandidateTableRow({
   onToggleSelected: () => void;
   onUnlocked: (candidateId: string, name: string, email: string) => void;
   onViewEvidence: () => void;
+  onMessage: () => void;
 }) {
   const { createUnlockOrder, verifyUnlockPayment } = useEmployerData();
   const { toast } = useToast();
@@ -500,6 +506,11 @@ function CandidateTableRow({
             <DropdownMenuItem onSelect={onViewEvidence}>
               <FileTextIcon className="size-4" aria-hidden="true" /> View evidence report
             </DropdownMenuItem>
+            {candidate.unlocked && !readOnly && (
+              <DropdownMenuItem onSelect={onMessage}>
+                <SendIcon className="size-4" aria-hidden="true" /> Message candidate
+              </DropdownMenuItem>
+            )}
             {candidate.unlocked && !readOnly && (
               <DropdownMenuItem onSelect={() => router.push(`/employer/requirements/${requirementId}/outcome?candidate=${candidate.id}`)}>
                 <MessageCircleIcon className="size-4" aria-hidden="true" /> How did it go?
@@ -681,6 +692,181 @@ function EvidenceDialog({ matchId, onClose }: { matchId: string | null; onClose:
   );
 }
 
+const MESSAGE_POLL_MS = 6000;
+
+/** Employer side of the basic employer<->candidate chat. Polls while open
+    (matches the codebase's NotificationBell polling idiom — no Realtime
+    infra here) and re-fetches immediately after a send so the sender sees
+    their own message without waiting for the next tick. */
+function MessagesDialog({
+  matchId,
+  candidateName,
+  onClose,
+}: {
+  matchId: string | null;
+  candidateName: string;
+  onClose: () => void;
+}) {
+  const { fetchMessages, sendMessage, uploadMessageAttachment, flagMessage } = useEmployerData();
+  const { toast } = useToast();
+  const [messages, setMessages] = useState<ConversationMessage[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [draft, setDraft] = useState("");
+  const [sending, setSending] = useState(false);
+  const [attaching, setAttaching] = useState(false);
+
+  const load = useCallback(async (mId: string, showSpinner: boolean) => {
+    if (showSpinner) setLoading(true);
+    const msgs = await fetchMessages(mId);
+    if (msgs) setMessages(msgs);
+    if (showSpinner) setLoading(false);
+  }, [fetchMessages]);
+
+  useEffect(() => {
+    if (!matchId) return;
+    setMessages([]);
+    load(matchId, true);
+    const interval = setInterval(() => load(matchId, false), MESSAGE_POLL_MS);
+    return () => clearInterval(interval);
+  }, [matchId, load]);
+
+  const handleSend = async () => {
+    if (!matchId || (!draft.trim() && sending)) return;
+    const text = draft.trim();
+    if (!text) return;
+    setSending(true);
+    const sent = await sendMessage(matchId, { body: text });
+    setSending(false);
+    if (!sent) {
+      toast("Couldn't send message — please try again", "error");
+      return;
+    }
+    setDraft("");
+    load(matchId, false);
+  };
+
+  const handleAttach = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !matchId) return;
+    if (file.size > 8_000_000) {
+      toast("File is too large — 8MB max", "error");
+      return;
+    }
+    setAttaching(true);
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(file);
+    }).catch(() => null);
+    if (!dataUrl) {
+      setAttaching(false);
+      toast("Couldn't read file", "error");
+      return;
+    }
+    const fileBase64 = dataUrl.slice(dataUrl.indexOf(",") + 1);
+    const uploaded = await uploadMessageAttachment(matchId, { fileName: file.name, contentType: file.type, fileBase64 });
+    if ("error" in uploaded) {
+      setAttaching(false);
+      toast(uploaded.error, "error");
+      return;
+    }
+    const sent = await sendMessage(matchId, {
+      attachmentPath: uploaded.attachmentPath,
+      attachmentName: uploaded.attachmentName,
+      attachmentMime: uploaded.attachmentMime,
+    });
+    setAttaching(false);
+    if (!sent) {
+      toast("Attachment uploaded but failed to send — please try again", "error");
+      return;
+    }
+    load(matchId, false);
+  };
+
+  const handleFlag = async (messageId: string) => {
+    const reason = window.prompt("Reason for flagging this message (e.g. inappropriate, spam, off-platform contact):");
+    if (!reason || !reason.trim()) return;
+    const ok = await flagMessage(messageId, reason.trim());
+    toast(ok ? "Message flagged for review" : "Couldn't flag message", ok ? "success" : "error");
+  };
+
+  return (
+    <Dialog open={matchId != null} onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogContent style={{ maxWidth: 480 }}>
+        <DialogHeader>
+          <DialogTitle>Message {candidateName}</DialogTitle>
+          <DialogDescription>Basic text chat. Contact-info sharing isn&apos;t blocked, but flagged for review.</DialogDescription>
+        </DialogHeader>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10, maxHeight: 360, overflowY: "auto", padding: "4px 2px" }}>
+          {loading && <HelpText>Loading messages…</HelpText>}
+          {!loading && messages.length === 0 && <HelpText>No messages yet — say hello.</HelpText>}
+          {messages.map((m) => (
+            <div
+              key={m.id}
+              style={{
+                alignSelf: m.senderRole === "employer" ? "flex-end" : "flex-start",
+                maxWidth: "80%",
+                background: m.senderRole === "employer" ? t.indigo100 : t.creamSoft,
+                borderRadius: 10,
+                padding: "8px 10px",
+              }}
+            >
+              {m.body && <div style={{ fontFamily: f.sans, fontSize: 13.5, color: t.coal, whiteSpace: "pre-wrap" }}>{m.body}</div>}
+              {m.attachmentPath && (
+                <div style={{ fontFamily: f.sans, fontSize: 12.5, color: t.indigoDeep, marginTop: m.body ? 4 : 0 }}>
+                  <PaperclipIcon size={12} style={{ display: "inline", marginRight: 4 }} aria-hidden="true" />
+                  {m.attachmentName || "Attachment"}
+                </div>
+              )}
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4 }}>
+                <span style={{ fontFamily: f.sans, fontSize: 11, color: t.inkFaint }}>
+                  {new Date(m.createdAt).toLocaleString()}
+                </span>
+                {m.flagged && <Badge variant="destructive">Flagged</Badge>}
+                <Button
+                  type="button"
+                  variant="link"
+                  onClick={() => handleFlag(m.id)}
+                  style={{ fontSize: 11, height: "auto", padding: 0, color: t.inkFaint, display: "flex", alignItems: "center", gap: 2 }}
+                >
+                  <FlagIcon size={11} aria-hidden="true" /> Report
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+        <DialogFooter style={{ flexDirection: "column", alignItems: "stretch", gap: 8 }}>
+          <Textarea
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            placeholder="Write a message…"
+            rows={2}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleSend();
+              }
+            }}
+          />
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <label style={{ cursor: attaching ? "default" : "pointer" }}>
+              <input type="file" onChange={handleAttach} disabled={attaching} style={{ display: "none" }} />
+              <span style={{ display: "flex", alignItems: "center", gap: 4, fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft }}>
+                <PaperclipIcon size={14} aria-hidden="true" /> {attaching ? "Uploading…" : "Attach file"}
+              </span>
+            </label>
+            <PrimaryCta size="sm" icon={<SendIcon size={13} aria-hidden="true" />} onClick={handleSend} disabled={sending || !draft.trim()}>
+              {sending ? "Sending…" : "Send"}
+            </PrimaryCta>
+          </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 /** Auto-dismissing "Undo" banner for the one action on this page that can be
     reversed without a page reload — a manual stage or bulk-status change.
     Failures already revert automatically; this is for changes that
@@ -749,6 +935,7 @@ export default function RequirementDetailPage() {
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [evidenceMatchId, setEvidenceMatchId] = useState<string | null>(null);
+  const [messagesCandidate, setMessagesCandidate] = useState<{ matchId: string; name: string } | null>(null);
   const [undoBanner, setUndoBanner] = useState<{ message: string; run: () => void } | null>(null);
   const [archiveOpen, setArchiveOpen] = useState(false);
   const [archiveReasonInput, setArchiveReasonInput] = useState("");
@@ -1675,6 +1862,7 @@ export default function RequirementDetailPage() {
                             onToggleSelected={() => toggleSelected(c.id)}
                             onUnlocked={handleUnlocked}
                             onViewEvidence={() => setEvidenceMatchId(c.id)}
+                            onMessage={() => setMessagesCandidate({ matchId: c.id, name: c.name })}
                           />
                         ))}
                       </TableBody>
@@ -1694,6 +1882,11 @@ export default function RequirementDetailPage() {
                 </Card>
               )}
               <EvidenceDialog matchId={evidenceMatchId} onClose={() => setEvidenceMatchId(null)} />
+              <MessagesDialog
+                matchId={messagesCandidate?.matchId ?? null}
+                candidateName={messagesCandidate?.name ?? "candidate"}
+                onClose={() => setMessagesCandidate(null)}
+              />
             </>
           )}
         </>

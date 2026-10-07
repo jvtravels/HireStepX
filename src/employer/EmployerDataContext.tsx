@@ -70,6 +70,19 @@ export interface UnlockPurchase {
   candidates: Array<{ matchId: string; name: string | null; email: string | null }>;
 }
 
+/** One message in an employer<->candidate conversation thread. Mirrors
+ *  toMessageShape() in server-handlers/messages.ts. */
+export interface ConversationMessage {
+  id: string;
+  senderRole: "employer" | "candidate";
+  body: string;
+  attachmentPath: string | null;
+  attachmentName: string | null;
+  attachmentMime: string | null;
+  flagged: boolean;
+  createdAt: string;
+}
+
 interface EmployerDataContextValue {
   companyStatus: CompanyStatus;
   companyStatusLoading: boolean;
@@ -98,6 +111,11 @@ interface EmployerDataContextValue {
   fetchRequirementActivity: (id: string) => Promise<RequirementActivity[] | null>;
   fetchUnlockHistory: () => Promise<UnlockPurchase[] | null>;
   refreshRequirements: () => Promise<void>;
+  fetchMessages: (matchId: string) => Promise<ConversationMessage[] | null>;
+  sendMessage: (matchId: string, payload: { body?: string; attachmentPath?: string; attachmentName?: string; attachmentMime?: string }) => Promise<ConversationMessage | null>;
+  uploadMessageAttachment: (matchId: string, file: { fileName: string; contentType: string; fileBase64: string }) => Promise<{ attachmentPath: string; attachmentName: string; attachmentMime: string } | { error: string }>;
+  flagMessage: (messageId: string, reason: string, note?: string) => Promise<boolean>;
+  fetchMessageAttachmentUrl: (messageId: string) => Promise<string | null>;
 }
 
 const EmployerDataContext = createContext<EmployerDataContextValue | null>(null);
@@ -318,6 +336,64 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
     }
   }, []);
 
+  const fetchMessages = useCallback(async (matchId: string): Promise<ConversationMessage[] | null> => {
+    try {
+      const headers = await authHeaders();
+      const res = await fetch(`/api/messages?matchId=${encodeURIComponent(matchId)}`, { headers });
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data) return null;
+      return (data.messages ?? []) as ConversationMessage[];
+    } catch {
+      return null;
+    }
+  }, []);
+
+  const sendMessage = useCallback(async (
+    matchId: string,
+    payload: { body?: string; attachmentPath?: string; attachmentName?: string; attachmentMime?: string },
+  ): Promise<ConversationMessage | null> => {
+    const res = await apiFetch<{ conversationId: string; message: ConversationMessage }>(
+      "/api/messages",
+      { matchId, body: payload.body, attachmentPath: payload.attachmentPath, attachmentName: payload.attachmentName, attachmentMime: payload.attachmentMime },
+      { method: "POST" },
+    );
+    return res.ok && res.data ? res.data.message : null;
+  }, []);
+
+  const uploadMessageAttachment = useCallback(async (
+    matchId: string,
+    file: { fileName: string; contentType: string; fileBase64: string },
+  ): Promise<{ attachmentPath: string; attachmentName: string; attachmentMime: string } | { error: string }> => {
+    const res = await apiFetch<{ attachmentPath: string; attachmentName: string; attachmentMime: string }>(
+      "/api/message-attachment-upload",
+      { matchId, fileName: file.fileName, contentType: file.contentType, fileBase64: file.fileBase64 },
+      { method: "POST" },
+    );
+    if (res.ok && res.data) return res.data;
+    return { error: res.errorData && typeof res.errorData === "object" && "error" in res.errorData ? String((res.errorData as { error: unknown }).error) : "Upload failed" };
+  }, []);
+
+  const flagMessage = useCallback(async (messageId: string, reason: string, note?: string): Promise<boolean> => {
+    const res = await apiFetch<{ ok: boolean }>(
+      "/api/flag-message",
+      { messageId, reason, note },
+      { method: "POST" },
+    );
+    return res.ok;
+  }, []);
+
+  const fetchMessageAttachmentUrl = useCallback(async (messageId: string): Promise<string | null> => {
+    try {
+      const headers = await authHeaders();
+      const res = await fetch(`/api/message-attachment-url?messageId=${encodeURIComponent(messageId)}`, { headers });
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data?.url) return null;
+      return data.url as string;
+    } catch {
+      return null;
+    }
+  }, []);
+
   const value: EmployerDataContextValue = {
     companyStatus,
     companyStatusLoading,
@@ -342,6 +418,11 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
     fetchRequirementActivity,
     fetchUnlockHistory,
     refreshRequirements,
+    fetchMessages,
+    sendMessage,
+    uploadMessageAttachment,
+    flagMessage,
+    fetchMessageAttachmentUrl,
   };
 
   return <EmployerDataContext.Provider value={value}>{children}</EmployerDataContext.Provider>;

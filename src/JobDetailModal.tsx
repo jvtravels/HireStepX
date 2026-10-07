@@ -6,14 +6,16 @@
    focus trapping come from the same primitive every other dialog in the
    app uses. */
 
+import { useRouter } from "next/navigation";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { XIcon } from "lucide-react";
+import { SendIcon, XIcon } from "lucide-react";
 import { tokens as t, fonts as f, textSize } from "./auth/_tokens";
 import { daysAgo, formatComp, formatExperience, WORK_MODE_LABEL, EMPLOYMENT_TYPE_LABEL } from "./hiringMatchFormat";
 import type { JobMatch } from "./DashboardJobs";
 
 export default function JobDetailModal({ job, onClose }: { job: JobMatch; onClose: () => void }) {
+  const router = useRouter();
   const comp = formatComp(job.budgetMin, job.budgetMax, job.salaryType);
   const exp = formatExperience(job.experienceMin, job.experienceMax);
   const mode = job.workMode ? WORK_MODE_LABEL[job.workMode] || job.workMode : null;
@@ -76,7 +78,7 @@ export default function JobDetailModal({ job, onClose }: { job: JobMatch; onClos
           </div>
         </div>
 
-        <div style={{ display: "flex", gap: 8, marginBottom: 18, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: 8, marginBottom: 18, flexWrap: "wrap", alignItems: "center" }}>
           {job.unlocked ? (
             <span style={{ fontFamily: f.sans, fontSize: textSize.xs, fontWeight: 600, color: t.indigoDeep, background: t.indigo100, padding: "4px 10px", borderRadius: 999 }}>
               Contacted
@@ -90,6 +92,16 @@ export default function JobDetailModal({ job, onClose }: { job: JobMatch; onClos
             <span style={{ fontFamily: f.sans, fontSize: textSize.xs, fontWeight: 600, color: t.inkSoft, background: t.creamSoft, padding: "4px 10px", borderRadius: 999 }}>
               Role closed
             </span>
+          )}
+          {job.unlocked && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => router.push(`/messages?matchId=${job.id}`)}
+              style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 6 }}
+            >
+              <SendIcon size={13} aria-hidden="true" /> Message employer
+            </Button>
           )}
         </div>
 

@@ -21,7 +21,8 @@ export type NotificationType =
   | "subscription_renewed"
   | "employer_viewed_profile"
   | "matches_ready"
-  | "strong_match_found";
+  | "strong_match_found"
+  | "new_message";
 
 export interface NotifyInput {
   userId: string;

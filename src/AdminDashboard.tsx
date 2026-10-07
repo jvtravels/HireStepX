@@ -150,6 +150,21 @@ interface FeedbackData {
   recent: Array<{ id: string; user_id: string; rating: string; comment: string; session_score: number; session_type: string; created_at: string }>;
 }
 
+interface MessagingData {
+  totalMessages: number;
+  openFlagCount: number;
+  byRole: Record<string, number>;
+  volumeByDay: Record<string, number>;
+  recentMessages: Array<{
+    id: string; conversation_id: string; sender_role: string; body: string;
+    attachment_name: string | null; auto_flag_reason: string | null; created_at: string;
+  }>;
+  flags: Array<{
+    id: string; message_id: string; conversation_id: string; flagged_by_role: string;
+    reason: string; note: string | null; status: string; created_at: string;
+  }>;
+}
+
 interface SupportMessagesData {
   total: number;
   byStatus: Record<string, number>;
@@ -266,7 +281,7 @@ export interface SessionDetailData {
   completionTokens?: number;
 }
 
-type Tab = "overview" | "users" | "sessions" | "financials" | "costs" | "llm" | "feedback" | "support-messages" | "referrals" | "promo-codes" | "calendar" | "outcomes" | "analytics" | "live" | "employers";
+type Tab = "overview" | "users" | "sessions" | "financials" | "costs" | "llm" | "feedback" | "support-messages" | "messaging" | "referrals" | "promo-codes" | "calendar" | "outcomes" | "analytics" | "live" | "employers";
 
 const TABS: { key: Tab; label: string; icon: string }[] = [
   { key: "overview", label: "Overview", icon: "📊" },
@@ -279,6 +294,7 @@ const TABS: { key: Tab; label: string; icon: string }[] = [
   { key: "analytics", label: "Analytics", icon: "📈" },
   { key: "feedback", label: "Feedback", icon: "💬" },
   { key: "support-messages", label: "Support", icon: "🛟" },
+  { key: "messaging", label: "Messaging", icon: "💬" },
   { key: "outcomes", label: "Outcomes", icon: "🏆" },
   { key: "referrals", label: "Referrals", icon: "🔗" },
   { key: "employers", label: "Employers", icon: "🏢" },
@@ -636,7 +652,7 @@ export default function AdminDashboard() {
     if (typeof window === "undefined") return "overview";
     const p = new URLSearchParams(window.location.search);
     const t = p.get("tab") as Tab | null;
-    return (t && ["overview","users","sessions","financials","costs","llm","feedback","support-messages","referrals","promo-codes","calendar","outcomes","analytics","live","employers"].includes(t)) ? t : "overview";
+    return (t && ["overview","users","sessions","financials","costs","llm","feedback","support-messages","messaging","referrals","promo-codes","calendar","outcomes","analytics","live","employers"].includes(t)) ? t : "overview";
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -655,6 +671,7 @@ export default function AdminDashboard() {
   const [sessions, setSessions] = useState<SessionsData | null>(null);
   const [feedback, setFeedback] = useState<FeedbackData | null>(null);
   const [supportMessages, setSupportMessages] = useState<SupportMessagesData | null>(null);
+  const [messaging, setMessaging] = useState<MessagingData | null>(null);
   const [referrals, setReferrals] = useState<ReferralsData | null>(null);
   const [employers, setEmployers] = useState<EmployersData | null>(null);
   const [employerActionBusyId, setEmployerActionBusyId] = useState<string | null>(null);
@@ -780,6 +797,11 @@ export default function AdminDashboard() {
         case "support-messages": {
           const d = await fetchSection("support-messages") as SupportMessagesData | null;
           if (d) setSupportMessages(d);
+          break;
+        }
+        case "messaging": {
+          const d = await fetchSection("messaging") as MessagingData | null;
+          if (d) setMessaging(d);
           break;
         }
         case "referrals": {
@@ -937,6 +959,11 @@ export default function AdminDashboard() {
       case "support-messages": {
         const d = await fetchSection("support-messages", undefined, true) as SupportMessagesData | null;
         if (d) setSupportMessages(d);
+        break;
+      }
+      case "messaging": {
+        const d = await fetchSection("messaging", undefined, true) as MessagingData | null;
+        if (d) setMessaging(d);
         break;
       }
       case "referrals": {
@@ -3388,6 +3415,204 @@ export default function AdminDashboard() {
     );
   };
 
+  const renderMessaging = () => {
+    if (!messaging) return <EmptyState title="No messages yet" />;
+
+    const roleColors: Record<string, string> = { employer: T.indigo, candidate: c.sage };
+    const roleBg: Record<string, string> = { employer: "rgba(49,46,129,0.2)", candidate: "rgba(21,128,61,0.12)" };
+
+    const reviewFlag = async (id: string, flagStatus: "reviewed" | "dismissed") => {
+      const token = getToken();
+      const reqHeaders: Record<string, string> = { "Content-Type": "application/json" };
+      if (token) reqHeaders["x-admin-token"] = token;
+      try {
+        const res = await fetch("/api/admin-data", {
+          method: "POST",
+          headers: reqHeaders,
+          credentials: "include",
+          body: JSON.stringify({ action: "review-message-flag", flagId: id, flagStatus }),
+        });
+        if (res.ok) {
+          const data = await res.json() as { _token?: string };
+          if (data._token) setToken(data._token);
+          const d = await fetchSection("messaging", undefined, true) as MessagingData | null;
+          if (d) setMessaging(d);
+        }
+      } catch { /* best-effort */ }
+    };
+
+    const last14Days = Array.from({ length: 14 }, (_, i) => {
+      const d = new Date(Date.now() - (13 - i) * 86_400_000);
+      return d.toISOString().slice(0, 10);
+    });
+    const maxVol = Math.max(1, ...last14Days.map(d => messaging.volumeByDay[d] || 0));
+    const openFlags = messaging.flags.filter(f => f.status === "open");
+
+    return (
+      <div>
+        {/* KPI row */}
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 16, marginBottom: 24 }}>
+          <div style={statCard}>
+            <p style={labelStyle}>Total Messages</p>
+            <p style={bigNum}>{messaging.totalMessages}</p>
+          </div>
+          <div style={statCard}>
+            <p style={labelStyle}>Open Flags</p>
+            <p style={{ ...bigNum, color: messaging.openFlagCount > 0 ? c.ember : c.sage }}>{messaging.openFlagCount}</p>
+          </div>
+          {Object.entries(messaging.byRole).map(([role, count]) => (
+            <div key={role} style={statCard}>
+              <p style={labelStyle}>From {role.charAt(0).toUpperCase() + role.slice(1)}s</p>
+              <p style={{ ...bigNum, color: roleColors[role] || c.ivory }}>{count}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Volume sparkline */}
+        <div style={{ ...card, marginBottom: 24 }}>
+          <p style={{ ...labelStyle, marginBottom: 12 }}>Volume — Last 14 Days</p>
+          <div style={{ display: "flex", alignItems: "flex-end", gap: 4, height: 48 }}>
+            {last14Days.map(day => {
+              const v = messaging.volumeByDay[day] || 0;
+              const pct = (v / maxVol) * 100;
+              return (
+                <div key={day} style={{ flex: 1, display: "flex", flexDirection: "column" as const, alignItems: "center" }}>
+                  <div
+                    title={`${day}: ${v}`}
+                    style={{
+                      width: "100%", borderRadius: "3px 3px 0 0",
+                      background: v > 0 ? T.indigo : c.border,
+                      height: `${Math.max(pct, 4)}%`,
+                      minHeight: v > 0 ? 6 : 3,
+                    }}
+                  />
+                </div>
+              );
+            })}
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
+            <span style={{ fontFamily: font.mono, fontSize: 10, color: c.stone }}>{last14Days[0]?.slice(5)}</span>
+            <span style={{ fontFamily: font.mono, fontSize: 10, color: c.stone }}>{last14Days[13]?.slice(5)}</span>
+          </div>
+        </div>
+
+        {/* Flag queue */}
+        <div style={{ ...card, padding: 0, overflow: "auto", marginBottom: 24 }}>
+          <div style={{ padding: "16px 24px 8px" }}>
+            <p style={labelStyle}>Flag Queue — {openFlags.length} open</p>
+          </div>
+          {openFlags.length > 0 ? (
+            <table style={tableStyle}>
+              <thead>
+                <tr>
+                  <th style={thStyle}>Date</th>
+                  <th style={thStyle}>Flagged By</th>
+                  <th style={thStyle}>Reason</th>
+                  <th style={thStyle}>Note</th>
+                  <th style={thStyle}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {openFlags.map((f) => (
+                  <tr key={f.id}>
+                    <td style={{ ...tdStyle, fontSize: 12, whiteSpace: "nowrap" as const }}>{formatDateTime(f.created_at)}</td>
+                    <td style={tdStyle}>
+                      <span style={{
+                        display: "inline-block", padding: "2px 8px", borderRadius: 10,
+                        fontSize: 11, fontWeight: 600, fontFamily: font.ui,
+                        background: roleBg[f.flagged_by_role] || "rgba(100,100,100,0.12)",
+                        color: roleColors[f.flagged_by_role] || c.stone,
+                      }}>{f.flagged_by_role}</span>
+                    </td>
+                    <td style={{ ...tdStyle, fontSize: 12 }}>{f.reason || "—"}</td>
+                    <td style={{ ...tdStyle, maxWidth: 300, whiteSpace: "pre-wrap" as const, wordBreak: "break-word" as const, fontSize: 12 }}>{f.note || "—"}</td>
+                    <td style={{ ...tdStyle, whiteSpace: "nowrap" as const }}>
+                      <div style={{ display: "flex", gap: 6 }}>
+                        <Button
+                          variant="outline"
+                          size="xs"
+                          onClick={() => reviewFlag(f.id, "reviewed")}
+                          style={{
+                            padding: "3px 8px", borderRadius: 6, border: "1px solid rgba(21,128,61,0.3)",
+                            background: "#1a1a1a", color: c.sage,
+                            fontSize: 11, fontFamily: font.ui,
+                          }}
+                        >Mark reviewed</Button>
+                        <Button
+                          variant="outline"
+                          size="xs"
+                          onClick={() => reviewFlag(f.id, "dismissed")}
+                          style={{
+                            padding: "3px 8px", borderRadius: 6, border: `1px solid ${c.border}`,
+                            background: "#1a1a1a", color: c.stone,
+                            fontSize: 11, fontFamily: font.ui,
+                          }}
+                        >Dismiss</Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <div style={{ padding: "8px 24px 20px" }}>
+              <p style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, margin: 0 }}>No open flags.</p>
+            </div>
+          )}
+        </div>
+
+        {/* All messages feed */}
+        {messaging.recentMessages.length > 0 ? (
+          <div style={{ ...card, padding: 0, overflow: "auto" }}>
+            <div style={{ padding: "16px 24px 8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <p style={labelStyle}>All Conversations — Recent Messages</p>
+              <Button variant="ghost" size="sm" onClick={() => exportCsv("messages.csv", messaging.recentMessages)} style={exportBtn}>Export CSV</Button>
+            </div>
+            <table style={tableStyle}>
+              <thead>
+                <tr>
+                  <th style={thStyle}>Date</th>
+                  <th style={thStyle}>Sender</th>
+                  <th style={thStyle}>Message</th>
+                  <th style={thStyle}>Attachment</th>
+                  <th style={thStyle}>Flagged</th>
+                </tr>
+              </thead>
+              <tbody>
+                {messaging.recentMessages.map((m) => (
+                  <tr key={m.id}>
+                    <td style={{ ...tdStyle, fontSize: 12, whiteSpace: "nowrap" as const }}>{formatDateTime(m.created_at)}</td>
+                    <td style={tdStyle}>
+                      <span style={{
+                        display: "inline-block", padding: "2px 8px", borderRadius: 10,
+                        fontSize: 11, fontWeight: 600, fontFamily: font.ui,
+                        background: roleBg[m.sender_role] || "rgba(100,100,100,0.12)",
+                        color: roleColors[m.sender_role] || c.stone,
+                      }}>{m.sender_role}</span>
+                    </td>
+                    <td style={{ ...tdStyle, maxWidth: 400, whiteSpace: "pre-wrap" as const, wordBreak: "break-word" as const }}>{m.body || "—"}</td>
+                    <td style={{ ...tdStyle, fontSize: 12 }}>{m.attachment_name || "—"}</td>
+                    <td style={tdStyle}>
+                      {m.auto_flag_reason
+                        ? <span style={{
+                            display: "inline-block", padding: "2px 8px", borderRadius: 10,
+                            fontSize: 11, fontWeight: 600, fontFamily: font.ui,
+                            background: "rgba(239,68,68,0.12)", color: c.ember,
+                          }} title={m.auto_flag_reason}>flagged</span>
+                        : <span style={{ color: c.stone }}>—</span>}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <EmptyState title="No messages yet" />
+        )}
+      </div>
+    );
+  };
+
   const renderContent = () => {
     if (error) {
       return (
@@ -3428,6 +3653,7 @@ export default function AdminDashboard() {
       case "sessions": return renderSessions();
       case "feedback": return renderFeedback();
       case "support-messages": return renderSupportMessages();
+      case "messaging": return renderMessaging();
       case "referrals": return renderReferrals();
       case "employers": return renderEmployers();
       case "promo-codes": return renderPromoCodes();

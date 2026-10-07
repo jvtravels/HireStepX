@@ -1230,6 +1230,67 @@ async function getSupportMessages() {
   };
 }
 
+/* Employer<->candidate messaging monitor. Mirrors getSupportMessages()'s
+   shape (stats + a capped recent list) but the "recent" list here is EVERY
+   message, not just flagged ones — the product ask is full visibility into
+   the chat feed, with the flag queue surfaced alongside it for triage. */
+async function getMessaging() {
+  const [messages, flags, totalMessages, openFlagCount] = await Promise.all([
+    fetchJSON<{
+      id: string; conversation_id: string; sender_role: string; body: string;
+      attachment_name: string | null; auto_flag_reason: string | null; created_at: string;
+    }>("conversation_messages?select=id,conversation_id,sender_role,body,attachment_name,auto_flag_reason,created_at&order=created_at.desc&limit=200"),
+    fetchJSON<{
+      id: string; message_id: string; conversation_id: string; flagged_by_role: string;
+      reason: string; note: string | null; status: string; created_at: string;
+    }>("message_flags?select=id,message_id,conversation_id,flagged_by_role,reason,note,status,created_at&order=created_at.desc&limit=200"),
+    fetchCount("conversation_messages"),
+    fetchCount("message_flags", "&status=eq.open"),
+  ]);
+
+  const byRole: Record<string, number> = {};
+  const volumeByDay: Record<string, number> = {};
+  const cutoff = daysAgo(30);
+  for (const m of messages) {
+    byRole[m.sender_role] = (byRole[m.sender_role] || 0) + 1;
+    if (m.created_at >= cutoff) {
+      const day = m.created_at.slice(0, 10);
+      volumeByDay[day] = (volumeByDay[day] || 0) + 1;
+    }
+  }
+
+  return {
+    totalMessages,
+    openFlagCount,
+    byRole,
+    volumeByDay,
+    recentMessages: messages.slice(0, 100),
+    flags: flags.slice(0, 100),
+  };
+}
+
+async function reviewMessageFlag(id: string, status: "reviewed" | "dismissed"): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/message_flags?id=eq.${encodeURIComponent(id)}`, {
+      method: "PATCH",
+      headers: {
+        apikey: SUPABASE_SERVICE_ROLE_KEY,
+        Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        "Content-Type": "application/json",
+        Prefer: "return=minimal",
+      },
+      body: JSON.stringify({ status, reviewed_at: new Date().toISOString(), reviewed_by: "admin" }),
+    });
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      return { ok: false, error: `HTTP ${res.status}: ${body.slice(0, 200)}` };
+    }
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
 /* ─── New section handlers (referrals, promo codes, calendar) ─── */
 
 interface ReferralRow {
@@ -1752,7 +1813,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(503).json({ error: "Not configured" });
   }
 
-  const body = req.body as { section?: string; action?: string; search?: string; offset?: number; userId?: string; sessionId?: string; id?: string; status?: string; tier?: string; days?: number; qty?: number; note?: string; paymentId?: string; amountPaise?: number; subject?: string; htmlBody?: string; month?: string; actualInvoiceInr?: number } | undefined;
+  const body = req.body as { section?: string; action?: string; search?: string; offset?: number; userId?: string; sessionId?: string; id?: string; status?: string; tier?: string; days?: number; qty?: number; note?: string; paymentId?: string; amountPaise?: number; subject?: string; htmlBody?: string; month?: string; actualInvoiceInr?: number; flagId?: string; flagStatus?: string } | undefined;
   const section = body?.section || body?.action || "overview";
 
   try {
@@ -1771,6 +1832,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         case "sessions": return getSessions();
         case "feedback": return getFeedback();
         case "support-messages": return getSupportMessages();
+        case "messaging": return getMessaging();
+        case "review-message-flag": {
+          if (!body?.flagId) throw new ValidationError("flagId required");
+          const s = body.flagStatus;
+          if (s !== "reviewed" && s !== "dismissed") throw new ValidationError("flagStatus must be reviewed | dismissed");
+          return reviewMessageFlag(body.flagId, s);
+        }
         case "referrals": return getReferrals();
         case "employers": return getEmployers();
         case "promo-codes": return getPromoCodes();
