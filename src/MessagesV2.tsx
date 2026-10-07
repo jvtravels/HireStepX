@@ -313,6 +313,9 @@ export default function MessagesV2() {
                   )}
                   {c.roleTitle}
                 </div>
+                <div style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, marginTop: 2 }}>
+                  {c.counterpartName}
+                </div>
                 {c.lastMessageAt && (
                   <div style={{ fontFamily: f.sans, fontSize: 11.5, color: t.inkFaint, marginTop: 2 }}>
                     {new Date(c.lastMessageAt).toLocaleDateString()}
