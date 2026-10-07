@@ -845,7 +845,7 @@ export default function EmployerJobsPage() {
 
   if (requirementsLoading) {
     return shell(
-      <div style={{ display: "flex", flex: 1, minHeight: 0 }}>
+      <div style={{ display: "flex", flex: 1, minHeight: 0, alignItems: "center", justifyContent: "center" }}>
         <LoadingScreen fullScreen={false} message="Loading your jobs…" />
       </div>,
     );
