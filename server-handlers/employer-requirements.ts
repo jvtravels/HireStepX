@@ -39,6 +39,7 @@ import {
 } from "./_employer-candidate-evidence-helpers";
 import { llmRerankCandidates, blendScore } from "./_requirement-match-llm";
 import { notify } from "./_notify";
+import { emailShell, title as emailTitle, para, button, dataCard, footer, escapeHtml } from "./_email-theme";
 import { pickRequirementsToRematch, type OpenRequirementForRematch } from "./_incremental-rematch-helpers";
 import {
   asBoundedString,
@@ -71,9 +72,77 @@ import {
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+const RESEND_API_KEY = (process.env.RESEND_API_KEY || "").trim();
+const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <noreply@hirestepx.com>";
+const APP_URL = (process.env.APP_URL || "https://hirestepx.vercel.app").replace(/\/$/, "");
 
 function serviceHeaders(): Record<string, string> {
   return { apikey: SUPABASE_SERVICE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_KEY}` };
+}
+
+/** Best-effort transactional "new strong match" email — fires alongside the
+ *  in-app notify() at the same call site. Never throws: a failure here must
+ *  never fail the matching pass it's attached to. Looks up the employer's
+ *  email via the Admin Users API since `employers` rows key off auth.users
+ *  and carry no email column of their own (see admin-data.ts's ban-user case
+ *  for the same lookup shape). */
+async function sendStrongMatchEmail(opts: {
+  ownerUserId: string;
+  requirementId: string;
+  requirementTitle: string;
+  candidateNames: string[];
+  topScore: number;
+}): Promise<void> {
+  if (!RESEND_API_KEY) return;
+  try {
+    const userRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${encodeURIComponent(opts.ownerUserId)}`, {
+      headers: serviceHeaders(),
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!userRes.ok) return;
+    const user = (await userRes.json()) as { email?: string };
+    const email = user.email;
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return;
+
+    const reqTitle = opts.requirementTitle || "your requirement";
+    const headline =
+      opts.candidateNames.length === 1
+        ? `${opts.candidateNames[0]} is a strong match (${opts.topScore}%) for ${reqTitle}.`
+        : `${opts.candidateNames.length} new strong matches found for ${reqTitle}.`;
+    const link = `${APP_URL}/employer/requirements/${opts.requirementId}`;
+    const html = emailShell({
+      preview: headline,
+      body:
+        emailTitle("New strong match", { accentWord: "found" }) +
+        para(escapeHtml(headline)) +
+        dataCard("Requirement", [
+          ["Role", escapeHtml(reqTitle)],
+          ["Candidates", String(opts.candidateNames.length)],
+          ["Top score", `${opts.topScore}%`],
+        ]) +
+        button("View candidate", link) +
+        footer(),
+    });
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 10_000);
+    try {
+      const res = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ from: FROM_EMAIL, to: [email], subject: "New strong match found — HireStepX", html }),
+        signal: controller.signal,
+      });
+      if (!res.ok) {
+        const t = await res.text().catch(() => "");
+        slog.warn("[sendStrongMatchEmail] resend failed", { status: res.status, body: t.slice(0, 200) });
+      }
+    } finally {
+      clearTimeout(timer);
+    }
+  } catch (err) {
+    slog.warn("[sendStrongMatchEmail] threw", { err: err instanceof Error ? err.message : String(err) });
+  }
 }
 
 /** Appends one row to employer_requirement_activity — the "History" action
@@ -574,6 +643,13 @@ async function runMatchingInner(requirementId: string, req: RequirementInput, ow
         title: "New strong match found",
         body,
         link: `/employer/requirements/${requirementId}`,
+      });
+      void sendStrongMatchEmail({
+        ownerUserId,
+        requirementId,
+        requirementTitle: title,
+        candidateNames: newStrongMatches.map((m) => byId.get(m.candidateId)?.name || "A candidate"),
+        topScore: Math.max(...newStrongMatches.map((m) => m.matchScore)),
       });
     }
 
