@@ -7,6 +7,7 @@ import {
   extractResumeLocation,
   extractSkills,
   describeMatch,
+  MIN_MATCH_SCORE_FLOOR,
   type CandidatePoolRow,
 } from "../../server-handlers/_requirement-match-helpers";
 
@@ -295,6 +296,20 @@ describe("rankAndCap", () => {
     const { ranked, totalMatched } = rankAndCap(scored, 20);
     expect(ranked).toEqual([]);
     expect(totalMatched).toBe(0);
+  });
+
+  it("drops a candidate below MIN_MATCH_SCORE_FLOOR even when structurally relevant and evidenced", () => {
+    // Regression for a 2026-10-07 production report: a "Top 20 of 27"
+    // shortlist included scores as low as 13% — real per hasRelevance/
+    // hasEvidence, but not a match worth presenting to an employer.
+    const scored = [
+      { candidateId: "real", matchScore: 45, rosterScore: 50, hasRelevance: true, hasEvidence: true },
+      { candidateId: "below-floor", matchScore: MIN_MATCH_SCORE_FLOOR - 1, rosterScore: 50, hasRelevance: true, hasEvidence: true },
+      { candidateId: "at-floor", matchScore: MIN_MATCH_SCORE_FLOOR, rosterScore: 50, hasRelevance: true, hasEvidence: true },
+    ];
+    const { ranked, totalMatched } = rankAndCap(scored, 20);
+    expect(ranked.map((s) => s.candidateId)).toEqual(["real", "at-floor"]);
+    expect(totalMatched).toBe(2);
   });
 
   it("filters out relevant candidates with no real evidence (no resume, no sessions)", () => {

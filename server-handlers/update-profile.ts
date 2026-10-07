@@ -12,6 +12,7 @@
 
 export const config = { runtime: "edge" };
 
+import { after } from "next/server";
 import { withAuthAndRateLimit, corsHeaders, withRequestId } from "./_shared";
 import { rematchOpenRequirementsForNewResume } from "./employer-requirements";
 
@@ -201,9 +202,13 @@ export default async function handler(req: Request): Promise<Response> {
       console.log(`[update-profile] OK user=${auth.userId?.slice(0, 8)} fields=${Object.keys(updates).join(",")} stripped=${stripped.join(",") || "-"} latency=${Date.now() - t0}ms`);
       // A fresh resume_data write is the signal that this candidate's profile
       // just became more (or newly) matchable — nudge the open requirements
-      // pipeline rather than waiting for the nightly cron. Fire-and-forget:
-      // never block this response on a re-scoring pass.
-      if ("resume_data" in updates) void rematchOpenRequirementsForNewResume();
+      // pipeline rather than waiting for the nightly cron. Registered via
+      // `after()` (not `void ...()`) so the Edge isolate is kept alive until
+      // the rescoring pass settles instead of being torn down the instant
+      // this response is returned — a bare fire-and-forget promise has no
+      // guaranteed lifetime past the response on Vercel's Edge runtime, so
+      // the rescore could silently never run.
+      if ("resume_data" in updates) after(() => rematchOpenRequirementsForNewResume());
       return new Response(JSON.stringify({ profile, strippedColumns: stripped }), { status: 200, headers });
     }
 

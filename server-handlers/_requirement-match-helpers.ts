@@ -381,6 +381,23 @@ export type RequirementMatchStatus = "ready" | "partial" | "zero";
     pool grows enough to shift the distribution meaningfully. */
 export const STRONG_MATCH_THRESHOLD = 40;
 
+/** Absolute floor below which a scored candidate is dropped from the
+    shortlist entirely, independent of the hasRelevance/hasEvidence floors
+    above. Those two gate on *structural* signal (any role/skill token
+    overlap at all, any resume/session on file) but say nothing about the
+    final blended score — a candidate who just clears the relevance ratio
+    floor (0.15) with no roster/activity credit still lands in the
+    high single digits to low 20s (see the STRONG_MATCH_THRESHOLD doc
+    comment above), which is a "found one shared word" result, not a
+    reviewable match. Production reports (2026-10-07) showed employers
+    being shown a "Top 20 of 27" shortlist with scores as low as 13% —
+    technically relevant/evidenced per the structural floors, but not a
+    match any employer should be led to believe is worth reviewing.
+    25 sits below genuine-but-weak fits (the Sales Assistant Intern /
+    "modest overlap" cases in the test suite score 30+) and above the
+    single-digit-to-20s noise band the recalibration above found. */
+export const MIN_MATCH_SCORE_FLOOR = 25;
+
 /** Classifies the overall requirement outcome from its scored candidates.
     `matches` is expected to already be floor-filtered (rankAndCap), so
     "zero" means literally no candidate cleared that floor — not merely
@@ -417,13 +434,19 @@ export function classifyRequirementStatus(matches: Array<{ matchScore: number }>
     reviewable match. These are pool noise the same way irrelevant
     candidates are, just along a different axis.
 
+    Also enforces MIN_MATCH_SCORE_FLOOR: a candidate can clear the
+    structural hasRelevance/hasEvidence floors on a single weak signal and
+    still blend to a score in the single digits to low 20s — real for the
+    structural checks, but not a score worth presenting as part of a
+    "Top N matches" list (see that constant's doc comment).
+
     Returns `totalMatched` alongside the capped `ranked` list — the true
     size of the floor-filtered pool *before* the `cap` slice, so a caller
     can tell "Top 20" apart from "20 (all of them)" instead of reporting
     the post-cap count as if it were the whole matched pool. */
 export function rankAndCap(scored: ScoredCandidate[], cap = 20): { ranked: ScoredCandidate[]; totalMatched: number } {
   const floorFiltered = scored
-    .filter((s) => s.hasRelevance && s.hasEvidence && s.meetsQualityBar !== false)
+    .filter((s) => s.hasRelevance && s.hasEvidence && s.meetsQualityBar !== false && s.matchScore >= MIN_MATCH_SCORE_FLOOR)
     .sort((a, b) => b.matchScore - a.matchScore);
   return { ranked: floorFiltered.slice(0, cap), totalMatched: floorFiltered.length };
 }
