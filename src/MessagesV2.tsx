@@ -294,10 +294,15 @@ export default function MessagesV2() {
                 style={{
                   display: "block", width: "100%", textAlign: "left", padding: "10px 16px 10px 24px",
                   border: "none", borderBottom: `1px solid ${t.line}`, cursor: "pointer",
-                  background: c.matchId === activeMatchId ? t.creamSoft : "transparent",
+                  background: c.matchId === activeMatchId ? t.creamSoft : c.unread ? t.pageBg : "transparent",
                 }}
               >
-                <div style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.coal }}>{c.roleTitle}</div>
+                <div style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.coal, display: "flex", alignItems: "center", gap: 6 }}>
+                  {c.unread && (
+                    <span aria-hidden="true" style={{ width: 6, height: 6, borderRadius: "50%", background: t.indigo, flexShrink: 0 }} />
+                  )}
+                  {c.roleTitle}
+                </div>
                 {c.lastMessageAt && (
                   <div style={{ fontFamily: f.sans, fontSize: 11.5, color: t.inkFaint, marginTop: 2 }}>
                     {new Date(c.lastMessageAt).toLocaleDateString()}

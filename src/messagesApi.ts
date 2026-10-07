@@ -23,6 +23,7 @@ export interface ConversationSummary {
   counterpartName: string;
   roleTitle: string;
   lastMessageAt: string | null;
+  unread: boolean;
   candidateStatus: string;
   matchScore: number | null;
 }

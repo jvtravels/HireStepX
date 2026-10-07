@@ -41,6 +41,21 @@ export function resolveRole(authUserId: string, employerId: string, candidateUse
   return null;
 }
 
+/** A conversation is unread for a viewer when its most recent message came
+ *  from the other side (or the system) and landed after the viewer's own
+ *  last-read mark — never when the viewer sent that last message themself. */
+export function isConversationUnread(
+  viewerRole: MessageRole,
+  lastMessageAt: string | null,
+  lastSenderRole: MessageSenderRole | null,
+  viewerLastReadAt: string | null,
+): boolean {
+  if (!lastMessageAt || !lastSenderRole) return false;
+  if (lastSenderRole === viewerRole) return false;
+  if (!viewerLastReadAt) return true;
+  return new Date(lastMessageAt).getTime() > new Date(viewerLastReadAt).getTime();
+}
+
 const EMAIL_RE = /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i;
 
 // Indian mobile numbers are most commonly shared as a bare 10-digit number
@@ -158,6 +173,6 @@ export async function postSystemMessage(
   await fetch(`${supabaseUrl}/rest/v1/conversations?id=eq.${encodeURIComponent(params.conversationId)}`, {
     method: "PATCH",
     headers: { ...serviceHeaders, "Content-Type": "application/json", Prefer: "return=minimal" },
-    body: JSON.stringify({ last_message_at: now }),
+    body: JSON.stringify({ last_message_at: now, last_sender_role: "system" }),
   });
 }

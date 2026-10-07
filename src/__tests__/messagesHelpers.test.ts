@@ -6,6 +6,7 @@ import {
   resolveRole,
   detectContactInfoFlag,
   inferAttachmentExtension,
+  isConversationUnread,
   MAX_MESSAGE_BODY_LEN,
 } from "../../server-handlers/_messages-helpers";
 
@@ -88,5 +89,31 @@ describe("inferAttachmentExtension", () => {
 
   it("rejects an unknown mime type", () => {
     expect(inferAttachmentExtension("application/x-msdownload")).toBeNull();
+  });
+});
+
+describe("isConversationUnread", () => {
+  it("is false when there is no message yet", () => {
+    expect(isConversationUnread("employer", null, null, null)).toBe(false);
+  });
+
+  it("is false when the viewer sent the last message", () => {
+    expect(isConversationUnread("employer", "2026-01-01T00:00:00Z", "employer", null)).toBe(false);
+  });
+
+  it("is true when the other side sent the last message and the viewer has never read", () => {
+    expect(isConversationUnread("employer", "2026-01-01T00:00:00Z", "candidate", null)).toBe(true);
+  });
+
+  it("is true for a system message the viewer hasn't read", () => {
+    expect(isConversationUnread("candidate", "2026-01-01T00:00:00Z", "system", null)).toBe(true);
+  });
+
+  it("is false once the viewer's last read is after the message", () => {
+    expect(isConversationUnread("employer", "2026-01-01T00:00:00Z", "candidate", "2026-01-02T00:00:00Z")).toBe(false);
+  });
+
+  it("is true when a new message arrives after the viewer's last read", () => {
+    expect(isConversationUnread("employer", "2026-01-02T00:00:00Z", "candidate", "2026-01-01T00:00:00Z")).toBe(true);
   });
 });

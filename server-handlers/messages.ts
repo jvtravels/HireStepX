@@ -25,6 +25,7 @@ import {
   asMessageBody,
   resolveRole,
   detectContactInfoFlag,
+  isConversationUnread,
   MATCH_ID_RE,
   type MessageRole,
   type MessageSenderRole,
@@ -57,6 +58,9 @@ interface ConversationRow {
   employer_id: string;
   candidate_user_id: string;
   last_message_at: string | null;
+  last_sender_role: MessageSenderRole | null;
+  employer_last_read_at: string | null;
+  candidate_last_read_at: string | null;
   created_at: string;
 }
 
@@ -168,6 +172,7 @@ async function handleListConversations(headers: Record<string, string>, authUser
 
   const conversations = rows.map((row) => {
     const role: MessageRole = row.employer_id === authUserId ? "employer" : "candidate";
+    const viewerLastReadAt = role === "employer" ? row.employer_last_read_at : row.candidate_last_read_at;
     return {
       matchId: row.match_id,
       conversationId: row.id,
@@ -175,6 +180,7 @@ async function handleListConversations(headers: Record<string, string>, authUser
       counterpartName: role === "employer" ? (row.profiles?.name || "Candidate") : (row.employer_requirements?.employers?.company_name || "Employer"),
       roleTitle: row.employer_requirements?.title || "Role",
       lastMessageAt: row.last_message_at,
+      unread: isConversationUnread(role, row.last_message_at, row.last_sender_role, viewerLastReadAt),
       candidateStatus: row.requirement_matches?.candidate_status || "shortlisted",
       matchScore: row.requirement_matches?.match_score ?? null,
     };
@@ -223,6 +229,15 @@ async function handleGet(req: Request, headers: Record<string, string>, auth: { 
     { headers: serviceHeaders() },
   );
   const msgRows = (await msgRes.json().catch(() => [])) as MessageRow[];
+
+  // Best-effort — never blocks the read if it fails. Opening the thread is
+  // what clears the unread badge for this viewer.
+  const readColumn = role === "employer" ? "employer_last_read_at" : "candidate_last_read_at";
+  void fetch(`${SUPABASE_URL}/rest/v1/conversations?id=eq.${encodeURIComponent(conversation.id)}`, {
+    method: "PATCH",
+    headers: { ...serviceHeaders(), "Content-Type": "application/json", Prefer: "return=minimal" },
+    body: JSON.stringify({ [readColumn]: new Date().toISOString() }),
+  }).catch(() => {});
 
   return new Response(
     JSON.stringify({
@@ -309,7 +324,7 @@ async function handlePost(req: Request, headers: Record<string, string>, auth: {
   void fetch(`${SUPABASE_URL}/rest/v1/conversations?id=eq.${encodeURIComponent(conversation.id)}`, {
     method: "PATCH",
     headers: { ...serviceHeaders(), "Content-Type": "application/json", Prefer: "return=minimal" },
-    body: JSON.stringify({ last_message_at: now }),
+    body: JSON.stringify({ last_message_at: now, last_sender_role: role }),
   }).catch(() => {});
 
   const recipientId = role === "employer" ? conversation.candidate_user_id : conversation.employer_id;

@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { MessageSquareIcon } from "lucide-react";
 import { tokens as T, fonts as F } from "./auth/_tokens";
 import { groupConversationsByCounterpart } from "./conversationGrouping";
+import CountBadge from "./CountBadge";
 
 /* ─── Messages bell ───────────────────────────────────────────────────────
  * Rendered in AppShellFrame's header next to NotificationBell, on both the
@@ -20,9 +21,8 @@ import { groupConversationsByCounterpart } from "./conversationGrouping";
  * /employer/messages) since the two sides use different data-layer
  * conventions (direct fetch vs EmployerDataContext) — this component stays
  * generic over the shape both already return from GET /api/messages.
- * No unread/read-tracking exists in the schema (conversation_messages has
- * no read_at column — basic text chat, per product scope), so this is a
- * quick-access list, not a notification feed: no badge count. */
+ * `unread` is computed server-side (conversations.employer_last_read_at /
+ * candidate_last_read_at vs last_message_at) in messages.ts. */
 
 export interface ConversationSummary {
   matchId: string;
@@ -31,6 +31,7 @@ export interface ConversationSummary {
   counterpartName: string;
   roleTitle: string;
   lastMessageAt: string | null;
+  unread?: boolean;
   candidateStatus?: string;
   matchScore?: number | null;
 }
@@ -79,6 +80,7 @@ export default function MessagesBell({
   }
 
   const groups = groupConversationsByCounterpart(conversations);
+  const unreadCount = conversations.filter((c) => c.unread).length;
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
@@ -86,11 +88,12 @@ export default function MessagesBell({
         <Button
           type="button"
           variant="outline"
-          aria-label="Messages"
+          aria-label={unreadCount > 0 ? `Messages (${unreadCount} unread)` : "Messages"}
           className="p-2 h-auto"
           style={{ position: "relative", flexShrink: 0 }}
         >
           <MessageSquareIcon size={16} aria-hidden="true" style={{ color: T.coal }} />
+          <CountBadge count={unreadCount} />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" style={{ width: 340, padding: 0 }}>
@@ -128,11 +131,14 @@ export default function MessagesBell({
                     onClick={() => handleItemClick(c)}
                     style={{
                       display: "block", width: "100%", textAlign: "left", cursor: "pointer",
-                      border: "none", borderBottom: `1px solid ${T.line}`, background: "transparent",
+                      border: "none", borderBottom: `1px solid ${T.line}`, background: c.unread ? T.pageBg : "transparent",
                       padding: "8px 12px 8px 20px",
                     }}
                   >
-                    <p style={{ margin: 0, fontFamily: F.sans, fontSize: 12.5, fontWeight: 600, color: T.coal, lineHeight: 1.4 }}>
+                    <p style={{ margin: 0, fontFamily: F.sans, fontSize: 12.5, fontWeight: 600, color: T.coal, lineHeight: 1.4, display: "flex", alignItems: "center", gap: 6 }}>
+                      {c.unread && (
+                        <span aria-hidden="true" style={{ width: 6, height: 6, borderRadius: "50%", background: T.indigo, flexShrink: 0 }} />
+                      )}
                       {c.roleTitle}
                     </p>
                     {c.lastMessageAt && (

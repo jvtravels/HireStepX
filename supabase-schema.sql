@@ -2030,6 +2030,14 @@ create table if not exists conversations (
 create index if not exists idx_conversations_employer on conversations(employer_id, last_message_at desc nulls last);
 create index if not exists idx_conversations_candidate on conversations(candidate_user_id, last_message_at desc nulls last);
 
+-- Per-side read-tracking (2026-10-08) so the inbox/bell can show an unread
+-- indicator. last_sender_role is denormalized here (rather than re-derived
+-- by joining the latest conversation_messages row) so the unread check in
+-- messages.ts stays a single-table read per conversation.
+alter table conversations add column if not exists employer_last_read_at timestamptz;
+alter table conversations add column if not exists candidate_last_read_at timestamptz;
+alter table conversations add column if not exists last_sender_role text check (last_sender_role in ('employer', 'candidate', 'system'));
+
 alter table conversations enable row level security;
 drop policy if exists "Employers view own conversations" on conversations;
 create policy "Employers view own conversations" on conversations
