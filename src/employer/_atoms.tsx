@@ -7,6 +7,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { tokens as t, fonts as f, shadows, textSize } from "../auth/_tokens";
 import type { RequirementStage, CandidateStatus } from "./mockData";
 import { STRONG_MATCH_THRESHOLD } from "../../server-handlers/_requirement-match-helpers";
+import { STAGE_TRANSITIONS } from "../../server-handlers/_employer-requirements-helpers";
 
 /** Deterministic evenly-spaced sample, used to show a diverse slice of a
  *  suggestions list before the user has typed anything. */
@@ -356,6 +357,12 @@ export function Badge({ tone, children }: { tone: BadgeTone; children: React.Rea
   );
 }
 
+/** All four persisted stage values, for label/tone/icon lookups that need to
+ *  render whatever stage a posting is CURRENTLY in — including the
+ *  system-owned `ai_matching`. This is distinct from which stages are valid
+ *  manual DESTINATIONS, which is `STAGE_TRANSITIONS` (shared with the
+ *  server, see _employer-requirements-helpers.ts): the dropdown below
+ *  renders `STAGE_TRANSITIONS[stage]`, never this list. */
 export const STAGE_OPTIONS: RequirementStage[] = ["ai_matching", "ready_for_review", "interviewing", "hired"];
 
 export const STAGE_LABEL: Record<RequirementStage, string> = {
@@ -381,8 +388,11 @@ export const STAGE_ICON: Record<RequirementStage, React.ComponentType<{ size?: n
 };
 
 /** Real, persisted hiring-pipeline stage — manually set by the employer,
-    distinct from the AI-generation Status. Click to move a posting forward
-    via its own dropdown.
+    distinct from the AI-generation Status. Click to move a posting to any
+    of the stages `STAGE_TRANSITIONS[stage]` lists as reachable from here
+    (see _employer-requirements-helpers.ts) — never `ai_matching`, which is
+    system-owned and set only by `runMatching`, so it's never offered as a
+    dropdown destination and the server rejects it if one were forged.
 
     Non-interactive (plain badge, no dropdown) while the AI hasn't produced
     any evaluated candidates yet — nothing exists to review, interview, or
@@ -463,8 +473,8 @@ export function StageCell({
         </motion.button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start">
-        {STAGE_OPTIONS.map((opt) => (
-          <DropdownMenuItem key={opt} disabled={opt === stage} onSelect={() => onChange(opt)}>
+        {STAGE_TRANSITIONS[stage].map((opt) => (
+          <DropdownMenuItem key={opt} onSelect={() => onChange(opt)}>
             {STAGE_LABEL[opt]}
           </DropdownMenuItem>
         ))}

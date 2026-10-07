@@ -18,6 +18,10 @@ import {
   EMPTY_AI_SCREENING,
   averageScoresByUser,
   daysSinceLastActive,
+  canManuallyTransitionStage,
+  STAGE_TRANSITIONS,
+  REQUIREMENT_STAGES,
+  type RequirementStage,
 } from "../../server-handlers/_employer-requirements-helpers";
 
 describe("asBoundedString", () => {
@@ -495,5 +499,45 @@ describe("daysSinceLastActive", () => {
     const now = new Date("2026-08-15T00:00:00Z").getTime();
     const future = new Date("2026-08-20T00:00:00Z").toISOString();
     expect(daysSinceLastActive([future], now)).toBe(0);
+  });
+});
+
+describe("STAGE_TRANSITIONS / canManuallyTransitionStage", () => {
+  it("never lists ai_matching as a reachable destination from any stage", () => {
+    for (const stage of REQUIREMENT_STAGES) {
+      expect(STAGE_TRANSITIONS[stage]).not.toContain("ai_matching");
+    }
+  });
+
+  it("has no manual transitions out of ai_matching — it's system-owned", () => {
+    expect(STAGE_TRANSITIONS.ai_matching).toEqual([]);
+  });
+
+  it("rejects any move into ai_matching regardless of current stage", () => {
+    for (const stage of REQUIREMENT_STAGES) {
+      expect(canManuallyTransitionStage(stage, "ai_matching")).toBe(false);
+    }
+  });
+
+  it("rejects every move while still in ai_matching", () => {
+    for (const stage of REQUIREMENT_STAGES) {
+      expect(canManuallyTransitionStage("ai_matching", stage)).toBe(false);
+    }
+  });
+
+  it("allows the three human stages to move freely between each other", () => {
+    const human: RequirementStage[] = ["ready_for_review", "interviewing", "hired"];
+    for (const from of human) {
+      for (const to of human) {
+        if (from === to) continue;
+        expect(canManuallyTransitionStage(from, to)).toBe(true);
+      }
+    }
+  });
+
+  it("never offers a stage as a transition target from itself", () => {
+    for (const stage of REQUIREMENT_STAGES) {
+      expect(STAGE_TRANSITIONS[stage]).not.toContain(stage);
+    }
   });
 });

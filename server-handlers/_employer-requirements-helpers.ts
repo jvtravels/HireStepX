@@ -56,6 +56,32 @@ export function asBoundedStage(v: unknown): RequirementStage | null {
   return typeof v === "string" && (REQUIREMENT_STAGES as readonly string[]).includes(v) ? (v as RequirementStage) : null;
 }
 
+/** Single source of truth for which manual stage moves are legal, keyed by
+ *  the CURRENT stage. `ai_matching` is system-owned — set only by
+ *  `runMatching` when a posting is created or re-scored — so it never
+ *  appears as a value anywhere in this table: not as a transition target
+ *  (an employer can't send a posting backward into it) and its own entry
+ *  is empty (an employer can't act at all while the AI is still scoring).
+ *  Once a posting has moved on, the three human stages stay freely
+ *  mutually reachable, matching how employers actually use the pipeline
+ *  (e.g. un-hiring a mis-click back to Interviewing).
+ *
+ *  Both the stage dropdown (StageCell in src/employer/_atoms.tsx, which
+ *  renders exactly `STAGE_TRANSITIONS[currentStage]` as its options) and
+ *  the server guard (handleStageAction in employer-requirement-detail.ts)
+ *  read this same table, so the two can never drift out of sync the way
+ *  an independently-maintained dropdown filter and server blocklist can. */
+export const STAGE_TRANSITIONS: Readonly<Record<RequirementStage, readonly RequirementStage[]>> = {
+  ai_matching: [],
+  ready_for_review: ["interviewing", "hired"],
+  interviewing: ["ready_for_review", "hired"],
+  hired: ["ready_for_review", "interviewing"],
+};
+
+export function canManuallyTransitionStage(from: RequirementStage, to: RequirementStage): boolean {
+  return STAGE_TRANSITIONS[from].includes(to);
+}
+
 /** Validated + length-capped read of a client-supplied field; returns "" for
  *  anything that isn't a string, so callers never propagate non-string JSON
  *  (numbers, objects, null) into a Postgres text column. */

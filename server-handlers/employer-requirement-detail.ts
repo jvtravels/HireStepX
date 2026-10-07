@@ -60,6 +60,7 @@ import {
   isValidRequirementInput,
   isValidRange,
   isFutureDueDate,
+  canManuallyTransitionStage,
   type RequirementRow,
   type RequirementStage,
 } from "./_employer-requirements-helpers";
@@ -421,23 +422,36 @@ async function handleStageAction(
       `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&employer_id=eq.${encodeURIComponent(userId)}&select=id,stage`,
       { headers: serviceHeaders() },
     );
-    const existingRows = (await existingRes.json().catch(() => [])) as Array<{ id: string; stage: string }>;
+    const existingRows = (await existingRes.json().catch(() => [])) as Array<{ id: string; stage: RequirementStage }>;
     if (!existingRes.ok || !existingRows[0]) {
       return new Response(JSON.stringify({ error: "Requirement not found" }), { status: 404, headers });
     }
+    const currentStage = existingRows[0].stage;
 
-    if (stage !== "ai_matching") {
-      const countRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/requirement_matches?requirement_id=eq.${encodeURIComponent(requirementId)}&select=id`,
-        { headers: { ...serviceHeaders(), Prefer: "count=exact", Range: "0-0" } },
+    // STAGE_TRANSITIONS (_employer-requirements-helpers.ts) is the single
+    // source of truth for legal manual moves — it's the same table the
+    // stage dropdown renders its options from, so a request this endpoint
+    // rejects is never one the UI could have produced by a normal click.
+    // This is what actually keeps `ai_matching` (system-owned, set only by
+    // runMatching) from ever being reachable from here, rather than a
+    // one-off `stage !== "ai_matching"` special case.
+    if (!canManuallyTransitionStage(currentStage, stage)) {
+      return new Response(
+        JSON.stringify({ error: `Can't move a requirement from "${currentStage}" to "${stage}"` }),
+        { status: 409, headers },
       );
-      const evaluated = Number(countRes.headers.get("content-range")?.split("/")[1] ?? "0");
-      if (!countRes.ok || !evaluated) {
-        return new Response(
-          JSON.stringify({ error: "Can't move to this stage until at least one candidate has been evaluated" }),
-          { status: 409, headers },
-        );
-      }
+    }
+
+    const countRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/requirement_matches?requirement_id=eq.${encodeURIComponent(requirementId)}&select=id`,
+      { headers: { ...serviceHeaders(), Prefer: "count=exact", Range: "0-0" } },
+    );
+    const evaluated = Number(countRes.headers.get("content-range")?.split("/")[1] ?? "0");
+    if (!countRes.ok || !evaluated) {
+      return new Response(
+        JSON.stringify({ error: "Can't move to this stage until at least one candidate has been evaluated" }),
+        { status: 409, headers },
+      );
     }
 
     const patchRes = await fetch(`${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}`, {
