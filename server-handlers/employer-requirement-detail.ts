@@ -37,7 +37,7 @@
 export const config = { runtime: "edge" };
 
 import { withAuthAndRateLimit, corsHeaders, withRequestId, slog } from "./_shared";
-import { extractResumeLocation, explainMatch } from "./_requirement-match-helpers";
+import { extractResumeLocation, explainMatch, extractSkills } from "./_requirement-match-helpers";
 import { extractResumeDetail, redactResumeDetailForLock } from "./_resume-detail-helpers";
 import { runMatching, logRequirementActivity } from "./employer-requirements";
 import {
@@ -71,12 +71,6 @@ const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 
 function serviceHeaders(): Record<string, string> {
   return { apikey: SUPABASE_SERVICE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_KEY}` };
-}
-
-function extractSkills(resumeData: unknown): string[] {
-  if (!resumeData || typeof resumeData !== "object") return [];
-  const skills = (resumeData as Record<string, unknown>).skills;
-  return Array.isArray(skills) ? skills.filter((s): s is string => typeof s === "string").slice(0, 8) : [];
 }
 
 interface PortfolioLink {
@@ -248,7 +242,7 @@ export default async function handler(req: Request): Promise<Response> {
         matchBreakdown,
         sessionsCompleted: sessionCounts.get(m.candidate_user_id) || 0,
         lastActiveDaysAgo,
-        skills: extractSkills(profile?.resume_data),
+        skills: extractSkills(profile?.resume_data).slice(0, 8),
         unlocked,
         contact: unlocked && profile ? { email: profile.email, phone: resumeDetail.phone || undefined } : undefined,
         /* Same identity-leak rule as contact/resume above: a personal

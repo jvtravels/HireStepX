@@ -32,7 +32,7 @@ import { useToast } from "@/Toast";
 import { Candidate, RequirementStage, ArchiveDisposition } from "@/employer/mockData";
 import { tokens as t, fonts as f, textSize } from "@/auth/_tokens";
 import LoadingScreen from "@/_LoadingScreen";
-import { UNLOCK_BUNDLE_SIZE } from "../../../../../server-handlers/_unlock-pricing";
+import { UNLOCK_BUNDLE_SIZE, singleUnlockPrice, batchUnlockPrice } from "../../../../../server-handlers/_unlock-pricing";
 import { WORK_MODE_LABEL, EMPLOYMENT_TYPE_LABEL } from "@/hiringMatchFormat";
 import { formatNumber } from "@/utils";
 import {
@@ -339,10 +339,7 @@ function CandidateTableRow({
   const [confirming, setConfirming] = useState(false);
   const [unlocking, setUnlocking] = useState(false);
 
-  // Display-only — mirrors UNLOCK_SINGLE_PRICE_PAISE in
-  // server-handlers/_unlock-pricing.ts, which is the sole source of truth
-  // for the amount actually charged.
-  const displayPrice = "₹59";
+  const displayPrice = `₹${(singleUnlockPrice().amountPaise / 100).toFixed(0)}`;
 
   const handleConfirmUnlock = async () => {
     setUnlocking(true);
@@ -609,7 +606,7 @@ function BatchUnlockBanner({
         Unlock candidates <strong>{batchStart}–{batchEnd}</strong> for a flat rate instead of one at a time.
       </span>
       <PrimaryCta size="sm" icon={<LockIcon size={13} aria-hidden="true" />} onClick={handleUnlockBatch} disabled={unlocking}>
-        {unlocking ? "Unlocking…" : "Unlock batch — ₹299"}
+        {unlocking ? "Unlocking…" : `Unlock batch — ₹${(batchUnlockPrice().amountPaise / 100).toFixed(0)}`}
       </PrimaryCta>
     </Card>
   );
