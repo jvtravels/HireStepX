@@ -32,6 +32,26 @@ export interface NotifyInput {
   link?: string;
 }
 
+/** Which console(s) a notification type belongs on. Read by
+ *  notifications-list.ts to scope the feed per caller-declared `audience` —
+ *  without this, a dual-role account (same auth.users.id as both an
+ *  `employers` row and a `profiles` row) sees employer-only notifications
+ *  (e.g. "New strong match found") leak into the candidate bell and vice
+ *  versa, since the `notifications` table is keyed only on `user_id`. */
+export const NOTIFICATION_AUDIENCE: Record<NotificationType, "employer" | "candidate" | "both"> = {
+  streak_milestone: "candidate",
+  referral_reward: "candidate",
+  candidate_status_change: "candidate",
+  employer_viewed_profile: "candidate",
+  unlock_confirmed: "employer",
+  matches_ready: "employer",
+  strong_match_found: "employer",
+  payment_success: "both",
+  payment_failed: "both",
+  subscription_renewed: "both",
+  new_message: "both",
+};
+
 export async function notify(input: NotifyInput): Promise<void> {
   const base = supabaseUrl();
   if (!base) return;

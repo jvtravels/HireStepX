@@ -133,14 +133,26 @@ function timeAgo(iso: string): string {
   return `${days}d ago`;
 }
 
-export default function NotificationBell({ onNavigate }: { onNavigate: (path: string) => void }) {
+export default function NotificationBell({
+  onNavigate,
+  audience,
+}: {
+  onNavigate: (path: string) => void;
+  /** Which console is rendering the bell — scopes the feed so an
+   *  employer-only or candidate-only notification never leaks to the
+   *  other side on a dual-role account. See AppShellFrame's `audience` prop. */
+  audience: "candidate" | "employer";
+}) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [open, setOpen] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   async function load() {
-    const res = await apiFetch<{ notifications: Notification[]; unreadCount: number }>("/api/notifications/list", {});
+    const res = await apiFetch<{ notifications: Notification[]; unreadCount: number }>(
+      `/api/notifications/list?audience=${audience}`,
+      {},
+    );
     if (res.ok && res.data) {
       setNotifications(res.data.notifications);
       setUnreadCount(res.data.unreadCount);
@@ -151,7 +163,7 @@ export default function NotificationBell({ onNavigate }: { onNavigate: (path: st
     load();
     pollRef.current = setInterval(load, POLL_MS);
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
-  }, []);
+  }, [audience]);
 
   async function markRead(id: string) {
     setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read_at: new Date().toISOString() } : n)));

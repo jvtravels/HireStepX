@@ -80,6 +80,12 @@ interface AppShellFrameProps {
   onLogout: () => void;
   /** Powers the header's message icon (next to the notification bell). */
   messaging: { fetchConversations: () => Promise<ConversationSummary[] | null>; basePath: string };
+  /** Which console this shell is — scopes the notification bell so an
+   *  employer-only notification (e.g. "New strong match found") never shows
+   *  up on the candidate side and vice versa, which matters for any account
+   *  that is both (dual-role test accounts, or a future employer-who-also-
+   *  interviews feature). */
+  audience: "candidate" | "employer";
   breadcrumbRoot: { label: string; path: string };
   pageLabel: string;
   isMobile: boolean;
@@ -95,7 +101,7 @@ interface AppShellFrameProps {
 
 export default function AppShellFrame({
   homeHref, navAriaLabel, navItems, activeId, onNavigate, onNavHover,
-  sidebarFooterExtra, account, accountMenuItems, onLogout, messaging,
+  sidebarFooterExtra, account, accountMenuItems, onLogout, messaging, audience,
   breadcrumbRoot, pageLabel, isMobile, mainId, pageKey, banners, overlays, children,
 }: AppShellFrameProps) {
   const initial = (account.name || "?")[0].toUpperCase();
@@ -283,7 +289,7 @@ export default function AppShellFrame({
             </BreadcrumbList>
           </Breadcrumb>
           <MessagesBell onNavigate={onNavigate} fetchConversations={messaging.fetchConversations} basePath={messaging.basePath} />
-          <NotificationBell onNavigate={onNavigate} />
+          <NotificationBell onNavigate={onNavigate} audience={audience} />
         </header>
 
         <div ref={scrollRef} style={{ flex: 1, minHeight: 0, minWidth: 0, display: "flex", flexDirection: "column", overflowY: "auto", overflowX: "hidden", paddingBottom: isMobile ? 16 : 24 }}>

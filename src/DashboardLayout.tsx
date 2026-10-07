@@ -274,6 +274,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
       activeId={activeNav}
       onNavigate={(path) => nav.push(path)}
       messaging={{ fetchConversations: listConversations, basePath: "/messages" }}
+      audience="candidate"
       onNavHover={(id) => {
         prefetchMap[id]?.();
         const path = navItems.find((item) => item.id === id)?.path;

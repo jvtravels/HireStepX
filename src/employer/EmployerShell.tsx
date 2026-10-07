@@ -230,6 +230,7 @@ export default function EmployerShell({ children }: { children: React.ReactNode 
       activeId={isSettingsRoute || isMessagesRoute ? "" : activeItem.id}
       onNavigate={(path) => router.push(path)}
       messaging={{ fetchConversations: listConversations, basePath: "/employer/messages" }}
+      audience="employer"
       account={{
         name: companyName || "Employer",
         subtitle: "Employer account",
