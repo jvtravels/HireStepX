@@ -558,7 +558,9 @@ export default function CandidateDetailPage() {
         <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: 16, alignItems: "start" }}>
           <Card>
             <SectionTitle>About</SectionTitle>
-            {resume?.summary ? (
+            {!candidate.unlocked ? (
+              <HelpText>This candidate's summary is locked. <Link href={`/employer/requirements/${requirement.id}`} style={{ color: t.indigo, fontWeight: 600 }}>Unlock from the shortlist</Link> to view.</HelpText>
+            ) : resume?.summary ? (
               <p style={{ fontFamily: f.sans, fontSize: 13.5, color: t.inkSoft, lineHeight: 1.6, margin: 0 }}>{resume.summary}</p>
             ) : (
               <HelpText>No resume summary available for this candidate.</HelpText>
@@ -596,13 +598,13 @@ export default function CandidateDetailPage() {
               </>
             )}
 
-            {(!!resume?.certifications.length || resume?.linkedin) && (
+            {(!!resume?.certifications.length || (candidate.unlocked && resume?.linkedin)) && (
               <>
                 <Divider />
                 <div style={{ marginTop: 14 }}>
                   <SectionTitle>Links</SectionTitle>
                   <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                    {resume?.linkedin && (
+                    {candidate.unlocked && resume?.linkedin && (
                       <a href={`https://${resume.linkedin.replace(/^https?:\/\//, "")}`} target="_blank" rel="noreferrer" style={{ textDecoration: "none" }}>
                         <SkillTag>LinkedIn</SkillTag>
                       </a>
@@ -727,7 +729,7 @@ export default function CandidateDetailPage() {
             </div>
           </div>
 
-          {resume?.summary && (
+          {candidate.unlocked && resume?.summary && (
             <p style={{ fontFamily: f.sans, fontSize: 13.5, color: t.inkSoft, lineHeight: 1.6, margin: "16px 0 0" }}>{resume.summary}</p>
           )}
 

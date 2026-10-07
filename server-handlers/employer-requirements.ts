@@ -37,6 +37,7 @@ import {
   type SessionRow,
 } from "./_employer-candidate-evidence-helpers";
 import { llmRerankCandidates, blendScore } from "./_requirement-match-llm";
+import { notify } from "./_notify";
 import {
   asBoundedString,
   asBoundedStringArray,
@@ -508,14 +509,28 @@ export async function runMatching(requirementId: string, req: RequirementInput, 
     // not a separate read) so a requirement the employer already moved
     // forward manually — or re-scored after an edit — is never dragged back.
     if (finalStatus === "ready" || finalStatus === "partial") {
-      await fetch(
+      const stageFlipRes = await fetch(
         `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&stage=eq.ai_matching`,
         {
           method: "PATCH",
-          headers: { ...serviceHeaders(), "Content-Type": "application/json", Prefer: "return=minimal" },
+          headers: { ...serviceHeaders(), "Content-Type": "application/json", Prefer: "return=representation" },
           body: JSON.stringify({ stage: "ready_for_review" }),
         },
-      ).catch(() => {});
+      ).catch(() => null);
+      // Only notify when THIS call actually flipped the stage (one row back) —
+      // the PostgREST filter makes the PATCH a no-op on a re-score after an
+      // edit or a requirement the employer already moved forward manually,
+      // and the employer shouldn't get a duplicate "ready to review" ping then.
+      const stageFlipRows = stageFlipRes?.ok ? await stageFlipRes.json().catch(() => []) : [];
+      if (Array.isArray(stageFlipRows) && stageFlipRows.length === 1) {
+        void notify({
+          userId: ownerUserId,
+          type: "matches_ready",
+          title: "Candidates ready to review",
+          body: `${req.title || "Your requirement"} has matched candidates ready for review.`,
+          link: `/employer/requirements/${requirementId}`,
+        });
+      }
     }
     return finalStatus;
   } catch (err) {

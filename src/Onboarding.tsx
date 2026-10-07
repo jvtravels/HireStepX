@@ -171,8 +171,14 @@ export default function Onboarding() {
   const [userName, setUserName] = useState(
     looksLikePersonName(user?.name) ? (user?.name || "") : ""
   );
-  const undoRef = useRef<{ fileName: string; resumeText: string; resumeParsed: ParsedResume | null; aiProfile: ResumeProfile | null; aiPhase: "idle" | "analyzing" | "done"; targetRole: string; userName: string } | null>(null);
+  const undoRef = useRef<{ fileName: string; resumeText: string; resumeParsed: ParsedResume | null; aiProfile: ResumeProfile | null; aiPhase: "idle" | "analyzing" | "done"; targetRole: string; userName: string; aiSuccess: boolean } | null>(null);
   const analysisAbortRef = useRef<AbortController | null>(null);
+  // Tracks whether `aiProfile` actually came from a successful AI analysis
+  // (vs. the "Analyzing..."/"Your Profile" placeholder seeded before/on
+  // failure) — finalizeOnboarding reads this to decide the StoredResume
+  // _type tag, mirroring the aiSuccess local var handleFileUpload already
+  // uses for its own save.
+  const aiSuccessRef = useRef(false);
   const [showUndo, setShowUndo] = useState(false);
   const undoTimerRef = useRef<number>(0);
   const [targetRole, setTargetRole] = useState(user?.targetRole || "");
@@ -539,6 +545,7 @@ export default function Onboarding() {
       setAiPhase("analyzing");
       let finalProfile: ResumeProfile = fallback;
       let aiSuccess = false;
+      aiSuccessRef.current = false;
       // Captured from analyze-resume's response so we can pin the user's
       // profile to the canonical resume_versions row immediately. If the
       // tab closes between LLM completion and the updateUser PATCH, the
@@ -580,6 +587,7 @@ export default function Onboarding() {
           setAiProfile(finalProfile);
           analyzedVersionId = result.resumeVersionId ?? null;
           aiSuccess = true;
+          aiSuccessRef.current = true;
           if (finalProfile.headline && finalProfile.headline !== "Analyzing...") {
             // AI headlines look like "Senior Product Designer with 5+ years…"
             // — slice off everything from " with " onwards to get just the role.
@@ -695,7 +703,7 @@ export default function Onboarding() {
     if (fileName) {
       saveData.resumeFileName = fileName;
       saveData.resumeText = resumeText;
-      if (aiProfile) {
+      if (aiSuccessRef.current && aiProfile) {
         saveData.resumeData = { _type: "ai", ...aiProfile };
       } else if (resumeParsed) {
         saveData.resumeData = { _type: "fallback", ...resumeParsed };
@@ -812,11 +820,13 @@ export default function Onboarding() {
     setResumeText("");
     setResumeParsed(null);
     setAiProfile(null);
+    aiSuccessRef.current = false;
   };
 
   const handleRemoveResume = () => {
-    undoRef.current = { fileName, resumeText, resumeParsed, aiProfile, aiPhase, targetRole, userName };
+    undoRef.current = { fileName, resumeText, resumeParsed, aiProfile, aiPhase, targetRole, userName, aiSuccess: aiSuccessRef.current };
     setFileName(""); setResumeText(""); setResumeParsed(null); setResumeError(""); setAiProfile(null); setAiPhase("idle"); setTargetRole(""); setUserName("");
+    aiSuccessRef.current = false;
     try { localStorage.removeItem("hirestepx_resume"); } catch { /* noop */ }
     setShowUndo(true); clearTimeout(undoTimerRef.current);
     undoTimerRef.current = window.setTimeout(() => { setShowUndo(false); undoRef.current = null; }, 12000);
@@ -826,6 +836,7 @@ export default function Onboarding() {
     if (!undoRef.current) return;
     const s = undoRef.current;
     setFileName(s.fileName); setResumeText(s.resumeText); setResumeParsed(s.resumeParsed); setAiProfile(s.aiProfile); setAiPhase(s.aiPhase); setTargetRole(s.targetRole); setUserName(s.userName);
+    aiSuccessRef.current = s.aiSuccess;
     setShowUndo(false); clearTimeout(undoTimerRef.current); undoRef.current = null;
   };
 
