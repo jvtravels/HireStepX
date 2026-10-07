@@ -38,6 +38,7 @@ import { ChevronsUpDownIcon, LogOutIcon } from "lucide-react";
 import { tokens as T, fonts as F } from "./auth/_tokens";
 import { dur, ease } from "./_motion";
 import NotificationBell from "./NotificationBell";
+import MessagesBell, { type ConversationSummary } from "./MessagesBell";
 
 /* ─── Shared app shell ───────────────────────────────────────────────────
  * The sidebar + header + scrolling body used by BOTH the candidate
@@ -77,6 +78,8 @@ interface AppShellFrameProps {
   /** Extra account-menu entries rendered above "Log out". */
   accountMenuItems?: React.ReactNode;
   onLogout: () => void;
+  /** Powers the header's message icon (next to the notification bell). */
+  messaging: { fetchConversations: () => Promise<ConversationSummary[] | null>; basePath: string };
   breadcrumbRoot: { label: string; path: string };
   pageLabel: string;
   isMobile: boolean;
@@ -92,7 +95,7 @@ interface AppShellFrameProps {
 
 export default function AppShellFrame({
   homeHref, navAriaLabel, navItems, activeId, onNavigate, onNavHover,
-  sidebarFooterExtra, account, accountMenuItems, onLogout,
+  sidebarFooterExtra, account, accountMenuItems, onLogout, messaging,
   breadcrumbRoot, pageLabel, isMobile, mainId, pageKey, banners, overlays, children,
 }: AppShellFrameProps) {
   const initial = (account.name || "?")[0].toUpperCase();
@@ -279,6 +282,7 @@ export default function AppShellFrame({
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
+          <MessagesBell onNavigate={onNavigate} fetchConversations={messaging.fetchConversations} basePath={messaging.basePath} />
           <NotificationBell onNavigate={onNavigate} />
         </header>
 

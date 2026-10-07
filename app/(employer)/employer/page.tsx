@@ -386,11 +386,10 @@ function EmployerDashboard() {
   const showOnboardingChecklist = unlockCount !== null && onboardingSteps.some((s) => !s.done);
 
   return (
+    <div style={{ minHeight: "100%", width: "100%" }}>
     <div
       style={{
         width: "100%",
-        maxWidth: 1280,
-        margin: "0 auto",
         boxSizing: "border-box",
         background: t.white,
         border: `1px solid ${t.line}`,
@@ -399,6 +398,7 @@ function EmployerDashboard() {
         display: "grid",
         gridTemplateColumns: "minmax(0, 1fr) minmax(280px, 360px)",
         gap: 32,
+        minHeight: "100%",
       }}
     >
       {/* ─── Main stage ─── */}
@@ -498,6 +498,7 @@ function EmployerDashboard() {
           </CardContent>
         </Card>
       </aside>
+    </div>
     </div>
   );
 }

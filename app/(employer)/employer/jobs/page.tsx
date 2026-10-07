@@ -13,7 +13,7 @@
    backing endpoints. Recent searches persist per-browser via localStorage
    only; there is no server-side record of search terms. */
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
 import {
@@ -473,6 +473,33 @@ function DueCell({ dueDate }: { dueDate: string | null }) {
   );
 }
 
+/* Hover-spring transition for the overlapping avatar-initial chip stack
+   below — ported from the transitions.dev "avatar-group-hover" pattern
+   (https://transitions.dev/detail.html?t=avatar-group-hover). Hovering a
+   chip lifts it and gently lifts its neighbors with a power-falloff, then
+   the whole stack snaps back with an overshoot spring on mouse-leave.
+   Direction-aware easing (clean ease-in on hover, bouncy ease-out on
+   return) is what gives it the springy feel — set inline right before the
+   --hsx-shift write so each direction's transition picks up the timing
+   function current at that moment, rather than sharing one fixed curve. */
+const AVATAR_GROUP_LIFT = -4;
+const AVATAR_GROUP_SCALE = 1.08;
+const AVATAR_GROUP_FALLOFF = 0.45;
+const AVATAR_GROUP_EASE_IN = "cubic-bezier(0.22, 1, 0.36, 1)";
+const AVATAR_GROUP_EASE_OUT = "cubic-bezier(0.34, 3.85, 0.64, 1)";
+
+const AVATAR_GROUP_STYLE = `
+.hsx-avatar {
+  transform-origin: center;
+  transform: translateY(var(--hsx-shift, 0px)) scale(var(--hsx-scale-active, 1));
+  transition: transform 320ms ${AVATAR_GROUP_EASE_IN};
+  will-change: transform;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hsx-avatar { transition: none !important; transform: none !important; }
+}
+`;
+
 /** "Strong Match" cell — overlapping avatar-initial chips for the candidates
     scoring at/above STRONG_MATCH_THRESHOLD. Hovering the chip stack shows a
     dark "Strong Matches" card (matches the canvas reference) listing each
@@ -482,6 +509,25 @@ function DueCell({ dueDate }: { dueDate: string | null }) {
     score is shown under Top Matches instead, since strongAvgScore is the
     average across that same top-matches group. */
 function StrongMatchCell({ aiScreening }: { aiScreening: RequirementSummary["aiScreening"] }) {
+  const groupRef = useRef<HTMLButtonElement>(null);
+
+  const setAvatarShifts = (activeIdx: number | null, phase: "in" | "out") => {
+    const root = groupRef.current;
+    if (!root) return;
+    const tf = phase === "out" ? AVATAR_GROUP_EASE_OUT : AVATAR_GROUP_EASE_IN;
+    root.querySelectorAll<HTMLElement>(".hsx-avatar").forEach((el, i) => {
+      el.style.transitionTimingFunction = tf;
+      if (activeIdx == null) {
+        el.style.setProperty("--hsx-shift", "0px");
+        el.style.setProperty("--hsx-scale-active", "1");
+        return;
+      }
+      const d = Math.abs(i - activeIdx);
+      el.style.setProperty("--hsx-shift", `${(AVATAR_GROUP_LIFT * Math.pow(AVATAR_GROUP_FALLOFF, d)).toFixed(3)}px`);
+      el.style.setProperty("--hsx-scale-active", i === activeIdx ? String(AVATAR_GROUP_SCALE) : "1");
+    });
+  };
+
   if (aiScreening.evaluated === 0) return <span style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.inkFaint }}>—</span>;
   if (aiScreening.strongMatches.length === 0) {
     return <span style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.inkFaint }}>None yet</span>;
@@ -490,17 +536,22 @@ function StrongMatchCell({ aiScreening }: { aiScreening: RequirementSummary["aiS
     <HoverCard openDelay={150}>
       <HoverCardTrigger asChild>
         <button
+          ref={groupRef}
           type="button"
           aria-label={`${aiScreening.topMatches} strong match${aiScreening.topMatches === 1 ? "" : "es"} — view candidates`}
           style={{ display: "flex", alignItems: "center", background: "none", border: "none", padding: 10, margin: -10, cursor: "pointer" }}
+          onMouseLeave={() => setAvatarShifts(null, "out")}
         >
+          <style>{AVATAR_GROUP_STYLE}</style>
           {aiScreening.strongMatches.map((candidate, i) => (
             <span
               key={candidate.id}
+              className="hsx-avatar"
+              onMouseEnter={() => setAvatarShifts(i, "in")}
               style={{
-                width: 24, height: 24, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
-                fontFamily: f.sans, fontSize: 10, fontWeight: 600, color: t.indigoDeep, background: t.indigo100, border: `2px solid ${t.white}`,
-                marginLeft: i === 0 ? 0 : -8,
+                width: 28, height: 28, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
+                fontFamily: f.sans, fontSize: 11, fontWeight: 600, color: t.indigoDeep, background: t.indigo100, border: `2px solid ${t.white}`,
+                marginLeft: i === 0 ? 0 : -9,
               }}
             >
               {candidate.initials}
@@ -508,10 +559,12 @@ function StrongMatchCell({ aiScreening }: { aiScreening: RequirementSummary["aiS
           ))}
           {aiScreening.strongMatchExtra > 0 && (
             <span
+              className="hsx-avatar"
+              onMouseEnter={() => setAvatarShifts(aiScreening.strongMatches.length, "in")}
               style={{
-                width: 24, height: 24, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
-                fontFamily: f.sans, fontSize: 10, fontWeight: 600, color: t.inkSoft, background: t.creamSoft, border: `2px solid ${t.white}`,
-                marginLeft: -8,
+                width: 28, height: 28, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
+                fontFamily: f.sans, fontSize: 11, fontWeight: 600, color: t.inkSoft, background: t.creamSoft, border: `2px solid ${t.white}`,
+                marginLeft: -9,
               }}
             >
               +{aiScreening.strongMatchExtra}
@@ -999,7 +1052,7 @@ export default function EmployerJobsPage() {
                   data to show, so hidden-column space isn't stranded. */}
               <SortableHead column="title" columnLabel={COLUMN_LABEL.title} defaultDirection="asc" width={hasAnyDepartment ? 220 : 320} minWidth={190} sort={sort} onSortChange={setSort}>Opportunity</SortableHead>
               {hasAnyDepartment && (
-                <TableHead style={{ width: 100, fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.inkSoft }}>Department</TableHead>
+                <TableHead style={{ width: 100, padding: "0 20px", fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.inkSoft }}>Department</TableHead>
               )}
               <SortableHead
                 column="stage"
@@ -1138,7 +1191,7 @@ export default function EmployerJobsPage() {
                   {hasAnyDepartment && (
                     <TableCell style={{ padding: "12px 20px", verticalAlign: "top", whiteSpace: "normal" }}>
                       {r.department ? (
-                        <span style={{ fontFamily: f.sans, fontSize: textSize.md, color: t.coal }}>{r.department}</span>
+                        <span style={{ fontFamily: f.sans, fontSize: textSize.md, fontWeight: 500, color: t.coal }}>{r.department}</span>
                       ) : (
                         <span style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.inkFaint }}>—</span>
                       )}
@@ -1183,7 +1236,7 @@ export default function EmployerJobsPage() {
                       <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-start" }}>
                         <Badge tone="info">Top {r.aiScreening.topMatches}</Badge>
                         {r.aiScreening.strongAvgScore != null && (
-                          <div style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.successInk }}>{r.aiScreening.strongAvgScore}% avg match score</div>
+                          <div style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.inkFaint, marginTop: 1 }}>{r.aiScreening.strongAvgScore}% avg match score</div>
                         )}
                       </div>
                     ) : (
@@ -1198,7 +1251,11 @@ export default function EmployerJobsPage() {
                   </TableCell>
                   <TableCell style={{ padding: "12px 20px", verticalAlign: "top", whiteSpace: "normal" }}>
                     <div style={{ fontFamily: f.sans, fontSize: textSize.md, fontWeight: 500, color: t.coal }}>{locationText(r) || "Not specified"}</div>
-                    {mode && <div style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.inkFaint, marginTop: 1 }}>{mode}</div>}
+                    {mode && mode !== locationText(r) && (
+                      <div style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.inkFaint, marginTop: 1 }}>
+                        {mode === "Remote" ? `Remote · based in ${locationText(r)}` : mode}
+                      </div>
+                    )}
                   </TableCell>
                   <TableCell style={{ padding: "12px 20px", verticalAlign: "top", whiteSpace: "normal" }}>
                     <DueCell dueDate={r.dueDate} />

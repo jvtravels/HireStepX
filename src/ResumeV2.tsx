@@ -16,6 +16,7 @@ import { tokens as T, fonts as F, textSize as S } from "./auth/_tokens";
 import { useAuth } from "./AuthContext";
 import { useResumeUpload, type ResumePhase } from "./useResumeUpload";
 import LoadingScreen from "./_LoadingScreen";
+import { SkeletonReveal } from "./SkeletonReveal";
 import { computeATSScore } from "./resumeAts";
 import { computeAllFitness, type InterviewType, type FitnessBand } from "./resumeFitness";
 import { Button } from "@/components/ui/button";
@@ -291,9 +292,7 @@ export default function ResumeV2Screen() {
   }, [profile]);
 
   let body: React.ReactNode;
-  if (authLoading) {
-    body = <ResumeSkeleton />;
-  } else if (!profile) {
+  if (!profile) {
     if (phase === "extracting" || phase === "analyzing") {
       body = <ResumeAnalyzingCard phase={phase} />;
     } else {
@@ -845,7 +844,9 @@ export default function ResumeV2Screen() {
   return (
     <TooltipProvider>
       <div style={{ display: "flex", flexDirection: "column", width: "100%", fontFamily: font.ui }}>
-        {body}
+        <SkeletonReveal loading={authLoading} skeleton={<ResumeSkeleton />}>
+          {body}
+        </SkeletonReveal>
       </div>
     </TooltipProvider>
   );

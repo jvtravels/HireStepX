@@ -34,7 +34,7 @@ const navItems: ShellNavItem[] = [
    narrower Card) both own their layout already — wrapping either in the
    fallback double-cards the page and, for the dashboard, caps it at the
    same 1280 the fallback itself uses, just with less usable width inside. */
-const SELF_CARDED_ROUTES = ["/employer", "/employer/jobs", "/employer/requirements/new", "/employer/settings"];
+const SELF_CARDED_ROUTES = ["/employer", "/employer/jobs", "/employer/requirements/new", "/employer/settings", "/employer/messages"];
 
 /* Every requirement-scoped page (detail, edit, candidate detail, outcome
    feedback, compare) renders its own header/Card layout designed to fill
@@ -172,7 +172,7 @@ function AccountMenu({ name, email, onLogout }: { name?: string; email?: string;
    company is even approved. */
 export default function EmployerShell({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
-  const { companyStatus, companyName } = useEmployerData();
+  const { companyStatus, companyName, listConversations } = useEmployerData();
   const isMobile = useIsMobile();
   const router = useRouter();
   const pathname = usePathname();
@@ -214,6 +214,7 @@ export default function EmployerShell({ children }: { children: React.ReactNode 
      navItems[0] here, or the sidebar highlights "Dashboard" and the
      breadcrumb reads "Dashboard" while the page itself says "Settings". */
   const isSettingsRoute = pathname === "/employer/settings";
+  const isMessagesRoute = pathname === "/employer/messages";
   const activeItem =
     navItems.find((item) =>
       item.path === "/employer" ? pathname === item.path : pathname === item.path || pathname?.startsWith(`${item.path}/`)
@@ -226,8 +227,9 @@ export default function EmployerShell({ children }: { children: React.ReactNode 
       homeHref="/employer"
       navAriaLabel="Employer navigation"
       navItems={navItems}
-      activeId={isSettingsRoute ? "" : activeItem.id}
+      activeId={isSettingsRoute || isMessagesRoute ? "" : activeItem.id}
       onNavigate={(path) => router.push(path)}
+      messaging={{ fetchConversations: listConversations, basePath: "/employer/messages" }}
       account={{
         name: companyName || "Employer",
         subtitle: "Employer account",

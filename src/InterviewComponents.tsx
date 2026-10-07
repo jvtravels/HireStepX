@@ -375,6 +375,27 @@ export const QuestionProgressBar = React.memo(function QuestionProgressBar({ cur
 });
 
 /* ─── Live Captions (synced to TTS voice playback) ─── */
+/* ─── Streaming-text tunables ────────────────────────────────────────────
+ * Ported from the transitions.dev "streaming-text" pattern
+ * (https://transitions.dev/detail.html?t=streaming-text): each word
+ * resolves into place through opacity + a small blur rather than being
+ * typed — it reads as the question condensing into focus, not keystrokes. */
+const STREAM_FADE_MS = 350;
+const STREAM_BLUR_PX = 1;
+const STREAM_EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
+
+function useReducedMotionPref(): boolean {
+  const [reduced, setReduced] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setReduced(mq.matches);
+    const onChange = () => setReduced(mq.matches);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+  return reduced;
+}
+
 export const LiveCaptions = React.memo(function LiveCaptions({ text, isTyping, speakingDuration, actualDuration, speechEnded, variant = "card" }: {
   text: string; isTyping: boolean; speakingDuration?: number;
   /** Real TTS audio duration in ms — reported by TTS provider after audio loads */
@@ -384,7 +405,7 @@ export const LiveCaptions = React.memo(function LiveCaptions({ text, isTyping, s
   /** "card" stamps its own sans/22px (legacy panel layout). "inherit"
       defers to the parent — used inside CanvasPlainHeading where the
       h1's clamp() font controls typography. Mismatched type between
-      typewriter and final heading is what caused the visible "jerk"
+      the reveal and final heading is what caused the visible "jerk"
       when speaking → listening swapped the renderer. */
   variant?: "card" | "inherit";
 }) {
@@ -393,20 +414,22 @@ export const LiveCaptions = React.memo(function LiveCaptions({ text, isTyping, s
   // the visible layer must always be clean. Without this, "[pause]"
   // tokens leak onto the screen.
   const cleanText = useMemo(() => stripProsodyMarkup(text || ""), [text]);
+  const words = useMemo(() => cleanText.split(/\s+/).filter(Boolean), [cleanText]);
+  const reducedMotion = useReducedMotionPref();
 
-  const [displayText, setDisplayText] = useState("");
-  const [charIndex, setCharIndex] = useState(0);
+  const [revealedCount, setRevealedCount] = useState(0);
 
+  // Reduced-motion users get the full question immediately — no staggered
+  // reveal to disable mid-flight, matching the pattern's required guard.
   useEffect(() => {
-    setDisplayText("");
-    setCharIndex(0);
-  }, [cleanText]);
+    setRevealedCount(reducedMotion ? words.length : 0);
+  }, [cleanText, reducedMotion, words.length]);
 
-  // When speech ends, instantly show all remaining text. Rising-edge
+  // When speech ends, instantly resolve every remaining word. Rising-edge
   // detection prevents a stale speechEnded=true from a prior turn from
   // flushing a freshly-arrived next-question text immediately — the
   // bug where the question appeared in full and only THEN started
-  // typing was caused by speechEnded persisting across turns.
+  // streaming was caused by speechEnded persisting across turns.
   const wasSpeechEndedRef = useRef(false);
   // On every cleanText change, reset the rising-edge tracker so the
   // next true-transition counts as a new edge for the new question.
@@ -417,34 +440,32 @@ export const LiveCaptions = React.memo(function LiveCaptions({ text, isTyping, s
     const isRisingEdge = !!speechEnded && !wasSpeechEndedRef.current;
     wasSpeechEndedRef.current = !!speechEnded;
     if (!isRisingEdge) return;
-    if (charIndex >= cleanText.length) return;
-    setDisplayText(cleanText);
-    setCharIndex(cleanText.length);
+    if (revealedCount >= words.length) return;
+    setRevealedCount(words.length);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [speechEnded, cleanText]);
+  }, [speechEnded, words]);
 
   useEffect(() => {
-    if (!isTyping || charIndex >= cleanText.length || speechEnded) return;
+    if (!isTyping || words.length === 0 || revealedCount >= words.length || speechEnded) return;
     // Use actualDuration from TTS if available, else fall back to speakingDuration estimate
-    const duration = actualDuration || speakingDuration || Math.max(2500, (cleanText.split(/\s+/).length / 175) * 60 * 1000);
-    // Calculate per-char delay to finish typing in sync with voice
-    // Leave a small buffer (200ms) so typing finishes just before voice ends
-    const remainingChars = cleanText.length - charIndex;
-    const elapsedRatio = charIndex / cleanText.length;
+    const duration = actualDuration || speakingDuration || Math.max(2500, (words.length / 175) * 60 * 1000);
+    // Calculate per-word delay to finish resolving in sync with voice.
+    // Leave a small buffer (200ms) so the last word lands just before voice ends.
+    const remainingWords = words.length - revealedCount;
+    const elapsedRatio = revealedCount / words.length;
     const remainingDuration = duration * (1 - elapsedRatio) - 200;
-    const msPerChar = Math.max(12, remainingDuration / remainingChars);
-    const delay = Math.max(12, Math.min(70, msPerChar + (Math.random() * 4 - 2)));
+    const msPerWord = Math.max(40, remainingDuration / remainingWords);
+    const delay = Math.max(40, Math.min(260, msPerWord));
     const timer = setTimeout(() => {
-      setDisplayText(cleanText.slice(0, charIndex + 1));
-      setCharIndex(charIndex + 1);
+      setRevealedCount(c => c + 1);
     }, delay);
     return () => clearTimeout(timer);
-  }, [charIndex, cleanText, isTyping, speakingDuration, actualDuration, speechEnded]);
+  }, [revealedCount, words, isTyping, speakingDuration, actualDuration, speechEnded]);
 
-  if (!isTyping && !displayText) return null;
+  if (!isTyping && revealedCount === 0) return null;
 
-  /* The typing animation streams text char-by-char. We INTENTIONALLY mark
-     this region aria-hidden so screen readers don't replay every keystroke
+  /* The streaming reveal resolves word-by-word. We INTENTIONALLY mark
+     this region aria-hidden so screen readers don't replay every word
      update — the parent QuestionCard is already aria-live="polite"
      aria-atomic="true" which announces the full question once per phase
      transition. The visible animation is purely sighted-user candy. */
@@ -465,10 +486,23 @@ export const LiveCaptions = React.memo(function LiveCaptions({ text, isTyping, s
               letterSpacing: "-0.01em", textWrap: "balance",
             }
       }>
-        {displayText}
-        {isTyping && charIndex < cleanText.length && (
-          <span style={{ display: "inline-block", width: 2, height: 20, background: e.indigo, marginLeft: 2, verticalAlign: "text-bottom", animation: "blink 0.8s ease-in-out infinite" }} />
-        )}
+        {words.map((w, i) => {
+          const isIn = i < revealedCount;
+          return (
+            <React.Fragment key={i}>
+              <span
+                style={{
+                  opacity: isIn ? 1 : 0,
+                  filter: reducedMotion ? "none" : `blur(${isIn ? 0 : STREAM_BLUR_PX}px)`,
+                  transition: reducedMotion ? "none" : `opacity ${STREAM_FADE_MS}ms ${STREAM_EASE}, filter ${STREAM_FADE_MS}ms ${STREAM_EASE}`,
+                }}
+              >
+                {w}
+              </span>
+              {i < words.length - 1 ? " " : ""}
+            </React.Fragment>
+          );
+        })}
       </p>
     </div>
   );

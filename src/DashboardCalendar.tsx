@@ -30,6 +30,7 @@ import { ROLE_SUGGESTIONS } from "./onboardingData";
 import { COMPANY_SUGGESTIONS } from "../data/company-suggestions";
 import { useDashboardUIActions, useDashboardSubscription, useDashboardSessions } from "./DashboardContext";
 import { DataLoadingSkeleton, PaywallGate } from "./dashboardComponents";
+import { SkeletonReveal } from "./SkeletonReveal";
 
 /* Scoped stylesheet — inline styles can't express :focus-visible, media
  * queries, or :hover, so the responsive grid + keyboard focus rings live here. */
@@ -531,11 +532,14 @@ export default function CalendarPage() {
     }
   };
 
-  if (eventsLoading) return <DataLoadingSkeleton />;
   // Calendar is available on any PAID plan (Starter/Sprint Pack + Team); only
   // the free tier hits the gate. Prep reminders and countdowns are basic
   // "don't miss your interview" utility a paying user reasonably expects.
   if (isFree) return <PaywallGate feature="Interview Calendar" onUpgrade={() => setShowUpgradeModal(true)} />;
+
+  // Computed as if already loaded — rendered behind the skeleton via
+  // SkeletonReveal below, which hides it until eventsLoading clears.
+  const content = (() => {
 
   const resetForm = () => {
     setFormTitle("");
@@ -1191,5 +1195,12 @@ export default function CalendarPage() {
       </div>
       </div>
     </div>
+  );
+  })();
+
+  return (
+    <SkeletonReveal loading={eventsLoading} skeleton={<DataLoadingSkeleton />}>
+      {content}
+    </SkeletonReveal>
   );
 }

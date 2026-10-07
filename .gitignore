@@ -54,3 +54,4 @@ audit-*.mjs
 qa-*.cjs
 qa-*.mjs
 do_commit.sh
+.env*

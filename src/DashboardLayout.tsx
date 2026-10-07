@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { DropdownMenuGroup, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import AppShellFrame from "./AppShellFrame";
+import { listConversations } from "./messagesApi";
 import { useDashboardCore, useDashboardSessions, useDashboardSubscription, useDashboardUI } from "./DashboardContext";
 const UpgradeModal = dynamic(() => import("./dashboardComponents").then(m => ({ default: m.UpgradeModal })), { ssr: false });
 import { FREE_SESSION_LIMIT, STARTER_WEEKLY_LIMIT } from "./dashboardData";
@@ -272,6 +273,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
       }))}
       activeId={activeNav}
       onNavigate={(path) => nav.push(path)}
+      messaging={{ fetchConversations: listConversations, basePath: "/messages" }}
       onNavHover={(id) => {
         prefetchMap[id]?.();
         const path = navItems.find((item) => item.id === id)?.path;

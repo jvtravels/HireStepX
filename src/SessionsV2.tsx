@@ -15,6 +15,7 @@ import { useRouter } from "next/navigation";
 import { tokens as T, fonts as F } from "./auth/_tokens";
 import { dur, ease } from "./_motion";
 import { useDashboardSessions } from "./DashboardContext";
+import { SkeletonReveal } from "./SkeletonReveal";
 import type { DashboardSession } from "./dashboardTypes";
 import { captureClientEvent } from "./posthogClient";
 import { Button } from "@/components/ui/button";
@@ -648,11 +649,11 @@ export default function SessionsV2Screen() {
     router.push(`/session/${id}`);
   };
 
+  // Computed as if already loaded — rendered behind the skeleton via
+  // SkeletonReveal below, which hides it until sessionsLoading clears.
   let body: React.ReactNode;
   let showPageHeader = true;
-  if (sessionsLoading) {
-    body = <SessionsLoadingSkeleton />;
-  } else if (rows.length === 0) {
+  if (rows.length === 0) {
     body = <SessionsEmptyState onStartSession={onStartSession} />;
   } else {
     // WorkspaceHeader already embeds the title + CTA into its own row —
@@ -664,10 +665,16 @@ export default function SessionsV2Screen() {
   return (
     <TooltipProvider>
       <div style={{ background: T.white, display: "flex", flexDirection: "column", fontFamily: font.ui, flex: 1, minHeight: 0, borderRadius: 12, border: `1px solid ${T.line}`, overflow: "hidden" }}>
-        {showPageHeader && <PageHeader onStartSession={onStartSession} />}
+        {showPageHeader && !sessionsLoading && <PageHeader onStartSession={onStartSession} />}
+        <SkeletonReveal
+          loading={sessionsLoading}
+          skeleton={<SessionsLoadingSkeleton />}
+          style={{ flex: 1, minHeight: 0 }}
+        >
         <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
           {body}
         </div>
+        </SkeletonReveal>
       </div>
     </TooltipProvider>
   );

@@ -9,6 +9,7 @@ import { sessionTypes, scoreLabel, scoreLabelColor } from "./dashboardTypes";
 import { ScoreTrendChart, SkillRadar } from "./DashboardCharts";
 import { useDashboardSessions, useDashboardCore, useDashboardUIActions, useDashboardSubscription } from "./DashboardContext";
 import { DataLoadingSkeleton, PaywallGate } from "./dashboardComponents";
+import { SkeletonReveal } from "./SkeletonReveal";
 import type { ResumeProfile } from "./dashboardData";
 import { isAiResume } from "./resumeParser";
 import { Button } from "@/components/ui/button";
@@ -161,9 +162,11 @@ export default function AnalyticsPage() {
     maxWeeklySessions, earnedBadges, nextBadge,
   } = derived;
 
-  if (sessionsLoading) return <DataLoadingSkeleton />;
   if (isFree) return <PaywallGate feature="Performance Analytics" onUpgrade={() => setShowUpgradeModal(true)} />;
 
+  // Computed as if already loaded — rendered behind the skeleton via
+  // SkeletonReveal below, which hides it until sessionsLoading clears.
+  const content = (() => {
   if (sessions.length === 0) {
     return (
       <div style={{ maxWidth: 560, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "60vh", margin: "0 auto", textAlign: "center", padding: "20px" }}>
@@ -641,5 +644,12 @@ export default function AnalyticsPage() {
         })()}
       </div>
     </div>
+  );
+  })();
+
+  return (
+    <SkeletonReveal loading={sessionsLoading} skeleton={<DataLoadingSkeleton />}>
+      {content}
+    </SkeletonReveal>
   );
 }

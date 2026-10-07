@@ -83,6 +83,17 @@ export interface ConversationMessage {
   createdAt: string;
 }
 
+/** One row in the employer's conversation inbox. Mirrors the shape
+ *  GET /api/messages (no matchId) returns for either side. */
+export interface ConversationSummary {
+  matchId: string;
+  conversationId: string;
+  role: "employer" | "candidate";
+  counterpartName: string;
+  roleTitle: string;
+  lastMessageAt: string | null;
+}
+
 interface EmployerDataContextValue {
   companyStatus: CompanyStatus;
   companyStatusLoading: boolean;
@@ -111,6 +122,7 @@ interface EmployerDataContextValue {
   fetchRequirementActivity: (id: string) => Promise<RequirementActivity[] | null>;
   fetchUnlockHistory: () => Promise<UnlockPurchase[] | null>;
   refreshRequirements: () => Promise<void>;
+  listConversations: () => Promise<ConversationSummary[] | null>;
   fetchMessages: (matchId: string) => Promise<ConversationMessage[] | null>;
   sendMessage: (matchId: string, payload: { body?: string; attachmentPath?: string; attachmentName?: string; attachmentMime?: string }) => Promise<ConversationMessage | null>;
   uploadMessageAttachment: (matchId: string, file: { fileName: string; contentType: string; fileBase64: string }) => Promise<{ attachmentPath: string; attachmentName: string; attachmentMime: string } | { error: string }>;
@@ -336,6 +348,18 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
     }
   }, []);
 
+  const listConversations = useCallback(async (): Promise<ConversationSummary[] | null> => {
+    try {
+      const headers = await authHeaders();
+      const res = await fetch("/api/messages", { headers });
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data) return null;
+      return (data.conversations ?? []) as ConversationSummary[];
+    } catch {
+      return null;
+    }
+  }, []);
+
   const fetchMessages = useCallback(async (matchId: string): Promise<ConversationMessage[] | null> => {
     try {
       const headers = await authHeaders();
@@ -418,6 +442,7 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
     fetchRequirementActivity,
     fetchUnlockHistory,
     refreshRequirements,
+    listConversations,
     fetchMessages,
     sendMessage,
     uploadMessageAttachment,
