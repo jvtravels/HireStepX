@@ -66,13 +66,41 @@ export default async function handler(req: Request): Promise<Response> {
       created_at: string;
     }>;
 
-    const purchases = rows.map((r) => ({
-      id: r.id,
-      matchIds: r.match_id ? [r.match_id] : r.match_ids || [],
-      amount: r.amount,
-      currency: r.currency,
-      createdAt: r.created_at,
-    }));
+    // Snapshotted at unlock time (supabase-migrations/0026) so a candidate
+    // later deleting their account — which cascades away the match row —
+    // doesn't leave the employer with an unexplained charge and no name.
+    const allMatchIds = Array.from(new Set(rows.flatMap((r) => (r.match_id ? [r.match_id] : r.match_ids || []))));
+    const candidateByMatchId = new Map<string, { name: string | null; email: string | null }>();
+    if (allMatchIds.length > 0) {
+      const matchIdParam = allMatchIds.map((id) => encodeURIComponent(id)).join(",");
+      const matchRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/requirement_matches?id=in.(${matchIdParam})&select=id,unlocked_candidate_name,unlocked_candidate_email`,
+        { headers: serviceHeaders() },
+      );
+      const matchRows = (await matchRes.json().catch(() => [])) as Array<{
+        id: string;
+        unlocked_candidate_name: string | null;
+        unlocked_candidate_email: string | null;
+      }>;
+      for (const m of matchRows) {
+        candidateByMatchId.set(m.id, { name: m.unlocked_candidate_name, email: m.unlocked_candidate_email });
+      }
+    }
+
+    const purchases = rows.map((r) => {
+      const matchIds = r.match_id ? [r.match_id] : r.match_ids || [];
+      return {
+        id: r.id,
+        matchIds,
+        amount: r.amount,
+        currency: r.currency,
+        createdAt: r.created_at,
+        candidates: matchIds.map((id) => {
+          const snapshot = candidateByMatchId.get(id);
+          return { matchId: id, name: snapshot?.name || null, email: snapshot?.email || null };
+        }),
+      };
+    });
     return new Response(JSON.stringify({ purchases }), { status: 200, headers });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);

@@ -241,8 +241,8 @@ describe("employer-verify-unlock-payment — order ownership & state", () => {
         ok: true,
         json: async () => [{ id: "m1", requirement_id: "req-1", candidate_user_id: "cand-1", unlocked: false }],
       })
-      .mockResolvedValueOnce({ ok: true, status: 200 }) // requirement_matches patch
-      .mockResolvedValueOnce({ ok: true, json: async () => [{ id: "cand-1", name: "Priya Sharma", email: "priya@example.com" }] });
+      .mockResolvedValueOnce({ ok: true, json: async () => [{ id: "cand-1", name: "Priya Sharma", email: "priya@example.com" }] })
+      .mockResolvedValueOnce({ ok: true, status: 200 }); // requirement_matches patch (name/email snapshot included)
     const res = mockRes();
     await handler(mockReq(validPaymentBody()), res);
     expect(res.statusCode).toBe(200);
@@ -264,8 +264,8 @@ describe("employer-verify-unlock-payment — successful unlock", () => {
         ok: true,
         json: async () => [{ id: "m1", requirement_id: "req-1", candidate_user_id: "cand-1", unlocked: false }],
       })
-      .mockResolvedValueOnce({ ok: true, status: 200 }) // requirement_matches patch
-      .mockResolvedValueOnce({ ok: true, json: async () => [{ id: "cand-1", name: "Priya Sharma", email: "priya@example.com" }] });
+      .mockResolvedValueOnce({ ok: true, json: async () => [{ id: "cand-1", name: "Priya Sharma", email: "priya@example.com" }] })
+      .mockResolvedValueOnce({ ok: true, status: 200 }); // requirement_matches patch (name/email snapshot included)
 
     const res = mockRes();
     await handler(mockReq(validPaymentBody()), res);
@@ -333,11 +333,14 @@ describe("employer-verify-unlock-payment — successful unlock", () => {
         ok: true,
         json: async () => matchIds.map((id, i) => ({ id, requirement_id: "req-1", candidate_user_id: `cand-${i}`, unlocked: false })),
       })
-      .mockResolvedValueOnce({ ok: true, status: 200 })
       .mockResolvedValueOnce({
         ok: true,
         json: async () => matchIds.map((_, i) => ({ id: `cand-${i}`, name: `Candidate ${i}`, email: `c${i}@example.com` })),
-      });
+      })
+      // One PATCH per still-locked match now (so the name/email snapshot can
+      // differ per candidate) rather than a single bulk PATCH — mockResolvedValue
+      // (not Once) covers all of them.
+      .mockResolvedValue({ ok: true, status: 200 });
 
     const res = mockRes();
     const body = {

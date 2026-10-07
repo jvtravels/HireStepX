@@ -262,7 +262,7 @@ function ZeroMatchState() {
   );
 }
 
-function FailedState() {
+function FailedState({ requirementId }: { requirementId: string }) {
   return (
     <Card style={{ textAlign: "center", padding: 48 }}>
       <div style={{ width: 40, height: 40, borderRadius: 10, background: t.error100, color: t.error, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
@@ -270,10 +270,14 @@ function FailedState() {
       </div>
       <h2 style={{ fontFamily: f.sans, fontSize: 22, color: t.coal, margin: "0 0 8px" }}>Matching failed</h2>
       <p style={{ fontFamily: f.sans, fontSize: 13.5, color: t.inkSoft, marginBottom: 20 }}>
-        Something went wrong generating this shortlist. No charge was made — you can safely try again.
+        Something went wrong generating this shortlist. No charge was made — saving this posting again will
+        retry the match.
       </p>
-      <Link href="/employer/requirements/new" style={{ textDecoration: "none" }}>
-        <PrimaryCta icon={<RefreshCwIcon size={14} aria-hidden="true" />}>Try again</PrimaryCta>
+      {/* Links back to THIS requirement's edit form, not a blank "create new"
+          one — saving it (even unchanged) re-runs runMatching, which is the
+          actual retry. A brand-new form would create a duplicate posting. */}
+      <Link href={`/employer/requirements/${requirementId}/edit`} style={{ textDecoration: "none" }}>
+        <PrimaryCta icon={<RefreshCwIcon size={14} aria-hidden="true" />}>Retry matching</PrimaryCta>
       </Link>
     </Card>
   );
@@ -1232,16 +1236,23 @@ export default function RequirementDetailPage() {
               <HelpText>No unlocks purchased for this requirement yet.</HelpText>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 10, maxHeight: 320, overflowY: "auto" }}>
-                {relevantUnlockHistory.map((p) => (
-                  <div key={p.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 0", borderBottom: `1px solid ${t.line}` }}>
-                    <span style={{ fontFamily: f.sans, fontSize: 13, color: t.coal }}>
-                      {p.matchIds.length > 1 ? `Batch of ${p.matchIds.length}` : "Single candidate"}
-                    </span>
-                    <span style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkFaint }}>
-                      ₹{(p.amount / 100).toFixed(0)} · {new Date(p.createdAt).toLocaleDateString()}
-                    </span>
-                  </div>
-                ))}
+                {relevantUnlockHistory.map((p) => {
+                  const names = (p.candidates || []).map((c) => c.name).filter((n): n is string => !!n);
+                  const label =
+                    names.length > 0
+                      ? names.join(", ")
+                      : p.matchIds.length > 1
+                        ? `Batch of ${p.matchIds.length}`
+                        : "Single candidate";
+                  return (
+                    <div key={p.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 0", borderBottom: `1px solid ${t.line}` }}>
+                      <span style={{ fontFamily: f.sans, fontSize: 13, color: t.coal }}>{label}</span>
+                      <span style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkFaint }}>
+                        ₹{(p.amount / 100).toFixed(0)} · {new Date(p.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </DialogContent>
@@ -1495,7 +1506,7 @@ export default function RequirementDetailPage() {
         </div>
         <>
           {requirement.status === "generating" && <GeneratingState />}
-          {requirement.status === "failed" && <FailedState />}
+          {requirement.status === "failed" && <FailedState requirementId={requirement.id} />}
           {requirement.status === "zero" && <ZeroMatchState />}
 
           {(requirement.status === "ready" || requirement.status === "partial" || requirement.status === "closed") && (

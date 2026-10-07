@@ -154,11 +154,22 @@ export default async function handler(req: Request): Promise<Response> {
     if (note !== null) patchBody.candidate_status_note = note;
     if (interviewScheduledAt !== null) patchBody.interview_scheduled_at = interviewScheduledAt;
 
-    const patchRes = await fetch(`${SUPABASE_URL}/rest/v1/requirement_matches?id=eq.${encodeURIComponent(matchId)}`, {
-      method: "PATCH",
-      headers: { ...serviceHeaders(), "Content-Type": "application/json", Prefer: "return=representation" },
-      body: JSON.stringify(patchBody),
-    });
+    // Compare-and-swap on candidate_status: two concurrent transition
+    // requests for the same match (e.g. two employer tabs, or a double
+    // click) would otherwise both pass the isValidCandidateStatusTransition
+    // check above against the same stale currentStatus and both write,
+    // silently clobbering each other and firing contradictory notifications.
+    // Filtering the PATCH on the status this request actually read means
+    // only the first writer's PATCH matches any row — the loser gets back
+    // zero rows and is told to retry against the new state.
+    const patchRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/requirement_matches?id=eq.${encodeURIComponent(matchId)}&candidate_status=eq.${encodeURIComponent(currentStatus)}`,
+      {
+        method: "PATCH",
+        headers: { ...serviceHeaders(), "Content-Type": "application/json", Prefer: "return=representation" },
+        body: JSON.stringify(patchBody),
+      },
+    );
     if (!patchRes.ok) {
       const t = await patchRes.text().catch(() => "");
       slog.error("employer-candidate-status PATCH failed", { code: "employer_candidate_status_patch_failed", httpStatus: patchRes.status, body: t.slice(0, 200), userId: auth.userId, matchId });
@@ -167,7 +178,10 @@ export default async function handler(req: Request): Promise<Response> {
     const updated = (await patchRes.json().catch(() => [])) as RequirementMatchRow[];
     const row = updated[0];
     if (!row) {
-      return new Response(JSON.stringify({ error: "Failed to update candidate status" }), { status: 500, headers });
+      return new Response(
+        JSON.stringify({ error: "This candidate's status was just changed by someone else — refresh and try again" }),
+        { status: 409, headers },
+      );
     }
 
     const notifText = STATUS_NOTIFICATION_TEXT[candidateStatus];

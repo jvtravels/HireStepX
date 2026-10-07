@@ -1806,6 +1806,13 @@ create table if not exists requirement_matches (
   roster_score integer not null default 0,
   unlocked boolean default false,
   unlocked_at timestamptz,
+  -- Point-in-time snapshot of who was unlocked, taken at unlock time —
+  -- candidate_user_id cascades on profile deletion, so without this an
+  -- employer's paid unlock survives as a charge with no way to tell who it
+  -- was for once the candidate deletes their account. Null on rows unlocked
+  -- before this column existed.
+  unlocked_candidate_name text,
+  unlocked_candidate_email text,
   -- Set on the employer's first evidence view (server-handlers/employer-
   -- candidate-evidence.ts), via a conditional PATCH so the candidate gets
   -- exactly one "an employer viewed your profile" notification per match.

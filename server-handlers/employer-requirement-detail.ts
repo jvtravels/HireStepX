@@ -197,7 +197,7 @@ export default async function handler(req: Request): Promise<Response> {
     if (candidateIds.length > 0) {
       const idParam = candidateIds.map((id) => encodeURIComponent(id)).join(",");
       const sessionsRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/sessions?user_id=in.(${idParam})&select=user_id`,
+        `${SUPABASE_URL}/rest/v1/sessions?user_id=in.(${idParam})&select=user_id&limit=20000`,
         { headers: serviceHeaders() },
       );
       if (sessionsRes.ok) {
@@ -432,14 +432,25 @@ async function handleStageAction(
 ): Promise<Response> {
   try {
     const existingRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&employer_id=eq.${encodeURIComponent(userId)}&select=id,stage`,
+      `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&employer_id=eq.${encodeURIComponent(userId)}&select=id,stage,status`,
       { headers: serviceHeaders() },
     );
-    const existingRows = (await existingRes.json().catch(() => [])) as Array<{ id: string; stage: RequirementStage }>;
+    const existingRows = (await existingRes.json().catch(() => [])) as Array<{ id: string; stage: RequirementStage; status: string }>;
     if (!existingRes.ok || !existingRows[0]) {
       return new Response(JSON.stringify({ error: "Requirement not found" }), { status: 404, headers });
     }
     const currentStage = existingRows[0].stage;
+
+    // Defense in depth: the UI already disables stage controls once a
+    // requirement is closed, but nothing stopped a direct API call from
+    // moving the stage of an archived requirement — mirrors the same
+    // closed-status check employer-candidate-status.ts enforces server-side.
+    if (existingRows[0].status === "closed") {
+      return new Response(
+        JSON.stringify({ error: "This requirement is closed and can no longer be updated" }),
+        { status: 409, headers },
+      );
+    }
 
     // STAGE_TRANSITIONS (_employer-requirements-helpers.ts) is the single
     // source of truth for legal manual moves — it's the same table the

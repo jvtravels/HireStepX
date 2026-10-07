@@ -63,6 +63,11 @@ export interface UnlockPurchase {
   amount: number;
   currency: string;
   createdAt: string;
+  /** Candidate name/email snapshotted at unlock time (supabase-migrations/0026),
+   *  so the history still shows who this was even if the candidate's account
+   *  (and match row, via cascade) has since been deleted. Null when the
+   *  match row is gone or predates the snapshot column. */
+  candidates: Array<{ matchId: string; name: string | null; email: string | null }>;
 }
 
 interface EmployerDataContextValue {

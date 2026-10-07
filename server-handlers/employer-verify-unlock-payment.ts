@@ -189,23 +189,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const missingCount = matchIds.length - matchRows.length;
     const stillLocked = matchRows.filter((m) => !m.unlocked).map((m) => m.id);
-    if (stillLocked.length > 0) {
-      const lockedIdParam = stillLocked.map((id) => encodeURIComponent(id)).join(",");
-      const patchRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/requirement_matches?id=in.(${lockedIdParam})`,
-        {
-          method: "PATCH",
-          headers: { ...supabaseServiceHeaders(), Prefer: "return=minimal" },
-          body: JSON.stringify({ unlocked: true, unlocked_at: new Date().toISOString() }),
-        },
-      );
-      if (!patchRes.ok) {
-        const t = await patchRes.text().catch(() => "");
-        console.error("employer unlock patch failed:", patchRes.status, t.slice(0, 200));
-        return res.status(500).json({ error: "Failed to unlock candidate" });
-      }
-    }
 
+    // Fetch profiles before unlocking so the name/email snapshot below can
+    // ride along in the same PATCH as the unlock flag — see
+    // supabase-migrations/0026-unlock-candidate-snapshot.sql: without this,
+    // a candidate later deleting their account cascades away the match row
+    // and leaves the employer's unlock history unable to say who it was for.
     const candidateIdParam = matchRows.map((m) => encodeURIComponent(m.candidate_user_id)).join(",");
     const profileRes = await fetch(
       `${SUPABASE_URL}/rest/v1/profiles?id=in.(${candidateIdParam})&select=id,name,email`,
@@ -214,6 +203,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const profileRows = (await profileRes.json().catch(() => [])) as Array<{ id: string; name: string; email: string }>;
     const profileById = new Map(profileRows.map((p) => [p.id, p]));
     const profileByMatchId = new Map(matchRows.map((m) => [m.id, profileById.get(m.candidate_user_id)]));
+
+    if (stillLocked.length > 0) {
+      const unlockedAt = new Date().toISOString();
+      const patchResults = await Promise.all(
+        stillLocked.map((matchId) => {
+          const profile = profileByMatchId.get(matchId);
+          return fetch(`${SUPABASE_URL}/rest/v1/requirement_matches?id=eq.${encodeURIComponent(matchId)}`, {
+            method: "PATCH",
+            headers: { ...supabaseServiceHeaders(), Prefer: "return=minimal" },
+            body: JSON.stringify({
+              unlocked: true,
+              unlocked_at: unlockedAt,
+              unlocked_candidate_name: profile?.name ?? null,
+              unlocked_candidate_email: profile?.email ?? null,
+            }),
+          });
+        }),
+      );
+      const failed = patchResults.find((r) => !r.ok);
+      if (failed) {
+        const t = await failed.text().catch(() => "");
+        console.error("employer unlock patch failed:", failed.status, t.slice(0, 200));
+        return res.status(500).json({ error: "Failed to unlock candidate" });
+      }
+    }
 
     const payload = buildBatchUnlockResponsePayload({ matchIds: matchRows.map((m) => m.id), profileByMatchId });
     if (!alreadyProcessed) {

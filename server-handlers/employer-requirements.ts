@@ -168,7 +168,7 @@ async function handleGet(userId: string, headers: Record<string, string>): Promi
           const idParamC = candidateIds.map((id) => encodeURIComponent(id)).join(",");
           const [profilesRes, sessionsRes] = await Promise.all([
             fetch(`${SUPABASE_URL}/rest/v1/profiles?id=in.(${idParamC})&select=id,name,resume_data`, { headers: serviceHeaders() }),
-            fetch(`${SUPABASE_URL}/rest/v1/sessions?user_id=in.(${idParamC})&select=user_id`, { headers: serviceHeaders() }),
+            fetch(`${SUPABASE_URL}/rest/v1/sessions?user_id=in.(${idParamC})&select=user_id&limit=20000`, { headers: serviceHeaders() }),
           ]);
           if (profilesRes.ok) {
             const profileRows = (await profilesRes.json().catch(() => [])) as Array<{ id: string; name: string; resume_data: unknown }>;
@@ -373,8 +373,35 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
     just because the requirement changed — only never-unlocked matches are
     replaced with a fresh scoring pass. On first creation there are no
     existing matches, so this is just the create path. */
+// Edge functions get killed by the platform at its own execution-time limit
+// with no chance for our own try/catch below to run — which left requirements
+// stuck in "generating" forever on a slow pass. Racing an internal timeout
+// against the real work means the existing catch block (which marks the
+// requirement "failed") fires on OUR clock, well before the platform's.
+const MATCHING_TIMEOUT_MS = 20_000;
+
 export async function runMatching(requirementId: string, req: RequirementInput, ownerUserId: string): Promise<string> {
   try {
+    return await Promise.race([
+      runMatchingInner(requirementId, req, ownerUserId),
+      new Promise<string>((_, reject) => {
+        setTimeout(() => reject(new Error(`matching timed out after ${MATCHING_TIMEOUT_MS}ms`)), MATCHING_TIMEOUT_MS);
+      }),
+    ]);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    slog.error("employer-requirements matching threw", { code: "employer_requirements_matching_failed", error: msg.slice(0, 200), requirementId });
+    await fetch(`${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}`, {
+      method: "PATCH",
+      headers: { ...serviceHeaders(), "Content-Type": "application/json", Prefer: "return=minimal" },
+      body: JSON.stringify({ status: "failed" }),
+    }).catch(() => {});
+    return "failed";
+  }
+}
+
+async function runMatchingInner(requirementId: string, req: RequirementInput, ownerUserId: string): Promise<string> {
+  {
     const existingRes = await fetch(
       `${SUPABASE_URL}/rest/v1/requirement_matches?requirement_id=eq.${encodeURIComponent(requirementId)}&select=id,candidate_user_id,match_score,unlocked,candidate_status,candidate_status_note,interview_scheduled_at`,
       { headers: serviceHeaders() },
@@ -413,7 +440,7 @@ export async function runMatching(requirementId: string, req: RequirementInput, 
     // "hired" only (not interviewing/shortlisted elsewhere), since those
     // candidates are still genuinely available.
     const hiredElsewhereRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/requirement_matches?candidate_status=eq.hired&requirement_id=neq.${encodeURIComponent(requirementId)}&select=candidate_user_id`,
+      `${SUPABASE_URL}/rest/v1/requirement_matches?candidate_status=eq.hired&requirement_id=neq.${encodeURIComponent(requirementId)}&select=candidate_user_id&limit=5000`,
       { headers: serviceHeaders() },
     );
     const hiredElsewhereRows = hiredElsewhereRes.ok ? ((await hiredElsewhereRes.json().catch(() => [])) as Array<{ candidate_user_id: string }>) : [];
@@ -442,7 +469,7 @@ export async function runMatching(requirementId: string, req: RequirementInput, 
     if (pool.length > 0) {
       const idParam = pool.map((p) => encodeURIComponent(p.id)).join(",");
       const sessionsRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/sessions?user_id=in.(${idParam})&select=user_id,score,created_at,report_json,type&order=created_at.desc`,
+        `${SUPABASE_URL}/rest/v1/sessions?user_id=in.(${idParam})&select=user_id,score,created_at,report_json,type&order=created_at.desc&limit=20000`,
         { headers: serviceHeaders() },
       );
       if (sessionsRes.ok) {
@@ -511,9 +538,14 @@ export async function runMatching(requirementId: string, req: RequirementInput, 
         match_score: m.matchScore,
         roster_score: m.rosterScore,
       }));
-      const insertMatchesRes = await fetch(`${SUPABASE_URL}/rest/v1/requirement_matches`, {
+      // merge-duplicates: two concurrent runMatching passes for the same
+      // requirement (e.g. an edit saved twice in quick succession) can both
+      // reach this insert for the same candidate — the unique
+      // (requirement_id, candidate_user_id) constraint would otherwise 409
+      // the second one and spuriously fail the whole pass.
+      const insertMatchesRes = await fetch(`${SUPABASE_URL}/rest/v1/requirement_matches?on_conflict=requirement_id,candidate_user_id`, {
         method: "POST",
-        headers: { ...serviceHeaders(), "Content-Type": "application/json", Prefer: "return=minimal" },
+        headers: { ...serviceHeaders(), "Content-Type": "application/json", Prefer: "resolution=merge-duplicates,return=minimal" },
         body: JSON.stringify(rows),
       });
       if (!insertMatchesRes.ok) throw new Error(`requirement_matches insert failed: ${insertMatchesRes.status}`);
@@ -557,7 +589,12 @@ export async function runMatching(requirementId: string, req: RequirementInput, 
     // is subtracted here too — otherwise the reported pool size could include
     // candidates who didn't make it into `ranked` at all.
     const matchedPoolSize = freshTotalMatched - droppedByFloorAfterBlend + preservedMatches.length;
-    await fetch(`${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}`, {
+    // &status=neq.closed guards against a requirement archived while this
+    // pass was in flight: without it, this unconditional write would land
+    // after the archive and silently flip a closed posting back open (and
+    // the stage-flip below could even re-fire a "matches ready" notification
+    // on an archived requirement).
+    await fetch(`${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&status=neq.closed`, {
       method: "PATCH",
       headers: { ...serviceHeaders(), "Content-Type": "application/json", Prefer: "return=minimal" },
       body: JSON.stringify({ status: finalStatus, matched_pool_size: matchedPoolSize, last_matched_at: new Date().toISOString() }),
@@ -568,9 +605,11 @@ export async function runMatching(requirementId: string, req: RequirementInput, 
     // Conditioned on stage still being ai_matching (via the PostgREST filter,
     // not a separate read) so a requirement the employer already moved
     // forward manually — or re-scored after an edit — is never dragged back.
+    // Also guarded against status=closed for the same in-flight-archive race
+    // as the status write above.
     if (finalStatus === "ready" || finalStatus === "partial") {
       const stageFlipRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&stage=eq.ai_matching`,
+        `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&stage=eq.ai_matching&status=neq.closed`,
         {
           method: "PATCH",
           headers: { ...serviceHeaders(), "Content-Type": "application/json", Prefer: "return=representation" },
@@ -593,15 +632,6 @@ export async function runMatching(requirementId: string, req: RequirementInput, 
       }
     }
     return finalStatus;
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    slog.error("employer-requirements matching threw", { code: "employer_requirements_matching_failed", error: msg.slice(0, 200), requirementId });
-    await fetch(`${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}`, {
-      method: "PATCH",
-      headers: { ...serviceHeaders(), "Content-Type": "application/json", Prefer: "return=minimal" },
-      body: JSON.stringify({ status: "failed" }),
-    }).catch(() => {});
-    return "failed";
   }
 }
 
