@@ -97,8 +97,9 @@ export default async function handler(req: Request): Promise<Response> {
       },
     );
     if (!mintRes.ok) {
-      console.error("[stt-token] Deepgram key mint failed:", mintRes.status);
-      logServiceUsage({ service: "deepgram_stt", endpoint: "token", userId: auth.userId, status: "error" });
+      const errBody = await mintRes.text().catch(() => "");
+      console.error(`[stt-token] Deepgram key mint failed: HTTP ${mintRes.status}: ${errBody.slice(0, 300)}`);
+      logServiceUsage({ service: "deepgram_stt", endpoint: "token", userId: auth.userId, status: "error", errorMessage: `HTTP ${mintRes.status}: ${errBody.slice(0, 200)}` });
       return new Response(JSON.stringify({ error: "Could not issue voice token" }), { status: 502, headers });
     }
     const mintData = await mintRes.json();
