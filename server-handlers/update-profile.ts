@@ -13,6 +13,7 @@
 export const config = { runtime: "edge" };
 
 import { withAuthAndRateLimit, corsHeaders, withRequestId } from "./_shared";
+import { rematchOpenRequirementsForNewResume } from "./employer-requirements";
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || "";
@@ -198,6 +199,11 @@ export default async function handler(req: Request): Promise<Response> {
         console.warn(`[update-profile] OK after stripping missing columns: ${stripped.join(",")}`);
       }
       console.log(`[update-profile] OK user=${auth.userId?.slice(0, 8)} fields=${Object.keys(updates).join(",")} stripped=${stripped.join(",") || "-"} latency=${Date.now() - t0}ms`);
+      // A fresh resume_data write is the signal that this candidate's profile
+      // just became more (or newly) matchable — nudge the open requirements
+      // pipeline rather than waiting for the nightly cron. Fire-and-forget:
+      // never block this response on a re-scoring pass.
+      if ("resume_data" in updates) void rematchOpenRequirementsForNewResume();
       return new Response(JSON.stringify({ profile, strippedColumns: stripped }), { status: 200, headers });
     }
 

@@ -38,6 +38,7 @@ import {
 } from "./_employer-candidate-evidence-helpers";
 import { llmRerankCandidates, blendScore } from "./_requirement-match-llm";
 import { notify } from "./_notify";
+import { pickRequirementsToRematch, type OpenRequirementForRematch } from "./_incremental-rematch-helpers";
 import {
   asBoundedString,
   asBoundedStringArray,
@@ -500,7 +501,7 @@ export async function runMatching(requirementId: string, req: RequirementInput, 
     await fetch(`${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}`, {
       method: "PATCH",
       headers: { ...serviceHeaders(), "Content-Type": "application/json", Prefer: "return=minimal" },
-      body: JSON.stringify({ status: finalStatus, matched_pool_size: matchedPoolSize }),
+      body: JSON.stringify({ status: finalStatus, matched_pool_size: matchedPoolSize, last_matched_at: new Date().toISOString() }),
     });
 
     // Screening produced something worth looking at — auto-advance out of
@@ -542,5 +543,54 @@ export async function runMatching(requirementId: string, req: RequirementInput, 
       body: JSON.stringify({ status: "failed" }),
     }).catch(() => {});
     return "failed";
+  }
+}
+
+/** Incremental counterpart to the nightly rematch-requirements cron
+ *  (server-handlers/cron-rematch-requirements.ts): fired fire-and-forget
+ *  from update-profile.ts whenever a candidate's resume_data is freshly
+ *  persisted, so a brand-new signup (or resume refresh) shows up against
+ *  open requirements without waiting for the nightly sweep.
+ *
+ *  Bounded to MAX_INCREMENTAL_REQUIREMENTS per call — re-running the full
+ *  pool-scan `runMatching` for every open requirement on every resume save
+ *  would make this hot, rate-limited endpoint's tail latency unbounded.
+ *  Requirements beyond the cap are left for the cron, which has no such
+ *  bound and processes the full backlog each night ordered by the same
+ *  staleness rule (pickRequirementsToRematch). Never awaited by its caller;
+ *  any failure here is swallowed by runMatching's own try/catch per
+ *  requirement, consistent with the best-effort `void notify(...)` pattern
+ *  used across this codebase. */
+const MAX_INCREMENTAL_REQUIREMENTS = 10;
+
+export async function rematchOpenRequirementsForNewResume(): Promise<void> {
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/employer_requirements?stage=in.(ai_matching,ready_for_review)&status=neq.closed` +
+        `&select=id,employer_id,title,location,description,skills,experience_min,experience_max,min_readiness_band,min_star_completeness,stage,status,last_matched_at&limit=500`,
+      { headers: serviceHeaders() },
+    );
+    if (!res.ok) return;
+    const rows = (await res.json().catch(() => [])) as OpenRequirementForRematch[];
+    const due = pickRequirementsToRematch(rows, MAX_INCREMENTAL_REQUIREMENTS);
+    for (const r of due) {
+      await runMatching(
+        r.id,
+        {
+          title: r.title,
+          location: r.location,
+          description: r.description ?? "",
+          skills: r.skills ?? [],
+          experienceMin: r.experience_min,
+          experienceMax: r.experience_max,
+          minReadinessBand: r.min_readiness_band,
+          minStarCompleteness: r.min_star_completeness,
+        },
+        r.employer_id,
+      );
+    }
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    slog.error("incremental rematch sweep threw", { code: "incremental_rematch_failed", error: msg.slice(0, 200) });
   }
 }

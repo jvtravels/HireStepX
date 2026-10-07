@@ -1759,6 +1759,13 @@ alter table employer_requirements add column if not exists min_star_completeness
 -- (employer-requirements.ts); defaults to 0 for any row from before this
 -- column existed, until the next create/edit re-runs matching.
 alter table employer_requirements add column if not exists matched_pool_size integer not null default 0;
+-- Last time `runMatching` scored this requirement against the candidate
+-- pool (2026-10-07) — set by every call site (create, edit, the incremental
+-- rematch fired from update-profile.ts, and the nightly rematch-requirements
+-- cron). Null means "never matched since this column existed" and sorts
+-- first, so the incremental and cron sweeps both prioritize the most stale
+-- requirements when bounding how many they re-score per run.
+alter table employer_requirements add column if not exists last_matched_at timestamptz;
 
 create index if not exists idx_employer_requirements_employer on employer_requirements(employer_id, created_at desc);
 
