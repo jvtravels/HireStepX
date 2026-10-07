@@ -18,6 +18,9 @@ import { AlertCircleIcon, FlagIcon, MessagesSquareIcon, PaperclipIcon, SendIcon 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Message, MessageAvatar, MessageContent, MessageFooter } from "@/components/ui/message";
+import { Bubble, BubbleContent } from "@/components/ui/bubble";
 import LoadingScreen from "@/_LoadingScreen";
 import { tokens as t, fonts as f } from "./auth/_tokens";
 import {
@@ -35,6 +38,12 @@ import { useToast } from "./Toast";
 
 const LIST_POLL_MS = 15000;
 const THREAD_POLL_MS = 6000;
+
+/* No profile photos anywhere in this app — every avatar in the thread is
+   two-letter initials derived from a display name. */
+function initialsOf(name: string): string {
+  return name.split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0]?.toUpperCase() ?? "").join("") || "?";
+}
 
 /** Candidate-friendly wording for a pipeline status — deliberately separate
  *  from employer/_atoms.tsx's CANDIDATE_STATUS_LABEL (same source enum,
@@ -263,6 +272,7 @@ export default function MessagesV2() {
   const list = conversations ?? [];
   const active = list.find((c) => c.matchId === activeMatchId) ?? null;
   const groups = groupConversationsByCounterpart(list);
+  const lastOwnMessageId = messages.filter((mm) => mm.senderRole === "candidate").at(-1)?.id;
 
   if (list.length === 0) {
     return shell(
@@ -342,38 +352,45 @@ export default function MessagesV2() {
                     </span>
                   </div>
                 ) : (
-                  <div
-                    key={m.id}
-                    style={{
-                      alignSelf: m.senderRole === "candidate" ? "flex-end" : "flex-start",
-                      maxWidth: "75%",
-                      background: m.senderRole === "candidate" ? t.indigo100 : t.creamSoft,
-                      borderRadius: 10,
-                      padding: "8px 10px",
-                    }}
-                  >
-                    {m.body && <div style={{ fontFamily: f.sans, fontSize: 13.5, color: t.coal, whiteSpace: "pre-wrap" }}>{m.body}</div>}
-                    {m.attachmentPath && (
-                      <div style={{ fontFamily: f.sans, fontSize: 12.5, color: t.indigoDeep, marginTop: m.body ? 4 : 0 }}>
-                        <PaperclipIcon size={12} style={{ display: "inline", marginRight: 4 }} aria-hidden="true" />
-                        {m.attachmentName || "Attachment"}
+                  <Message key={m.id} align={m.senderRole === "candidate" ? "end" : "start"}>
+                    <MessageAvatar>
+                      <Avatar size="sm">
+                        <AvatarFallback>
+                          {initialsOf(m.senderRole === "candidate" ? context?.candidateName || "Me" : active.counterpartName)}
+                        </AvatarFallback>
+                      </Avatar>
+                    </MessageAvatar>
+                    <MessageContent>
+                      <Bubble variant={m.senderRole === "candidate" ? "default" : "secondary"}>
+                        <BubbleContent>
+                          {m.body && <p className="whitespace-pre-wrap">{m.body}</p>}
+                          {m.attachmentPath && (
+                            <div style={{ fontFamily: f.sans, fontSize: 12.5, marginTop: m.body ? 4 : 0, display: "flex", alignItems: "center", gap: 4 }}>
+                              <PaperclipIcon size={12} aria-hidden="true" />
+                              {m.attachmentName || "Attachment"}
+                            </div>
+                          )}
+                        </BubbleContent>
+                      </Bubble>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "0 12px" }}>
+                        <span style={{ fontFamily: f.sans, fontSize: 11, color: t.inkFaint }}>
+                          {new Date(m.createdAt).toLocaleString()}
+                        </span>
+                        {m.flagged && <Badge variant="destructive">Flagged</Badge>}
+                        <Button
+                          type="button"
+                          variant="link"
+                          onClick={() => handleFlag(m.id)}
+                          style={{ fontSize: 11, height: "auto", padding: 0, color: t.inkFaint, display: "flex", alignItems: "center", gap: 2 }}
+                        >
+                          <FlagIcon size={11} aria-hidden="true" /> Report
+                        </Button>
                       </div>
-                    )}
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4 }}>
-                      <span style={{ fontFamily: f.sans, fontSize: 11, color: t.inkFaint }}>
-                        {new Date(m.createdAt).toLocaleString()}
-                      </span>
-                      {m.flagged && <Badge variant="destructive">Flagged</Badge>}
-                      <Button
-                        type="button"
-                        variant="link"
-                        onClick={() => handleFlag(m.id)}
-                        style={{ fontSize: 11, height: "auto", padding: 0, color: t.inkFaint, display: "flex", alignItems: "center", gap: 2 }}
-                      >
-                        <FlagIcon size={11} aria-hidden="true" /> Report
-                      </Button>
-                    </div>
-                  </div>
+                      {m.senderRole === "candidate" && m.id === lastOwnMessageId && (
+                        <MessageFooter>Delivered</MessageFooter>
+                      )}
+                    </MessageContent>
+                  </Message>
                 ),
               )}
             </div>
