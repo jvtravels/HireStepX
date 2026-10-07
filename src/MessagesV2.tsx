@@ -14,7 +14,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { AlertCircleIcon, FlagIcon, MessagesSquareIcon, PaperclipIcon, SendIcon } from "lucide-react";
+import { AlertCircleIcon, MessagesSquareIcon, PaperclipIcon, SendIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
@@ -28,7 +28,6 @@ import {
   fetchThread,
   sendMessage as apiSendMessage,
   uploadMessageAttachment,
-  flagMessage as apiFlagMessage,
   type ConversationContext,
   type ConversationMessage,
   type ConversationSummary,
@@ -226,13 +225,6 @@ export default function MessagesV2() {
     loadConversations();
   };
 
-  const handleFlag = async (messageId: string) => {
-    const reason = window.prompt("Reason for flagging this message (e.g. inappropriate, spam, off-platform contact):");
-    if (!reason || !reason.trim()) return;
-    const ok = await apiFlagMessage(messageId, reason.trim());
-    toast(ok ? "Message flagged for review" : "Couldn't flag message", ok ? "success" : "error");
-  };
-
   const heading = (
     <div style={{ padding: "16px 20px", borderBottom: `1px solid ${t.line}` }}>
       <h1 style={{ fontFamily: f.sans, fontSize: 26, fontWeight: 700, color: t.coal, margin: 0, letterSpacing: "-0.01em", lineHeight: "32px" }}>Messages</h1>
@@ -316,11 +308,6 @@ export default function MessagesV2() {
                 <div style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, marginTop: 2 }}>
                   {c.counterpartName}
                 </div>
-                {c.lastMessageAt && (
-                  <div style={{ fontFamily: f.sans, fontSize: 11.5, color: t.inkFaint, marginTop: 2 }}>
-                    {new Date(c.lastMessageAt).toLocaleDateString()}
-                  </div>
-                )}
               </button>
             ))}
           </div>
@@ -356,7 +343,7 @@ export default function MessagesV2() {
                   </div>
                 ) : (
                   <Message key={m.id} align={m.senderRole === "candidate" ? "end" : "start"}>
-                    <MessageAvatar>
+                    <MessageAvatar className="self-center">
                       <Avatar size="sm">
                         <AvatarFallback>
                           {initialsOf(m.senderRole === "candidate" ? context?.candidateName || "Me" : active.counterpartName)}
@@ -380,14 +367,6 @@ export default function MessagesV2() {
                           {new Date(m.createdAt).toLocaleString()}
                         </span>
                         {m.flagged && <Badge variant="destructive">Flagged</Badge>}
-                        <Button
-                          type="button"
-                          variant="link"
-                          onClick={() => handleFlag(m.id)}
-                          style={{ fontSize: 11, height: "auto", padding: 0, color: t.inkFaint, display: "flex", alignItems: "center", gap: 2 }}
-                        >
-                          <FlagIcon size={11} aria-hidden="true" /> Report
-                        </Button>
                       </div>
                       {m.senderRole === "candidate" && m.id === lastOwnMessageId && (
                         <MessageFooter>Delivered</MessageFooter>
