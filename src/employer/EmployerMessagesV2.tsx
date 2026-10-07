@@ -66,15 +66,29 @@ export default function EmployerMessagesV2() {
     if (list) {
       setConversations(list);
       setListError(false);
-    } else {
-      setListError(true);
+      return true;
     }
+    setListError(true);
+    return false;
   }, [listConversations]);
 
+  /* A fixed-interval poll that keeps firing through failures (e.g. a 429)
+     never lets the caller's rate-limit window go idle, turning a transient
+     block into a permanent one for the rest of the session. Back off on
+     each consecutive failure and reset to the normal cadence on success. */
   useEffect(() => {
-    loadConversations();
-    const interval = setInterval(loadConversations, LIST_POLL_MS);
-    return () => clearInterval(interval);
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout>;
+    let failures = 0;
+    const tick = async () => {
+      const ok = await loadConversations();
+      if (cancelled) return;
+      failures = ok ? 0 : failures + 1;
+      const delay = ok ? LIST_POLL_MS : Math.min(LIST_POLL_MS * 2 ** failures, 120_000);
+      timer = setTimeout(tick, delay);
+    };
+    tick();
+    return () => { cancelled = true; clearTimeout(timer); };
   }, [loadConversations]);
 
   const loadThread = useCallback(async (matchId: string, showSpinner: boolean) => {
@@ -85,6 +99,7 @@ export default function EmployerMessagesV2() {
       setContext(result.context);
     }
     if (showSpinner) setThreadLoading(false);
+    return !!result;
   }, [fetchMessages]);
 
   useEffect(() => {
@@ -93,9 +108,18 @@ export default function EmployerMessagesV2() {
       setContext(null);
       return;
     }
-    loadThread(activeMatchId, true);
-    const interval = setInterval(() => loadThread(activeMatchId, false), THREAD_POLL_MS);
-    return () => clearInterval(interval);
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout>;
+    let failures = 0;
+    const tick = async (showSpinner: boolean) => {
+      const ok = await loadThread(activeMatchId, showSpinner);
+      if (cancelled) return;
+      failures = ok ? 0 : failures + 1;
+      const delay = ok ? THREAD_POLL_MS : Math.min(THREAD_POLL_MS * 2 ** failures, 60_000);
+      timer = setTimeout(() => tick(false), delay);
+    };
+    tick(true);
+    return () => { cancelled = true; clearTimeout(timer); };
   }, [activeMatchId, loadThread]);
 
   useEffect(() => {

@@ -645,11 +645,16 @@ function inMemoryRateLimit(ip: string, bucket: string, limit: number, windowMs: 
 async function redisRateLimit(ip: string, bucket: string, limit: number, windowSec: number): Promise<boolean> {
   const key = `rl:${bucket}:${ip}`;
   try {
-    // INCR + EXPIRE via Upstash REST API (single pipeline)
+    /* INCR + EXPIRE..NX via Upstash REST API (single pipeline). NX only
+       attaches a TTL when the key has none yet (i.e. the first hit of a
+       fresh window) — without it, EXPIRE renews on every request and a
+       bucket that's ever crossed `limit` never goes idle long enough to
+       reset while traffic (e.g. a client polling on a fixed interval)
+       keeps arriving, locking that caller out indefinitely. */
     const res = await fetch(`${UPSTASH_URL}/pipeline`, {
       method: "POST",
       headers: { Authorization: `Bearer ${UPSTASH_TOKEN}`, "Content-Type": "application/json" },
-      body: JSON.stringify([["INCR", key], ["EXPIRE", key, windowSec]]),
+      body: JSON.stringify([["INCR", key], ["EXPIRE", key, windowSec, "NX"]]),
     });
     if (!res.ok) return inMemoryRateLimit(ip, bucket, limit, windowSec * 1000);
     const results = await res.json();
