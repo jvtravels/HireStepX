@@ -76,8 +76,8 @@ interface EmployerDataContextValue {
   requirementsError: boolean;
   submitCompanyProfile: (fields: { companyName: string; website: string; logoBase64?: string; logoContentType?: string }) => Promise<boolean>;
   resetCompanyProfile: () => void;
-  addRequirement: (r: RequirementFormValues) => Promise<string | null>;
-  updateRequirement: (id: string, r: RequirementFormValues) => Promise<boolean>;
+  addRequirement: (r: RequirementFormValues) => Promise<{ id: string } | { error: string }>;
+  updateRequirement: (id: string, r: RequirementFormValues) => Promise<{ ok: true } | { error: string }>;
   createUnlockOrder: (request: { mode: "single"; matchId: string } | { mode: "batch"; requirementId: string }) => Promise<UnlockOrder | null>;
   verifyUnlockPayment: (payload: {
     razorpay_order_id: string;
@@ -182,18 +182,18 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
     const res = await apiFetch<{ id: string }>("/api/employer-requirements", r, { method: "POST" });
     if (res.ok && res.data) {
       refreshRequirements();
-      return res.data.id;
+      return { id: res.data.id };
     }
-    return null;
+    return { error: res.error || "Couldn't create this requirement — please try again." };
   }, [refreshRequirements]);
 
   const updateRequirement = useCallback(async (id: string, r: RequirementFormValues) => {
     const res = await apiFetch<{ id: string }>(`/api/employer-requirement-detail?id=${encodeURIComponent(id)}`, r, { method: "PATCH" });
     if (res.ok && res.data) {
       refreshRequirements();
-      return true;
+      return { ok: true as const };
     }
-    return false;
+    return { error: res.error || "Couldn't save changes — please try again." };
   }, [refreshRequirements]);
 
   const createUnlockOrder = useCallback(async (

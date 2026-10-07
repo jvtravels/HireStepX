@@ -45,6 +45,14 @@ export interface RequirementInput {
       all — see meetsQualityBar/rankAndCap below. */
   minReadinessBand?: "strongHire" | "hire" | "leanHire" | null;
   minStarCompleteness?: number | null;
+  /** Contract-shape fields (full-time/contract/internship, duration,
+      weekly hours) — no symmetric signal exists on CandidatePoolRow, so
+      these aren't scored deterministically; they're passed to the LLM
+      rerank prompt in _requirement-match-llm.ts so contract fit still
+      informs the blended score. */
+  employmentType?: string | null;
+  durationWeeks?: number | null;
+  hoursPerWeek?: number | null;
 }
 
 const READINESS_RANK: Record<"strongHire" | "hire" | "leanHire", number> = {

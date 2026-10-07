@@ -20,7 +20,8 @@ export type NotificationType =
   | "payment_failed"
   | "subscription_renewed"
   | "employer_viewed_profile"
-  | "matches_ready";
+  | "matches_ready"
+  | "strong_match_found";
 
 export interface NotifyInput {
   userId: string;

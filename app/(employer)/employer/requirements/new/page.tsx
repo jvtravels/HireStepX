@@ -11,9 +11,12 @@ export default function PostRequirementPage() {
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const handleSubmit = async (values: RequirementFormValues) => {
-    const id = await addRequirement(values);
-    if (!id) return false;
-    router.push(`/employer/requirements/${id}`);
+    const result = await addRequirement(values);
+    if ("error" in result) {
+      setSubmitError(result.error);
+      return false;
+    }
+    router.push(`/employer/requirements/${result.id}`);
     return true;
   };
 

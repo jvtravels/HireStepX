@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Dispatch, SetStateAction } from "react";
 import { useRouter } from "next/navigation";
 import { WorkMode, EmploymentType, SalaryType, Requirement, RequirementFormValues } from "./mockData";
 import { tokens as t, fonts as f, textSize } from "@/auth/_tokens";
@@ -115,7 +115,7 @@ export function RequirementForm({
   initial?: Requirement;
   onSubmit: (values: RequirementFormValues) => Promise<boolean>;
   submitError: string | null;
-  setSubmitError: (v: string | null) => void;
+  setSubmitError: Dispatch<SetStateAction<string | null>>;
 }) {
   const router = useRouter();
   const [step, setStep] = useState<1 | 2>(1);
@@ -216,7 +216,9 @@ export function RequirementForm({
     });
     if (!ok) {
       setSubmitting(false);
-      setSubmitError(mode === "create" ? "Couldn't create this requirement — please try again." : "Couldn't save changes — please try again.");
+      // onSubmit already called setSubmitError with the server's specific
+      // message when it had one; only fall back to a generic message here.
+      setSubmitError((prev) => prev ?? (mode === "create" ? "Couldn't create this requirement — please try again." : "Couldn't save changes — please try again."));
     }
   };
 

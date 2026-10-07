@@ -140,7 +140,7 @@ export default async function handler(req: Request): Promise<Response> {
 
   try {
     const reqRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&employer_id=eq.${encodeURIComponent(auth.userId)}&select=id,title,location,notice_period_pref,description,status,stage,department,archive_reason,archive_disposition,experience_min,experience_max,due_date,budget_min,budget_max,locations,open_positions,work_mode,skills,responsibilities,nice_to_have,preferred_industry,preferred_colleges,target_companies,perks_and_benefits,employment_type,salary_type,duration_weeks,hours_per_week,preferred_domain,work_schedule,availability,relevant_experience,portfolio_required,custom_skill_sets,min_readiness_band,min_star_completeness,matched_pool_size,created_at`,
+      `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&employer_id=eq.${encodeURIComponent(auth.userId)}&select=id,title,location,notice_period_pref,description,status,stage,department,archive_reason,archive_disposition,experience_min,experience_max,due_date,budget_min,budget_max,locations,open_positions,work_mode,skills,responsibilities,nice_to_have,preferred_industry,preferred_colleges,target_companies,perks_and_benefits,employment_type,salary_type,duration_weeks,hours_per_week,preferred_domain,work_schedule,availability,relevant_experience,portfolio_required,custom_skill_sets,min_readiness_band,min_star_completeness,matched_pool_size,created_at,last_matched_at`,
       { headers: serviceHeaders() },
     );
     if (!reqRes.ok) throw new Error(`requirement read failed: ${reqRes.status}`);
@@ -160,6 +160,7 @@ export default async function handler(req: Request): Promise<Response> {
       min_readiness_band: string | null; min_star_completeness: number | null;
       matched_pool_size: number | null;
       created_at: string;
+      last_matched_at: string | null;
     }>;
     const requirement = reqRows[0];
     if (!requirement) {
@@ -302,6 +303,7 @@ export default async function handler(req: Request): Promise<Response> {
         minReadinessBand: asBoundedReadinessBand(requirement.min_readiness_band),
         minStarCompleteness: requirement.min_star_completeness,
         createdAt: requirement.created_at.slice(0, 10),
+        lastMatchedAt: requirement.last_matched_at,
         candidates,
         // True pre-cap matched-pool size (see rankAndCap's totalMatched in
         // _requirement-match-helpers.ts) — floored at candidates.length so a
@@ -328,10 +330,10 @@ async function handleStatusAction(
 ): Promise<Response> {
   try {
     const existingRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&employer_id=eq.${encodeURIComponent(userId)}&select=id,status,title,location,description,skills,experience_min,experience_max,min_readiness_band,min_star_completeness`,
+      `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&employer_id=eq.${encodeURIComponent(userId)}&select=id,status,title,location,description,skills,experience_min,experience_max,min_readiness_band,min_star_completeness,employment_type,duration_weeks,hours_per_week`,
       { headers: serviceHeaders() },
     );
-    const existingRows = (await existingRes.json().catch(() => [])) as Array<{ id: string; status: string; title: string; location: string; description: string | null; skills: string[] | null; experience_min: number | null; experience_max: number | null; min_readiness_band: string | null; min_star_completeness: number | null }>;
+    const existingRows = (await existingRes.json().catch(() => [])) as Array<{ id: string; status: string; title: string; location: string; description: string | null; skills: string[] | null; experience_min: number | null; experience_max: number | null; min_readiness_band: string | null; min_star_completeness: number | null; employment_type: string | null; duration_weeks: number | null; hours_per_week: number | null }>;
     if (!existingRes.ok || !existingRows[0]) {
       return new Response(JSON.stringify({ error: "Requirement not found" }), { status: 404, headers });
     }
@@ -352,6 +354,11 @@ async function handleStatusAction(
       // Reopening clears the archive breadcrumbs so a later re-archive starts fresh.
       patchBody.archive_reason = null;
       patchBody.archive_disposition = null;
+      // A requirement archived while at stage "interviewing" or "hired"
+      // would otherwise stay stuck there after reopening, which also blocks
+      // runMatching's auto-advance-to-ready_for_review below (gated on
+      // stage=eq.ai_matching) from ever firing on the re-score that follows.
+      patchBody.stage = "ai_matching";
     }
     const patchRes = await fetch(`${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}`, {
       method: "PATCH",
@@ -368,8 +375,11 @@ async function handleStatusAction(
 
     if (action === "archive" && archiveDisposition === "reject_remaining") {
       const activeStatuses = ["shortlisted", "interview_invited", "interviewing"].map((s) => `"${s}"`).join(",");
+      // Also catches rows with a null candidate_status (legacy rows from
+      // before the column's not-null default was added) — those are still
+      // "active" candidates an employer expects reject_remaining to cover.
       const bulkRejectRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/requirement_matches?requirement_id=eq.${encodeURIComponent(requirementId)}&candidate_status=in.(${activeStatuses})`,
+        `${SUPABASE_URL}/rest/v1/requirement_matches?requirement_id=eq.${encodeURIComponent(requirementId)}&or=(candidate_status.in.(${activeStatuses}),candidate_status.is.null)`,
         {
           method: "PATCH",
           headers: { ...serviceHeaders(), "Content-Type": "application/json", Prefer: "return=minimal" },
@@ -398,6 +408,9 @@ async function handleStatusAction(
           experienceMax: current.experience_max,
           minReadinessBand: asBoundedReadinessBand(current.min_readiness_band),
           minStarCompleteness: asBoundedStarCompleteness(current.min_star_completeness),
+          employmentType: current.employment_type,
+          durationWeeks: current.duration_weeks,
+          hoursPerWeek: current.hours_per_week,
         },
         userId,
       );
@@ -565,6 +578,12 @@ async function handlePatch(req: Request, requirementId: string, userId: string, 
     const minReadinessBand = body.minReadinessBand !== undefined ? asBoundedReadinessBand(body.minReadinessBand) : asBoundedReadinessBand(existing.min_readiness_band);
     const minStarCompleteness = body.minStarCompleteness !== undefined ? asBoundedStarCompleteness(body.minStarCompleteness) : existing.min_star_completeness;
     const location = locations.join(", ");
+    // Once an employer has moved a requirement to "interviewing" or "hired",
+    // a field edit (e.g. fixing a typo) shouldn't silently reset status back
+    // to "generating" and rerun full candidate matching — that resets a
+    // pipeline stage the employer deliberately advanced past, for no
+    // benefit (the pipeline no longer needs fresh candidates at that point).
+    const skipRematch = existing.stage === "interviewing" || existing.stage === "hired";
 
     if (!isValidRequirementInput(title, locations, description)) {
       return new Response(JSON.stringify({ error: "title, at least one location, and a role description (min 20 characters) are required" }), { status: 400, headers });
@@ -583,7 +602,8 @@ async function handlePatch(req: Request, requirementId: string, userId: string, 
       method: "PATCH",
       headers: { ...serviceHeaders(), "Content-Type": "application/json", Prefer: "return=representation" },
       body: JSON.stringify({
-        title, location, department, notice_period_pref: noticePeriodPref, description, status: "generating",
+        title, location, department, notice_period_pref: noticePeriodPref, description,
+        ...(skipRematch ? {} : { status: "generating" }),
         experience_min: experienceMin, experience_max: experienceMax, due_date: dueDate,
         budget_min: budgetMin, budget_max: budgetMax,
         locations, open_positions: openPositions, work_mode: workMode, skills,
@@ -605,7 +625,16 @@ async function handlePatch(req: Request, requirementId: string, userId: string, 
     const updated = (await patchRes.json()) as RequirementRow[];
     const requirement = updated[0];
 
-    const finalStatus = await runMatching(requirementId, { title, location, description, skills, experienceMin, experienceMax, minReadinessBand, minStarCompleteness }, userId);
+    const finalStatus = skipRematch
+      ? existing.status
+      : await runMatching(
+          requirementId,
+          {
+            title, location, description, skills, experienceMin, experienceMax, minReadinessBand, minStarCompleteness,
+            employmentType, durationWeeks, hoursPerWeek,
+          },
+          userId,
+        );
     await logRequirementActivity(requirementId, userId, "updated");
 
     return new Response(

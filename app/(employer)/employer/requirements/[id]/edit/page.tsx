@@ -30,8 +30,11 @@ export default function EditRequirementPage() {
   }, [id, fetchRequirementDetail]);
 
   const handleSubmit = async (values: RequirementFormValues) => {
-    const ok = await updateRequirement(id, values);
-    if (!ok) return false;
+    const result = await updateRequirement(id, values);
+    if ("error" in result) {
+      setSubmitError(result.error);
+      return false;
+    }
     router.push(`/employer/requirements/${id}`);
     return true;
   };

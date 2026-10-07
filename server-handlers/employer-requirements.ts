@@ -25,6 +25,7 @@ import {
   rankAndCap,
   hasMatchSignal,
   STRONG_MATCH_THRESHOLD,
+  MIN_MATCH_SCORE_FLOOR,
   extractSkills,
   type CandidatePoolRow,
   type RequirementInput,
@@ -142,7 +143,7 @@ async function handleGet(userId: string, headers: Record<string, string>): Promi
     if (ids.length > 0) {
       const idParam = ids.map((id) => encodeURIComponent(id)).join(",");
       const matchesRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/requirement_matches?requirement_id=in.(${idParam})&select=requirement_id,candidate_user_id,match_score`,
+        `${SUPABASE_URL}/rest/v1/requirement_matches?requirement_id=in.(${idParam})&select=requirement_id,candidate_user_id,match_score&limit=5000`,
         { headers: serviceHeaders() },
       );
       if (matchesRes.ok) {
@@ -312,7 +313,10 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
 
     const finalStatus = await runMatching(
       requirement.id,
-      { title, location, description, skills, experienceMin, experienceMax, minReadinessBand, minStarCompleteness },
+      {
+        title, location, description, skills, experienceMin, experienceMax, minReadinessBand, minStarCompleteness,
+        employmentType, durationWeeks, hoursPerWeek,
+      },
       userId,
     );
     await logRequirementActivity(requirement.id, userId, "created");
@@ -379,6 +383,11 @@ export async function runMatching(requirementId: string, req: RequirementInput, 
       id: string; candidate_user_id: string; match_score: number; unlocked: boolean;
       candidate_status: string | null; candidate_status_note: string | null; interview_scheduled_at: string | null;
     }>;
+    // Captured before stale rows are deleted below, so a candidate who just
+    // crossed STRONG_MATCH_THRESHOLD on *this* pass (and wasn't there last
+    // pass) can be told apart from one who's been a strong match all along —
+    // the "new strong match" notification fires only for the former.
+    const previousScoreByCandidate = new Map(existing.map((m) => [m.candidate_user_id, m.match_score]));
     // A row the employer has already acted on — unlocked it, moved it off the
     // default "shortlisted" stage, left a note, or scheduled an interview —
     // is preserved as-is rather than deleted and re-inserted with a new id
@@ -398,8 +407,20 @@ export async function runMatching(requirementId: string, req: RequirementInput, 
       });
     }
 
+    // A candidate already hired against a DIFFERENT requirement is off the
+    // market — surfacing them as a fresh match elsewhere just leads an
+    // employer to shortlist someone who can't actually join. Scoped to
+    // "hired" only (not interviewing/shortlisted elsewhere), since those
+    // candidates are still genuinely available.
+    const hiredElsewhereRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/requirement_matches?candidate_status=eq.hired&requirement_id=neq.${encodeURIComponent(requirementId)}&select=candidate_user_id`,
+      { headers: serviceHeaders() },
+    );
+    const hiredElsewhereRows = hiredElsewhereRes.ok ? ((await hiredElsewhereRes.json().catch(() => [])) as Array<{ candidate_user_id: string }>) : [];
+    const hiredElsewhereIds = new Set(hiredElsewhereRows.map((r) => r.candidate_user_id));
+
     const poolRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/profiles?id=neq.${encodeURIComponent(ownerUserId)}&select=id,name,target_role,industry,resume_data,practice_timestamps`,
+      `${SUPABASE_URL}/rest/v1/profiles?id=neq.${encodeURIComponent(ownerUserId)}&select=id,name,target_role,industry,resume_data,practice_timestamps&limit=5000`,
       { headers: serviceHeaders() },
     );
     if (!poolRes.ok) throw new Error(`candidate pool read failed: ${poolRes.status}`);
@@ -412,7 +433,7 @@ export async function runMatching(requirementId: string, req: RequirementInput, 
     // hasMatchSignal additionally drops zero-signal profiles (no target_role,
     // no resume_data) outright — see its doc comment in
     // _requirement-match-helpers.ts.
-    const pool = poolRows.filter((p) => !preservedCandidateIds.has(p.id) && hasMatchSignal(p));
+    const pool = poolRows.filter((p) => !preservedCandidateIds.has(p.id) && !hiredElsewhereIds.has(p.id) && hasMatchSignal(p));
 
     const scores = new Map<string, number>();
     const sessionCounts = new Map<string, number>();
@@ -470,10 +491,18 @@ export async function runMatching(requirementId: string, req: RequirementInput, 
       .map((m) => byId.get(m.candidateId))
       .filter((c): c is CandidatePoolRow => !!c);
     const llmScores = await llmRerankCandidates(req, shortlistCandidates, { userId: ownerUserId });
-    const ranked = deterministicRanked.map((m) => ({
+    // Re-applies MIN_MATCH_SCORE_FLOOR after blending: the deterministic pass
+    // (rankAndCap, above) already filtered against it, but blendScore can
+    // pull a candidate who just cleared that floor back below it (or vice
+    // versa) — leaving the floor unchecked here let sub-floor noise back
+    // into the shortlist whenever the LLM rerank disagreed with the
+    // deterministic score.
+    const blended = deterministicRanked.map((m) => ({
       ...m,
       matchScore: blendScore(m.matchScore, llmScores.get(m.candidateId)),
     }));
+    const ranked = blended.filter((m) => m.matchScore >= MIN_MATCH_SCORE_FLOOR);
+    const droppedByFloorAfterBlend = blended.length - ranked.length;
 
     if (ranked.length > 0) {
       const rows = ranked.map((m) => ({
@@ -490,6 +519,32 @@ export async function runMatching(requirementId: string, req: RequirementInput, 
       if (!insertMatchesRes.ok) throw new Error(`requirement_matches insert failed: ${insertMatchesRes.status}`);
     }
 
+    // "New strong match" ping: a candidate who is a strong match NOW but
+    // wasn't one on the previous pass (or wasn't matched at all) — using
+    // previousScoreByCandidate (captured before this pass's rows were
+    // deleted) rather than a persisted flag, so no schema change is needed
+    // and a candidate doesn't get re-notified on every subsequent re-score.
+    // Fired once per runMatching call (not once per candidate) to avoid
+    // spamming the employer when a requirement's first pass surfaces
+    // several strong matches at once.
+    const newStrongMatches = ranked.filter(
+      (m) => m.matchScore >= STRONG_MATCH_THRESHOLD && (previousScoreByCandidate.get(m.candidateId) ?? -1) < STRONG_MATCH_THRESHOLD,
+    );
+    if (newStrongMatches.length > 0) {
+      const title = req.title || "your requirement";
+      const body =
+        newStrongMatches.length === 1
+          ? `${byId.get(newStrongMatches[0].candidateId)?.name || "A candidate"} is a strong match (${newStrongMatches[0].matchScore}%) for ${title}.`
+          : `${newStrongMatches.length} new strong matches found for ${title}.`;
+      void notify({
+        userId: ownerUserId,
+        type: "strong_match_found",
+        title: "New strong match found",
+        body,
+        link: `/employer/requirements/${requirementId}`,
+      });
+    }
+
     const finalStatus = classifyRequirementStatus([
       ...preservedMatches.map((m) => ({ matchScore: m.match_score })),
       ...ranked,
@@ -497,7 +552,11 @@ export async function runMatching(requirementId: string, req: RequirementInput, 
     // Preserved (touched) matches are real matched candidates too — they're
     // just excluded from this pass's re-scoring (see isTouched above) — so
     // they count toward the true pool size alongside the freshly-scored ones.
-    const matchedPoolSize = freshTotalMatched + preservedMatches.length;
+    // freshTotalMatched comes from the pre-blend floor pass (rankAndCap); the
+    // post-blend floor above can drop additional candidates, so that count
+    // is subtracted here too — otherwise the reported pool size could include
+    // candidates who didn't make it into `ranked` at all.
+    const matchedPoolSize = freshTotalMatched - droppedByFloorAfterBlend + preservedMatches.length;
     await fetch(`${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}`, {
       method: "PATCH",
       headers: { ...serviceHeaders(), "Content-Type": "application/json", Prefer: "return=minimal" },
@@ -563,32 +622,46 @@ export async function runMatching(requirementId: string, req: RequirementInput, 
  *  used across this codebase. */
 const MAX_INCREMENTAL_REQUIREMENTS = 10;
 
+/** Bounds how many requirements get re-scored concurrently in a single
+    batch. Unbounded Promise.all across a whole backlog risks an edge
+    isolate getting torn down or overwhelming Supabase with one burst of
+    connections; fixed-size chunks give most of the wall-clock win of
+    parallelism without that fan-out risk. */
+const REMATCH_BATCH_SIZE = 5;
+
+async function runMatchingInBatches(
+  due: OpenRequirementForRematch[],
+  toInput: (r: OpenRequirementForRematch) => RequirementInput,
+): Promise<void> {
+  for (let i = 0; i < due.length; i += REMATCH_BATCH_SIZE) {
+    const batch = due.slice(i, i + REMATCH_BATCH_SIZE);
+    await Promise.all(batch.map((r) => runMatching(r.id, toInput(r), r.employer_id)));
+  }
+}
+
 export async function rematchOpenRequirementsForNewResume(): Promise<void> {
   try {
     const res = await fetch(
       `${SUPABASE_URL}/rest/v1/employer_requirements?stage=in.(ai_matching,ready_for_review)&status=neq.closed` +
-        `&select=id,employer_id,title,location,description,skills,experience_min,experience_max,min_readiness_band,min_star_completeness,stage,status,last_matched_at&limit=500`,
+        `&select=id,employer_id,title,location,description,skills,experience_min,experience_max,min_readiness_band,min_star_completeness,employment_type,duration_weeks,hours_per_week,stage,status,last_matched_at&limit=500`,
       { headers: serviceHeaders() },
     );
     if (!res.ok) return;
     const rows = (await res.json().catch(() => [])) as OpenRequirementForRematch[];
     const due = pickRequirementsToRematch(rows, MAX_INCREMENTAL_REQUIREMENTS);
-    for (const r of due) {
-      await runMatching(
-        r.id,
-        {
-          title: r.title,
-          location: r.location,
-          description: r.description ?? "",
-          skills: r.skills ?? [],
-          experienceMin: r.experience_min,
-          experienceMax: r.experience_max,
-          minReadinessBand: r.min_readiness_band,
-          minStarCompleteness: r.min_star_completeness,
-        },
-        r.employer_id,
-      );
-    }
+    await runMatchingInBatches(due, (r) => ({
+      title: r.title,
+      location: r.location,
+      description: r.description ?? "",
+      skills: r.skills ?? [],
+      experienceMin: r.experience_min,
+      experienceMax: r.experience_max,
+      minReadinessBand: r.min_readiness_band,
+      minStarCompleteness: r.min_star_completeness,
+      employmentType: r.employment_type,
+      durationWeeks: r.duration_weeks,
+      hoursPerWeek: r.hours_per_week,
+    }));
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     slog.error("incremental rematch sweep threw", { code: "incremental_rematch_failed", error: msg.slice(0, 200) });

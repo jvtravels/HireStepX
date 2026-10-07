@@ -48,6 +48,13 @@ Title: ${req.title}
 Location: ${req.location}
 Required skills: ${req.skills && req.skills.length > 0 ? req.skills.join(", ") : "not specified"}
 Experience range: ${req.experienceMin ?? "any"}-${req.experienceMax ?? "any"} years
+Employment type: ${req.employmentType ?? "not specified"}${
+    req.employmentType === "internship" && (req.durationWeeks != null || req.hoursPerWeek != null)
+      ? ` (${req.durationWeeks != null ? `${req.durationWeeks} weeks` : "duration unspecified"}, ${
+          req.hoursPerWeek != null ? `${req.hoursPerWeek} hrs/week` : "hours unspecified"
+        })`
+      : ""
+  }
 Description: ${req.description.slice(0, 2000)}
 
 CANDIDATES (role/skills are self-reported, may be incomplete):

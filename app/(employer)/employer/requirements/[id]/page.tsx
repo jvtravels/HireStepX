@@ -88,6 +88,17 @@ function daysUntil(dueDate: string): number {
   return Math.round((new Date(`${dueDate}T00:00:00Z`).getTime() - Date.now()) / 86_400_000);
 }
 
+function timeAgoLabel(iso: string): string {
+  const diffMs = Date.now() - new Date(iso).getTime();
+  const minutes = Math.round(diffMs / 60_000);
+  if (minutes < 1) return "just now";
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.round(hours / 24);
+  return `${days}d ago`;
+}
+
 /** budgetMin/budgetMax's unit depends on salaryType — whole INR lakhs for
     per-annum roles, a raw INR amount for per-month/fixed ones. Mirrors
     asBoundedBudget in server-handlers/_employer-requirements-helpers.ts and
@@ -674,23 +685,37 @@ function EvidenceDialog({ matchId, onClose }: { matchId: string | null; onClose:
     Failures already revert automatically; this is for changes that
     succeeded but the employer wants to take back. */
 function UndoBanner({ message, onUndo, onDismiss }: { message: string; onUndo: () => void; onDismiss: () => void }) {
+  // WCAG 2.2.1 (Timing Adjustable) — a hard timeout with no way to extend it
+  // fails for anyone who needs longer to read or act. Pausing while the
+  // banner has hover/focus gives that time without removing the timeout.
+  const [paused, setPaused] = useState(false);
+
   useEffect(() => {
+    if (paused) return;
     const timer = setTimeout(onDismiss, 8000);
     return () => clearTimeout(timer);
-  }, [onDismiss]);
+  }, [onDismiss, paused]);
 
   return (
-    <Card style={{ marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "10px 16px", background: t.indigo100 }}>
-      <span style={{ fontFamily: f.sans, fontSize: 13, color: t.indigoDeep }}>{message}</span>
-      <Button
-        type="button"
-        variant="link"
-        onClick={onUndo}
-        style={{ fontFamily: f.sans, fontSize: 12.5, fontWeight: 700, color: t.indigoDeep, height: "auto", padding: 0, display: "flex", alignItems: "center", gap: 4 }}
-      >
-        <Undo2Icon size={13} aria-hidden="true" /> Undo
-      </Button>
-    </Card>
+    <div
+      role="status"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+      onFocus={() => setPaused(true)}
+      onBlur={() => setPaused(false)}
+    >
+      <Card style={{ marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "10px 16px", background: t.indigo100 }}>
+        <span style={{ fontFamily: f.sans, fontSize: 13, color: t.indigoDeep }}>{message}</span>
+        <Button
+          type="button"
+          variant="link"
+          onClick={onUndo}
+          style={{ fontFamily: f.sans, fontSize: 12.5, fontWeight: 700, color: t.indigoDeep, height: "auto", padding: 0, display: "flex", alignItems: "center", gap: 4 }}
+        >
+          <Undo2Icon size={13} aria-hidden="true" /> Undo
+        </Button>
+      </Card>
+    </div>
   );
 }
 
@@ -740,6 +765,13 @@ export default function RequirementDetailPage() {
     setLoading(false);
   }, [fetchRequirementDetail, params.id]);
 
+  // Silent variant for background revalidation (tab refocus) — refetches
+  // without flashing the full-page loading state over an already-rendered list.
+  const refreshSilently = useCallback(async () => {
+    const r = await fetchRequirementDetail(params.id);
+    setRequirement(r);
+  }, [fetchRequirementDetail, params.id]);
+
   useEffect(() => {
     load();
   }, [load]);
@@ -752,6 +784,17 @@ export default function RequirementDetailPage() {
     const timer = setTimeout(load, 2500);
     return () => clearTimeout(timer);
   }, [requirement?.status, load]);
+
+  // Candidates can be added to this requirement's pool by background jobs
+  // (new signups, the nightly rematch cron) with no push notification to this
+  // tab — so pick up fresh matches whenever the employer comes back to it.
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === "visible") refreshSilently();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [refreshSilently]);
 
   const locationOptions = useMemo(() => {
     const cities = new Set((requirement?.candidates ?? []).map((c) => c.city).filter((c) => c && c !== "Not specified"));
@@ -1429,7 +1472,27 @@ export default function RequirementDetailPage() {
       </div>
 
       <div style={{ marginTop: 24 }}>
-        <h2 style={{ fontFamily: f.sans, fontSize: 18, color: t.coal, margin: "0 0 16px" }}>Candidates</h2>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
+          <h2 style={{ fontFamily: f.sans, fontSize: 18, color: t.coal, margin: 0 }}>Candidates</h2>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            {requirement.lastMatchedAt && (
+              <span
+                role="status"
+                aria-live="polite"
+                style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkFaint }}
+              >
+                Updated {timeAgoLabel(requirement.lastMatchedAt)}
+              </span>
+            )}
+            <OutlineCta
+              size="sm"
+              onClick={load}
+              icon={<RefreshCwIcon size={13} aria-hidden="true" className={loading ? "animate-spin" : undefined} />}
+            >
+              Refresh
+            </OutlineCta>
+          </div>
+        </div>
         <>
           {requirement.status === "generating" && <GeneratingState />}
           {requirement.status === "failed" && <FailedState />}

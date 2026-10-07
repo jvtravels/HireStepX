@@ -29,6 +29,9 @@ export interface OpenRequirementForRematch extends RematchableRequirement {
   experience_max: number | null;
   min_readiness_band: "strongHire" | "hire" | "leanHire" | null;
   min_star_completeness: number | null;
+  employment_type: string | null;
+  duration_weeks: number | null;
+  hours_per_week: number | null;
 }
 
 /** Stages where fresh candidates are still worth surfacing. Once an employer

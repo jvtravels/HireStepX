@@ -32,6 +32,11 @@ const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABAS
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const CRON_SECRET = process.env.CRON_SECRET || "";
 const MAX_REQUIREMENTS_PER_RUN = 150;
+/** Fixed-size concurrency so a 150-requirement backlog doesn't run fully
+    sequentially (slow) or fully in parallel (an unbounded burst of
+    Supabase/LLM calls) — see runMatchingInBatches in employer-requirements.ts
+    for the same pattern on the incremental path. */
+const BATCH_SIZE = 5;
 
 function serviceHeaders(): Record<string, string> {
   return { apikey: SUPABASE_SERVICE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_KEY}` };
@@ -55,7 +60,7 @@ export default async function handler(req: Request): Promise<Response> {
   const t0 = Date.now();
   const res = await fetch(
     `${SUPABASE_URL}/rest/v1/employer_requirements?stage=in.(ai_matching,ready_for_review)&status=neq.closed` +
-      `&select=id,employer_id,title,location,description,skills,experience_min,experience_max,min_readiness_band,min_star_completeness,stage,status,last_matched_at&limit=2000`,
+      `&select=id,employer_id,title,location,description,skills,experience_min,experience_max,min_readiness_band,min_star_completeness,employment_type,duration_weeks,hours_per_week,stage,status,last_matched_at&limit=2000`,
     { headers: serviceHeaders() },
   );
   if (!res.ok) {
@@ -66,23 +71,33 @@ export default async function handler(req: Request): Promise<Response> {
 
   let matched = 0;
   let failed = 0;
-  for (const r of due) {
-    const status = await runMatching(
-      r.id,
-      {
-        title: r.title,
-        location: r.location,
-        description: r.description ?? "",
-        skills: r.skills ?? [],
-        experienceMin: r.experience_min,
-        experienceMax: r.experience_max,
-        minReadinessBand: r.min_readiness_band,
-        minStarCompleteness: r.min_star_completeness,
-      },
-      r.employer_id,
+  for (let i = 0; i < due.length; i += BATCH_SIZE) {
+    const batch = due.slice(i, i + BATCH_SIZE);
+    const statuses = await Promise.all(
+      batch.map((r) =>
+        runMatching(
+          r.id,
+          {
+            title: r.title,
+            location: r.location,
+            description: r.description ?? "",
+            skills: r.skills ?? [],
+            experienceMin: r.experience_min,
+            experienceMax: r.experience_max,
+            minReadinessBand: r.min_readiness_band,
+            minStarCompleteness: r.min_star_completeness,
+            employmentType: r.employment_type,
+            durationWeeks: r.duration_weeks,
+            hoursPerWeek: r.hours_per_week,
+          },
+          r.employer_id,
+        ),
+      ),
     );
-    if (status === "failed") failed += 1;
-    else matched += 1;
+    for (const status of statuses) {
+      if (status === "failed") failed += 1;
+      else matched += 1;
+    }
   }
 
   return jsonResponse({

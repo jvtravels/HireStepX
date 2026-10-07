@@ -177,6 +177,10 @@ export interface Requirement {
   minReadinessBand: "strongHire" | "hire" | "leanHire" | null;
   minStarCompleteness: number | null;
   createdAt: string;
+  /** Timestamp of the most recent runMatching() pass for this requirement —
+   *  null if it has never been matched. Drives the "Updated X ago" freshness
+   *  indicator on the detail page. */
+  lastMatchedAt: string | null;
   candidates: Candidate[];
   /** True size of the matched-candidate pool before the 20-candidate cap —
    *  equal to candidates.length unless the real pool exceeded the cap. */
