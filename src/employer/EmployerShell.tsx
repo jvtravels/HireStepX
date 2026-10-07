@@ -243,7 +243,7 @@ export default function EmployerShell({ children }: { children: React.ReactNode 
       }
       onLogout={handleLogout}
       breadcrumbRoot={{ label: companyName || "HireStepX", path: "/employer" }}
-      pageLabel={isSettingsRoute ? "Settings" : activeItem.label}
+      pageLabel={isSettingsRoute ? "Settings" : isMessagesRoute ? "Messages" : activeItem.label}
       isMobile={isMobile}
       mainId="employer-main"
       pageKey={pathname}
