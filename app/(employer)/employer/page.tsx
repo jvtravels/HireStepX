@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useAuth } from "@/AuthContext";
 import { useEmployerData } from "@/employer/EmployerDataContext";
@@ -247,6 +247,92 @@ function CompanyRejected() {
   );
 }
 
+interface ChecklistStep {
+  label: string;
+  body: string;
+  done: boolean;
+  href: string;
+  cta: string;
+}
+
+/** Replaces the Overview stat strip while a new employer hasn't yet
+ *  completed the activation path (post → see a match → unlock a
+ *  candidate) — the moment they've done all three, this stops rendering
+ *  for good and EmployerDashboard falls back to the plain stat cells. */
+function OnboardingChecklist({ steps }: { steps: ChecklistStep[] }) {
+  const doneCount = steps.filter((s) => s.done).length;
+  const nextStepIndex = steps.findIndex((s) => !s.done);
+
+  return (
+    <Card>
+      <CardContent>
+        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 14 }}>
+          <Eyebrow tone="indigo">Getting started</Eyebrow>
+          <span style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkFaint }}>{doneCount} of {steps.length} done</span>
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          {steps.map((step, i) => (
+            <div
+              key={step.label}
+              style={{
+                display: "flex",
+                alignItems: "flex-start",
+                gap: 12,
+                padding: "10px 0",
+                borderTop: i > 0 ? `1px solid ${t.line}` : "none",
+              }}
+            >
+              <div
+                style={{
+                  width: 24,
+                  height: 24,
+                  borderRadius: "50%",
+                  flexShrink: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginTop: 1,
+                  background: step.done ? t.indigo : "transparent",
+                  border: step.done ? "none" : `1.5px solid ${t.lineStrong}`,
+                  color: step.done ? t.white : t.inkFaint,
+                  fontFamily: f.sans,
+                  fontSize: 11.5,
+                  fontWeight: 700,
+                }}
+              >
+                {step.done ? <EmployerIcon.Check /> : i + 1}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div
+                  style={{
+                    fontFamily: f.sans,
+                    fontSize: 14,
+                    fontWeight: 600,
+                    color: step.done ? t.inkFaint : t.coal,
+                    textDecoration: step.done ? "line-through" : "none",
+                  }}
+                >
+                  {step.label}
+                </div>
+                {i === nextStepIndex && (
+                  <>
+                    <p style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft, margin: "3px 0 10px", lineHeight: 1.5 }}>
+                      {step.body}
+                    </p>
+                    <Link href={step.href} style={{ textDecoration: "none" }}>
+                      <PrimaryCta size="sm">{step.cta}</PrimaryCta>
+                    </Link>
+                  </>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 /* Employer landing after approval — lightweight overview only. The full
    requirements list lives on /employer/jobs; this screen is the "how's it
    going" glance (greeting, next move, stat strip, company profile rail).
@@ -255,10 +341,49 @@ function CompanyRejected() {
    so the employer surface reads as the same product. */
 function EmployerDashboard() {
   const { user } = useAuth();
-  const { requirements, companyLogoUrl } = useEmployerData();
+  const { requirements, companyLogoUrl, fetchUnlockHistory } = useEmployerData();
+  const [unlockCount, setUnlockCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchUnlockHistory().then((purchases) => {
+      if (!cancelled) setUnlockCount(purchases ? purchases.length : 0);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [fetchUnlockHistory]);
 
   const openRequirements = requirements.filter((r) => r.status !== "closed");
   const totalCandidates = requirements.reduce((sum, r) => sum + r.candidateCount, 0);
+
+  const onboardingSteps: ChecklistStep[] = [
+    {
+      label: "Post your first job",
+      body: "Tell us the role, location, and notice-period preference — we'll start matching candidates against it.",
+      done: requirements.length > 0,
+      href: "/employer/requirements/new",
+      cta: "Post a requirement",
+    },
+    {
+      label: "Review your first AI match",
+      body: "Once candidates are scored against your requirement, their shortlist shows up on the job's page.",
+      done: totalCandidates > 0,
+      href: "/employer/jobs",
+      cta: "View your jobs",
+    },
+    {
+      label: "Unlock your first candidate",
+      body: "Unlock a candidate's contact details to reach out and move them into your pipeline.",
+      done: (unlockCount ?? 0) > 0,
+      href: "/employer/jobs",
+      cta: "Review candidates",
+    },
+  ];
+  // Hold off until the unlock count has loaded at least once, so a brand-new
+  // employer doesn't see the plain stat strip flash before the checklist
+  // (which needs that count to know if step 3 is done) swaps in.
+  const showOnboardingChecklist = unlockCount !== null && onboardingSteps.some((s) => !s.done);
 
   return (
     <div
@@ -289,35 +414,45 @@ function EmployerDashboard() {
           </p>
         </section>
 
-        <Card>
-          <CardContent>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 24, flexWrap: "wrap" }}>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <Eyebrow tone="indigo">Your next move</Eyebrow>
-                <p style={{ fontFamily: f.sans, fontSize: 28, fontWeight: 400, lineHeight: 1.2, letterSpacing: "-0.01em", color: t.coal, margin: "8px 0 10px" }}>
-                  Post a requirement
-                </p>
-                <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft, margin: 0, maxWidth: 520, lineHeight: 1.55 }}>
-                  Tell us the role, location, and notice-period preference — we'll return a scored shortlist
-                  from candidates actively practicing on HireStepX.
-                </p>
-                <div style={{ marginTop: 18 }}>
-                  <Link href="/employer/requirements/new" style={{ textDecoration: "none" }}>
-                    <PrimaryCta icon={<EmployerIcon.Plus />}>Post a requirement</PrimaryCta>
-                  </Link>
+        {/* Suppressed while the checklist is up — its active step already
+            carries whichever CTA actually applies (post/review/unlock), so
+            this hardcoded "post a requirement" prompt would just duplicate
+            or contradict it. */}
+        {!showOnboardingChecklist && (
+          <Card>
+            <CardContent>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 24, flexWrap: "wrap" }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <Eyebrow tone="indigo">Your next move</Eyebrow>
+                  <p style={{ fontFamily: f.sans, fontSize: 28, fontWeight: 400, lineHeight: 1.2, letterSpacing: "-0.01em", color: t.coal, margin: "8px 0 10px" }}>
+                    Post a requirement
+                  </p>
+                  <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft, margin: 0, maxWidth: 520, lineHeight: 1.55 }}>
+                    Tell us the role, location, and notice-period preference — we'll return a scored shortlist
+                    from candidates actively practicing on HireStepX.
+                  </p>
+                  <div style={{ marginTop: 18 }}>
+                    <Link href="/employer/requirements/new" style={{ textDecoration: "none" }}>
+                      <PrimaryCta icon={<EmployerIcon.Plus />}>Post a requirement</PrimaryCta>
+                    </Link>
+                  </div>
                 </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
 
-        <section>
-          <Eyebrow tone="ink">Overview</Eyebrow>
-          <dl style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 0, margin: "10px 0 0", borderTop: `1px solid ${t.line}`, borderBottom: `1px solid ${t.line}` }}>
-            <StatCell label="Open requirements" value={String(openRequirements.length)} unit="" />
-            <StatCell label="Candidates matched" value={String(totalCandidates)} unit="" />
-          </dl>
-        </section>
+        {showOnboardingChecklist ? (
+          <OnboardingChecklist steps={onboardingSteps} />
+        ) : (
+          <section>
+            <Eyebrow tone="ink">Overview</Eyebrow>
+            <dl style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 0, margin: "10px 0 0", borderTop: `1px solid ${t.line}`, borderBottom: `1px solid ${t.line}` }}>
+              <StatCell label="Open requirements" value={String(openRequirements.length)} unit="" />
+              <StatCell label="Candidates matched" value={String(totalCandidates)} unit="" />
+            </dl>
+          </section>
+        )}
 
         <Link href="/employer/jobs" style={{ textDecoration: "none" }}>
           <OutlineCta full>View all jobs</OutlineCta>
