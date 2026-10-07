@@ -34,7 +34,13 @@ interface SessionRow {
   created_at: string;
 }
 
-type EmailTier = "day1" | "day3" | "day7" | "paid14" | "paid30" | "winback";
+type EmailTier = "day1" | "day3" | "day7" | "paid14" | "paid30" | "winback" | "employer_interest";
+
+// Below this many completed sessions, a candidate's evidence (skills,
+// quotes, readiness forecast) is thin — the employer_interest tier nudges
+// them to practice more specifically because an employer is already
+// looking, not just because they've gone idle.
+const LOW_SESSION_THRESHOLD = 3;
 
 function getEmailTier(daysSinceLastSession: number, lastEmailSent: string | null, isPaid = false): EmailTier | null {
   const lastSentDays = lastEmailSent
@@ -79,6 +85,7 @@ function buildEmail(
   user: UserRow,
   tier: EmailTier,
   lastSession: SessionRow | null,
+  employerInterest?: { count: number; roleTitle: string | null },
 ): { subject: string; html: string } {
   const name = escapeHtml(user.name?.split(" ")[0] || "there");
   const role = escapeHtml(user.target_role || "your target role");
@@ -88,6 +95,31 @@ function buildEmail(
   const sessionUrl = `${APP_URL}/session/new`;
   const upgradeUrl = `${APP_URL}/dashboard?upgrade=1`;
 
+  if (tier === "employer_interest" && employerInterest) {
+    const interestedRole = employerInterest.roleTitle ? escapeHtml(employerInterest.roleTitle) : "a role";
+    const subject = `Employers are checking you out, ${user.name?.split(" ")[0] || "there"} — here's how to stand out`;
+    const hero =
+      employerInterest.count === 1
+        ? `Hi ${name}, an employer has shortlisted you for ${interestedRole}. Your profile is thin on evidence though, just ${b(`${user.practice_timestamps?.length ?? 0} session${(user.practice_timestamps?.length ?? 0) === 1 ? "" : "s"}`)} so far. A few more mock interviews sharpen the skill scores and sample answers employers see on your profile.`
+        : `Hi ${name}, ${employerInterest.count} employers have shortlisted you, including one for ${interestedRole}. Your profile is thin on evidence though, just ${b(`${user.practice_timestamps?.length ?? 0} session${(user.practice_timestamps?.length ?? 0) === 1 ? "" : "s"}`)} so far. A few more mock interviews sharpen the skill scores and sample answers employers see on your profile.`;
+    const footerLine = "More sessions, stronger evidence, better odds of an interview invite.";
+    const html = emailShell({
+      preview: footerLine,
+      body:
+        title("Employers are", { accentWord: "looking." }) +
+        para(hero) +
+        button("Practice now", sessionUrl) +
+        para(footerLine, { small: true, muted: true }),
+    });
+    return { subject, html };
+  }
+
+  // employer_interest always returns above (guarded by `employerInterest`
+  // being set whenever tier is computed as "employer_interest" in the
+  // handler below) — narrow so the Records past this point don't need an
+  // unused entry for it.
+  const genericTier = tier as Exclude<EmailTier, "employer_interest">;
+
   const safeWeakest = weakest ? escapeHtml(weakest) : null;
 
   // Free users who've hit the limit should be directed to upgrade, not practice.
@@ -95,7 +127,7 @@ function buildEmail(
   const sessionsUsed = user.practice_timestamps?.length ?? 0;
   const hitFreeLimit = isFreeUser && sessionsUsed >= FREE_SESSION_LIMIT;
 
-  const subjects: Record<EmailTier, string> = {
+  const subjects: Record<Exclude<EmailTier, "employer_interest">, string> = {
     day1: `${user.name?.split(" ")[0] || "Hey"}, your next practice session is ready`,
     day3: `Your ${weakest || "interview"} skills need a refresh`,
     day7: "Your practice sessions are still here",
@@ -104,7 +136,7 @@ function buildEmail(
     winback: "We saved your progress — come back whenever you're ready",
   };
 
-  const titles: Record<EmailTier, string> = {
+  const titles: Record<Exclude<EmailTier, "employer_interest">, string> = {
     day1: "Pick up",
     day3: "Worth a",
     day7: "Still",
@@ -112,7 +144,7 @@ function buildEmail(
     paid30: "Right here,",
     winback: "Still in",
   };
-  const accents: Record<EmailTier, string> = {
+  const accents: Record<Exclude<EmailTier, "employer_interest">, string> = {
     day1: "where you left off.",
     day3: "ten minutes.",
     day7: "right here.",
@@ -121,7 +153,7 @@ function buildEmail(
     winback: "your corner.",
   };
 
-  const heroText: Record<EmailTier, string> = {
+  const heroText: Record<Exclude<EmailTier, "employer_interest">, string> = {
     day1: `Hi ${name}, your personalised ${role} session is ready and waiting. Pick up exactly where you left off, your resume-tailored questions are already lined up.`,
     day3: safeWeakest
       ? `Hi ${name}, your ${b(safeWeakest)} score has room to grow. A focused 10-minute session can lift it by 15 points or more, and that is often the difference in a real interview.`
@@ -134,7 +166,7 @@ function buildEmail(
     winback: `Hi ${name}, it has been a while. Your resume, your target role, and everything you built is still saved exactly as you left it. Whenever you are ready to start again, we are here.`,
   };
 
-  const ctaText: Record<EmailTier, string> = {
+  const ctaText: Record<Exclude<EmailTier, "employer_interest">, string> = {
     day1: hitFreeLimit ? "See upgrade options" : "Continue practising",
     day3: hitFreeLimit ? "Upgrade from ₹9" : (weakest ? `Practise ${weakest}` : "Start a session"),
     day7: "Practise now",
@@ -143,7 +175,7 @@ function buildEmail(
     winback: "Pick up where you left off",
   };
 
-  const footerText: Record<EmailTier, string> = {
+  const footerText: Record<Exclude<EmailTier, "employer_interest">, string> = {
     day1: hitFreeLimit
       ? "You've used both free sessions. Plans start at ₹9 per session — no subscription required."
       : "You still have free sessions remaining, no card needed.",
@@ -200,16 +232,16 @@ function buildEmail(
   }
 
   const html = emailShell({
-    preview: footerText[tier],
+    preview: footerText[genericTier],
     body:
-      title(titles[tier], { accentWord: accents[tier] }) +
-      para(heroText[tier]) +
+      title(titles[genericTier], { accentWord: accents[genericTier] }) +
+      para(heroText[genericTier]) +
       (showCard ? dataCard("Where you stand", cardRows) : "") +
-      button(ctaText[tier], ctaUrl) +
-      para(footerText[tier], { small: true, muted: true }),
+      button(ctaText[genericTier], ctaUrl) +
+      para(footerText[genericTier], { small: true, muted: true }),
   });
 
-  return { subject: subjects[tier], html };
+  return { subject: subjects[genericTier], html };
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -279,8 +311,43 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     let skipped = 0;
     let failed = 0;
 
+    // Employer-interest signal: candidates any cron pass might otherwise send
+    // a generic "come back" email to, but who actually have an employer
+    // actively considering them right now (shortlisted/invited/interviewing).
+    // Fetched for the whole candidate pool up front — cheap, one query — and
+    // combined with a low session count below to pick a more motivating,
+    // specific tier over the generic day1/day3/day7 copy.
+    const interestByUser = new Map<string, { count: number; roleTitle: string | null }>();
+    if (candidates.length > 0) {
+      try {
+        const ids = candidates.map(c => c.id).map(id => encodeURIComponent(id)).join(",");
+        const interestRes = await fetch(
+          `${SUPABASE_URL}/rest/v1/requirement_matches?candidate_user_id=in.(${ids})&candidate_status=in.(shortlisted,interview_invited,interviewing)` +
+            `&select=candidate_user_id,employer_requirements(title)&limit=2000`,
+          {
+            headers: {
+              apikey: SUPABASE_SERVICE_ROLE_KEY,
+              Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+            },
+          },
+        );
+        if (interestRes.ok) {
+          const rows = await interestRes.json() as Array<{ candidate_user_id: string; employer_requirements: { title: string } | null }>;
+          for (const row of rows) {
+            const existing = interestByUser.get(row.candidate_user_id);
+            interestByUser.set(row.candidate_user_id, {
+              count: (existing?.count ?? 0) + 1,
+              roleTitle: existing?.roleTitle ?? row.employer_requirements?.title ?? null,
+            });
+          }
+        }
+      } catch (err) {
+        console.warn("[re-engage] employer-interest fetch failed, proceeding without it:", err);
+      }
+    }
+
     // Step 1 — compute tier for each candidate up-front; drop those that get no email
-    type Eligible = { user: UserRow; tier: EmailTier };
+    type Eligible = { user: UserRow; tier: EmailTier; employerInterest?: { count: number; roleTitle: string | null } };
     const eligible: Eligible[] = [];
     for (const user of candidates) {
       const neverStarted = !user.practice_timestamps || user.practice_timestamps.length === 0;
@@ -288,6 +355,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         ? Math.floor((Date.now() - new Date(user.created_at).getTime()) / 86400000)
         : Math.floor((Date.now() - new Date(user.practice_timestamps![user.practice_timestamps!.length - 1]).getTime()) / 86400000);
       const isPaid = user.subscription_tier === "starter";
+
+      const interest = interestByUser.get(user.id);
+      const sessionsUsed = user.practice_timestamps?.length ?? 0;
+      const lastSentDays = user.re_engage_sent
+        ? Math.floor((Date.now() - new Date(user.re_engage_sent).getTime()) / 86400000)
+        : Infinity;
+      if (interest && sessionsUsed < LOW_SESSION_THRESHOLD && lastSentDays >= 2) {
+        eligible.push({ user, tier: "employer_interest", employerInterest: interest });
+        continue;
+      }
+
       const tier = getEmailTier(daysSince, user.re_engage_sent, isPaid);
       if (!tier) { skipped++; continue; }
       eligible.push({ user, tier });
@@ -325,9 +403,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Step 3 — send emails in parallel batches of 5 to respect Resend rate limits
     const now = new Date().toISOString();
-    async function sendOne({ user, tier }: Eligible): Promise<"sent" | "failed"> {
+    async function sendOne({ user, tier, employerInterest }: Eligible): Promise<"sent" | "failed"> {
       const lastSession = sessionByUser.get(user.id) || null;
-      const { subject, html } = buildEmail(user, tier, lastSession);
+      const { subject, html } = buildEmail(user, tier, lastSession, employerInterest);
       try {
         const emailRes = await fetch("https://api.resend.com/emails", {
           method: "POST",

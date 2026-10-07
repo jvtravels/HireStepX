@@ -27,13 +27,73 @@ import {
   type SessionRow,
 } from "./_employer-candidate-evidence-helpers";
 import { notify } from "./_notify";
+import { emailShell, title as emailTitle, para, button, footer, escapeHtml } from "./_email-theme";
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+const RESEND_API_KEY = (process.env.RESEND_API_KEY || "").trim();
+const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <noreply@hirestepx.com>";
+const APP_URL = (process.env.APP_URL || "https://hirestepx.vercel.app").replace(/\/$/, "");
 
 function serviceHeaders(): Record<string, string> {
   return { apikey: SUPABASE_SERVICE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_KEY}` };
+}
+
+/** Best-effort "an employer viewed your profile" email — fires immediately,
+ *  alongside the in-app notify(), the first time an employer opens a given
+ *  match's evidence panel (gated upstream by claimProfileView so a single
+ *  view doesn't fire twice). Never throws: a failure here must never fail
+ *  the evidence read it's attached to. */
+async function sendProfileViewedEmail(opts: {
+  candidateUserId: string;
+  roleTitle: string;
+  companyName: string;
+}): Promise<void> {
+  if (!RESEND_API_KEY) return;
+  try {
+    const profileRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(opts.candidateUserId)}&select=name,email`,
+      { headers: serviceHeaders(), signal: AbortSignal.timeout(5000) },
+    );
+    if (!profileRes.ok) return;
+    const rows = (await profileRes.json().catch(() => [])) as Array<{ name: string | null; email: string | null }>;
+    const email = rows[0]?.email;
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return;
+
+    const firstName = escapeHtml((rows[0]?.name || "there").split(" ")[0]);
+    const role = escapeHtml(opts.roleTitle);
+    const company = escapeHtml(opts.companyName);
+    const headline = `${company} looked at your profile for ${role}.`;
+    const link = `${APP_URL}/jobs`;
+    const html = emailShell({
+      preview: headline,
+      body:
+        emailTitle("An employer viewed", { accentWord: "your profile" }) +
+        para(`Hi ${firstName}, ${headline} A strong practice score is what gets you from "viewed" to "invited" — keep your evidence sharp.`) +
+        button("View your matches", link) +
+        footer(),
+    });
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 10_000);
+    try {
+      const res = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ from: FROM_EMAIL, to: [email], subject: "An employer viewed your profile — HireStepX", html }),
+        signal: controller.signal,
+      });
+      if (!res.ok) {
+        const t = await res.text().catch(() => "");
+        slog.warn("[sendProfileViewedEmail] resend failed", { status: res.status, body: t.slice(0, 200) });
+      }
+    } finally {
+      clearTimeout(timer);
+    }
+  } catch (err) {
+    slog.warn("[sendProfileViewedEmail] threw", { err: err instanceof Error ? err.message : String(err) });
+  }
 }
 
 export default async function handler(req: Request): Promise<Response> {
@@ -103,6 +163,7 @@ export default async function handler(req: Request): Promise<Response> {
         body: `${companyName} looked at your evidence and details for ${roleTitle}.`,
         link: "/jobs",
       });
+      void sendProfileViewedEmail({ candidateUserId, roleTitle, companyName });
     }
 
     /* limit=20, not 1: the most recent session overall is frequently a

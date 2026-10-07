@@ -31,6 +31,11 @@ import {
 } from "./_employer-candidate-status-helpers";
 import { notify } from "./_notify";
 import { findOrCreateConversationId, postSystemMessage } from "./_messages-helpers";
+import { emailShell, title as emailTitle, para, b, button, footer, escapeHtml } from "./_email-theme";
+
+const RESEND_API_KEY = (process.env.RESEND_API_KEY || "").trim();
+const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <noreply@hirestepx.com>";
+const APP_URL = (process.env.APP_URL || "https://hirestepx.vercel.app").replace(/\/$/, "");
 
 const STATUS_NOTIFICATION_TEXT: Record<string, { title: string; body: string }> = {
   interview_invited: { title: "You've been invited to interview!", body: "An employer wants to move forward with you — check your dashboard for details." },
@@ -71,6 +76,69 @@ const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 
 function serviceHeaders(): Record<string, string> {
   return { apikey: SUPABASE_SERVICE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_KEY}` };
+}
+
+/** Best-effort "you've been invited to interview" email — the candidate-side
+ *  counterpart to sendStrongMatchEmail in employer-requirements.ts. Fires
+ *  alongside the in-app notify() only for the interview_invited transition,
+ *  since that's the one status change a candidate would actually want to
+ *  know about the moment it happens (hired/rejected still land in-app only
+ *  for now). Never throws: a failure here must never fail the status
+ *  update it's attached to. */
+async function sendInterviewInviteEmail(opts: {
+  candidateUserId: string;
+  roleTitle: string;
+  companyName: string;
+  interviewScheduledAt: string | null;
+}): Promise<void> {
+  if (!RESEND_API_KEY) return;
+  try {
+    const profileRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(opts.candidateUserId)}&select=name,email`,
+      { headers: serviceHeaders(), signal: AbortSignal.timeout(5000) },
+    );
+    if (!profileRes.ok) return;
+    const rows = (await profileRes.json().catch(() => [])) as Array<{ name: string | null; email: string | null }>;
+    const email = rows[0]?.email;
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return;
+
+    const firstName = escapeHtml((rows[0]?.name || "there").split(" ")[0]);
+    const role = escapeHtml(opts.roleTitle);
+    const company = escapeHtml(opts.companyName);
+    const when = opts.interviewScheduledAt
+      ? new Date(opts.interviewScheduledAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })
+      : null;
+    const headline = `${company} wants to move forward with you for ${role}.`;
+    const link = `${APP_URL}/jobs`;
+    const html = emailShell({
+      preview: headline,
+      body:
+        emailTitle("You're invited to", { accentWord: "interview" }) +
+        para(`Hi ${firstName}, ${headline}`) +
+        (when ? para(`They've suggested ${b(when)} — check your dashboard to confirm or message them directly.`) : para("Check your dashboard for next steps and to message them directly.")) +
+        button("View invite", link) +
+        footer(),
+    });
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 10_000);
+    try {
+      const res = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ from: FROM_EMAIL, to: [email], subject: `You've been invited to interview — ${opts.roleTitle}`, html }),
+        signal: controller.signal,
+      });
+      if (!res.ok) {
+        const t = await res.text().catch(() => "");
+        slog.warn("[sendInterviewInviteEmail] resend failed", { status: res.status, body: t.slice(0, 200) });
+      }
+    } finally {
+      clearTimeout(timer);
+    }
+  } catch (err) {
+    slog.warn("[sendInterviewInviteEmail] threw", { err: err instanceof Error ? err.message : String(err) });
+  }
 }
 
 function toResponseShape(row: RequirementMatchRow) {
@@ -148,10 +216,13 @@ export default async function handler(req: Request): Promise<Response> {
     const currentStatus = asCandidateStatus(matchRows[0].candidate_status);
 
     const reqRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&employer_id=eq.${encodeURIComponent(auth.userId)}&select=id,status`,
+      `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&employer_id=eq.${encodeURIComponent(auth.userId)}` +
+        `&select=id,status,title,employers(company_name)`,
       { headers: serviceHeaders() },
     );
-    const reqRows = (await reqRes.json().catch(() => [])) as Array<{ id: string; status: string }>;
+    const reqRows = (await reqRes.json().catch(() => [])) as Array<{
+      id: string; status: string; title: string | null; employers: { company_name: string } | null;
+    }>;
     if (!reqRes.ok || !reqRows[0]) {
       return new Response(JSON.stringify({ error: "Candidate match not found" }), { status: 404, headers });
     }
@@ -218,6 +289,15 @@ export default async function handler(req: Request): Promise<Response> {
         title: notifText.title,
         body: notifText.body,
         link: "/jobs",
+      });
+    }
+
+    if (candidateStatus === "interview_invited") {
+      void sendInterviewInviteEmail({
+        candidateUserId: matchRows[0].candidate_user_id,
+        roleTitle: reqRows[0].title || "a role",
+        companyName: reqRows[0].employers?.company_name || "An employer",
+        interviewScheduledAt: row.interview_scheduled_at ?? interviewScheduledAt,
       });
     }
 
