@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { MessageSquareIcon } from "lucide-react";
 import { tokens as T, fonts as F } from "./auth/_tokens";
+import { groupConversationsByCounterpart } from "./conversationGrouping";
 
 /* ─── Messages bell ───────────────────────────────────────────────────────
  * Rendered in AppShellFrame's header next to NotificationBell, on both the
@@ -75,6 +76,8 @@ export default function MessagesBell({
     onNavigate(`${basePath}?matchId=${encodeURIComponent(c.matchId)}`);
   }
 
+  const groups = groupConversationsByCounterpart(conversations);
+
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
@@ -108,29 +111,36 @@ export default function MessagesBell({
               No conversations yet.
             </p>
           ) : (
-            conversations.map((c) => (
-              <button
-                key={c.conversationId}
-                type="button"
-                onClick={() => handleItemClick(c)}
-                style={{
-                  display: "block", width: "100%", textAlign: "left", cursor: "pointer",
-                  border: "none", borderBottom: `1px solid ${T.line}`, background: "transparent",
-                  padding: "10px 12px",
-                }}
-              >
-                <p style={{ margin: 0, fontFamily: F.sans, fontSize: 13, fontWeight: 600, color: T.coal }}>
-                  {c.counterpartName}
+            groups.map((group) => (
+              <div key={group.counterpartName}>
+                <p style={{
+                  margin: 0, padding: "8px 12px 2px", fontFamily: F.sans, fontSize: 10.5, fontWeight: 700,
+                  color: T.inkSoft, textTransform: "uppercase", letterSpacing: "0.04em",
+                }}>
+                  {group.counterpartName}
                 </p>
-                <p style={{ margin: "2px 0 0", fontFamily: F.sans, fontSize: 12.5, color: T.inkSoft, lineHeight: 1.4 }}>
-                  {c.roleTitle}
-                </p>
-                {c.lastMessageAt && (
-                  <p style={{ margin: "4px 0 0", fontFamily: F.sans, fontSize: 11, color: T.inkSoft }}>
-                    {timeAgo(c.lastMessageAt)}
-                  </p>
-                )}
-              </button>
+                {group.conversations.map((c) => (
+                  <button
+                    key={c.conversationId}
+                    type="button"
+                    onClick={() => handleItemClick(c)}
+                    style={{
+                      display: "block", width: "100%", textAlign: "left", cursor: "pointer",
+                      border: "none", borderBottom: `1px solid ${T.line}`, background: "transparent",
+                      padding: "8px 12px 8px 20px",
+                    }}
+                  >
+                    <p style={{ margin: 0, fontFamily: F.sans, fontSize: 12.5, fontWeight: 600, color: T.coal, lineHeight: 1.4 }}>
+                      {c.roleTitle}
+                    </p>
+                    {c.lastMessageAt && (
+                      <p style={{ margin: "3px 0 0", fontFamily: F.sans, fontSize: 11, color: T.inkSoft }}>
+                        {timeAgo(c.lastMessageAt)}
+                      </p>
+                    )}
+                  </button>
+                ))}
+              </div>
             ))
           )}
         </div>

@@ -29,6 +29,7 @@ import {
   type ConversationMessage,
   type ConversationSummary,
 } from "./messagesApi";
+import { groupConversationsByCounterpart } from "./conversationGrouping";
 import { useToast } from "./Toast";
 
 const LIST_POLL_MS = 15000;
@@ -192,6 +193,7 @@ export default function MessagesV2() {
 
   const list = conversations ?? [];
   const active = list.find((c) => c.matchId === activeMatchId) ?? null;
+  const groups = groupConversationsByCounterpart(list);
 
   if (list.length === 0) {
     return shell(
@@ -208,19 +210,33 @@ export default function MessagesV2() {
   return shell(
     <div style={{ display: "flex", flex: 1, minHeight: 0 }}>
       <div style={{ width: 280, borderRight: `1px solid ${t.line}`, overflowY: "auto", flexShrink: 0 }}>
-        {list.map((c) => (
-          <button
-            key={c.matchId}
-            onClick={() => selectConversation(c.matchId)}
-            style={{
-              display: "block", width: "100%", textAlign: "left", padding: "12px 16px",
-              border: "none", borderBottom: `1px solid ${t.line}`, cursor: "pointer",
-              background: c.matchId === activeMatchId ? t.creamSoft : "transparent",
-            }}
-          >
-            <div style={{ fontFamily: f.sans, fontSize: 13.5, fontWeight: 600, color: t.coal }}>{c.counterpartName}</div>
-            <div style={{ fontFamily: f.sans, fontSize: 12, color: t.inkFaint, marginTop: 2 }}>{c.roleTitle}</div>
-          </button>
+        {groups.map((group) => (
+          <div key={group.counterpartName}>
+            <div style={{
+              padding: "10px 16px 4px", fontFamily: f.sans, fontSize: 11, fontWeight: 700,
+              color: t.inkFaint, textTransform: "uppercase", letterSpacing: "0.04em",
+            }}>
+              {group.counterpartName}
+            </div>
+            {group.conversations.map((c) => (
+              <button
+                key={c.matchId}
+                onClick={() => selectConversation(c.matchId)}
+                style={{
+                  display: "block", width: "100%", textAlign: "left", padding: "10px 16px 10px 24px",
+                  border: "none", borderBottom: `1px solid ${t.line}`, cursor: "pointer",
+                  background: c.matchId === activeMatchId ? t.creamSoft : "transparent",
+                }}
+              >
+                <div style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.coal }}>{c.roleTitle}</div>
+                {c.lastMessageAt && (
+                  <div style={{ fontFamily: f.sans, fontSize: 11.5, color: t.inkFaint, marginTop: 2 }}>
+                    {new Date(c.lastMessageAt).toLocaleDateString()}
+                  </div>
+                )}
+              </button>
+            ))}
+          </div>
         ))}
       </div>
       <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
