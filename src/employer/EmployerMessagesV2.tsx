@@ -70,6 +70,10 @@ export default function EmployerMessagesV2() {
   const [rejectNote, setRejectNote] = useState("");
   const [rejectSubmitting, setRejectSubmitting] = useState(false);
 
+  const [flagMessageId, setFlagMessageId] = useState<string | null>(null);
+  const [flagReason, setFlagReason] = useState("");
+  const [flagSubmitting, setFlagSubmitting] = useState(false);
+
   const loadConversations = useCallback(async () => {
     const list = await listConversations();
     if (list) {
@@ -210,11 +214,14 @@ export default function EmployerMessagesV2() {
     loadConversations();
   };
 
-  const handleFlag = async (messageId: string) => {
-    const reason = window.prompt("Reason for flagging this message (e.g. inappropriate, spam, off-platform contact):");
-    if (!reason || !reason.trim()) return;
-    const ok = await flagMessage(messageId, reason.trim());
+  const handleSubmitFlag = async () => {
+    if (!flagMessageId || !flagReason.trim()) return;
+    setFlagSubmitting(true);
+    const ok = await flagMessage(flagMessageId, flagReason.trim());
+    setFlagSubmitting(false);
     toast(ok ? "Message flagged for review" : "Couldn't flag message", ok ? "success" : "error");
+    setFlagMessageId(null);
+    setFlagReason("");
   };
 
   const handleSendInvite = async () => {
@@ -309,7 +316,7 @@ export default function EmployerMessagesV2() {
 
   return shell(
     <div style={{ display: "flex", flex: 1, minHeight: 0 }}>
-      <div style={{ width: 280, borderRight: `1px solid ${t.line}`, overflowY: "auto", flexShrink: 0 }}>
+      <div style={{ width: 280, borderRight: `1px solid ${t.line}`, overflowY: "auto", flexShrink: 0 }} role="list" aria-label="Conversations">
         {groups.map((group) => (
           <div key={group.counterpartName}>
             <div style={{
@@ -321,6 +328,8 @@ export default function EmployerMessagesV2() {
             {group.conversations.map((c) => (
               <button
                 key={c.matchId}
+                role="listitem"
+                aria-current={c.matchId === activeMatchId ? "true" : undefined}
                 onClick={() => selectConversation(c.matchId)}
                 style={{
                   display: "block", width: "100%", textAlign: "left", padding: "10px 16px 10px 24px",
@@ -382,8 +391,18 @@ export default function EmployerMessagesV2() {
                 </div>
               </div>
             </div>
-            <div ref={scrollRef} style={{ flex: 1, overflowY: "auto", padding: "14px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
-              {threadLoading && <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkFaint }}>Loading messages…</p>}
+            <div
+              ref={scrollRef}
+              role="log"
+              aria-live="polite"
+              aria-label={`Conversation with ${active.counterpartName}`}
+              style={{ flex: 1, overflowY: "auto", padding: "14px 16px", display: "flex", flexDirection: "column", gap: 10 }}
+            >
+              {threadLoading && (
+                <div style={{ display: "flex", flex: 1 }}>
+                  <LoadingScreen fullScreen={false} message="Loading messages…" />
+                </div>
+              )}
               {!threadLoading && messages.length === 0 && (
                 <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkFaint }}>No messages yet — say hello.</p>
               )}
@@ -396,7 +415,7 @@ export default function EmployerMessagesV2() {
                   </div>
                 ) : (
                   <Message key={m.id} align={m.senderRole === "employer" ? "end" : "start"}>
-                    <MessageAvatar>
+                    <MessageAvatar className="self-center">
                       <Avatar size="sm">
                         <AvatarFallback>
                           {initialsOf(m.senderRole === "employer" ? companyName || "Me" : active.counterpartName)}
@@ -423,7 +442,7 @@ export default function EmployerMessagesV2() {
                         <Button
                           type="button"
                           variant="link"
-                          onClick={() => handleFlag(m.id)}
+                          onClick={() => setFlagMessageId(m.id)}
                           style={{ fontSize: 11, height: "auto", padding: 0, color: t.inkFaint, display: "flex", alignItems: "center", gap: 2 }}
                         >
                           <FlagIcon size={11} aria-hidden="true" /> Report
@@ -442,6 +461,7 @@ export default function EmployerMessagesV2() {
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
                 placeholder="Write a message…"
+                aria-label="Message"
                 rows={2}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
@@ -452,7 +472,13 @@ export default function EmployerMessagesV2() {
               />
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <label style={{ cursor: attaching ? "default" : "pointer" }}>
-                  <input type="file" onChange={handleAttach} disabled={attaching} style={{ display: "none" }} />
+                  <input
+                    type="file"
+                    onChange={handleAttach}
+                    disabled={attaching}
+                    aria-label="Attach a file (max 8MB)"
+                    style={{ display: "none" }}
+                  />
                   <span style={{ display: "flex", alignItems: "center", gap: 4, fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft }}>
                     <PaperclipIcon size={14} aria-hidden="true" /> {attaching ? "Uploading…" : "Attach file"}
                   </span>
@@ -502,6 +528,31 @@ export default function EmployerMessagesV2() {
                   <OutlineCta onClick={() => setRejectOpen(false)}>Cancel</OutlineCta>
                   <Button type="button" variant="destructive" onClick={handleReject} disabled={rejectSubmitting}>
                     {rejectSubmitting ? "Rejecting…" : "Reject candidate"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
+            <Dialog open={!!flagMessageId} onOpenChange={(open) => { if (!open) { setFlagMessageId(null); setFlagReason(""); } }}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Report this message</DialogTitle>
+                  <DialogDescription>Flags it for review — e.g. inappropriate content, spam, or off-platform contact info.</DialogDescription>
+                </DialogHeader>
+                <div style={{ display: "grid", gap: 8, padding: "4px 0" }}>
+                  <Label htmlFor="msg-flag-reason">Reason</Label>
+                  <Textarea
+                    id="msg-flag-reason"
+                    rows={3}
+                    value={flagReason}
+                    onChange={(e) => setFlagReason(e.target.value)}
+                    placeholder="What's wrong with this message?"
+                  />
+                </div>
+                <DialogFooter>
+                  <OutlineCta onClick={() => { setFlagMessageId(null); setFlagReason(""); }}>Cancel</OutlineCta>
+                  <Button type="button" variant="destructive" onClick={handleSubmitFlag} disabled={flagSubmitting || !flagReason.trim()}>
+                    {flagSubmitting ? "Reporting…" : "Report message"}
                   </Button>
                 </DialogFooter>
               </DialogContent>

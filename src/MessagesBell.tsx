@@ -9,7 +9,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { MessageSquareIcon } from "lucide-react";
+import { MessageSquareIcon, MessagesSquareIcon } from "lucide-react";
 import { tokens as T, fonts as F } from "./auth/_tokens";
 import { groupConversationsByCounterpart } from "./conversationGrouping";
 import CountBadge from "./CountBadge";
@@ -110,11 +110,15 @@ export default function MessagesBell({
           </button>
         </div>
         <DropdownMenuSeparator className="m-0" />
-        <div style={{ maxHeight: 360, overflowY: "auto" }}>
+        <div style={{ maxHeight: 360, overflowY: "auto" }} role="list" aria-label="Conversations">
           {conversations.length === 0 ? (
-            <p style={{ margin: 0, padding: "24px 12px", textAlign: "center", fontFamily: F.sans, fontSize: 13, color: T.inkSoft }}>
-              No conversations yet.
-            </p>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, padding: "28px 16px", textAlign: "center" }}>
+              <MessagesSquareIcon size={22} color={T.inkFaint} aria-hidden="true" />
+              <p style={{ margin: 0, fontFamily: F.sans, fontSize: 13, fontWeight: 600, color: T.coal }}>No conversations yet</p>
+              <p style={{ margin: 0, fontFamily: F.sans, fontSize: 12, color: T.inkFaint, lineHeight: 1.4 }}>
+                New messages will show up here.
+              </p>
+            </div>
           ) : (
             groups.map((group) => (
               <div key={group.counterpartName}>
@@ -128,6 +132,7 @@ export default function MessagesBell({
                   <button
                     key={c.conversationId}
                     type="button"
+                    role="listitem"
                     onClick={() => handleItemClick(c)}
                     style={{
                       display: "block", width: "100%", textAlign: "left", cursor: "pointer",

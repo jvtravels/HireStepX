@@ -236,13 +236,15 @@ async function handleGet(req: Request, headers: Record<string, string>, auth: { 
   const msgRows = (await msgRes.json().catch(() => [])) as MessageRow[];
 
   // Best-effort — never blocks the read if it fails. Opening the thread is
-  // what clears the unread badge for this viewer.
+  // what clears the unread badge for this viewer. Logged (not silently
+  // swallowed) since repeated failures here silently desyncs the unread
+  // badge with zero visibility until a user reports it.
   const readColumn = role === "employer" ? "employer_last_read_at" : "candidate_last_read_at";
   void fetch(`${SUPABASE_URL}/rest/v1/conversations?id=eq.${encodeURIComponent(conversation.id)}`, {
     method: "PATCH",
     headers: { ...serviceHeaders(), "Content-Type": "application/json", Prefer: "return=minimal" },
     body: JSON.stringify({ [readColumn]: new Date().toISOString() }),
-  }).catch(() => {});
+  }).catch((err) => slog.warn("messages: last-read update failed", { conversationId: conversation.id, error: (err as Error).message }));
 
   return new Response(
     JSON.stringify({
@@ -325,12 +327,14 @@ async function handlePost(req: Request, headers: Record<string, string>, auth: {
     }).catch((err) => slog.warn("messages: auto-flag insert failed", { error: (err as Error).message }));
   }
 
-  // Best-effort — never blocks the send if it fails.
+  // Best-effort — never blocks the send if it fails. Logged since a failure
+  // here leaves the conversation's ordering/unread state stale with no
+  // other signal that it happened.
   void fetch(`${SUPABASE_URL}/rest/v1/conversations?id=eq.${encodeURIComponent(conversation.id)}`, {
     method: "PATCH",
     headers: { ...serviceHeaders(), "Content-Type": "application/json", Prefer: "return=minimal" },
     body: JSON.stringify({ last_message_at: now, last_sender_role: role }),
-  }).catch(() => {});
+  }).catch((err) => slog.warn("messages: last_message_at update failed", { conversationId: conversation.id, error: (err as Error).message }));
 
   const recipientId = role === "employer" ? conversation.candidate_user_id : conversation.employer_id;
   void notify({

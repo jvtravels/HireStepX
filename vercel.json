@@ -65,6 +65,10 @@
     {
       "path": "/api/cron/rematch-requirements",
       "schedule": "0 1 * * *"
+    },
+    {
+      "path": "/api/prune-notifications",
+      "schedule": "15 3 * * *"
     }
   ]
 }

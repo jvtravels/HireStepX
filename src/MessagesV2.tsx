@@ -58,24 +58,28 @@ const STATUS_LABEL: Record<string, string> = {
   no_response: "Application closed",
 };
 
-const STATUS_COLOR: Record<string, string> = {
-  shortlisted: "#6366f1",
-  interview_invited: "#8b5cf6",
-  interviewing: "#d97706",
-  hired: "#16a34a",
-  rejected: "#6b7280",
-  not_a_fit: "#6b7280",
-  no_response: "#6b7280",
+/** Same {bg, fg} token-pair convention as employer/_atoms.tsx's pillPalette +
+ *  CANDIDATE_STATUS_TONE — kept as its own map (see STATUS_LABEL comment
+ *  above) rather than importing the employer module, but aligned on the same
+ *  tokens so a given status reads as the same color on both sides. */
+const STATUS_TONE: Record<string, { bg: string; fg: string }> = {
+  shortlisted: { bg: t.indigo100, fg: t.indigoDeep },
+  interview_invited: { bg: t.violet100, fg: t.violet },
+  interviewing: { bg: t.copper100, fg: t.copper },
+  hired: { bg: t.success100, fg: t.success },
+  rejected: { bg: t.error100, fg: t.error },
+  not_a_fit: { bg: t.creamSoft, fg: t.inkSoft },
+  no_response: { bg: t.creamSoft, fg: t.inkSoft },
 };
 
 function StatusBadge({ status }: { status: string }) {
   const label = STATUS_LABEL[status] || status;
-  const color = STATUS_COLOR[status] || t.inkFaint;
+  const tone = STATUS_TONE[status] || { bg: t.creamSoft, fg: t.inkSoft };
   return (
     <span
       style={{
         display: "inline-flex", alignItems: "center", fontFamily: f.sans, fontSize: 11.5, fontWeight: 600,
-        color, background: `${color}1a`, borderRadius: 999, padding: "2px 9px",
+        color: tone.fg, background: tone.bg, borderRadius: 999, padding: "2px 9px",
       }}
     >
       {label}
@@ -284,7 +288,7 @@ export default function MessagesV2() {
 
   return shell(
     <div style={{ display: "flex", flex: 1, minHeight: 0 }}>
-      <div style={{ width: 280, borderRight: `1px solid ${t.line}`, overflowY: "auto", flexShrink: 0 }}>
+      <div style={{ width: 280, borderRight: `1px solid ${t.line}`, overflowY: "auto", flexShrink: 0 }} role="list" aria-label="Conversations">
         {groups.map((group) => (
           <div key={group.counterpartName}>
             <div style={{
@@ -296,6 +300,8 @@ export default function MessagesV2() {
             {group.conversations.map((c) => (
               <button
                 key={c.matchId}
+                role="listitem"
+                aria-current={c.matchId === activeMatchId ? "true" : undefined}
                 onClick={() => selectConversation(c.matchId)}
                 style={{
                   display: "block", width: "100%", textAlign: "left", padding: "10px 16px 10px 24px",
@@ -333,8 +339,18 @@ export default function MessagesV2() {
                 {active.roleTitle}{context?.companyName ? ` · ${context.companyName}` : ""}
               </div>
             </div>
-            <div ref={scrollRef} style={{ flex: 1, overflowY: "auto", padding: "14px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
-              {threadLoading && <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkFaint }}>Loading messages…</p>}
+            <div
+              ref={scrollRef}
+              role="log"
+              aria-live="polite"
+              aria-label={`Conversation with ${context?.companyName || active.companyName}`}
+              style={{ flex: 1, overflowY: "auto", padding: "14px 16px", display: "flex", flexDirection: "column", gap: 10 }}
+            >
+              {threadLoading && (
+                <div style={{ display: "flex", flex: 1 }}>
+                  <LoadingScreen fullScreen={false} message="Loading messages…" />
+                </div>
+              )}
               {!threadLoading && messages.length === 0 && (
                 <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkFaint }}>No messages yet — say hello.</p>
               )}
@@ -385,6 +401,7 @@ export default function MessagesV2() {
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
                 placeholder="Write a message…"
+                aria-label="Message"
                 rows={2}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
@@ -395,7 +412,13 @@ export default function MessagesV2() {
               />
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <label style={{ cursor: attaching ? "default" : "pointer" }}>
-                  <input type="file" onChange={handleAttach} disabled={attaching} style={{ display: "none" }} />
+                  <input
+                    type="file"
+                    onChange={handleAttach}
+                    disabled={attaching}
+                    aria-label="Attach a file (max 8MB)"
+                    style={{ display: "none" }}
+                  />
                   <span style={{ display: "flex", alignItems: "center", gap: 4, fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft }}>
                     <PaperclipIcon size={14} aria-hidden="true" /> {attaching ? "Uploading…" : "Attach file"}
                   </span>

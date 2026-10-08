@@ -2025,7 +2025,15 @@ create table if not exists conversations (
   employer_id uuid references employers(id) on delete cascade not null,
   candidate_user_id uuid references profiles(id) on delete cascade not null,
   last_message_at timestamptz,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  -- employers.id and profiles.id share the auth.users(id) uuid space, so a
+  -- corrupted match row (candidate_user_id == employer_id, e.g. a self-match
+  -- bug) used to resolve a conversation's role inconsistently and leak the
+  -- wrong counterpart (an employer's own name) to the candidate side. This
+  -- constraint makes that corruption impossible to insert at all, rather
+  -- than relying solely on resolveRole()'s check order in
+  -- _messages-helpers.ts as the only defense.
+  constraint conversations_parties_distinct check (employer_id <> candidate_user_id)
 );
 create index if not exists idx_conversations_employer on conversations(employer_id, last_message_at desc nulls last);
 create index if not exists idx_conversations_candidate on conversations(candidate_user_id, last_message_at desc nulls last);
@@ -2058,7 +2066,8 @@ create table if not exists conversation_messages (
   attachment_name text,
   attachment_mime text,
   auto_flag_reason text,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  constraint conversation_messages_parties_distinct check (employer_id <> candidate_user_id)
 );
 create index if not exists idx_conversation_messages_conversation on conversation_messages(conversation_id, created_at);
 create index if not exists idx_conversation_messages_employer on conversation_messages(employer_id, created_at desc);
