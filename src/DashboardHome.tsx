@@ -466,7 +466,7 @@ export default function DashboardHome() {
         minHeight: "100%", fontFamily: f.sans, color: t.coal,
         background: t.white, border: `1px solid ${t.line}`, borderRadius: 16,
         display: "flex", flexDirection: "column", gap: 24, padding: 24,
-        margin: "16px 0 64px",
+        margin: "0 0 64px",
       }}
     >
       <DashboardHeader
@@ -498,23 +498,39 @@ export default function DashboardHome() {
         onViewJobs={goToJobs}
       />
 
-      <NextMoveCard
-        isFirstTimer={!sessions.hasData}
-        weakestSkillKey={nextMove.weakestSkillName}
-        ctaLabel={nextMoveCtaLabel}
-        onStart={nextMoveOnStart}
-      />
-
-      {sessions.hasData && (
+      {sessions.hasData ? (
         <div style={{ display: "flex", flexWrap: "wrap", gap: 20 }}>
-          <div style={{ flex: "2 1 320px", minWidth: 280 }}>
+          <div style={{ flex: "3 1 420px", minWidth: 280 }}>
+            <NextMoveCard
+              isFirstTimer={!sessions.hasData}
+              weakestSkillKey={nextMove.weakestSkillName}
+              ctaLabel={nextMoveCtaLabel}
+              onStart={nextMoveOnStart}
+            />
+          </div>
+          <div style={{ flex: "2 1 280px", minWidth: 260 }}>
             <PracticeActivityCard
               sessionsCompleted={sessions.overallStats.sessionsCompleted}
               hoursLogged={sessions.overallStats.hoursLogged}
               questionsAnswered={sessions.overallStats.questionsAnswered}
             />
           </div>
-          <div style={{ flex: "3 1 380px", minWidth: 280 }}>
+        </div>
+      ) : (
+        <NextMoveCard
+          isFirstTimer={!sessions.hasData}
+          weakestSkillKey={nextMove.weakestSkillName}
+          ctaLabel={nextMoveCtaLabel}
+          onStart={nextMoveOnStart}
+        />
+      )}
+
+      {sessions.hasData && (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 20 }}>
+          <div style={{ flex: "3 1 420px", minWidth: 280 }}>
+            <HiringActivityCard />
+          </div>
+          <div style={{ flex: "2 1 280px", minWidth: 260 }}>
             <EvidenceCapabilitiesCard capabilities={sessions.evidenceCapabilities} />
           </div>
         </div>
@@ -534,8 +550,6 @@ export default function DashboardHome() {
           </div>
         </div>
       )}
-
-      <HiringActivityCard />
 
       <section aria-labelledby="dh-recent-heading">
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 12 }}>

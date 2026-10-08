@@ -349,8 +349,18 @@ export function NextMoveCard({ isFirstTimer, weakestSkillKey, ctaLabel, onStart 
       padding: "24px", borderRadius: 14, background: t.cream, border: `1px solid ${t.line}`,
       display: "flex", flexDirection: "column", gap: 14,
     }}>
-      <div style={{ fontFamily: f.sans, fontSize: textSize.xs, fontWeight: 700, color: t.inkSoft, textTransform: "uppercase", letterSpacing: 0.6 }}>
-        {isFirstTimer ? "Your First Step" : "Your Next Move"}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={t.coal} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+            <line x1="12" x2="12" y1="19" y2="22" />
+          </svg>
+          <span style={{ fontFamily: f.sans, fontSize: textSize.lg, fontWeight: 700, color: t.coal }}>
+            {isFirstTimer ? "Your First Step" : "Your Next Move"}
+          </span>
+        </div>
+        <span style={{ fontFamily: f.sans, fontSize: textSize.sm, color: t.inkFaint }}>~15 min · 8 questions</span>
       </div>
       <h2 id="dh-next-heading" style={{ fontFamily: f.sans, fontSize: textSize["2xl"], fontWeight: 700, color: t.coal, margin: 0 }}>
         {title}
@@ -361,7 +371,6 @@ export function NextMoveCard({ isFirstTimer, weakestSkillKey, ctaLabel, onStart 
       <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
         {copy.tags.map((tag) => <Tag key={tag} label={tag} />)}
       </div>
-      <div style={{ fontFamily: f.sans, fontSize: textSize.sm, color: t.inkFaint }}>~15 min · 8 questions</div>
       <button
         type="button"
         onClick={onStart}
@@ -371,7 +380,7 @@ export function NextMoveCard({ isFirstTimer, weakestSkillKey, ctaLabel, onStart 
           fontFamily: f.sans, fontSize: textSize.md, fontWeight: 700, cursor: "pointer",
         }}
       >
-        {ctaLabel}
+        {ctaLabel} →
       </button>
     </section>
   );
@@ -382,23 +391,41 @@ export function NextMoveCard({ isFirstTimer, weakestSkillKey, ctaLabel, onStart 
 export function PracticeActivityCard({ sessionsCompleted, hoursLogged, questionsAnswered }: {
   sessionsCompleted: number; hoursLogged: number; questionsAnswered: number;
 }) {
-  const rows = [
-    { label: "Sessions Completed", value: sessionsCompleted },
-    { label: "Hours Practiced", value: hoursLogged },
+  const subStats = [
+    { label: "Total Practice Time", value: `${hoursLogged}h` },
     { label: "Questions Answered", value: questionsAnswered },
   ];
   return (
     <section aria-labelledby="dh-activity-heading" style={{
       padding: "24px", borderRadius: 14, background: t.cream, border: `1px solid ${t.line}`,
+      display: "flex", flexDirection: "column", gap: 12,
     }}>
-      <h2 id="dh-activity-heading" style={{ fontFamily: f.sans, fontSize: textSize.lg, fontWeight: 700, color: t.coal, margin: "0 0 16px" }}>
-        Practice Activity
-      </h2>
-      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-        {rows.map((r) => (
-          <div key={r.label} style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <span style={{ fontFamily: f.sans, fontSize: textSize.sm, color: t.inkSoft }}>{r.label}</span>
-            <span style={{ fontFamily: f.sans, fontSize: textSize.lg, fontWeight: 700, color: t.coal }}>{r.value}</span>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={t.coal} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M3 3v18h18" />
+          <path d="M18 17V9" />
+          <path d="M13 17V5" />
+          <path d="M8 17v-3" />
+        </svg>
+        <h2 id="dh-activity-heading" style={{ fontFamily: f.sans, fontSize: textSize.lg, fontWeight: 700, color: t.coal, margin: 0 }}>
+          Practice Activity
+        </h2>
+      </div>
+      <div style={{
+        padding: "16px", borderRadius: 10, background: t.creamSoft, border: `1px solid ${t.line}`,
+        textAlign: "center",
+      }}>
+        <div style={{ fontFamily: f.sans, fontSize: textSize["2xl"], fontWeight: 700, color: t.coal }}>{sessionsCompleted}</div>
+        <div style={{ fontFamily: f.sans, fontSize: textSize.xs, color: t.inkSoft, marginTop: 4 }}>Total Sessions</div>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+        {subStats.map((s) => (
+          <div key={s.label} style={{
+            padding: "14px", borderRadius: 10, background: t.creamSoft, border: `1px solid ${t.line}`,
+            textAlign: "center",
+          }}>
+            <div style={{ fontFamily: f.sans, fontSize: textSize.xl, fontWeight: 700, color: t.coal }}>{s.value}</div>
+            <div style={{ fontFamily: f.sans, fontSize: textSize.xs, color: t.inkSoft, marginTop: 4 }}>{s.label}</div>
           </div>
         ))}
       </div>
