@@ -633,9 +633,17 @@ async function runMatchingInner(requirementId: string, req: RequirementInput, ow
     );
     if (newStrongMatches.length > 0) {
       const title = req.title || "your requirement";
+      // Fresh matches are never unlocked yet (they were just inserted above),
+      // so the candidate's real name must stay hidden here the same way the
+      // requirement/candidate pages mask it — see
+      // `candidate.unlocked ? candidate.name : \`Candidate #${id.slice(0, 6)}\``
+      // in app/(employer)/employer/requirements/[id]/page.tsx. Surfacing the
+      // real name in a notification or email would leak PII the employer
+      // hasn't paid to unlock.
+      const maskedLabel = (candidateId: string) => `Candidate #${candidateId.slice(0, 6)}`;
       const body =
         newStrongMatches.length === 1
-          ? `${byId.get(newStrongMatches[0].candidateId)?.name || "A candidate"} is a strong match (${newStrongMatches[0].matchScore}%) for ${title}.`
+          ? `${maskedLabel(newStrongMatches[0].candidateId)} is a strong match (${newStrongMatches[0].matchScore}%) for ${title}.`
           : `${newStrongMatches.length} new strong matches found for ${title}.`;
       void notify({
         userId: ownerUserId,
@@ -648,7 +656,7 @@ async function runMatchingInner(requirementId: string, req: RequirementInput, ow
         ownerUserId,
         requirementId,
         requirementTitle: title,
-        candidateNames: newStrongMatches.map((m) => byId.get(m.candidateId)?.name || "A candidate"),
+        candidateNames: newStrongMatches.map((m) => maskedLabel(m.candidateId)),
         topScore: Math.max(...newStrongMatches.map((m) => m.matchScore)),
       });
     }

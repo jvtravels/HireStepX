@@ -159,7 +159,6 @@ import {
   Calendar,
   Building2,
   LayoutGrid,
-  Folder,
   GraduationCap,
   Clock,
   MapPin,
@@ -4251,44 +4250,25 @@ function OpportunityDetailsView({
 
       </div>
 
-      <div className="bg-card flex flex-col gap-3.5 rounded-xl border p-5 lg:w-96 lg:shrink-0">
-        <div className="flex items-center justify-between gap-2">
-          <h2 className="text-foreground text-sm font-semibold">Talent preferences</h2>
-          <Button variant="ghost" size="sm" className="text-muted-foreground -mr-2 gap-1.5" onClick={onEdit}>
-            <Pencil className="size-3.5" />
-            Edit
-          </Button>
-        </div>
-        <div className="grid grid-cols-2 gap-x-3 gap-y-3">
-          {[
-            { icon: Building2, label: "Industry", value: opportunity.talentPreferences.preferredIndustry },
-            { icon: LayoutGrid, label: "Domain", value: opportunity.talentPreferences.preferredDomain },
-            { icon: Calendar, label: "Availability", value: opportunity.talentPreferences.availability },
-            { icon: GraduationCap, label: "Experience", value: opportunity.talentPreferences.relevantExperience },
-          ].map(({ icon: Icon, label, value }) => (
-            <div key={label} className="flex items-start gap-2">
-              <div className="bg-muted text-muted-foreground flex size-7 shrink-0 items-center justify-center rounded-md">
-                <Icon className="size-3.5" />
-              </div>
-              <div className="flex min-w-0 flex-col">
-                <span className="text-muted-foreground text-[11px] leading-tight">{label}</span>
-                <span className="text-foreground text-sm leading-snug font-medium">{value}</span>
-              </div>
-            </div>
-          ))}
-          <div className="flex items-start gap-2">
-            <div className="bg-muted text-muted-foreground flex size-7 shrink-0 items-center justify-center rounded-md">
-              <Folder className="size-3.5" />
-            </div>
-            <div className="flex min-w-0 flex-col gap-0.5">
-              <span className="text-muted-foreground text-[11px] leading-tight">Portfolio</span>
-              <Badge
-                variant={opportunity.talentPreferences.portfolioRequired ? "default" : "outline"}
-                className="w-fit font-normal"
-              >
-                {opportunity.talentPreferences.portfolioRequired ? "Required" : "Optional"}
+      <div className="bg-card flex flex-col gap-3.5 rounded-xl border p-5 lg:shrink-0 w-max">
+        <div className="flex flex-col gap-2">
+          <h2 className="text-foreground text-base font-semibold">Required skills</h2>
+          <div className="flex flex-wrap gap-1.5">
+            {opportunity.requiredSkills.map((skill) => (
+              <Badge key={skill} className="font-normal">
+                {skill}
               </Badge>
-            </div>
+            ))}
+          </div>
+        </div>
+        <div className="flex flex-col gap-2">
+          <h2 className="text-muted-foreground text-sm font-medium">Nice to have</h2>
+          <div className="flex flex-wrap gap-1.5">
+            {opportunity.niceToHaveSkills.map((skill) => (
+              <Badge key={skill} variant="outline" className="font-normal">
+                {skill}
+              </Badge>
+            ))}
           </div>
         </div>
       </div>
@@ -4316,28 +4296,6 @@ function OpportunityDetailsView({
             </div>
           </div>
 
-          <div className="flex flex-col gap-5 border-t pt-5 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-6">
-            <div className="flex flex-col gap-2">
-              <h2 className="text-foreground text-base font-semibold">Required skills</h2>
-              <div className="flex flex-wrap gap-1.5">
-                {opportunity.requiredSkills.map((skill) => (
-                  <Badge key={skill} className="border-primary/20 bg-primary/10 text-primary font-normal">
-                    {skill}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-            <div className="flex flex-col gap-2">
-              <h2 className="text-muted-foreground text-sm font-medium">Nice to have</h2>
-              <div className="flex flex-wrap gap-1.5">
-                {opportunity.niceToHaveSkills.map((skill) => (
-                  <Badge key={skill} variant="outline" className="font-normal">
-                    {skill}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          </div>
         </div>
 
         <div ref={shortlistRef} className="flex flex-col gap-3">
@@ -5068,6 +5026,12 @@ export default function EmployersDashboard({
   const [detailsTarget, setDetailsTarget] = React.useState<string | null>(initialDetailsId);
   const [profileCandidateName, setProfileCandidateName] = React.useState<string | null>(null);
   const closeProfileRef = React.useRef<(() => void) | null>(null);
+  /* Set by the Opportunities table's "Strong Matches" hover preview so the
+     OpportunityDetailsView it mounts opens straight into that candidate's
+     (still-locked) profile, instead of landing on the bare shortlist. Only
+     a seed for the view's initial state (see initialProfileTarget's own
+     doc comment) — never read back here. */
+  const [pendingProfileTarget, setPendingProfileTarget] = React.useState<string | null>(null);
 
   const handleSort = (column: SortColumn) => {
     if (sortColumn === column) {
@@ -5584,7 +5548,7 @@ export default function EmployersDashboard({
                 initialEvidenceTarget={initialEvidenceTarget}
                 initialPurchaseHistory={initialPurchaseHistory}
                 initialUnlockConfirmation={initialUnlockConfirmation}
-                initialProfileTarget={initialProfileTarget}
+                initialProfileTarget={pendingProfileTarget ?? initialProfileTarget}
               />
             );
           })()
@@ -5921,7 +5885,10 @@ export default function EmployersDashboard({
                           <button
                             type="button"
                             disabled={isMatching}
-                            onClick={() => setDetailsTarget(o.id)}
+                            onClick={() => {
+                              setPendingProfileTarget(null);
+                              setDetailsTarget(o.id);
+                            }}
                             className="text-foreground hover:text-primary focus-visible:ring-ring/50 disabled:hover:text-foreground -mx-0.5 rounded px-0.5 text-left font-semibold outline-none hover:underline focus-visible:ring-[3px] disabled:cursor-default disabled:hover:no-underline"
                           >
                             {o.title}
@@ -6018,7 +5985,7 @@ export default function EmployersDashboard({
                             <button
                               type="button"
                               aria-label={`${o.strongMatches} strong match${o.strongMatches === 1 ? "" : "es"} — view candidates`}
-                              className="focus-visible:ring-ring/50 flex w-fit items-center rounded-full outline-none focus-visible:ring-[3px]"
+                              className="focus-visible:ring-ring/50 flex w-fit items-center rounded-full outline-none transition-transform duration-150 ease-out hover:-translate-y-0.5 hover:scale-105 focus-visible:ring-[3px]"
                             >
                               {o.strongMatchInitials.slice(0, 2).map((initials, i) => (
                                 <Avatar
@@ -6068,9 +6035,8 @@ export default function EmployersDashboard({
                                     key={initials}
                                     type="button"
                                     onClick={() => {
-                                      // Candidate details screen not built yet — this is the
-                                      // intended navigation hook (e.g. router push to
-                                      // /candidates/:id) once that screen exists.
+                                      setPendingProfileTarget(initials);
+                                      setDetailsTarget(o.id);
                                     }}
                                     className="group hover:bg-[var(--tooltip-border)] focus-visible:bg-[var(--tooltip-border)] -mx-1.5 flex items-center justify-between gap-3 rounded-md px-1.5 py-2.5 text-left transition-colors focus-visible:outline-none"
                                   >
@@ -6127,7 +6093,10 @@ export default function EmployersDashboard({
                           <DropdownMenuContent align="end" className="w-44">
                             <DropdownMenuItem
                               disabled={isMatching}
-                              onSelect={() => setDetailsTarget(o.id)}
+                              onSelect={() => {
+                                setPendingProfileTarget(null);
+                                setDetailsTarget(o.id);
+                              }}
                             >
                               <Users className="size-4" />
                               View details

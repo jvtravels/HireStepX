@@ -207,17 +207,35 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (stillLocked.length > 0) {
       const unlockedAt = new Date().toISOString();
       const patchResults = await Promise.all(
-        stillLocked.map((matchId) => {
+        stillLocked.map(async (matchId) => {
           const profile = profileByMatchId.get(matchId);
-          return fetch(`${SUPABASE_URL}/rest/v1/requirement_matches?id=eq.${encodeURIComponent(matchId)}`, {
+          const url = `${SUPABASE_URL}/rest/v1/requirement_matches?id=eq.${encodeURIComponent(matchId)}`;
+          const patchHeaders = { ...supabaseServiceHeaders(), Prefer: "return=minimal" };
+          const full = await fetch(url, {
             method: "PATCH",
-            headers: { ...supabaseServiceHeaders(), Prefer: "return=minimal" },
+            headers: patchHeaders,
             body: JSON.stringify({
               unlocked: true,
               unlocked_at: unlockedAt,
               unlocked_candidate_name: profile?.name ?? null,
               unlocked_candidate_email: profile?.email ?? null,
             }),
+          });
+          if (full.ok) return full;
+          // The employer already paid — the unlock itself must not be lost
+          // to a snapshot-column mismatch (see supabase-migrations/0026).
+          // Retry with just the core fields; the name/email snapshot is a
+          // display nicety, not the thing the employer paid for.
+          const bodyText = await full.text().catch(() => "");
+          console.error(
+            "employer unlock patch with candidate snapshot failed, retrying without it:",
+            full.status,
+            bodyText.slice(0, 200),
+          );
+          return fetch(url, {
+            method: "PATCH",
+            headers: patchHeaders,
+            body: JSON.stringify({ unlocked: true, unlocked_at: unlockedAt }),
           });
         }),
       );

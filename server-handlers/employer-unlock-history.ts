@@ -77,13 +77,27 @@ export default async function handler(req: Request): Promise<Response> {
         `${SUPABASE_URL}/rest/v1/requirement_matches?id=in.(${matchIdParam})&select=id,unlocked_candidate_name,unlocked_candidate_email`,
         { headers: serviceHeaders() },
       );
-      const matchRows = (await matchRes.json().catch(() => [])) as Array<{
-        id: string;
-        unlocked_candidate_name: string | null;
-        unlocked_candidate_email: string | null;
-      }>;
-      for (const m of matchRows) {
-        candidateByMatchId.set(m.id, { name: m.unlocked_candidate_name, email: m.unlocked_candidate_email });
+      // Soft-fail: this is a display enrichment, not the primary data. A
+      // schema mismatch or transient PostgREST error here (e.g. an error
+      // object instead of an array) must never 500 the purchase list itself —
+      // candidates just fall back to null/"Candidate" below.
+      if (matchRes.ok) {
+        const matchRows = await matchRes.json().catch(() => null);
+        if (Array.isArray(matchRows)) {
+          for (const m of matchRows as Array<{
+            id: string;
+            unlocked_candidate_name: string | null;
+            unlocked_candidate_email: string | null;
+          }>) {
+            candidateByMatchId.set(m.id, { name: m.unlocked_candidate_name, email: m.unlocked_candidate_email });
+          }
+        }
+      } else {
+        slog.error("employer-unlock-history candidate snapshot lookup failed", {
+          code: "employer_unlock_history_match_lookup_failed",
+          status: matchRes.status,
+          userId: auth.userId,
+        });
       }
     }
 

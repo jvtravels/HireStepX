@@ -544,11 +544,13 @@ function BatchUnlockBanner({
   batchStart,
   batchEnd,
   onUnlocked,
+  compact = false,
 }: {
   requirementId: string;
   batchStart: number;
   batchEnd: number;
   onUnlocked: (candidates: Array<{ matchId: string; name: string; contact: { email: string } }>) => void;
+  compact?: boolean;
 }) {
   const { createUnlockOrder, verifyUnlockPayment } = useEmployerData();
   const { toast } = useToast();
@@ -610,6 +612,21 @@ function BatchUnlockBanner({
     });
     rzp.open();
   };
+
+  if (compact) {
+    return (
+      <span title={`Unlock candidates ${batchStart}–${batchEnd} for a flat rate instead of one at a time.`}>
+        <PrimaryCta
+          size="sm"
+          icon={<LockIcon size={13} aria-hidden="true" />}
+          onClick={handleUnlockBatch}
+          disabled={unlocking}
+        >
+          {unlocking ? "Unlocking…" : `Unlock ${batchStart}–${batchEnd} — ₹${(batchUnlockPrice().amountPaise / 100).toFixed(0)}`}
+        </PrimaryCta>
+      </span>
+    );
+  }
 
   return (
     <Card style={{ marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap", padding: "12px 16px", background: t.creamSoft }}>
@@ -1589,96 +1606,62 @@ export default function RequirementDetailPage() {
       </div>
 
       <div style={{ marginTop: 24 }}>
-        <Card>
-          <h2 style={{ fontFamily: f.sans, fontSize: 18, color: t.coal, margin: "0 0 10px" }}>Details</h2>
-
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 14 }}>
-            <div>
-              <div style={{ fontFamily: f.mono, fontSize: 10, letterSpacing: 0.6, textTransform: "uppercase", color: t.inkFaint }}>Open positions</div>
-              <div style={{ fontFamily: f.sans, fontSize: 13.5, color: t.coal, marginTop: 4 }}>{requirement.openPositions ?? "Not specified"}</div>
-            </div>
-            <div>
-              <div style={{ fontFamily: f.mono, fontSize: 10, letterSpacing: 0.6, textTransform: "uppercase", color: t.inkFaint }}>Due date</div>
-              <div style={{ fontFamily: f.sans, fontSize: 13.5, color: t.coal, marginTop: 4 }}>{requirement.dueDate || "No due date set"}</div>
-            </div>
-            <div>
-              <div style={{ fontFamily: f.mono, fontSize: 10, letterSpacing: 0.6, textTransform: "uppercase", color: t.inkFaint }}>Pipeline stage</div>
-              <div style={{ marginTop: 4, fontFamily: f.sans, fontSize: 13.5, color: t.coal }}>{STAGE_LABEL[requirement.stage]}</div>
-            </div>
-          </div>
-
-          {requirement.workSchedule && (
-            <div style={{ marginTop: 20, paddingTop: 20, borderTop: `1px solid ${t.line}` }}>
-              <div style={{ fontFamily: f.mono, fontSize: 10, letterSpacing: 0.6, textTransform: "uppercase", color: t.inkFaint }}>Work schedule</div>
-              <div style={{ fontFamily: f.sans, fontSize: 13.5, color: t.coal, marginTop: 4 }}>{requirement.workSchedule}</div>
-            </div>
+        <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 10, marginBottom: 16 }}>
+          <h2 style={{ fontFamily: f.sans, fontSize: 18, fontWeight: 600, color: t.coal, margin: 0 }}>Candidates</h2>
+          {requirement.lastMatchedAt && (
+            <span
+              role="status"
+              aria-live="polite"
+              style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkFaint }}
+            >
+              Updated {timeAgoLabel(requirement.lastMatchedAt)}
+            </span>
           )}
-
-          {requirement.skills.length > 0 && (
-            <div style={{ marginTop: 20, paddingTop: 20, borderTop: `1px solid ${t.line}` }}>
-              <div style={{ fontFamily: f.mono, fontSize: 10, letterSpacing: 0.6, textTransform: "uppercase", color: t.inkFaint, marginBottom: 8 }}>Skills</div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                {requirement.skills.map((s) => <SkillTag key={s}>{s}</SkillTag>)}
-              </div>
-            </div>
+          {(requirement.status === "ready" || requirement.status === "partial" || requirement.status === "closed") && (
+            <>
+              <SearchWithSuggestions
+                id="candidates-search"
+                label="Search candidates"
+                value={search}
+                onChange={setSearch}
+                placeholder="Search by name, role, skill, or notice period…"
+                storageKey={CANDIDATES_RECENT_SEARCHES_KEY}
+                suggestedFilters={suggestedFilters}
+                style={{ flex: "1 1 200px", minWidth: 180, maxWidth: 360 }}
+                inputStyle={{ background: t.white }}
+                inputClassName="focus-visible:ring-0"
+              />
+              <FilterPill label="Contact" value={contactFilter} options={contactFilterOptions} onChange={setContactFilter} />
+              {locationOptions.length > 1 && (
+                <FilterPill
+                  label="Location"
+                  value={locationFilter}
+                  options={[{ value: "all", label: "All locations" }, ...locationOptions.map((loc) => ({ value: loc, label: loc }))]}
+                  onChange={setLocationFilter}
+                />
+              )}
+              {(search.trim() !== "" || contactFilter !== "all" || locationFilter !== "all") && (
+                <Button
+                  type="button"
+                  variant="link"
+                  onClick={() => { setSearch(""); setContactFilter("all"); setLocationFilter("all"); }}
+                  style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 600, height: "auto" }}
+                >
+                  Clear filters
+                </Button>
+              )}
+              {!readOnly && nextLockedBatch && (
+                <BatchUnlockBanner
+                  requirementId={requirement.id}
+                  batchStart={nextLockedBatch.start}
+                  batchEnd={nextLockedBatch.end}
+                  onUnlocked={handleBatchUnlocked}
+                  compact
+                />
+              )}
+            </>
           )}
-
-          {requirement.responsibilities && (
-            <div style={{ marginTop: 20, paddingTop: 20, borderTop: `1px solid ${t.line}` }}>
-              <div style={{ fontFamily: f.mono, fontSize: 10, letterSpacing: 0.6, textTransform: "uppercase", color: t.inkFaint, marginBottom: 8 }}>Responsibilities</div>
-              <p style={{ fontFamily: f.sans, fontSize: 13.5, color: t.inkSoft, lineHeight: 1.7, margin: 0, whiteSpace: "pre-wrap" }}>{requirement.responsibilities}</p>
-            </div>
-          )}
-
-          {requirement.niceToHave && (
-            <div style={{ marginTop: 20, paddingTop: 20, borderTop: `1px solid ${t.line}` }}>
-              <div style={{ fontFamily: f.mono, fontSize: 10, letterSpacing: 0.6, textTransform: "uppercase", color: t.inkFaint, marginBottom: 8 }}>Nice to have</div>
-              <p style={{ fontFamily: f.sans, fontSize: 13.5, color: t.inkSoft, lineHeight: 1.7, margin: 0, whiteSpace: "pre-wrap" }}>{requirement.niceToHave}</p>
-            </div>
-          )}
-
-          {requirement.preferredColleges.length > 0 && (
-            <div style={{ marginTop: 20, paddingTop: 20, borderTop: `1px solid ${t.line}` }}>
-              <div style={{ fontFamily: f.mono, fontSize: 10, letterSpacing: 0.6, textTransform: "uppercase", color: t.inkFaint, marginBottom: 8 }}>Preferred colleges</div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                {requirement.preferredColleges.map((c) => <Pill key={c} tone="indigo">{c}</Pill>)}
-              </div>
-            </div>
-          )}
-
-          {requirement.targetCompanies.length > 0 && (
-            <div style={{ marginTop: 20, paddingTop: 20, borderTop: `1px solid ${t.line}` }}>
-              <div style={{ fontFamily: f.mono, fontSize: 10, letterSpacing: 0.6, textTransform: "uppercase", color: t.inkFaint, marginBottom: 8 }}>Target companies</div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                {requirement.targetCompanies.map((c) => <Pill key={c} tone="indigo">{c}</Pill>)}
-              </div>
-            </div>
-          )}
-
-          {requirement.perksAndBenefits.length > 0 && (
-            <div style={{ marginTop: 20, paddingTop: 20, borderTop: `1px solid ${t.line}` }}>
-              <div style={{ fontFamily: f.mono, fontSize: 10, letterSpacing: 0.6, textTransform: "uppercase", color: t.inkFaint, marginBottom: 8 }}>Perks and benefits</div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                {requirement.perksAndBenefits.map((p) => <Pill key={p} tone="success">{p}</Pill>)}
-              </div>
-            </div>
-          )}
-        </Card>
-      </div>
-
-      <div style={{ marginTop: 24 }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
-          <h2 style={{ fontFamily: f.sans, fontSize: 18, color: t.coal, margin: 0 }}>Candidates</h2>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            {requirement.lastMatchedAt && (
-              <span
-                role="status"
-                aria-live="polite"
-                style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkFaint }}
-              >
-                Updated {timeAgoLabel(requirement.lastMatchedAt)}
-              </span>
-            )}
+          <div style={{ marginLeft: "auto" }}>
             <OutlineCta
               size="sm"
               onClick={load}
@@ -1704,14 +1687,6 @@ export default function RequirementDetailPage() {
                     This requirement is closed. Candidate details are read-only.
                   </span>
                 </Card>
-              )}
-              {!readOnly && nextLockedBatch && (
-                <BatchUnlockBanner
-                  requirementId={requirement.id}
-                  batchStart={nextLockedBatch.start}
-                  batchEnd={nextLockedBatch.end}
-                  onUnlocked={handleBatchUnlocked}
-                />
               )}
               {!readOnly && selectedIds.size >= 2 && (
                 <Card style={{ marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap", padding: "10px 16px" }}>
@@ -1763,39 +1738,6 @@ export default function RequirementDetailPage() {
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
-              <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 16, alignItems: "center" }}>
-                <SearchWithSuggestions
-                  id="candidates-search"
-                  label="Search candidates"
-                  value={search}
-                  onChange={setSearch}
-                  placeholder="Search by name, role, skill, or notice period…"
-                  storageKey={CANDIDATES_RECENT_SEARCHES_KEY}
-                  suggestedFilters={suggestedFilters}
-                  style={{ flex: "1 1 220px", minWidth: 200, maxWidth: 420 }}
-                  inputStyle={{ background: t.white }}
-                  inputClassName="focus-visible:ring-0"
-                />
-                <FilterPill label="Contact" value={contactFilter} options={contactFilterOptions} onChange={setContactFilter} />
-                {locationOptions.length > 1 && (
-                  <FilterPill
-                    label="Location"
-                    value={locationFilter}
-                    options={[{ value: "all", label: "All locations" }, ...locationOptions.map((loc) => ({ value: loc, label: loc }))]}
-                    onChange={setLocationFilter}
-                  />
-                )}
-                {(search.trim() !== "" || contactFilter !== "all" || locationFilter !== "all") && (
-                  <Button
-                    type="button"
-                    variant="link"
-                    onClick={() => { setSearch(""); setContactFilter("all"); setLocationFilter("all"); }}
-                    style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 600, height: "auto" }}
-                  >
-                    Clear filters
-                  </Button>
-                )}
-              </div>
 
               {filteredSorted.length === 0 ? (
                 <Card style={{ textAlign: "center", padding: 48 }}>

@@ -285,6 +285,55 @@ describe("employer-verify-unlock-payment — successful unlock", () => {
     expect(String(patchCall![0])).toContain("requirement_matches");
   });
 
+  it("still unlocks when the candidate name/email snapshot columns reject the PATCH (supabase-migrations/0026 not yet applied) — the payment isn't lost to a schema mismatch", async () => {
+    const fetchMock = global.fetch as ReturnType<typeof vi.fn>;
+    fetchMock
+      .mockResolvedValueOnce(authOk())
+      .mockResolvedValueOnce(razorpayOrderOk({ employerId: "emp-1", mode: "single", matchIds: "m1" }, 5900))
+      .mockResolvedValueOnce({ ok: true, status: 201 }) // employer_unlock_payments insert
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => [{ id: "m1", requirement_id: "req-1", candidate_user_id: "cand-1", unlocked: false }],
+      })
+      .mockResolvedValueOnce({ ok: true, json: async () => [{ id: "cand-1", name: "Priya Sharma", email: "priya@example.com" }] })
+      .mockResolvedValueOnce({ ok: false, status: 400, text: async () => "column \"unlocked_candidate_name\" does not exist" })
+      .mockResolvedValueOnce({ ok: true, status: 200 }); // retry without the snapshot fields succeeds
+
+    const res = mockRes();
+    await handler(mockReq(validPaymentBody()), res);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toEqual({
+      unlocked: true,
+      candidates: [{ matchId: "m1", name: "Priya Sharma", contact: { email: "priya@example.com" } }],
+    });
+
+    const patchCalls = fetchMock.mock.calls.filter(([, opts]) => (opts as RequestInit | undefined)?.method === "PATCH");
+    expect(patchCalls).toHaveLength(2);
+    const retryBody = JSON.parse((patchCalls[1][1] as RequestInit).body as string);
+    expect(retryBody).toEqual({ unlocked: true, unlocked_at: expect.any(String) });
+    expect(retryBody).not.toHaveProperty("unlocked_candidate_name");
+  });
+
+  it("500s when the retry PATCH without the snapshot fields also fails", async () => {
+    const fetchMock = global.fetch as ReturnType<typeof vi.fn>;
+    fetchMock
+      .mockResolvedValueOnce(authOk())
+      .mockResolvedValueOnce(razorpayOrderOk({ employerId: "emp-1", mode: "single", matchIds: "m1" }, 5900))
+      .mockResolvedValueOnce({ ok: true, status: 201 })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => [{ id: "m1", requirement_id: "req-1", candidate_user_id: "cand-1", unlocked: false }],
+      })
+      .mockResolvedValueOnce({ ok: true, json: async () => [{ id: "cand-1", name: "Priya Sharma", email: "priya@example.com" }] })
+      .mockResolvedValueOnce({ ok: false, status: 400, text: async () => "column does not exist" })
+      .mockResolvedValueOnce({ ok: false, status: 500, text: async () => "db unavailable" });
+
+    const res = mockRes();
+    await handler(mockReq(validPaymentBody()), res);
+    expect(res.statusCode).toBe(500);
+  });
+
   it("treats a 409 dedup response as an idempotent replay instead of erroring", async () => {
     const fetchMock = global.fetch as ReturnType<typeof vi.fn>;
     fetchMock
