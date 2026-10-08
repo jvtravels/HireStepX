@@ -688,9 +688,6 @@ export default function ResumeV2Screen() {
                 </div>
               ))}
             </div>
-            <p style={{ fontFamily: font.mono, fontSize: S.xs, letterSpacing: "0.08em", textTransform: "uppercase", color: T.inkFaintWeak, margin: 0 }}>
-              {user?.name ? `Tuned to ${user.name.trim().split(/\s+/)[0]}'s profile` : "Tuned to your profile"}
-            </p>
           </SectionCard>
 
           {/* ATS readiness */}
