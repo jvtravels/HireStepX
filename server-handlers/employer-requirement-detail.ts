@@ -558,9 +558,18 @@ async function handlePatch(req: Request, requirementId: string, userId: string, 
     const experienceMin = body.experienceMin !== undefined ? asBoundedExperience(body.experienceMin) : existing.experience_min;
     const experienceMax = body.experienceMax !== undefined ? asBoundedExperience(body.experienceMax) : existing.experience_max;
     const dueDate = body.dueDate !== undefined ? asBoundedDueDate(body.dueDate) : existing.due_date;
-    const salaryType = (body.salaryType !== undefined ? asBoundedSalaryType(body.salaryType) : asBoundedSalaryType(existing.salary_type)) || "per-annum";
-    const budgetMin = body.budgetMin !== undefined ? asBoundedBudget(body.budgetMin, salaryType) : existing.budget_min;
-    const budgetMax = body.budgetMax !== undefined ? asBoundedBudget(body.budgetMax, salaryType) : existing.budget_max;
+    const existingSalaryType = asBoundedSalaryType(existing.salary_type) || "per-annum";
+    const salaryType = (body.salaryType !== undefined ? asBoundedSalaryType(body.salaryType) : existingSalaryType) || "per-annum";
+    // budgetMin/budgetMax are unit-dependent on salaryType (whole lakhs for
+    // per-annum, raw rupees otherwise). If salaryType changes in a partial
+    // PATCH that doesn't resubmit the budget fields, carrying the existing
+    // numbers forward unchanged would leave a value in the OLD unit tagged
+    // with the NEW salaryType (e.g. a raw-rupee 1800000 displayed as "LPA").
+    // Clear them instead of guessing a conversion — the caller re-enters
+    // budget when changing pay type.
+    const salaryTypeChanged = salaryType !== existingSalaryType;
+    const budgetMin = body.budgetMin !== undefined ? asBoundedBudget(body.budgetMin, salaryType) : salaryTypeChanged ? null : existing.budget_min;
+    const budgetMax = body.budgetMax !== undefined ? asBoundedBudget(body.budgetMax, salaryType) : salaryTypeChanged ? null : existing.budget_max;
     const locations = body.locations !== undefined ? asBoundedStringArray(body.locations, 20, 100) : existing.locations;
     const openPositions = body.openPositions !== undefined ? asBoundedOpenPositions(body.openPositions) : existing.open_positions;
     const workMode = body.workMode !== undefined ? asBoundedWorkMode(body.workMode) : existing.work_mode;

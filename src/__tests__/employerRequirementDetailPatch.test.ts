@@ -140,4 +140,56 @@ describe("employer-requirement-detail PATCH — partial update preserves omitted
     const sentBody = JSON.parse((fetchMock.mock.calls[1][1] as RequestInit).body as string);
     expect(sentBody.department).toBeNull();
   });
+
+  it("clears budgetMin/budgetMax when salaryType changes without resubmitting them", async () => {
+    // budget_min/budget_max are unit-dependent on salary_type (whole lakhs for
+    // per-annum, raw rupees for per-month/fixed). A requirement priced ₹70,000/mo
+    // whose salaryType flips to per-annum without new budget figures must not
+    // carry the raw-rupee 70000 forward tagged as lakhs.
+    const perMonthRow = { ...EXISTING_ROW, salary_type: "per-month", budget_min: 70000, budget_max: 90000 };
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => [perMonthRow] })
+      .mockResolvedValueOnce({ ok: true, json: async () => [{ ...perMonthRow, salary_type: "per-annum", budget_min: null, budget_max: null }] });
+    global.fetch = fetchMock as unknown as typeof fetch;
+
+    const res = await handler(
+      patchReq({
+        title: EXISTING_ROW.title,
+        locations: EXISTING_ROW.locations,
+        description: EXISTING_ROW.description,
+        dueDate: EXISTING_ROW.due_date,
+        salaryType: "per-annum",
+      }),
+    );
+
+    expect(res.status).toBe(200);
+    const sentBody = JSON.parse((fetchMock.mock.calls[1][1] as RequestInit).body as string);
+    expect(sentBody.salary_type).toBe("per-annum");
+    expect(sentBody.budget_min).toBeNull();
+    expect(sentBody.budget_max).toBeNull();
+  });
+
+  it("keeps budgetMin/budgetMax when salaryType is unchanged", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => [EXISTING_ROW] })
+      .mockResolvedValueOnce({ ok: true, json: async () => [EXISTING_ROW] });
+    global.fetch = fetchMock as unknown as typeof fetch;
+
+    const res = await handler(
+      patchReq({
+        title: EXISTING_ROW.title,
+        locations: EXISTING_ROW.locations,
+        description: EXISTING_ROW.description,
+        dueDate: EXISTING_ROW.due_date,
+        salaryType: EXISTING_ROW.salary_type,
+      }),
+    );
+
+    expect(res.status).toBe(200);
+    const sentBody = JSON.parse((fetchMock.mock.calls[1][1] as RequestInit).body as string);
+    expect(sentBody.budget_min).toBe(12);
+    expect(sentBody.budget_max).toBe(20);
+  });
 });

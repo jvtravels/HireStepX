@@ -159,10 +159,24 @@ function synthesizeFitReasons(seed: string, candidate: Candidate, requirement: R
   return reasons.slice(0, 4);
 }
 
+function lakhString(amount: number): string {
+  // budgetMin/budgetMax are documented as whole INR lakhs for per-annum roles (≤1000);
+  // a stray raw-rupee value (e.g. a stale PATCH that skipped revalidation) would otherwise
+  // render as a 7-digit number, so fall back to converting it rather than printing it as-is.
+  const lpa = amount > 1000 ? amount / 100000 : amount;
+  const rounded = Math.round(lpa * 10) / 10;
+  return rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(1);
+}
+
 function formatBudget(amount: number, salaryType: Requirement["salaryType"]): string {
-  if (salaryType === "per-annum") return `₹${amount.toFixed(1).replace(/\.0$/, "")} LPA`;
+  if (salaryType === "per-annum") return `₹${lakhString(amount)} LPA`;
   if (salaryType === "per-month") return `₹${amount.toLocaleString("en-IN")}/mo`;
   return `₹${amount.toLocaleString("en-IN")}`;
+}
+
+function formatBudgetRange(lo: number, hi: number, salaryType: Requirement["salaryType"]): string {
+  if (salaryType === "per-annum") return `₹${lakhString(lo)}–${lakhString(hi)} LPA`;
+  return `${formatBudget(lo, salaryType)} – ${formatBudget(hi, salaryType)}`;
 }
 
 function synthesizeOffer(requirement: Requirement, evidenceScore: number) {
@@ -949,7 +963,7 @@ export default function CandidateDetailPage() {
               <div style={{ marginTop: 14, padding: 12, borderRadius: 10, border: `1px solid ${t.line}`, display: "flex", flexDirection: "column", gap: 6 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft }}>
                   <span>Listed budget</span>
-                  <span>{formatBudget(offer.lo, offer.salaryType)} – {formatBudget(offer.hi, offer.salaryType)}</span>
+                  <span>{formatBudgetRange(offer.lo, offer.hi, offer.salaryType)}</span>
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft }}>
                   <span>Evidence tier multiplier</span>
