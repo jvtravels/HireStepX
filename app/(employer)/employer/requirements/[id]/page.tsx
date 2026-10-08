@@ -73,12 +73,9 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { SearchWithSuggestions } from "@/components/SearchWithSuggestions";
 import { TablePaginationFooter } from "@/components/TablePaginationFooter";
 
@@ -914,6 +911,114 @@ function MessagesDialog({
   );
 }
 
+/* Mirrors the "Filters" popover shell on the employer Jobs table (header
+   bar, uppercase section labels, staged Reset/Apply) so the two candidate-
+   facing filter surfaces look and behave the same. */
+function CandidatesFiltersPopover({
+  contactFilter,
+  onContactFilterChange,
+  locationFilter,
+  onLocationFilterChange,
+  locationOptions,
+  activeCount,
+}: {
+  contactFilter: ContactFilter;
+  onContactFilterChange: (v: ContactFilter) => void;
+  locationFilter: string;
+  onLocationFilterChange: (v: string) => void;
+  locationOptions: string[];
+  activeCount: number;
+}) {
+  const [open, setOpen] = useState(false);
+  const [draftContact, setDraftContact] = useState(contactFilter);
+  const [draftLocation, setDraftLocation] = useState(locationFilter);
+
+  const seedDraft = () => {
+    setDraftContact(contactFilter);
+    setDraftLocation(locationFilter);
+  };
+
+  const handleReset = () => {
+    setDraftContact("all");
+    setDraftLocation("all");
+  };
+
+  const handleApply = () => {
+    onContactFilterChange(draftContact);
+    onLocationFilterChange(draftLocation);
+    setOpen(false);
+  };
+
+  const sectionLabelStyle: CSSProperties = {
+    fontFamily: f.sans, fontSize: 11, fontWeight: 600, letterSpacing: "0.06em",
+    textTransform: "uppercase", color: t.inkFaint, marginBottom: 10,
+  };
+
+  return (
+    <Popover open={open} onOpenChange={(next) => { setOpen(next); if (next) seedDraft(); }}>
+      <PopoverTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          style={{ borderRadius: 8, height: 36, gap: 8, background: t.white, color: t.coal, fontFamily: f.sans, fontSize: 13, fontWeight: 500, flexShrink: 0 }}
+        >
+          <SlidersHorizontalIcon size={13} aria-hidden="true" />
+          Filters
+          {activeCount > 0 && (
+            <span
+              style={{
+                display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: 18, height: 18,
+                borderRadius: 9, background: t.indigo, color: t.white, fontFamily: f.sans, fontSize: 11, fontWeight: 600, padding: "0 5px",
+              }}
+            >
+              {activeCount}
+            </span>
+          )}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="end" collisionPadding={16} className="gap-0" style={{ width: 280, padding: 0 }}>
+        <div style={{ padding: "14px 16px", borderBottom: `1px solid ${t.line}` }}>
+          <span style={{ fontFamily: f.sans, fontSize: 16, fontWeight: 700, color: t.coal }}>Filters</span>
+        </div>
+        <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 16 }}>
+          <div>
+            <div style={sectionLabelStyle}>Contact</div>
+            <RadioGroup value={draftContact} onValueChange={(v) => setDraftContact(v as ContactFilter)}>
+              {contactFilterOptions.map((o) => (
+                <label key={o.value} style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: f.sans, fontSize: 13, color: t.coal, cursor: "pointer" }}>
+                  <RadioGroupItem value={o.value} />
+                  {o.label}
+                </label>
+              ))}
+            </RadioGroup>
+          </div>
+          {locationOptions.length > 1 && (
+            <div>
+              <div style={sectionLabelStyle}>Location</div>
+              <RadioGroup value={draftLocation} onValueChange={setDraftLocation}>
+                {[{ value: "all", label: "All locations" }, ...locationOptions.map((loc) => ({ value: loc, label: loc }))].map((o) => (
+                  <label key={o.value} style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: f.sans, fontSize: 13, color: t.coal, cursor: "pointer" }}>
+                    <RadioGroupItem value={o.value} />
+                    {o.label}
+                  </label>
+                ))}
+              </RadioGroup>
+            </div>
+          )}
+        </div>
+        <div style={{ display: "flex", gap: 8, padding: "14px 16px", borderTop: `1px solid ${t.line}` }}>
+          <Button type="button" variant="outline" className="flex-1" onClick={handleReset}>
+            Reset
+          </Button>
+          <Button type="button" className="flex-1" onClick={handleApply}>
+            Apply filter
+          </Button>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 /** Auto-dismissing "Undo" banner for the one action on this page that can be
     reversed without a page reload — a manual stage or bulk-status change.
     Failures already revert automatically; this is for changes that
@@ -1662,60 +1767,14 @@ export default function RequirementDetailPage() {
                 inputStyle={{ background: t.white }}
                 inputClassName="focus-visible:ring-0"
               />
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    style={{ borderRadius: 8, height: 36, gap: 8, background: t.white, color: t.coal, fontFamily: f.sans, fontSize: 13, fontWeight: 500, flexShrink: 0 }}
-                  >
-                    <SlidersHorizontalIcon size={13} aria-hidden="true" />
-                    Filters
-                    {activeFilterCount > 0 && (
-                      <span
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          minWidth: 18,
-                          height: 18,
-                          padding: "0 5px",
-                          borderRadius: 999,
-                          background: t.coal,
-                          color: t.white,
-                          fontSize: 11,
-                          fontWeight: 600,
-                        }}
-                      >
-                        {activeFilterCount}
-                      </span>
-                    )}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>Contact</DropdownMenuLabel>
-                  <DropdownMenuRadioGroup value={contactFilter} onValueChange={(v) => setContactFilter(v as ContactFilter)}>
-                    {contactFilterOptions.map((o) => (
-                      <DropdownMenuRadioItem key={o.value} value={o.value}>
-                        {o.label}
-                      </DropdownMenuRadioItem>
-                    ))}
-                  </DropdownMenuRadioGroup>
-                  {locationOptions.length > 1 && (
-                    <>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuLabel>Location</DropdownMenuLabel>
-                      <DropdownMenuRadioGroup value={locationFilter} onValueChange={setLocationFilter}>
-                        {[{ value: "all", label: "All locations" }, ...locationOptions.map((loc) => ({ value: loc, label: loc }))].map((o) => (
-                          <DropdownMenuRadioItem key={o.value} value={o.value}>
-                            {o.label}
-                          </DropdownMenuRadioItem>
-                        ))}
-                      </DropdownMenuRadioGroup>
-                    </>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <CandidatesFiltersPopover
+                contactFilter={contactFilter}
+                onContactFilterChange={setContactFilter}
+                locationFilter={locationFilter}
+                onLocationFilterChange={setLocationFilter}
+                locationOptions={locationOptions}
+                activeCount={activeFilterCount}
+              />
               {(search.trim() !== "" || contactFilter !== "all" || locationFilter !== "all") && (
                 <Button
                   type="button"
