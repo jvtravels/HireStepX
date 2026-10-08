@@ -239,7 +239,7 @@ function ContactBox({ icon, children }: { icon: React.ReactNode; children: React
 function KpiCard({ label, value, sub, tone }: { label: string; value: string; sub?: string; tone?: "success" | "indigo" | "neutral" | "error" }) {
   const toneColor = tone === "success" ? t.success : tone === "error" ? t.error : tone === "indigo" ? t.indigo : t.coal;
   return (
-    <Card style={{ padding: 16 }}>
+    <Card style={{ boxShadow: "none",  padding: 16 }}>
       <div style={{ fontFamily: f.sans, fontSize: 11, fontWeight: 700, letterSpacing: 0.3, textTransform: "uppercase", color: t.inkFaint }}>{label}</div>
       <div style={{ fontFamily: f.sans, fontSize: 24, fontWeight: 700, color: toneColor, marginTop: 6 }}>{value}</div>
       {sub && <div style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, marginTop: 4 }}>{sub}</div>}
@@ -435,7 +435,7 @@ export default function CandidateDetailPage() {
 
   if (loading) {
     return (
-      <Card style={{ textAlign: "center", padding: 48 }}>
+      <Card style={{ boxShadow: "none",  textAlign: "center", padding: 48 }}>
         <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft }}>Loading…</p>
       </Card>
     );
@@ -443,7 +443,7 @@ export default function CandidateDetailPage() {
 
   if (!requirement || !candidate) {
     return (
-      <Card style={{ textAlign: "center", padding: 48 }}>
+      <Card style={{ boxShadow: "none",  textAlign: "center", padding: 48 }}>
         <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft, marginBottom: 16 }}>Candidate not found.</p>
         <Link href={`/employer/requirements/${params.id}`} style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.indigo, textDecoration: "none" }}>
           ← Back to shortlist
@@ -477,7 +477,7 @@ export default function CandidateDetailPage() {
 
   return (
     <div>
-      <Card>
+      <Card style={{ boxShadow: "none" }}>
         <div style={{ display: "flex", gap: 16, alignItems: "flex-start", flexWrap: "wrap" }}>
           <div
             style={{
@@ -652,7 +652,7 @@ export default function CandidateDetailPage() {
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           {activeTab === "overview" && (
             <>
-              <Card>
+              <Card style={{ boxShadow: "none" }}>
                 <SectionTitle>Why this candidate fits {requirement.title}</SectionTitle>
                 <ul style={{ margin: 0, paddingLeft: 18, fontFamily: f.sans, fontSize: 13.5, color: t.inkSoft, lineHeight: 1.8 }}>
                   {fitReasons.map((r) => (
@@ -661,7 +661,7 @@ export default function CandidateDetailPage() {
                 </ul>
               </Card>
 
-              <Card>
+              <Card style={{ boxShadow: "none" }}>
                 <SectionTitle>Practice track record</SectionTitle>
                 {evidenceLoading ? (
                   <HelpText>Loading practice-session evidence…</HelpText>
@@ -707,7 +707,7 @@ export default function CandidateDetailPage() {
                 )}
               </Card>
 
-              <Card>
+              <Card style={{ boxShadow: "none" }}>
                 <SectionTitle>STAR evidence breakdown</SectionTitle>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
                   {starBreakdown.map((s) => (
@@ -716,7 +716,7 @@ export default function CandidateDetailPage() {
                 </div>
               </Card>
 
-              <Card>
+              <Card style={{ boxShadow: "none" }}>
                 <SectionTitle>Skill trend across sessions</SectionTitle>
                 <div style={{ display: "flex", alignItems: "flex-end", gap: 8, height: 72 }}>
                   {skillTrend.map((v, i) => (
@@ -728,7 +728,7 @@ export default function CandidateDetailPage() {
                 </div>
               </Card>
 
-              <Card>
+              <Card style={{ boxShadow: "none" }}>
                 <SectionTitle>Hiring progress</SectionTitle>
                 <HiringProgress status={candidate.candidateStatus} />
               </Card>
@@ -737,7 +737,7 @@ export default function CandidateDetailPage() {
 
           {activeTab === "practice" && (
             <>
-              <Card>
+              <Card style={{ boxShadow: "none" }}>
                 <SectionTitle>Round types &amp; readiness</SectionTitle>
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   {roundReadiness.map((r) => (
@@ -749,7 +749,7 @@ export default function CandidateDetailPage() {
                 </div>
               </Card>
 
-              <Card>
+              <Card style={{ boxShadow: "none" }}>
                 <SectionTitle>Communication signals</SectionTitle>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
                   {communicationSignals.map((sig) => (
@@ -763,7 +763,7 @@ export default function CandidateDetailPage() {
               </Card>
 
               {evidence && evidence.quotes.length > 0 && (
-                <Card>
+                <Card style={{ boxShadow: "none" }}>
                   <SectionTitle>What they said</SectionTitle>
                   <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                     {evidence.quotes.map((q, i) => (
@@ -790,7 +790,7 @@ export default function CandidateDetailPage() {
 
           {activeTab === "resume" && (
             <>
-              <Card>
+              <Card style={{ boxShadow: "none" }}>
                 <SectionTitle>Resume intelligence</SectionTitle>
                 <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
                   <ScoreChip score={evidenceAvg} />
@@ -839,7 +839,7 @@ export default function CandidateDetailPage() {
                 )}
               </Card>
 
-              <Card>
+              <Card style={{ boxShadow: "none" }}>
                 <SectionTitle>Employment history</SectionTitle>
                 {resume?.experience.length ? (
                   <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -884,7 +884,7 @@ export default function CandidateDetailPage() {
                 )}
               </Card>
 
-              <Card>
+              <Card style={{ boxShadow: "none" }}>
                 <SectionTitle>Tools &amp; skills</SectionTitle>
                 {candidate.skills.length ? (
                   <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
@@ -910,7 +910,7 @@ export default function CandidateDetailPage() {
                 )}
               </Card>
 
-              <Card>
+              <Card style={{ boxShadow: "none" }}>
                 <SectionTitle>Portfolio &amp; work samples</SectionTitle>
                 {!candidate.unlocked ? (
                   <HelpText>Portfolio links are locked until this candidate is unlocked.</HelpText>
@@ -932,7 +932,7 @@ export default function CandidateDetailPage() {
 
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           {offer && (
-            <Card>
+            <Card style={{ boxShadow: "none" }}>
               <SectionTitle>Suggested offer</SectionTitle>
               <div style={{ fontFamily: f.sans, fontSize: 24, fontWeight: 700, color: t.coal }}>
                 {formatBudget(offer.suggested, offer.salaryType)}
@@ -968,7 +968,7 @@ export default function CandidateDetailPage() {
             </Card>
           )}
 
-          <Card>
+          <Card style={{ boxShadow: "none" }}>
             <SectionTitle>Candidate snapshot</SectionTitle>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
               <SnapshotCell label="Experience" value={resume?.yearsExperience != null ? `${resume.yearsExperience} yrs` : "—"} />
@@ -978,7 +978,7 @@ export default function CandidateDetailPage() {
             </div>
           </Card>
 
-          <Card>
+          <Card style={{ boxShadow: "none" }}>
             <SectionTitle>Skills</SectionTitle>
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
               {matchedSkills.map((s) => (
@@ -1006,7 +1006,7 @@ export default function CandidateDetailPage() {
           </Card>
 
           {!!resume?.education.length && (
-            <Card>
+            <Card style={{ boxShadow: "none" }}>
               <SectionTitle>Education</SectionTitle>
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 {resume.education.map((ed, i) => (
@@ -1018,7 +1018,7 @@ export default function CandidateDetailPage() {
           )}
 
           {!candidate.unlocked && (
-            <Card style={{ border: `1px dashed ${t.line}` }}>
+            <Card style={{ boxShadow: "none",  border: `1px dashed ${t.line}` }}>
               <SectionTitle>Identity locked</SectionTitle>
               <p style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft, lineHeight: 1.6, margin: 0 }}>
                 Name, contact details, and portfolio links are hidden until this candidate is unlocked.{" "}
