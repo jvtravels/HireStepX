@@ -4,7 +4,7 @@ import { loadEvents, daysUntilEvent, formatEventTime } from "./dashboardHelpers"
 import { supabaseConfigured } from "./supabase";
 import type { UserContext, DashboardSession, SkillData, TrendPoint, PersistedState, SessionCoaching, SessionFocusMetric } from "./dashboardTypes";
 import { scoreLabel } from "./dashboardTypes";
-import { strengthCopy, gapCopy } from "./skillCopy";
+import { strengthCopy, gapCopy, skillLabel } from "./skillCopy";
 import type { SkillTrend } from "./sessionReport/progressTracking";
 import type { HrCompanyNorms } from "../data/hr-company-norms";
 
@@ -218,6 +218,9 @@ function realSessionsToDashboard(realSessions: RealSession[], targetRole: string
     const dateObj = new Date(rs.date);
     const dateLabel = dateObj.toLocaleDateString("en-US", { month: "short", day: "numeric" });
     const durationMin = Math.ceil(rs.duration / 60);
+    const weakestKey = rs.skill_scores
+      ? Object.entries(rs.skill_scores).sort(([, a], [, b]) => extractScore(a) - extractScore(b))[0]?.[0]
+      : undefined;
     return {
       id: rs.id,
       date: toISTDateString(new Date(rs.date)),
@@ -239,10 +242,9 @@ function realSessionsToDashboard(realSessions: RealSession[], targetRole: string
           ) || pickByScore(strengthsByType[type] || strengthsByType["Behavioral"], rs.score)
         : pickByScore(strengthsByType[type] || strengthsByType["Behavioral"], rs.score),
       topWeakness: rs.skill_scores
-        ? gapCopy(
-            Object.entries(rs.skill_scores).sort(([, a], [, b]) => extractScore(a) - extractScore(b))[0]?.[0]
-          ) || pickByScore(weaknessesByType[type] || weaknessesByType["Behavioral"], rs.score + 3)
+        ? gapCopy(weakestKey) || pickByScore(weaknessesByType[type] || weaknessesByType["Behavioral"], rs.score + 3)
         : pickByScore(weaknessesByType[type] || weaknessesByType["Behavioral"], rs.score + 3),
+      topWeaknessKey: weakestKey,
       focus: rs.focus,
       coaching: rs.coaching,
       focusMetrics: rs.focusMetrics,
@@ -311,11 +313,36 @@ export function getSessionData(targetRole: string, supabaseSessions: RealSession
     avgScore: allScores.length > 0 ? Math.round(allScores.reduce((a, b) => a + b, 0) / allScores.length) : 0,
     improvement: real.length >= 2 ? Math.max(0, real[0].score - real[real.length - 1].score) : 0,
     hoursLogged: Math.round((recentSessions.reduce((sum, s) => sum + parseInt(s.duration), 0) / 60) * 10) / 10,
+    questionsAnswered: recentSessions.reduce((sum, s) => sum + s.questionScores.length, 0),
   };
 
   const skillVelocity = computeSkillVelocity(real);
+  const readinessDelta = computeReadinessDelta(real, scoreTrend, skills);
 
-  return { recentSessions, scoreTrend, skills, overallStats, hasData: real.length > 0, skillVelocity };
+  return { recentSessions, scoreTrend, skills, overallStats, hasData: real.length > 0, skillVelocity, readinessDelta, realSessions: real };
+}
+
+/* How many readiness points the user has gained since their very first
+ * session, using the SAME computeReadiness formula for both ends so the
+ * comparison is apples-to-apples: "now" uses the full skill/trend history,
+ * "then" uses only the first session's own score + its own skill_scores
+ * snapshot. null when there isn't enough history to compare (fewer than 2
+ * sessions, or the first session predates skill_scores). */
+function computeReadinessDelta(
+  real: RealSession[],
+  scoreTrend: { score: number; date: string }[],
+  skills: SkillData[],
+): number | null {
+  if (real.length < 2 || skills.length === 0) return null;
+  const first = [...real].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())[0];
+  if (!first.skill_scores) return null;
+  const firstSkills: SkillData[] = Object.entries(first.skill_scores).map(([name, raw]) => ({
+    name, score: extractScore(raw), prev: extractScore(raw), color: "",
+  }));
+  if (firstSkills.length === 0) return null;
+  const baseline = computeReadiness([{ score: first.score, date: first.date }], firstSkills);
+  const current = computeReadiness(scoreTrend, skills);
+  return current - baseline;
 }
 
 /* ─── Personalized AI Insights ─── */
@@ -744,6 +771,107 @@ export function computeCompanyReadiness(
   readySkills.sort((a, b) => b.weight - a.weight);
   atRiskSkills.sort((a, b) => b.weight - a.weight);
   return { readinessPercent, readySkills, atRiskSkills, projectedDaysToReady, companyName: company || "your target company", targetScore };
+}
+
+/* ─── Practice Coverage ───
+ * The 5 competency areas the evaluator tags sessions against — the same
+ * taxonomy COMPANY_SKILL_WEIGHTS/DEFAULT_SKILL_WEIGHTS already use above.
+ * "Practiced" means at least one session produced a skill_scores entry
+ * for that key; an area with zero data is a bigger blind spot than one
+ * that's merely scoring low, so an untouched area always outranks a
+ * weak-but-practiced one as the "biggest gap". */
+export const PRACTICE_COVERAGE_AREAS = ["communication", "structure", "technicalDepth", "leadership", "problemSolving"] as const;
+
+export interface PracticeCoverage {
+  practicedCount: number;
+  totalAreas: number;
+  biggestGapKey: string | null;
+  biggestGapLabel: string | null;
+}
+
+export function computePracticeCoverage(skills: SkillData[]): PracticeCoverage {
+  const practiced = new Set(skills.map(s => s.name));
+  const practicedAreas = PRACTICE_COVERAGE_AREAS.filter(a => practiced.has(a));
+  const untouched = PRACTICE_COVERAGE_AREAS.find(a => !practiced.has(a));
+  let biggestGapKey: string | null = untouched ?? null;
+  if (!biggestGapKey) {
+    const covered = skills.filter(s => (PRACTICE_COVERAGE_AREAS as readonly string[]).includes(s.name));
+    if (covered.length > 0) {
+      biggestGapKey = covered.reduce((lowest, s) => (s.score < lowest.score ? s : lowest), covered[0]).name;
+    }
+  }
+  return {
+    practicedCount: practicedAreas.length,
+    totalAreas: PRACTICE_COVERAGE_AREAS.length,
+    biggestGapKey,
+    biggestGapLabel: biggestGapKey ? skillLabel(biggestGapKey) : null,
+  };
+}
+
+/* ─── Evidence Capabilities ───
+ * A fixed set of 4 capabilities a candidate can build verified proof of
+ * through practice. "Verified" is a new, real threshold (not previously
+ * tracked anywhere): the skill-based capabilities need 2+ sessions scoring
+ * 70+ on the underlying competency — a single good run could be a fluke,
+ * two can't both be. Salary Negotiation is a dedicated, less-frequent
+ * session focus, so one 70+ run is enough evidence. "Decision Making"
+ * reuses the problemSolving rubric key as its real-data proxy — the
+ * evaluator doesn't emit a separate decisionMaking key today. */
+export interface EvidenceCapability {
+  key: string;
+  label: string;
+  verified: boolean;
+  verifiedDateLabel: string | null;
+}
+
+const EVIDENCE_VERIFY_THRESHOLD = 70;
+const EVIDENCE_VERIFY_MIN_SESSIONS = 2;
+
+function formatVerifiedDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+}
+
+export function computeEvidenceCapabilities(sessions: RealSession[]): EvidenceCapability[] {
+  const bySkill = (skillKey: string) =>
+    sessions
+      .filter(s => s.skill_scores && skillKey in s.skill_scores && extractScore(s.skill_scores[skillKey]) >= EVIDENCE_VERIFY_THRESHOLD)
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+  const byFocus = (focus: string) =>
+    sessions
+      .filter(s => s.focus === focus && s.score >= EVIDENCE_VERIFY_THRESHOLD)
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+  const build = (label: string, key: string, hits: RealSession[], minSessions: number): EvidenceCapability => ({
+    key, label,
+    verified: hits.length >= minSessions,
+    verifiedDateLabel: hits.length >= minSessions ? formatVerifiedDate(hits[0].date) : null,
+  });
+
+  return [
+    build("Communication", "communication", bySkill("communication"), EVIDENCE_VERIFY_MIN_SESSIONS),
+    build("Salary Negotiation", "salary-negotiation", byFocus("salary-negotiation"), 1),
+    build("Decision Making", "decisionMaking", bySkill("problemSolving"), EVIDENCE_VERIFY_MIN_SESSIONS),
+    build("Leadership", "leadership", bySkill("leadership"), EVIDENCE_VERIFY_MIN_SESSIONS),
+  ];
+}
+
+/* ─── Role readiness target ───
+ * The "N points away from your <role> readiness target" header line is
+ * shown even before a user's first session, so it can't depend purely on
+ * session history. Pre-first-session, it anchors to resume quality as a
+ * conservative starting estimate (a strong resume alone doesn't prove
+ * interview readiness, hence the 0.5 discount) instead of showing 0 or
+ * hiding the line entirely. */
+export const ROLE_READINESS_TARGET = 75;
+
+export function computeReadinessGap(
+  hasData: boolean,
+  readinessScore: number,
+  resumeScore?: number | null,
+): { current: number; target: number; gap: number } {
+  const current = hasData ? readinessScore : Math.round((resumeScore ?? 0) * 0.5);
+  return { current, target: ROLE_READINESS_TARGET, gap: Math.max(0, ROLE_READINESS_TARGET - current) };
 }
 
 /* ─── Structured Improvement Plan ─── */

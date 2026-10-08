@@ -122,12 +122,13 @@ export default async function handler(req: Request): Promise<Response> {
     const shortlistedCount = activeMatches.length;
     const unlockedCount = matches.filter((m) => m.unlocked).length;
 
-    // The dashboard widget only ever needs a short teaser; the dedicated
-    // Jobs tab wants the full list plus the richer per-role fields. Both
-    // read from the same match set — cap only what's returned as `recent`.
+    // The dashboard widget only ever needs a short teaser (the Employer
+    // Interest grid shows 4 cards); the dedicated Jobs tab wants the full
+    // list plus the richer per-role fields. Both read from the same match
+    // set — cap only what's returned as `recent`.
     const url = new URL(req.url);
     const full = url.searchParams.get("full") === "1";
-    const limited = full ? activeMatches : activeMatches.slice(0, 3);
+    const limited = full ? activeMatches : activeMatches.slice(0, 4);
 
     const recent = limited.map((m) => {
       const req = m.employer_requirements;
@@ -164,8 +165,12 @@ export default async function handler(req: Request): Promise<Response> {
           ? describeMatch(candidateProfile, { title: req.title, location: req.location, description: req.description || "" }, skills)
           : "Matched on your overall profile and practice history.",
         unlocked: m.unlocked,
-        matchedAt: m.created_at.slice(0, 10),
-        unlockedAt: m.unlocked_at ? m.unlocked_at.slice(0, 10) : null,
+        // Full ISO timestamp — callers that only need day-granularity (daysAgo)
+        // still work fine off the full string; the dashboard teaser's
+        // hour-granular relative time (hoursOrDaysAgo) needs the precision
+        // a date-only slice throws away.
+        matchedAt: m.created_at,
+        unlockedAt: m.unlocked_at,
       };
     });
 

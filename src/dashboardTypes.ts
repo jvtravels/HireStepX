@@ -50,6 +50,12 @@ export interface DashboardSession {
   focus?: string;
   topStrength: string;
   topWeakness: string;
+  /** Raw skill_scores key behind `topWeakness`, preserved alongside the
+   *  humanized gapCopy() phrase so surfaces that need a short noun-phrase
+   *  label (e.g. the Recent Sessions table's "Focus" column via
+   *  focusTopicLabel()) don't have to reverse-engineer it out of the
+   *  phrase. Undefined when the session has no skill_scores. */
+  topWeaknessKey?: string;
   /** Structured plain-language coaching from the evaluator (mvp-8+).
    *  Undefined for older sessions → card falls back to topStrength/
    *  topWeakness one-liners. */

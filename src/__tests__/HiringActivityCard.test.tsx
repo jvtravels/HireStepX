@@ -23,18 +23,19 @@ describe("HiringActivityCard", () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it("shows a zero-match state when there are no matches", async () => {
+  it("renders nothing when there are no shortlisted matches", async () => {
     global.fetch = vi.fn(() =>
       Promise.resolve({
         ok: true,
         json: async () => ({ shortlistedCount: 0, unlockedCount: 0, recent: [] }),
       }),
     ) as unknown as typeof fetch;
-    render(<HiringActivityCard />);
-    await waitFor(() => expect(screen.getByText(/No matches yet/)).toBeInTheDocument());
+    const { container } = render(<HiringActivityCard />);
+    await new Promise((r) => setTimeout(r, 0));
+    expect(container).toBeEmptyDOMElement();
   });
 
-  it("renders match cards with comp, experience, skills, and unlocked state", async () => {
+  it("renders the invites pill and match cards with company, role, and employment type", async () => {
     global.fetch = vi.fn(() =>
       Promise.resolve({
         ok: true,
@@ -45,32 +46,14 @@ describe("HiringActivityCard", () => {
             {
               roleTitle: "Backend Engineer",
               companyName: "Acme Corp",
-              location: "Bengaluru",
-              workMode: "hybrid",
-              budgetMin: 12,
-              budgetMax: 18,
-              experienceMin: 2,
-              experienceMax: 4,
-              skills: ["Node.js", "Postgres"],
-              matchScore: 87,
-              unlocked: true,
-              matchedAt: new Date().toISOString().slice(0, 10),
-              unlockedAt: new Date().toISOString().slice(0, 10),
+              employmentType: "full-time",
+              matchedAt: new Date().toISOString(),
             },
             {
               roleTitle: "SDE II",
               companyName: "Beta Inc",
-              location: "",
-              workMode: null,
-              budgetMin: null,
-              budgetMax: 20,
-              experienceMin: null,
-              experienceMax: null,
-              skills: [],
-              matchScore: 60,
-              unlocked: false,
-              matchedAt: new Date().toISOString().slice(0, 10),
-              unlockedAt: null,
+              employmentType: null,
+              matchedAt: new Date().toISOString(),
             },
           ],
         }),
@@ -78,40 +61,30 @@ describe("HiringActivityCard", () => {
     ) as unknown as typeof fetch;
     render(<HiringActivityCard />);
     await waitFor(() => expect(screen.getByText("Backend Engineer")).toBeInTheDocument());
+    expect(screen.getByText("2 Invites")).toBeInTheDocument();
     expect(screen.getByText(/Acme Corp/)).toBeInTheDocument();
-    expect(screen.getByText("Contacted")).toBeInTheDocument();
-    expect(screen.getByText("Interested")).toBeInTheDocument();
-    expect(screen.getByText("Node.js")).toBeInTheDocument();
-    expect(screen.getByText(/₹12–18L/)).toBeInTheDocument();
-    expect(screen.getByText(/₹20L/)).toBeInTheDocument();
+    expect(screen.getByText(/Full-time/)).toBeInTheDocument();
+    expect(screen.getByText("SDE II")).toBeInTheDocument();
   });
 
-  it("caps the teaser at 3 and shows a View all link to the Jobs tab", async () => {
+  it("shows singular '1 Invite' and caps the teaser grid at 4 cards", async () => {
     const recent = Array.from({ length: 5 }, (_, i) => ({
       roleTitle: `Role ${i}`,
       companyName: `Company ${i}`,
-      location: "Bengaluru",
-      workMode: "remote",
-      budgetMin: 10,
-      budgetMax: 15,
-      experienceMin: 1,
-      experienceMax: 3,
-      skills: [],
-      matchScore: 70,
-      unlocked: false,
-      matchedAt: new Date().toISOString().slice(0, 10),
-      unlockedAt: null,
+      employmentType: "contract",
+      matchedAt: new Date().toISOString(),
     }));
     global.fetch = vi.fn(() =>
       Promise.resolve({
         ok: true,
-        json: async () => ({ shortlistedCount: 5, unlockedCount: 0, recent }),
+        json: async () => ({ shortlistedCount: 1, unlockedCount: 0, recent }),
       }),
     ) as unknown as typeof fetch;
     render(<HiringActivityCard />);
-    await waitFor(() => expect(screen.getByText(/View all 5 matches/)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText("1 Invite")).toBeInTheDocument());
     expect(screen.getByText("Role 0")).toBeInTheDocument();
-    expect(screen.queryByText("Role 3")).not.toBeInTheDocument();
+    expect(screen.getByText("Role 3")).toBeInTheDocument();
+    expect(screen.queryByText("Role 4")).not.toBeInTheDocument();
   });
 
   it("stays quiet on a fetch rejection", async () => {

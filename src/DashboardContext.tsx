@@ -8,11 +8,13 @@ import { type InterviewEvent, loadEvents } from "./dashboardHelpers";
 import {
   type PersistedState, type DashboardSession, type SkillData, type TrendPoint,
   type RealSession, type SkillVelocity, type CompanyReadiness, type ImprovementPlan,
+  type PracticeCoverage, type EvidenceCapability,
   FREE_SESSION_LIMIT, STARTER_WEEKLY_LIMIT,
   loadState, saveState, getSessionData,
   generateFallbackInsights, generateNotifications, generateGoals,
   getReturnContext, getSmartScheduleSuggestion, getImprovementPlan,
   computeWeekActivity, computeStreak, computeReadiness, computeCompanyReadiness, daysUntil,
+  computePracticeCoverage, computeEvidenceCapabilities,
   generateReport,
   computeBadges, getDailyChallenge, getPracticeReminder,
 } from "./dashboardData";
@@ -93,11 +95,16 @@ export interface SessionsContextValue {
   scoreTrend: TrendPoint[];
   skills: SkillData[];
   skillVelocity: SkillVelocity[];
-  overallStats: { sessionsCompleted: number; avgScore: number; improvement: number; hoursLogged: number };
+  overallStats: { sessionsCompleted: number; avgScore: number; improvement: number; hoursLogged: number; questionsAnswered: number };
   hasData: boolean;
   weekActivity: boolean[];
   currentStreak: number;
   readinessScore: number;
+  /** Readiness points gained since the user's first session. null when
+   *  there isn't enough history (fewer than 2 sessions) to compare. */
+  readinessDelta: number | null;
+  practiceCoverage: PracticeCoverage;
+  evidenceCapabilities: EvidenceCapability[];
   calendarEvents: InterviewEvent[];
   /**
    * Per-section initial-load flags. Replaces the all-or-nothing
@@ -654,10 +661,12 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   }, [user?.id, refreshSessions]);
 
   // Session data
-  const { recentSessions, scoreTrend, skills, overallStats, hasData, skillVelocity } = useMemo(
+  const { recentSessions, scoreTrend, skills, overallStats, hasData, skillVelocity, readinessDelta, realSessions } = useMemo(
     () => getSessionData(user?.targetRole || persisted.targetRole, supabaseSessions),
     [user?.targetRole, persisted.targetRole, supabaseSessions],
   );
+  const practiceCoverage: PracticeCoverage = useMemo(() => computePracticeCoverage(skills), [skills]);
+  const evidenceCapabilities: EvidenceCapability[] = useMemo(() => computeEvidenceCapabilities(realSessions), [realSessions]);
 
   const weekActivity = useMemo(() => computeWeekActivity(recentSessions), [recentSessions]);
   const currentStreak = useMemo(() => computeStreak(recentSessions), [recentSessions]);
@@ -942,10 +951,10 @@ ${skills.length > 0 ? `<h2>Skills</h2><table><tr><th>Skill</th><th>Score</th><th
 
   const sessionsValue: SessionsContextValue = useMemo(() => ({
     recentSessions, scoreTrend, skills, skillVelocity, overallStats, hasData,
-    weekActivity, currentStreak, readinessScore,
+    weekActivity, currentStreak, readinessScore, readinessDelta, practiceCoverage, evidenceCapabilities,
     calendarEvents, topGaps, refreshSessions, invalidateSessions, sessionVersion,
     sessionsLoading, eventsLoading,
-  }), [recentSessions, scoreTrend, skills, skillVelocity, overallStats, hasData, weekActivity, currentStreak, readinessScore, calendarEvents, topGaps, refreshSessions, invalidateSessions, sessionVersion, sessionsLoading, eventsLoading]);
+  }), [recentSessions, scoreTrend, skills, skillVelocity, overallStats, hasData, weekActivity, currentStreak, readinessScore, readinessDelta, practiceCoverage, evidenceCapabilities, calendarEvents, topGaps, refreshSessions, invalidateSessions, sessionVersion, sessionsLoading, eventsLoading]);
 
   const subscriptionValue: SubscriptionContextValue = useMemo(() => ({
     isFree, isStarter, atSessionLimit,

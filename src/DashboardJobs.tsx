@@ -438,7 +438,7 @@ export default function DashboardJobs() {
                         setSelected(r);
                       }
                     }}
-                    className="focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                    className=""
                     onMouseEnter={(e) => { e.currentTarget.style.background = t.rowTint; }}
                     onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
                     style={{ cursor: "pointer", minHeight: 72, transition: `background ${dur.instant} ${ease.snap}` }}

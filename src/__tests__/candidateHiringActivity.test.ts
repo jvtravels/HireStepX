@@ -109,7 +109,7 @@ describe("candidate-hiring-activity handler", () => {
       "Frontend Engineer",
     ]);
     expect(body.recent[0].companyName).toBe("Acme");
-    expect(body.recent[0].unlockedAt).toBe("2026-08-01");
+    expect(body.recent[0].unlockedAt).toBe("2026-08-01T00:00:00Z");
   });
 
   it("returns 500 and logs when the profile read fails", async () => {

@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef } from "react";
+import { Fragment, useLayoutEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -88,6 +88,15 @@ interface AppShellFrameProps {
   audience: "candidate" | "employer";
   breadcrumbRoot: { label: string; path: string };
   pageLabel: string;
+  /** Where pageLabel navigates to when extraCrumbs make it a clickable
+   *  mid-trail segment instead of the bold current page. Defaults to
+   *  breadcrumbRoot.path when omitted. */
+  pageLabelPath?: string;
+  /** Extra segments rendered after pageLabel for pages nested deeper than
+   *  the shell's static section label (e.g. a job title, then a candidate
+   *  name). Each needs a path to be clickable; the last segment is always
+   *  rendered as the bold, non-clickable current page regardless of path. */
+  extraCrumbs?: { label: string; path?: string }[];
   isMobile: boolean;
   mainId: string;
   /** Changing this re-runs the page-enter animation. */
@@ -102,7 +111,7 @@ interface AppShellFrameProps {
 export default function AppShellFrame({
   homeHref, navAriaLabel, navItems, activeId, onNavigate, onNavHover,
   sidebarFooterExtra, account, accountMenuItems, onLogout, messaging, audience,
-  breadcrumbRoot, pageLabel, isMobile, mainId, pageKey, banners, overlays, children,
+  breadcrumbRoot, pageLabel, pageLabelPath, extraCrumbs, isMobile, mainId, pageKey, banners, overlays, children,
 }: AppShellFrameProps) {
   const initial = (account.name || "?")[0].toUpperCase();
 
@@ -281,11 +290,38 @@ export default function AppShellFrame({
                 </BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator />
-              <BreadcrumbItem>
-                <BreadcrumbPage style={{ fontSize: 13, fontWeight: 600, color: c.ink }}>
-                  {pageLabel}
-                </BreadcrumbPage>
-              </BreadcrumbItem>
+              {extraCrumbs && extraCrumbs.length > 0 ? (
+                <BreadcrumbItem>
+                  <BreadcrumbLink onClick={() => onNavigate(pageLabelPath ?? breadcrumbRoot.path)} style={{ color: c.inkSoft, cursor: "pointer" }}>
+                    {pageLabel}
+                  </BreadcrumbLink>
+                </BreadcrumbItem>
+              ) : (
+                <BreadcrumbItem>
+                  <BreadcrumbPage style={{ fontSize: 13, fontWeight: 600, color: c.ink }}>
+                    {pageLabel}
+                  </BreadcrumbPage>
+                </BreadcrumbItem>
+              )}
+              {extraCrumbs?.map((crumb, i) => {
+                const isLast = i === extraCrumbs.length - 1;
+                return (
+                  <Fragment key={`${crumb.label}-${i}`}>
+                    <BreadcrumbSeparator />
+                    <BreadcrumbItem>
+                      {isLast || !crumb.path ? (
+                        <BreadcrumbPage style={{ fontSize: 13, fontWeight: 600, color: c.ink }}>
+                          {crumb.label}
+                        </BreadcrumbPage>
+                      ) : (
+                        <BreadcrumbLink onClick={() => onNavigate(crumb.path!)} style={{ color: c.inkSoft, cursor: "pointer" }}>
+                          {crumb.label}
+                        </BreadcrumbLink>
+                      )}
+                    </BreadcrumbItem>
+                  </Fragment>
+                );
+              })}
             </BreadcrumbList>
           </Breadcrumb>
           <MessagesBell onNavigate={onNavigate} fetchConversations={messaging.fetchConversations} basePath={messaging.basePath} />

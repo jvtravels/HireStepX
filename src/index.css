@@ -131,14 +131,6 @@ input[type="range"]:focus-visible {
   outline: 2px solid oklch(0.555 0.163 48.998);
   outline-offset: 4px;
 }
-/* Design-system components (button.tsx, input.tsx, select.tsx, etc.) already
-   draw their own focus-visible:ring box-shadow — this outline would stack a
-   second, misaligned ring on top of it. Higher specificity than the type
-   selectors above lets legacy plain elements (no data-slot) keep the
-   fallback outline while data-slot components suppress it. */
-[data-slot]:focus-visible {
-  outline: none;
-}
 
 /* ─── Pointer cursor on clickable elements ───
    Native <button> and role="button" default to the browser's arrow cursor,

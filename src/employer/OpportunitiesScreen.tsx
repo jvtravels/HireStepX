@@ -484,7 +484,7 @@ export default function OpportunitiesScreen() {
             </div>
           </div>
 
-          <Card pad={0} style={{ overflow: "hidden" }}>
+          <Card pad={0} style={{ overflow: "hidden", boxShadow: "none" }}>
             <div style={{ overflowX: "auto" }}>
               <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 860 }}>
                 <thead>

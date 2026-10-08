@@ -19,6 +19,28 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { LayoutDashboardIcon, BriefcaseIcon, SettingsIcon } from "lucide-react";
 import AppShellFrame, { type ShellNavItem } from "../AppShellFrame";
 
+export type BreadcrumbCrumb = { label: string; path?: string };
+type BreadcrumbState = { pathname: string; crumbs: BreadcrumbCrumb[] } | null;
+
+const EmployerBreadcrumbContext = React.createContext<(state: BreadcrumbState) => void>(() => {});
+
+/* Pages nested deeper than the shell's static section label (job details,
+   candidate details, etc.) call this once their data loads to extend the
+   breadcrumb past "Jobs" with the real job title / candidate name. Tagging
+   each update with the pathname it was computed for (rather than clearing
+   on unmount) avoids a race against EmployerShell's own re-render on
+   navigation — a stale trail from the previous page is simply never read
+   once pathname has moved on, with no effect-ordering to get right. */
+export function useEmployerBreadcrumb(crumbs: BreadcrumbCrumb[] | null) {
+  const setState = React.useContext(EmployerBreadcrumbContext);
+  const pathname = usePathname();
+  const key = crumbs ? JSON.stringify(crumbs) : "";
+  useEffect(() => {
+    setState(crumbs ? { pathname: pathname ?? "", crumbs } : null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key, pathname]);
+}
+
 /* The console renders the exact same AppShellFrame as the candidate
    dashboard (src/DashboardLayout.tsx) — one product, one shell. */
 const navItems: ShellNavItem[] = [
@@ -178,6 +200,9 @@ export default function EmployerShell({ children }: { children: React.ReactNode 
   const pathname = usePathname();
   const isConsole = companyStatus === "approved";
 
+  const [breadcrumbState, setBreadcrumbState] = useState<BreadcrumbState>(null);
+  const breadcrumbExtra = breadcrumbState && breadcrumbState.pathname === pathname ? breadcrumbState.crumbs : undefined;
+
   const handleLogout = async () => {
     await logout();
     router.replace("/login");
@@ -223,40 +248,44 @@ export default function EmployerShell({ children }: { children: React.ReactNode 
     navItems[0];
 
   return (
-    <AppShellFrame
-      homeHref="/employer"
-      navAriaLabel="Employer navigation"
-      navItems={navItems}
-      activeId={isSettingsRoute || isMessagesRoute ? "" : activeItem.id}
-      onNavigate={(path) => router.push(path)}
-      messaging={{ fetchConversations: listConversations, basePath: "/employer/messages" }}
-      audience="employer"
-      account={{
-        name: companyName || "Employer",
-        subtitle: "Employer account",
-        email: user?.email,
-      }}
-      accountMenuItems={
-        <DropdownMenuItem onClick={() => router.push("/employer/settings")}>
-          <SettingsIcon size={14} aria-hidden="true" />
-          Settings
-        </DropdownMenuItem>
-      }
-      onLogout={handleLogout}
-      breadcrumbRoot={{ label: companyName || "HireStepX", path: "/employer" }}
-      pageLabel={isSettingsRoute ? "Settings" : isMessagesRoute ? "Messages" : activeItem.label}
-      isMobile={isMobile}
-      mainId="employer-main"
-      pageKey={pathname}
-    >
-      {isSelfCardedRoute(pathname ?? "") ? children : (
-        <div style={{
-          width: "100%", maxWidth: 1280, margin: "0 auto", boxSizing: "border-box",
-          background: t.white, border: `1px solid ${t.line}`, borderRadius: 12, padding: 24,
-        }}>
-          {children}
-        </div>
-      )}
-    </AppShellFrame>
+    <EmployerBreadcrumbContext.Provider value={setBreadcrumbState}>
+      <AppShellFrame
+        homeHref="/employer"
+        navAriaLabel="Employer navigation"
+        navItems={navItems}
+        activeId={isSettingsRoute || isMessagesRoute ? "" : activeItem.id}
+        onNavigate={(path) => router.push(path)}
+        messaging={{ fetchConversations: listConversations, basePath: "/employer/messages" }}
+        audience="employer"
+        account={{
+          name: companyName || "Employer",
+          subtitle: "Employer account",
+          email: user?.email,
+        }}
+        accountMenuItems={
+          <DropdownMenuItem onClick={() => router.push("/employer/settings")}>
+            <SettingsIcon size={14} aria-hidden="true" />
+            Settings
+          </DropdownMenuItem>
+        }
+        onLogout={handleLogout}
+        breadcrumbRoot={{ label: companyName || "HireStepX", path: "/employer" }}
+        pageLabel={isSettingsRoute ? "Settings" : isMessagesRoute ? "Messages" : activeItem.label}
+        pageLabelPath={activeItem.path}
+        extraCrumbs={breadcrumbExtra}
+        isMobile={isMobile}
+        mainId="employer-main"
+        pageKey={pathname}
+      >
+        {isSelfCardedRoute(pathname ?? "") ? children : (
+          <div style={{
+            width: "100%", maxWidth: 1280, margin: "0 auto", boxSizing: "border-box",
+            background: t.white, border: `1px solid ${t.line}`, borderRadius: 12, padding: 24,
+          }}>
+            {children}
+          </div>
+        )}
+      </AppShellFrame>
+    </EmployerBreadcrumbContext.Provider>
   );
 }

@@ -32,6 +32,7 @@ import {
   SlidersHorizontalIcon,
 } from "lucide-react";
 import { useEmployerData, Requirement, CandidateEvidence, UnlockPurchase, ConversationMessage } from "@/employer/EmployerDataContext";
+import { useEmployerBreadcrumb } from "@/employer/EmployerShell";
 import { useToast } from "@/Toast";
 import { Candidate, RequirementStage, ArchiveDisposition } from "@/employer/mockData";
 import { tokens as t, fonts as f, textSize } from "@/auth/_tokens";
@@ -227,6 +228,13 @@ function HeadInfo({ label, children }: { label: string; children: React.ReactNod
       </TooltipContent>
     </Tooltip>
   );
+}
+
+function candidateSubtitle(candidate: Candidate): string {
+  const parts = [candidate.targetRole, candidate.city].filter(
+    (part) => part && part !== "Not specified"
+  );
+  return parts.join(" · ");
 }
 
 function initials(name: string): string {
@@ -455,9 +463,9 @@ function CandidateTableRow({
                 color: t.inkFaint,
                 marginTop: 2,
               }}
-              title={`${candidate.targetRole} · ${candidate.city}`}
+              title={candidateSubtitle(candidate)}
             >
-              {candidate.targetRole} · {candidate.city}
+              {candidateSubtitle(candidate)}
             </div>
           </div>
         </div>
@@ -466,7 +474,7 @@ function CandidateTableRow({
         <ScoreChip score={candidate.matchScore} />
       </TableCell>
       <TableCell style={{ ...tdSortable, color: t.inkSoft }}>
-        {candidate.rosterScore} roster · {candidate.sessionsCompleted} {candidate.sessionsCompleted === 1 ? "session" : "sessions"}
+        {candidate.rosterScore} avg score · {candidate.sessionsCompleted} {candidate.sessionsCompleted === 1 ? "session" : "sessions"}
       </TableCell>
       <TableCell style={{ ...td, color: t.inkSoft }}>
         {candidate.resume?.noticePeriod || <span style={{ color: t.inkFaint }}>—</span>}
@@ -488,9 +496,18 @@ function CandidateTableRow({
               <SkillTag key={s}>{s}</SkillTag>
             ))}
             {candidate.skills.length > 3 && (
-              <span style={{ fontFamily: f.sans, fontSize: textSize.sm, color: t.inkFaint, alignSelf: "center" }}>
-                +{candidate.skills.length - 3}
-              </span>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span
+                    style={{ fontFamily: f.sans, fontSize: textSize.sm, color: t.inkFaint, alignSelf: "center", cursor: "default" }}
+                  >
+                    +{candidate.skills.length - 3}
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="max-w-64">
+                  {candidate.skills.slice(3).join(", ")}
+                </TooltipContent>
+              </Tooltip>
             )}
           </div>
         ) : (
@@ -1116,6 +1133,8 @@ export default function RequirementDetailPage() {
     load();
   }, [load]);
 
+  useEmployerBreadcrumb(requirement ? [{ label: requirement.title, path: `/employer/requirements/${params.id}` }] : null);
+
   // A freshly created requirement matches synchronously on the server, so
   // by the time this page loads it's already past "generating" in
   // practice — this poll only covers the rare case of a stale fetch.
@@ -1405,8 +1424,8 @@ export default function RequirementDetailPage() {
   };
 
   return (
-    <div>
-      <div style={{ display: "flex", alignItems: "flex-start", gap: 16, flexWrap: "wrap" }}>
+    <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
+      <div style={{ display: "flex", alignItems: "stretch", gap: 16, flexWrap: "wrap" }}>
       <Card style={{ flex: "3 1 560px", boxShadow: "none" }}>
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
@@ -1607,15 +1626,6 @@ export default function RequirementDetailPage() {
           </div>
         )}
 
-        {requirement.responsibilities && (
-          <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${t.line}` }}>
-            <span style={{ fontFamily: f.sans, fontSize: 11, color: t.inkFaint }}>Responsibilities</span>
-            <p style={{ fontFamily: f.sans, fontSize: 13.5, color: t.inkSoft, lineHeight: 1.6, margin: "6px 0 0" }}>
-              {requirement.responsibilities}
-            </p>
-          </div>
-        )}
-
         <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginTop: 14, paddingTop: 14, borderTop: `1px solid ${t.line}` }}>
           {dueDaysLeft != null && (
             <span style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: f.sans, fontSize: 12, color: dueDaysLeft < 0 ? t.error : t.inkFaint, fontWeight: dueDaysLeft < 0 ? 600 : 400 }}>
@@ -1749,7 +1759,7 @@ export default function RequirementDetailPage() {
       </Card>
       </div>
 
-      <div style={{ marginTop: 24 }}>
+      <div style={{ marginTop: 24, flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
         <div style={{ display: "flex", alignItems: "center", flexWrap: "nowrap", gap: 10, marginBottom: 16, overflowX: "auto" }}>
           <h2 style={{ fontFamily: f.sans, fontSize: 18, fontWeight: 600, color: t.coal, margin: 0, flexShrink: 0 }}>Candidates</h2>
           <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", flexWrap: "nowrap", gap: 10, justifyContent: "flex-end" }}>
@@ -1882,14 +1892,14 @@ export default function RequirementDetailPage() {
               </Dialog>
 
               {filteredSorted.length === 0 ? (
-                <Card style={{ textAlign: "center", padding: 48 }}>
+                <Card style={{ textAlign: "center", padding: 48, flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft, margin: 0 }}>
                     No candidates match your search or filters.
                   </p>
                 </Card>
               ) : (
-                <Card pad={0} style={{ overflow: "hidden" }}>
-                  <div style={{ overflowX: "auto" }}>
+                <Card pad={0} style={{ overflow: "hidden", boxShadow: "none", flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
+                  <div style={{ overflowX: "auto", flex: 1, minHeight: 0 }}>
                     <Table style={{ minWidth: 950 }}>
                       <TableHeader style={{ position: "sticky", top: 0, zIndex: 1 }}>
                         <TableRow style={{ background: t.rowTint, height: 40 }}>
@@ -1913,7 +1923,7 @@ export default function RequirementDetailPage() {
                             minWidth={150}
                             sort={sort}
                             onSortChange={setSort}
-                            after={<HeadInfo label="About Practice history">&quot;Roster&quot; is this candidate's average score (0–100) across all their completed practice interviews on HireStepX, not specific to this requirement. &quot;Sessions&quot; is how many practice interviews they've completed in total.</HeadInfo>}
+                            after={<HeadInfo label="About Practice history">&quot;Avg score&quot; is this candidate's average score (0–100) across all their completed practice interviews on HireStepX, not specific to this requirement. &quot;Sessions&quot; is how many practice interviews they've completed in total.</HeadInfo>}
                           >
                             Practice history
                           </SortableHead>

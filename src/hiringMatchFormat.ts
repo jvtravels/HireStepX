@@ -15,6 +15,18 @@ export function daysAgo(dateStr: string): string {
   return months === 1 ? "1 month ago" : `${months} months ago`;
 }
 
+// Hour-granular sibling of daysAgo, for surfaces (dashboard Employer Interest
+// grid) that need "2 hours ago" instead of collapsing same-day events to
+// "today" — requires a full ISO timestamp, not a date-only string.
+export function hoursOrDaysAgo(dateStr: string): string {
+  const ms = Date.now() - new Date(dateStr).getTime();
+  const hours = Math.floor(ms / 3_600_000);
+  if (hours <= 0) return "just now";
+  if (hours === 1) return "1 hour ago";
+  if (hours < 24) return `${hours} hours ago`;
+  return daysAgo(dateStr);
+}
+
 // budgetMin/budgetMax's unit depends on salaryType — whole INR lakhs for
 // per-annum roles, a raw INR amount for per-month/fixed ones. Mirrors
 // asBoundedBudget in server-handlers/_employer-requirements-helpers.ts.

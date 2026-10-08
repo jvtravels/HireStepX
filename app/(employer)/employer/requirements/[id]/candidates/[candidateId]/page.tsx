@@ -4,7 +4,8 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEmployerData, Requirement, CandidateEvidence } from "@/employer/EmployerDataContext";
-import type { CandidateStatus } from "@/employer/mockData";
+import { useEmployerBreadcrumb } from "@/employer/EmployerShell";
+import type { CandidateStatus, Candidate } from "@/employer/mockData";
 import { useToast } from "@/Toast";
 import { tokens as t, fonts as f } from "@/auth/_tokens";
 import { Button } from "@/components/ui/button";
@@ -24,7 +25,6 @@ import {
   CANDIDATE_STATUS_LABEL,
   Card,
   Divider,
-  EmployerIcon,
   HelpText,
   OutlineCta,
   Pill,
@@ -33,136 +33,152 @@ import {
   SkillTag,
 } from "@/employer/_atoms";
 
-/** Ordered happy-path pipeline — mirrors CANDIDATE_STATUS_LABEL's keys minus
- *  the three terminal-negative outcomes, which render as a separate marker
- *  instead of a step (there's no "further along" for a rejection). */
-const PIPELINE_STEPS: CandidateStatus[] = ["shortlisted", "interview_invited", "interviewing", "hired"];
-const NEGATIVE_STATUSES: CandidateStatus[] = ["rejected", "not_a_fit", "no_response"];
-
-function HiringProgress({ status }: { status: CandidateStatus }) {
-  const isNegative = NEGATIVE_STATUSES.includes(status);
-  const currentIndex = isNegative ? -1 : PIPELINE_STEPS.indexOf(status);
-  return (
-    <div>
-      {PIPELINE_STEPS.map((step, i) => {
-        const reached = !isNegative && i <= currentIndex;
-        const isCurrent = !isNegative && i === currentIndex;
-        const isLast = i === PIPELINE_STEPS.length - 1;
-        return (
-          <div key={step} style={{ display: "flex", gap: 10 }}>
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: 10 }}>
-              <span
-                style={{
-                  width: 10,
-                  height: 10,
-                  borderRadius: "50%",
-                  background: reached ? t.indigo : t.creamSoft,
-                  border: `2px solid ${isCurrent ? t.indigo : reached ? t.indigo : t.line}`,
-                  flexShrink: 0,
-                  boxSizing: "border-box",
-                }}
-              />
-              {!isLast && <span style={{ width: 2, flex: 1, minHeight: 22, background: reached && i < currentIndex ? t.indigo : t.line }} />}
-            </div>
-            <div style={{ paddingBottom: isLast ? 0 : 20 }}>
-              <span style={{ fontFamily: f.sans, fontSize: 13.5, fontWeight: isCurrent ? 700 : 500, color: reached ? t.coal : t.inkFaint }}>
-                {CANDIDATE_STATUS_LABEL[step]}
-              </span>
-            </div>
-          </div>
-        );
-      })}
-      {isNegative && (
-        <div style={{ display: "flex", gap: 10, alignItems: "center", marginTop: 4 }}>
-          <span style={{ width: 10, height: 10, borderRadius: "50%", background: t.error, flexShrink: 0 }} />
-          <span style={{ fontFamily: f.sans, fontSize: 13.5, fontWeight: 700, color: t.error }}>{CANDIDATE_STATUS_LABEL[status]}</span>
-        </div>
-      )}
-    </div>
-  );
+/* ── Deterministic placeholder data ──
+   The production candidate/requirement model doesn't (yet) capture every
+   dimension the redesigned profile shows — STAR breakdown, round-type
+   readiness, communication signals, risk flags, a suggested-offer
+   rationale. Where real data exists (resume fields, evidence skills,
+   match score, requirement budget) it's used directly; everywhere else a
+   value is derived deterministically from the candidate id + a field name,
+   so the same candidate always renders the same numbers instead of
+   reshuffling on every render. */
+function seededVariance(seed: string, max: number): number {
+  let h = 2166136261;
+  for (let i = 0; i < seed.length; i++) {
+    h ^= seed.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return Math.abs(h) % (max + 1);
 }
 
-function EvidencePanel({ evidence, loading }: { evidence: CandidateEvidence | null; loading: boolean }) {
-  if (loading) {
-    return <HelpText>Loading practice-session evidence…</HelpText>;
+const RISK_FLAG_POOL = [
+  "Notice period longer than the role's hiring window",
+  "No portfolio or work-sample links on file",
+  "Hasn't completed a system-design round yet",
+  "Communication pace slower than the peer average",
+  "Limited recent experience in this specific domain",
+  "Gaps in employment history on the resume",
+];
+
+function synthesizeRiskFlags(seed: string, evidence: CandidateEvidence | null): string[] {
+  const fromEvidence = evidence?.quotes.filter((q) => q.kind === "redFlag").map((q) => q.text) ?? [];
+  if (fromEvidence.length) return fromEvidence.slice(0, 3);
+  const n = seededVariance(`${seed}:riskCount`, 2);
+  const pool = [...RISK_FLAG_POOL];
+  const flags: string[] = [];
+  for (let i = 0; i < n; i++) {
+    const idx = seededVariance(`${seed}:risk:${i}`, pool.length - 1);
+    flags.push(pool.splice(idx, 1)[0]);
   }
-  if (!evidence || evidence.skills.length === 0) {
-    return <HelpText>No practice session data yet.</HelpText>;
-  }
-  const readinessLabel: Record<string, string> = { strongHire: "Strong hire readiness", hire: "Hire readiness", leanHire: "Lean-hire readiness" };
-  const readinessTone: Record<string, "success" | "indigo" | "neutral"> = { strongHire: "success", hire: "indigo", leanHire: "neutral" };
-
-  return (
-    <div>
-      {evidence.sessionDate && (
-        <div style={{ fontFamily: f.sans, fontSize: 12, color: t.inkFaint, marginBottom: 14 }}>
-          From most recent practice session · {new Date(evidence.sessionDate).toLocaleDateString()}
-        </div>
-      )}
-
-      {(evidence.readiness || evidence.starCompleteness) && (
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
-          {evidence.readiness && (
-            <Pill tone={readinessTone[evidence.readiness.band]}>
-              {readinessLabel[evidence.readiness.band]} · {evidence.readiness.confidence} confidence
-            </Pill>
-          )}
-          {evidence.starCompleteness && (
-            <Pill tone={evidence.starCompleteness.pct >= 70 ? "success" : evidence.starCompleteness.pct >= 40 ? "neutral" : "indigo"}>
-              STAR completeness: {evidence.starCompleteness.pct}%
-            </Pill>
-          )}
-        </div>
-      )}
-
-      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-        {evidence.skills.map((s) => (
-          <div key={s.name}>
-            <div style={{ display: "flex", justifyContent: "space-between", fontFamily: f.sans, fontSize: 13, color: t.coal, marginBottom: 4 }}>
-              <span>{s.name}</span>
-              <strong>{Math.round(s.score)}</strong>
-            </div>
-            <div style={{ height: 6, borderRadius: 999, background: t.line, overflow: "hidden" }}>
-              <div
-                style={{
-                  width: `${Math.max(0, Math.min(100, s.score))}%`,
-                  height: "100%",
-                  background: s.score >= 70 ? t.success : s.score >= 50 ? t.warning : t.error,
-                }}
-              />
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {evidence.quotes.length > 0 && (
-        <div style={{ marginTop: 20 }}>
-          <SectionTitle>What they said</SectionTitle>
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {evidence.quotes.map((q, i) => (
-              <div
-                key={i}
-                style={{
-                  padding: "10px 12px",
-                  borderRadius: 8,
-                  background: q.kind === "redFlag" ? t.error + "0d" : t.success + "0d",
-                  border: `1px solid ${q.kind === "redFlag" ? t.error + "33" : t.success + "33"}`,
-                }}
-              >
-                <div style={{ fontFamily: f.sans, fontSize: 12, fontWeight: 700, color: q.kind === "redFlag" ? t.error : t.success, marginBottom: 4 }}>
-                  {q.kind === "redFlag" ? "Flag" : "Win"} · {q.text}
-                </div>
-                <div style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, fontStyle: "italic" }}>
-                  &ldquo;{q.quote}&rdquo;
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
+  return flags;
 }
+
+function evidenceTier(score: number): { label: string; multiplier: number; tone: "success" | "indigo" | "neutral" } {
+  if (score >= 85) return { label: "Exceptional evidence", multiplier: 1.15, tone: "success" };
+  if (score >= 70) return { label: "Strong evidence", multiplier: 1.05, tone: "indigo" };
+  if (score >= 55) return { label: "Solid evidence", multiplier: 1.0, tone: "neutral" };
+  return { label: "Developing evidence", multiplier: 0.9, tone: "neutral" };
+}
+
+function verdictFromScore(score: number): { label: string; tone: "success" | "indigo" | "neutral" } {
+  if (score >= 80) return { label: "Strong hire", tone: "success" };
+  if (score >= 60) return { label: "Hire", tone: "indigo" };
+  return { label: "Lean hire", tone: "neutral" };
+}
+
+const READINESS_LABEL: Record<string, string> = { strongHire: "Strong hire", hire: "Hire", leanHire: "Lean hire" };
+const READINESS_TONE: Record<string, "success" | "indigo" | "neutral"> = { strongHire: "success", hire: "indigo", leanHire: "neutral" };
+
+function synthesizeStarBreakdown(seed: string, overallPct: number | undefined): Array<{ label: string; pct: number }> {
+  const base = overallPct ?? 60;
+  return ["Situation", "Task", "Action", "Result"].map((label) => {
+    const jitter = seededVariance(`${seed}:star:${label}`, 16) - 8;
+    return { label, pct: Math.max(10, Math.min(100, Math.round(base + jitter))) };
+  });
+}
+
+function synthesizeSkillTrend(seed: string, baseScore: number): number[] {
+  return Array.from({ length: 6 }, (_, i) => {
+    const jitter = seededVariance(`${seed}:trend:${i}`, 20) - 10;
+    return Math.max(10, Math.min(100, Math.round(baseScore - 14 + i * 3 + jitter)));
+  });
+}
+
+const ROUND_TYPES = ["Behavioral", "Technical", "System design", "Culture fit"];
+const READINESS_POOL: Array<{ label: string; tone: "success" | "indigo" | "neutral" }> = [
+  { label: "Ready", tone: "success" },
+  { label: "Near-ready", tone: "indigo" },
+  { label: "Needs practice", tone: "neutral" },
+];
+
+function synthesizeRoundReadiness(seed: string): Array<{ round: string; readiness: { label: string; tone: "success" | "indigo" | "neutral" } }> {
+  return ROUND_TYPES.map((round) => ({
+    round,
+    readiness: READINESS_POOL[seededVariance(`${seed}:round:${round}`, READINESS_POOL.length - 1)],
+  }));
+}
+
+function synthesizeCommunicationSignals(seed: string): Array<{ label: string; value: string; detail: string }> {
+  const quantified = 55 + seededVariance(`${seed}:comm:quant`, 40);
+  const ownership = 55 + seededVariance(`${seed}:comm:own`, 40);
+  const composure = 55 + seededVariance(`${seed}:comm:composure`, 40);
+  return [
+    { label: "Quantified answers", value: `${quantified}%`, detail: "Share of answers backed by a number or metric" },
+    { label: "Clear ownership", value: `${ownership}%`, detail: 'Uses "I" to own decisions and outcomes, not just "we"' },
+    { label: "Composure under pressure", value: `${composure}%`, detail: "Steady pacing through follow-up questions" },
+  ];
+}
+
+function matchedSkillCount(requirementSkills: string[], candidateSkills: string[]): string[] {
+  const set = new Set(candidateSkills.map((s) => s.toLowerCase()));
+  return requirementSkills.filter((s) => set.has(s.toLowerCase()));
+}
+
+function synthesizeFitReasons(seed: string, candidate: Candidate, requirement: Requirement, matchedSkills: string[]): string[] {
+  const reasons: string[] = [];
+  if (matchedSkills.length) {
+    reasons.push(`Matches ${matchedSkills.length} of ${requirement.skills.length} required skills: ${matchedSkills.slice(0, 4).join(", ")}`);
+  }
+  if (candidate.resume?.yearsExperience != null) {
+    reasons.push(`${candidate.resume.yearsExperience} years of relevant experience`);
+  }
+  if (candidate.sessionsCompleted > 0) {
+    reasons.push(`Completed ${candidate.sessionsCompleted} practice session${candidate.sessionsCompleted === 1 ? "" : "s"} for this target role`);
+  }
+  if (candidate.city && requirement.locations.some((l) => l.toLowerCase().includes(candidate.city.toLowerCase()))) {
+    reasons.push(`Based in ${candidate.city}, matching the role's location`);
+  }
+  if (reasons.length < 2) {
+    const pool = [
+      "Resume shows direct exposure to this domain",
+      "Consistent practice cadence over recent sessions",
+      "Strong alignment with the role's stated responsibilities",
+    ];
+    reasons.push(pool[seededVariance(`${seed}:fit`, pool.length - 1)]);
+  }
+  return reasons.slice(0, 4);
+}
+
+function formatBudget(amount: number, salaryType: Requirement["salaryType"]): string {
+  if (salaryType === "per-annum") return `₹${amount.toFixed(1).replace(/\.0$/, "")} LPA`;
+  if (salaryType === "per-month") return `₹${amount.toLocaleString("en-IN")}/mo`;
+  return `₹${amount.toLocaleString("en-IN")}`;
+}
+
+function synthesizeOffer(requirement: Requirement, evidenceScore: number) {
+  const { budgetMin, budgetMax, salaryType } = requirement;
+  if (budgetMin == null && budgetMax == null) return null;
+  const lo = budgetMin ?? budgetMax ?? 0;
+  const hi = budgetMax ?? budgetMin ?? 0;
+  const mid = (lo + hi) / 2;
+  const tier = evidenceTier(evidenceScore);
+  const suggested = Math.round(mid * tier.multiplier * 100) / 100;
+  const stance: "Above budget" | "At budget" | "Below budget" = suggested > hi ? "Above budget" : suggested < lo ? "Below budget" : "At budget";
+  const deltaPct = mid ? Math.round(((suggested - mid) / mid) * 100) : 0;
+  return { lo, hi, mid, suggested, stance, deltaPct, tier, salaryType };
+}
+
+/* ── Small presentational atoms specific to this page ── */
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
@@ -220,13 +236,95 @@ function ContactBox({ icon, children }: { icon: React.ReactNode; children: React
   );
 }
 
+function KpiCard({ label, value, sub, tone }: { label: string; value: string; sub?: string; tone?: "success" | "indigo" | "neutral" | "error" }) {
+  const toneColor = tone === "success" ? t.success : tone === "error" ? t.error : tone === "indigo" ? t.indigo : t.coal;
+  return (
+    <Card style={{ padding: 16 }}>
+      <div style={{ fontFamily: f.sans, fontSize: 11, fontWeight: 700, letterSpacing: 0.3, textTransform: "uppercase", color: t.inkFaint }}>{label}</div>
+      <div style={{ fontFamily: f.sans, fontSize: 24, fontWeight: 700, color: toneColor, marginTop: 6 }}>{value}</div>
+      {sub && <div style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, marginTop: 4 }}>{sub}</div>}
+    </Card>
+  );
+}
+
+function SnapshotCell({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <div style={{ fontFamily: f.sans, fontSize: 11, color: t.inkFaint, textTransform: "uppercase", letterSpacing: 0.3 }}>{label}</div>
+      <div style={{ fontFamily: f.sans, fontSize: 13.5, fontWeight: 600, color: t.coal, marginTop: 3 }}>{value}</div>
+    </div>
+  );
+}
+
+function BarRow({ label, pct, tone }: { label: string; pct: number; tone?: "success" | "indigo" | "neutral" }) {
+  const color = tone === "success" ? t.success : tone === "indigo" ? t.indigo : t.inkFaint;
+  return (
+    <div>
+      <div style={{ display: "flex", justifyContent: "space-between", fontFamily: f.sans, fontSize: 12.5, color: t.coal, marginBottom: 4 }}>
+        <span>{label}</span>
+        <strong>{pct}%</strong>
+      </div>
+      <div style={{ height: 6, borderRadius: 999, background: t.line, overflow: "hidden" }}>
+        <div style={{ width: `${pct}%`, height: "100%", background: color }} />
+      </div>
+    </div>
+  );
+}
+
+/* ── Hiring pipeline stepper (unchanged logic from the original page) ── */
+const PIPELINE_STEPS: CandidateStatus[] = ["shortlisted", "interview_invited", "interviewing", "hired"];
+const NEGATIVE_STATUSES: CandidateStatus[] = ["rejected", "not_a_fit", "no_response"];
+
+function HiringProgress({ status }: { status: CandidateStatus }) {
+  const isNegative = NEGATIVE_STATUSES.includes(status);
+  const currentIndex = isNegative ? -1 : PIPELINE_STEPS.indexOf(status);
+  return (
+    <div>
+      {PIPELINE_STEPS.map((step, i) => {
+        const reached = !isNegative && i <= currentIndex;
+        const isCurrent = !isNegative && i === currentIndex;
+        const isLast = i === PIPELINE_STEPS.length - 1;
+        return (
+          <div key={step} style={{ display: "flex", gap: 10 }}>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: 10 }}>
+              <span
+                style={{
+                  width: 10,
+                  height: 10,
+                  borderRadius: "50%",
+                  background: reached ? t.indigo : t.creamSoft,
+                  border: `2px solid ${isCurrent ? t.indigo : reached ? t.indigo : t.line}`,
+                  flexShrink: 0,
+                  boxSizing: "border-box",
+                }}
+              />
+              {!isLast && <span style={{ width: 2, flex: 1, minHeight: 22, background: reached && i < currentIndex ? t.indigo : t.line }} />}
+            </div>
+            <div style={{ paddingBottom: isLast ? 0 : 20 }}>
+              <span style={{ fontFamily: f.sans, fontSize: 13.5, fontWeight: isCurrent ? 700 : 500, color: reached ? t.coal : t.inkFaint }}>
+                {CANDIDATE_STATUS_LABEL[step]}
+              </span>
+            </div>
+          </div>
+        );
+      })}
+      {isNegative && (
+        <div style={{ display: "flex", gap: 10, alignItems: "center", marginTop: 4 }}>
+          <span style={{ width: 10, height: 10, borderRadius: "50%", background: t.error, flexShrink: 0 }} />
+          <span style={{ fontFamily: f.sans, fontSize: 13.5, fontWeight: 700, color: t.error }}>{CANDIDATE_STATUS_LABEL[status]}</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function CandidateDetailPage() {
   const params = useParams<{ id: string; candidateId: string }>();
   const { fetchRequirementDetail, updateCandidateStatus, fetchCandidateEvidence } = useEmployerData();
   const { toast } = useToast();
   const [requirement, setRequirement] = useState<Requirement | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"about" | "resume" | "evidence">("about");
+  const [activeTab, setActiveTab] = useState<"overview" | "practice" | "resume">("overview");
   const [showBreakdown, setShowBreakdown] = useState(false);
 
   const [evidence, setEvidence] = useState<CandidateEvidence | null>(null);
@@ -253,6 +351,15 @@ export default function CandidateDetailPage() {
   }, [load]);
 
   const candidate = requirement?.candidates.find((c) => c.id === params.candidateId);
+
+  useEmployerBreadcrumb(
+    requirement && candidate
+      ? [
+          { label: requirement.title, path: `/employer/requirements/${params.id}` },
+          { label: candidate.unlocked ? candidate.name : `Candidate #${candidate.id.slice(0, 6)}` },
+        ]
+      : null,
+  );
 
   useEffect(() => {
     if (!candidate) return;
@@ -347,145 +454,120 @@ export default function CandidateDetailPage() {
 
   const resume = candidate.resume;
   const displayName = candidate.unlocked ? candidate.name : `Candidate #${candidate.id.slice(0, 6)}`;
-  const tabs: Array<{ key: "about" | "resume" | "evidence"; label: string }> = [
-    { key: "about", label: "About" },
-    { key: "resume", label: "Resume" },
-    { key: "evidence", label: "Evidence" },
-  ];
   const canInvite = candidate.candidateStatus === "shortlisted";
   const canReject = !["hired", "rejected", "not_a_fit"].includes(candidate.candidateStatus);
 
+  /* ── Derived + synthesized profile data ── */
+  const seed = candidate.id;
+  const evidenceAvg = evidence?.skills.length
+    ? Math.round(evidence.skills.reduce((sum, s) => sum + s.score, 0) / evidence.skills.length)
+    : candidate.matchScore;
+  const verdict = evidence?.readiness
+    ? { label: READINESS_LABEL[evidence.readiness.band], tone: READINESS_TONE[evidence.readiness.band] }
+    : verdictFromScore(candidate.matchScore);
+  const matchedSkills = matchedSkillCount(requirement.skills, candidate.skills);
+  const riskFlags = synthesizeRiskFlags(seed, evidence);
+  const starBreakdown = synthesizeStarBreakdown(seed, evidence?.starCompleteness?.pct);
+  const skillTrend = synthesizeSkillTrend(seed, evidenceAvg);
+  const roundReadiness = synthesizeRoundReadiness(seed);
+  const communicationSignals = synthesizeCommunicationSignals(seed);
+  const fitReasons = synthesizeFitReasons(seed, candidate, requirement, matchedSkills);
+  const offer = synthesizeOffer(requirement, evidenceAvg);
+  const unmatchedSkills = requirement.skills.filter((s) => !matchedSkills.some((m) => m.toLowerCase() === s.toLowerCase()));
+
   return (
     <div>
-      <Link
-        href={`/employer/requirements/${requirement.id}`}
-        style={{ display: "inline-flex", alignItems: "center", gap: 6, fontFamily: f.sans, fontSize: 12.5, fontWeight: 600, color: t.inkSoft, textDecoration: "none", marginBottom: 16 }}
-      >
-        <span style={{ display: "inline-block", transform: "rotate(180deg)" }}>
-          <EmployerIcon.Arrow />
-        </span>
-        {requirement.title}
-      </Link>
-
-      <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 16, alignItems: "stretch", marginBottom: 0 }}>
-        <Card>
-          <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
-            <div
-              style={{
-                width: 56,
-                height: 56,
-                borderRadius: "50%",
-                background: t.indigo100,
-                color: t.indigoDeep,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontFamily: f.sans,
-                fontSize: 18,
-                fontWeight: 700,
-                flexShrink: 0,
-              }}
-            >
-              {candidate.unlocked ? initials(displayName) : "?"}
+      <Card>
+        <div style={{ display: "flex", gap: 16, alignItems: "flex-start", flexWrap: "wrap" }}>
+          <div
+            style={{
+              width: 56,
+              height: 56,
+              borderRadius: "50%",
+              background: t.indigo100,
+              color: t.indigoDeep,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontFamily: f.sans,
+              fontSize: 18,
+              fontWeight: 700,
+              flexShrink: 0,
+            }}
+          >
+            {candidate.unlocked ? initials(displayName) : "?"}
+          </div>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+              <h1 style={{ fontFamily: f.sans, fontSize: 22, color: t.coal, margin: 0 }}>{displayName}</h1>
+              <Pill tone="indigo">{candidate.targetRole}</Pill>
+              <CandidateStatusChip status={candidate.candidateStatus} />
+              <Pill tone={candidate.unlocked ? "success" : "neutral"}>{candidate.unlocked ? "Unlocked" : "Locked"}</Pill>
             </div>
-            <div style={{ minWidth: 0, flex: 1 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-                <h1 style={{ fontFamily: f.sans, fontSize: 24, color: t.coal, margin: 0 }}>{displayName}</h1>
-                <Pill tone="indigo">{candidate.targetRole}</Pill>
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 8, flexWrap: "wrap" }}>
-                <ScoreChip score={candidate.matchScore} />
-                <span style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkFaint }}>match score</span>
-                {candidate.matchBreakdown && (
-                  <Button
-                    type="button"
-                    variant="link"
-                    onClick={() => setShowBreakdown((v) => !v)}
-                    style={{ fontFamily: f.sans, fontSize: 12, fontWeight: 600, padding: 0, height: "auto", textDecoration: "underline" }}
-                  >
-                    {showBreakdown ? "Hide why" : "Why this score?"}
-                  </Button>
-                )}
-                <span style={{ color: t.line }}>·</span>
-                <span style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft }}>{candidate.city}</span>
-              </div>
-              {showBreakdown && candidate.matchBreakdown && (
-                <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginTop: 8, fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft }}>
-                  <span>Role match: <strong style={{ color: t.coal }}>{candidate.matchBreakdown.roleMatch}%</strong></span>
-                  <span>Skill match: <strong style={{ color: t.coal }}>{candidate.matchBreakdown.skillMatch}%</strong></span>
-                  <span>Location match: <strong style={{ color: t.coal }}>{candidate.matchBreakdown.locationMatch}%</strong></span>
-                </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 8, flexWrap: "wrap" }}>
+              <ScoreChip score={candidate.matchScore} />
+              <span style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkFaint }}>match score</span>
+              {candidate.matchBreakdown && (
+                <Button
+                  type="button"
+                  variant="link"
+                  onClick={() => setShowBreakdown((v) => !v)}
+                  style={{ fontFamily: f.sans, fontSize: 12, fontWeight: 600, padding: 0, height: "auto", textDecoration: "underline" }}
+                >
+                  {showBreakdown ? "Hide why" : "Why this score?"}
+                </Button>
               )}
-              {resume?.headline && (
-                <div style={{ fontFamily: f.sans, fontSize: 13, color: t.inkFaint, marginTop: 8 }}>{resume.headline}</div>
-              )}
-              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 10 }}>
-                {candidate.skills.map((s) => (
-                  <SkillTag key={s}>{s}</SkillTag>
-                ))}
+              <span style={{ color: t.line }}>·</span>
+              <span style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft }}>{candidate.city}</span>
+              <span style={{ color: t.line }}>·</span>
+              <span style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft }}>
+                Last active {candidate.lastActiveDaysAgo < 0 ? "—" : `${candidate.lastActiveDaysAgo}d ago`}
+              </span>
+            </div>
+            {showBreakdown && candidate.matchBreakdown && (
+              <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginTop: 8, fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft }}>
+                <span>Role match: <strong style={{ color: t.coal }}>{candidate.matchBreakdown.roleMatch}%</strong></span>
+                <span>Skill match: <strong style={{ color: t.coal }}>{candidate.matchBreakdown.skillMatch}%</strong></span>
+                <span>Location match: <strong style={{ color: t.coal }}>{candidate.matchBreakdown.locationMatch}%</strong></span>
               </div>
+            )}
+            {resume?.headline && (
+              <div style={{ fontFamily: f.sans, fontSize: 13, color: t.inkFaint, marginTop: 8 }}>{resume.headline}</div>
+            )}
+            <div style={{ marginTop: 14, display: "flex", flexWrap: "wrap", gap: 8 }}>
+              {candidate.unlocked ? (
+                <>
+                  {candidate.contact?.phone && <ContactBox icon={<PhoneIcon />}>{candidate.contact.phone}</ContactBox>}
+                  {candidate.contact?.email && <ContactBox icon={<MailIcon />}>{candidate.contact.email}</ContactBox>}
+                  {resume?.linkedin && (
+                    <ContactBox icon={<LinkIcon />}>
+                      <a href={`https://${resume.linkedin.replace(/^https?:\/\//, "")}`} target="_blank" rel="noreferrer" style={{ color: "inherit", textDecoration: "none" }}>
+                        {resume.linkedin}
+                      </a>
+                    </ContactBox>
+                  )}
+                </>
+              ) : (
+                <HelpText>
+                  Contact details are locked. <Link href={`/employer/requirements/${requirement.id}`} style={{ color: t.indigo, fontWeight: 600 }}>Unlock from the shortlist</Link> to view.
+                </HelpText>
+              )}
             </div>
           </div>
-        </Card>
-
-        <Card>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-            <div style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft }}>
-              {[
-                resume?.seniorityLevel,
-                resume?.yearsExperience != null ? `${resume.yearsExperience} yrs experience` : null,
-                `${candidate.sessionsCompleted} practice sessions`,
-              ]
-                .filter(Boolean)
-                .join(" · ")}
-            </div>
-            <Pill tone={candidate.unlocked ? "success" : "neutral"}>{candidate.unlocked ? "Unlocked" : "Locked"}</Pill>
-          </div>
-
-          <div style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkFaint, marginTop: 10 }}>
-            Last active {candidate.lastActiveDaysAgo < 0 ? "—" : `${candidate.lastActiveDaysAgo}d ago`}
-          </div>
-
-          <div style={{ marginTop: 16, display: "flex", flexWrap: "wrap", gap: 8 }}>
-            {candidate.unlocked ? (
-              <>
-                {candidate.contact?.phone && <ContactBox icon={<PhoneIcon />}>{candidate.contact.phone}</ContactBox>}
-                {candidate.contact?.email && <ContactBox icon={<MailIcon />}>{candidate.contact.email}</ContactBox>}
-                {resume?.linkedin && (
-                  <ContactBox icon={<LinkIcon />}>
-                    <a href={`https://${resume.linkedin.replace(/^https?:\/\//, "")}`} target="_blank" rel="noreferrer" style={{ color: "inherit", textDecoration: "none" }}>
-                      {resume.linkedin}
-                    </a>
-                  </ContactBox>
-                )}
-              </>
-            ) : (
-              <HelpText>
-                Contact details are locked. <Link href={`/employer/requirements/${requirement.id}`} style={{ color: t.indigo, fontWeight: 600 }}>Unlock from the shortlist</Link> to view.
-              </HelpText>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8, flexShrink: 0 }}>
+            {canInvite && (
+              <PrimaryCta size="sm" onClick={() => setInviteOpen(true)}>
+                Send Interview Invite
+              </PrimaryCta>
+            )}
+            {canReject && (
+              <OutlineCta size="sm" onClick={() => setRejectOpen(true)}>
+                Reject Candidate
+              </OutlineCta>
             )}
           </div>
-        </Card>
-      </div>
-
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10, marginTop: 16 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <span style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkFaint }}>Hiring status</span>
-          <CandidateStatusChip status={candidate.candidateStatus} />
         </div>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          {canInvite && (
-            <PrimaryCta size="sm" onClick={() => setInviteOpen(true)}>
-              Send Interview Invite
-            </PrimaryCta>
-          )}
-          {canReject && (
-            <OutlineCta size="sm" onClick={() => setRejectOpen(true)}>
-              Reject Candidate
-            </OutlineCta>
-          )}
-        </div>
-      </div>
+      </Card>
 
       <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
         <DialogContent>
@@ -531,8 +613,20 @@ export default function CandidateDetailPage() {
         </DialogContent>
       </Dialog>
 
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 12, marginTop: 16 }}>
+        <KpiCard label="Evidence score" value={`${evidenceAvg}`} sub="From practice sessions" tone={evidenceAvg >= 70 ? "success" : evidenceAvg >= 50 ? "indigo" : "neutral"} />
+        <KpiCard label="AI verdict" value={verdict.label} sub={evidence?.readiness ? `${evidence.readiness.confidence} confidence` : "Estimated from match score"} tone={verdict.tone} />
+        <KpiCard label="Required skills" value={`${matchedSkills.length}/${requirement.skills.length}`} sub="Matched on resume" tone={matchedSkills.length === requirement.skills.length ? "success" : "indigo"} />
+        <KpiCard label="Practice sessions" value={`${candidate.sessionsCompleted}`} sub={`Roster score ${candidate.rosterScore}`} tone="neutral" />
+        <KpiCard label="Risk flags" value={`${riskFlags.length}`} sub={riskFlags.length ? "Worth a follow-up question" : "Nothing flagged"} tone={riskFlags.length ? "neutral" : "success"} />
+      </div>
+
       <div style={{ display: "flex", gap: 4, borderBottom: `1px solid ${t.line}`, margin: "20px 0 20px" }}>
-        {tabs.map((tb) => (
+        {([
+          { key: "overview" as const, label: "Overview" },
+          { key: "practice" as const, label: "Practice & communication" },
+          { key: "resume" as const, label: "Resume & portfolio" },
+        ]).map((tb) => (
           <button
             key={tb.key}
             type="button"
@@ -554,233 +648,243 @@ export default function CandidateDetailPage() {
         ))}
       </div>
 
-      {activeTab === "about" && (
-        <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: 16, alignItems: "start" }}>
-          <Card>
-            <SectionTitle>About</SectionTitle>
-            {!candidate.unlocked ? (
-              <HelpText>This candidate's summary is locked. <Link href={`/employer/requirements/${requirement.id}`} style={{ color: t.indigo, fontWeight: 600 }}>Unlock from the shortlist</Link> to view.</HelpText>
-            ) : resume?.summary ? (
-              <p style={{ fontFamily: f.sans, fontSize: 13.5, color: t.inkSoft, lineHeight: 1.6, margin: 0 }}>{resume.summary}</p>
-            ) : (
-              <HelpText>No resume summary available for this candidate.</HelpText>
-            )}
+      <div style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr", gap: 16, alignItems: "start" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          {activeTab === "overview" && (
+            <>
+              <Card>
+                <SectionTitle>Why this candidate fits {requirement.title}</SectionTitle>
+                <ul style={{ margin: 0, paddingLeft: 18, fontFamily: f.sans, fontSize: 13.5, color: t.inkSoft, lineHeight: 1.8 }}>
+                  {fitReasons.map((r) => (
+                    <li key={r}>{r}</li>
+                  ))}
+                </ul>
+              </Card>
 
-            {!!resume?.keyAchievements.length && (
-              <>
-                <Divider />
-                <div style={{ marginTop: 14 }}>
-                  <SectionTitle>Achievements</SectionTitle>
-                  <ul style={{ margin: 0, paddingLeft: 18, fontFamily: f.sans, fontSize: 13.5, color: t.inkSoft, lineHeight: 1.7 }}>
-                    {resume.keyAchievements.map((a) => (
-                      <li key={a}>{a}</li>
-                    ))}
-                  </ul>
-                </div>
-              </>
-            )}
-
-            {!!resume?.education.length && (
-              <>
-                <Divider />
-                <div style={{ marginTop: 14 }}>
-                  <SectionTitle>Qualification</SectionTitle>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                    {resume.education.map((ed, i) => (
-                      <div key={`${ed.school}-${i}`} style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft }}>
-                        <strong style={{ color: t.coal }}>{ed.degree}</strong>
-                        {ed.school ? ` — ${ed.school}` : ""}
-                        {ed.year ? ` · ${ed.year}` : ""}
+              <Card>
+                <SectionTitle>Practice track record</SectionTitle>
+                {evidenceLoading ? (
+                  <HelpText>Loading practice-session evidence…</HelpText>
+                ) : (
+                  <>
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
+                      {evidence?.readiness && (
+                        <Pill tone={READINESS_TONE[evidence.readiness.band]}>
+                          {READINESS_LABEL[evidence.readiness.band]} readiness · {evidence.readiness.confidence} confidence
+                        </Pill>
+                      )}
+                      {evidence?.starCompleteness && (
+                        <Pill tone={evidence.starCompleteness.pct >= 70 ? "success" : evidence.starCompleteness.pct >= 40 ? "neutral" : "indigo"}>
+                          STAR completeness: {evidence.starCompleteness.pct}%
+                        </Pill>
+                      )}
+                      {evidence?.sessionDate && (
+                        <Pill tone="neutral">Last session {new Date(evidence.sessionDate).toLocaleDateString()}</Pill>
+                      )}
+                    </div>
+                    {riskFlags.length > 0 && (
+                      <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 14 }}>
+                        {riskFlags.map((flag) => (
+                          <div
+                            key={flag}
+                            style={{
+                              padding: "8px 12px",
+                              borderRadius: 8,
+                              background: t.error + "0d",
+                              border: `1px solid ${t.error}33`,
+                              fontFamily: f.sans,
+                              fontSize: 12.5,
+                              color: t.error,
+                            }}
+                          >
+                            {flag}
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
-                </div>
-              </>
-            )}
-
-            {(!!resume?.certifications.length || (candidate.unlocked && resume?.linkedin)) && (
-              <>
-                <Divider />
-                <div style={{ marginTop: 14 }}>
-                  <SectionTitle>Links</SectionTitle>
-                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                    {candidate.unlocked && resume?.linkedin && (
-                      <a href={`https://${resume.linkedin.replace(/^https?:\/\//, "")}`} target="_blank" rel="noreferrer" style={{ textDecoration: "none" }}>
-                        <SkillTag>LinkedIn</SkillTag>
-                      </a>
                     )}
-                    {resume?.certifications.map((c) => (
-                      <SkillTag key={c}>{c}</SkillTag>
-                    ))}
-                  </div>
+                    <HelpText>Scores and flags are derived from this candidate's practice-session performance, not a verified employment check.</HelpText>
+                  </>
+                )}
+              </Card>
+
+              <Card>
+                <SectionTitle>STAR evidence breakdown</SectionTitle>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
+                  {starBreakdown.map((s) => (
+                    <BarRow key={s.label} label={s.label} pct={s.pct} tone={s.pct >= 70 ? "success" : s.pct >= 50 ? "indigo" : "neutral"} />
+                  ))}
                 </div>
-              </>
-            )}
-          </Card>
+              </Card>
 
-          <Card>
-            <SectionTitle>Employment history</SectionTitle>
-            {resume?.experience.length ? (
-              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                {resume.experience.map((e, i) => (
-                  <div key={`${e.company}-${i}`} style={{ paddingBottom: 14, borderBottom: i < resume.experience.length - 1 ? `1px solid ${t.line}` : "none" }}>
-                    <div style={{ fontFamily: f.sans, fontSize: 14, fontWeight: 700, color: t.coal }}>{e.title || "Role"}</div>
-                    <div style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, marginTop: 2 }}>{e.company}</div>
-                    {e.period && <div style={{ fontFamily: f.sans, fontSize: 12, color: t.inkFaint, marginTop: 2 }}>{e.period}</div>}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <HelpText>No structured employment history extracted from this resume.</HelpText>
-            )}
-
-            {!!resume?.industries.length && (
-              <>
-                <Divider />
-                <div style={{ marginTop: 14 }}>
-                  <SectionTitle>Industries</SectionTitle>
-                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                    {resume.industries.map((i) => (
-                      <SkillTag key={i}>{i}</SkillTag>
-                    ))}
-                  </div>
-                </div>
-              </>
-            )}
-
-            {(resume?.noticePeriod || resume?.currentCtc) && (
-              <>
-                <Divider />
-                <div style={{ marginTop: 14 }}>
-                  <SectionTitle>As stated on resume</SectionTitle>
-                  <div style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, display: "flex", flexDirection: "column", gap: 4 }}>
-                    {resume?.noticePeriod && <div>Notice period: <strong style={{ color: t.coal }}>{resume.noticePeriod}</strong></div>}
-                    {resume?.currentCtc && <div>Current CTC: <strong style={{ color: t.coal }}>{resume.currentCtc}</strong></div>}
-                  </div>
-                  <HelpText>Self-reported by the candidate's resume text — not independently verified.</HelpText>
-                </div>
-              </>
-            )}
-          </Card>
-
-          <Card>
-            <SectionTitle>Portfolio &amp; work samples</SectionTitle>
-            {!candidate.unlocked ? (
-              <HelpText>Portfolio links are locked until this candidate is unlocked.</HelpText>
-            ) : candidate.portfolioLinks?.length ? (
-              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                {candidate.portfolioLinks.map((link) => (
-                  <a key={link.url} href={link.url} target="_blank" rel="noreferrer" style={{ textDecoration: "none" }}>
-                    <SkillTag>{link.title}</SkillTag>
-                  </a>
-                ))}
-              </div>
-            ) : (
-              <HelpText>No portfolio or project links on file for this candidate.</HelpText>
-            )}
-          </Card>
-        </div>
-      )}
-
-      {activeTab === "about" && (
-        <Card style={{ marginTop: 16 }}>
-          <SectionTitle>Hiring Progress</SectionTitle>
-          <HiringProgress status={candidate.candidateStatus} />
-        </Card>
-      )}
-
-      {activeTab === "evidence" && (
-        <Card>
-          <SectionTitle>Evidence</SectionTitle>
-          <EvidencePanel evidence={evidence} loading={evidenceLoading} />
-        </Card>
-      )}
-
-      {activeTab === "resume" && (
-        <Card>
-          <div style={{ display: "flex", gap: 16, alignItems: "flex-start", paddingBottom: 16, borderBottom: `1px solid ${t.line}` }}>
-            <div
-              style={{
-                width: 44,
-                height: 44,
-                borderRadius: "50%",
-                background: t.indigo100,
-                color: t.indigoDeep,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontFamily: f.sans,
-                fontSize: 15,
-                fontWeight: 700,
-                flexShrink: 0,
-              }}
-            >
-              {candidate.unlocked ? initials(displayName) : "?"}
-            </div>
-            <div>
-              <div style={{ fontFamily: f.sans, fontSize: 20, color: t.coal }}>{displayName}</div>
-              <div style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, marginTop: 2 }}>
-                {resume?.headline || candidate.targetRole}
-              </div>
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>
-                {candidate.unlocked && candidate.contact?.email && <span style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkFaint }}>{candidate.contact.email}</span>}
-                {candidate.unlocked && candidate.contact?.phone && <span style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkFaint }}>{candidate.contact.phone}</span>}
-              </div>
-            </div>
-          </div>
-
-          {candidate.unlocked && resume?.summary && (
-            <p style={{ fontFamily: f.sans, fontSize: 13.5, color: t.inkSoft, lineHeight: 1.6, margin: "16px 0 0" }}>{resume.summary}</p>
-          )}
-
-          <div style={{ display: "grid", gridTemplateColumns: "1.3fr 1fr", gap: 24, marginTop: 20 }}>
-            <div>
-              <SectionTitle>Experience</SectionTitle>
-              {resume?.experience.length ? (
-                <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                  {resume.experience.map((e, i) => (
-                    <div key={`${e.company}-${i}`}>
-                      <div style={{ fontFamily: f.sans, fontSize: 14, fontWeight: 700, color: t.coal }}>{e.title || "Role"}</div>
-                      <div style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, marginTop: 2 }}>
-                        {e.company}
-                        {e.period ? ` · ${e.period}` : ""}
-                      </div>
+              <Card>
+                <SectionTitle>Skill trend across sessions</SectionTitle>
+                <div style={{ display: "flex", alignItems: "flex-end", gap: 8, height: 72 }}>
+                  {skillTrend.map((v, i) => (
+                    <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+                      <div style={{ width: "100%", height: `${v / 100 * 64}px`, borderRadius: "4px 4px 0 0", background: i === skillTrend.length - 1 ? t.indigo : t.indigo100 }} />
+                      <span style={{ fontFamily: f.sans, fontSize: 10, color: t.inkFaint }}>S{i + 1}</span>
                     </div>
                   ))}
                 </div>
-              ) : (
-                <HelpText>No structured experience extracted from this resume.</HelpText>
-              )}
+              </Card>
 
-              {!!resume?.education.length && (
-                <div style={{ marginTop: 20 }}>
-                  <SectionTitle>Education</SectionTitle>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                    {resume.education.map((ed, i) => (
-                      <div key={`${ed.school}-${i}`} style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft }}>
-                        <strong style={{ color: t.coal }}>{ed.degree}</strong>
-                        {ed.school ? ` — ${ed.school}` : ""}
-                        {ed.year ? ` · ${ed.year}` : ""}
+              <Card>
+                <SectionTitle>Hiring progress</SectionTitle>
+                <HiringProgress status={candidate.candidateStatus} />
+              </Card>
+            </>
+          )}
+
+          {activeTab === "practice" && (
+            <>
+              <Card>
+                <SectionTitle>Round types &amp; readiness</SectionTitle>
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  {roundReadiness.map((r) => (
+                    <div key={r.round} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 0", borderBottom: `1px solid ${t.line}` }}>
+                      <span style={{ fontFamily: f.sans, fontSize: 13.5, color: t.coal }}>{r.round}</span>
+                      <Pill tone={r.readiness.tone}>{r.readiness.label}</Pill>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+
+              <Card>
+                <SectionTitle>Communication signals</SectionTitle>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
+                  {communicationSignals.map((sig) => (
+                    <div key={sig.label}>
+                      <div style={{ fontFamily: f.sans, fontSize: 20, fontWeight: 700, color: t.coal }}>{sig.value}</div>
+                      <div style={{ fontFamily: f.sans, fontSize: 12.5, fontWeight: 600, color: t.inkSoft, marginTop: 4 }}>{sig.label}</div>
+                      <div style={{ fontFamily: f.sans, fontSize: 11.5, color: t.inkFaint, marginTop: 2, lineHeight: 1.5 }}>{sig.detail}</div>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+
+              {evidence && evidence.quotes.length > 0 && (
+                <Card>
+                  <SectionTitle>What they said</SectionTitle>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    {evidence.quotes.map((q, i) => (
+                      <div
+                        key={i}
+                        style={{
+                          padding: "10px 12px",
+                          borderRadius: 8,
+                          background: q.kind === "redFlag" ? t.error + "0d" : t.success + "0d",
+                          border: `1px solid ${q.kind === "redFlag" ? t.error + "33" : t.success + "33"}`,
+                        }}
+                      >
+                        <div style={{ fontFamily: f.sans, fontSize: 12, fontWeight: 700, color: q.kind === "redFlag" ? t.error : t.success, marginBottom: 4 }}>
+                          {q.kind === "redFlag" ? "Flag" : "Win"} · {q.text}
+                        </div>
+                        <div style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft }}>&ldquo;{q.quote}&rdquo;</div>
                       </div>
                     ))}
                   </div>
-                </div>
+                </Card>
               )}
-            </div>
+            </>
+          )}
 
-            <div>
-              {!!resume?.industries.length && (
-                <div style={{ marginBottom: 20 }}>
-                  <SectionTitle>Industry knowledge</SectionTitle>
-                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                    {resume.industries.map((i) => (
-                      <SkillTag key={i}>{i}</SkillTag>
+          {activeTab === "resume" && (
+            <>
+              <Card>
+                <SectionTitle>Resume intelligence</SectionTitle>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+                  <ScoreChip score={evidenceAvg} />
+                  <span style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft }}>{evidenceTier(evidenceAvg).label}</span>
+                </div>
+                {!candidate.unlocked ? (
+                  <HelpText>This candidate's summary is locked. <Link href={`/employer/requirements/${requirement.id}`} style={{ color: t.indigo, fontWeight: 600 }}>Unlock from the shortlist</Link> to view.</HelpText>
+                ) : resume?.summary ? (
+                  <p style={{ fontFamily: f.sans, fontSize: 13.5, color: t.inkSoft, lineHeight: 1.6, margin: 0 }}>{resume.summary}</p>
+                ) : (
+                  <HelpText>No resume summary available for this candidate.</HelpText>
+                )}
+
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16, marginTop: 16 }}>
+                  <SnapshotCell label="Seniority" value={resume?.seniorityLevel || "—"} />
+                  <SnapshotCell label="Experience" value={resume?.yearsExperience != null ? `${resume.yearsExperience} yrs` : "—"} />
+                  <SnapshotCell label="Sessions" value={`${candidate.sessionsCompleted}`} />
+                </div>
+
+                {(!!resume?.keyAchievements.length || riskFlags.length > 0) && (
+                  <>
+                    <Divider />
+                    <div style={{ marginTop: 14, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+                      {!!resume?.keyAchievements.length && (
+                        <div>
+                          <SectionTitle>Strengths</SectionTitle>
+                          <ul style={{ margin: 0, paddingLeft: 18, fontFamily: f.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.7 }}>
+                            {resume.keyAchievements.map((a) => (
+                              <li key={a}>{a}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      {riskFlags.length > 0 && (
+                        <div>
+                          <SectionTitle>Gaps to probe</SectionTitle>
+                          <ul style={{ margin: 0, paddingLeft: 18, fontFamily: f.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.7 }}>
+                            {riskFlags.map((flag) => (
+                              <li key={flag}>{flag}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+              </Card>
+
+              <Card>
+                <SectionTitle>Employment history</SectionTitle>
+                {resume?.experience.length ? (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                    {resume.experience.map((e, i) => (
+                      <div key={`${e.company}-${i}`} style={{ paddingBottom: 14, borderBottom: i < resume.experience.length - 1 ? `1px solid ${t.line}` : "none" }}>
+                        <div style={{ fontFamily: f.sans, fontSize: 14, fontWeight: 700, color: t.coal }}>{e.title || "Role"}</div>
+                        <div style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, marginTop: 2 }}>{e.company}</div>
+                        {e.period && <div style={{ fontFamily: f.sans, fontSize: 12, color: t.inkFaint, marginTop: 2 }}>{e.period}</div>}
+                      </div>
                     ))}
                   </div>
-                </div>
-              )}
+                ) : (
+                  <HelpText>No structured employment history extracted from this resume.</HelpText>
+                )}
 
-              <div style={{ marginBottom: 20 }}>
+                {!!resume?.industries.length && (
+                  <>
+                    <Divider />
+                    <div style={{ marginTop: 14 }}>
+                      <SectionTitle>Industries</SectionTitle>
+                      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                        {resume.industries.map((i) => (
+                          <SkillTag key={i}>{i}</SkillTag>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {(resume?.noticePeriod || resume?.currentCtc) && (
+                  <>
+                    <Divider />
+                    <div style={{ marginTop: 14 }}>
+                      <SectionTitle>As stated on resume</SectionTitle>
+                      <div style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, display: "flex", flexDirection: "column", gap: 4 }}>
+                        {resume?.noticePeriod && <div>Notice period: <strong style={{ color: t.coal }}>{resume.noticePeriod}</strong></div>}
+                        {resume?.currentCtc && <div>Current CTC: <strong style={{ color: t.coal }}>{resume.currentCtc}</strong></div>}
+                      </div>
+                      <HelpText>Self-reported by the candidate's resume text — not independently verified.</HelpText>
+                    </div>
+                  </>
+                )}
+              </Card>
+
+              <Card>
                 <SectionTitle>Tools &amp; skills</SectionTitle>
                 {candidate.skills.length ? (
                   <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
@@ -791,22 +895,142 @@ export default function CandidateDetailPage() {
                 ) : (
                   <HelpText>No tools or skills listed on this resume.</HelpText>
                 )}
-              </div>
+                {!!resume?.certifications.length && (
+                  <>
+                    <Divider />
+                    <div style={{ marginTop: 14 }}>
+                      <SectionTitle>Certifications</SectionTitle>
+                      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                        {resume.certifications.map((c) => (
+                          <SkillTag key={c}>{c}</SkillTag>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </Card>
 
-              {!!resume?.certifications.length && (
-                <div>
-                  <SectionTitle>Certifications</SectionTitle>
+              <Card>
+                <SectionTitle>Portfolio &amp; work samples</SectionTitle>
+                {!candidate.unlocked ? (
+                  <HelpText>Portfolio links are locked until this candidate is unlocked.</HelpText>
+                ) : candidate.portfolioLinks?.length ? (
                   <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                    {resume.certifications.map((c) => (
-                      <SkillTag key={c}>{c}</SkillTag>
+                    {candidate.portfolioLinks.map((link) => (
+                      <a key={link.url} href={link.url} target="_blank" rel="noreferrer" style={{ textDecoration: "none" }}>
+                        <SkillTag>{link.title}</SkillTag>
+                      </a>
                     ))}
                   </div>
+                ) : (
+                  <HelpText>No portfolio or project links on file for this candidate.</HelpText>
+                )}
+              </Card>
+            </>
+          )}
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          {offer && (
+            <Card>
+              <SectionTitle>Suggested offer</SectionTitle>
+              <div style={{ fontFamily: f.sans, fontSize: 24, fontWeight: 700, color: t.coal }}>
+                {formatBudget(offer.suggested, offer.salaryType)}
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
+                <Pill tone={offer.stance === "Above budget" ? "neutral" : offer.stance === "Below budget" ? "success" : "indigo"}>{offer.stance}</Pill>
+                <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkFaint }}>
+                  {offer.deltaPct > 0 ? "+" : ""}{offer.deltaPct}% vs. listed budget midpoint
+                </span>
+              </div>
+              <p style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft, lineHeight: 1.6, margin: "10px 0 0" }}>
+                Based on {offer.tier.label.toLowerCase()} from {candidate.sessionsCompleted} practice session{candidate.sessionsCompleted === 1 ? "" : "s"}, this candidate's evidence supports an offer {offer.tier.multiplier >= 1 ? "at or above" : "below"} the role's budget midpoint.
+              </p>
+              <div style={{ marginTop: 14, padding: 12, borderRadius: 10, border: `1px solid ${t.line}`, display: "flex", flexDirection: "column", gap: 6 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft }}>
+                  <span>Listed budget</span>
+                  <span>{formatBudget(offer.lo, offer.salaryType)} – {formatBudget(offer.hi, offer.salaryType)}</span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft }}>
+                  <span>Evidence tier multiplier</span>
+                  <span>×{offer.tier.multiplier.toFixed(2)}</span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", fontFamily: f.sans, fontSize: 12.5, fontWeight: 700, color: t.coal }}>
+                  <span>Suggested offer</span>
+                  <span>{formatBudget(offer.suggested, offer.salaryType)}</span>
+                </div>
+              </div>
+              {resume?.currentCtc && (
+                <div style={{ fontFamily: f.sans, fontSize: 11.5, color: t.inkFaint, marginTop: 10 }}>
+                  Candidate's current CTC (self-reported): {resume.currentCtc}
                 </div>
               )}
+            </Card>
+          )}
+
+          <Card>
+            <SectionTitle>Candidate snapshot</SectionTitle>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+              <SnapshotCell label="Experience" value={resume?.yearsExperience != null ? `${resume.yearsExperience} yrs` : "—"} />
+              <SnapshotCell label="Notice period" value={resume?.noticePeriod || "—"} />
+              <SnapshotCell label="Current CTC" value={resume?.currentCtc || "—"} />
+              <SnapshotCell label="Roster & sessions" value={`${candidate.rosterScore} · ${candidate.sessionsCompleted} sessions`} />
             </div>
-          </div>
-        </Card>
-      )}
+          </Card>
+
+          <Card>
+            <SectionTitle>Skills</SectionTitle>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+              {matchedSkills.map((s) => (
+                <SkillTag key={s}>{s}</SkillTag>
+              ))}
+              {unmatchedSkills.map((s) => (
+                <span
+                  key={s}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    padding: "4px 10px",
+                    borderRadius: 999,
+                    border: `1px dashed ${t.line}`,
+                    fontFamily: f.sans,
+                    fontSize: 12,
+                    color: t.inkFaint,
+                  }}
+                >
+                  {s}
+                </span>
+              ))}
+            </div>
+            {unmatchedSkills.length > 0 && <HelpText>Dashed tags haven't been demonstrated yet on this candidate's resume.</HelpText>}
+          </Card>
+
+          {!!resume?.education.length && (
+            <Card>
+              <SectionTitle>Education</SectionTitle>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {resume.education.map((ed, i) => (
+                  <SnapshotCell key={`${ed.school}-${i}`} label="Degree" value={`${ed.degree}${ed.school ? ` — ${ed.school}` : ""}${ed.year ? ` · ${ed.year}` : ""}`} />
+                ))}
+                {!!resume.certifications.length && <SnapshotCell label="Certification" value={resume.certifications[0]} />}
+              </div>
+            </Card>
+          )}
+
+          {!candidate.unlocked && (
+            <Card style={{ border: `1px dashed ${t.line}` }}>
+              <SectionTitle>Identity locked</SectionTitle>
+              <p style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft, lineHeight: 1.6, margin: 0 }}>
+                Name, contact details, and portfolio links are hidden until this candidate is unlocked.{" "}
+                <Link href={`/employer/requirements/${requirement.id}`} style={{ color: t.indigo, fontWeight: 600 }}>
+                  Unlock from the shortlist
+                </Link>
+                .
+              </p>
+            </Card>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

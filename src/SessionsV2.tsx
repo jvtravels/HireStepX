@@ -433,7 +433,7 @@ function SessionsTable({
                     onOpenSession(row.id);
                   }
                 }}
-                className="focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                className=""
                 style={{ height: 64, borderBottom: `1px solid ${T.line}`, cursor: "pointer", transition: `background ${dur.instant} ${ease.snap}` }}
                 onMouseEnter={(e) => { e.currentTarget.style.background = T.rowTint; }}
                 onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}

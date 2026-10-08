@@ -1,204 +1,108 @@
 "use client";
 
-/* Dashboard right-rail panel — the candidate-facing half of the employer
-   talent-roster feature: shortlisted/contacted counts, and per-match detail
-   (role, company, comp range, work mode, experience band, matched skills,
-   match score, and when they were matched/contacted) — not just a name and
-   a pill. Fetches /api/candidate-hiring-activity. */
+/* Dashboard "Employer Interest" card — the candidate-facing half of the
+   employer talent-roster feature. A 4-up grid of the most recent matches
+   (role, company, employment type, relative time) behind an indigo "N
+   Invites" pill, driven by the real shortlisted/recent counts. Fetches
+   /api/candidate-hiring-activity. */
 
-import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { useAuth } from "./AuthContext";
-import { authHeaders } from "./supabase";
 import { tokens as t, fonts as f, textSize } from "./auth/_tokens";
-import { daysAgo, formatComp, formatExperience, WORK_MODE_LABEL, type SalaryType } from "./hiringMatchFormat";
+import { hoursOrDaysAgo, EMPLOYMENT_TYPE_LABEL } from "./hiringMatchFormat";
+import { useHiringActivity } from "./useHiringActivity";
 
-interface HiringMatch {
-  roleTitle: string;
-  companyName: string;
-  location: string;
-  workMode: string | null;
-  salaryType: SalaryType | null;
-  budgetMin: number | null;
-  budgetMax: number | null;
-  experienceMin: number | null;
-  experienceMax: number | null;
-  skills: string[];
-  matchScore: number;
-  unlocked: boolean;
-  matchedAt: string;
-  unlockedAt: string | null;
+// Cycles through 4 existing status tokens so every badge is sourced from
+// the design system rather than a one-off hex literal.
+const BADGE_COLORS = [
+  { bg: t.info100, fg: t.info },
+  { bg: t.success100, fg: t.success },
+  { bg: t.violet100, fg: t.violet },
+  { bg: t.error100, fg: t.error },
+];
+
+function initials(name: string): string {
+  const words = name.trim().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return "?";
+  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
+  return (words[0][0] + words[1][0]).toUpperCase();
 }
 
-// Everything beyond this teaser count lives on the dedicated Jobs tab —
-// the dashboard card's job is to prompt a visit, not be the full list.
-const DASHBOARD_TEASER_LIMIT = 3;
-
-interface HiringActivity {
-  shortlistedCount?: number;
-  unlockedCount?: number;
-  recent?: HiringMatch[];
+function employmentLabel(type: string | null): string | null {
+  if (!type) return null;
+  return EMPLOYMENT_TYPE_LABEL[type] || type.charAt(0).toUpperCase() + type.slice(1);
 }
 
 export default function HiringActivityCard() {
   const router = useRouter();
-  const { user: authUser } = useAuth();
-  // Cache-first like DashboardContext's sessions/events: a tab switch back
-  // to the dashboard shows the last-known teaser instantly instead of the
-  // whole card vanishing (data === null) and reappearing on every remount.
-  const [data, setData] = useState<HiringActivity | null>(() => {
-    if (!authUser?.id) return null;
-    try {
-      const cached = localStorage.getItem(`hirestepx_cache_hiring_activity_teaser_${authUser.id}`);
-      return cached ? JSON.parse(cached) : null;
-    } catch { return null; }
-  });
+  const data = useHiringActivity();
 
-  useEffect(() => {
-    if (!authUser?.id) return;
-    let cancelled = false;
-    const cacheKey = `hirestepx_cache_hiring_activity_teaser_${authUser.id}`;
-    (async () => {
-      try {
-        const headers = await authHeaders();
-        const res = await fetch("/api/candidate-hiring-activity", { headers });
-        const json = await res.json().catch(() => null);
-        if (!cancelled && res.ok && json) {
-          setData(json as HiringActivity);
-          try { localStorage.setItem(cacheKey, JSON.stringify(json)); } catch { /* expected: localStorage may be unavailable */ }
-        }
-      } catch {
-        // stay quiet on transient failure — this is a nice-to-have, not core flow
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [authUser?.id]);
+  const shortlisted = data?.shortlistedCount ?? 0;
+  if (!data || shortlisted === 0) return null;
 
-  if (!data) return null;
-
-  const boxStyle: React.CSSProperties = {
-    padding: "18px",
-    background: t.creamSoft,
-    border: `1px solid ${t.line}`,
-    borderRadius: 10,
-  };
-
-  const label = (
-    <p style={{ fontFamily: f.mono, fontSize: 11, letterSpacing: 0.5, color: t.inkSoft, margin: "0 0 10px", textTransform: "uppercase" }}>
-      Hiring activity
-    </p>
-  );
-
-  const shortlisted = data.shortlistedCount ?? 0;
-  const unlocked = data.unlockedCount ?? 0;
-  const matches = (data.recent || []).slice(0, DASHBOARD_TEASER_LIMIT);
+  const matches = (data.recent || []).slice(0, 4);
 
   return (
-    <div style={boxStyle}>
-      {label}
+    <section
+      aria-labelledby="employer-interest-heading"
+      style={{ padding: "20px", background: t.cream, border: `1px solid ${t.line}`, borderRadius: 12 }}
+    >
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={t.coal} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="2" y="7" width="20" height="14" rx="2" />
+            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+          </svg>
+          <h2 id="employer-interest-heading" style={{ fontFamily: f.sans, fontSize: textSize.lg, fontWeight: 700, color: t.coal, margin: 0 }}>
+            Employer Interest
+          </h2>
+          <span style={{
+            fontFamily: f.sans, fontSize: textSize.xs, fontWeight: 600, color: t.indigo,
+            background: t.indigo100, padding: "3px 10px", borderRadius: 999,
+          }}>
+            {shortlisted} {shortlisted === 1 ? "Invite" : "Invites"}
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={() => router.push("/jobs")}
+          style={{
+            fontFamily: f.sans, fontSize: textSize.sm, fontWeight: 600, color: t.coal,
+            background: "none", border: "none", padding: 0, cursor: "pointer",
+          }}
+        >
+          View All →
+        </button>
+      </div>
 
-      {shortlisted === 0 ? (
-        <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, margin: 0, lineHeight: 1.5 }}>
-          No matches yet — we'll surface this the moment a role fits your profile.
-        </p>
-      ) : (
-        <>
-          <div style={{ display: "flex", gap: 20, marginBottom: 14, paddingBottom: 14, borderBottom: `1px solid ${t.line}` }}>
-            <div>
-              <div style={{ fontFamily: f.serif, fontSize: 26, color: t.coal, lineHeight: 1 }}>{shortlisted}</div>
-              <div style={{ fontFamily: f.sans, fontSize: 11.5, color: t.inkSoft, marginTop: 2 }}>Shortlisted for</div>
-            </div>
-            <div>
-              <div style={{ fontFamily: f.serif, fontSize: 26, color: t.coal, lineHeight: 1 }}>{unlocked}</div>
-              <div style={{ fontFamily: f.sans, fontSize: 11.5, color: t.inkSoft, marginTop: 2 }}>Contacted you</div>
-            </div>
-          </div>
-
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            {matches.map((r, i) => {
-              const comp = formatComp(r.budgetMin, r.budgetMax, r.salaryType);
-              const exp = formatExperience(r.experienceMin, r.experienceMax);
-              const mode = r.workMode ? WORK_MODE_LABEL[r.workMode] || r.workMode : null;
-              return (
-                <div
-                  key={i}
-                  style={{
-                    padding: "12px", borderRadius: 8,
-                    background: r.unlocked ? t.indigo100 : t.cream,
-                    border: `1px solid ${r.unlocked ? t.indigoDeep : t.line}`,
-                  }}
-                >
-                  <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8, marginBottom: 4 }}>
-                    <div style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 700, color: t.coal, minWidth: 0 }}>
-                      {r.roleTitle}
-                    </div>
-                    {r.unlocked ? (
-                      <span style={{
-                        flexShrink: 0, fontFamily: f.sans, fontSize: textSize.xs, fontWeight: 600, color: t.indigoDeep,
-                        background: t.indigo100, padding: "3px 9px", borderRadius: 999,
-                      }}>
-                        Contacted
-                      </span>
-                    ) : (
-                      <span style={{
-                        flexShrink: 0, fontFamily: f.sans, fontSize: textSize.xs, fontWeight: 600, color: t.successInk,
-                        background: t.success100, padding: "3px 9px", borderRadius: 999,
-                      }}>
-                        Interested
-                      </span>
-                    )}
-                  </div>
-
-                  <div style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, marginBottom: 6 }}>
-                    {r.companyName}{r.location ? ` · ${r.location}` : ""}{mode ? ` · ${mode}` : ""}
-                  </div>
-
-                  {(comp || exp) && (
-                    <div style={{ display: "flex", gap: 12, fontFamily: f.sans, fontSize: 11.5, color: t.inkFaint, marginBottom: r.skills.length ? 8 : 6 }}>
-                      {comp && <span>{comp}</span>}
-                      {exp && <span>{exp} exp</span>}
-                    </div>
-                  )}
-
-                  {r.skills.length > 0 && (
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 6 }}>
-                      {r.skills.map((s, si) => (
-                        <span key={si} style={{
-                          fontFamily: f.sans, fontSize: 10.5, color: t.coal, background: t.cream,
-                          border: `1px solid ${t.line}`, padding: "2px 7px", borderRadius: 999,
-                        }}>
-                          {s}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-
-                  <div style={{ fontFamily: f.sans, fontSize: 10.5, color: t.inkFaint }}>
-                    {r.unlocked && r.unlockedAt
-                      ? `Contacted ${daysAgo(r.unlockedAt)} · matched ${daysAgo(r.matchedAt)}`
-                      : `Matched ${daysAgo(r.matchedAt)}`}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {shortlisted > matches.length && (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => router.push("/jobs")}
-              style={{
-                marginTop: 12, width: "100%", height: "auto", padding: "8px 0",
-                fontFamily: f.sans, fontSize: 12.5,
-              }}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
+        {matches.map((m, i) => {
+          const color = BADGE_COLORS[i % BADGE_COLORS.length];
+          const empLabel = employmentLabel(m.employmentType);
+          return (
+            <div
+              key={i}
+              style={{ padding: "14px", borderRadius: 10, background: t.creamSoft, border: `1px solid ${t.line}` }}
             >
-              View all {shortlisted} matches →
-            </Button>
-          )}
-        </>
-      )}
-    </div>
+              <div style={{
+                width: 32, height: 32, borderRadius: 8, background: color.bg, color: color.fg,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontFamily: f.sans, fontSize: textSize.sm, fontWeight: 700, marginBottom: 10,
+              }}>
+                {initials(m.companyName)}
+              </div>
+              <div style={{ fontFamily: f.sans, fontSize: textSize.base, fontWeight: 700, color: t.coal, marginBottom: 4 }}>
+                {m.roleTitle}
+              </div>
+              <div style={{ fontFamily: f.sans, fontSize: textSize.sm, color: t.inkSoft, marginBottom: 8 }}>
+                {m.companyName}{empLabel ? ` · ${empLabel}` : ""}
+              </div>
+              <div style={{ fontFamily: f.sans, fontSize: textSize.xs, color: t.inkFaint }}>
+                {hoursOrDaysAgo(m.matchedAt)}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </section>
   );
 }

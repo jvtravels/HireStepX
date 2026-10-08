@@ -47,6 +47,36 @@ const SKILL_VOCAB: Record<string, Phrasings> = {
   starStructure:       { strength: "Hit every STAR beat cleanly",    gap: "Walk through Situation → Result" },
 };
 
+/* Short noun-phrase label per competency key, for surfaces that name a
+ * topic rather than coach it — e.g. the Recent Sessions table's "Focus"
+ * column ("Compensation package", "Answer structure"). Distinct from
+ * SKILL_VOCAB's strength/gap phrasings, which are full coaching sentences.
+ * Unknown keys fall back to skillLabel()'s humanized key. */
+const TOPIC_VOCAB: Record<string, string> = {
+  anchoring:          "Opening anchor",
+  packageThinking:    "Compensation package",
+  leverageUse:        "Negotiation leverage",
+  concessionStrategy: "Concession strategy",
+  closingTechnique:   "Closing technique",
+  composure:          "Composure under pressure",
+  professionalTone:   "Professional tone",
+
+  communication:      "Communication clarity",
+  structure:          "Answer structure",
+  technicalDepth:     "Technical depth",
+  leadership:         "Ownership & leadership",
+  problemSolving:     "Problem-solving approach",
+  confidence:         "Answer confidence",
+  specificity:        "Specific examples",
+
+  empathy:            "User empathy",
+  metricsLiteracy:    "Metrics literacy",
+  prioritization:     "Prioritization",
+  productSense:       "Product sense",
+  systemThinking:     "Systems thinking",
+  starStructure:      "STAR structure",
+};
+
 /* Split a camelCase / snake_case token into spaced Title Case. Used as
  * the last-resort fallback so a never-before-seen key like
  * `riskAppetite` becomes "Risk appetite" instead of a raw token. */
@@ -100,4 +130,13 @@ export function skillLabel(value: string | null | undefined): string {
   if (!value) return "";
   if (!isRawKey(value)) return value;
   return titleCaseFromKey(value);
+}
+
+/* Short noun-phrase topic label for a raw competency key — see TOPIC_VOCAB.
+ * Falls back to skillLabel() (humanized key) for keys outside the
+ * vocabulary, so an unmapped key still reads as a topic, never a raw token. */
+export function focusTopicLabel(value: string | null | undefined): string {
+  if (!value) return "";
+  if (!isRawKey(value)) return value;
+  return TOPIC_VOCAB[value] || skillLabel(value);
 }
