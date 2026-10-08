@@ -12,6 +12,7 @@ import { useParams, useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { track } from "@vercel/analytics";
 import { useAuth } from "./AuthContext";
+import { useDashboardBreadcrumb } from "./DashboardLayout";
 import { getSessionById } from "./supabase";
 import { loadLocalSession, type LocalSession } from "./sessionDetailHelpers";
 import type { DashboardSession } from "./dashboardTypes";
@@ -247,6 +248,15 @@ export default function SessionDetail() {
     return { href: "/sessions", label: "Back to Sessions" };
   });
   const onBack = () => router.push(backTarget.href);
+
+  // Extends the shell's static "Sessions" breadcrumb with the actual
+  // interview this report is for, mirroring the employer console's
+  // requirement/candidate-detail breadcrumbs (useEmployerBreadcrumb).
+  useDashboardBreadcrumb(
+    dashboardSession
+      ? [{ label: dashboardSession.company ? `${dashboardSession.role} — ${dashboardSession.company}` : dashboardSession.role }]
+      : null
+  );
 
   if (loading) return <LoadingScreen message="Loading your session…" />;
   if (loadError) return <LoadErrorScreen message={loadError} onRetry={() => { setLoadError(null); setLoading(true); /* trigger effect */ }} onBack={onBack} />;

@@ -6,6 +6,7 @@ import { CATEGORY_BUCKETS, bucketToSlug, bucketDescription, bucketIntro, categor
 import { NavV2, MobileStickyCTA } from "@/marketing-v2/HomepageV2";
 import { FooterDome } from "@/marketing-v2/FooterDome";
 import { tokens as t, fonts } from "@/auth/_tokens";
+import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import { buildBlogCategoryJsonLd, bucketFromSlug, getAllBlogCategorySlugs } from "./_jsonld";
 
 /* /blog/category/[category] — topic-bucket blog landing pages.
@@ -94,13 +95,19 @@ export default async function BlogCategoryPage({
       <main style={{ background: "#fdfcf7", minHeight: "60vh" }}>
         <div style={{ maxWidth: 760, margin: "0 auto", padding: "56px 24px 80px" }}>
 
-          <nav aria-label="Breadcrumb" style={{ marginBottom: 32 }}>
-            <span style={{ fontFamily: fonts.mono, fontSize: 11, color: t.inkSoft }}>
-              <Link href="/blog" style={{ color: t.copper, textDecoration: "none" }}>Blog</Link>
-              {" / "}
-              <span>{bucket}</span>
-            </span>
-          </nav>
+          <Breadcrumb style={{ marginBottom: 32 }}>
+            <BreadcrumbList style={{ fontFamily: fonts.mono, fontSize: 11, color: t.inkSoft }}>
+              <BreadcrumbItem>
+                <BreadcrumbLink asChild style={{ color: t.copper, textDecoration: "none" }}>
+                  <Link href="/blog">Blog</Link>
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbPage style={{ color: t.inkSoft }}>{bucket}</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
 
           <p style={{ fontFamily: fonts.mono, fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", color: t.inkSoft, textTransform: "uppercase", margin: "0 0 12px" }}>
             {posts.length} {posts.length === 1 ? "guide" : "guides"}

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useContext, createContext } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useAuth } from "./AuthContext";
 import { Button } from "@/components/ui/button";
@@ -103,6 +103,27 @@ function NavIcon({ id }: { id: string }) {
     case "settings": return <SettingsIcon {...props} />;
     default: return null;
   }
+}
+
+export type DashboardBreadcrumbCrumb = { label: string; path?: string };
+type DashboardBreadcrumbState = { pathname: string; crumbs: DashboardBreadcrumbCrumb[] } | null;
+
+const DashboardBreadcrumbContext = createContext<(state: DashboardBreadcrumbState) => void>(() => {});
+
+/* Mirrors useEmployerBreadcrumb (src/employer/EmployerShell.tsx) — pages
+   nested deeper than the shell's static section label (session report,
+   settings sub-section) call this once their data loads to extend the
+   breadcrumb past "Sessions"/"Settings" with the real session name / tab.
+   Tagging each update with the pathname it was computed for avoids a race
+   against DashboardLayout's own re-render on navigation. */
+export function useDashboardBreadcrumb(crumbs: DashboardBreadcrumbCrumb[] | null) {
+  const setState = useContext(DashboardBreadcrumbContext);
+  const pathname = usePathname();
+  const key = crumbs ? JSON.stringify(crumbs) : "";
+  useEffect(() => {
+    setState(crumbs ? { pathname: pathname ?? "", crumbs } : null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key, pathname]);
 }
 
 export default function DashboardLayout({ children }: { children?: React.ReactNode }) {
@@ -258,7 +279,11 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
   const primaryCtaLabel = planCtaLabel({ starterExhausted, freeExhausted, creditBalance });
   const primaryCtaTitle = planCtaTitle(primaryCtaLabel);
 
+  const [breadcrumbState, setBreadcrumbState] = useState<DashboardBreadcrumbState>(null);
+  const breadcrumbExtra = breadcrumbState && breadcrumbState.pathname === pathname ? breadcrumbState.crumbs : undefined;
+
   return (
+    <DashboardBreadcrumbContext.Provider value={setBreadcrumbState}>
     <AppShellFrame
       homeHref="/"
       navAriaLabel="Main navigation"
@@ -451,6 +476,8 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
       onLogout={() => { authLogout(); }}
       breadcrumbRoot={{ label: "HireStepX", path: "/dashboard" }}
       pageLabel={navItems.find((item) => item.id === activeNav)?.label || "Dashboard"}
+      pageLabelPath={navItems.find((item) => item.id === activeNav)?.path}
+      extraCrumbs={breadcrumbExtra}
       isMobile={isMobile}
       mainId="dashboard-main"
       pageKey={pathname}
@@ -579,5 +606,6 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
     >
       {children}
     </AppShellFrame>
+    </DashboardBreadcrumbContext.Provider>
   );
 }

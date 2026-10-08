@@ -8,6 +8,7 @@ import { SEO_PAGES } from "../../../../../data/seo-pages";
 import { SALARY_SEO_PAGES, salaryCompanyLabel } from "../../../../../data/salary-seo";
 import { COMPANY_LABEL } from "../../../../../data/company-labels";
 import { tokens as t, fonts } from "@/auth/_tokens";
+import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import {
   buildBlogCompanyJsonLd,
   companyToSlug,
@@ -129,14 +130,19 @@ export default async function BlogCompanyPage({
       <main style={{ background: "#fdfcf7", minHeight: "60vh" }}>
         <div style={{ maxWidth: 760, margin: "0 auto", padding: "56px 24px 80px" }}>
 
-          {/* Breadcrumb */}
-          <nav aria-label="Breadcrumb" style={{ marginBottom: 32 }}>
-            <span style={{ fontFamily: fonts.mono, fontSize: 11, color: t.inkSoft }}>
-              <Link href="/blog" style={{ color: t.copper, textDecoration: "none" }}>Blog</Link>
-              {" / "}
-              <span>{displayName}</span>
-            </span>
-          </nav>
+          <Breadcrumb style={{ marginBottom: 32 }}>
+            <BreadcrumbList style={{ fontFamily: fonts.mono, fontSize: 11, color: t.inkSoft }}>
+              <BreadcrumbItem>
+                <BreadcrumbLink asChild style={{ color: t.copper, textDecoration: "none" }}>
+                  <Link href="/blog">Blog</Link>
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbPage style={{ color: t.inkSoft }}>{displayName}</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
 
           {/* Header */}
           <p style={{ fontFamily: fonts.mono, fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", color: t.inkSoft, textTransform: "uppercase", margin: "0 0 12px" }}>

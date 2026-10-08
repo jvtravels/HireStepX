@@ -7,6 +7,7 @@ import { COMPANY_LABEL } from "../../../../data/company-labels";
 import { NavV2, MobileStickyCTA } from "@/marketing-v2/HomepageV2";
 import { FooterDome } from "@/marketing-v2/FooterDome";
 import { tokens as t, fonts } from "@/auth/_tokens";
+import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import { buildInterviewPrepCityJsonLd } from "./_jsonld";
 
 /* /interview-prep/[city] — city-specific interview prep landing pages.
@@ -119,13 +120,19 @@ export default async function CityInterviewPrepPage({
       <main style={{ background: t.cream, color: t.coal, minHeight: "100dvh", padding: "48px 24px 80px", ...s }}>
         <div style={{ maxWidth: 780, margin: "0 auto" }}>
 
-          <nav aria-label="Breadcrumb" style={{ marginBottom: 24 }}>
-            <span style={{ ...mono, fontSize: 11, color: t.inkSoft }}>
-              <Link href="/interview-prep" style={{ color: t.copper, textDecoration: "none" }}>Interview Prep</Link>
-              {" / "}
-              <span>{page.displayName}</span>
-            </span>
-          </nav>
+          <Breadcrumb style={{ marginBottom: 24 }}>
+            <BreadcrumbList style={{ ...mono, fontSize: 11, color: t.inkSoft }}>
+              <BreadcrumbItem>
+                <BreadcrumbLink asChild style={{ color: t.copper, textDecoration: "none" }}>
+                  <Link href="/interview-prep">Interview Prep</Link>
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbPage style={{ color: t.inkSoft }}>{page.displayName}</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
 
           <div style={{ ...mono, fontSize: 11, fontWeight: 600, letterSpacing: "0.10em", textTransform: "uppercase", color: t.copper, marginBottom: 12 }}>
             City Guide · 2026
