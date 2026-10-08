@@ -29,6 +29,7 @@ import {
   SendIcon,
   PaperclipIcon,
   FlagIcon,
+  SlidersHorizontalIcon,
 } from "lucide-react";
 import { useEmployerData, Requirement, CandidateEvidence, UnlockPurchase, ConversationMessage } from "@/employer/EmployerDataContext";
 import { useToast } from "@/Toast";
@@ -41,7 +42,6 @@ import { formatNumber } from "@/utils";
 import {
   Card,
   CandidateStatusChip,
-  Eyebrow,
   HelpText,
   OutlineCta,
   Pill,
@@ -73,9 +73,12 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { FilterPill } from "@/components/FilterPill";
 import { SearchWithSuggestions } from "@/components/SearchWithSuggestions";
 import { TablePaginationFooter } from "@/components/TablePaginationFooter";
 
@@ -615,16 +618,23 @@ function BatchUnlockBanner({
 
   if (compact) {
     return (
-      <span title={`Unlock candidates ${batchStart}–${batchEnd} for a flat rate instead of one at a time.`}>
-        <PrimaryCta
-          size="sm"
-          icon={<LockIcon size={13} aria-hidden="true" />}
-          onClick={handleUnlockBatch}
-          disabled={unlocking}
-        >
-          {unlocking ? "Unlocking…" : `Unlock ${batchStart}–${batchEnd} — ₹${(batchUnlockPrice().amountPaise / 100).toFixed(0)}`}
-        </PrimaryCta>
-      </span>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span>
+            <PrimaryCta
+              size="sm"
+              icon={<LockIcon size={13} aria-hidden="true" />}
+              onClick={handleUnlockBatch}
+              disabled={unlocking}
+            >
+              {unlocking ? "Unlocking…" : `Unlock ${batchStart}–${batchEnd} — ₹${(batchUnlockPrice().amountPaise / 100).toFixed(0)}`}
+            </PrimaryCta>
+          </span>
+        </TooltipTrigger>
+        <TooltipContent side="bottom" className="max-w-64">
+          Unlock candidates {batchStart}–{batchEnd} for a flat rate instead of one at a time.
+        </TooltipContent>
+      </Tooltip>
     );
   }
 
@@ -1006,6 +1016,8 @@ export default function RequirementDetailPage() {
     return Array.from(cities).sort();
   }, [requirement]);
 
+  const activeFilterCount = (contactFilter !== "all" ? 1 : 0) + (locationFilter !== "all" ? 1 : 0);
+
   const suggestedFilters = useMemo(() => {
     const suggestions: Array<{ label: string; apply: () => void }> = [];
     const firstContact = contactFilterOptions.find((o) => o.value !== "all" && o.value !== contactFilter);
@@ -1092,18 +1104,7 @@ export default function RequirementDetailPage() {
       toast("Couldn't update the stage — please try again", "error");
       return;
     }
-    setUndoBanner({
-      message: `Stage changed to ${STAGE_LABEL[stage]}`,
-      run: async () => {
-        setUndoBanner(null);
-        setRequirement((prev) => (prev ? { ...prev, stage: previousStage } : prev));
-        const reverted = await updateRequirementStage(requirement.id, previousStage);
-        if (!reverted) {
-          setRequirement((prev) => (prev ? { ...prev, stage } : prev));
-          toast("Couldn't undo the stage change", "error");
-        }
-      },
-    });
+    toast(`Stage changed to ${STAGE_LABEL[stage]}`, "success");
   };
 
   if (loading) {
@@ -1300,9 +1301,8 @@ export default function RequirementDetailPage() {
               <BriefcaseIcon size={22} aria-hidden="true" />
             </div>
             <div>
-              <Eyebrow tone="indigo">{requirement.noticePeriodPref} notice</Eyebrow>
-              <h1 style={{ fontFamily: f.sans, fontSize: 28, color: t.coal, margin: "6px 0 0" }}>{requirement.title}</h1>
-              <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", columnGap: 12, rowGap: 4, marginTop: 8, fontFamily: f.sans, fontSize: 13.5, fontWeight: 500, color: t.coal }}>
+              <h1 style={{ fontFamily: f.sans, fontSize: 28, fontWeight: 700, letterSpacing: "-0.02em", lineHeight: 1.2, color: t.coal, margin: 0 }}>{requirement.title}</h1>
+              <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", columnGap: 12, rowGap: 4, marginTop: 8, fontFamily: f.sans, fontSize: 14, fontWeight: 500, color: t.coal }}>
                 {budget && (
                   <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
                     <IndianRupeeIcon size={14} color={t.inkFaint} aria-hidden="true" /> {budget}
@@ -1474,28 +1474,33 @@ export default function RequirementDetailPage() {
                 overflow: descExpanded ? "visible" : "hidden",
               }}
             >
-              {requirement.description}
+              {requirement.description}{" "}
+              <Button
+                type="button"
+                variant="link"
+                onClick={() => setDescExpanded((v) => !v)}
+                style={{ padding: 0, fontFamily: f.sans, fontSize: 12.5, fontWeight: 600, height: "auto", display: "inline" }}
+              >
+                {descExpanded ? "Show less" : "Read more"}
+              </Button>
             </p>
-            <Button
-              type="button"
-              variant="link"
-              onClick={() => setDescExpanded((v) => !v)}
-              style={{ padding: 0, marginTop: 6, fontFamily: f.sans, fontSize: 12.5, fontWeight: 600, height: "auto" }}
-            >
-              {descExpanded ? "Show less" : "Read more"}
-            </Button>
           </div>
         )}
 
         <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginTop: 14, paddingTop: 14, borderTop: `1px solid ${t.line}` }}>
           {dueDaysLeft != null && (
-            <span style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: f.sans, fontSize: 12.5, color: dueDaysLeft < 0 ? t.error : t.inkFaint, fontWeight: dueDaysLeft < 0 ? 600 : 400 }}>
+            <span style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: f.sans, fontSize: 12, color: dueDaysLeft < 0 ? t.error : t.inkFaint, fontWeight: dueDaysLeft < 0 ? 600 : 400 }}>
               <ClockIcon size={13} aria-hidden="true" /> {dueDaysLeft < 0 ? `${Math.abs(dueDaysLeft)}d overdue` : dueDaysLeft === 0 ? "Due today" : `${dueDaysLeft}d until due`}
             </span>
           )}
-          <span style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: f.sans, fontSize: 12.5, color: t.inkFaint }}>
+          <span style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: f.sans, fontSize: 12, color: t.inkFaint }}>
             <BuildingIcon size={13} aria-hidden="true" /> Posted {requirement.createdAt}
           </span>
+          {requirement.lastMatchedAt && (
+            <span role="status" aria-live="polite" style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: f.sans, fontSize: 12, color: t.inkFaint }}>
+              <RefreshCwIcon size={13} aria-hidden="true" /> Updated {timeAgoLabel(requirement.lastMatchedAt)}
+            </span>
+          )}
         </div>
 
         {hasCandidates ? (
@@ -1602,21 +1607,31 @@ export default function RequirementDetailPage() {
             </div>
           </div>
         </div>
+
+        <div style={{ marginTop: 16, paddingTop: 14, borderTop: `1px solid ${t.line}` }}>
+          <span style={{ fontFamily: f.sans, fontSize: 11, color: t.inkFaint }}>Required skills</span>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 6 }}>
+            {requirement.skills.length ? (
+              requirement.skills.map((s) => <SkillTag key={s}>{s}</SkillTag>)
+            ) : (
+              <span style={{ fontFamily: f.sans, fontSize: 13.5, fontWeight: 500, color: t.coal }}>Not specified</span>
+            )}
+          </div>
+        </div>
+
+        <div style={{ marginTop: 16, paddingTop: 14, borderTop: `1px solid ${t.line}` }}>
+          <span style={{ fontFamily: f.sans, fontSize: 11, color: t.inkFaint }}>Nice to have</span>
+          <p style={{ fontFamily: f.sans, fontSize: 13.5, color: t.coal, lineHeight: 1.5, margin: "6px 0 0" }}>
+            {requirement.niceToHave || "Not specified"}
+          </p>
+        </div>
       </Card>
       </div>
 
       <div style={{ marginTop: 24 }}>
         <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 10, marginBottom: 16 }}>
           <h2 style={{ fontFamily: f.sans, fontSize: 18, fontWeight: 600, color: t.coal, margin: 0 }}>Candidates</h2>
-          {requirement.lastMatchedAt && (
-            <span
-              role="status"
-              aria-live="polite"
-              style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkFaint }}
-            >
-              Updated {timeAgoLabel(requirement.lastMatchedAt)}
-            </span>
-          )}
+          <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", flexWrap: "wrap", gap: 10, justifyContent: "flex-end" }}>
           {(requirement.status === "ready" || requirement.status === "partial" || requirement.status === "closed") && (
             <>
               <SearchWithSuggestions
@@ -1627,19 +1642,64 @@ export default function RequirementDetailPage() {
                 placeholder="Search by name, role, skill, or notice period…"
                 storageKey={CANDIDATES_RECENT_SEARCHES_KEY}
                 suggestedFilters={suggestedFilters}
-                style={{ flex: "1 1 200px", minWidth: 180, maxWidth: 360 }}
+                style={{ flex: "0 1 280px", minWidth: 180, maxWidth: 280 }}
                 inputStyle={{ background: t.white }}
                 inputClassName="focus-visible:ring-0"
               />
-              <FilterPill label="Contact" value={contactFilter} options={contactFilterOptions} onChange={setContactFilter} />
-              {locationOptions.length > 1 && (
-                <FilterPill
-                  label="Location"
-                  value={locationFilter}
-                  options={[{ value: "all", label: "All locations" }, ...locationOptions.map((loc) => ({ value: loc, label: loc }))]}
-                  onChange={setLocationFilter}
-                />
-              )}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    style={{ borderRadius: 8, height: 36, gap: 8, background: t.white, color: t.coal, fontFamily: f.sans, fontSize: 13, fontWeight: 500, flexShrink: 0 }}
+                  >
+                    <SlidersHorizontalIcon size={13} aria-hidden="true" />
+                    Filters
+                    {activeFilterCount > 0 && (
+                      <span
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          minWidth: 18,
+                          height: 18,
+                          padding: "0 5px",
+                          borderRadius: 999,
+                          background: t.coal,
+                          color: t.white,
+                          fontSize: 11,
+                          fontWeight: 600,
+                        }}
+                      >
+                        {activeFilterCount}
+                      </span>
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start">
+                  <DropdownMenuLabel>Contact</DropdownMenuLabel>
+                  <DropdownMenuRadioGroup value={contactFilter} onValueChange={(v) => setContactFilter(v as ContactFilter)}>
+                    {contactFilterOptions.map((o) => (
+                      <DropdownMenuRadioItem key={o.value} value={o.value}>
+                        {o.label}
+                      </DropdownMenuRadioItem>
+                    ))}
+                  </DropdownMenuRadioGroup>
+                  {locationOptions.length > 1 && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuLabel>Location</DropdownMenuLabel>
+                      <DropdownMenuRadioGroup value={locationFilter} onValueChange={setLocationFilter}>
+                        {[{ value: "all", label: "All locations" }, ...locationOptions.map((loc) => ({ value: loc, label: loc }))].map((o) => (
+                          <DropdownMenuRadioItem key={o.value} value={o.value}>
+                            {o.label}
+                          </DropdownMenuRadioItem>
+                        ))}
+                      </DropdownMenuRadioGroup>
+                    </>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
               {(search.trim() !== "" || contactFilter !== "all" || locationFilter !== "all") && (
                 <Button
                   type="button"
@@ -1661,14 +1721,21 @@ export default function RequirementDetailPage() {
               )}
             </>
           )}
-          <div style={{ marginLeft: "auto" }}>
-            <OutlineCta
-              size="sm"
-              onClick={load}
-              icon={<RefreshCwIcon size={13} aria-hidden="true" className={loading ? "animate-spin" : undefined} />}
-            >
-              Refresh
-            </OutlineCta>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={load}
+                aria-label="Refresh candidates"
+                style={{ borderRadius: 8, flexShrink: 0 }}
+              >
+                <RefreshCwIcon size={13} aria-hidden="true" className={loading ? "animate-spin" : undefined} />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="max-w-64">Refresh candidates</TooltipContent>
+          </Tooltip>
           </div>
         </div>
         <>
