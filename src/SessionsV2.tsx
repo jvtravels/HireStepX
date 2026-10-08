@@ -61,8 +61,10 @@ type SessionRow = {
 
 /* Flattened row used by the table's filter/sort/paginate pipeline —
    groupLabel keeps the "Today / This week / Earlier" bucket so date
-   divider rows can be rebuilt after filtering. */
-type FlatRow = SessionRow;
+   divider rows can be rebuilt after filtering. Exported so the dashboard
+   home's Recent Sessions preview can feed the same SessionsTable instead
+   of hand-rolling a second table that silently drifts from this one. */
+export type FlatRow = SessionRow;
 
 const bandLabel: Record<ScoreBand, string> = {
   developing: "Developing",
@@ -121,7 +123,7 @@ function buildTakeaways(d: DashboardSession): TakeawayPoint[] {
 
 /* Map the canonical DashboardSession shape onto this screen's row shape —
    campus-placement special case, empty-company guard. */
-function toRow(d: DashboardSession, now: number): FlatRow {
+export function toRow(d: DashboardSession, now: number): FlatRow {
   return {
     id: d.id,
     title: d.role,
@@ -145,8 +147,8 @@ const SCORE_OPTIONS: { value: "All" | ScoreBand; label: string }[] = [
 ];
 
 type SortColumn = "title" | "score" | "progress" | "date";
-type Sort = SharedSort<SortColumn>;
-const DEFAULT_SORT: Sort = { column: "date", direction: "desc" };
+export type Sort = SharedSort<SortColumn>;
+export const DEFAULT_SORT: Sort = { column: "date", direction: "desc" };
 
 const COLUMN_LABEL: Record<SortColumn, string> = {
   title: "Session",
@@ -347,7 +349,18 @@ function TakeawayCell({ points }: { points: TakeawayPoint[] }) {
   );
 }
 
-function SessionsTable({
+// Non-interactive stand-in for SortableHead, used when the embedding table
+// (Dashboard Home's compact preview) disables sorting — same column
+// typography/sizing, no button/chevron/click handler.
+function StaticTableHead({ width, minWidth, children }: { width?: number | string; minWidth?: number; children: React.ReactNode }) {
+  return (
+    <TableHead style={{ width, minWidth, padding: "0 20px", fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: T.inkSoft }}>
+      {children}
+    </TableHead>
+  );
+}
+
+export function SessionsTable({
   rows,
   totalCount,
   filteredCount,
@@ -360,19 +373,27 @@ function SessionsTable({
   onPageChange,
   onClearFilters,
   onOpenSession,
+  sortable = true,
+  hideFooter = false,
 }: {
   rows: FlatRow[];
-  totalCount: number;
-  filteredCount: number;
+  totalCount?: number;
+  filteredCount?: number;
   sort: Sort;
   onSortChange: (sort: Sort) => void;
-  page: number;
-  totalPages: number;
-  rowsPerPage: number;
-  onRowsPerPageChange: (rowsPerPage: number) => void;
-  onPageChange: (page: number) => void;
+  page?: number;
+  totalPages?: number;
+  rowsPerPage?: number;
+  onRowsPerPageChange?: (rowsPerPage: number) => void;
+  onPageChange?: (page: number) => void;
   onClearFilters: () => void;
   onOpenSession: (id: string) => void;
+  /* Dashboard Home's compact 5-row preview reuses this exact table (so the
+   * two can't silently diverge again) but turns off the page-table chrome
+   * that doesn't belong in a small widget: column sorting and the
+   * rows-per-page/pagination footer. */
+  sortable?: boolean;
+  hideFooter?: boolean;
 }) {
   return (
     <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
@@ -388,10 +409,21 @@ function SessionsTable({
                 Score/Progress/Date stayed cramped. minWidth still protects
                 each column's content on narrower viewports (the table then
                 scrolls horizontally, per the empty-state note below). */}
-            <SortableHead column="title" columnLabel={COLUMN_LABEL.title} defaultDirection="asc" width="28%" minWidth={220} sort={sort} onSortChange={onSortChange}>Session</SortableHead>
-            <SortableHead column="score" columnLabel={COLUMN_LABEL.score} width="14%" minWidth={150} sort={sort} onSortChange={onSortChange}>Score</SortableHead>
-            <SortableHead column="progress" columnLabel={COLUMN_LABEL.progress} width="17%" minWidth={190} sort={sort} onSortChange={onSortChange}>Progress</SortableHead>
-            <SortableHead column="date" columnLabel={COLUMN_LABEL.date} width="11%" minWidth={120} sort={sort} onSortChange={onSortChange}>Date</SortableHead>
+            {sortable ? (
+              <>
+                <SortableHead column="title" columnLabel={COLUMN_LABEL.title} defaultDirection="asc" width="28%" minWidth={220} sort={sort} onSortChange={onSortChange}>Session</SortableHead>
+                <SortableHead column="score" columnLabel={COLUMN_LABEL.score} width="14%" minWidth={150} sort={sort} onSortChange={onSortChange}>Score</SortableHead>
+                <SortableHead column="progress" columnLabel={COLUMN_LABEL.progress} width="17%" minWidth={190} sort={sort} onSortChange={onSortChange}>Progress</SortableHead>
+                <SortableHead column="date" columnLabel={COLUMN_LABEL.date} width="11%" minWidth={120} sort={sort} onSortChange={onSortChange}>Date</SortableHead>
+              </>
+            ) : (
+              <>
+                <StaticTableHead width="28%" minWidth={220}>Session</StaticTableHead>
+                <StaticTableHead width="14%" minWidth={150}>Score</StaticTableHead>
+                <StaticTableHead width="17%" minWidth={190}>Progress</StaticTableHead>
+                <StaticTableHead width="11%" minWidth={120}>Date</StaticTableHead>
+              </>
+            )}
             <TableHead style={{ width: "30%", minWidth: 260, padding: "0 20px", fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: T.inkSoft }}>Key Takeaway</TableHead>
           </TableRow>
         </TableHeader>
@@ -465,16 +497,18 @@ function SessionsTable({
       </Table>
       </div>
 
-      <TablePaginationFooter
-        entityLabel="session"
-        totalCount={totalCount}
-        filteredCount={filteredCount}
-        rowsPerPage={rowsPerPage}
-        onRowsPerPageChange={onRowsPerPageChange}
-        page={page}
-        totalPages={totalPages}
-        onPageChange={onPageChange}
-      />
+      {!hideFooter && (
+        <TablePaginationFooter
+          entityLabel="session"
+          totalCount={totalCount ?? rows.length}
+          filteredCount={filteredCount ?? rows.length}
+          rowsPerPage={rowsPerPage ?? rows.length}
+          onRowsPerPageChange={onRowsPerPageChange ?? (() => {})}
+          page={page ?? 1}
+          totalPages={totalPages ?? 1}
+          onPageChange={onPageChange ?? (() => {})}
+        />
+      )}
     </div>
   );
 }

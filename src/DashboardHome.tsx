@@ -40,9 +40,9 @@ import {
   EvidenceCapabilitiesCard,
   GettingStartedCard,
   UnlockTeaserGrid,
-  RecentSessionsTable,
   NoSessionsEmptyState,
 } from "./DashboardHomeSections";
+import { SessionsTable, toRow, DEFAULT_SORT } from "./SessionsV2";
 
 /* Funnel telemetry — these event names are the contract PostHog
    dashboards query, so they're stable. */
@@ -575,10 +575,17 @@ export default function DashboardHome() {
           )}
         </div>
         {sessions.hasData ? (
-          <RecentSessionsTable
-            sessions={sessions.recentSessions.slice(0, 5)}
-            onOpen={(id) => openSession(id, "recent-sessions-table")}
-          />
+          <div style={{ border: `1px solid ${t.line}`, borderRadius: 12 }}>
+            <SessionsTable
+              rows={sessions.recentSessions.slice(0, 5).map((d) => toRow(d, Date.now()))}
+              sort={DEFAULT_SORT}
+              onSortChange={() => {}}
+              onClearFilters={() => {}}
+              onOpenSession={(id) => openSession(id, "recent-sessions-table")}
+              sortable={false}
+              hideFooter
+            />
+          </div>
         ) : (
           <NoSessionsEmptyState onStart={goToInterview("recent-empty")} />
         )}

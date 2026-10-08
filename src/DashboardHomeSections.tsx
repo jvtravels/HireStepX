@@ -8,26 +8,12 @@
    orchestration; these are presentational, driven entirely by props. */
 
 import { tokens as t, fonts as f, textSize } from "./auth/_tokens";
-import type { DashboardSession } from "./dashboardTypes";
 import type { PracticeCoverage, EvidenceCapability } from "./dashboardData";
 import { skillLabel } from "./skillCopy";
 import { hoursOrDaysAgo } from "./hiringMatchFormat";
 import { useHiringActivity } from "./useHiringActivity";
 
 /* ─── shared bits ─── */
-
-const MONTH_NAMES = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
-];
-
-// "25 July, 2026" — the Recent Sessions table's exact date style. Distinct
-// from SessionsV2's formatRowDate (en-GB 2-digit, no comma) and from
-// dashboardData's dateLabel ("Jul 25"), neither of which match the Figma.
-function formatSessionDate(dateStr: string): string {
-  const d = new Date(dateStr + (dateStr.length <= 10 ? "T00:00" : ""));
-  return `${d.getDate()} ${MONTH_NAMES[d.getMonth()]}, ${d.getFullYear()}`;
-}
 
 function ProgressBar({ value, max = 100, color }: { value: number; max?: number; color: string }) {
   const pct = Math.max(0, Math.min(100, (value / max) * 100));
@@ -558,101 +544,6 @@ export function UnlockTeaserGrid() {
         ))}
       </div>
     </section>
-  );
-}
-
-/* ─── Recent Sessions table (full-data) / empty state ─── */
-
-// Same 85/75/50 breakpoints and neutral-dot-except-outlier treatment as
-// SessionsV2's ScoreCell/bandFor, so a score reads identically whether a
-// candidate sees it on the dashboard preview or the full Sessions table.
-const SCORE_ALARM = 50;
-
-function recentSessionBandLabel(score: number): string {
-  if (score >= 85) return "Good";
-  if (score >= 75) return "Developing";
-  return "Needs focus";
-}
-
-function RecentSessionScoreCell({ score }: { score: number }) {
-  const alarming = score < SCORE_ALARM;
-  const dotColor = alarming ? t.error : t.inkFaint;
-  const textColor = alarming ? t.error : t.inkSoft;
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-      <span style={{ fontFamily: f.mono, fontSize: textSize.base, fontWeight: 500, color: t.coal, fontVariantNumeric: "tabular-nums" }}>{score}</span>
-      <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontFamily: f.sans, fontSize: textSize.sm, fontWeight: 500, color: textColor }}>
-        <span aria-hidden="true" style={{ width: 6, height: 6, borderRadius: 3, background: dotColor, flexShrink: 0 }} />
-        {recentSessionBandLabel(score)}
-      </span>
-    </div>
-  );
-}
-
-// Matches SessionsV2's ProgressCell exactly (same colors, arrow glyphs, and
-// "vs last session" copy) so the Recent Sessions preview and the full
-// Sessions table show the same column, not a different one.
-function RecentSessionProgressCell({ progress }: { progress: number }) {
-  const { text, glyph } =
-    progress > 0
-      ? { text: t.successInk, glyph: "▲" }
-      : progress < 0
-        ? { text: t.error, glyph: "▼" }
-        : { text: t.inkFaint, glyph: "" };
-  const sign = progress > 0 ? "+" : "";
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-      <span style={{ fontFamily: f.mono, fontSize: 13, fontWeight: 500, color: text, display: "inline-flex", alignItems: "center", gap: 4, fontVariantNumeric: "tabular-nums" }}>
-        {glyph && <span aria-hidden="true" style={{ fontSize: 9 }}>{glyph}</span>}
-        {sign}{progress}
-      </span>
-      <span style={{ fontFamily: f.sans, fontSize: 13, color: t.inkFaint }}>vs last session</span>
-    </div>
-  );
-}
-
-export function RecentSessionsTable({ sessions, onOpen }: { sessions: DashboardSession[]; onOpen: (id: string) => void }) {
-  return (
-    <div style={{ overflowX: "auto", border: `1px solid ${t.line}`, borderRadius: 12 }}>
-      <table style={{ width: "100%", borderCollapse: "collapse" }}>
-        <thead>
-          <tr style={{ background: t.rowTint, height: 40 }}>
-            {["Session", "Score", "Progress", "Date"].map((h) => (
-              <th key={h} style={{
-                textAlign: "left", padding: "0 20px",
-                fontFamily: f.sans, fontSize: textSize.sm, fontWeight: 600, color: t.inkSoft,
-                borderBottom: `1px solid ${t.line}`,
-              }}>{h}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {sessions.map((s) => (
-            <tr
-              key={s.id}
-              onClick={() => onOpen(s.id)}
-              style={{ height: 64, cursor: "pointer", borderBottom: `1px solid ${t.line}`, transition: "background 0.1s ease" }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = t.rowTint; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
-            >
-              <td style={{ padding: "0 20px" }}>
-                <div style={{ fontFamily: f.sans, fontSize: textSize.base, fontWeight: 600, color: t.coal }}>{s.type}</div>
-                {s.role && <div style={{ fontFamily: f.sans, fontSize: textSize.xs, color: t.inkFaint, marginTop: 2 }}>{s.role}</div>}
-              </td>
-              <td style={{ padding: "0 20px" }}>
-                <RecentSessionScoreCell score={s.score} />
-              </td>
-              <td style={{ padding: "0 20px" }}>
-                <RecentSessionProgressCell progress={s.change} />
-              </td>
-              <td style={{ padding: "0 20px", fontFamily: f.mono, fontSize: textSize.sm, color: t.inkFaint, fontVariantNumeric: "tabular-nums" }}>
-                {formatSessionDate(s.date)}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
   );
 }
 
