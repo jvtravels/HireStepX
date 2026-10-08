@@ -554,17 +554,42 @@ export function UnlockTeaserGrid() {
 
 /* ─── Recent Sessions table (full-data) / empty state ─── */
 
+// Same 85/75/50 breakpoints and neutral-dot-except-outlier treatment as
+// SessionsV2's ScoreCell/bandFor, so a score reads identically whether a
+// candidate sees it on the dashboard preview or the full Sessions table.
+const SCORE_ALARM = 50;
+
+function recentSessionBandLabel(score: number): string {
+  if (score >= 85) return "Good";
+  if (score >= 75) return "Developing";
+  return "Needs focus";
+}
+
+function RecentSessionScoreCell({ score }: { score: number }) {
+  const alarming = score < SCORE_ALARM;
+  const dotColor = alarming ? t.error : t.inkFaint;
+  const textColor = alarming ? t.error : t.inkSoft;
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      <span style={{ fontFamily: f.mono, fontSize: textSize.base, fontWeight: 500, color: t.coal, fontVariantNumeric: "tabular-nums" }}>{score}</span>
+      <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontFamily: f.sans, fontSize: textSize.sm, fontWeight: 500, color: textColor }}>
+        <span aria-hidden="true" style={{ width: 6, height: 6, borderRadius: 3, background: dotColor, flexShrink: 0 }} />
+        {recentSessionBandLabel(score)}
+      </span>
+    </div>
+  );
+}
+
 export function RecentSessionsTable({ sessions, onOpen }: { sessions: DashboardSession[]; onOpen: (id: string) => void }) {
   return (
     <div style={{ overflowX: "auto", border: `1px solid ${t.line}`, borderRadius: 12 }}>
       <table style={{ width: "100%", borderCollapse: "collapse" }}>
         <thead>
-          <tr style={{ background: t.rowTint }}>
+          <tr style={{ background: t.rowTint, height: 40 }}>
             {["Session", "Score", "Focus", "Date"].map((h) => (
               <th key={h} style={{
-                textAlign: "left", padding: "12px 16px",
-                fontFamily: f.sans, fontSize: textSize.xs, fontWeight: 700, color: t.inkSoft,
-                textTransform: "uppercase", letterSpacing: 0.4,
+                textAlign: "left", padding: "0 20px",
+                fontFamily: f.sans, fontSize: textSize.sm, fontWeight: 600, color: t.inkSoft,
                 borderBottom: `1px solid ${t.line}`,
               }}>{h}</th>
             ))}
@@ -575,19 +600,21 @@ export function RecentSessionsTable({ sessions, onOpen }: { sessions: DashboardS
             <tr
               key={s.id}
               onClick={() => onOpen(s.id)}
-              style={{ cursor: "pointer", borderBottom: `1px solid ${t.line}` }}
+              style={{ height: 64, cursor: "pointer", borderBottom: `1px solid ${t.line}`, transition: "background 0.1s ease" }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = t.rowTint; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
             >
-              <td style={{ padding: "14px 16px" }}>
+              <td style={{ padding: "0 20px" }}>
                 <div style={{ fontFamily: f.sans, fontSize: textSize.base, fontWeight: 600, color: t.coal }}>{s.type}</div>
                 {s.role && <div style={{ fontFamily: f.sans, fontSize: textSize.xs, color: t.inkFaint, marginTop: 2 }}>{s.role}</div>}
               </td>
-              <td style={{ padding: "14px 16px", fontFamily: f.sans, fontSize: textSize.base, fontWeight: 600, color: t.coal }}>
-                {s.score}/100
+              <td style={{ padding: "0 20px" }}>
+                <RecentSessionScoreCell score={s.score} />
               </td>
-              <td style={{ padding: "14px 16px", fontFamily: f.sans, fontSize: textSize.sm, color: t.inkSoft }}>
+              <td style={{ padding: "0 20px", fontFamily: f.sans, fontSize: textSize.sm, color: t.inkSoft }}>
                 {focusTopicLabel(s.topWeaknessKey)}
               </td>
-              <td style={{ padding: "14px 16px", fontFamily: f.sans, fontSize: textSize.sm, color: t.inkSoft }}>
+              <td style={{ padding: "0 20px", fontFamily: f.mono, fontSize: textSize.sm, color: t.inkFaint, fontVariantNumeric: "tabular-nums" }}>
                 {formatSessionDate(s.date)}
               </td>
             </tr>
