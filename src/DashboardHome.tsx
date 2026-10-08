@@ -552,7 +552,7 @@ export default function DashboardHome() {
       )}
 
       <section aria-labelledby="dh-recent-heading">
-        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 12 }}>
+        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 4 }}>
           <h2 id="dh-recent-heading" style={{ fontFamily: f.sans, fontSize: 22, fontWeight: 700, color: t.coal, margin: 0 }}>
             Recent Sessions
           </h2>
