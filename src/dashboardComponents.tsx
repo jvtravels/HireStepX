@@ -504,7 +504,7 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
             <span style={{ fontFamily: font.ui, fontSize: 12, color: c.ember, display: "block", marginBottom: 8 }}>{error}</span>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
               {verifyRetries > 0 && (
-                <Button size="sm" onClick={retryVerification} style={{ background: c.ember, color: c.graphite }}>Retry Verification</Button>
+                <Button size="sm" onClick={retryVerification}>Retry Verification</Button>
               )}
               <Button variant="outline" size="sm" onClick={() => { setError(""); setVerifyRetries(0); }} style={{ color: T.indigo, minHeight: 36 }}>Dismiss</Button>
             </div>
@@ -626,7 +626,7 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
                         </div>
                         <Button onClick={() => handleCheckout("single")} disabled={!!loading}
                           className="w-full"
-                          style={{ background: c.slate, color: T.white, opacity: loading && loading !== "single" ? 0.5 : 1 }}
+                          style={{ opacity: loading && loading !== "single" ? 0.5 : 1 }}
                         >
                           {loading === "single" ? "Opening Razorpay..." : loading === "verifying" ? "Verifying..."
                             : <>{singleQty === 1 ? "Buy 1 session" : `Buy ${singleQty} sessions`} &#xB7; &#x20B9;{SINGLE_SESSION_PRICE * singleQty} <span style={{ fontSize: 16 }}>&#8594;</span></>}
@@ -825,7 +825,7 @@ export const PaywallGate = memo(function PaywallGate({ feature, onUpgrade }: { f
             </div>
           )}
 
-          <Button onClick={onUpgrade} style={{ padding: "12px 28px", background: `linear-gradient(135deg, ${T.indigo}, ${T.indigoDeep})`, color: c.obsidian }}>
+          <Button onClick={onUpgrade} size="cta">
             {copy.cta}
           </Button>
           <span style={{ fontFamily: font.mono, fontSize: 11, color: c.stone, marginTop: 10 }}>{copy.footnote}</span>
@@ -925,14 +925,14 @@ export const EmptyState = memo(function EmptyState({ onStartWarmup, onStartCusto
           3 friendly behavioral questions, ~5 minutes. We'll use your resume to personalize every question and set your baseline score.
         </p>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
-          <button className="shimmer-btn warmup-pulse-btn" onClick={onStartWarmup}
-            style={{ fontFamily: font.ui, fontSize: 15, fontWeight: 500, padding: "14px 36px", borderRadius: 8, border: "none", background: T.indigo, color: c.obsidian, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 10, animation: "warmupPulse 2s ease-in-out infinite" }}
-            onMouseEnter={(e) => { e.currentTarget.style.filter = "brightness(1.15)"; e.currentTarget.style.animation = "none"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.filter = "brightness(1)"; e.currentTarget.style.animation = "warmupPulse 2s ease-in-out infinite"; }}
+          <Button className="shimmer-btn warmup-pulse-btn" size="cta" onClick={onStartWarmup}
+            style={{ fontFamily: font.ui, animation: "warmupPulse 2s ease-in-out infinite" }}
+            onMouseEnter={(e) => { e.currentTarget.style.animation = "none"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.animation = "warmupPulse 2s ease-in-out infinite"; }}
           >
             <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="5,3 19,12 5,21" /></svg>
             Start Warmup
-          </button>
+          </Button>
           <Button variant="link" onClick={onStartCustom} style={{ fontSize: 12, fontWeight: 500, color: c.stone }}>
             or choose your own session
           </Button>

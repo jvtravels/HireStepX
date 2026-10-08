@@ -1,6 +1,7 @@
 import { Component, type ReactNode, type ErrorInfo } from "react";
 import { c, font } from "./tokens";
 import { tokens as T } from "./auth/_tokens";
+import { Button } from "@/components/ui/button";
 
 // Raw error messages can leak stack traces, internal identifiers, or PII into
 // the UI. Show them only in development; production users get the friendly copy.
@@ -115,39 +116,15 @@ export default class ErrorBoundary extends Component<Props, State> {
             </pre>
           )}
           <div style={{ display: "flex", gap: 12 }}>
-            <button
-              onClick={this.handleReset}
-              style={{
-                padding: "10px 24px",
-                borderRadius: 8,
-                border: `1px solid ${c.border}`,
-                background: "transparent",
-                color: c.ivory,
-                fontSize: 13,
-                fontWeight: 500,
-                cursor: "pointer",
-              }}
-            >
+            <Button variant="outline" onClick={this.handleReset} style={{ fontFamily: font.ui, padding: "10px 24px" }}>
               Try Again
-            </button>
-            <button
-              onClick={() => { window.location.replace("/dashboard"); }}
-              style={{
-                padding: "10px 24px",
-                borderRadius: 8,
-                border: "none",
-                // General navigation CTA, not score-related — indigo is the
-                // one brand/interactive color; copper stays reserved for
-                // score/streak/reward visuals.
-                background: T.indigo,
-                color: c.obsidian,
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: "pointer",
-              }}
-            >
+            </Button>
+            {/* General navigation CTA, not score-related — indigo is the
+                one brand/interactive color; copper stays reserved for
+                score/streak/reward visuals. */}
+            <Button onClick={() => { window.location.replace("/dashboard"); }} style={{ fontFamily: font.ui, padding: "10px 24px" }}>
               Go to Dashboard
-            </button>
+            </Button>
           </div>
         </div>
       );
@@ -218,13 +195,9 @@ export class RouteErrorBoundary extends Component<{ children: ReactNode }, Route
               overflow: "auto", fontFamily: font.mono, textAlign: "left",
             }}>{this.state.error.message}</pre>
           )}
-          <button
-            onClick={() => this.setState({ hasError: false, error: null })}
-            style={{
-              padding: "8px 20px", borderRadius: 8, border: `1px solid ${c.border}`,
-              background: "transparent", color: c.ivory, fontSize: 13, fontWeight: 500, cursor: "pointer",
-            }}
-          >Try Again</button>
+          <Button variant="outline" size="sm" onClick={() => this.setState({ hasError: false, error: null })} style={{ fontFamily: font.ui, padding: "8px 20px" }}>
+            Try Again
+          </Button>
         </div>
       );
     }

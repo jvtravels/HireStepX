@@ -18,6 +18,7 @@ import { c, font, shadow, sp, radius, ease } from "./tokens";
 import { tokens as T, shadows as eShadow } from "./auth/_tokens";
 import { useAuth } from "./AuthContext";
 import { useDocTitle } from "./useDocTitle";
+import { Button } from "@/components/ui/button";
 import { listEvents, saveEvent, deleteEvent, generatePrepRunway, connectGoogleCalendar, currentTimezone, type CalendarEventRow, type CalendarEventInput } from "./calendarAPI";
 import {
   type InterviewEvent, loadEvents, saveEvents, generateEventId,
@@ -272,9 +273,9 @@ function PrepRunwayRail({ interview, all, onStart, onBuild, building }: {
                   <div style={{ fontSize: 13, fontWeight: 600, color: c.ivory, lineHeight: 1.25 }}>{n.title}</div>
                   <div style={{ fontSize: 11.5, color: c.chalk, marginTop: 3, lineHeight: 1.35 }}>{n.detail}</div>
                   {n.state === "active" && (
-                    <button className="cpr-tap" onClick={onStart} style={{ marginTop: sp.sm, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 5, minHeight: 36, background: c.slate, color: c.carbon, border: "none", borderRadius: radius.sm, padding: "8px 12px", fontFamily: font.ui, fontSize: 11.5, fontWeight: 600, cursor: "pointer", boxShadow: shadow.sm }}>
+                    <Button className="cpr-tap" size="sm" onClick={onStart} style={{ marginTop: sp.sm, fontFamily: font.ui, boxShadow: shadow.sm }}>
                       <Icon size={13}>{I.play}</Icon> Start practice
-                    </button>
+                    </Button>
                   )}
                 </div>
               </div>
@@ -286,9 +287,9 @@ function PrepRunwayRail({ interview, all, onStart, onBuild, building }: {
           <p style={{ fontSize: 13, color: c.chalk, margin: 0, lineHeight: 1.5, maxWidth: 440 }}>
             No prep sessions yet. Build a countdown of AI mock interviews mapped backward from this date, so you walk in ready.
           </p>
-          <button className="cpr-tap" onClick={onBuild} disabled={building} style={{ display: "inline-flex", alignItems: "center", gap: 7, background: c.slate, color: c.carbon, border: "none", borderRadius: radius.md, padding: "11px 18px", fontFamily: font.ui, fontSize: 13, fontWeight: 600, cursor: building ? "default" : "pointer", opacity: building ? 0.7 : 1, boxShadow: shadow.sm }}>
+          <Button className="cpr-tap" onClick={onBuild} disabled={building} style={{ fontFamily: font.ui, boxShadow: shadow.sm }}>
             <Icon size={15}>{I.sparkle}</Icon> {building ? "Building…" : "Build Prep Runway"}
-          </button>
+          </Button>
         </div>
       )}
 
@@ -811,9 +812,9 @@ export default function CalendarPage() {
             </p>
           </div>
           <div className="cpr-actions" style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: sp.sm }}>
-            <button className="cpr-tap" onClick={openNewForm} style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 7, background: c.slate, color: c.carbon, border: "none", borderRadius: radius.md, padding: "12px 20px", fontFamily: font.ui, fontSize: 14, fontWeight: 600, cursor: "pointer", boxShadow: shadow.sm }}>
+            <Button className="cpr-tap" onClick={openNewForm} style={{ fontFamily: font.ui, boxShadow: shadow.sm }}>
               <Icon size={16}>{I.plus}</Icon> Add interview
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -998,14 +999,12 @@ export default function CalendarPage() {
             <div style={{ borderTop: `1px solid ${c.borderSubtle}`, padding: "16px 28px", display: "flex", flexDirection: "column", gap: 10 }}>
               {formError && <span style={{ fontFamily: font.ui, fontSize: 12, color: c.ember }}>{formError}</span>}
               <div style={{ display: "flex", gap: 10 }}>
-                <button className="cpr-tap" onClick={() => { setShowForm(false); resetForm(); }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = c.graphite)} onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-                  style={{ fontFamily: font.ui, fontSize: 13.5, fontWeight: 500, color: c.chalk, background: "transparent", border: `1px solid ${c.border}`, borderRadius: radius.md, padding: "12px 20px", cursor: "pointer", transition: "background 0.15s ease" }}>Cancel</button>
-                <button className="cpr-tap" onClick={handleSave} disabled={!canSave}
-                  onMouseEnter={(e) => { if (canSave) e.currentTarget.style.filter = "brightness(1.08)"; }} onMouseLeave={(e) => (e.currentTarget.style.filter = "none")}
-                  style={{ flex: 1, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 7, fontFamily: font.ui, fontSize: 13.5, fontWeight: 600, background: canSave ? c.slate : c.border, color: canSave ? c.carbon : c.stone, border: "none", borderRadius: radius.md, padding: "12px 24px", cursor: canSave ? "pointer" : "not-allowed", boxShadow: canSave ? shadow.sm : "none", transition: "filter 0.15s ease" }}>
+                <Button className="cpr-tap" variant="outline" onClick={() => { setShowForm(false); resetForm(); }}
+                  style={{ fontFamily: font.ui, fontSize: 13.5, padding: "12px 20px" }}>Cancel</Button>
+                <Button className="cpr-tap" onClick={handleSave} disabled={!canSave}
+                  style={{ flex: 1, fontFamily: font.ui, fontSize: 13.5, padding: "12px 24px", boxShadow: canSave ? shadow.sm : "none" }}>
                   {saving ? "Saving…" : editingId ? "Save changes" : (<><Icon size={15}>{I.plus}</Icon> Add interview</>)}
-                </button>
+                </Button>
               </div>
             </div>
           </div>
@@ -1059,9 +1058,9 @@ export default function CalendarPage() {
 
                 {/* actions */}
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap", borderTop: `1px solid ${c.borderSubtle}`, marginTop: sp.lg, paddingTop: sp.md }}>
-                  <button className="cpr-tap" onClick={() => startMock(focused)} style={{ display: "inline-flex", alignItems: "center", gap: 5, background: c.slate, color: c.carbon, border: "none", borderRadius: radius.sm, padding: "8px 14px", fontFamily: font.ui, fontSize: 12, fontWeight: 600, cursor: "pointer", boxShadow: shadow.sm }}>
+                  <Button className="cpr-tap" size="sm" onClick={() => startMock(focused)} style={{ fontFamily: font.ui, boxShadow: shadow.sm }}>
                     <Icon size={13}>{I.play}</Icon> {practiceLabel}
-                  </button>
+                  </Button>
                   <div style={{ position: "relative" }}>
                     <button className="cpr-tap" onClick={() => handleExportICS(focused)} style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "transparent", color: c.chalk, border: `1px solid ${c.border}`, borderRadius: radius.sm, padding: "8px 12px", fontFamily: font.ui, fontSize: 12, fontWeight: 500, cursor: "pointer" }}>
                       <Icon size={13}>{I.download}</Icon> Export .ics
@@ -1094,9 +1093,9 @@ export default function CalendarPage() {
               <p style={{ fontSize: 13, color: c.chalk, margin: "0 auto 18px", maxWidth: 360, lineHeight: 1.5 }}>
                 Add your interview schedule to get countdown reminders and an adaptive Prep Runway of mock sessions.
               </p>
-              <button className="cpr-tap" onClick={openNewForm} style={{ display: "inline-flex", alignItems: "center", gap: 7, background: c.slate, color: c.carbon, border: "none", borderRadius: radius.md, padding: "11px 20px", fontFamily: font.ui, fontSize: 13, fontWeight: 600, cursor: "pointer", boxShadow: shadow.sm }}>
+              <Button className="cpr-tap" onClick={openNewForm} style={{ fontFamily: font.ui, boxShadow: shadow.sm }}>
                 <Icon size={15}>{I.plus}</Icon> Add your first interview
-              </button>
+              </Button>
             </Card>
           )}
 

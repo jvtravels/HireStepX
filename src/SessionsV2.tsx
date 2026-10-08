@@ -189,14 +189,10 @@ function PageHeader({ onStartSession }: { onStartSession: () => void }) {
       <Button
         onClick={onStartSession}
         style={{
-          background: T.indigo,
-          color: T.white,
-          borderRadius: 8,
           padding: "12px 20px",
           height: 44,
           gap: 8,
           fontSize: 15,
-          fontWeight: 600,
           boxShadow: `0px 2px 4px color-mix(in srgb, ${T.indigo} 20%, transparent)`,
         }}
       >
@@ -525,9 +521,7 @@ function SessionsEmptyState({ onStartSession }: { onStartSession: () => void }) 
         </p>
         <Button
           onClick={onStartSession}
-          style={{ background: T.indigo, color: T.white, fontFamily: font.ui, fontSize: 14, fontWeight: 600, gap: 8, height: 44, borderRadius: 8, transition: `background ${dur.instant} ${ease.snap}` }}
-          onMouseEnter={(e) => { e.currentTarget.style.background = T.indigoDeep; }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = T.indigo; }}
+          style={{ fontFamily: font.ui, fontSize: 14, gap: 8, height: 44 }}
         >
           <PlusIcon size={16} aria-hidden="true" />
           Start session

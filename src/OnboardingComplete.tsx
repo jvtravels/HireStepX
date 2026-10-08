@@ -328,24 +328,15 @@ export default function OnboardingComplete() {
 
           {/* CTAs */}
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, animation: "obcFadeIn 0.5s ease 0.8s both" }}>
-            <button
+            <Button
               onClick={() => sessionCount >= FREE_SESSION_LIMIT ? router.push("/dashboard?upgrade=1") : router.push("/session/new")}
               className="shimmer-btn"
-              style={{
-                fontFamily: font.ui, fontSize: 15, fontWeight: 600,
-                padding: "16px 44px", borderRadius: 10, border: "none",
-                background: `linear-gradient(135deg, ${T.indigo}, ${T.indigoDeep})`,
-                color: c.obsidian, cursor: "pointer",
-                transition: "all 0.25s ease",
-                display: "inline-flex", alignItems: "center", gap: 10,
-                boxShadow: "0 8px 32px rgba(49,46,129,0.25)",
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 12px 40px rgba(49,46,129,0.35)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 8px 32px rgba(49,46,129,0.25)"; }}
+              size="cta"
+              style={{ fontFamily: font.ui }}
             >
               <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polygon points="5,3 19,12 5,21"/></svg>
               {sessionCount >= FREE_SESSION_LIMIT ? "Upgrade to Keep Practicing" : `Continue to Session ${sessionCount + 1}`}
-            </button>
+            </Button>
             <Button
               type="button"
               variant="link"

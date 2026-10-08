@@ -13,6 +13,7 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { c, font } from "@/tokens";
+import { Button } from "@/components/ui/button";
 import { tokens as T } from "@/auth/_tokens";
 import { CopyEmailLink } from "@/_CopyEmailLink";
 
@@ -101,23 +102,9 @@ export default function GlobalRouteError({
         </p>
       ) : null}
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "center" }}>
-        <button
-          type="button"
-          onClick={reset}
-          style={{
-            fontFamily: font.ui,
-            fontSize: 14,
-            fontWeight: 500,
-            color: c.obsidian,
-            background: T.indigo,
-            padding: "12px 28px",
-            borderRadius: 8,
-            border: "none",
-            cursor: "pointer",
-          }}
-        >
+        <Button type="button" onClick={reset} style={{ fontFamily: font.ui, padding: "12px 28px" }}>
           Try again
-        </button>
+        </Button>
         <Link
           href="/"
           style={{

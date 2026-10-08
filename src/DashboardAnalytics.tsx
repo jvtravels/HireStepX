@@ -182,14 +182,10 @@ export default function AnalyticsPage() {
           Complete sessions to see analytics. Score trends, skill breakdowns, performance by interview type, and more will appear here.
         </p>
         {handleStartSession && (
-          <button onClick={handleStartSession} className="shimmer-btn"
-            style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 500, padding: "12px 32px", borderRadius: 8, border: "none", background: T.indigo, color: c.obsidian, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 8 }}
-            onMouseEnter={(e) => { e.currentTarget.style.filter = "brightness(1.15)"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.filter = "brightness(1)"; }}
-          >
+          <Button onClick={handleStartSession} className="shimmer-btn" size="cta" style={{ fontFamily: font.ui }}>
             <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="5,3 19,12 5,21" /></svg>
             Start Your First Session
-          </button>
+          </Button>
         )}
       </div>
     );

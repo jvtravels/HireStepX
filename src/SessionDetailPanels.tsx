@@ -137,7 +137,7 @@ export const SessionNotFound = memo(function SessionNotFound({ onNavigate }: { o
     <div style={{ minHeight: "100vh", background: c.obsidian, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", fontFamily: font.ui }}>
       <p style={{ fontSize: 18, color: c.ivory, marginBottom: 8 }}>Session not found</p>
       <p style={{ fontSize: 13, color: c.stone, marginBottom: 24 }}>This session may have been deleted or the link is invalid.</p>
-      <Button onClick={onNavigate} style={{ background: c.slate, color: c.obsidian, fontWeight: 600 }}>
+      <Button onClick={onNavigate}>
         Back to Sessions
       </Button>
     </div>
@@ -617,7 +617,7 @@ export const FeedbackSection = memo(function FeedbackSection({ feedbackRating, f
             onBlur={(e) => { e.currentTarget.style.borderColor = c.border; }}
             onKeyDown={(e) => { if (e.key === "Enter") onSubmitComment(); }}
           />
-          <Button onClick={onSubmitComment} style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 600, background: c.slate, color: c.obsidian }}>
+          <Button onClick={onSubmitComment} style={{ fontFamily: font.ui, fontSize: 11 }}>
             Save
           </Button>
         </div>
@@ -653,7 +653,7 @@ export const WhatsNext = memo(function WhatsNext({ session, skillEntries, isFree
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
         {weakest && (
           <Button onClick={() => onNavigate(`/session/new?type=${session.type}&focus=${weakest.name.toLowerCase().replace(/\s+/g, "-")}`)}
-            style={{ fontFamily: font.ui, fontWeight: 600, background: `linear-gradient(135deg, ${c.slate}, ${T.indigoDeep})`, color: c.obsidian, boxShadow: shadow.sm }}>
+            style={{ fontFamily: font.ui, boxShadow: shadow.sm }}>
             <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polygon points="5,3 19,12 5,21"/></svg>
             Practice {weakest.name}
           </Button>

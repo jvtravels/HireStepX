@@ -114,16 +114,10 @@ export function DashboardHeader({
       ) : (
         <Button
           type="button"
+          size="cta"
           onClick={onConnectCalendar}
           disabled={googleSyncStatus === "syncing" || hasGoogleToken}
-          style={{
-            flexShrink: 0, display: "inline-flex", alignItems: "center", gap: 8,
-            padding: "14px 28px", borderRadius: 9999,
-            background: t.indigo, color: t.white, border: "none",
-            fontFamily: f.sans, fontSize: textSize.lg, fontWeight: 700,
-            cursor: googleSyncStatus === "syncing" ? "default" : "pointer",
-            opacity: googleSyncStatus === "syncing" ? 0.7 : 1,
-          }}
+          style={{ flexShrink: 0, fontFamily: f.sans }}
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
             <rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" />
@@ -384,12 +378,9 @@ export function NextMoveCard({ isFirstTimer, weakestSkillKey, ctaLabel, onStart,
       </div>
       <Button
         type="button"
+        size="cta"
         onClick={onStart}
-        style={{
-          marginTop: 4, width: "100%", padding: "14px 0", borderRadius: 9999,
-          background: t.indigo, color: t.white, border: "none",
-          fontFamily: f.sans, fontSize: textSize.lg, fontWeight: 700, cursor: "pointer",
-        }}
+        style={{ marginTop: 4, width: "100%", fontFamily: f.sans }}
       >
         {ctaLabel} →
       </Button>
@@ -586,12 +577,9 @@ export function NoSessionsEmptyState({ onStart }: { onStart: () => void }) {
       </p>
       <Button
         type="button"
+        size="cta"
         onClick={onStart}
-        style={{
-          marginTop: 6, padding: "14px 28px", borderRadius: 9999,
-          background: t.indigo, color: t.white, border: "none",
-          fontFamily: f.sans, fontSize: textSize.lg, fontWeight: 700, cursor: "pointer",
-        }}
+        style={{ marginTop: 6, fontFamily: f.sans }}
       >
         Start Your First Session
       </Button>
