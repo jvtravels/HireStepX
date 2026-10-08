@@ -1285,7 +1285,7 @@ export default function RequirementDetailPage() {
       <div style={{ display: "flex", alignItems: "flex-start", gap: 16, flexWrap: "wrap" }}>
       <Card style={{ flex: "3 1 560px", boxShadow: "none" }}>
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
-          <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
             <div
               style={{
                 width: 48,
@@ -1588,7 +1588,6 @@ export default function RequirementDetailPage() {
             { Icon: Building2Icon, label: "Industry", value: requirement.preferredIndustry || "Not specified" },
             { Icon: LayoutGridIcon, label: "Domain", value: requirement.preferredDomain || "Not specified" },
             { Icon: CalendarIcon, label: "Availability", value: requirement.availability || "Not specified" },
-            { Icon: GraduationCapIcon, label: "Experience", value: requirement.relevantExperience || "Not specified" },
           ].map(({ Icon, label, value }) => (
             <div key={label} style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
               <div style={{ width: 28, height: 28, borderRadius: 8, background: t.creamSoft, color: t.inkFaint, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
@@ -1691,7 +1690,7 @@ export default function RequirementDetailPage() {
                     )}
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="start">
+                <DropdownMenuContent align="end">
                   <DropdownMenuLabel>Contact</DropdownMenuLabel>
                   <DropdownMenuRadioGroup value={contactFilter} onValueChange={(v) => setContactFilter(v as ContactFilter)}>
                     {contactFilterOptions.map((o) => (
