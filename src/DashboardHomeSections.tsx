@@ -301,6 +301,18 @@ const NEXT_MOVE_COPY: Record<string, { description: string; tags: [string, strin
     description: "Numbers and specifics make a claim credible. This session drills backing up every answer with real detail.",
     tags: ["Quantified results", "Named tools/metrics", "Concrete examples"],
   },
+  adaptability: {
+    description: "Pivoting cleanly when a follow-up catches you off guard shows real command of the material. This session drills staying flexible under pressure.",
+    tags: ["Handles follow-ups", "Flexible framing", "No rigid scripts"],
+  },
+  businessImpact: {
+    description: "Tying your work to revenue, efficiency, or growth turns a feature story into a business story. This session drills that connection.",
+    tags: ["Revenue/efficiency framing", "Quantified outcomes", "Business-first narrative"],
+  },
+  answerCompleteness: {
+    description: "Leaving part of a multi-part question unanswered costs easy points. This session drills covering every angle asked.",
+    tags: ["Full question coverage", "No dropped sub-asks", "Structured completeness"],
+  },
   anchoring: {
     description: "Anchoring the number first sets the frame for the entire negotiation. This session drills opening with confidence.",
     tags: ["Opening with a number", "Market-rate framing", "Holding your position"],

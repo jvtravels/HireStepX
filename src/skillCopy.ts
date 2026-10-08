@@ -37,6 +37,9 @@ const SKILL_VOCAB: Record<string, Phrasings> = {
   problemSolving:      { strength: "Strong problem-solving instinct", gap: "Break problems down step by step" },
   confidence:          { strength: "Answered with confidence",       gap: "Sound more certain in answers" },
   specificity:         { strength: "Backed claims with specifics",   gap: "Add numbers and specifics" },
+  adaptability:        { strength: "Adapted well to follow-ups",     gap: "Adapt faster to follow-ups" },
+  businessImpact:      { strength: "Connected work to business outcomes", gap: "Connect your work to business outcomes" },
+  answerCompleteness:  { strength: "Fully addressed every part asked", gap: "Address every part of the question" },
 
   // ── Common analyzer keys (in case evaluator widens vocabulary) ──
   empathy:             { strength: "Showed real user empathy",       gap: "Lead with user empathy" },
@@ -68,6 +71,9 @@ const TOPIC_VOCAB: Record<string, string> = {
   problemSolving:     "Problem-solving approach",
   confidence:         "Answer confidence",
   specificity:        "Specific examples",
+  adaptability:       "Follow-up adaptability",
+  businessImpact:     "Business impact",
+  answerCompleteness: "Answer completeness",
 
   empathy:            "User empathy",
   metricsLiteracy:    "Metrics literacy",
