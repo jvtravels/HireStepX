@@ -823,13 +823,9 @@ export function computePracticeCoverage(skills: SkillData[]): PracticeCoverage {
 
 /* ─── Evidence Capabilities ───
  * A fixed set of 4 capabilities a candidate can build verified proof of
- * through practice. "Verified" is a new, real threshold (not previously
- * tracked anywhere): the skill-based capabilities need 2+ sessions scoring
- * 70+ on the underlying competency — a single good run could be a fluke,
- * two can't both be. Salary Negotiation is a dedicated, less-frequent
- * session focus, so one 70+ run is enough evidence. "Decision Making"
- * reuses the problemSolving rubric key as its real-data proxy — the
- * evaluator doesn't emit a separate decisionMaking key today. */
+ * through practice. "Verified" means 2+ sessions scoring 70+ on the
+ * underlying competency, applied consistently across all four rows —
+ * a single good run could be a fluke, two can't both be. */
 export interface EvidenceCapability {
   key: string;
   label: string;
@@ -855,17 +851,17 @@ export function computeEvidenceCapabilities(sessions: RealSession[]): EvidenceCa
       .filter(s => s.focus === focus && s.score >= EVIDENCE_VERIFY_THRESHOLD)
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-  const build = (label: string, key: string, hits: RealSession[], minSessions: number): EvidenceCapability => ({
+  const build = (label: string, key: string, hits: RealSession[]): EvidenceCapability => ({
     key, label,
-    verified: hits.length >= minSessions,
-    verifiedDateLabel: hits.length >= minSessions ? formatVerifiedDate(hits[0].date) : null,
+    verified: hits.length >= EVIDENCE_VERIFY_MIN_SESSIONS,
+    verifiedDateLabel: hits.length >= EVIDENCE_VERIFY_MIN_SESSIONS ? formatVerifiedDate(hits[0].date) : null,
   });
 
   return [
-    build("Communication", "communication", bySkill("communication"), EVIDENCE_VERIFY_MIN_SESSIONS),
-    build("Salary Negotiation", "salary-negotiation", byFocus("salary-negotiation"), 1),
-    build("Decision Making", "decisionMaking", bySkill("problemSolving"), EVIDENCE_VERIFY_MIN_SESSIONS),
-    build("Leadership", "leadership", bySkill("leadership"), EVIDENCE_VERIFY_MIN_SESSIONS),
+    build("Communication", "communication", bySkill("communication")),
+    build("Salary Negotiation", "salary-negotiation", byFocus("salary-negotiation")),
+    build("Problem Solving", "problemSolving", bySkill("problemSolving")),
+    build("Leadership", "leadership", bySkill("leadership")),
   ];
 }
 
