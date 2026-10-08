@@ -300,7 +300,18 @@ export default function ResumeV2Screen() {
     if (phase === "extracting" || phase === "analyzing") {
       body = <ResumeAnalyzingCard phase={phase} />;
     } else {
-      body = <ResumeEmptyState onUpload={triggerUpload} errorMsg={errorMsg} />;
+      body = (
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
+          <ResumeEmptyState onUpload={triggerUpload} errorMsg={errorMsg} />
+          <SectionCard style={{ maxWidth: 460, width: "100%" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <LinkIcon size={16} color={T.coal} aria-hidden="true" />
+              <h2 style={{ fontFamily: font.ui, fontSize: S.lg, fontWeight: 700, color: T.coal, margin: 0 }}>Portfolio & Work Samples</h2>
+            </div>
+            <PortfolioLinksSection portfolioLinks={user?.portfolioLinks} authUpdateUser={authUpdateUser} showToast={showToast} />
+          </SectionCard>
+        </div>
+      );
     }
   } else {
     const qualityScore = profile.resumeScore ?? 0;
@@ -622,6 +633,22 @@ export default function ResumeV2Screen() {
               ))}
             </div>
           )}
+
+          {/* Portfolio & work samples — anchors the left column so its
+              height tracks the right column's (Focus Areas / Practice
+              Focus / ATS / Skills / Practice next) instead of leaving a
+              column-height gap under Experience. */}
+          <SectionCard>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <LinkIcon size={16} color={T.coal} aria-hidden="true" />
+              <h2 style={{ fontFamily: font.ui, fontSize: S.xl, fontWeight: 700, color: T.coal, margin: 0 }}>Portfolio & Work Samples</h2>
+            </div>
+            <PortfolioLinksSection
+              portfolioLinks={user?.portfolioLinks}
+              authUpdateUser={authUpdateUser}
+              showToast={showToast}
+            />
+          </SectionCard>
         </div>
 
         <div style={{ flex: "1 1 420px", maxWidth: 550, display: "flex", flexDirection: "column", gap: 16 }}>
@@ -849,20 +876,7 @@ export default function ResumeV2Screen() {
     <TooltipProvider>
       <div style={{ display: "flex", flexDirection: "column", width: "100%", fontFamily: font.ui }}>
         <SkeletonReveal loading={authLoading} skeleton={<ResumeSkeleton />}>
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            {body}
-            <SectionCard>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <LinkIcon size={16} color={T.coal} aria-hidden="true" />
-                <h2 style={{ fontFamily: font.ui, fontSize: S.lg, fontWeight: 700, color: T.coal, margin: 0 }}>Portfolio & Work Samples</h2>
-              </div>
-              <PortfolioLinksSection
-                portfolioLinks={user?.portfolioLinks}
-                authUpdateUser={authUpdateUser}
-                showToast={showToast}
-              />
-            </SectionCard>
-          </div>
+          {body}
         </SkeletonReveal>
       </div>
     </TooltipProvider>
