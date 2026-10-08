@@ -14,7 +14,9 @@
 import { useMemo } from "react";
 import { tokens as T, fonts as F, textSize as S } from "./auth/_tokens";
 import { useAuth } from "./AuthContext";
+import { useDashboardUIActions } from "./DashboardContext";
 import { useResumeUpload, type ResumePhase } from "./useResumeUpload";
+import { PortfolioLinksSection } from "./settingsSections";
 import LoadingScreen from "./_LoadingScreen";
 import { SkeletonReveal } from "./SkeletonReveal";
 import { computeATSScore } from "./resumeAts";
@@ -44,6 +46,7 @@ import {
   FileUpIcon,
   SparklesIcon,
   XIcon,
+  LinkIcon,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -241,7 +244,8 @@ function ResumeEmptyState({ onUpload, errorMsg }: { onUpload: () => void; errorM
 /* ── Root ── */
 
 export default function ResumeV2Screen() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, updateUser: authUpdateUser } = useAuth();
+  const { showToast } = useDashboardUIActions();
   const {
     phase,
     profile,
@@ -845,7 +849,20 @@ export default function ResumeV2Screen() {
     <TooltipProvider>
       <div style={{ display: "flex", flexDirection: "column", width: "100%", fontFamily: font.ui }}>
         <SkeletonReveal loading={authLoading} skeleton={<ResumeSkeleton />}>
-          {body}
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            {body}
+            <SectionCard>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <LinkIcon size={16} color={T.coal} aria-hidden="true" />
+                <h2 style={{ fontFamily: font.ui, fontSize: S.lg, fontWeight: 700, color: T.coal, margin: 0 }}>Portfolio & Work Samples</h2>
+              </div>
+              <PortfolioLinksSection
+                portfolioLinks={user?.portfolioLinks}
+                authUpdateUser={authUpdateUser}
+                showToast={showToast}
+              />
+            </SectionCard>
+          </div>
         </SkeletonReveal>
       </div>
     </TooltipProvider>
