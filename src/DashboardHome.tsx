@@ -565,7 +565,7 @@ export default function DashboardHome() {
         </div>
         {sessions.hasData ? (
           <RecentSessionsTable
-            sessions={sessions.recentSessions}
+            sessions={sessions.recentSessions.slice(0, 5)}
             onOpen={(id) => openSession(id, "recent-sessions-table")}
           />
         ) : (
