@@ -1,10 +1,11 @@
 "use client";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { c, font, shadow } from "./tokens";
 import { tokens as T } from "./auth/_tokens";
 import { useDocTitle } from "./useDocTitle";
 import { useAuth } from "./AuthContext";
+import { markAnalyticsVisited } from "./dashboardHelpers";
 import { sessionTypes, scoreLabel, scoreLabelColor } from "./dashboardTypes";
 import { ScoreTrendChart, SkillRadar } from "./DashboardCharts";
 import { useDashboardSessions, useDashboardCore, useDashboardUIActions, useDashboardSubscription } from "./DashboardContext";
@@ -63,6 +64,9 @@ export default function AnalyticsPage() {
   const resumeProfile: ResumeProfile | undefined = isAiResume(user?.resumeData)
     ? user.resumeData
     : undefined;
+
+  useEffect(() => { markAnalyticsVisited(user?.id); }, [user?.id]);
+
   const {
     recentSessions: allSessions, skills: sk, scoreTrend: trend,
     readinessScore, currentStreak, overallStats, sessionsLoading,

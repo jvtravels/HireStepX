@@ -13,6 +13,24 @@
  */
 
 import { skillLabel } from "./skillCopy";
+import { sessionMinutesForFocus, questionCountForFocus } from "../data/session-length";
+
+/* Salary-negotiation rubric keys (interviewEvaluation.ts:86-94, mirrored in
+ * skillCopy.ts's SKILL_VOCAB comment) — the only skill group tied to a
+ * session focus other than Behavioral. Drives which focus's real
+ * minutes/question-count the Next Move card previews. */
+const SALARY_NEGOTIATION_SKILLS = new Set([
+  "anchoring", "packageThinking", "leverageUse", "concessionStrategy",
+  "closingTechnique", "composure", "professionalTone",
+]);
+
+/** GAP_CTA_MAP's `sessionFocus` values (session-type keys) → the display
+ *  name data/session-length.ts's table is keyed by. */
+const GAP_FOCUS_LABEL: Record<string, string> = {
+  "hr-round": "HR Round",
+  "salary-negotiation": "Salary Negotiation",
+  "campus-placement": "Campus Placement",
+};
 
 export interface SkillLike {
   name: string;
@@ -86,6 +104,16 @@ export interface NextMove {
    * Dashboard subtitle uses this to say the right session type name.
    */
   coachingSessionFocus: string | null;
+  /**
+   * Real minutes + question count for the session the CTA will launch —
+   * from data/session-length.ts, the same table SessionSetup.tsx and
+   * generate-questions.ts use, so the card never shows a guessed length.
+   * Resolved from coachingSessionFocus when a gap matched, from the
+   * salary-negotiation skill group when the weakest skill belongs to it,
+   * else Behavioral (SessionSetup's own cold-start default).
+   */
+  sessionMinutes: number;
+  sessionQuestionCount: number;
 }
 
 /**
@@ -277,6 +305,14 @@ export function pickNextMove(input: NextMoveInput): NextMove {
     ? (matchedGap.cta.sessionFocus ?? "hr-round")
     : null;
 
+  const practiceFocusLabel = coachingSessionFocus
+    ? (GAP_FOCUS_LABEL[coachingSessionFocus] ?? "Behavioral")
+    : weakestSkillName && SALARY_NEGOTIATION_SKILLS.has(weakestSkillName)
+      ? "Salary Negotiation"
+      : "Behavioral";
+  const sessionMinutes = sessionMinutesForFocus(practiceFocusLabel);
+  const sessionQuestionCount = questionCountForFocus(practiceFocusLabel);
+
   const chips: NextMoveChip[] = [];
   if (currentStreak > 0) {
     chips.push({
@@ -299,5 +335,7 @@ export function pickNextMove(input: NextMoveInput): NextMove {
     nextStreakMilestone,
     coachingFocus,
     coachingSessionFocus,
+    sessionMinutes,
+    sessionQuestionCount,
   };
 }

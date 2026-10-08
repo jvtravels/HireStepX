@@ -79,6 +79,10 @@ function mapSessionRecord(s: SessionRecord): RealSession {
        report_json.focusMetrics. Empty/undefined for older rows → the
        card renders no instrument strip. */
     focusMetrics: s.report_json?.focusMetrics ?? undefined,
+    /* Real per-question scores, persisted in report_json.perQuestion.
+       Undefined until the session's report has been generated at least
+       once — realSessionsToDashboard falls back to the overall score. */
+    perQuestion: s.report_json?.perQuestion ?? undefined,
     /* Kernel-aware negotiation metrics. The Supabase column type
        is jsonb so we get an unknown-shaped object back; the
        RealSession field is strictly typed. Cast is intentional —

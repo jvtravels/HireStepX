@@ -36,6 +36,20 @@ export interface InterviewEvent {
 
 export const EVENTS_KEY = "hirestepx_events";
 
+/* ─── "Visited analytics" flag (Getting Started card, 4th step) ───
+   Written on mount by the analytics page itself (DashboardAnalytics.tsx /
+   readinessIndex/ReadinessIndex.tsx) so the dashboard's Getting Started
+   card can show a real completed step instead of a permanently-false one. */
+export function markAnalyticsVisited(userId: string | undefined) {
+  if (!userId) return;
+  try { localStorage.setItem(`hirestepx_visited_analytics_${userId}`, "1"); } catch { /* expected: localStorage may be unavailable */ }
+}
+
+export function hasVisitedAnalytics(userId: string | undefined): boolean {
+  if (!userId) return false;
+  try { return localStorage.getItem(`hirestepx_visited_analytics_${userId}`) === "1"; } catch { return false; }
+}
+
 export function loadEvents(): InterviewEvent[] {
   try {
     const raw = localStorage.getItem(EVENTS_KEY);

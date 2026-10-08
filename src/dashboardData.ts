@@ -77,6 +77,10 @@ export interface RealSession {
   /** Per-focus signature strip (mvp-9+), read out of report_json.focusMetrics.
    *  Empty/undefined for older sessions → the card shows no strip. */
   focusMetrics?: SessionFocusMetric[];
+  /** Real per-question scores from the evaluator's cached report
+   *  (report_json.perQuestion). Undefined until the session's report has
+   *  been generated at least once. */
+  perQuestion?: Array<{ question: string; score: number; explanation?: string }>;
   /** Kernel-aware negotiation metrics (salary-neg sessions). Loaded
    *  from either localStorage or Supabase column `negotiation_metrics`. */
   negotiationMetrics?: {
@@ -250,11 +254,20 @@ function realSessionsToDashboard(realSessions: RealSession[], targetRole: string
       focusMetrics: rs.focusMetrics,
       feedback: generateFeedback(type, rs.score),
       transcript: [] as { speaker: string; text: string; scoreNote?: string }[],
-      questionScores: Array.from({ length: rs.questions || 3 }, (_, qi) => ({
-        question: `Question ${qi + 1}`,
-        score: Math.max(60, Math.min(100, rs.score + Math.floor((Math.random() - 0.5) * 16))),
-        notes: qi === 0 ? "Strong opening" : qi === rs.questions - 1 ? "Good closing" : "Solid answer",
-      })),
+      /* Real per-question scores from the cached report when available
+         (report_json.perQuestion). Falls back to the session's overall
+         score with no note — not a random guess — for sessions whose
+         report hasn't been generated yet. Length tracks the real
+         question count so SessionsV2's question-count column and
+         overallStats.questionsAnswered stay accurate either way. */
+      questionScores: Array.from({ length: rs.questions || 0 }, (_, qi) => {
+        const real = rs.perQuestion?.[qi];
+        return {
+          question: real?.question || `Question ${qi + 1}`,
+          score: typeof real?.score === "number" ? real.score : rs.score,
+          notes: real?.explanation || "",
+        };
+      }),
       negotiationMetrics: rs.negotiationMetrics,
     };
   });

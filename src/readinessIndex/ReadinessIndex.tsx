@@ -14,6 +14,8 @@ import { useDashboardSubscription, useDashboardUI } from "../DashboardContext";
 import { PaywallGate } from "../dashboardComponents";
 import { authHeaders } from "../supabase";
 import { captureClientEvent } from "../posthogClient";
+import { useAuth } from "../AuthContext";
+import { markAnalyticsVisited } from "../dashboardHelpers";
 import type { Fixture, RangeKeyLocal as RangeKey, Pillar } from "./types";
 import { SHEET, BAND_META } from "./ui";
 import {
@@ -294,11 +296,13 @@ function useReadinessPayload(): { state: FetchState; reload: () => void } {
 /* ── Public surface ────────────────────────────────────────────── */
 
 export function ReadinessIndex() {
+  const { user } = useAuth();
   const { isFree } = useDashboardSubscription();
   const { setShowUpgradeModal, isMobile } = useDashboardUI();
   const { state, reload } = useReadinessPayload();
 
   React.useEffect(() => { if (isFree) captureClientEvent("analytics_progate"); }, [isFree]);
+  React.useEffect(() => { markAnalyticsVisited(user?.id); }, [user?.id]);
 
   if (isFree) return <PaywallGate feature="The Readiness Index" onUpgrade={() => setShowUpgradeModal(true)} />;
   if (state.status === "loading") return <LoadingState />;

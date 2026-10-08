@@ -183,6 +183,9 @@ export interface SessionRecord {
        itself is null. */
     wins?: Array<{ text: string }> | null;
     fixes?: Array<{ text: string }> | null;
+    /* Real per-question breakdown — read by the dashboard card instead of
+       fabricating placeholder scores. Absent until the report is generated. */
+    perQuestion?: Array<{ question: string; score: number; explanation?: string }> | null;
   } & Record<string, unknown> | null;
   /* Schema version the evaluator was on when the report was written.
      Surfaced so the client can short-circuit /api/evaluate-session

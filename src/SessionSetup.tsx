@@ -15,6 +15,7 @@ import { profileFromRole, inferRoleFamily, inferSeniority, type InterviewFocus }
 import { detectRoleCompanyFit } from "./_role-company-fit";
 import { getCompanyTier } from "../data/company-tiers";
 import { matchRoleKey } from "../data/salaries";
+import { sessionMinutesForFocus } from "../data/session-length";
 import { Button } from "@/components/ui/button";
 import { Wordmark } from "./auth/_fields";
 import { AUTH_STYLES } from "./auth/_styles";
@@ -838,20 +839,10 @@ export default function SessionSetup() {
        - Panel: 3 interviewers, each gets a turn → longest
      The engine still computes step-count from the script — these
      minutes only drive the time-pill copy + the `&length=` URL param
-     (analytics + mini-mode threshold at "10m"). */
-  const FOCUS_MINUTES: Record<string, number> = {
-    "Behavioral": 15,
-    "Strategic": 20,
-    "Technical Leadership": 20,
-    "Case Study": 25,
-    "Salary Negotiation": 12,
-    "Panel Interview": 25,
-    "Campus Placement": 15,
-    "HR Round": 10,
-    "Management": 18,
-    "Government / PSU": 18,
-  };
-  const sessionMinutes = FOCUS_MINUTES[interviewFocus[0]] ?? 15;
+     (analytics + mini-mode threshold at "10m"). Table lives in
+     data/session-length.ts so other surfaces (dashboard Next Move card)
+     can preview the same real number instead of guessing. */
+  const sessionMinutes = sessionMinutesForFocus(interviewFocus[0]);
   const SESSION_LENGTH = `${sessionMinutes}m`;
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const isFreeUser = !user?.subscriptionTier || user.subscriptionTier === "free";

@@ -22,7 +22,7 @@ import { captureClientEvent } from "./posthogClient";
 import { tokens as T, fonts as F } from "./auth/_tokens";
 import { computeReadinessGap } from "./dashboardData";
 import { isAiResume } from "./resumeParser";
-import { daysUntilEvent } from "./dashboardHelpers";
+import { daysUntilEvent, hasVisitedAnalytics } from "./dashboardHelpers";
 import HiringActivityCard from "./HiringActivityCard";
 import { authHeaders } from "./supabase";
 import { apiFetch } from "./apiClient";
@@ -342,6 +342,12 @@ export default function DashboardHome() {
     return emailLocal || "there";
   }, [user]);
 
+  /* Read after mount (not during render) so SSR and the client's first
+     paint agree — the flag only exists in localStorage, which is undefined
+     on the server. */
+  const [visitedAnalytics, setVisitedAnalytics] = useState(false);
+  useEffect(() => { setVisitedAnalytics(hasVisitedAnalytics(user?.id)); }, [user?.id]);
+
   const resumeData = user?.resumeData;
   const hasResume = !!resumeData;
   const resumeScore = isAiResume(resumeData) ? resumeData.resumeScore ?? null : null;
@@ -506,6 +512,8 @@ export default function DashboardHome() {
               weakestSkillKey={nextMove.weakestSkillName}
               ctaLabel={nextMoveCtaLabel}
               onStart={nextMoveOnStart}
+              sessionMinutes={nextMove.sessionMinutes}
+              sessionQuestionCount={nextMove.sessionQuestionCount}
             />
           </div>
           <div style={{ flex: "2 1 280px", minWidth: 260 }}>
@@ -522,6 +530,8 @@ export default function DashboardHome() {
           weakestSkillKey={nextMove.weakestSkillName}
           ctaLabel={nextMoveCtaLabel}
           onStart={nextMoveOnStart}
+          sessionMinutes={nextMove.sessionMinutes}
+          sessionQuestionCount={nextMove.sessionQuestionCount}
         />
       )}
 
@@ -543,6 +553,7 @@ export default function DashboardHome() {
               hasResume={hasResume}
               hasTargetRole={!!user?.targetRole}
               hasFirstSession={sessions.hasData}
+              hasVisitedAnalytics={visitedAnalytics}
             />
           </div>
           <div style={{ flex: "3 1 380px", minWidth: 280 }}>

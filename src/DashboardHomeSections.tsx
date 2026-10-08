@@ -334,11 +334,15 @@ const NEXT_MOVE_COPY: Record<string, { description: string; tags: [string, strin
   },
 };
 
-export function NextMoveCard({ isFirstTimer, weakestSkillKey, ctaLabel, onStart }: {
+export function NextMoveCard({ isFirstTimer, weakestSkillKey, ctaLabel, onStart, sessionMinutes, sessionQuestionCount }: {
   isFirstTimer: boolean;
   weakestSkillKey: string | null;
   ctaLabel: string;
   onStart: () => void;
+  /** Real minutes + question count for the session this CTA launches
+   *  (data/session-length.ts via nextMove.ts) — not a guessed placeholder. */
+  sessionMinutes: number;
+  sessionQuestionCount: number;
 }) {
   const key = weakestSkillKey && NEXT_MOVE_COPY[weakestSkillKey] ? weakestSkillKey : "communication";
   const copy = NEXT_MOVE_COPY[key];
@@ -360,7 +364,9 @@ export function NextMoveCard({ isFirstTimer, weakestSkillKey, ctaLabel, onStart 
             {isFirstTimer ? "Your First Step" : "Your Next Move"}
           </span>
         </div>
-        <span style={{ fontFamily: f.sans, fontSize: textSize.sm, color: t.inkFaint }}>~15 min · 8 questions</span>
+        <span style={{ fontFamily: f.sans, fontSize: textSize.sm, color: t.inkFaint }}>
+          ~{sessionMinutes} min · {sessionQuestionCount} questions
+        </span>
       </div>
       <h2 id="dh-next-heading" style={{ fontFamily: f.sans, fontSize: textSize["2xl"], fontWeight: 700, color: t.coal, margin: 0 }}>
         {title}
@@ -467,14 +473,17 @@ export function EvidenceCapabilitiesCard({ capabilities }: { capabilities: Evide
 
 /* ─── Getting Started stepper (empty-state only) ─── */
 
-export function GettingStartedCard({ hasResume, hasTargetRole, hasFirstSession }: {
+export function GettingStartedCard({ hasResume, hasTargetRole, hasFirstSession, hasVisitedAnalytics }: {
   hasResume: boolean; hasTargetRole: boolean; hasFirstSession: boolean;
+  /** Real localStorage flag (dashboardHelpers.ts) written on mount by the
+   *  analytics page itself — not a permanently-false placeholder. */
+  hasVisitedAnalytics: boolean;
 }) {
   const steps = [
     { label: "Upload your resume", done: hasResume },
     { label: "Set your target role", done: hasTargetRole },
     { label: "Complete your first session", done: hasFirstSession },
-    { label: "Review your analytics", done: false },
+    { label: "Review your analytics", done: hasVisitedAnalytics },
   ];
   const currentIndex = steps.findIndex((s) => !s.done);
 
