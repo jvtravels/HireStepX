@@ -465,7 +465,7 @@ export default function DashboardHome() {
       style={{
         minHeight: "100%", flexShrink: 0, fontFamily: f.sans, color: t.coal,
         background: t.white, border: `1px solid ${t.line}`, borderRadius: 16,
-        display: "flex", flexDirection: "column", gap: 24, padding: 24,
+        display: "flex", flexDirection: "column", gap: 24, padding: 16,
         margin: "0 0 64px",
       }}
     >
