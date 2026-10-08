@@ -428,19 +428,38 @@ function CandidateTableRow({
           />
         </TableCell>
       )}
-      <TableCell style={tdSortable}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+      <TableCell style={{ ...tdSortable, maxWidth: 320 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
           <CandidateAvatar name={candidate.name} unlocked={candidate.unlocked} />
-          <div>
+          <div style={{ minWidth: 0, overflow: "hidden" }}>
             <Link
               href={`/employer/requirements/${requirementId}/candidates/${candidate.id}`}
-              style={{ fontWeight: 500, fontSize: textSize.md, color: t.coal, textDecoration: "none" }}
+              style={{
+                display: "block",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+                fontWeight: 500,
+                fontSize: textSize.md,
+                color: t.coal,
+                textDecoration: "none",
+              }}
               onMouseOver={(e) => { e.currentTarget.style.textDecoration = "underline"; }}
               onMouseOut={(e) => { e.currentTarget.style.textDecoration = "none"; }}
             >
               {candidate.unlocked ? candidate.name : `Candidate #${candidate.id.slice(0, 6)}`}
             </Link>
-            <div style={{ fontSize: textSize.base, color: t.inkFaint, marginTop: 2 }}>
+            <div
+              style={{
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+                fontSize: textSize.base,
+                color: t.inkFaint,
+                marginTop: 2,
+              }}
+              title={`${candidate.targetRole} · ${candidate.city}`}
+            >
               {candidate.targetRole} · {candidate.city}
             </div>
           </div>
@@ -1495,11 +1514,11 @@ export default function RequirementDetailPage() {
         <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginTop: 14, paddingTop: 14, borderTop: `1px solid ${t.line}` }}>
           {dueDaysLeft != null && (
             <span style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: f.sans, fontSize: 12, color: dueDaysLeft < 0 ? t.error : t.inkFaint, fontWeight: dueDaysLeft < 0 ? 600 : 400 }}>
-              <ClockIcon size={13} aria-hidden="true" /> {dueDaysLeft < 0 ? `${Math.abs(dueDaysLeft)}d overdue` : dueDaysLeft === 0 ? "Due today" : `${dueDaysLeft}d until due`}
+              <ClockIcon size={13} aria-hidden="true" /> {dueDaysLeft < 0 ? "Due Overdue" : dueDaysLeft === 0 ? "Due today" : `Due ${dueDaysLeft} ${dueDaysLeft === 1 ? "day" : "days"} left`}
             </span>
           )}
           <span style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: f.sans, fontSize: 12, color: t.inkFaint }}>
-            <BuildingIcon size={13} aria-hidden="true" /> Posted {requirement.createdAt}
+            <BuildingIcon size={13} aria-hidden="true" /> Posted {timeAgoLabel(requirement.createdAt)}
           </span>
           {requirement.lastMatchedAt && (
             <span role="status" aria-live="polite" style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: f.sans, fontSize: 12, color: t.inkFaint }}>
@@ -1613,27 +1632,10 @@ export default function RequirementDetailPage() {
         </div>
 
         <div style={{ marginTop: 16, paddingTop: 14, borderTop: `1px solid ${t.line}` }}>
-          <span style={{ fontFamily: f.sans, fontSize: 11, color: t.inkFaint }}>Required skills</span>
+          <span style={{ fontFamily: f.sans, fontSize: 15, fontWeight: 600, color: t.coal }}>Required skills</span>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 6 }}>
             {requirement.skills.length ? (
-              requirement.skills.map((s) => (
-                <span
-                  key={s}
-                  style={{
-                    display: "inline-flex",
-                    padding: "4px 9px",
-                    borderRadius: 8,
-                    background: t.creamSoft,
-                    border: `1px solid ${t.line}`,
-                    fontFamily: f.sans,
-                    fontSize: 13.5,
-                    fontWeight: 500,
-                    color: t.coal,
-                  }}
-                >
-                  {s}
-                </span>
-              ))
+              requirement.skills.map((s) => <SkillTag key={s}>{s}</SkillTag>)
             ) : (
               <span style={{ fontFamily: f.sans, fontSize: 13.5, fontWeight: 500, color: t.coal }}>Not specified</span>
             )}
