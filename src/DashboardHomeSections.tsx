@@ -55,40 +55,6 @@ function StatCard({ children }: { children: React.ReactNode }) {
   );
 }
 
-/* ─── Session quota meter ───
-   Progressive nudge toward the paywall — shows remaining free/starter
-   sessions instead of only revealing the limit once a candidate is
-   already blocked at zero. */
-
-export function SessionQuotaBar({ used, limit, creditBalance, periodLabel }: {
-  used: number;
-  limit: number;
-  creditBalance: number;
-  /** e.g. "free sessions" or "sessions this week" */
-  periodLabel: string;
-}) {
-  const remaining = Math.max(0, limit - used);
-  const atLimit = remaining === 0 && creditBalance === 0;
-  return (
-    <div style={{
-      display: "flex", alignItems: "center", gap: 12, padding: "12px 16px",
-      background: t.cream, border: `1px solid ${t.line}`, borderRadius: 12,
-    }}>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 6 }}>
-          <span style={{ fontFamily: f.sans, fontSize: textSize.sm, fontWeight: 600, color: t.coal }}>
-            {atLimit ? "No free sessions left" : `${remaining} of ${limit} ${periodLabel} left`}
-          </span>
-          {creditBalance > 0 && (
-            <Tag tone="success" label={`+${creditBalance} credit${creditBalance === 1 ? "" : "s"}`} />
-          )}
-        </div>
-        <ProgressBar value={used} max={limit} color={atLimit ? t.error : t.coal} />
-      </div>
-    </div>
-  );
-}
-
 /* ─── Header ─── */
 
 export function DashboardHeader({

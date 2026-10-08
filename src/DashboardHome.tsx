@@ -21,7 +21,7 @@ import { pickNextMove } from "./nextMove";
 import { useDocTitle } from "./useDocTitle";
 import { captureClientEvent } from "./posthogClient";
 import { tokens as T, fonts as F } from "./auth/_tokens";
-import { computeReadinessGap, FREE_SESSION_LIMIT, STARTER_WEEKLY_LIMIT } from "./dashboardData";
+import { computeReadinessGap } from "./dashboardData";
 import { isAiResume } from "./resumeParser";
 import { daysUntilEvent, hasVisitedAnalytics } from "./dashboardHelpers";
 import HiringActivityCard from "./HiringActivityCard";
@@ -42,7 +42,6 @@ import {
   GettingStartedCard,
   UnlockTeaserGrid,
   NoSessionsEmptyState,
-  SessionQuotaBar,
 } from "./DashboardHomeSections";
 import { SessionsTable, toRow, DEFAULT_SORT } from "./SessionsV2";
 
@@ -334,7 +333,7 @@ export default function DashboardHome() {
   useDocTitle("Dashboard");
   const sessions = useDashboardSessions();
   const account = useDashboardCore();
-  const { isFree, isStarter, sessionsUsed, sessionsRemaining, sessionsThisWeek, creditBalance } = useDashboardSubscription();
+  const { isFree, sessionsRemaining, creditBalance } = useDashboardSubscription();
   const { setShowUpgradeModal } = useDashboardUIActions();
 
   const displayName = useMemo(() => {
@@ -506,22 +505,6 @@ export default function DashboardHome() {
         onViewJobs={goToJobs}
       />
 
-      {isFree && (
-        <SessionQuotaBar
-          used={sessionsUsed}
-          limit={FREE_SESSION_LIMIT}
-          creditBalance={creditBalance}
-          periodLabel="free sessions"
-        />
-      )}
-      {isStarter && (
-        <SessionQuotaBar
-          used={sessionsThisWeek}
-          limit={STARTER_WEEKLY_LIMIT}
-          creditBalance={creditBalance}
-          periodLabel="sessions this week"
-        />
-      )}
 
       {sessions.sessionsLoading ? (
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", gap: 16 }}>
