@@ -69,7 +69,7 @@ export default function HiringActivityCard() {
           variant="ghost"
           onClick={() => router.push("/jobs")}
           style={{
-            fontFamily: f.sans, fontSize: textSize.sm, fontWeight: 600, color: t.coal,
+            fontFamily: f.sans, fontSize: textSize.sm, fontWeight: 600, color: t.indigo,
             background: "none", border: "none", padding: 0, height: "auto", cursor: "pointer",
           }}
         >

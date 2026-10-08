@@ -182,7 +182,7 @@ export function StatCardsRow({
         <ProgressBar value={resumeScore ?? 0} color={t.coal} />
         <Button type="button" variant="ghost" onClick={onViewResume} style={{
           alignSelf: "flex-start", background: "none", border: "none", padding: 0, height: "auto", cursor: "pointer",
-          fontFamily: f.sans, fontSize: textSize.sm, fontWeight: 600, color: t.coal,
+          fontFamily: f.sans, fontSize: textSize.sm, fontWeight: 600, color: t.indigo,
         }}>View Details →</Button>
       </StatCard>
 
