@@ -465,7 +465,7 @@ export default function DashboardHome() {
       style={{
         minHeight: "100%", flexShrink: 0, fontFamily: f.sans, color: t.coal,
         background: t.white, border: `1px solid ${t.line}`, borderRadius: 16,
-        display: "flex", flexDirection: "column", gap: 24, padding: 16,
+        display: "flex", flexDirection: "column", gap: 16, padding: 16,
         margin: "0 0 64px",
       }}
     >
@@ -499,7 +499,7 @@ export default function DashboardHome() {
       />
 
       {sessions.hasData ? (
-        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", gap: 20 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", gap: 16 }}>
           <div style={{ flex: "3 1 420px", minWidth: 280 }}>
             <NextMoveCard
               isFirstTimer={!sessions.hasData}
@@ -526,7 +526,7 @@ export default function DashboardHome() {
       )}
 
       {sessions.hasData && (
-        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", gap: 20 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", gap: 16 }}>
           <div style={{ flex: "3 1 420px", minWidth: 280 }}>
             <HiringActivityCard />
           </div>
@@ -537,7 +537,7 @@ export default function DashboardHome() {
       )}
 
       {!sessions.hasData && (
-        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", gap: 20 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", gap: 16 }}>
           <div style={{ flex: "2 1 320px", minWidth: 280 }}>
             <GettingStartedCard
               hasResume={hasResume}
