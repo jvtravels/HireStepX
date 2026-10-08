@@ -14,6 +14,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { TablePaginationFooter } from "@/components/TablePaginationFooter";
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { PlusIcon, XIcon } from "lucide-react";
+import { PortfolioLinkIcon, formatPortfolioUrl } from "./portfolioLinkIcons";
 
 
 /* Local token aliases — same shape as the shared `T` object so JSX
@@ -300,39 +303,47 @@ export interface PortfolioLinksSectionProps {
 export const PortfolioLinksSection = memo(function PortfolioLinksSection(props: PortfolioLinksSectionProps) {
   const { portfolioLinks, authUpdateUser, showToast } = props;
 
-  const [rows, setRows] = useState<Array<{ title: string; url: string }>>(() => portfolioLinks && portfolioLinks.length > 0 ? portfolioLinks : [{ title: "", url: "" }]);
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const [links, setLinks] = useState<Array<{ title: string; url: string }>>(() => portfolioLinks ?? []);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [draftTitle, setDraftTitle] = useState("");
+  const [draftUrl, setDraftUrl] = useState("");
+  const [formError, setFormError] = useState("");
+  const [adding, setAdding] = useState(false);
+  const [removingIndex, setRemovingIndex] = useState<number | null>(null);
 
-  function updateRow(i: number, field: "title" | "url", value: string) {
-    setSaved(false);
-    setRows(prev => prev.map((r, idx) => idx === i ? { ...r, [field]: value } : r));
-  }
+  const atCap = links.length >= MAX_PORTFOLIO_LINKS;
 
-  function removeRow(i: number) {
-    setSaved(false);
-    setRows(prev => prev.filter((_, idx) => idx !== i));
-  }
+  async function handleAdd() {
+    const title = draftTitle.trim();
+    const url = draftUrl.trim();
+    if (!title) { setFormError("Add a title for this link."); return; }
+    if (!/^https?:\/\//i.test(url)) { setFormError("Enter a full URL starting with https://"); return; }
 
-  function addRow() {
-    setRows(prev => prev.length >= MAX_PORTFOLIO_LINKS ? prev : [...prev, { title: "", url: "" }]);
-  }
-
-  async function handleSave() {
-    const cleaned = rows
-      .map(r => ({ title: r.title.trim(), url: r.url.trim() }))
-      .filter(r => r.title && /^https?:\/\//i.test(r.url));
-    setSaving(true);
+    const next = [...links, { title, url }];
+    setAdding(true);
     try {
-      await authUpdateUser({ portfolioLinks: cleaned });
-      setRows(cleaned.length > 0 ? cleaned : [{ title: "", url: "" }]);
-      setSaved(true);
-      showToast("Portfolio links saved");
-      setTimeout(() => setSaved(false), 4000);
+      await authUpdateUser({ portfolioLinks: next });
+      setLinks(next);
+      setDialogOpen(false);
+      showToast("Link added");
     } catch {
-      showToast("Failed to save — try again");
+      setFormError("Failed to save — try again");
     } finally {
-      setSaving(false);
+      setAdding(false);
+    }
+  }
+
+  async function handleRemove(i: number) {
+    const next = links.filter((_, idx) => idx !== i);
+    setRemovingIndex(i);
+    try {
+      await authUpdateUser({ portfolioLinks: next });
+      setLinks(next);
+      showToast("Link removed");
+    } catch {
+      showToast("Failed to remove — try again");
+    } finally {
+      setRemovingIndex(null);
     }
   }
 
@@ -343,57 +354,136 @@ export const PortfolioLinksSection = memo(function PortfolioLinksSection(props: 
         Only what you add here is ever shown; nothing is invented on your behalf.
       </p>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        {rows.map((row, i) => (
-          <div key={i} style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+      {links.length > 0 && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {links.map((link, i) => (
+            <div key={`${link.url}-${i}`} style={{
+              display: "flex", alignItems: "center", gap: 12,
+              padding: "10px 12px", borderRadius: 10,
+              border: `1px solid ${c.border}`, background: c.graphite,
+            }}>
+              <span aria-hidden="true" style={{
+                width: 32, height: 32, borderRadius: 8, flexShrink: 0,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                background: c.creamSoft, border: `1px solid ${c.border}`, color: c.ink,
+              }}>
+                <PortfolioLinkIcon url={link.url} size={16} />
+              </span>
+              <a href={link.url} target="_blank" rel="noopener noreferrer" style={{ minWidth: 0, flex: 1, textDecoration: "none" }}>
+                <div style={{ fontFamily: font.ui, fontSize: 13.5, fontWeight: 600, color: c.ink, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {link.title}
+                </div>
+                <div style={{ fontFamily: font.ui, fontSize: 12, color: c.inkSoft, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {formatPortfolioUrl(link.url)}
+                </div>
+              </a>
+              <button
+                type="button"
+                onClick={() => handleRemove(i)}
+                disabled={removingIndex === i}
+                aria-label={`Remove ${link.title}`}
+                style={{
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  width: 28, height: 28, borderRadius: 7, flexShrink: 0,
+                  background: "transparent", border: "none", color: c.inkSoft, cursor: "pointer",
+                  opacity: removingIndex === i ? 0.5 : 1,
+                }}
+              >
+                <XIcon aria-hidden="true" width={15} height={15} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <Dialog
+        open={dialogOpen}
+        onOpenChange={(open) => {
+          setDialogOpen(open);
+          if (open) { setDraftTitle(""); setDraftUrl(""); setFormError(""); }
+        }}
+      >
+        <DialogTrigger asChild>
+          {links.length === 0 ? (
+            <button type="button" style={{
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+              fontFamily: font.ui, fontSize: 13.5, fontWeight: 600, color: c.inkSoft,
+              background: "transparent", border: `1.5px dashed ${c.borderStrong}`, borderRadius: 10,
+              padding: "18px 14px", cursor: "pointer", width: "100%",
+            }}>
+              <PlusIcon aria-hidden="true" width={15} height={15} /> Add your first link
+            </button>
+          ) : (
+            <button type="button" disabled={atCap} style={{
+              ...flatRowBtn, display: "inline-flex", alignItems: "center", gap: 6,
+              alignSelf: "flex-start", opacity: atCap ? 0.5 : 1,
+            }}>
+              <PlusIcon aria-hidden="true" width={14} height={14} /> Add link
+            </button>
+          )}
+        </DialogTrigger>
+        <DialogContent
+          style={{
+            display: "block", background: c.graphite, border: `1px solid ${c.border}`,
+            borderRadius: 16, padding: "24px 22px", maxWidth: 420, width: "100%",
+          }}
+        >
+          <DialogTitle style={{ fontFamily: font.ui, fontSize: 16, fontWeight: 700, color: c.ink, margin: "0 0 4px" }}>
+            Add a portfolio link
+          </DialogTitle>
+          <DialogDescription style={{ fontFamily: font.ui, fontSize: 12.5, color: c.inkSoft, margin: "0 0 18px" }}>
+            GitHub, Dribbble, LinkedIn, Behance, Notion, or any URL.
+          </DialogDescription>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             <input
               type="text"
-              value={row.title}
-              onChange={(e) => updateRow(i, "title", e.target.value)}
+              value={draftTitle}
+              onChange={(e) => { setDraftTitle(e.target.value); setFormError(""); }}
               placeholder="Title (e.g. GitHub)"
               maxLength={120}
-              aria-label={`Portfolio link ${i + 1} title`}
+              aria-label="Link title"
               style={{
-                fontFamily: font.ui, fontSize: 13, color: c.ink, background: c.graphite,
+                fontFamily: font.ui, fontSize: 13, color: c.ink, background: c.cream,
                 border: `1px solid ${c.borderStrong}`, borderRadius: 9, padding: "10px 14px",
-                outline: "none", minHeight: 40, boxSizing: "border-box", flex: "1 1 180px", minWidth: 0,
+                outline: "none", minHeight: 40, boxSizing: "border-box",
               }}
             />
             <input
               type="url"
-              value={row.url}
-              onChange={(e) => updateRow(i, "url", e.target.value)}
+              value={draftUrl}
+              onChange={(e) => { setDraftUrl(e.target.value); setFormError(""); }}
               placeholder="https://..."
               maxLength={500}
-              aria-label={`Portfolio link ${i + 1} URL`}
+              aria-label="Link URL"
               style={{
-                fontFamily: font.ui, fontSize: 13, color: c.ink, background: c.graphite,
+                fontFamily: font.ui, fontSize: 13, color: c.ink, background: c.cream,
                 border: `1px solid ${c.borderStrong}`, borderRadius: 9, padding: "10px 14px",
-                outline: "none", minHeight: 40, boxSizing: "border-box", flex: "2 1 240px", minWidth: 0,
+                outline: "none", minHeight: 40, boxSizing: "border-box",
               }}
             />
-            <button
-              type="button"
-              onClick={() => removeRow(i)}
-              aria-label={`Remove portfolio link ${i + 1}`}
-              style={{ ...accSubtleBtnGhost, color: c.ember, flexShrink: 0 }}
-            >
-              Remove
-            </button>
+            {formError && (
+              <div style={{ fontFamily: font.ui, fontSize: 12, color: c.ember }}>{formError}</div>
+            )}
           </div>
-        ))}
-      </div>
 
-      <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-        <button type="button" onClick={addRow} disabled={rows.length >= MAX_PORTFOLIO_LINKS} style={{ ...flatRowBtn, opacity: rows.length >= MAX_PORTFOLIO_LINKS ? 0.5 : 1 }}>
-          Add link
-        </button>
-        <Button type="button" variant="default" size="sm" onClick={handleSave} disabled={saving}
-          style={{ ...indigoPrimaryBtn, opacity: saving ? 0.6 : 1 }}>
-          {saving ? "Saving..." : saved ? "Saved" : "Save"}
-        </Button>
-        <span style={{ fontFamily: font.ui, fontSize: 12, color: c.inkSoft }}>{rows.length} / {MAX_PORTFOLIO_LINKS}</span>
-      </div>
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 18 }}>
+            <DialogClose asChild>
+              <button type="button" style={accSubtleBtnGhost}>Cancel</button>
+            </DialogClose>
+            <Button type="button" variant="default" size="sm" onClick={handleAdd} disabled={adding}
+              style={{ ...indigoPrimaryBtn, opacity: adding ? 0.6 : 1 }}>
+              {adding ? "Adding..." : "Add link"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {links.length > 0 && (
+        <span style={{ fontFamily: font.ui, fontSize: 12, color: c.inkSoft }}>
+          {links.length} / {MAX_PORTFOLIO_LINKS} links{atCap ? " · limit reached" : ""}
+        </span>
+      )}
     </div>
   );
 });
