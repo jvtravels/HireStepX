@@ -10,6 +10,7 @@ import { useAuth } from "./AuthContext";
 import { authHeaders } from "./supabase";
 
 export interface HiringMatch {
+  id: string;
   roleTitle: string;
   companyName: string;
   employmentType: string | null;

@@ -8,6 +8,7 @@
 
 import { useRouter } from "next/navigation";
 import { tokens as t, fonts as f, textSize } from "./auth/_tokens";
+import { dur, ease } from "./_motion";
 import { hoursOrDaysAgo, EMPLOYMENT_TYPE_LABEL } from "./hiringMatchFormat";
 import { useHiringActivity } from "./useHiringActivity";
 
@@ -80,8 +81,20 @@ export default function HiringActivityCard() {
           const empLabel = employmentLabel(m.employmentType);
           return (
             <div
-              key={i}
-              style={{ padding: "14px", borderRadius: 10, background: t.creamSoft, border: `1px solid ${t.line}` }}
+              key={m.id}
+              role="button"
+              tabIndex={0}
+              aria-label={`View details for ${m.roleTitle} at ${m.companyName}`}
+              onClick={() => router.push(`/jobs?open=${encodeURIComponent(m.id)}`)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  router.push(`/jobs?open=${encodeURIComponent(m.id)}`);
+                }
+              }}
+              style={{ padding: "14px", borderRadius: 10, background: t.cream, border: `1px solid ${t.line}`, cursor: "pointer", transition: `background ${dur.instant} ${ease.snap}` }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = t.creamSoft; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = t.cream; }}
             >
               <div style={{
                 width: 32, height: 32, borderRadius: 8, background: color.bg, color: color.fg,

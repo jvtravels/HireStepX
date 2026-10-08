@@ -19,7 +19,7 @@
    Button) rather than hand-rolled table/select/button markup. */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   PlusIcon,
   SearchXIcon,
@@ -172,6 +172,7 @@ function Badge({ tone, title, children }: { tone: BadgeTone; title?: string; chi
 
 export default function DashboardJobs() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user: authUser } = useAuth();
   // Cache-first like DashboardContext's sessions/events: a tab switch back
   // into Jobs shows the last-known list instantly instead of a spinner,
@@ -238,6 +239,15 @@ export default function DashboardJobs() {
   }, [loadMatches]);
 
   const matches = useMemo(() => data?.recent || [], [data]);
+
+  // Deep link from HiringActivityCard's dashboard teaser: ?open=<matchId>
+  // opens that match's detail modal once the full list has loaded.
+  useEffect(() => {
+    const openId = searchParams.get("open");
+    if (!openId) return;
+    const match = matches.find((m) => m.id === openId);
+    if (match) setSelected(match);
+  }, [searchParams, matches]);
 
   const locationOptions = useMemo(
     () => Array.from(new Set(matches.map((m) => m.location).filter(Boolean))).sort(),
