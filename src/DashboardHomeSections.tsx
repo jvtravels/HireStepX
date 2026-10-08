@@ -11,7 +11,7 @@ import { tokens as t, fonts as f, textSize } from "./auth/_tokens";
 import type { DashboardSession } from "./dashboardTypes";
 import type { PracticeCoverage, EvidenceCapability } from "./dashboardData";
 import { focusTopicLabel, skillLabel } from "./skillCopy";
-import { hoursOrDaysAgo, daysAgo } from "./hiringMatchFormat";
+import { hoursOrDaysAgo } from "./hiringMatchFormat";
 import { useHiringActivity } from "./useHiringActivity";
 
 /* ─── shared bits ─── */
@@ -150,36 +150,6 @@ export function DashboardHeader({
 
 function formatEventDateShort(date: string): string {
   return new Date(date + "T00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
-}
-
-/* ─── Continue banner ─── */
-
-export function ContinueBanner({ session, onOpen }: { session: DashboardSession; onOpen: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onOpen}
-      style={{
-        display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap",
-        width: "100%", textAlign: "left", cursor: "pointer",
-        padding: "16px 20px", borderRadius: 12,
-        background: t.indigo100, border: `1px solid ${t.indigo}`,
-        font: "inherit", color: "inherit",
-      }}
-    >
-      <div style={{ minWidth: 0 }}>
-        <div style={{ fontFamily: f.sans, fontSize: textSize.sm, fontWeight: 700, color: t.indigo, marginBottom: 4 }}>
-          Continue Where You Left Off
-        </div>
-        <div style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.coal }}>
-          {session.type}{session.role ? `, ${session.role}` : ""} · {session.questionScores.length} questions · {daysAgo(session.date)}
-        </div>
-      </div>
-      <span style={{ fontFamily: f.sans, fontSize: textSize.sm, fontWeight: 600, color: t.coal, flexShrink: 0 }}>
-        Last score {session.score}/100 →
-      </span>
-    </button>
-  );
 }
 
 /* ─── 4-card stat row ─── */

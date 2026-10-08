@@ -34,7 +34,6 @@ import {
 } from "./resumeFreshness";
 import {
   DashboardHeader,
-  ContinueBanner,
   StatCardsRow,
   NextMoveCard,
   PracticeActivityCard,
@@ -65,6 +64,7 @@ const t = {
   success100:   T.success100,
   error:        T.error,
   error100:     T.error100,
+  line:         T.line,
   lineStrong:   T.lineStrong,
 } as const;
 
@@ -461,7 +461,14 @@ export default function DashboardHome() {
   ]);
 
   return (
-    <div style={{ minHeight: "100%", fontFamily: f.sans, color: t.coal, display: "flex", flexDirection: "column", gap: 24, padding: "16px 0 64px" }}>
+    <div
+      style={{
+        minHeight: "100%", fontFamily: f.sans, color: t.coal,
+        background: t.white, border: `1px solid ${t.line}`, borderRadius: 16,
+        display: "flex", flexDirection: "column", gap: 24, padding: 24,
+        margin: "16px 0 64px",
+      }}
+    >
       <DashboardHeader
         displayName={displayName}
         hasData={sessions.hasData}
@@ -479,13 +486,6 @@ export default function DashboardHome() {
         firstSessionDate={user?.practiceTimestamps?.[0]}
         isCampus={sessions.recentSessions.some((s) => s.focus === "campus-placement")}
       />
-
-      {sessions.hasData && sessions.recentSessions[0] && (
-        <ContinueBanner
-          session={sessions.recentSessions[0]}
-          onOpen={() => openSession(sessions.recentSessions[0].id, "continue-banner")}
-        />
-      )}
 
       <StatCardsRow
         hasData={sessions.hasData}
