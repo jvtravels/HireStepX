@@ -14,13 +14,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "./AuthContext";
 import { useDashboardSessions, useDashboardSubscription, useDashboardUIActions, useDashboardCore } from "./DashboardContext";
 import { pickNextMove } from "./nextMove";
 import { useDocTitle } from "./useDocTitle";
 import { captureClientEvent } from "./posthogClient";
 import { tokens as T, fonts as F } from "./auth/_tokens";
-import { computeReadinessGap } from "./dashboardData";
+import { computeReadinessGap, FREE_SESSION_LIMIT, STARTER_WEEKLY_LIMIT } from "./dashboardData";
 import { isAiResume } from "./resumeParser";
 import { daysUntilEvent, hasVisitedAnalytics } from "./dashboardHelpers";
 import HiringActivityCard from "./HiringActivityCard";
@@ -41,6 +42,7 @@ import {
   GettingStartedCard,
   UnlockTeaserGrid,
   NoSessionsEmptyState,
+  SessionQuotaBar,
 } from "./DashboardHomeSections";
 import { SessionsTable, toRow, DEFAULT_SORT } from "./SessionsV2";
 
@@ -332,7 +334,7 @@ export default function DashboardHome() {
   useDocTitle("Dashboard");
   const sessions = useDashboardSessions();
   const account = useDashboardCore();
-  const { isFree, sessionsRemaining, creditBalance } = useDashboardSubscription();
+  const { isFree, isStarter, sessionsUsed, sessionsRemaining, sessionsThisWeek, creditBalance } = useDashboardSubscription();
   const { setShowUpgradeModal } = useDashboardUIActions();
 
   const displayName = useMemo(() => {
@@ -504,7 +506,29 @@ export default function DashboardHome() {
         onViewJobs={goToJobs}
       />
 
-      {sessions.hasData ? (
+      {isFree && (
+        <SessionQuotaBar
+          used={sessionsUsed}
+          limit={FREE_SESSION_LIMIT}
+          creditBalance={creditBalance}
+          periodLabel="free sessions"
+        />
+      )}
+      {isStarter && (
+        <SessionQuotaBar
+          used={sessionsThisWeek}
+          limit={STARTER_WEEKLY_LIMIT}
+          creditBalance={creditBalance}
+          periodLabel="sessions this week"
+        />
+      )}
+
+      {sessions.sessionsLoading ? (
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", gap: 16 }}>
+          <Skeleton style={{ flex: "3 1 420px", minWidth: 280, height: 220, borderRadius: 12 }} />
+          <Skeleton style={{ flex: "2 1 280px", minWidth: 260, height: 220, borderRadius: 12 }} />
+        </div>
+      ) : sessions.hasData ? (
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", gap: 16 }}>
           <div style={{ flex: "3 1 420px", minWidth: 280 }}>
             <NextMoveCard
@@ -514,6 +538,7 @@ export default function DashboardHome() {
               onStart={nextMoveOnStart}
               sessionMinutes={nextMove.sessionMinutes}
               sessionQuestionCount={nextMove.sessionQuestionCount}
+              chips={nextMove.chips}
             />
           </div>
           <div style={{ flex: "2 1 280px", minWidth: 260 }}>
@@ -532,10 +557,16 @@ export default function DashboardHome() {
           onStart={nextMoveOnStart}
           sessionMinutes={nextMove.sessionMinutes}
           sessionQuestionCount={nextMove.sessionQuestionCount}
+          chips={nextMove.chips}
         />
       )}
 
-      {sessions.hasData && (
+      {sessions.sessionsLoading ? (
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", gap: 16 }}>
+          <Skeleton style={{ flex: "3 1 420px", minWidth: 280, height: 180, borderRadius: 12 }} />
+          <Skeleton style={{ flex: "2 1 280px", minWidth: 260, height: 180, borderRadius: 12 }} />
+        </div>
+      ) : sessions.hasData ? (
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", gap: 16 }}>
           <div style={{ flex: "3 1 420px", minWidth: 280 }}>
             <HiringActivityCard />
@@ -544,9 +575,7 @@ export default function DashboardHome() {
             <EvidenceCapabilitiesCard capabilities={sessions.evidenceCapabilities} />
           </div>
         </div>
-      )}
-
-      {!sessions.hasData && (
+      ) : (
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", gap: 16 }}>
           <div style={{ flex: "2 1 320px", minWidth: 280 }}>
             <GettingStartedCard
@@ -574,7 +603,9 @@ export default function DashboardHome() {
             }}>View all →</Button>
           )}
         </div>
-        {sessions.hasData ? (
+        {sessions.sessionsLoading ? (
+          <Skeleton style={{ width: "100%", height: 280, borderRadius: 12 }} />
+        ) : sessions.hasData ? (
           <div style={{ border: `1px solid ${t.line}`, borderRadius: 12 }}>
             <SessionsTable
               rows={sessions.recentSessions.slice(0, 5).map((d) => toRow(d, Date.now()))}

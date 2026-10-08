@@ -438,7 +438,6 @@ export default function DashboardJobs() {
                 return (
                   <TableRow
                     key={r.id}
-                    role="button"
                     tabIndex={0}
                     aria-label={`View details for ${r.roleTitle} at ${r.companyName}`}
                     onClick={() => setSelected(r)}

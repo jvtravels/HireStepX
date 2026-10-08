@@ -12,6 +12,7 @@ import type { PracticeCoverage, EvidenceCapability } from "./dashboardData";
 import { skillLabel } from "./skillCopy";
 import { hoursOrDaysAgo } from "./hiringMatchFormat";
 import { useHiringActivity } from "./useHiringActivity";
+import { Button } from "@/components/ui/button";
 
 /* ─── shared bits ─── */
 
@@ -51,6 +52,40 @@ function StatCard({ children }: { children: React.ReactNode }) {
       background: t.cream, border: `1px solid ${t.line}`, borderRadius: 12,
       display: "flex", flexDirection: "column", gap: 10,
     }}>{children}</div>
+  );
+}
+
+/* ─── Session quota meter ───
+   Progressive nudge toward the paywall — shows remaining free/starter
+   sessions instead of only revealing the limit once a candidate is
+   already blocked at zero. */
+
+export function SessionQuotaBar({ used, limit, creditBalance, periodLabel }: {
+  used: number;
+  limit: number;
+  creditBalance: number;
+  /** e.g. "free sessions" or "sessions this week" */
+  periodLabel: string;
+}) {
+  const remaining = Math.max(0, limit - used);
+  const atLimit = remaining === 0 && creditBalance === 0;
+  return (
+    <div style={{
+      display: "flex", alignItems: "center", gap: 12, padding: "12px 16px",
+      background: t.cream, border: `1px solid ${t.line}`, borderRadius: 12,
+    }}>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 6 }}>
+          <span style={{ fontFamily: f.sans, fontSize: textSize.sm, fontWeight: 600, color: t.coal }}>
+            {atLimit ? "No free sessions left" : `${remaining} of ${limit} ${periodLabel} left`}
+          </span>
+          {creditBalance > 0 && (
+            <Tag tone="success" label={`+${creditBalance} credit${creditBalance === 1 ? "" : "s"}`} />
+          )}
+        </div>
+        <ProgressBar value={used} max={limit} color={atLimit ? t.error : t.coal} />
+      </div>
+    </div>
   );
 }
 
@@ -111,7 +146,7 @@ export function DashboardHeader({
           </span>
         </div>
       ) : (
-        <button
+        <Button
           type="button"
           onClick={onConnectCalendar}
           disabled={googleSyncStatus === "syncing" || hasGoogleToken}
@@ -128,7 +163,7 @@ export function DashboardHeader({
             <rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" />
           </svg>
           {googleSyncStatus === "syncing" ? "Connecting…" : hasGoogleToken ? "Calendar Connected" : "Connect the Calendar"}
-        </button>
+        </Button>
       )}
     </div>
   );
@@ -179,10 +214,10 @@ export function StatCardsRow({
           {improvementsCount > 0 && <Tag label={`${improvementsCount} to improve`} />}
         </div>
         <ProgressBar value={resumeScore ?? 0} color={t.coal} />
-        <button type="button" onClick={onViewResume} style={{
-          alignSelf: "flex-start", background: "none", border: "none", padding: 0, cursor: "pointer",
+        <Button type="button" variant="ghost" onClick={onViewResume} style={{
+          alignSelf: "flex-start", background: "none", border: "none", padding: 0, height: "auto", cursor: "pointer",
           fontFamily: f.sans, fontSize: textSize.sm, fontWeight: 600, color: t.coal,
-        }}>View Details →</button>
+        }}>View Details →</Button>
       </StatCard>
 
       <StatCard>
@@ -206,30 +241,30 @@ export function StatCardsRow({
 
       <StatCard>
         <div style={{ fontFamily: f.sans, fontSize: textSize.sm, color: t.inkSoft, fontWeight: 600 }}>Needs Attention</div>
-        <button type="button" onClick={onViewJobs} style={{
-          display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8,
+        <Button type="button" variant="ghost" onClick={onViewJobs} style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, width: "100%", height: "auto",
           background: "none", border: "none", padding: 0, cursor: unlockedCount > 0 ? "pointer" : "default", textAlign: "left",
         }}>
           <span style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.coal, fontWeight: 600 }}>
             {unlockedCount} Employer{unlockedCount === 1 ? "" : "s"} Interested
           </span>
           {unlockedCount > 0 && <span aria-hidden style={{ color: t.inkFaint }}>→</span>}
-        </button>
+        </Button>
         {latestMatch && (
           <div style={{ fontFamily: f.sans, fontSize: textSize.xs, color: t.inkFaint }}>
             {latestMatch.companyName} · {hoursOrDaysAgo(latestMatch.matchedAt)}
           </div>
         )}
-        <button type="button" onClick={onViewResume} style={{
-          display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8,
-          background: "none", border: "none", padding: 0, cursor: "pointer", textAlign: "left",
+        <Button type="button" variant="ghost" onClick={onViewResume} style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, width: "100%", height: "auto",
+          background: "none", border: "none", padding: 0, cursor: "pointer", textAlign: "left", borderRadius: 0,
           borderTop: `1px solid ${t.line}`, paddingTop: 8, marginTop: 2,
         }}>
           <span style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.coal, fontWeight: 600 }}>
             Resume Improvement {improvementsCount > 0 ? `(${improvementsCount})` : ""}
           </span>
           <span aria-hidden style={{ color: t.inkFaint }}>→</span>
-        </button>
+        </Button>
       </StatCard>
     </div>
   );
@@ -320,7 +355,7 @@ const NEXT_MOVE_COPY: Record<string, { description: string; tags: [string, strin
   },
 };
 
-export function NextMoveCard({ isFirstTimer, weakestSkillKey, ctaLabel, onStart, sessionMinutes, sessionQuestionCount }: {
+export function NextMoveCard({ isFirstTimer, weakestSkillKey, ctaLabel, onStart, sessionMinutes, sessionQuestionCount, chips }: {
   isFirstTimer: boolean;
   weakestSkillKey: string | null;
   ctaLabel: string;
@@ -329,6 +364,9 @@ export function NextMoveCard({ isFirstTimer, weakestSkillKey, ctaLabel, onStart,
    *  (data/session-length.ts via nextMove.ts) — not a guessed placeholder. */
   sessionMinutes: number;
   sessionQuestionCount: number;
+  /** Streak / smart-schedule context chips from nextMove.ts — optional,
+   *  omitted entirely (not even an empty row) when there's nothing to show. */
+  chips?: { kind: "streak" | "schedule"; label: string }[];
 }) {
   const key = weakestSkillKey && NEXT_MOVE_COPY[weakestSkillKey] ? weakestSkillKey : "communication";
   const copy = NEXT_MOVE_COPY[key];
@@ -361,9 +399,12 @@ export function NextMoveCard({ isFirstTimer, weakestSkillKey, ctaLabel, onStart,
         {copy.description}
       </p>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+        {chips?.map((c) => (
+          <Tag key={c.label} label={c.label} tone={c.kind === "streak" ? "indigo" : "neutral"} />
+        ))}
         {copy.tags.map((tag) => <Tag key={tag} label={tag} />)}
       </div>
-      <button
+      <Button
         type="button"
         onClick={onStart}
         style={{
@@ -373,7 +414,7 @@ export function NextMoveCard({ isFirstTimer, weakestSkillKey, ctaLabel, onStart,
         }}
       >
         {ctaLabel} →
-      </button>
+      </Button>
     </section>
   );
 }
@@ -565,7 +606,7 @@ export function NoSessionsEmptyState({ onStart }: { onStart: () => void }) {
       <p style={{ fontFamily: f.sans, fontSize: textSize.sm, color: t.inkSoft, margin: 0, maxWidth: 360 }}>
         Your completed practice sessions will appear here.
       </p>
-      <button
+      <Button
         type="button"
         onClick={onStart}
         style={{
@@ -575,7 +616,7 @@ export function NoSessionsEmptyState({ onStart }: { onStart: () => void }) {
         }}
       >
         Start Your First Session
-      </button>
+      </Button>
     </div>
   );
 }

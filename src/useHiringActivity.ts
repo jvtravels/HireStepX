@@ -8,6 +8,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "./AuthContext";
 import { authHeaders } from "./supabase";
+import { captureClientEvent } from "./posthogClient";
 
 export interface HiringMatch {
   id: string;
@@ -45,9 +46,13 @@ export function useHiringActivity(): HiringActivity | null {
         if (!cancelled && res.ok && json) {
           setData(json as HiringActivity);
           try { localStorage.setItem(cacheKey, JSON.stringify(json)); } catch { /* expected: localStorage may be unavailable */ }
+        } else if (!cancelled && !res.ok) {
+          captureClientEvent("hiring_activity_fetch_error", { reason: `status_${res.status}` });
         }
-      } catch {
-        // stay quiet on transient failure — this is a nice-to-have, not core flow
+      } catch (err) {
+        // stay quiet in the UI — this is a nice-to-have, not core flow — but still
+        // report it so a systemic outage doesn't go unnoticed.
+        captureClientEvent("hiring_activity_fetch_error", { reason: err instanceof Error ? err.message : "unknown" });
       }
     })();
     return () => { cancelled = true; };

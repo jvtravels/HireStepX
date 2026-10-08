@@ -11,6 +11,7 @@ import { tokens as t, fonts as f, textSize } from "./auth/_tokens";
 import { dur, ease } from "./_motion";
 import { hoursOrDaysAgo, EMPLOYMENT_TYPE_LABEL } from "./hiringMatchFormat";
 import { useHiringActivity } from "./useHiringActivity";
+import { Button } from "@/components/ui/button";
 
 // Cycles through 4 existing status tokens so every badge is sourced from
 // the design system rather than a one-off hex literal.
@@ -63,16 +64,17 @@ export default function HiringActivityCard() {
             {shortlisted} {shortlisted === 1 ? "Invite" : "Invites"}
           </span>
         </div>
-        <button
+        <Button
           type="button"
+          variant="ghost"
           onClick={() => router.push("/jobs")}
           style={{
             fontFamily: f.sans, fontSize: textSize.sm, fontWeight: 600, color: t.coal,
-            background: "none", border: "none", padding: 0, cursor: "pointer",
+            background: "none", border: "none", padding: 0, height: "auto", cursor: "pointer",
           }}
         >
           View All →
-        </button>
+        </Button>
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>

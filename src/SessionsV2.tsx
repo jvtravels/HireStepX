@@ -455,7 +455,6 @@ export function SessionsTable({
             rows.map((row) => (
               <TableRow
                 key={row.id}
-                role="button"
                 tabIndex={0}
                 aria-label={`View details for ${row.title}${row.company ? ` at ${row.company}` : ""}`}
                 onClick={() => onOpenSession(row.id)}
