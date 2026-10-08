@@ -152,9 +152,9 @@ export function DashboardHeader({
           disabled={googleSyncStatus === "syncing" || hasGoogleToken}
           style={{
             flexShrink: 0, display: "inline-flex", alignItems: "center", gap: 8,
-            padding: "11px 18px", borderRadius: 10,
+            padding: "14px 28px", borderRadius: 9999,
             background: t.indigo, color: t.white, border: "none",
-            fontFamily: f.sans, fontSize: textSize.sm, fontWeight: 600,
+            fontFamily: f.sans, fontSize: textSize.lg, fontWeight: 700,
             cursor: googleSyncStatus === "syncing" ? "default" : "pointer",
             opacity: googleSyncStatus === "syncing" ? 0.7 : 1,
           }}
@@ -408,9 +408,9 @@ export function NextMoveCard({ isFirstTimer, weakestSkillKey, ctaLabel, onStart,
         type="button"
         onClick={onStart}
         style={{
-          marginTop: 4, width: "100%", padding: "13px 0", borderRadius: 10,
+          marginTop: 4, width: "100%", padding: "14px 0", borderRadius: 9999,
           background: t.indigo, color: t.white, border: "none",
-          fontFamily: f.sans, fontSize: textSize.md, fontWeight: 700, cursor: "pointer",
+          fontFamily: f.sans, fontSize: textSize.lg, fontWeight: 700, cursor: "pointer",
         }}
       >
         {ctaLabel} →
@@ -610,9 +610,9 @@ export function NoSessionsEmptyState({ onStart }: { onStart: () => void }) {
         type="button"
         onClick={onStart}
         style={{
-          marginTop: 6, padding: "11px 22px", borderRadius: 10,
+          marginTop: 6, padding: "14px 28px", borderRadius: 9999,
           background: t.indigo, color: t.white, border: "none",
-          fontFamily: f.sans, fontSize: textSize.sm, fontWeight: 700, cursor: "pointer",
+          fontFamily: f.sans, fontSize: textSize.lg, fontWeight: 700, cursor: "pointer",
         }}
       >
         Start Your First Session
