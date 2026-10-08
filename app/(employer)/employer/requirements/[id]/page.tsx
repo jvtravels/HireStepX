@@ -83,6 +83,7 @@ import { SearchWithSuggestions } from "@/components/SearchWithSuggestions";
 import { TablePaginationFooter } from "@/components/TablePaginationFooter";
 
 const CANDIDATES_RECENT_SEARCHES_KEY = "hirestepx-employer-candidates-recent-searches";
+const DESCRIPTION_TRUNCATE_LENGTH = 220;
 
 function experienceLabel(min: number | null, max: number | null): string | null {
   if (min == null && max == null) return null;
@@ -1461,28 +1462,32 @@ export default function RequirementDetailPage() {
 
         {requirement.description && (
           <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${t.line}` }}>
-            <p
-              style={{
-                fontFamily: f.sans,
-                fontSize: 13.5,
-                color: t.inkSoft,
-                lineHeight: 1.6,
-                margin: 0,
-                display: descExpanded ? "block" : "-webkit-box",
-                WebkitLineClamp: descExpanded ? undefined : 2,
-                WebkitBoxOrient: "vertical",
-                overflow: descExpanded ? "visible" : "hidden",
-              }}
-            >
-              {requirement.description}{" "}
-              <Button
-                type="button"
-                variant="link"
-                onClick={() => setDescExpanded((v) => !v)}
-                style={{ padding: 0, fontFamily: f.sans, fontSize: 12.5, fontWeight: 600, height: "auto", display: "inline" }}
-              >
-                {descExpanded ? "Show less" : "Read more"}
-              </Button>
+            <p style={{ fontFamily: f.sans, fontSize: 13.5, color: t.inkSoft, lineHeight: 1.6, margin: 0 }}>
+              {descExpanded || requirement.description.length <= DESCRIPTION_TRUNCATE_LENGTH
+                ? requirement.description
+                : `${requirement.description.slice(0, DESCRIPTION_TRUNCATE_LENGTH).trimEnd()}…`}
+              {requirement.description.length > DESCRIPTION_TRUNCATE_LENGTH && (
+                <>
+                  {" "}
+                  <Button
+                    type="button"
+                    variant="link"
+                    onClick={() => setDescExpanded((v) => !v)}
+                    style={{ padding: 0, fontFamily: f.sans, fontSize: 12.5, fontWeight: 600, height: "auto", display: "inline" }}
+                  >
+                    {descExpanded ? "Show less" : "Read more"}
+                  </Button>
+                </>
+              )}
+            </p>
+          </div>
+        )}
+
+        {requirement.responsibilities && (
+          <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${t.line}` }}>
+            <span style={{ fontFamily: f.sans, fontSize: 11, color: t.inkFaint }}>Responsibilities</span>
+            <p style={{ fontFamily: f.sans, fontSize: 13.5, color: t.inkSoft, lineHeight: 1.6, margin: "6px 0 0" }}>
+              {requirement.responsibilities}
             </p>
           </div>
         )}
@@ -1612,26 +1617,36 @@ export default function RequirementDetailPage() {
           <span style={{ fontFamily: f.sans, fontSize: 11, color: t.inkFaint }}>Required skills</span>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 6 }}>
             {requirement.skills.length ? (
-              requirement.skills.map((s) => <SkillTag key={s}>{s}</SkillTag>)
+              requirement.skills.map((s) => (
+                <span
+                  key={s}
+                  style={{
+                    display: "inline-flex",
+                    padding: "4px 9px",
+                    borderRadius: 8,
+                    background: t.creamSoft,
+                    border: `1px solid ${t.line}`,
+                    fontFamily: f.sans,
+                    fontSize: 13.5,
+                    fontWeight: 500,
+                    color: t.coal,
+                  }}
+                >
+                  {s}
+                </span>
+              ))
             ) : (
               <span style={{ fontFamily: f.sans, fontSize: 13.5, fontWeight: 500, color: t.coal }}>Not specified</span>
             )}
           </div>
         </div>
-
-        <div style={{ marginTop: 16, paddingTop: 14, borderTop: `1px solid ${t.line}` }}>
-          <span style={{ fontFamily: f.sans, fontSize: 11, color: t.inkFaint }}>Nice to have</span>
-          <p style={{ fontFamily: f.sans, fontSize: 13.5, color: t.coal, lineHeight: 1.5, margin: "6px 0 0" }}>
-            {requirement.niceToHave || "Not specified"}
-          </p>
-        </div>
       </Card>
       </div>
 
       <div style={{ marginTop: 24 }}>
-        <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 10, marginBottom: 16 }}>
-          <h2 style={{ fontFamily: f.sans, fontSize: 18, fontWeight: 600, color: t.coal, margin: 0 }}>Candidates</h2>
-          <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", flexWrap: "wrap", gap: 10, justifyContent: "flex-end" }}>
+        <div style={{ display: "flex", alignItems: "center", flexWrap: "nowrap", gap: 10, marginBottom: 16, overflowX: "auto" }}>
+          <h2 style={{ fontFamily: f.sans, fontSize: 18, fontWeight: 600, color: t.coal, margin: 0, flexShrink: 0 }}>Candidates</h2>
+          <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", flexWrap: "nowrap", gap: 10, justifyContent: "flex-end" }}>
           {(requirement.status === "ready" || requirement.status === "partial" || requirement.status === "closed") && (
             <>
               <SearchWithSuggestions
@@ -1642,7 +1657,7 @@ export default function RequirementDetailPage() {
                 placeholder="Search by name, role, skill, or notice period…"
                 storageKey={CANDIDATES_RECENT_SEARCHES_KEY}
                 suggestedFilters={suggestedFilters}
-                style={{ flex: "0 1 280px", minWidth: 180, maxWidth: 280 }}
+                style={{ flex: "0 1 280px", minWidth: 140, maxWidth: 280 }}
                 inputStyle={{ background: t.white }}
                 inputClassName="focus-visible:ring-0"
               />
@@ -1705,7 +1720,7 @@ export default function RequirementDetailPage() {
                   type="button"
                   variant="link"
                   onClick={() => { setSearch(""); setContactFilter("all"); setLocationFilter("all"); }}
-                  style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 600, height: "auto" }}
+                  style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 600, height: "auto", flexShrink: 0 }}
                 >
                   Clear filters
                 </Button>
