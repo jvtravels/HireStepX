@@ -153,7 +153,7 @@ export function DashboardHeader({
           style={{
             flexShrink: 0, display: "inline-flex", alignItems: "center", gap: 8,
             padding: "11px 18px", borderRadius: 10,
-            background: t.coal, color: t.white, border: "none",
+            background: t.indigo, color: t.white, border: "none",
             fontFamily: f.sans, fontSize: textSize.sm, fontWeight: 600,
             cursor: googleSyncStatus === "syncing" ? "default" : "pointer",
             opacity: googleSyncStatus === "syncing" ? 0.7 : 1,
@@ -409,7 +409,7 @@ export function NextMoveCard({ isFirstTimer, weakestSkillKey, ctaLabel, onStart,
         onClick={onStart}
         style={{
           marginTop: 4, width: "100%", padding: "13px 0", borderRadius: 10,
-          background: t.coal, color: t.white, border: "none",
+          background: t.indigo, color: t.white, border: "none",
           fontFamily: f.sans, fontSize: textSize.md, fontWeight: 700, cursor: "pointer",
         }}
       >
@@ -611,7 +611,7 @@ export function NoSessionsEmptyState({ onStart }: { onStart: () => void }) {
         onClick={onStart}
         style={{
           marginTop: 6, padding: "11px 22px", borderRadius: 10,
-          background: t.coal, color: t.white, border: "none",
+          background: t.indigo, color: t.white, border: "none",
           fontFamily: f.sans, fontSize: textSize.sm, fontWeight: 700, cursor: "pointer",
         }}
       >
