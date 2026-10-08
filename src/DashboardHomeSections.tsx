@@ -10,7 +10,7 @@
 import { tokens as t, fonts as f, textSize } from "./auth/_tokens";
 import type { DashboardSession } from "./dashboardTypes";
 import type { PracticeCoverage, EvidenceCapability } from "./dashboardData";
-import { focusTopicLabel, skillLabel } from "./skillCopy";
+import { skillLabel } from "./skillCopy";
 import { hoursOrDaysAgo } from "./hiringMatchFormat";
 import { useHiringActivity } from "./useHiringActivity";
 
@@ -589,13 +589,35 @@ function RecentSessionScoreCell({ score }: { score: number }) {
   );
 }
 
+// Matches SessionsV2's ProgressCell exactly (same colors, arrow glyphs, and
+// "vs last session" copy) so the Recent Sessions preview and the full
+// Sessions table show the same column, not a different one.
+function RecentSessionProgressCell({ progress }: { progress: number }) {
+  const { text, glyph } =
+    progress > 0
+      ? { text: t.successInk, glyph: "▲" }
+      : progress < 0
+        ? { text: t.error, glyph: "▼" }
+        : { text: t.inkFaint, glyph: "" };
+  const sign = progress > 0 ? "+" : "";
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      <span style={{ fontFamily: f.mono, fontSize: 13, fontWeight: 500, color: text, display: "inline-flex", alignItems: "center", gap: 4, fontVariantNumeric: "tabular-nums" }}>
+        {glyph && <span aria-hidden="true" style={{ fontSize: 9 }}>{glyph}</span>}
+        {sign}{progress}
+      </span>
+      <span style={{ fontFamily: f.sans, fontSize: 13, color: t.inkFaint }}>vs last session</span>
+    </div>
+  );
+}
+
 export function RecentSessionsTable({ sessions, onOpen }: { sessions: DashboardSession[]; onOpen: (id: string) => void }) {
   return (
     <div style={{ overflowX: "auto", border: `1px solid ${t.line}`, borderRadius: 12 }}>
       <table style={{ width: "100%", borderCollapse: "collapse" }}>
         <thead>
           <tr style={{ background: t.rowTint, height: 40 }}>
-            {["Session", "Score", "Focus", "Date"].map((h) => (
+            {["Session", "Score", "Progress", "Date"].map((h) => (
               <th key={h} style={{
                 textAlign: "left", padding: "0 20px",
                 fontFamily: f.sans, fontSize: textSize.sm, fontWeight: 600, color: t.inkSoft,
@@ -620,8 +642,8 @@ export function RecentSessionsTable({ sessions, onOpen }: { sessions: DashboardS
               <td style={{ padding: "0 20px" }}>
                 <RecentSessionScoreCell score={s.score} />
               </td>
-              <td style={{ padding: "0 20px", fontFamily: f.sans, fontSize: textSize.sm, color: t.inkSoft }}>
-                {focusTopicLabel(s.topWeaknessKey)}
+              <td style={{ padding: "0 20px" }}>
+                <RecentSessionProgressCell progress={s.change} />
               </td>
               <td style={{ padding: "0 20px", fontFamily: f.mono, fontSize: textSize.sm, color: t.inkFaint, fontVariantNumeric: "tabular-nums" }}>
                 {formatSessionDate(s.date)}
