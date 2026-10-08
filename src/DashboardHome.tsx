@@ -499,7 +499,7 @@ export default function DashboardHome() {
       />
 
       {sessions.hasData ? (
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 20 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", gap: 20 }}>
           <div style={{ flex: "3 1 420px", minWidth: 280 }}>
             <NextMoveCard
               isFirstTimer={!sessions.hasData}
@@ -526,7 +526,7 @@ export default function DashboardHome() {
       )}
 
       {sessions.hasData && (
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 20 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", gap: 20 }}>
           <div style={{ flex: "3 1 420px", minWidth: 280 }}>
             <HiringActivityCard />
           </div>
@@ -537,7 +537,7 @@ export default function DashboardHome() {
       )}
 
       {!sessions.hasData && (
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 20 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", gap: 20 }}>
           <div style={{ flex: "2 1 320px", minWidth: 280 }}>
             <GettingStartedCard
               hasResume={hasResume}
