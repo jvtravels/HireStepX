@@ -203,19 +203,31 @@ export async function getOverview() {
   };
 }
 
+/* Employer signups also get a profiles row (auth trigger), so they would
+ * otherwise show up as candidates in the Users tab. They live in the Employers
+ * tab. ids go in the URL, so only the first USERS_EXCLUDE_IN_URL are excluded
+ * in the query; any beyond that are dropped from the returned page instead. */
+const USERS_EXCLUDE_IN_URL = 200;
+
 export async function getUsers(search?: string, offset = 0, limit = 50) {
-  let profilePath = `profiles?select=id,name,email,subscription_tier,created_at,practice_timestamps,has_completed_onboarding,subscription_end&order=created_at.desc&offset=${offset}&limit=${limit}`;
-  if (search) {
-    profilePath += `&or=(name.ilike.*${encodeURIComponent(search)}*,email.ilike.*${encodeURIComponent(search)}*)`;
-  }
+  const employerRows = await fetchJSON<{ id: string }>("employers?select=id&limit=2000");
+  const inUrl = employerRows.slice(0, USERS_EXCLUDE_IN_URL).map((e) => encodeURIComponent(e.id));
+  const overflowIds = new Set(employerRows.slice(USERS_EXCLUDE_IN_URL).map((e) => e.id));
+  const notEmployer = inUrl.length > 0 ? `&id=not.in.(${inUrl.join(",")})` : "";
+  const searchFilter = search
+    ? `&or=(name.ilike.*${encodeURIComponent(search)}*,email.ilike.*${encodeURIComponent(search)}*)`
+    : "";
+
+  const profilePath = `profiles?select=id,name,email,subscription_tier,created_at,practice_timestamps,has_completed_onboarding,subscription_end&order=created_at.desc&offset=${offset}&limit=${limit}${notEmployer}${searchFilter}`;
 
   // Get total count and profiles in parallel — use Supabase count header instead of fetching all sessions
   const [profilesRes, totalCount] = await Promise.all([
     supa(profilePath),
-    fetchCount("profiles", search ? `&or=(name.ilike.*${encodeURIComponent(search)}*,email.ilike.*${encodeURIComponent(search)}*)` : ""),
+    fetchCount("profiles", `${notEmployer}${searchFilter}`),
   ]);
 
-  const profiles = profilesRes.ok ? await profilesRes.json() : [];
+  const profiles = ((profilesRes.ok ? await profilesRes.json() : []) as Array<{ id: string }>)
+    .filter((p) => !overflowIds.has(p.id));
 
   // Get session counts + last-7d counts for the users on this page
   const userIds = (profiles as Array<{ id: string }>).map(p => p.id);
