@@ -639,6 +639,36 @@ export const SessionReport = memo(function SessionReport({
     }
   }, [report, session.id, user?.practiceTimestamps?.length]);
 
+  /* ── Which sections do users actually scroll to? One event per section per report. ── */
+  const hasReport = !!report;
+  useEffect(() => {
+    if (!hasReport || typeof IntersectionObserver === "undefined") return;
+    const seen = new Set<string>();
+    let observer: IntersectionObserver | null = null;
+    const raf = requestAnimationFrame(() => {
+      const sections = document.querySelectorAll<HTMLElement>('[id^="ir-section-"]');
+      observer = new IntersectionObserver(
+        (entries) => {
+          for (const e of entries) {
+            if (!e.isIntersecting || seen.has(e.target.id)) continue;
+            seen.add(e.target.id);
+            observer?.unobserve(e.target);
+            captureClientEvent("report_section_viewed", {
+              session_id: session.id,
+              section: e.target.id.replace("ir-section-", ""),
+            });
+          }
+        },
+        { threshold: 0.4 },
+      );
+      sections.forEach((el) => observer?.observe(el));
+    });
+    return () => {
+      cancelAnimationFrame(raf);
+      observer?.disconnect();
+    };
+  }, [hasReport, session.id]);
+
   /* ── Fetch trend + live cohort (best-effort) ── */
   useEffect(() => {
     let cancelled = false;
