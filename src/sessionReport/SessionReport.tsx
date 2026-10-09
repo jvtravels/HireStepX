@@ -644,28 +644,40 @@ export const SessionReport = memo(function SessionReport({
   useEffect(() => {
     if (!hasReport || typeof IntersectionObserver === "undefined") return;
     const seen = new Set<string>();
-    let observer: IntersectionObserver | null = null;
-    const raf = requestAnimationFrame(() => {
-      const sections = document.querySelectorAll<HTMLElement>('[id^="ir-section-"]');
-      observer = new IntersectionObserver(
-        (entries) => {
-          for (const e of entries) {
-            if (!e.isIntersecting || seen.has(e.target.id)) continue;
-            seen.add(e.target.id);
-            observer?.unobserve(e.target);
-            captureClientEvent("report_section_viewed", {
-              session_id: session.id,
-              section: e.target.id.replace("ir-section-", ""),
-            });
-          }
-        },
-        { threshold: 0.4 },
-      );
-      sections.forEach((el) => observer?.observe(el));
+    const watched = new WeakSet<Element>();
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (!e.isIntersecting || seen.has(e.target.id)) continue;
+          seen.add(e.target.id);
+          observer.unobserve(e.target);
+          captureClientEvent("report_section_viewed", {
+            session_id: session.id,
+            section: e.target.id.replace("ir-section-", ""),
+          });
+        }
+      },
+      { threshold: 0.4 },
+    );
+    // Some sections (trend, campus calibration) mount after async data
+    // loads, so keep scanning for new ones instead of a single pass.
+    const scan = () => {
+      document.querySelectorAll<HTMLElement>('[id^="ir-section-"]').forEach((el) => {
+        if (watched.has(el) || seen.has(el.id)) return;
+        watched.add(el);
+        observer.observe(el);
+      });
+    };
+    let raf = requestAnimationFrame(scan);
+    const mutations = new MutationObserver(() => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(scan);
     });
+    mutations.observe(document.body, { childList: true, subtree: true });
     return () => {
       cancelAnimationFrame(raf);
-      observer?.disconnect();
+      mutations.disconnect();
+      observer.disconnect();
     };
   }, [hasReport, session.id]);
 
