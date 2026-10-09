@@ -568,7 +568,7 @@ export function NavV2() {
                   color: t.white,
                   background: t.indigo,
                   padding: "9px 18px",
-                  borderRadius: 999,
+                  borderRadius: 8,
                   textDecoration: "none",
                   display: "inline-flex",
                   alignItems: "center",
@@ -602,7 +602,7 @@ export function NavV2() {
                     color: t.white,
                     background: t.indigo,
                     padding: "9px 18px",
-                    borderRadius: 999,
+                    borderRadius: 8,
                     textDecoration: "none",
                     display: "inline-flex",
                     alignItems: "center",
@@ -693,7 +693,7 @@ export function NavV2() {
                     color: t.white,
                     background: t.indigo,
                     padding: "13px 18px",
-                    borderRadius: 999,
+                    borderRadius: 8,
                     textDecoration: "none",
                     textAlign: "center",
                   }}
@@ -713,7 +713,7 @@ export function NavV2() {
                       background: t.white,
                       border: `1px solid ${t.lineStrong}`,
                       padding: "12px 18px",
-                      borderRadius: 999,
+                      borderRadius: 8,
                       textDecoration: "none",
                       textAlign: "center",
                     }}
@@ -730,7 +730,7 @@ export function NavV2() {
                       color: t.white,
                       background: t.indigo,
                       padding: "13px 18px",
-                      borderRadius: 999,
+                      borderRadius: 8,
                       textDecoration: "none",
                       textAlign: "center",
                     }}
@@ -2003,7 +2003,7 @@ export function ComparisonV2() {
           style={{
             fontFamily: fonts.sans, fontSize: 15, fontWeight: 600,
             color: t.white, background: t.coal,
-            padding: "14px 30px", borderRadius: 999,
+            padding: "14px 30px", borderRadius: 8,
             textDecoration: "none",
             display: "inline-flex", alignItems: "center", gap: 8,
             letterSpacing: "-0.01em",
@@ -2431,6 +2431,7 @@ export function PricingV2() {
         "2 mock sessions",
         "Behavioral rounds + basic STAR score",
         "Full scored report after each session",
+        "No credit card required",
       ],
       cta: "Start free",
       href: "/signup?plan=free",
@@ -2702,7 +2703,7 @@ export function PricingV2() {
                   fontSize: 14,
                   fontWeight: 600,
                   padding: "12px 18px",
-                  borderRadius: 999,
+                  borderRadius: 8,
                   textDecoration: "none",
                   color: tier.featured ? t.coal : tier.price === "₹0" ? t.coal : t.cream,
                   background: tier.featured ? t.cream : tier.price === "₹0" ? "transparent" : t.copper,
@@ -2775,7 +2776,7 @@ export function FAQV2() {
   const qs: Array<{ q: string; a: string }> = [
     {
       q: "What exactly is free? Do I need a card to start?",
-      a: "2 sessions completely free: no account needed, no card required. You get the full voice interview and the full scored report both times. After that, ₹9 per session with no expiry, or ₹39 for a Sprint Pack of 5 sessions valid for 30 days. Both are one-time purchases — buy another pack whenever you need more, nothing auto-renews.",
+      a: "2 sessions completely free: no card required, just a free account (email or Google, 30 seconds). You get the full voice interview and the full scored report both times. After that, ₹9 per session with no expiry, or ₹39 for a Sprint Pack of 5 sessions valid for 30 days. Both are one-time purchases — buy another pack whenever you need more, nothing auto-renews.",
     },
     {
       q: "Will the AI understand my Indian English accent?",
@@ -2934,7 +2935,7 @@ function StructuredData() {
   /* Mirrors FAQV2's `qs` array verbatim (below in this file) — keep the two
      in sync so the structured data matches the visible accordion exactly. */
   const faqs = [
-    ["What exactly is free? Do I need a card to start?", "2 sessions completely free: no account needed, no card required. You get the full voice interview and the full scored report both times. After that, ₹9 per session with no expiry, or ₹39 for a Sprint Pack of 5 sessions valid for 30 days. Both are one-time purchases — buy another pack whenever you need more, nothing auto-renews."],
+    ["What exactly is free? Do I need a card to start?", "2 sessions completely free: no card required, just a free account (email or Google, 30 seconds). You get the full voice interview and the full scored report both times. After that, ₹9 per session with no expiry, or ₹39 for a Sprint Pack of 5 sessions valid for 30 days. Both are one-time purchases — buy another pack whenever you need more, nothing auto-renews."],
     ["Will the AI understand my Indian English accent?", "Yes, built specifically for Indian English. Our voice model is trained on Indian speech patterns, including regional accents. If you can speak to a real interviewer, you can speak to HireStepX."],
     ["Is ₹9 per session really it? What's the catch?", "That's the real price. ₹9 per session with no expiry: buy one, use it whenever. Or get the Sprint Pack: 5 sessions for ₹39, valid for 30 days, a one-time purchase with no auto-renewal. Built on Indian infrastructure at Indian costs. No hidden charges either way."],
     ["Will my current company know I'm practicing?", "No. HireStepX is completely private. We don't connect to LinkedIn, your employer, or your target company. Nothing you practice here is visible to anyone but you."],
@@ -3795,11 +3796,13 @@ export default function HomepageV2() {
       <main id="main">
         <HeroV2 />
         <InterviewFocusV2 />
+        <TestimonialsV2 />
         <PersonalizedReportsV2 />
         <FeatureGridV2 />
         <ProductStoryV2 />
         <HiredDirectlyV2 />
         <PricingV2 />
+        <BuiltForIndiaV2 />
         <SecurityComplianceV2 />
         <FAQV2 />
         <VideoCtaV2 />
@@ -3860,7 +3863,7 @@ export function MobileStickyCTA() {
           color: t.coal,
           background: t.cream,
           padding: "10px 16px",
-          borderRadius: 999,
+          borderRadius: 8,
           textDecoration: "none",
           whiteSpace: "nowrap",
           display: "inline-flex",
