@@ -156,7 +156,7 @@ export function isDeterministicLLMFailure(msg: string): boolean {
   if (isQuotaExhausted(msg)) return true;
   if (/\b413\b/.test(msg)) return true;
   if (/\b(400|401|403|404|422)\b/.test(msg)) return true;
-  return /\bskipped\b/i.test(msg);
+  return /skipped.{1,4}prompt/i.test(msg);
 }
 
 /** Thrown when every provider fails. Carries each provider's message so

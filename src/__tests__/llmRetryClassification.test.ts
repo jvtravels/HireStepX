@@ -61,7 +61,8 @@ describe("deterministic chain failures", () => {
     expect(isDeterministicLLMFailure("Groq error 413: Request too large")).toBe(true);
     expect(isDeterministicLLMFailure("Gemini error 400: INVALID_ARGUMENT")).toBe(true);
     expect(isDeterministicLLMFailure("Gemini error 429: RESOURCE_EXHAUSTED")).toBe(true);
-    expect(isDeterministicLLMFailure("groq skipped: prompt too large")).toBe(true);
+    expect(isDeterministicLLMFailure("Groq skipped — prompt (~7000 tokens) leaves ~0")).toBe(true);
+    expect(isDeterministicLLMFailure("gemini skipped — total LLM budget exhausted")).toBe(false);
     expect(isDeterministicLLMFailure("Groq error 503: overloaded")).toBe(false);
     expect(isDeterministicLLMFailure("timeout")).toBe(false);
   });
