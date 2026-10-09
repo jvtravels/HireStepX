@@ -2,15 +2,17 @@
 
 /* Full-page detail view for a single employer match, opened from a row in
    the Jobs table (DashboardJobs.tsx) or the dashboard's Employer Interest
-   card. Mirrors the employer console's /employer/requirements/[id] page
-   (back link, breadcrumb, header, content) with the candidate-relevant
-   fields only. */
+   card. Mirrors the employer console's /employer/requirements/[id] page:
+   a header card (icon tile, title, icon meta row) beside a details card,
+   with the breadcrumb (not a back link) as the way up. */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { ArrowLeftIcon, GlobeIcon, LockIcon, SendIcon } from "lucide-react";
+import {
+  BriefcaseIcon, Building2Icon, CalendarIcon, ClockIcon, GlobeIcon, GraduationCapIcon,
+  HourglassIcon, IndianRupeeIcon, LockIcon, MapPinIcon, SendIcon, UsersIcon,
+} from "lucide-react";
 import { useMaxWidth } from "./hooks/useMaxWidth";
 import { useAuth } from "./AuthContext";
 import { authHeaders } from "./supabase";
@@ -21,22 +23,52 @@ import { JobDetailRouteSkeleton } from "./routeSkeletons";
 import { CompanyAvatar } from "./CompanyAvatar";
 import type { JobMatch } from "./DashboardJobs";
 
-const BACK_LINK_STYLE = { display: "inline-flex", alignItems: "center", gap: 6, fontFamily: f.sans, fontSize: 13, fontWeight: 500, color: t.inkSoft, textDecoration: "none" } as const;
+/* Same surface as the employer console's <Card> (white, 1px line, 16px
+   radius, 24px padding, flat) so the two detail screens read as one product. */
+const PANEL_STYLE = { background: t.white, border: `1px solid ${t.line}`, borderRadius: 16, padding: 24, minWidth: 0 } as const;
+const SECTION_HEADING_STYLE = { fontFamily: f.sans, fontSize: 15, fontWeight: 600, color: t.coal, margin: "0 0 8px" } as const;
+const BODY_TEXT_STYLE = { fontFamily: f.sans, fontSize: 14, color: t.coal, margin: 0, lineHeight: 1.6, whiteSpace: "pre-line", overflowWrap: "anywhere" } as const;
+const EMPTY_TEXT_STYLE = { fontFamily: f.sans, fontSize: 13, color: t.inkFaint, fontStyle: "italic", margin: 0 } as const;
+
+function IconTile({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{ width: 28, height: 28, borderRadius: 8, background: t.creamSoft, color: t.inkFaint, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+      {children}
+    </div>
+  );
+}
+
+function Detail({ icon, label, value, muted }: { icon: React.ReactNode; label: string; value: string; muted?: boolean }) {
+  return (
+    <div style={{ display: "flex", alignItems: "flex-start", gap: 8, minWidth: 0 }}>
+      <IconTile>{icon}</IconTile>
+      <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
+        <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkFaint }}>{label}</span>
+        <span style={{ fontFamily: f.sans, fontSize: 13.5, fontWeight: 500, color: muted ? t.inkFaint : t.coal, fontStyle: muted ? "italic" : "normal", overflowWrap: "anywhere" }}>{value}</span>
+      </div>
+    </div>
+  );
+}
+
+function StatusChip({ label, color, background }: { label: string; color: string; background: string }) {
+  return (
+    <span style={{ fontFamily: f.sans, fontSize: textSize.xs, fontWeight: 600, color, background, padding: "4px 10px", borderRadius: 999 }}>
+      {label}
+    </span>
+  );
+}
 
 /* Who the employer is stays hidden until they've contacted the candidate
    (unlocked) — otherwise candidates could go around the platform. The server
    already redacts these fields for matched-only rows; the locked branch just
    explains why. */
-function CompanyCard({ job, stacked, onMessage }: { job: JobMatch; stacked: boolean; onMessage: () => void }) {
+function CompanyCard({ job, onMessage }: { job: JobMatch; onMessage: () => void }) {
   const websiteHost = job.companyWebsite ? job.companyWebsite.replace(/^https?:\/\//i, "").replace(/\/$/, "") : null;
   const websiteHref = job.companyWebsite && /^https?:\/\//i.test(job.companyWebsite) ? job.companyWebsite : job.companyWebsite ? `https://${job.companyWebsite}` : null;
   return (
     <aside
       aria-label="Company profile"
-      style={{
-        width: stacked ? "100%" : 280, flexShrink: 0, border: `1px solid ${t.line}`, borderRadius: 12,
-        background: t.white, padding: 18, display: "flex", flexDirection: "column", gap: 14,
-      }}
+      style={{ ...PANEL_STYLE, display: "flex", flexDirection: "column", gap: 14 }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
         <CompanyAvatar job={job} size={48} />
@@ -160,123 +192,147 @@ export default function JobDetailPage() {
   const mode = job.workMode ? WORK_MODE_LABEL[job.workMode] || job.workMode : null;
   const jobType = job.employmentType ? EMPLOYMENT_TYPE_LABEL[job.employmentType] || job.employmentType : null;
   const closed = job.status === "closed" || job.status === "failed";
-
-  const statLabel = (value: string | null, fallback: string) => (
-    <span style={{ color: t.inkFaint, fontStyle: value ? "normal" : "italic" }}>{value || fallback}</span>
-  );
+  const hasBody = !!(job.description || job.responsibilities || job.niceToHave);
+  const metaItem: React.CSSProperties = { display: "inline-flex", alignItems: "center", gap: 6 };
 
   return (
     <div style={{ flex: 1, minHeight: 0, overflowY: "auto", width: "100%", padding: stacked ? "16px" : "20px 24px", fontFamily: f.sans }}>
-      <Link href="/jobs" className="hover:underline underline-offset-4" style={BACK_LINK_STYLE}>
-        <ArrowLeftIcon size={14} aria-hidden="true" /> Back to Jobs
-      </Link>
-
-      <div style={{ margin: "14px 0 12px" }}>
-        <h1 style={{ fontFamily: f.sans, fontSize: 24, fontWeight: 700, color: t.coal, margin: 0 }}>{job.roleTitle}</h1>
-        <div style={{ fontFamily: f.sans, fontSize: 13.5, color: t.inkSoft, marginTop: 4 }}>
-          {job.location || "Location not specified"}{mode ? ` · ${mode}` : ""}
-        </div>
-      </div>
-
-      <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap", alignItems: "center" }}>
-        {job.unlocked ? (
-          <span style={{ fontFamily: f.sans, fontSize: textSize.xs, fontWeight: 600, color: t.indigoDeep, background: t.indigo100, padding: "4px 10px", borderRadius: 999 }}>
-            Contacted
-          </span>
-        ) : (
-          <span style={{ fontFamily: f.sans, fontSize: textSize.xs, fontWeight: 600, color: t.successInk, background: t.success100, padding: "4px 10px", borderRadius: 999 }}>
-            Matched
-          </span>
-        )}
-        {closed && (
-          <span style={{ fontFamily: f.sans, fontSize: textSize.xs, fontWeight: 600, color: t.inkSoft, background: t.creamSoft, padding: "4px 10px", borderRadius: 999 }}>
-            Role closed
-          </span>
-        )}
-      </div>
-
-      <div style={{ display: "flex", flexDirection: stacked ? "column-reverse" : "row", gap: 24, alignItems: "flex-start" }}>
-        <div style={{ flex: 1, minWidth: 0, width: "100%" }}>
-        {!job.unlocked && (
-          <p style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft, margin: "0 0 16px", lineHeight: 1.5 }}>
-            {job.matchReason}
-          </p>
-        )}
-
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px 20px", fontFamily: f.sans, fontSize: 13, marginBottom: 18, paddingBottom: 18, borderBottom: `1px solid ${t.line}` }}>
-          <div>{statLabel(comp, "Compensation not disclosed")}</div>
-          <div>{statLabel(exp ? `${exp} exp` : null, "Experience not specified")}</div>
-          <div>{statLabel(jobType, "Employment type not specified")}</div>
-          <div>{statLabel(job.openPositions != null ? `${job.openPositions} opening${job.openPositions === 1 ? "" : "s"}` : null, "Openings not specified")}</div>
-          <div>
-            <span style={{ color: t.inkFaint, fontStyle: job.noticePeriodPref ? "normal" : "italic" }}>
-              Notice: {job.noticePeriodPref || "Not specified"}
-            </span>
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 16, flexWrap: "wrap" }}>
+        <section aria-labelledby="job-title" style={{ ...PANEL_STYLE, flex: "3 1 min(560px, 100%)" }}>
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 0, flex: "1 1 280px" }}>
+              <div style={{ width: 48, height: 48, borderRadius: 12, background: t.indigo100, color: t.indigo, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <BriefcaseIcon size={22} aria-hidden="true" />
+              </div>
+              <div style={{ minWidth: 0 }}>
+                <h1 id="job-title" style={{ overflowWrap: "anywhere", fontFamily: f.sans, fontSize: "clamp(22px, 6vw, 28px)", fontWeight: 700, letterSpacing: "-0.02em", lineHeight: 1.2, color: t.coal, margin: 0 }}>
+                  {job.roleTitle}
+                </h1>
+                <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", columnGap: 12, rowGap: 4, marginTop: 8, fontFamily: f.sans, fontSize: 14, fontWeight: 500, color: t.coal }}>
+                  <span style={metaItem}>
+                    <IndianRupeeIcon size={14} color={t.inkFaint} aria-hidden="true" />
+                    {comp ? comp : <span style={{ color: t.inkFaint, fontStyle: "italic", fontWeight: 400 }}>Compensation not disclosed</span>}
+                  </span>
+                  <span style={metaItem}>
+                    <MapPinIcon size={14} color={t.inkFaint} aria-hidden="true" />
+                    {job.location || "Location not specified"}{mode ? ` · ${mode}` : ""}
+                  </span>
+                  {exp && (
+                    <span style={metaItem}>
+                      <GraduationCapIcon size={14} color={t.inkFaint} aria-hidden="true" /> {exp} exp
+                    </span>
+                  )}
+                  {jobType && (
+                    <span style={metaItem}>
+                      <ClockIcon size={14} color={t.inkFaint} aria-hidden="true" /> {jobType}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+              {job.unlocked
+                ? <StatusChip label="Contacted" color={t.indigoDeep} background={t.indigo100} />
+                : <StatusChip label="Matched" color={t.successInk} background={t.success100} />}
+              {closed && <StatusChip label="Role closed" color={t.inkSoft} background={t.creamSoft} />}
+            </div>
           </div>
-          <div>{statLabel(job.preferredIndustry, "Any industry")}</div>
-          <div>{statLabel(job.dueDate ? `Hiring by ${job.dueDate}` : null, "Open-ended timeline")}</div>
-        </div>
 
-        {job.skills.length > 0 ? (
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 16 }}>
-            {job.skills.map((s, i) => (
-              <span key={i} style={{ fontFamily: f.sans, fontSize: 11.5, color: t.coal, background: t.cream, border: `1px solid ${t.line}`, padding: "3px 9px", borderRadius: 999 }}>
-                {s}
-              </span>
-            ))}
+          {!job.unlocked && job.matchReason && (
+            <p style={{ fontFamily: f.sans, fontSize: 13.5, color: t.inkSoft, margin: "16px 0 0", lineHeight: 1.5 }}>{job.matchReason}</p>
+          )}
+
+          <div style={{ marginTop: 20, paddingTop: 20, borderTop: `1px solid ${t.line}`, display: "flex", flexDirection: "column", gap: 20 }}>
+            <section aria-label="Skills">
+              <h2 style={SECTION_HEADING_STYLE}>Skills</h2>
+              {job.skills.length > 0 ? (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  {job.skills.map((s, i) => (
+                    <span key={i} style={{ fontFamily: f.sans, fontSize: 12.5, color: t.coal, background: t.cream, border: `1px solid ${t.line}`, padding: "4px 10px", borderRadius: 999 }}>
+                      {s}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <p style={EMPTY_TEXT_STYLE}>No specific skills listed for this role.</p>
+              )}
+            </section>
+
+            {job.description && (
+              <section aria-label="About the role">
+                <h2 style={SECTION_HEADING_STYLE}>About the role</h2>
+                <p style={BODY_TEXT_STYLE}>{job.description}</p>
+              </section>
+            )}
+            {job.responsibilities && (
+              <section aria-label="Responsibilities">
+                <h2 style={SECTION_HEADING_STYLE}>Responsibilities</h2>
+                <p style={BODY_TEXT_STYLE}>{job.responsibilities}</p>
+              </section>
+            )}
+            {job.niceToHave && (
+              <section aria-label="Nice to have">
+                <h2 style={SECTION_HEADING_STYLE}>Nice to have</h2>
+                <p style={{ ...BODY_TEXT_STYLE, color: t.inkSoft }}>{job.niceToHave}</p>
+              </section>
+            )}
+            {!hasBody && <p style={EMPTY_TEXT_STYLE}>This employer hasn't added a role description yet.</p>}
+
+            <section aria-label="Perks and benefits">
+              <h2 style={SECTION_HEADING_STYLE}>Perks &amp; benefits</h2>
+              {job.perksAndBenefits.length > 0 ? (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  {job.perksAndBenefits.map((p, i) => (
+                    <span key={i} style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft, border: `1px solid ${t.line}`, padding: "4px 10px", borderRadius: 999 }}>
+                      {p}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <p style={EMPTY_TEXT_STYLE}>No perks or benefits listed.</p>
+              )}
+            </section>
           </div>
-        ) : (
-          <p style={{ fontFamily: f.sans, fontSize: 12, color: t.inkFaint, fontStyle: "italic", margin: "0 0 16px" }}>
-            No specific skills listed for this role.
-          </p>
-        )}
 
-        {job.description && (
-          <p style={{ fontFamily: f.sans, fontSize: 13, color: t.coal, margin: "0 0 12px", lineHeight: 1.6 }}>
-            {job.description}
-          </p>
-        )}
-
-        {job.responsibilities && (
-          <p style={{ fontFamily: f.sans, fontSize: 13, color: t.coal, margin: "0 0 12px", lineHeight: 1.6 }}>
-            <strong>Responsibilities: </strong>{job.responsibilities}
-          </p>
-        )}
-
-        {job.niceToHave && (
-          <p style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft, margin: "0 0 12px", lineHeight: 1.55 }}>
-            <strong style={{ color: t.coal }}>Nice to have: </strong>{job.niceToHave}
-          </p>
-        )}
-
-        {!job.description && !job.responsibilities && !job.niceToHave && (
-          <p style={{ fontFamily: f.sans, fontSize: 12, color: t.inkFaint, fontStyle: "italic", margin: "0 0 12px" }}>
-            This employer hasn't added a role description yet.
-          </p>
-        )}
-
-        {job.perksAndBenefits.length > 0 ? (
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 14 }}>
-            {job.perksAndBenefits.map((p, i) => (
-              <span key={i} style={{ fontFamily: f.sans, fontSize: 11, color: t.inkSoft, border: `1px solid ${t.line}`, padding: "2px 9px", borderRadius: 999 }}>
-                {p}
-              </span>
-            ))}
+          <div style={{ fontFamily: f.sans, fontSize: 12, color: t.inkFaint, marginTop: 20, paddingTop: 14, borderTop: `1px solid ${t.line}` }}>
+            {job.unlocked && job.unlockedAt
+              ? `Contacted ${daysAgo(job.unlockedAt)} · matched ${daysAgo(job.matchedAt)}`
+              : `Matched ${daysAgo(job.matchedAt)}`}
           </div>
-        ) : (
-          <p style={{ fontFamily: f.sans, fontSize: 11.5, color: t.inkFaint, fontStyle: "italic", margin: "0 0 14px" }}>
-            No perks or benefits listed.
-          </p>
-        )}
+        </section>
 
+        <div style={{ flex: "1 1 260px", minWidth: 260, maxWidth: stacked ? "none" : 340, display: "flex", flexDirection: "column", gap: 16 }}>
+          <CompanyCard job={job} onMessage={() => router.push(`/messages?matchId=${job.id}`)} />
+          <section aria-labelledby="job-details-heading" style={PANEL_STYLE}>
+            <h2 id="job-details-heading" style={{ ...SECTION_HEADING_STYLE, margin: 0 }}>Role details</h2>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginTop: 16 }}>
+              <Detail
+                icon={<UsersIcon size={14} aria-hidden="true" />}
+                label="Openings"
+                value={job.openPositions != null ? `${job.openPositions} opening${job.openPositions === 1 ? "" : "s"}` : "Not specified"}
+                muted={job.openPositions == null}
+              />
+              <Detail
+                icon={<HourglassIcon size={14} aria-hidden="true" />}
+                label="Notice period"
+                value={job.noticePeriodPref || "Not specified"}
+                muted={!job.noticePeriodPref}
+              />
+              <Detail
+                icon={<Building2Icon size={14} aria-hidden="true" />}
+                label="Industry"
+                value={job.preferredIndustry || "Any industry"}
+                muted={!job.preferredIndustry}
+              />
+              <Detail
+                icon={<CalendarIcon size={14} aria-hidden="true" />}
+                label="Timeline"
+                value={job.dueDate ? `Hiring by ${job.dueDate}` : "Open-ended timeline"}
+                muted={!job.dueDate}
+              />
+            </div>
+          </section>
         </div>
-        <CompanyCard job={job} stacked={stacked} onMessage={() => router.push(`/messages?matchId=${job.id}`)} />
-      </div>
-
-      <div style={{ fontFamily: f.sans, fontSize: 11, color: t.inkFaint, paddingTop: 12, marginTop: 18, borderTop: `1px solid ${t.line}` }}>
-        {job.unlocked && job.unlockedAt
-          ? `Contacted ${daysAgo(job.unlockedAt)} · matched ${daysAgo(job.matchedAt)}`
-          : `Matched ${daysAgo(job.matchedAt)}`}
       </div>
     </div>
   );

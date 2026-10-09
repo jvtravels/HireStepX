@@ -66,12 +66,15 @@ describe("JobDetailPage", () => {
     mockFetch([baseMatch]);
     render(<JobDetailPage />);
     await waitFor(() => expect(screen.getByRole("heading", { name: "Backend Engineer" })).toBeInTheDocument());
-    expect(screen.getByRole("link", { name: /Back to Jobs/ })).toHaveAttribute("href", "/jobs");
+    expect(screen.queryByRole("link", { name: /Back to Jobs/ })).not.toBeInTheDocument();
     const company = screen.getByRole("complementary", { name: "Company profile" });
     expect(within(company).getByText("Acme Corp")).toBeInTheDocument();
     expect(within(company).getByRole("link", { name: /acme\.example/ })).toHaveAttribute("href", "https://acme.example");
     expect(screen.getByText("2 openings")).toBeInTheDocument();
-    expect(screen.getByText(/Notice: 30 days/)).toBeInTheDocument();
+    expect(screen.getByText("Notice period")).toBeInTheDocument();
+    expect(screen.getByText("30 days")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Responsibilities" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Role details" })).toBeInTheDocument();
     expect(screen.getByText(/Own the payments service\./)).toBeInTheDocument();
     expect(screen.getByText(/Hiring by 2026-09-30/)).toBeInTheDocument();
   });
