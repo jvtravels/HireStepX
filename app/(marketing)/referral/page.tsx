@@ -5,7 +5,7 @@ import { buildReferralJsonLd } from "./_jsonld";
 export const metadata: Metadata = {
   title: "Refer a Friend: Give a Session, Get a Session | HireStepX",
   description:
-    "Refer a friend to HireStepX, and both of you get a free session credit. Share your link, they practise, you earn a free session. No codes, no hassle.",
+    "Refer a friend to HireStepX, and both of you get a free session credit. Share your link, they finish a first interview, you earn a free session. No codes, no hassle.",
   keywords: [
     "HireStepX referral program",
     "refer a friend interview prep India",
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Refer a Friend to HireStepX: Both of You Get a Session",
     description:
-      "Share your referral link. Both of you get a free session credit. No limit on referrals.",
+      "Share your referral link. Both of you get a free session credit. Referral codes are for new accounts.",
     url: "https://hirestepx.com/referral",
     type: "website",
     siteName: "HireStepX",

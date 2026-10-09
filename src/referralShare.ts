@@ -10,7 +10,7 @@ export interface ReferralStats {
 export const SESSIONS_PER_REFERRAL = 1;
 
 export function buildShareMessage(link: string): string {
-  return `I'm practising interviews with AI on HireStepX. Sign up with my link and we each get a free practice session: ${link}`;
+  return `I'm practising interviews with AI on HireStepX. Sign up with my link and get a free practice session: ${link}`;
 }
 
 export function whatsAppShareUrl(link: string): string {

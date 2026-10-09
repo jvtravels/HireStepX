@@ -81,8 +81,8 @@ function StatusChip({ status }: { status: InviteStatus }) {
 
 const STEPS = [
   { title: "Share your link", body: "Send it to a friend who is preparing for interviews." },
-  { title: "They sign up", body: "They create a free HireStepX account using your link." },
-  { title: "You both get a session", body: `Each of you gets ${SESSIONS_PER_REFERRAL} free practice session, credited instantly.` },
+  { title: "They sign up", body: `They create a new account with your link and get ${SESSIONS_PER_REFERRAL} free practice session right away.` },
+  { title: "You earn yours", body: `When they finish their first interview, ${SESSIONS_PER_REFERRAL} free practice session is added to your account.` },
 ];
 
 export default function DashboardReferrals() {
@@ -161,7 +161,7 @@ export default function DashboardReferrals() {
       <div style={{ padding: "16px 20px", borderBottom: `1px solid ${t.line}` }}>
         <h1 id="referral-title" style={{ fontFamily: f.sans, fontSize: 26, fontWeight: 700, color: t.coal, margin: 0, letterSpacing: "-0.01em", lineHeight: "32px" }}>Referrals</h1>
         <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkFaint, margin: "2px 0 0" }}>
-          Invite friends to HireStepX. When they join with your link, you both get a free practice session.
+          Invite friends to HireStepX. They get a free practice session when they join, and you get one when they finish their first interview.
         </p>
       </div>
 
@@ -219,7 +219,7 @@ export default function DashboardReferrals() {
               <h2 id="referral-invites-heading" style={SECTION_HEADING_STYLE}>Your invites</h2>
               {invites.length === 0 ? (
                 <p style={{ fontFamily: f.sans, fontSize: 13.5, color: t.inkSoft, margin: "8px 0 0", lineHeight: 1.55 }}>
-                  No one has joined with your link yet. Share it above and they will show up here.
+                  No one has joined with your link yet. Share it above and they will show up here. Your free session unlocks when they finish their first interview.
                 </p>
               ) : (
                 <ul style={{ listStyle: "none", margin: "12px 0 0", padding: 0, display: "flex", flexDirection: "column" }}>

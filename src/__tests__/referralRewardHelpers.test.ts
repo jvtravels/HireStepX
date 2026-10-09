@@ -3,7 +3,13 @@ import {
   normalizeReferralCode,
   claimReferralReward,
   countRecentReferralRewards,
-  grantReferralReward,
+  isNewAccount,
+  maskEmail,
+  countReferralsCreatedSince,
+  countReferralPayouts,
+  payReferrerForReferral,
+  REFERRAL_REWARD_LIFETIME_CAP,
+  REFERRAL_NEW_ACCOUNT_WINDOW_MS,
   REFERRAL_REWARD_DAILY_CAP,
   REFERRAL_REWARD_CREDITS,
 } from "../../server-handlers/_referral-reward-helpers";
@@ -65,61 +71,112 @@ describe("countRecentReferralRewards", () => {
   });
 });
 
-describe("grantReferralReward", () => {
+describe("isNewAccount", () => {
+  const now = Date.parse("2026-03-10T00:00:00Z");
+  it("accepts accounts inside the window", () => {
+    expect(isNewAccount("2026-03-09T00:00:00Z", now)).toBe(true);
+    expect(isNewAccount(new Date(now - REFERRAL_NEW_ACCOUNT_WINDOW_MS).toISOString(), now)).toBe(true);
+  });
+  it("rejects old accounts", () => {
+    expect(isNewAccount("2026-01-01T00:00:00Z", now)).toBe(false);
+  });
+  it("fails closed on missing or invalid timestamps", () => {
+    expect(isNewAccount(null, now)).toBe(false);
+    expect(isNewAccount("garbage", now)).toBe(false);
+  });
+});
+
+describe("maskEmail", () => {
+  it("keeps the first letter and the domain", () => {
+    expect(maskEmail("priya.sharma@gmail.com")).toBe("p***@gmail.com");
+  });
+  it("returns empty for missing or malformed input", () => {
+    expect(maskEmail(null)).toBe("");
+    expect(maskEmail("@x.com")).toBe("");
+    expect(maskEmail("nope")).toBe("");
+  });
+});
+
+describe("referral counters", () => {
+  it("countReferralsCreatedSince counts rows", async () => {
+    const f = router([{ match: (u) => u.includes("created_at=gte"), reply: () => res([{ id: "1" }, { id: "2" }, { id: "3" }]) }]);
+    expect(await countReferralsCreatedSince(BASE, KEY, "ref", "2026-01-01T00:00:00Z", f)).toBe(3);
+  });
+  it("countReferralPayouts counts paid rows", async () => {
+    const f = router([{ match: (u) => u.includes("reward_granted_at=not.is.null"), reply: () => res([{ id: "1" }]) }]);
+    expect(await countReferralPayouts(BASE, KEY, "ref", f)).toBe(1);
+  });
+});
+
+describe("payReferrerForReferral", () => {
   const input = {
     baseUrl: BASE,
     serviceKey: KEY,
-    referralId: "r1",
-    referrerId: "u-referrer",
     referredId: "u-referred",
     nowIso: "2026-01-01T00:00:00Z",
     sinceIso: "2025-12-31T00:00:00Z",
   };
+  const pendingRow = { match: (u: string) => u.includes("referred_id=eq.u-referred") && u.includes("reward_granted_at=is.null"), reply: () => res([{ id: "r1", referrer_id: "u-referrer" }]) };
+  const dailyCount = (rows: unknown[]) => ({ match: (u: string) => u.includes("reward_granted_at=gte"), reply: () => res(rows) });
+  const lifetimeCount = (rows: unknown[]) => ({ match: (u: string) => u.includes("reward_granted_at=not.is.null"), reply: () => res(rows) });
+  const claim = (rows: unknown[], onCall?: () => void) => ({
+    match: (u: string, i?: RequestInit) => u.includes("/referrals?id=eq.r1") && i?.method === "PATCH" && !u.includes("reward_granted_at=eq."),
+    reply: () => { onCall?.(); return res(rows); },
+  });
+  const rpcOk = { match: (u: string) => u.includes("/rpc/"), reply: () => res(5) };
+  const rpcFail = { match: (u: string) => u.includes("/rpc/"), reply: () => res(null, false) };
+  const release = (onCall: () => void) => ({
+    match: (u: string, i?: RequestInit) => u.includes("reward_granted_at=eq.") && i?.method === "PATCH",
+    reply: () => { onCall(); return res(null); },
+  });
+  const rows = (n: number) => Array.from({ length: n }, (_, i) => ({ id: String(i) }));
 
-  it("does not grant or claim when the referrer is over the daily cap", async () => {
-    const capRows = Array.from({ length: REFERRAL_REWARD_DAILY_CAP }, (_, i) => ({ id: String(i) }));
+  it("returns no_pending when the referred user has no unpaid referral", async () => {
+    const f = router([{ match: (u) => u.includes("referred_id=eq."), reply: () => res([]) }]);
+    expect((await payReferrerForReferral(input, f)).reason).toBe("no_pending");
+  });
+
+  it("returns error when the lookup fails", async () => {
+    const f = router([{ match: () => true, reply: () => res(null, false) }]);
+    expect((await payReferrerForReferral(input, f)).reason).toBe("error");
+  });
+
+  it("does not claim when over the daily cap", async () => {
     const patch = vi.fn();
-    const f = router([
-      { match: (u) => u.includes("reward_granted_at=gte"), reply: () => res(capRows) },
-      { match: (_u, i) => i?.method === "PATCH", reply: () => { patch(); return res([{ id: "r1" }]); } },
-    ]);
-    const out = await grantReferralReward(input, f);
-    expect(out.granted).toBe(false);
+    const f = router([pendingRow, dailyCount(rows(REFERRAL_REWARD_DAILY_CAP)), lifetimeCount([]), claim([{ id: "r1" }], patch)]);
+    const out = await payReferrerForReferral(input, f);
     expect(out.reason).toBe("capped");
     expect(patch).not.toHaveBeenCalled();
   });
 
-  it("returns already_claimed when the CAS finds no row", async () => {
-    const f = router([
-      { match: (u) => u.includes("reward_granted_at=gte"), reply: () => res([]) },
-      { match: (_u, i) => i?.method === "PATCH", reply: () => res([]) }, // claim loses
-    ]);
-    const out = await grantReferralReward(input, f);
-    expect(out.granted).toBe(false);
-    expect(out.reason).toBe("already_claimed");
+  it("does not claim when over the lifetime cap", async () => {
+    const patch = vi.fn();
+    const f = router([pendingRow, dailyCount([]), lifetimeCount(rows(REFERRAL_REWARD_LIFETIME_CAP)), claim([{ id: "r1" }], patch)]);
+    const out = await payReferrerForReferral(input, f);
+    expect(out.reason).toBe("capped");
+    expect(patch).not.toHaveBeenCalled();
   });
 
-  it("claims and credits BOTH sides exactly once on success", async () => {
-    const credited: string[] = [];
-    const f = router([
-      { match: (u) => u.includes("reward_granted_at=gte"), reply: () => res([]) }, // cap: 0
-      { match: (u, i) => u.includes("/referrals") && i?.method === "PATCH", reply: () => res([{ id: "r1" }]) }, // claim wins
-      // RPC not yet deployed in test env — return 404 so grantSessionCredits falls back to the
-      // non-atomic upsert path. Supabase returns 404 for missing functions, not a network throw.
-      { match: (u) => u.includes("/rpc/"), reply: () => ({ ok: false, status: 404, json: async () => ({}) } as unknown as Response) },
-      { match: (u, i) => u.includes("/session_credits") && (!i || i.method === undefined || i.method === "GET"), reply: () => res([{ balance: 0 }]) }, // balance read
-      {
-        match: (u, i) => u.includes("/session_credits") && i?.method === "POST",
-        reply: () => { credited.push("grant"); return res(null); },
-      },
-    ]);
-    const out = await grantReferralReward(input, f);
-    expect(out.granted).toBe(true);
-    expect(out.reason).toBe("ok");
-    expect(out.referrerCredited).toBe(true);
-    expect(out.referredCredited).toBe(true);
-    // One credit grant POST per side.
-    expect(credited.length).toBe(2);
+  it("returns already_claimed when the CAS loses", async () => {
+    const f = router([pendingRow, dailyCount([]), lifetimeCount([]), claim([])]);
+    expect((await payReferrerForReferral(input, f)).reason).toBe("already_claimed");
+  });
+
+  it("releases the claim when the credit write fails so a retry can pay", async () => {
+    const released = vi.fn();
+    const f = router([pendingRow, dailyCount([]), lifetimeCount([]), claim([{ id: "r1" }]), rpcFail, release(released)]);
+    const out = await payReferrerForReferral(input, f);
+    expect(out.paid).toBe(false);
+    expect(out.reason).toBe("credit_failed");
+    expect(released).toHaveBeenCalledTimes(1);
+  });
+
+  it("claims once and credits the referrer on success", async () => {
+    const claimed = vi.fn();
+    const f = router([pendingRow, dailyCount([]), lifetimeCount([]), claim([{ id: "r1" }], claimed), rpcOk]);
+    const out = await payReferrerForReferral(input, f);
+    expect(out).toEqual({ paid: true, reason: "paid", referrerId: "u-referrer" });
+    expect(claimed).toHaveBeenCalledTimes(1);
     expect(REFERRAL_REWARD_CREDITS).toBe(1);
   });
 });

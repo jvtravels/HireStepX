@@ -85,7 +85,9 @@ full story. Same pattern applies to any auth'd mutation.
 **Streak / reward economy** — practice_timestamps + session_credits
 live on `profiles`. Reward triggers:
 - Streak milestones 7 / 14 / 30 (save-session.ts)
-- Referral conversion to paid tier (verify-payment.ts)
+- Referral: friend is credited on signup (new account ≤7 days old, `_referral-apply.ts`);
+  referrer is paid on the friend's first session with ≥3 answers
+  (`payReferrerForReferral` via save-session.ts). Daily cap 20, lifetime cap 50.
 - Single-session purchase
 The `_streak-reward.ts` and `_referral-reward.ts` helpers are
 unit-tested; the compare-and-swap semantics are load-bearing.

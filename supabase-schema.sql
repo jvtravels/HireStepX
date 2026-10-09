@@ -1169,14 +1169,14 @@ drop policy if exists "Users can view own payments" on payments;
 create policy "Users can view own payments" on payments
   for select using ((auth.uid())::text = user_id::text);
 
--- Referrals: users can view/create their own referrals
+-- Referrals: users can view their own referrals. Rows are created ONLY by the
+-- service role (/api/referral); a client insert policy would let anyone forge
+-- referral rows for any code.
 alter table referrals enable row level security;
 drop policy if exists "Users can view own referrals" on referrals;
 create policy "Users can view own referrals" on referrals
   for select using ((auth.uid())::text = referrer_id::text);
 drop policy if exists "Users can insert own referrals" on referrals;
-create policy "Users can insert own referrals" on referrals
-  for insert with check ((auth.uid())::text = referrer_id::text);
 
 -- Promo codes: restrict public SELECT to avoid code enumeration.
 -- Validation is server-side via /api/validate-promo (service-role key).

@@ -2089,7 +2089,7 @@ const HOW_IT_WORKS = [
   {
     step: "01",
     heading: "Get your link",
-    body: "Sign up or log in, then visit Dashboard → Settings → Referral to copy your personal link.",
+    body: "Sign up or log in, then open Referrals from your account menu to copy your personal link.",
   },
   {
     step: "02",
@@ -2099,7 +2099,7 @@ const HOW_IT_WORKS = [
   {
     step: "03",
     heading: "Both of you benefit",
-    body: "Your friend gets a free session credit added to their account immediately. You earn one free session credit once they practise.",
+    body: "Your friend gets a free session credit added to their account immediately. You earn one free session credit when they finish their first interview.",
   },
 ];
 
@@ -2298,9 +2298,9 @@ export function ReferralPageV2() {
             margin: "0 auto",
           }}
         >
-          Credit is applied automatically once your referred friend completes
-          their first paid session. Credits are valid for 90 days and apply
-          toward any session type. No limit on referrals.
+          Your credit is applied automatically once your referred friend
+          completes their first interview. Referral codes work for new accounts
+          only, and you can earn up to 50 free sessions through referrals.
         </p>
       </section>
     </PageShell>

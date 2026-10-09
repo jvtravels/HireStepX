@@ -30,6 +30,8 @@ import { computeStreakReward } from "./_streak-reward";
 import { grantSessionCredits } from "./_session-credits";
 import { computePracticeTimestamps } from "./_save-session-helpers";
 import { notify } from "./_notify";
+import { payReferrerForReferral, REFERRAL_PAYOUT_MIN_QUESTIONS, REFERRAL_REWARD_WINDOW_MS } from "./_referral-reward-helpers";
+import { notifyReferrerPaid } from "./_referral-emails";
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || "";
@@ -673,7 +675,7 @@ export default async function handler(req: Request): Promise<Response> {
   let completedCountAfter = -1;
   try {
     const getRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(auth.userId)}&select=practice_timestamps,started_session_ids`,
+      `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(auth.userId)}&select=practice_timestamps,started_session_ids,referred_by`,
       {
         headers: {
           apikey: SUPABASE_SERVICE_KEY,
@@ -727,6 +729,37 @@ export default async function handler(req: Request): Promise<Response> {
           // Only set when this was a genuine new session (not a replay / ghost).
           if (!alreadyCounted && !isGhostSession && questionsAnswered) {
             completedCountAfter = existing.length + 1;
+          }
+          // Referral payout: the referred user just completed a real session, so
+          // the referrer's reward (held back at signup) is now due. Awaited — it
+          // is a payout, so it must not be cut off when the response returns.
+          if (row.referred_by && !alreadyCounted && !isGhostSession && (sessionRow.questions ?? 0) >= REFERRAL_PAYOUT_MIN_QUESTIONS) {
+            try {
+              const payout = await payReferrerForReferral({
+                baseUrl: SUPABASE_URL,
+                serviceKey: SUPABASE_SERVICE_KEY,
+                referredId: auth.userId,
+                nowIso,
+                sinceIso: new Date(Date.now() - REFERRAL_REWARD_WINDOW_MS).toISOString(),
+              });
+              if (payout.paid && payout.referrerId) {
+                const referrerId = payout.referrerId;
+                void captureServerEvent("referral_reward_granted", referrerId, { side: "referrer" });
+                void (async () => {
+                  const r = await fetch(
+                    `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(referrerId)}&select=email,name`,
+                    { headers: { apikey: SUPABASE_SERVICE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_KEY}` } },
+                  ).catch(() => null);
+                  const rows = r?.ok ? await r.json().catch(() => []) : [];
+                  const ref = Array.isArray(rows) ? rows[0] : null;
+                  await notifyReferrerPaid(referrerId, (ref?.email as string) ?? null, (ref?.name as string) ?? null);
+                })().catch((e: unknown) => console.warn("[save-session] referrer notify failed:", (e as Error).message));
+              } else if (payout.reason === "credit_failed" || payout.reason === "error") {
+                console.warn(`[save-session] referral payout ${payout.reason} for referred=${auth.userId.slice(0, 8)}`);
+              }
+            } catch (e) {
+              console.warn("[save-session] referral payout threw:", (e as Error).message);
+            }
           }
           if (!alreadyCounted && questionsAnswered) {
             const bonus = computeStreakReward(existing, nowIso);
