@@ -249,98 +249,75 @@ export function StatCardsRow({
 
 /* ─── Your Next Move / Your First Step ─── */
 
-const NEXT_MOVE_COPY: Record<string, { description: string; tags: [string, string, string] }> = {
+const NEXT_MOVE_COPY: Record<string, { description: string }> = {
   communication: {
     description: "Clear, confident communication is the fastest lever for your overall score. This session drills the fundamentals.",
-    tags: ["Clearer answer structure", "Relevant examples", "Stronger delivery"],
   },
   structure: {
     description: "A well-structured answer is easier to follow and score. This session drills organizing your response before you speak.",
-    tags: ["Situation → Result flow", "Shorter setup", "Clear takeaway"],
   },
   technicalDepth: {
     description: "Real technical depth separates a good answer from a great one. This session drills going past the surface level.",
-    tags: ["Specific tools used", "Trade-offs explained", "Concrete outcomes"],
   },
   leadership: {
     description: "Owning the work as a leader is what interviewers listen for. This session drills showing ownership, not just participation.",
-    tags: ["Ownership language", "Decision rationale", "Team impact"],
   },
   problemSolving: {
     description: "Breaking a problem down step by step shows how you think, not just what you did. This session drills that structure.",
-    tags: ["Problem framing", "Step-by-step logic", "Verified outcome"],
   },
   confidence: {
     description: "Sounding certain changes how an answer is received, even when the content is the same. This session drills delivery.",
-    tags: ["Fewer hedges", "Steady pacing", "Direct statements"],
   },
   specificity: {
     description: "Numbers and specifics make a claim credible. This session drills backing up every answer with real detail.",
-    tags: ["Quantified results", "Named tools/metrics", "Concrete examples"],
   },
   adaptability: {
     description: "Pivoting cleanly when a follow-up catches you off guard shows real command of the material. This session drills staying flexible under pressure.",
-    tags: ["Handles follow-ups", "Flexible framing", "No rigid scripts"],
   },
   businessImpact: {
     description: "Tying your work to revenue, efficiency, or growth turns a feature story into a business story. This session drills that connection.",
-    tags: ["Revenue/efficiency framing", "Quantified outcomes", "Business-first narrative"],
   },
   answerCompleteness: {
     description: "Leaving part of a multi-part question unanswered costs easy points. This session drills covering every angle asked.",
-    tags: ["Full question coverage", "No dropped sub-asks", "Structured completeness"],
   },
   anchoring: {
     description: "Anchoring the number first sets the frame for the entire negotiation. This session drills opening with confidence.",
-    tags: ["Opening with a number", "Market-rate framing", "Holding your position"],
   },
   packageThinking: {
     description: "Looking beyond base salary unlocks real negotiation leverage. This session drills thinking in total compensation.",
-    tags: ["Equity & bonus asks", "Benefits negotiation", "Total comp framing"],
   },
   leverageUse: {
     description: "Building leverage before you ask changes the entire conversation. This session drills surfacing your strongest cards.",
-    tags: ["Competing offers", "Market data citing", "Timing your ask"],
   },
   concessionStrategy: {
     description: "Trading concessions instead of just giving them protects your position. This session drills give-to-get negotiation.",
-    tags: ["Trade, don't cave", "Conditional offers", "Protecting your floor"],
   },
   closingTechnique: {
     description: "A clear written summary at the close avoids ambiguity later. This session drills closing the loop properly.",
-    tags: ["Written summary", "Next-step clarity", "Confirming terms"],
   },
   composure: {
     description: "Staying composed under pressure is itself a signal to the other side. This session drills holding steady when pushed.",
-    tags: ["Measured pace", "No over-explaining", "Calm pushback"],
   },
   professionalTone: {
     description: "A professional, collaborative tone keeps negotiation productive instead of adversarial. This session drills that balance.",
-    tags: ["Collaborative framing", "Firm but polite", "No ultimatums"],
   },
   empathy: {
     description: "Leading with user empathy shows you understand who you're building for. This session drills grounding answers in the user.",
-    tags: ["User-first framing", "Named pain points", "Evidence of research"],
   },
   metricsLiteracy: {
     description: "Picking the right success metric shows product judgment. This session drills reasoning with the metrics that matter.",
-    tags: ["Right north star", "Trade-off awareness", "Data-backed calls"],
   },
   prioritization: {
     description: "Being clear about trade-offs is what separates prioritization from just listing ideas. This session drills that clarity.",
-    tags: ["Named trade-offs", "Clear rationale", "Decisive calls"],
   },
   productSense: {
     description: "Sharp product instincts show up in how you reason, not just what you ship. This session drills that reasoning.",
-    tags: ["User + business lens", "Clear hypotheses", "Grounded judgment"],
   },
   systemThinking: {
     description: "Thinking in systems instead of features shows you can scale a solution. This session drills that broader lens.",
-    tags: ["Component breakdown", "Scaling considerations", "Edge-case awareness"],
   },
   starStructure: {
     description: "Hitting every STAR beat cleanly keeps your answers complete and easy to score. This session drills the full structure.",
-    tags: ["Situation → Task", "Action in detail", "Quantified result"],
   },
 };
 
@@ -367,44 +344,44 @@ export function NextMoveCard({ isFirstTimer, weakestSkillKey, ctaLabel, onStart,
 
   return (
     <section aria-labelledby="dh-next-heading" style={{
-      padding: "24px", borderRadius: 14, background: t.cream, border: `1px solid ${t.line}`,
-      display: "flex", flexDirection: "column", gap: 14,
+      padding: "28px", borderRadius: 14, background: t.cream, border: `1px solid ${t.line}`,
+      display: "flex", flexDirection: "column", gap: 16,
     }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={t.coal} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
-            <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-            <line x1="12" x2="12" y1="19" y2="22" />
-          </svg>
-          <span style={{ fontFamily: f.sans, fontSize: textSize.lg, fontWeight: 700, color: t.coal }}>
-            {isFirstTimer ? "Your First Step" : "Your Next Move"}
-          </span>
-        </div>
-        <span style={{ fontFamily: f.sans, fontSize: textSize.sm, color: t.inkFaint }}>
-          ~{sessionMinutes} min · {sessionQuestionCount} questions
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={t.indigo} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="10" />
+          <circle cx="12" cy="12" r="6" />
+          <circle cx="12" cy="12" r="2" />
+        </svg>
+        <span style={{ fontFamily: f.sans, fontSize: textSize.md, fontWeight: 600, color: t.inkSoft }}>
+          {isFirstTimer ? "Your First Step" : "Your Next Move"}
         </span>
-      </div>
-      <h2 id="dh-next-heading" style={{ fontFamily: f.sans, fontSize: textSize["2xl"], fontWeight: 700, color: t.coal, margin: 0 }}>
-        {title}
-      </h2>
-      <p style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.inkSoft, margin: 0, lineHeight: 1.55 }}>
-        {copy.description}
-      </p>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
         {chips?.map((c) => (
           <Tag key={c.label} label={c.label} tone={c.kind === "streak" ? "indigo" : "neutral"} />
         ))}
-        {copy.tags.map((tag) => <Tag key={tag} label={tag} />)}
       </div>
-      <Button
-        type="button"
-        size="cta"
-        onClick={onStart}
-        style={{ marginTop: 4, width: "100%", fontFamily: f.sans }}
-      >
-        {ctaLabel} →
-      </Button>
+      <h2 id="dh-next-heading" style={{ fontFamily: f.sans, fontSize: textSize["3xl"], fontWeight: 700, color: t.coal, margin: 0, lineHeight: 1.2 }}>
+        {title}
+      </h2>
+      <p style={{ fontFamily: f.sans, fontSize: textSize.lg, color: t.inkSoft, margin: 0, lineHeight: 1.55, maxWidth: 640 }}>
+        {copy.description}
+      </p>
+      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", columnGap: 20, rowGap: 12, marginTop: 4 }}>
+        <Button type="button" size="cta" onClick={onStart} style={{ fontFamily: f.sans }}>
+          {ctaLabel} →
+        </Button>
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", columnGap: 10, rowGap: 4, fontFamily: f.sans, fontSize: textSize.sm, color: t.inkFaint }}>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+            <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" />
+            </svg>
+            ~{sessionMinutes} min · {sessionQuestionCount} questions
+          </span>
+          <span aria-hidden="true">•</span>
+          <span>Personalized questions based on your role</span>
+        </div>
+      </div>
     </section>
   );
 }
