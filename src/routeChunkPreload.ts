@@ -9,6 +9,7 @@ const LOADERS: Record<string, () => Promise<unknown>> = {
   "/sessions": () => import("./SessionsV2"),
   "/jobs": () => import("./DashboardJobs"),
   "/messages": () => import("./MessagesV2"),
+  "/referrals": () => import("./DashboardReferrals"),
   "/calendar": () => import("./DashboardCalendar"),
   "/resume": () => import("./ResumeV2"),
   "/settings": () => import("./DashboardSettings"),

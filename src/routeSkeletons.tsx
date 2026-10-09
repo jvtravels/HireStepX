@@ -111,6 +111,34 @@ export function ResumeRouteSkeleton() {
   );
 }
 
+export function ReferralsRouteSkeleton() {
+  const panel = { background: "#fff", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 16, padding: 24, minWidth: 0 } as const;
+  return (
+    <div role="status" aria-busy="true" style={{ width: "100%" }}>
+      <span className="sr-only">Loading referrals</span>
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 16, flexWrap: "wrap" }}>
+        <div style={{ flex: "3 1 min(560px, 100%)", minWidth: 0, display: "flex", flexDirection: "column", gap: 16 }}>
+          <div style={panel}>
+            <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 24 }}>
+              <div className="skeleton" style={{ width: 48, height: 48, borderRadius: 12, flexShrink: 0 }} />
+              <div style={{ flex: 1 }}>
+                <div className="skeleton skeleton-heading" style={{ width: 300, maxWidth: "80%", marginBottom: 10 }} />
+                <div className="skeleton skeleton-text-sm" style={{ width: 380, maxWidth: "90%" }} />
+              </div>
+            </div>
+            <div className="skeleton" style={{ height: 40, width: "100%", borderRadius: 10 }} />
+          </div>
+          <div className="skeleton" style={{ height: 150, borderRadius: 16 }} />
+        </div>
+        <div style={{ flex: "1 1 260px", minWidth: 260, maxWidth: 340, display: "flex", flexDirection: "column", gap: 16 }}>
+          <div className="skeleton" style={{ height: 170, borderRadius: 16 }} />
+          <div className="skeleton" style={{ height: 230, borderRadius: 16 }} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function JobDetailRouteSkeleton() {
   const panel = { background: "#fff", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 16, padding: 24, minWidth: 0 } as const;
   return (

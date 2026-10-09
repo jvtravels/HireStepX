@@ -80,6 +80,7 @@ const navItems = [
 const EXTRA_ROUTE_LABELS: { prefix: string; label: string }[] = [
   { prefix: "/messages", label: "Messages" },
   { prefix: "/settings", label: "Settings" },
+  { prefix: "/referrals", label: "Referrals" },
 ];
 
 function NavIcon({ id }: { id: string }) {
@@ -458,7 +459,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
             <SettingsIcon size={14} aria-hidden="true" />
             Settings
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => nav.push("/settings?tab=referral")}>
+          <DropdownMenuItem onClick={() => nav.push("/referrals")}>
             <UserPlusIcon size={14} aria-hidden="true" />
             Referral
           </DropdownMenuItem>
