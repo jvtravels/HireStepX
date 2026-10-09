@@ -4,6 +4,7 @@ import { captureServerEvent } from "./_posthog";
 import { countTokens } from "./_tokenizer";
 import { recordSlo } from "./_slo";
 import { redisGet, redisIncrByWithExpiry } from "./_shared";
+import { isServerFlagEnabled } from "./_feature-flags";
 
 declare const process: { env: Record<string, string | undefined> };
 
@@ -148,6 +149,7 @@ function tokenKey(userId: string): string {
 
 async function isOverTokenBudget(userId: string, endpoint: string | undefined): Promise<boolean> {
   if (!isTokenGated(endpoint)) return false;
+  if (!(await isServerFlagEnabled("LLM_TOKEN_CAP"))) return false;
   const raw = await redisGet(tokenKey(userId)).catch(() => null);
   return raw != null && Number(raw) >= DAILY_TOKEN_CAP;
 }

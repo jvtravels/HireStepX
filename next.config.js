@@ -19,6 +19,7 @@ const nextConfig = {
   // requiring a separate env-var configuration step.
   env: {
     NEXT_PUBLIC_BEHAVIORAL_REPORT_V2: "true",
+    NEXT_PUBLIC_RELEASE: (process.env.VERCEL_GIT_COMMIT_SHA || "dev").slice(0, 7),
   },
 
   turbopack: {

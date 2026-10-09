@@ -126,6 +126,7 @@ export async function initPostHog(
           flushPending(ph);
         },
       });
+      ph.register({ release: process.env.NEXT_PUBLIC_RELEASE || "dev" });
       _instance = ph;
       flushPending(ph);
       return ph;

@@ -25,6 +25,11 @@ export const FLAGS = {
     enabled: true,
     scope: "global",
   },
+  LLM_TOKEN_CAP: {
+    description: "Per-user daily LLM token ceiling on enhancement endpoints. Off → cap is not enforced (kill switch if it wrongly blocks users).",
+    enabled: true,
+    scope: "global",
+  },
 } as const satisfies Record<string, FeatureFlag>;
 
 export type FlagName = keyof typeof FLAGS;

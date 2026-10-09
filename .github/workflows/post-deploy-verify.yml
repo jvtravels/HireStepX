@@ -1,0 +1,40 @@
+name: Post-deploy verify
+
+# Runs after Vercel finishes a Production deployment. Detects a bad deploy in
+# minutes instead of waiting for users. It reports (fails + opens an issue);
+# rollback stays a human decision via Vercel "Instant Rollback".
+on:
+  deployment_status:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  verify:
+    if: github.event.deployment_status.state == 'success' && github.event.deployment.environment == 'Production'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Probe production
+        env:
+          BASE: https://hirestepx.com
+        run: |
+          set -u
+          fail=0
+          for path in / /pricing /login /api/health; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 --retry 3 --retry-delay 5 "$BASE$path")
+            echo "$path -> $code"
+            [ "$code" = "200" ] || fail=1
+          done
+          [ "$fail" = "0" ]
+
+      - name: Open issue on failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ github.event.deployment.sha }}
+        run: |
+          gh issue create --repo "$GITHUB_REPOSITORY" \
+            --title "Production verification failed for ${SHA:0:7}" \
+            --body "Post-deploy probe failed. Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID. Consider Vercel Instant Rollback."

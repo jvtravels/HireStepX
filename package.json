@@ -20,6 +20,8 @@
     "test:e2e:ui": "playwright test --ui",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
+    "ratchet": "node scripts/ratchet.mjs",
+    "ratchet:update": "node scripts/ratchet.mjs --update",
     "generate:jsonld-hashes": "tsx scripts/generate-jsonld-csp-hashes.mts",
     "import:salaries": "tsx scripts/import-salary-csv.mts",
     "audit:coverage": "tsx scripts/audit-coverage-gaps.mts",

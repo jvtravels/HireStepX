@@ -5,10 +5,14 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  merge_group:
 
+# One group per commit on main (so a newer push never cancels the check that
+# guards an earlier deploy); one group per PR, where superseded runs are safe
+# to cancel.
 concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  group: ci-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   quality:
@@ -28,6 +32,8 @@ jobs:
         # eslint.config.js (max-lines, no-restricted-syntax on `as unknown
         # as X`). Ratchet downward as we fix each hit.
         run: npx eslint . --max-warnings 200
+      - name: Debt ratchet (file size, type escapes, raw colors, inline styles)
+        run: node scripts/ratchet.mjs
 
   security-audit:
     name: Dependency Security Audit
