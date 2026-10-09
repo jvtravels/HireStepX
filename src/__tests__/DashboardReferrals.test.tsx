@@ -29,7 +29,7 @@ describe("DashboardReferrals", () => {
   it("shows the attributed link, share channels and empty invites state", async () => {
     mockApi({});
     render(<DashboardReferrals />);
-    const input = (await screen.findByLabelText("Your referral link")) as HTMLInputElement;
+    const input = (await screen.findByRole("textbox", { name: "Your referral link" })) as HTMLInputElement;
     expect(input.value).toBe("https://app.test/signup?ref=HSX-ABC123");
     expect(screen.getByRole("button", { name: /copy link/i })).toBeTruthy();
     expect(screen.getByRole("button", { name: /whatsapp/i })).toBeTruthy();

@@ -112,27 +112,21 @@ export function ResumeRouteSkeleton() {
 }
 
 export function ReferralsRouteSkeleton() {
-  const panel = { background: "#fff", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 16, padding: 24, minWidth: 0 } as const;
   return (
-    <div role="status" aria-busy="true" style={{ width: "100%" }}>
+    <div role="status" aria-busy="true" style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 12, overflow: "hidden", width: "100%" }}>
       <span className="sr-only">Loading referrals</span>
-      <div style={{ display: "flex", alignItems: "flex-start", gap: 16, flexWrap: "wrap" }}>
-        <div style={{ flex: "3 1 min(560px, 100%)", minWidth: 0, display: "flex", flexDirection: "column", gap: 16 }}>
-          <div style={panel}>
-            <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 24 }}>
-              <div className="skeleton" style={{ width: 48, height: 48, borderRadius: 12, flexShrink: 0 }} />
-              <div style={{ flex: 1 }}>
-                <div className="skeleton skeleton-heading" style={{ width: 300, maxWidth: "80%", marginBottom: 10 }} />
-                <div className="skeleton skeleton-text-sm" style={{ width: 380, maxWidth: "90%" }} />
-              </div>
-            </div>
-            <div className="skeleton" style={{ height: 40, width: "100%", borderRadius: 10 }} />
-          </div>
-          <div className="skeleton" style={{ height: 150, borderRadius: 16 }} />
+      <div style={{ padding: "16px 20px", borderBottom: "1px solid rgba(0,0,0,0.06)" }}>
+        <div className="skeleton skeleton-heading" style={{ width: 140, marginBottom: 8 }} />
+        <div className="skeleton skeleton-text-sm" style={{ width: 380, maxWidth: "90%" }} />
+      </div>
+      <div style={{ padding: 20, display: "flex", alignItems: "flex-start", gap: 32, flexWrap: "wrap" }}>
+        <div style={{ flex: "3 1 min(520px, 100%)", minWidth: 0, display: "flex", flexDirection: "column", gap: 20 }}>
+          <div className="skeleton" style={{ height: 40, width: "100%", borderRadius: 10 }} />
+          <div className="skeleton" style={{ height: 120, width: "100%", borderRadius: 12 }} />
         </div>
         <div style={{ flex: "1 1 260px", minWidth: 260, maxWidth: 340, display: "flex", flexDirection: "column", gap: 16 }}>
-          <div className="skeleton" style={{ height: 170, borderRadius: 16 }} />
-          <div className="skeleton" style={{ height: 230, borderRadius: 16 }} />
+          <div className="skeleton" style={{ height: 120, borderRadius: 12 }} />
+          <div className="skeleton" style={{ height: 180, borderRadius: 12 }} />
         </div>
       </div>
     </div>

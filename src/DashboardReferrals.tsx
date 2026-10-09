@@ -4,8 +4,8 @@
    (/api/referral issues the code + stats and rewards BOTH sides on signup,
    /api/referral-invites lists who joined) — this is its dedicated home, so
    sharing is no longer only reachable from a good session report.
-   Layout mirrors the job detail / employer screens: flat white 16px panels
-   in a main column plus a narrow side column. */
+   Top-level shell page, so it follows the Jobs/Messages pattern: one bordered
+   white card with an h1 header band, sections divided by hairlines. */
 
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import {
@@ -47,7 +47,6 @@ interface ReferralInvite {
   createdAt: string;
 }
 
-const PANEL_STYLE = { background: t.white, border: `1px solid ${t.line}`, borderRadius: 16, padding: 24, minWidth: 0 } as const;
 const SECTION_HEADING_STYLE = { fontFamily: f.sans, fontSize: 15, fontWeight: 600, color: t.coal, margin: 0 } as const;
 
 function IconTile({ children, tone = "neutral" }: { children: ReactNode; tone?: "neutral" | "brand" }) {
@@ -154,31 +153,30 @@ export default function DashboardReferrals() {
   const shareBtn = { display: "inline-flex", alignItems: "center", gap: 8 } as const;
   const safeStats: ReferralStats = stats ?? { total: invites.length, redeemed: invites.filter((i) => i.status !== "pending").length, rewarded: invites.filter((i) => i.status === "rewarded").length };
 
-  return (
-    <div style={{ flex: 1, minHeight: 0, overflowY: "auto", width: "100%", fontFamily: f.sans }}>
-      <div style={{ display: "flex", alignItems: "flex-start", gap: 16, flexWrap: "wrap" }}>
-        <div style={{ flex: "3 1 min(560px, 100%)", minWidth: 0, display: "flex", flexDirection: "column", gap: 16 }}>
-          <section aria-labelledby="referral-title" style={PANEL_STYLE}>
-            <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-              <div style={{ width: 48, height: 48, borderRadius: 12, background: t.indigo100, color: t.indigo, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <GiftIcon size={22} aria-hidden="true" />
-              </div>
-              <div style={{ minWidth: 0 }}>
-                <h1 id="referral-title" style={{ fontFamily: f.sans, fontSize: "clamp(22px, 6vw, 28px)", fontWeight: 700, letterSpacing: "-0.02em", lineHeight: 1.2, color: t.coal, margin: 0 }}>
-                  Give a session, get a session
-                </h1>
-                <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft, margin: "6px 0 0", lineHeight: 1.5 }}>
-                  When a friend joins with your link, you both get a free practice session. No purchase needed.
-                </p>
-              </div>
-            </div>
+  const sectionStyle = { minWidth: 0 } as const;
+  const divided = { ...sectionStyle, paddingTop: 20, borderTop: `1px solid ${t.line}` } as const;
 
-            <div style={{ marginTop: 20, paddingTop: 20, borderTop: `1px solid ${t.line}` }}>
-              <label htmlFor="referral-link" style={{ ...SECTION_HEADING_STYLE, display: "block", marginBottom: 8 }}>Your referral link</label>
+  return (
+    <div style={{ background: t.white, display: "flex", flexDirection: "column", flex: 1, minHeight: 0, borderRadius: 12, border: `1px solid ${t.line}`, overflow: "hidden", fontFamily: f.sans }}>
+      <div style={{ padding: "16px 20px", borderBottom: `1px solid ${t.line}` }}>
+        <h1 id="referral-title" style={{ fontFamily: f.sans, fontSize: 26, fontWeight: 700, color: t.coal, margin: 0, letterSpacing: "-0.01em", lineHeight: "32px" }}>Referrals</h1>
+        <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkFaint, margin: "2px 0 0" }}>
+          Invite friends to HireStepX. When they join with your link, you both get a free practice session.
+        </p>
+      </div>
+
+      <div style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: 20 }}>
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 32, flexWrap: "wrap" }}>
+          <div style={{ flex: "3 1 min(520px, 100%)", minWidth: 0, display: "flex", flexDirection: "column", gap: 20 }}>
+            <section aria-labelledby="referral-link-heading" style={sectionStyle}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+                <IconTile tone="brand"><GiftIcon size={15} aria-hidden="true" /></IconTile>
+                <h2 id="referral-link-heading" style={SECTION_HEADING_STYLE}>Your referral link</h2>
+              </div>
               {failed && !code ? (
                 <div role="alert" style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", color: t.inkSoft, fontSize: 13.5 }}>
                   <AlertCircleIcon size={16} color={t.error} aria-hidden="true" />
-                  <span>We couldn't load your referral link. This is usually temporary.</span>
+                  <span>We couldn&apos;t load your referral link. This is usually temporary.</span>
                   <Button variant="outline" size="sm" onClick={() => { setLoaded(false); setFailed(false); load({ cancelled: false }); }}>Try again</Button>
                 </div>
               ) : (
@@ -186,6 +184,7 @@ export default function DashboardReferrals() {
                   <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                     <input
                       id="referral-link"
+                      aria-labelledby="referral-link-heading"
                       readOnly
                       value={link}
                       onFocus={(e) => e.currentTarget.select()}
@@ -214,58 +213,58 @@ export default function DashboardReferrals() {
                   </div>
                 </>
               )}
-            </div>
-          </section>
+            </section>
 
-          <section aria-labelledby="referral-invites-heading" style={PANEL_STYLE}>
-            <h2 id="referral-invites-heading" style={SECTION_HEADING_STYLE}>Your invites</h2>
-            {invites.length === 0 ? (
-              <p style={{ fontFamily: f.sans, fontSize: 13.5, color: t.inkSoft, margin: "8px 0 0", lineHeight: 1.55 }}>
-                No one has joined with your link yet. Share it above and they will show up here.
-              </p>
-            ) : (
-              <ul style={{ listStyle: "none", margin: "12px 0 0", padding: 0, display: "flex", flexDirection: "column" }}>
-                {invites.map((inv, i) => (
-                  <li key={inv.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 0", borderTop: i === 0 ? "none" : `1px solid ${t.line}`, minWidth: 0 }}>
-                    <div aria-hidden="true" style={{ width: 36, height: 36, borderRadius: 999, background: t.indigo100, color: t.indigo, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 600, fontSize: 14, flexShrink: 0 }}>
-                      {(inv.name[0] || "?").toUpperCase()}
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontFamily: f.sans, fontSize: 14, fontWeight: 600, color: t.coal, overflowWrap: "anywhere" }}>{inv.name}</div>
-                      <div style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkFaint, overflowWrap: "anywhere" }}>
-                        {inv.email ? `${inv.email} · ` : ""}{daysAgo(inv.createdAt)}
+            <section aria-labelledby="referral-invites-heading" style={divided}>
+              <h2 id="referral-invites-heading" style={SECTION_HEADING_STYLE}>Your invites</h2>
+              {invites.length === 0 ? (
+                <p style={{ fontFamily: f.sans, fontSize: 13.5, color: t.inkSoft, margin: "8px 0 0", lineHeight: 1.55 }}>
+                  No one has joined with your link yet. Share it above and they will show up here.
+                </p>
+              ) : (
+                <ul style={{ listStyle: "none", margin: "12px 0 0", padding: 0, display: "flex", flexDirection: "column" }}>
+                  {invites.map((inv, i) => (
+                    <li key={inv.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 0", borderTop: i === 0 ? "none" : `1px solid ${t.line}`, minWidth: 0 }}>
+                      <div aria-hidden="true" style={{ width: 36, height: 36, borderRadius: 999, background: t.indigo100, color: t.indigo, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 600, fontSize: 14, flexShrink: 0 }}>
+                        {(inv.name[0] || "?").toUpperCase()}
                       </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontFamily: f.sans, fontSize: 14, fontWeight: 600, color: t.coal, overflowWrap: "anywhere" }}>{inv.name}</div>
+                        <div style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkFaint, overflowWrap: "anywhere" }}>
+                          {inv.email ? `${inv.email} · ` : ""}{daysAgo(inv.createdAt)}
+                        </div>
+                      </div>
+                      <StatusChip status={inv.status} />
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          </div>
+
+          <div style={{ flex: "1 1 260px", minWidth: 260, maxWidth: 340, display: "flex", flexDirection: "column", gap: 20 }}>
+            <section aria-labelledby="referral-impact-heading" style={{ ...sectionStyle, display: "flex", flexDirection: "column", gap: 14 }}>
+              <h2 id="referral-impact-heading" style={SECTION_HEADING_STYLE}>Your impact</h2>
+              <StatRow icon={<UsersIcon size={15} aria-hidden="true" />} label="Friends invited" value={safeStats.total} />
+              <StatRow icon={<UserCheckIcon size={15} aria-hidden="true" />} label="Friends joined" value={safeStats.redeemed} />
+              <StatRow icon={<TicketIcon size={15} aria-hidden="true" />} label="Free sessions earned" value={freeSessionsEarned(safeStats)} />
+            </section>
+
+            <section aria-labelledby="referral-how-heading" style={divided}>
+              <h2 id="referral-how-heading" style={SECTION_HEADING_STYLE}>How it works</h2>
+              <ol style={{ listStyle: "none", margin: "14px 0 0", padding: 0, display: "flex", flexDirection: "column", gap: 14 }}>
+                {STEPS.map((s, i) => (
+                  <li key={s.title} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+                    <IconTile tone="brand"><span style={{ fontFamily: f.sans, fontSize: 12, fontWeight: 700 }}>{i + 1}</span></IconTile>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontFamily: f.sans, fontSize: 13.5, fontWeight: 600, color: t.coal }}>{s.title}</div>
+                      <div style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft, marginTop: 2, lineHeight: 1.5 }}>{s.body}</div>
                     </div>
-                    <StatusChip status={inv.status} />
                   </li>
                 ))}
-              </ul>
-            )}
-          </section>
-        </div>
-
-        <div style={{ flex: "1 1 260px", minWidth: 260, maxWidth: 340, display: "flex", flexDirection: "column", gap: 16 }}>
-          <section aria-labelledby="referral-impact-heading" style={{ ...PANEL_STYLE, display: "flex", flexDirection: "column", gap: 14 }}>
-            <h2 id="referral-impact-heading" style={SECTION_HEADING_STYLE}>Your impact</h2>
-            <StatRow icon={<UsersIcon size={15} aria-hidden="true" />} label="Friends invited" value={safeStats.total} />
-            <StatRow icon={<UserCheckIcon size={15} aria-hidden="true" />} label="Friends joined" value={safeStats.redeemed} />
-            <StatRow icon={<TicketIcon size={15} aria-hidden="true" />} label="Free sessions earned" value={freeSessionsEarned(safeStats)} />
-          </section>
-
-          <section aria-labelledby="referral-how-heading" style={PANEL_STYLE}>
-            <h2 id="referral-how-heading" style={SECTION_HEADING_STYLE}>How it works</h2>
-            <ol style={{ listStyle: "none", margin: "14px 0 0", padding: 0, display: "flex", flexDirection: "column", gap: 14 }}>
-              {STEPS.map((s, i) => (
-                <li key={s.title} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
-                  <IconTile tone="brand"><span style={{ fontFamily: f.sans, fontSize: 12, fontWeight: 700 }}>{i + 1}</span></IconTile>
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ fontFamily: f.sans, fontSize: 13.5, fontWeight: 600, color: t.coal }}>{s.title}</div>
-                    <div style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft, marginTop: 2, lineHeight: 1.5 }}>{s.body}</div>
-                  </div>
-                </li>
-              ))}
-            </ol>
-          </section>
+              </ol>
+            </section>
+          </div>
         </div>
       </div>
     </div>
