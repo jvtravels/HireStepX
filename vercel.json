@@ -2,7 +2,7 @@
   "framework": "nextjs",
   "buildCommand": "next build",
   "regions": [
-    "hnd1"
+    "bom1"
   ],
   "crons": [
     {
