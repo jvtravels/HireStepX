@@ -7,7 +7,7 @@
    The adapter at `./adapter.ts` translates the production SessionReport
    schema into the InterviewResultData view-model this component
    consumes. Production-only wiring (loading, error, abort, share,
-   PDF, analytics) lives at `./SessionReport.tsx` (the entry).
+   analytics) lives at `./SessionReport.tsx` (the entry).
 
    This file is the orchestrator only. Every section is its own file
    under `./panels/sr-*.tsx`. The split mirrors the pattern already
@@ -327,8 +327,8 @@ function FocusBannerStrip({ banner, daysUntilInterview }: { banner: FocusBannerD
 
 const DETAIL_PREF_KEY = "hsx_report_full_analysis";
 
-/* Secondary sections stay mounted while collapsed (display:none) so PDF
-   print (forced visible in styles.ts), analytics and anchors keep working. */
+/* Secondary sections stay mounted while collapsed (display:none) so
+   analytics and anchors keep working. */
 function MoreDetail({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(() => {
     try { return localStorage.getItem(DETAIL_PREF_KEY) === "1"; } catch { return false; }
@@ -343,7 +343,7 @@ function MoreDetail({ children }: { children: ReactNode }) {
     <>
       <button
         type="button"
-        className="ir-more-detail-toggle ir-print-hide"
+        className="ir-more-detail-toggle"
         aria-expanded={open}
         aria-controls="ir-more-detail"
         onClick={toggle}
@@ -387,8 +387,6 @@ export interface SessionReportViewProps {
    *  Header — overridden to "Back to Sessions" when the user arrived
    *  from /sessions so the affordance matches where they came from. */
   backLabel?: string;
-  /** PDF download handler — typically `() => window.print()`. */
-  onDownloadPdf?: () => void;
   /** Share-link handler — POSTs to /api/share-report and copies the
    *  resulting URL to clipboard. */
   onShare?: () => void;
@@ -492,7 +490,6 @@ export default function SessionReportView({
   sessionId,
   onBack,
   backLabel,
-  onDownloadPdf,
   onShare,
   shareUrl,
   onTryQuestionAgain,

@@ -5,8 +5,8 @@
    `<style>{SESSION_REPORT_STYLES}</style>` at component-mount so the
    rest of the app (dark-luxury chrome) stays unaffected.
 
-   Print rules + scoped overrides are appended at the end of this
-   file so a single source of CSS truth ships with the report. */
+   Scoped overrides are appended at the end of this file so a single
+   source of CSS truth ships with the report. */
 
 export const SESSION_REPORT_STYLES = `
   .ir-row { display: flex; gap: 16px; flex-wrap: wrap; }
@@ -827,22 +827,4 @@ export const SESSION_REPORT_STYLES = `
   .ir-more-detail { display: none; }
   .ir-more-detail.is-open { display: flex; }
   .ir-more-detail-toggle:hover { background: rgba(49,46,129,0.05); }
-
-  /* ─── Print styles ───
-     PDF generation goes through window.print(). We hide chrome (jump
-     nav, header buttons, sticky CTAs, footer thumbs) and force every
-     expandable section open so the printed report is complete. */
-  @media print {
-    body { background: #FFFFFF !important; }
-    .ir-jump-nav, .ir-skip-link, .ir-print-hide, .ir-thought-toggle,
-    .ir-feedback-row, .ir-thumb-btn, .ir-cta-primary, .ir-cta-ghost,
-    .ir-q-card-trigger svg:last-child {
-      display: none !important;
-    }
-    .ir-q-card-trigger { pointer-events: none; }
-    .ir-more-detail { display: flex !important; flex-direction: column; gap: 16px; }
-    [role="region"][hidden] { display: block !important; }
-    [hidden] { display: revert !important; }
-    section { break-inside: avoid; page-break-inside: avoid; }
-  }
 `;

@@ -1,13 +1,12 @@
 /* Session Report — production entry component.
    Owns the LLM evaluation pipeline (loading / error / abort / retry),
-   recent-score + cohort fetches, share-link wiring, PDF print hook,
-   and analytics. Delegates all rendering to `SessionReportView` —
+   recent-score + cohort fetches, share-link wiring, and analytics. Delegates all rendering to `SessionReportView` —
    the pure presentation port of the canvas design.
 
    Contract:
      props: { session, onBack }
      side-effects: evaluateSessionWithAI(), fetchRecentSessionScores(),
-                   fetchLiveCohort(), POST /api/share-report, window.print()
+                   fetchLiveCohort(), POST /api/share-report
 
    Loaded via `next/dynamic` from `dashboardComponents.tsx`. */
 
@@ -819,11 +818,6 @@ export const SessionReport = memo(function SessionReport({
     setReloadTick((tk) => tk + 1);
   }, [session.id]);
 
-  const onDownloadPdf = useCallback(() => {
-    track("report_pdf_downloaded", { sessionId: session.id, view: "main" });
-    if (typeof window !== "undefined") window.print();
-  }, [session.id]);
-
   const onShare = useCallback(async () => {
     track("report_action_clicked", {
       action: "share",
@@ -1203,7 +1197,6 @@ export const SessionReport = memo(function SessionReport({
       sessionId={session.id}
       onBack={onBack}
       backLabel={backLabel}
-      onDownloadPdf={onDownloadPdf}
       onShare={onShare}
       shareUrl={shareUrl}
       onTryQuestionAgain={onTryQuestionAgain}

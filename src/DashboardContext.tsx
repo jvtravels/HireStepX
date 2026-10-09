@@ -218,7 +218,6 @@ export interface CoreContextValue {
   handleExport: () => void;
   handleDownload: () => void;
   handleExportCSV: () => void;
-  handleExportPDF: () => void;
 }
 
 /* ─── Contexts ─── */
@@ -952,31 +951,6 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     showToast("CSV exported");
   }, [recentSessions, showToast]);
 
-  const handleExportPDF = useCallback(() => {
-    const report = generateReport(persisted.userName, overallStats, skills, recentSessions);
-    const rows = recentSessions.slice(0, 20).map(s =>
-      `<tr><td>${s.date}</td><td>${s.type}</td><td>${s.score}</td><td>${s.topStrength || "-"}</td><td>${s.topWeakness || "-"}</td></tr>`
-    ).join("");
-    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>HireStepX Progress Report</title>
-<style>body{font-family:Arial,Helvetica,sans-serif;color:#1a1a1a;max-width:720px;margin:0 auto;padding:40px 24px;line-height:1.6}
-h1{font-size:22px;margin-bottom:4px}h2{font-size:16px;margin-top:32px;border-bottom:1px solid #ddd;padding-bottom:6px}
-table{width:100%;border-collapse:collapse;font-size:13px;margin-top:12px}th,td{text-align:left;padding:8px 10px;border-bottom:1px solid #eee}
-th{background:#f5f5f5;font-weight:600}.meta{color:#666;font-size:13px}pre{white-space:pre-wrap;font-size:12px;background:#f9f9f9;padding:16px;border-radius:8px}
-@media print{body{padding:20px}}</style></head><body>
-<h1>HireStepX Progress Report</h1>
-<p class="meta">${persisted.userName || "User"} · Generated ${new Date().toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}</p>
-<h2>Overview</h2>
-<p>Sessions: ${overallStats.sessionsCompleted} · Average Score: ${overallStats.avgScore} · Improvement: ${overallStats.improvement > 0 ? "+" : ""}${overallStats.improvement}%</p>
-${skills.length > 0 ? `<h2>Skills</h2><table><tr><th>Skill</th><th>Score</th><th>Change</th></tr>${skills.map(s => `<tr><td>${s.name}</td><td>${s.score}/100</td><td>${s.score - s.prev >= 0 ? "+" : ""}${s.score - s.prev}</td></tr>`).join("")}</table>` : ""}
-<h2>Recent Sessions</h2>
-<table><tr><th>Date</th><th>Type</th><th>Score</th><th>Strength</th><th>To Improve</th></tr>${rows}</table>
-<h2>Full Report</h2><pre>${report.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</pre>
-</body></html>`;
-    const w = window.open("", "_blank");
-    if (w) { w.document.write(html); w.document.close(); w.print(); }
-    showToast("PDF export opened — use Save as PDF in print dialog");
-  }, [persisted.userName, overallStats, skills, recentSessions, showToast]);
-
   /* ─── Memoized sub-context values ─── */
 
   const sessionsValue: SessionsContextValue = useMemo(() => ({
@@ -1013,7 +987,7 @@ ${skills.length > 0 ? `<h2>Skills</h2><table><tr><th>Skill</th><th>Score</th><th
     returnContext, smartSchedule, prepPlan, companyReadiness, curriculumState,
     badges, dailyChallenge, practiceReminder,
     googleSyncStatus, googleSyncError, hasGoogleToken, syncGoogleCalendar,
-    handleStartSession, handleExport, handleDownload, handleExportCSV, handleExportPDF,
+    handleStartSession, handleExport, handleDownload, handleExportCSV,
   }), [
     persisted, updatePersisted,
     displayName, isNewUser, daysLeft,
@@ -1021,7 +995,7 @@ ${skills.length > 0 ? `<h2>Skills</h2><table><tr><th>Skill</th><th>Score</th><th
     returnContext, smartSchedule, prepPlan, companyReadiness, curriculumState,
     badges, dailyChallenge, practiceReminder,
     googleSyncStatus, googleSyncError, hasGoogleToken, syncGoogleCalendar,
-    handleStartSession, handleExport, handleDownload, handleExportCSV, handleExportPDF,
+    handleStartSession, handleExport, handleDownload, handleExportCSV,
   ]);
 
   return (
