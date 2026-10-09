@@ -2103,3 +2103,13 @@ create index if not exists idx_message_flags_status on message_flags(status, cre
 create index if not exists idx_message_flags_conversation on message_flags(conversation_id, created_at desc);
 
 alter table message_flags enable row level security;
+
+-- Trigger-only SECURITY DEFINER functions must not be callable over the public
+-- REST RPC endpoint. Triggers run as the table owner, so revoking is safe.
+revoke execute on function public.bump_sessions_started_lifetime() from public, anon, authenticated;
+revoke execute on function public.guard_profile_billing_columns()  from public, anon, authenticated;
+revoke execute on function public.handle_new_user()                from public, anon, authenticated;
+revoke execute on function public.notify_new_signup()              from public, anon, authenticated;
+revoke execute on function public.rls_auto_enable()                from public, anon, authenticated;
+alter function public.handle_new_user()   set search_path = public, pg_temp;
+alter function public.notify_new_signup() set search_path = public, pg_temp;
