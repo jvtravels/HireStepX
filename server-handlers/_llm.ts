@@ -135,8 +135,32 @@ export function isQuotaExhausted(msg: string): boolean {
 const QUOTA_COOLDOWN_MS = 5 * 60_000;
 const quotaCooldownUntil = new Map<string, number>();
 
-export function markProviderQuotaExhausted(name: string, now = Date.now()): void {
-  quotaCooldownUntil.set(name, now + QUOTA_COOLDOWN_MS);
+export function markProviderQuotaExhausted(name: string, now = Date.now(), durationMs = QUOTA_COOLDOWN_MS): void {
+  quotaCooldownUntil.set(name, now + durationMs);
+}
+
+/* Circuit breaker for provider health failures (timeouts, 5xx, overload).
+   Request-specific errors (413/400, budget skips) say nothing about provider
+   health and are ignored. After BREAKER_THRESHOLD consecutive health failures
+   the provider is skipped briefly so users don't each wait out its timeout. */
+const BREAKER_THRESHOLD = 3;
+const BREAKER_COOLDOWN_MS = 30_000;
+const consecutiveHealthFailures = new Map<string, number>();
+
+export function recordProviderSuccess(name: string): void {
+  consecutiveHealthFailures.delete(name);
+}
+
+export function recordProviderFailure(name: string, msg: string, isTimeout: boolean, now = Date.now()): void {
+  const healthFailure = isTimeout || (isTransientLLMError(msg) && !isDeterministicLLMFailure(msg));
+  if (!healthFailure) return;
+  const n = (consecutiveHealthFailures.get(name) ?? 0) + 1;
+  if (n >= BREAKER_THRESHOLD) {
+    consecutiveHealthFailures.delete(name);
+    markProviderQuotaExhausted(name, now, BREAKER_COOLDOWN_MS);
+  } else {
+    consecutiveHealthFailures.set(name, n);
+  }
 }
 
 export function isProviderCoolingDown(name: string, now = Date.now()): boolean {
@@ -148,6 +172,7 @@ export function isProviderCoolingDown(name: string, now = Date.now()): boolean {
 
 export function resetProviderCooldowns(): void {
   quotaCooldownUntil.clear();
+  consecutiveHealthFailures.clear();
 }
 
 /** A provider failure that re-sending the same request cannot fix: hard
@@ -448,6 +473,7 @@ export async function callLLM(opts: LLMOptions, timeoutMs = 15000, meta?: { user
       if (remainingBudget() <= 0) throw new Error(`${provider.name} skipped — total LLM budget exhausted`);
       try {
         const result = await callOnce(provider);
+        recordProviderSuccess(provider.name);
         await logUsage({ userId: meta?.userId, endpoint: meta?.endpoint, model: result.model, isFallback, promptTokens: result.tokensUsed?.prompt ?? 0, completionTokens: result.tokensUsed?.completion ?? 0, totalTokens: result.tokensUsed?.total ?? 0, latencyMs: result.latencyMs ?? 0, status: "success", sessionId: meta?.sessionId, cachedTokens: result.tokensUsed?.cached });
         return result;
       } catch (err) {
@@ -461,6 +487,7 @@ export async function callLLM(opts: LLMOptions, timeoutMs = 15000, meta?: { user
           continue;
         }
         if (isQuotaExhausted(msg)) markProviderQuotaExhausted(provider.name);
+        else recordProviderFailure(provider.name, msg, isTimeout);
         console.error(`[LLM] ${provider.name} failed (${isTimeout ? "timeout" : "error"}): ${msg.slice(0, 150)}`);
         await logUsage({ userId: meta?.userId, endpoint: meta?.endpoint, model: provider.name, isFallback, promptTokens: 0, completionTokens: 0, totalTokens: 0, latencyMs: 0, status: isTimeout ? "timeout" : "error", errorMessage: msg.slice(0, 200), sessionId: meta?.sessionId });
         throw err;

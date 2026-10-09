@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { isQuotaExhausted, isTransientLLMError, markProviderQuotaExhausted, isProviderCoolingDown, resetProviderCooldowns, isDeterministicLLMFailure, isNonRetryableChainFailure, LLMChainError } from "../../server-handlers/_llm";
+import { isQuotaExhausted, isTransientLLMError, markProviderQuotaExhausted, isProviderCoolingDown, resetProviderCooldowns, isDeterministicLLMFailure, isNonRetryableChainFailure, LLMChainError, recordProviderFailure, recordProviderSuccess } from "../../server-handlers/_llm";
 
 /* The retry path on each LLM provider does one short-backoff retry for
    transient errors before failing over. A 429 from a per-second rate limit is
@@ -71,5 +71,30 @@ describe("deterministic chain failures", () => {
     expect(isNonRetryableChainFailure(new LLMChainError("x", ["Groq error 413", "Gemini error 400"]))).toBe(true);
     expect(isNonRetryableChainFailure(new LLMChainError("x", ["Groq error 413", "Gemini error 503"]))).toBe(false);
     expect(isNonRetryableChainFailure(new Error("plain"))).toBe(false);
+  });
+});
+
+describe("provider circuit breaker", () => {
+  beforeEach(() => resetProviderCooldowns());
+
+  it("opens after 3 consecutive health failures and closes after 30s", () => {
+    const t0 = 5_000_000;
+    recordProviderFailure("groq", "Groq error 503", false, t0);
+    recordProviderFailure("groq", "aborted", true, t0);
+    expect(isProviderCoolingDown("groq", t0)).toBe(false);
+    recordProviderFailure("groq", "Groq error 502", false, t0);
+    expect(isProviderCoolingDown("groq", t0 + 1000)).toBe(true);
+    expect(isProviderCoolingDown("groq", t0 + 30_001)).toBe(false);
+  });
+
+  it("a success resets the streak, and request-specific errors never count", () => {
+    recordProviderFailure("groq", "Groq error 503", false);
+    recordProviderFailure("groq", "Groq error 503", false);
+    recordProviderSuccess("groq");
+    recordProviderFailure("groq", "Groq error 503", false);
+    expect(isProviderCoolingDown("groq")).toBe(false);
+    for (let i = 0; i < 5; i++) recordProviderFailure("gemini", "Gemini error 400: INVALID_ARGUMENT", false);
+    for (let i = 0; i < 5; i++) recordProviderFailure("gemini", "Groq error 413: too large", false);
+    expect(isProviderCoolingDown("gemini")).toBe(false);
   });
 });
