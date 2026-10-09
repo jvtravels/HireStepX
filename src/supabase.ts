@@ -413,7 +413,6 @@ const SESSION_LIST_COLUMNS = [
   "rj_wins:report_json->wins",
   "rj_fixes:report_json->fixes",
   "rj_focus:report_json->focusMetrics",
-  "rj_perq:report_json->perQuestion",
 ].join(",");
 
 type SessionListRow = Omit<SessionRecord, "transcript" | "report_json"> & {
@@ -422,7 +421,6 @@ type SessionListRow = Omit<SessionRecord, "transcript" | "report_json"> & {
   rj_wins: unknown;
   rj_fixes: unknown;
   rj_focus: unknown;
-  rj_perq: unknown;
 };
 
 export async function getUserSessions(userId: string): Promise<SessionRecord[]> {
@@ -434,8 +432,8 @@ export async function getUserSessions(userId: string): Promise<SessionRecord[]> 
     .order("created_at", { ascending: false })
     .returns<SessionListRow[]>();
   if (error) throw new Error(error.message);
-  return (data || []).map(({ rj_overall, rj_coaching, rj_wins, rj_fixes, rj_focus, rj_perq, ...row }) => {
-    const hasReport = [rj_overall, rj_coaching, rj_wins, rj_fixes, rj_focus, rj_perq].some((v) => v != null);
+  return (data || []).map(({ rj_overall, rj_coaching, rj_wins, rj_fixes, rj_focus, ...row }) => {
+    const hasReport = [rj_overall, rj_coaching, rj_wins, rj_fixes, rj_focus].some((v) => v != null);
     const report_json = hasReport
       ? {
           ...(rj_overall != null ? { overallScore: rj_overall } : {}),
@@ -443,7 +441,6 @@ export async function getUserSessions(userId: string): Promise<SessionRecord[]> 
           ...(rj_wins != null ? { wins: rj_wins } : {}),
           ...(rj_fixes != null ? { fixes: rj_fixes } : {}),
           ...(rj_focus != null ? { focusMetrics: rj_focus } : {}),
-          ...(rj_perq != null ? { perQuestion: rj_perq } : {}),
         } as SessionRecord["report_json"]
       : null;
     return { ...row, transcript: [], report_json } as SessionRecord;
