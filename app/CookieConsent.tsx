@@ -48,6 +48,9 @@ export default function CookieConsent() {
 
   if (!visible) return null;
 
+  // Ads only run on the public marketing host; the signed-in app host has none.
+  const showAdsNote = !window.location.hostname.startsWith("app.");
+
   return (
     <>
       <style>{`
@@ -90,8 +93,9 @@ export default function CookieConsent() {
       }}
     >
       <div id="cookie-consent-desc" style={{ flex: "1 1 260px", fontSize: 13, lineHeight: 1.55, color: "#4A4540" }}>
-        We use essential cookies to run HireStepX. With your permission we'll also use analytics cookies to improve the experience. On public blog, questions, and salary pages, Google AdSense may set advertising cookies to serve relevant ads.{" "}
-        <a href="/privacy" style={{ color: "#9B6E2E", textDecoration: "underline", display: "inline-block", padding: "12px 4px", margin: "-12px -4px" }}>
+        We use essential cookies to run HireStepX. With your permission we'll also use analytics cookies to improve the experience.
+        {showAdsNote && " On public blog, questions, and salary pages, Google AdSense may set advertising cookies to serve relevant ads."}{" "}
+        <a href="/privacy" style={{ color: "#8A5F22", textDecoration: "underline", display: "inline-block", padding: "12px 4px", margin: "-12px -4px" }}>
           Privacy policy
         </a>
         .
