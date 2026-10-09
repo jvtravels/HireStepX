@@ -89,44 +89,44 @@ export interface AccountSectionProps {
 
 export const accSubtleBtn: React.CSSProperties = {
   fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ink,
-  background: c.graphite, border: `1px solid ${c.borderStrong}`, borderRadius: 9,
+  background: c.graphite, border: `1px solid ${c.borderStrong}`, borderRadius: 8,
   padding: "10px 14px", cursor: "pointer", minHeight: 40,
 };
 
 export const accSubtleBtnGhost: React.CSSProperties = {
   fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.inkSoft,
-  background: "transparent", border: "none", borderRadius: 9,
+  background: "transparent", border: "none", borderRadius: 8,
   padding: "10px 14px", cursor: "pointer", minHeight: 40,
 };
 
 export const dangerSubtleBtn: React.CSSProperties = {
   fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ember,
   background: "transparent", border: `1px solid ${t.errorLine}`,
-  borderRadius: 9, padding: "10px 14px", cursor: "pointer", minHeight: 40,
+  borderRadius: 8, padding: "10px 14px", cursor: "pointer", minHeight: 40,
 };
 
 export const dangerSolidBtn: React.CSSProperties = {
   fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.cream,
   background: c.ember, border: "none",
-  borderRadius: 9, padding: "10px 14px", cursor: "pointer", minHeight: 40,
+  borderRadius: 8, padding: "10px 14px", cursor: "pointer", minHeight: 40,
 };
 
 export const successSubtleBtn: React.CSSProperties = {
   fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.cream,
   background: c.sage, border: `1px solid ${c.sage}`,
-  borderRadius: 9, padding: "10px 14px", cursor: "pointer", minHeight: 40,
+  borderRadius: 8, padding: "10px 14px", cursor: "pointer", minHeight: 40,
 };
 
 export const indigoPrimaryBtn: React.CSSProperties = {
   fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.cream,
   background: c.indigo, border: `1px solid ${c.indigo}`,
-  borderRadius: 9, padding: "10px 16px", cursor: "pointer", minHeight: 40,
+  borderRadius: 8, padding: "10px 16px", cursor: "pointer", minHeight: 40,
 };
 
 export const indigoGhostBtn: React.CSSProperties = {
   fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ink,
   background: c.graphite, border: `1px solid ${c.borderStrong}`,
-  borderRadius: 9, padding: "10px 16px", cursor: "pointer", minHeight: 40,
+  borderRadius: 8, padding: "10px 16px", cursor: "pointer", minHeight: 40,
 };
 
 export function SectionHead({ kicker: k, title, desc, tone }: { kicker?: string; title: string; desc?: string; tone?: "danger" }) {
@@ -384,7 +384,7 @@ export const PortfolioLinksSection = memo(function PortfolioLinksSection(props: 
                 aria-label={`Remove ${link.title}`}
                 style={{
                   display: "flex", alignItems: "center", justifyContent: "center",
-                  width: 28, height: 28, borderRadius: 7, flexShrink: 0,
+                  width: 28, height: 28, borderRadius: 8, flexShrink: 0,
                   background: "transparent", border: "none", color: c.inkSoft, cursor: "pointer",
                   opacity: removingIndex === i ? 0.5 : 1,
                 }}
@@ -408,7 +408,7 @@ export const PortfolioLinksSection = memo(function PortfolioLinksSection(props: 
             <button type="button" style={{
               display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
               fontFamily: font.ui, fontSize: 13.5, fontWeight: 600, color: c.inkSoft,
-              background: "transparent", border: `1.5px dashed ${c.borderStrong}`, borderRadius: 10,
+              background: "transparent", border: `1.5px dashed ${c.borderStrong}`, borderRadius: 8,
               padding: "18px 14px", cursor: "pointer", width: "100%",
             }}>
               <PlusIcon aria-hidden="true" width={15} height={15} /> Add your first link
@@ -665,7 +665,9 @@ export const PlanUsageSection = memo(function PlanUsageSection(props: PlanUsageS
   const sessionsCap = usage?.mock.cap ?? null;
   const sessionsUsed = usage?.mock.count ?? 0;
   const sessionsPct = sessionsCap && sessionsCap > 0 ? Math.min(100, Math.round((sessionsUsed / sessionsCap) * 100)) : 0;
-  const capLine = sessionsCap == null ? "Unlimited interview sessions" : `${sessionsCap} Interview Session${sessionsCap === 1 ? "" : "s"} / Month`;
+  const capLine = sessionsCap == null
+    ? "Unlimited interview sessions"
+    : `${sessionsCap} Interview Session${sessionsCap === 1 ? "" : "s"}${authUser?.hasRecurringSubscription ? " / Month" : ""}`;
   const sessionsUsedLabel = sessionsCap == null ? `${sessionsUsed} sessions used` : `${Math.min(sessionsUsed, sessionsCap)} of ${sessionsCap} sessions used`;
 
   const [rowsPerPage, setRowsPerPage] = useState(10);

@@ -70,7 +70,12 @@ export default function SettingsPage() {
     else showToast(result.error || "Failed to send reset email");
   };
 
-  const tierLabel = (authUser?.subscriptionTier || "free").charAt(0).toUpperCase() + (authUser?.subscriptionTier || "free").slice(1);
+  // Map tier ids to the actual product names used on pricing/checkout
+  // (dashboardComponents.tsx) instead of naively capitalizing the id —
+  // "starter" is sold and billed as "Sprint Pack", not "Starter".
+  const TIER_DISPLAY_NAMES: Record<string, string> = { free: "Free", starter: "Sprint Pack", team: "Team" };
+  const tierId = authUser?.subscriptionTier || "free";
+  const tierLabel = TIER_DISPLAY_NAMES[tierId] || (tierId.charAt(0).toUpperCase() + tierId.slice(1));
 
   return (
     <div style={{ width: "100%" }}>
