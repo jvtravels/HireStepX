@@ -865,13 +865,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // can read it. Set to true inside if(session) when fast render ran.
         let didFastRender = false;
         if (!session) {
-          session = await Promise.race([
-            client.auth.getSession().then(r => r.data.session ?? null),
-            new Promise<null>((resolve) => setTimeout(() => {
-              console.warn("[auth] getSession() exceeded 7s — treating as no session (browser extension may be blocking fetch)");
-              resolve(null);
-            }, 7000)),
-          ]);
+          let getSessionTimer: ReturnType<typeof setTimeout> | undefined;
+          try {
+            session = await Promise.race([
+              client.auth.getSession().then(r => r.data.session ?? null),
+              new Promise<null>((resolve) => {
+                getSessionTimer = setTimeout(() => {
+                  console.warn("[auth] getSession() exceeded 7s — treating as no session (browser extension may be blocking fetch)");
+                  resolve(null);
+                }, 7000);
+              }),
+            ]);
+          } finally {
+            clearTimeout(getSessionTimer);
+          }
         } else {
           // Background refresh — fire-and-forget. If the SDK manages to
           // resolve quickly it'll merely confirm what we already have;
