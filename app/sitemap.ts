@@ -6,6 +6,7 @@ import { getAllSalarySlugs, getSalaryPage } from "../data/salary-seo";
 import { getAllCitySlugs } from "../data/city-pages";
 import { COMPANY_KNOWN_FACTS } from "../data/company-known-facts";
 import { buildRoleSections } from "./(marketing)/salary/[company]/_jsonld";
+import { isSyntheticHeavySalaryPage } from "../src/salaryQuality";
 import { shouldNoindexBlogPost } from "../src/blogQuality";
 import { isThinDuplicateQuestionsPage } from "./(marketing)/questions/[slug]/_jsonld";
 
@@ -126,7 +127,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       const page = getSalaryPage(slug);
       if (!page) return false;
       const roleSections = buildRoleSections(slug, page.roles);
-      if (roleSections.length === 0) return false;
+      if (roleSections.length === 0 || isSyntheticHeavySalaryPage(slug)) return false;
       const overrideKey = slug.replace(/-/g, " ");
       const knownFacts = COMPANY_KNOWN_FACTS[slug] ?? COMPANY_KNOWN_FACTS[overrideKey];
       return !(roleSections.length <= 2 && !knownFacts?.notes);

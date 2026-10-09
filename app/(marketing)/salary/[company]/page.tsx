@@ -1,3 +1,4 @@
+import { isSyntheticHeavySalaryPage } from "@/salaryQuality";
 import type { Metadata } from "next";
 import Script from "next/script";
 import { notFound } from "next/navigation";
@@ -120,7 +121,7 @@ export async function generateMetadata({
   // search/ad crawlers to index it as a standalone page.
   const overrideKey = company.replace(/-/g, " ");
   const knownFacts = COMPANY_KNOWN_FACTS[company] ?? COMPANY_KNOWN_FACTS[overrideKey];
-  const isThin = roleSections.length <= 2 && !knownFacts?.notes;
+  const isThin = (roleSections.length <= 2 && !knownFacts?.notes) || isSyntheticHeavySalaryPage(company);
 
   // Pages with a handful of roles keep their hand-tuned, single-keyword
   // searchPhrase (e.g. "Razorpay Software Engineer Salary India 2026") —
@@ -327,12 +328,14 @@ export default async function SalaryCompanySlugPage({
           </div>
         </section>
       )}
-      <Script
-        async
-        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7810403590527236"
-        crossOrigin="anonymous"
-        strategy="lazyOnload"
-      />
+      {!isSyntheticHeavySalaryPage(company) && (
+        <Script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7810403590527236"
+          crossOrigin="anonymous"
+          strategy="lazyOnload"
+        />
+      )}
       <FooterDome />
       <MobileStickyCTA />
     </>
