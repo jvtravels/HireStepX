@@ -329,6 +329,24 @@ function interviewSubstep(candidate: Candidate): string | null {
   return `Interview ${dateLabel}`;
 }
 
+/* Below 768px the table reflows to stacked cards (thead hidden, each row a
+   wrapping flex box with per-cell labels). Pure CSS so row state and dialogs
+   stay in one component. Sorting is unavailable at this width. */
+const CAND_CARD_CSS = `
+@media (max-width: 767px) {
+  .cand-table { min-width: 0 !important; }
+  .cand-table, .cand-table tbody { display: block; width: 100%; }
+  .cand-thead { display: none !important; }
+  .cand-tr { display: flex !important; flex-wrap: wrap; align-items: center; gap: 8px 16px; height: auto !important; padding: 14px 16px; }
+  .cand-td { display: block; width: auto !important; max-width: none !important; padding: 0 !important; height: auto !important; flex: 0 1 auto; order: 3; font-size: 13px; }
+  .cand-td[data-label]::before { content: attr(data-label); display: block; font-size: 12px; color: #6b7280; margin-bottom: 2px; }
+  .cand-td-chk { order: 0; flex: 0 0 auto; }
+  .cand-td-name { order: 1; flex: 1 1 140px !important; min-width: 140px; }
+  .cand-td-act { order: 2; flex: 0 0 auto; }
+  .cand-td-skills { flex: 1 1 100%; }
+}
+`;
+
 function CandidateTableRow({
   candidate,
   requirementId,
@@ -419,12 +437,13 @@ function CandidateTableRow({
 
   return (
     <TableRow
+      className="cand-tr"
       style={{ height: 64, borderBottom: `1px solid ${t.line}` }}
       onMouseEnter={(e) => { e.currentTarget.style.background = t.rowTint; }}
       onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
     >
       {!readOnly && (
-        <TableCell style={{ width: 32, verticalAlign: "middle" }}>
+        <TableCell className="cand-td cand-td-chk" style={{ width: 32, verticalAlign: "middle" }}>
           <Checkbox
             checked={selected}
             onCheckedChange={onToggleSelected}
@@ -433,7 +452,7 @@ function CandidateTableRow({
           />
         </TableCell>
       )}
-      <TableCell style={{ ...tdSortable, maxWidth: 320 }}>
+      <TableCell className="cand-td cand-td-name" style={{ ...tdSortable, maxWidth: 320 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
           <CandidateAvatar name={candidate.name} unlocked={candidate.unlocked} />
           <div style={{ minWidth: 0, overflow: "hidden" }}>
@@ -470,16 +489,16 @@ function CandidateTableRow({
           </div>
         </div>
       </TableCell>
-      <TableCell style={tdSortable}>
+      <TableCell className="cand-td" data-label="Match" style={tdSortable}>
         <ScoreChip score={candidate.matchScore} />
       </TableCell>
-      <TableCell style={{ ...tdSortable, color: t.inkSoft }}>
+      <TableCell className="cand-td" data-label="Practice" style={{ ...tdSortable, color: t.inkSoft }}>
         {candidate.rosterScore} avg score · {candidate.sessionsCompleted} {candidate.sessionsCompleted === 1 ? "session" : "sessions"}
       </TableCell>
-      <TableCell style={{ ...td, color: t.inkSoft }}>
+      <TableCell className="cand-td" data-label="Notice" style={{ ...td, color: t.inkSoft }}>
         {candidate.resume?.noticePeriod || <span style={{ color: t.inkFaint }}>—</span>}
       </TableCell>
-      <TableCell style={{ ...td, color: t.inkSoft }}>
+      <TableCell className="cand-td" data-label="CTC" style={{ ...td, color: t.inkSoft }}>
         {candidate.resume?.currentCtc ? (
           <>
             {candidate.resume.currentCtc}
@@ -489,7 +508,7 @@ function CandidateTableRow({
           <span style={{ color: t.inkFaint }}>—</span>
         )}
       </TableCell>
-      <TableCell style={{ ...td, maxWidth: 220 }}>
+      <TableCell className="cand-td cand-td-skills" data-label="Skills" style={{ ...td, maxWidth: 220 }}>
         {candidate.skills.length ? (
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
             {candidate.skills.slice(0, 3).map((s) => (
@@ -514,7 +533,7 @@ function CandidateTableRow({
           <span style={{ color: t.inkFaint }}>—</span>
         )}
       </TableCell>
-      <TableCell style={tdSortable}>
+      <TableCell className="cand-td" data-label="Pipeline" style={tdSortable}>
         <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-start" }}>
           <CandidateStatusChip status={candidate.candidateStatus} />
           {interviewSubstep(candidate) && (
@@ -522,7 +541,7 @@ function CandidateTableRow({
           )}
         </div>
       </TableCell>
-      <TableCell style={{ ...td, width: 48, textAlign: "right" }} onClick={(e) => e.stopPropagation()}>
+      <TableCell className="cand-td cand-td-act" style={{ ...td, width: 48, textAlign: "right" }} onClick={(e) => e.stopPropagation()}>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
@@ -1900,8 +1919,9 @@ export default function RequirementDetailPage() {
               ) : (
                 <Card pad={0} style={{ overflow: "hidden", boxShadow: "none", flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
                   <div style={{ overflowX: "auto", flex: 1, minHeight: 0 }}>
-                    <Table style={{ minWidth: 950 }}>
-                      <TableHeader style={{ position: "sticky", top: 0, zIndex: 1 }}>
+                    <style>{CAND_CARD_CSS}</style>
+                    <Table className="cand-table" style={{ minWidth: 950 }}>
+                      <TableHeader className="cand-thead" style={{ position: "sticky", top: 0, zIndex: 1 }}>
                         <TableRow style={{ background: t.rowTint, height: 40 }}>
                           {!readOnly && <TableHead style={{ width: 32 }}></TableHead>}
                           <SortableHead column="name" columnLabel={COLUMN_LABEL.name} defaultDirection="asc" width="30%" minWidth={240} sort={sort} onSortChange={setSort}>Candidate</SortableHead>

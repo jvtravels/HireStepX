@@ -412,6 +412,10 @@ function InterviewInner() {
            the decorative visualizer and tighten every vertical gap. */
         @media (max-height: 500px) and (orientation: landscape) {
           .iv-canvas-topbar { padding-top: max(6px, env(safe-area-inset-top, 6px)) !important; padding-bottom: 6px !important; }
+          .iv-canvas-topbar { padding-left: 16px !important; padding-right: 16px !important; gap: 8px !important; }
+          .iv-canvas-topbar-left { gap: 10px !important; min-width: 0 !important; flex: 1 1 auto !important; overflow: hidden !important; }
+          .iv-canvas-topbar-right { gap: 6px !important; flex-shrink: 0 !important; }
+          .iv-canvas-mobile-hide, .iv-canvas-avatar-wrap { display: none !important; }
           .iv-info-bar-row { padding-top: 6px !important; padding-bottom: 6px !important; }
           .iv-canvas-stage { padding: 8px 24px !important; gap: 8px !important; }
           .iv-viz-disc { display: none !important; }
