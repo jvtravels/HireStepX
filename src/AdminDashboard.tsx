@@ -7,6 +7,7 @@ import { EmptyState } from "./components/EmptyState";
 import { Button } from "./components/ui/button";
 import { SearchWithSuggestions } from "./components/SearchWithSuggestions";
 import LoadingScreen from "./_LoadingScreen";
+import AdminUnlockPanel from "./AdminUnlockPanel";
 
 /* ─── Token-based auth ─── */
 // Token lives in a React ref (memory only). The HttpOnly admin_token cookie is
@@ -281,7 +282,7 @@ export interface SessionDetailData {
   completionTokens?: number;
 }
 
-type Tab = "overview" | "users" | "sessions" | "financials" | "costs" | "llm" | "feedback" | "support-messages" | "messaging" | "referrals" | "promo-codes" | "calendar" | "outcomes" | "analytics" | "live" | "employers";
+type Tab = "overview" | "users" | "sessions" | "financials" | "costs" | "llm" | "feedback" | "support-messages" | "messaging" | "referrals" | "promo-codes" | "calendar" | "outcomes" | "analytics" | "live" | "employers" | "unlock";
 
 const TABS: { key: Tab; label: string; icon: string }[] = [
   { key: "overview", label: "Overview", icon: "📊" },
@@ -298,6 +299,7 @@ const TABS: { key: Tab; label: string; icon: string }[] = [
   { key: "outcomes", label: "Outcomes", icon: "🏆" },
   { key: "referrals", label: "Referrals", icon: "🔗" },
   { key: "employers", label: "Employers", icon: "🏢" },
+  { key: "unlock", label: "Unlock", icon: "🔓" },
   { key: "promo-codes", label: "Promo Codes", icon: "🎟️" },
   { key: "calendar", label: "Calendar", icon: "📅" },
 ];
@@ -652,7 +654,7 @@ export default function AdminDashboard() {
     if (typeof window === "undefined") return "overview";
     const p = new URLSearchParams(window.location.search);
     const t = p.get("tab") as Tab | null;
-    return (t && ["overview","users","sessions","financials","costs","llm","feedback","support-messages","messaging","referrals","promo-codes","calendar","outcomes","analytics","live","employers"].includes(t)) ? t : "overview";
+    return (t && ["overview","users","sessions","financials","costs","llm","feedback","support-messages","messaging","referrals","promo-codes","calendar","outcomes","analytics","live","employers","unlock"].includes(t)) ? t : "overview";
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -3656,6 +3658,7 @@ export default function AdminDashboard() {
       case "messaging": return renderMessaging();
       case "referrals": return renderReferrals();
       case "employers": return renderEmployers();
+      case "unlock": return <AdminUnlockPanel getToken={getToken} setToken={setToken} />;
       case "promo-codes": return renderPromoCodes();
       case "calendar": return renderCalendar();
       case "outcomes": return renderOutcomes();

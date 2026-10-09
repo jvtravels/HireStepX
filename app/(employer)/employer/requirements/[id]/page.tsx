@@ -1593,7 +1593,7 @@ export default function RequirementDetailPage() {
                     <div key={p.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 0", borderBottom: `1px solid ${t.line}` }}>
                       <span style={{ fontFamily: f.sans, fontSize: 13, color: t.coal }}>{label}</span>
                       <span style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkFaint }}>
-                        ₹{(p.amount / 100).toFixed(0)} · {new Date(p.createdAt).toLocaleDateString()}
+                        {p.amount === 0 ? "Complimentary" : `₹${(p.amount / 100).toFixed(0)}`} · {new Date(p.createdAt).toLocaleDateString()}
                       </span>
                     </div>
                   );

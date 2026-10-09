@@ -38,6 +38,7 @@ import {
   buildBatchUnlockResponsePayload,
 } from "./_employer-unlock-verify-helpers";
 import { notify } from "./_notify";
+import { patchMatchUnlocked } from "./_unlock-apply";
 
 const RAZORPAY_KEY_ID = (process.env.RAZORPAY_KEY_ID || "").trim();
 const RAZORPAY_KEY_SECRET = (process.env.RAZORPAY_KEY_SECRET || "").trim();
@@ -207,37 +208,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (stillLocked.length > 0) {
       const unlockedAt = new Date().toISOString();
       const patchResults = await Promise.all(
-        stillLocked.map(async (matchId) => {
-          const profile = profileByMatchId.get(matchId);
-          const url = `${SUPABASE_URL}/rest/v1/requirement_matches?id=eq.${encodeURIComponent(matchId)}`;
-          const patchHeaders = { ...supabaseServiceHeaders(), Prefer: "return=minimal" };
-          const full = await fetch(url, {
-            method: "PATCH",
-            headers: patchHeaders,
-            body: JSON.stringify({
-              unlocked: true,
-              unlocked_at: unlockedAt,
-              unlocked_candidate_name: profile?.name ?? null,
-              unlocked_candidate_email: profile?.email ?? null,
-            }),
-          });
-          if (full.ok) return full;
-          // The employer already paid — the unlock itself must not be lost
-          // to a snapshot-column mismatch (see supabase-migrations/0026).
-          // Retry with just the core fields; the name/email snapshot is a
-          // display nicety, not the thing the employer paid for.
-          const bodyText = await full.text().catch(() => "");
-          console.error(
-            "employer unlock patch with candidate snapshot failed, retrying without it:",
-            full.status,
-            bodyText.slice(0, 200),
-          );
-          return fetch(url, {
-            method: "PATCH",
-            headers: patchHeaders,
-            body: JSON.stringify({ unlocked: true, unlocked_at: unlockedAt }),
-          });
-        }),
+        stillLocked.map((matchId) =>
+          patchMatchUnlocked({
+            supabaseUrl: SUPABASE_URL,
+            headers: supabaseServiceHeaders(),
+            matchId,
+            unlockedAt,
+            profile: profileByMatchId.get(matchId),
+          }),
+        ),
       );
       const failed = patchResults.find((r) => !r.ok);
       if (failed) {
