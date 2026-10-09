@@ -5,6 +5,8 @@ import { type PaymentRecord } from "./supabase";
 import { useDashboardSubscription } from "./DashboardContext";
 import { tokens as t, fonts, shadows } from "./auth/_tokens";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { useUiSoundsEnabled, setUiSoundsEnabled } from "./uiSounds";
 import {
   Table,
   TableBody,
@@ -237,6 +239,27 @@ function TinyChip({ children, tone }: { children: React.ReactNode; tone?: "succe
       fontFamily: font.mono, fontSize: 12, letterSpacing: "0.08em", textTransform: "uppercase",
       padding: "4px 8px", borderRadius: 4, background: palette.bg, color: palette.fg, fontWeight: 700,
     }}>{children}</span>
+  );
+}
+
+export function SoundsSection() {
+  const enabled = useUiSoundsEnabled();
+  return (
+    <div style={{ border: `1px solid ${c.border}`, borderRadius: 12, padding: "0 20px" }}>
+      <ActionRow
+        last
+        icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg>}
+        title="Message & notification sounds"
+        desc="Play a short sound when you send or receive a message, or get a new notification."
+        action={
+          <Switch
+            checked={enabled}
+            onCheckedChange={setUiSoundsEnabled}
+            aria-label="Message and notification sounds"
+          />
+        }
+      />
+    </div>
   );
 }
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { playUiSound } from "./uiSounds";
 import {
   Sheet,
   SheetContent,
@@ -78,6 +79,7 @@ export default function NotificationBell({
       if (!firstLoadRef.current && res.data.unreadCount > prevUnreadRef.current) {
         const delta = res.data.unreadCount - prevUnreadRef.current;
         setAnnouncement(delta === 1 ? "1 new notification" : `${delta} new notifications`);
+        playUiSound("notification");
       }
       firstLoadRef.current = false;
       prevUnreadRef.current = res.data.unreadCount;

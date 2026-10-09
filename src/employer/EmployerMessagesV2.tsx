@@ -31,6 +31,7 @@ import { tokens as t, fonts as f } from "../auth/_tokens";
 import { useEmployerData, type ConversationContext, type ConversationMessage, type ConversationSummary, type CandidateEvidence } from "./EmployerDataContext";
 import { groupConversationsByCounterpart } from "../conversationGrouping";
 import { useToast } from "../Toast";
+import { playUiSound } from "../uiSounds";
 import { CandidateStatusChip, OutlineCta, PrimaryCta, Pill, ScoreChip } from "./_atoms";
 
 const LIST_POLL_MS = 15000;
@@ -121,10 +122,16 @@ export default function EmployerMessagesV2() {
     return () => { cancelled = true; clearTimeout(timer); };
   }, [loadConversations]);
 
+  const seenMessageIdsRef = useRef<Set<string>>(new Set());
+
   const loadThread = useCallback(async (matchId: string, showSpinner: boolean) => {
     if (showSpinner) setThreadLoading(true);
     const result = await fetchMessages(matchId);
     if (result) {
+      const seen = seenMessageIdsRef.current;
+      if (showSpinner) seen.clear();
+      else if (result.messages.some((m) => m.senderRole !== "employer" && !seen.has(m.id))) playUiSound("receive");
+      for (const m of result.messages) seen.add(m.id);
       setMessages(result.messages);
       setContext(result.context);
     }
@@ -185,6 +192,7 @@ export default function EmployerMessagesV2() {
       toast("Couldn't send message — please try again", "error");
       return;
     }
+    playUiSound("send");
     setDraft("");
     loadThread(activeMatchId, false);
     loadConversations();
@@ -227,6 +235,7 @@ export default function EmployerMessagesV2() {
       toast("Attachment uploaded but failed to send — please try again", "error");
       return;
     }
+    playUiSound("send");
     loadThread(activeMatchId, false);
     loadConversations();
   };

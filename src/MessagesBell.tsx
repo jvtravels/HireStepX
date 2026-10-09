@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { playUiSound } from "./uiSounds";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -62,9 +63,15 @@ export default function MessagesBell({
   const [open, setOpen] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  const prevUnreadRef = useRef<number | null>(null);
+
   async function load() {
     const result = await fetchConversations();
-    if (result) setConversations(result);
+    if (!result) return;
+    setConversations(result);
+    const unread = result.filter((c) => c.unread).length;
+    if (prevUnreadRef.current !== null && unread > prevUnreadRef.current) playUiSound("receive");
+    prevUnreadRef.current = unread;
   }
 
   useEffect(() => {

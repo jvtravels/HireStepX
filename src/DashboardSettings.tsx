@@ -9,6 +9,7 @@ import {
   FlatSection,
   AccountSection,
   PlanUsageSection,
+  SoundsSection,
   DangerZoneSection,
 } from "./settingsSections";
 
@@ -101,6 +102,10 @@ export default function SettingsPage() {
             handlePasswordReset={handlePasswordReset}
             isOAuthOnly={authUser?.signedInVia === "google"}
           />
+        </FlatSection>
+
+        <FlatSection title="Sounds">
+          <SoundsSection />
         </FlatSection>
 
         <FlatSection title="Danger Zone" last>

@@ -5,7 +5,7 @@ import { useMaxWidth } from "@/hooks/useMaxWidth";
 import { useEmployerData } from "@/employer/EmployerDataContext";
 import { tokens as t, fonts as f } from "@/auth/_tokens";
 import { FieldLabel, HelpText, PrimaryCta, EmployerIcon } from "@/employer/_atoms";
-import { PageHeader, FlatSection } from "@/settingsSections";
+import { PageHeader, FlatSection, SoundsSection } from "@/settingsSections";
 import {
   LOGO_MAX_MB,
   LOGO_ACCEPTED_TYPES,
@@ -73,7 +73,7 @@ export default function EmployerSettingsPage() {
       <div style={{ background: t.white, border: `1px solid ${t.line}`, borderRadius: 16, overflow: "hidden" }}>
         <PageHeader title="Settings" desc="Update your company profile." />
 
-        <FlatSection title="Company profile" last>
+        <FlatSection title="Company profile">
           <div style={{ display: "flex", flexDirection: "column", gap: 18, maxWidth: 480 }}>
             <div>
               <FieldLabel required>Company name</FieldLabel>
@@ -168,6 +168,10 @@ export default function EmployerSettingsPage() {
               {saving ? "Saving…" : "Save changes"}
             </PrimaryCta>
           </div>
+        </FlatSection>
+
+        <FlatSection title="Sounds" last>
+          <SoundsSection />
         </FlatSection>
       </div>
     </div>
