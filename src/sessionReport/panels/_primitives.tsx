@@ -549,15 +549,17 @@ export function StatTile(props: StatTileProps) {
   );
 }
 
-/* SectionEyebrow — the "01 · OVERVIEW" header rule used by every
+/* SectionEyebrow — the "OVERVIEW" header rule used by every
  * sr-*Section card. Hoisted here from sr-JumpNav.tsx 2026-05-29 so
  * SrSectionShell can compose it without a cross-file import dance.
  * sr-JumpNav.tsx re-exports for back-compat with any existing
  * `import { SectionEyebrow } from "./sr-JumpNav"` call sites. */
-export function SectionEyebrow({ num, label }: { num: string; label: string }) {
+/* `num` is accepted but not rendered: sections are conditional, so fixed
+ * numbers left visible gaps (e.g. 07 → 09) in most reports. */
+export function SectionEyebrow({ label }: { num?: string; label: string }) {
   return (
     <div className="ir-section-eyebrow">
-      <span className="ir-section-num">{num} · {label.toUpperCase()}</span>
+      <span className="ir-section-num">{label.toUpperCase()}</span>
       <span className="ir-section-rule" aria-hidden="true" />
     </div>
   );

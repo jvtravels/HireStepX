@@ -12,7 +12,7 @@
    Loaded via `next/dynamic` from `dashboardComponents.tsx`. */
 
 "use client";
-import { memo, useCallback, useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { track } from "@vercel/analytics";
 import { captureClientEvent } from "../posthogClient";
@@ -611,8 +611,10 @@ export const SessionReport = memo(function SessionReport({
   }, [session.id, reloadTick, user?.targetCompany, hasCurrentCachedReport]);
 
   /* ── Single fire on first successful view ── */
+  const viewedSessionRef = useRef<string | null>(null);
   useEffect(() => {
-    if (report) {
+    if (report && viewedSessionRef.current !== session.id) {
+      viewedSessionRef.current = session.id;
       track("report_viewed", {
         sessionId: session.id,
         score: report.overallScore,

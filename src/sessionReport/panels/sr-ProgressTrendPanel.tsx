@@ -110,7 +110,15 @@ function ArrowGlyph({ trend }: { trend: SkillTrend["trend"] }) {
  * creamSoft/line/radius.bar tile vocabulary used by sr-CoreMetricsSection
  * so the two sections sit visually adjacent without jarring. */
 function TrendTile({ trend }: { trend: SkillTrend }) {
-  const color = trendColor(trend.trend);
+  // Arrow and text must agree: the stored `trend` compares against the
+  // 3-session average, but the label shows the delta vs the last session.
+  const shown: SkillTrend["trend"] =
+    trend.sparkline.length <= 1 || Math.abs(trend.deltaVsLast) < 3
+      ? "flat"
+      : trend.deltaVsLast > 0
+        ? "up"
+        : "down";
+  const color = trendColor(shown);
   const deltaSign = trend.deltaVsLast > 0 ? "+" : "";
   const deltaText =
     trend.sparkline.length <= 1
@@ -162,7 +170,7 @@ function TrendTile({ trend }: { trend: SkillTrend }) {
         </span>
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-        <ArrowGlyph trend={trend.trend} />
+        <ArrowGlyph trend={shown} />
         <span
           style={{
             fontFamily: f.mono,
@@ -193,7 +201,7 @@ export function ProgressTrendPanel({ trends }: { trends: SkillTrend[] }) {
       num="03"
       label="Across sessions"
       title="Skill Progress"
-      subtitle="How your negotiation skills are trending vs. prior sessions."
+      subtitle="How your skills are trending vs. prior sessions."
     >
       {hasAnyHistory && trends.length > 0 ? (
         <div
