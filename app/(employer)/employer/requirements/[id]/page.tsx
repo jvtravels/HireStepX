@@ -460,6 +460,7 @@ function CandidateTableRow({
               href={`/employer/requirements/${requirementId}/candidates/${candidate.id}`}
               style={{
                 display: "block",
+                minHeight: 0,
                 overflow: "hidden",
                 textOverflow: "ellipsis",
                 whiteSpace: "nowrap",
