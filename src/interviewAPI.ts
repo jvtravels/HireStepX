@@ -1007,8 +1007,12 @@ async function postKernel(body: Record<string, unknown>): Promise<NegotiationKer
   return second.data;
 }
 
-/** Retry queued offline evaluations */
-export async function retryQueuedEvals(): Promise<void> {
+/** Retry queued offline evaluations. `userId`, when provided, also pushes
+ * the corrected score to the server (via /api/sessions/update-score) so a
+ * session that was saved with a heuristic fallback score doesn't keep
+ * showing that wrong score after the next refresh/device — previously this
+ * only patched the local cache. */
+export async function retryQueuedEvals(userId?: string): Promise<void> {
   try {
     const db = await openIDB();
     const tx = db.transaction(IDB_STORE, "readonly");
@@ -1034,19 +1038,31 @@ export async function retryQueuedEvals(): Promise<void> {
             resumeText: data.resumeText as string | undefined,
           });
           if (result) {
+            const score = Math.min(100, Math.max(0, result.overallScore));
+            const skillScores = result.skillScores && typeof result.skillScores === "object"
+              ? Object.fromEntries(Object.entries(result.skillScores).map(([k, v]) => [k, typeof v === "object" && v !== null && "score" in (v as Record<string, unknown>) ? (v as Record<string, unknown>).score as number : v]))
+              : result.skillScores;
             try {
               const raw = localStorage.getItem(RESULTS_KEY);
               const sessions: SessionResult[] = raw ? JSON.parse(raw) : [];
               const idx = sessions.findIndex(s => s.id === data.sessionId);
               if (idx >= 0) {
-                sessions[idx].score = Math.min(100, Math.max(0, result.overallScore));
+                sessions[idx].score = score;
                 sessions[idx].ai_feedback = result.feedback;
-                sessions[idx].skill_scores = result.skillScores && typeof result.skillScores === "object"
-                  ? Object.fromEntries(Object.entries(result.skillScores).map(([k, v]) => [k, typeof v === "object" && v !== null && "score" in (v as Record<string, unknown>) ? (v as Record<string, unknown>).score as number : v]))
-                  : result.skillScores;
+                sessions[idx].skill_scores = skillScores;
                 localStorage.setItem(RESULTS_KEY, JSON.stringify(sessions));
               }
             } catch { /* expected: localStorage update may fail */ }
+            if (userId) {
+              try {
+                await apiFetch<{ ok: boolean }>("/api/sessions/update-score", {
+                  id: data.sessionId,
+                  score,
+                  ai_feedback: result.feedback,
+                  skill_scores: skillScores,
+                });
+              } catch { /* expected: server patch is best-effort; local cache is already corrected */ }
+            }
             await deleteFromIDB(key);
           }
         } catch { /* expected: IDB cursor iteration may fail */ }

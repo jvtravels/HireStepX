@@ -643,6 +643,7 @@ function InterviewInner() {
                 ? liveNegotiationState?.facts.candidateCurrentCTC != null
                 : undefined
             }
+            micError={micError}
           />
         )}
 

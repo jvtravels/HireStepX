@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { c, font } from "./tokens";
 import { tokens as T } from "./auth/_tokens";
@@ -196,8 +196,10 @@ export default function OutcomePromptBanner() {
             }}
             placeholder="The structured-feedback section was the thing that finally moved my offer rate."
           />
-          <label style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 8, cursor: "pointer" }}>
+          <label htmlFor="outcome-may-share" style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 8, cursor: "pointer" }}>
             <input
+              id="outcome-may-share"
+              name="mayShare"
               type="checkbox"
               checked={mayShare}
               onChange={(e) => setMayShare(e.target.checked)}
@@ -221,9 +223,10 @@ export default function OutcomePromptBanner() {
 }
 
 function Toggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
+  const id = useId();
   return (
-    <label style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
-      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} style={{ accentColor: T.indigo }} />
+    <label htmlFor={id} style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
+      <input id={id} name={id} type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} style={{ accentColor: T.indigo }} />
       <span style={{ fontFamily: font.ui, fontSize: 13, color: c.chalk }}>{label}</span>
     </label>
   );
@@ -232,10 +235,13 @@ function Toggle({ label, checked, onChange }: { label: string; checked: boolean;
 function Field({ label, value, onChange, placeholder }: { label: string; value: string; onChange: (v: string) => void; placeholder?: string }) {
   // Wrap the input in the label so screen readers associate them without
   // needing a unique htmlFor/id pair on every render.
+  const id = useId();
   return (
     <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
       <span style={{ fontFamily: font.ui, fontSize: 11, color: c.stone }}>{label}</span>
       <input
+        id={id}
+        name={id}
         value={value}
         onChange={(e) => onChange(e.target.value.slice(0, 120))}
         placeholder={placeholder}

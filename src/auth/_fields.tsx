@@ -284,6 +284,7 @@ export interface CheckboxProps {
 export function Checkbox({ checked, onChange, label, description }: CheckboxProps) {
   const [focused, setFocused] = useState(false);
   const descId = useId();
+  const inputId = useId();
   return (
     <label
       title={description}
@@ -303,6 +304,8 @@ export function Checkbox({ checked, onChange, label, description }: CheckboxProp
     >
       {/* Real checkbox — visually hidden but keyboard-focusable */}
       <input
+        id={inputId}
+        name={inputId}
         type="checkbox"
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}

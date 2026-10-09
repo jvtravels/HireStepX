@@ -290,6 +290,7 @@ export function Composer({
   isLastStep, isClosingStep, onViewResult,
   currentQuestionText,
   candidateCurrentCtcKnown,
+  micError,
 }: {
   currentTranscript: string;
   setCurrentTranscript: (v: string) => void;
@@ -335,6 +336,13 @@ export function Composer({
   /** S42-B2 / S43-B2 — suppress the "Current-CTC probe: Deflect"
    *  tip once the candidate has already disclosed their CTC. */
   candidateCurrentCtcKnown?: boolean;
+  /** Reason text for why speech input dropped to typing (permission denied,
+   *  unsupported browser). Deliberately NOT shown for the quiet "having
+   *  trouble hearing you" safety-timeout fallback — that one stays silent
+   *  per QA bug 21 (sudden element appearing mid-interview). A genuine
+   *  denial/unsupported-browser switch is a one-time, permanent state
+   *  change the candidate needs to understand, not a transient blip. */
+  micError?: string;
 }) {
   const [typing, setTyping] = useState(speechUnavailable);
   // Per-answer timer for the PaceMeter — local, resets when remounts
@@ -414,6 +422,21 @@ export function Composer({
       {/* Type-mode textarea fallback */}
       {showTyping && (
         <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 8 }}>
+          {micError && micError !== "Having trouble hearing you? Type your answer instead." && (
+            <div role="status" style={{
+              display: "flex", alignItems: "center", gap: 8, padding: "8px 12px",
+              background: "oklch(0.359 0.135 278.697 / 0.10)", border: "1px solid oklch(0.359 0.135 278.697 / 0.22)",
+              borderRadius: 10, fontFamily: ef.sans, fontSize: 12, color: e.inkSoft,
+            }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={e.indigo} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden style={{ flexShrink: 0 }}>
+                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                <line x1="12" y1="19" x2="12" y2="23" />
+                <line x1="1" y1="1" x2="23" y2="23" />
+              </svg>
+              <span>{micError}</span>
+            </div>
+          )}
           <textarea
             ref={textareaRef}
             id="composer"
@@ -516,7 +539,7 @@ export function Composer({
               fontFamily: ef.sans, fontSize: 14, fontWeight: 500,
               color: e.cream, background: e.indigo,
               border: `1px solid ${e.indigo}`,
-              borderRadius: 999, padding: "12px 26px",
+              borderRadius: 8, padding: "12px 26px",
               cursor: "pointer",
               transition: "all 180ms cubic-bezier(0.16, 1, 0.3, 1)",
               boxShadow: "0 6px 20px -6px rgba(49,46,129,0.40)",
@@ -541,7 +564,7 @@ export function Composer({
             fontFamily: ef.sans, fontSize: 14, fontWeight: 500,
             color: e.cream, background: e.indigo,
             border: `1px solid ${e.indigo}`,
-            borderRadius: 999, padding: "12px 26px",
+            borderRadius: 8, padding: "12px 26px",
             cursor: "pointer",
             transition: "all 180ms cubic-bezier(0.16, 1, 0.3, 1)",
             boxShadow: "0 6px 20px -6px rgba(49,46,129,0.40)",
@@ -575,7 +598,7 @@ export function Composer({
             color: canSend ? e.cream : e.coal,
             background: canSend ? e.indigo : e.white,
             border: `1px solid ${canSend ? e.indigo : e.line}`,
-            borderRadius: 999, padding: "10px 18px 10px 12px",
+            borderRadius: 8, padding: "10px 18px 10px 12px",
             cursor: canSend ? "pointer" : "not-allowed",
             opacity: canSend ? 1 : 0.7,
             transition: "all 180ms cubic-bezier(0.16, 1, 0.3, 1)",

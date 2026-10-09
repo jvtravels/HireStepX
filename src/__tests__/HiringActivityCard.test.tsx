@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import "./setup-next-navigation";
 import HiringActivityCard from "../HiringActivityCard";
+import { resetHiringActivityInFlight } from "../useHiringActivity";
 
 vi.mock("../supabase", () => ({
   authHeaders: vi.fn(() => Promise.resolve({ "Content-Type": "application/json" })),
@@ -15,6 +16,7 @@ describe("HiringActivityCard", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     localStorage.clear();
+    resetHiringActivityInFlight();
   });
 
   it("renders nothing before the fetch resolves", () => {

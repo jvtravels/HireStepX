@@ -135,7 +135,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
   // layout from re-rendering when unrelated state (e.g. recentSessions poll)
   // changes. Each sub-context only notifies when ITS slice changes.
   const { displayName, persisted } = useDashboardCore();
-  const { calendarEvents, refreshSessions } = useDashboardSessions();
+  const { calendarEvents } = useDashboardSessions();
   const { isFree, isStarter, sessionsUsed, sessionsRemaining, starterRemaining, sessionsThisWeek, creditBalance, creditsLoaded } = useDashboardSubscription();
   // True once auth has fully resolved AND the tier is set. Gating on
   // !authLoading prevents the card from briefly showing the wrong colour
@@ -162,17 +162,6 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
       nav.replace(pathname ?? "/dashboard");
     }
   }, [searchParams, pathname, setShowUpgradeModal, nav]);
-
-  // Refetch sessions AND credit balance on every mount (returning from /interview,
-  // navigating back from session report, etc.).  Always fetch — don't gate on
-  // creditsLoaded: when the layout remounts after an interview the Context resets
-  // creditsLoaded→false and the old guard caused the refresh to silently skip,
-  // leaving a stale/consumed balance on screen until a full page reload.
-  useEffect(() => {
-    refreshSessions();
-    refreshCreditBalance();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [refreshSessions, refreshCreditBalance]);
 
   // Drain any interview-turn writes that failed during a previous session
   // (network blip mid-interview, browser tab closed before save, etc.).
@@ -350,11 +339,17 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
             const periodLabel   = isStarter ? "in this pack" : "total";
             // planName kept for potential future use (e.g. aria labels, tooltips).
             const pct  = Math.min(100, (planUsed / planTotal) * 100);
-            const isLow = !planExhausted && (
+            // Purchased credits make the plan limit a soft ceiling, not a hard
+            // wall — don't flash the alarming "limit reached" ember styling
+            // when the candidate can keep practicing anyway (mirrors the
+            // same guard in SessionSetup's quota banner).
+            const hasCredits = creditBalance > 0;
+            const isLow = !planExhausted && !hasCredits && (
               (isStarter && planLeft <= 2) || (isFree && planLeft <= 1)
             );
+            const showExhaustedAlarm = planExhausted && !hasCredits;
             // barFill: matches the "N of N" text — ember when exhausted or low, indigo when healthy.
-            const barFill = (planExhausted || isLow) ? c.ember : c.accent;
+            const barFill = (showExhaustedAlarm || isLow) ? c.ember : c.accent;
 
 
             return (
@@ -366,13 +361,13 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                     style={{ fontFamily: font.ui, fontSize: 11, lineHeight: 1.4, margin: 0,
                       color: isLow ? c.ember : c.inkSoft,
                       fontWeight: isLow ? 600 : 400,
-                      opacity: planExhausted ? 0.65 : 1 }}
+                      opacity: showExhaustedAlarm ? 0.65 : 1 }}
                   >
                     Sessions used
                   </p>
                   <span style={{ fontFamily: font.mono, fontSize: 11,
-                    color: planExhausted ? c.ember : isLow ? c.ember : c.inkSoft,
-                    opacity: planExhausted ? 0.75 : 1, fontWeight: planExhausted ? 600 : 400 }}>
+                    color: showExhaustedAlarm ? c.ember : isLow ? c.ember : c.inkSoft,
+                    opacity: showExhaustedAlarm ? 0.75 : 1, fontWeight: showExhaustedAlarm ? 600 : 400 }}>
                     {planUsed} of {planTotal}
                   </span>
                 </div>
@@ -391,7 +386,6 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                     Green + bold when credits exist. Muted with 0 when none —
                     so users always see the row and know purchased credits are a thing. */}
                 {(() => {
-                  const hasCredits = creditBalance > 0;
                   return (
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between",
                       marginBottom: 10, marginTop: planExhausted ? 6 : 2,
@@ -529,8 +523,6 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
       }
       overlays={
         <>
-      {/* Preload Razorpay checkout script so it's cached before the user clicks Upgrade */}
-      <link rel="preload" href="https://checkout.razorpay.com/v1/checkout.js" as="script" crossOrigin="anonymous" />
       {/* Command palette — ⌘K from anywhere, or the header's Search button */}
       <CommandDialog open={paletteOpen} onOpenChange={setPaletteOpen}>
         <CommandInput placeholder="Jump to a page or action…" />
@@ -561,8 +553,12 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
         </CommandList>
       </CommandDialog>
 
-      {/* Upgrade modal */}
+      {/* Upgrade modal — preload the checkout script only once the modal is
+          actually open, not on every dashboard page view (most visits never
+          touch checkout at all). */}
       {showUpgradeModal && (
+        <>
+        <link rel="preload" href="https://checkout.razorpay.com/v1/checkout.js" as="script" crossOrigin="anonymous" />
         <UpgradeModal
           onClose={() => setShowUpgradeModal(false)}
           sessionsUsed={sessionsUsed}
@@ -586,6 +582,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
               setTimeout(() => refreshCreditBalance(), 1500);
             }}
         />
+        </>
       )}
 
 

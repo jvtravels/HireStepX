@@ -134,7 +134,7 @@ describe("Accessibility: ARIA Landmarks", () => {
     expect(skipLink?.textContent).toContain("Skip to main content");
   });
 
-  it("nav buttons have aria-current for active page", async () => {
+  it("nav links have aria-current for active page", async () => {
     const { DashboardProvider } = await import("../DashboardContext");
     const DashboardLayout = (await import("../DashboardLayout")).default;
     await act(async () => {
@@ -147,7 +147,7 @@ describe("Accessibility: ARIA Landmarks", () => {
       );
     });
 
-    const navButtons = document.querySelectorAll("nav button");
+    const navButtons = document.querySelectorAll("nav a");
     const activeButton = Array.from(navButtons).find(b => b.getAttribute("aria-current") === "page");
     expect(activeButton).toBeTruthy();
     expect(activeButton?.getAttribute("aria-label")).toBe("Dashboard");
@@ -212,7 +212,7 @@ describe("Accessibility: Decorative icons", () => {
     });
   });
 
-  it("nav buttons have aria-label for screen readers", async () => {
+  it("nav links have aria-label for screen readers", async () => {
     const { DashboardProvider } = await import("../DashboardContext");
     const DashboardLayout = (await import("../DashboardLayout")).default;
     await act(async () => {
@@ -225,7 +225,8 @@ describe("Accessibility: Decorative icons", () => {
       );
     });
 
-    const navButtons = document.querySelectorAll("nav button");
+    const navButtons = document.querySelectorAll("nav a[data-sidebar='menu-button']");
+    expect(navButtons.length).toBeGreaterThan(0);
     navButtons.forEach(btn => {
       expect(btn.getAttribute("aria-label")).toBeTruthy();
     });

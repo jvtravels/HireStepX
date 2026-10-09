@@ -270,6 +270,7 @@ export function useInterviewSTT(
         if (stopped) return;
         const recognition = createSpeechRecognition();
         if (!recognition) {
+          callbacks.setMicError("Voice input isn't supported in this browser. You can type your answers instead.");
           callbacks.setSpeechUnavailable(true);
           return;
         }

@@ -21,6 +21,7 @@ import {
 import { getCurriculumState, type CurriculumState } from "./curriculum";
 import type { SessionCoaching } from "./dashboardTypes";
 import type { SessionRecord } from "./supabase";
+import { retryQueuedEvals } from "./interviewAPI";
 
 /* S70-B1: session cards that only ever received a deterministic fallback
  * evaluation have coaching=null — the LLM never wrote the pair. The skill_scores
@@ -348,6 +349,19 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       }
     } catch { /* sessionStorage unavailable (private-browsing) — stay with defaults */ }
   }, [user?.id]);
+
+  // Flush any evaluations that failed during a past session and were queued
+  // for retry (see _evaluation-flow.ts). Previously this only ran from the
+  // interview engine's online-event listener, so a candidate who closed the
+  // tab right after a failed eval (and never returned to an active session)
+  // would carry a stale fallback score on their dashboard indefinitely.
+  const retryFlushDoneRef = useRef(false);
+  useEffect(() => {
+    if (!user?.id || retryFlushDoneRef.current) return;
+    retryFlushDoneRef.current = true;
+    retryQueuedEvals(user.id).catch(() => { /* best-effort */ });
+  }, [user?.id]);
+
   const [toast, setToast] = useState<string | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const showToast = useCallback((msg: string) => {

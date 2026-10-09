@@ -156,7 +156,7 @@ export default function AppShellFrame({
         <aside aria-label="Navigation sidebar" style={{ display: "flex", flexDirection: "column", height: "100%" }}>
         <SidebarHeader className="px-3 pt-4 pb-3">
           <Link href={homeHref} className="pl-1.5 group-data-[collapsible=icon]:pl-0" style={{ textDecoration: "none", display: "inline-flex", alignItems: "center" }}>
-            <Image src="/wordmark.png" alt="HireStepX" width={387} height={108} className="group-data-[collapsible=icon]:hidden" style={{ height: 32, width: "auto" }} />
+            <Image src="/wordmark.png" alt="HireStepX" width={387} height={108} priority className="group-data-[collapsible=icon]:hidden" style={{ height: 32, width: "auto" }} />
             <Image src="/favicon.svg" alt="HireStepX" width={28} height={28} className="hidden group-data-[collapsible=icon]:block" style={{ height: 28, width: 28 }} />
           </Link>
         </SidebarHeader>
@@ -173,30 +173,35 @@ export default function AppShellFrame({
                       <span aria-hidden="true" style={{ position: "absolute", left: -8, top: 4, width: 3, height: 24, borderRadius: "0 3px 3px 0", background: c.accent, animation: "fadeIn 0.15s ease" }} />
                     )}
                     <SidebarMenuButton
+                      asChild
                       isActive={active}
-                      aria-current={active ? "page" : undefined}
-                      onClick={() => onNavigate(item.path)}
-                      onMouseEnter={(e) => { onNavHover?.(item.id); if (!active) e.currentTarget.style.background = c.border; }}
-                      onMouseLeave={(e) => { if (!active) e.currentTarget.style.background = "transparent"; }}
-                      onTouchStart={() => onNavHover?.(item.id)}
-                      aria-label={item.label}
                       tooltip={item.label}
-                      style={{
-                        height: 36, gap: 10, fontFamily: F.sans, fontSize: 14,
-                        fontWeight: 500,
-                        color: active ? c.accent : c.inkSoft,
-                        background: active ? c.border : "transparent",
-                        borderRadius: 8,
-                        transition: `background ${dur.instant} ${ease.snap}, color ${dur.instant} ${ease.snap}`,
-                      }}
                     >
-                      {item.icon}
-                      <span className="group-data-[collapsible=icon]:hidden" style={{ position: "relative" }}>
-                        {item.label}
-                        {item.alert && (
-                          <span style={{ position: "absolute", top: -2, right: -10, width: 7, height: 7, borderRadius: "50%", background: T.error, border: `2px solid ${c.graphite}` }} />
-                        )}
-                      </span>
+                      <Link
+                        href={item.path}
+                        aria-current={active ? "page" : undefined}
+                        onClick={() => onNavigate(item.path)}
+                        onMouseEnter={(e) => { onNavHover?.(item.id); if (!active) e.currentTarget.style.background = c.border; }}
+                        onMouseLeave={(e) => { if (!active) e.currentTarget.style.background = "transparent"; }}
+                        onTouchStart={() => onNavHover?.(item.id)}
+                        aria-label={item.alert ? `${item.label} (new activity)` : item.label}
+                        style={{
+                          height: 36, gap: 10, fontFamily: F.sans, fontSize: 14,
+                          fontWeight: 500,
+                          color: active ? c.accent : c.inkSoft,
+                          background: active ? c.border : "transparent",
+                          borderRadius: 8,
+                          transition: `background ${dur.instant} ${ease.snap}, color ${dur.instant} ${ease.snap}`,
+                        }}
+                      >
+                        {item.icon}
+                        <span className="group-data-[collapsible=icon]:hidden" style={{ position: "relative" }}>
+                          {item.label}
+                          {item.alert && (
+                            <span aria-hidden="true" style={{ position: "absolute", top: -2, right: -10, width: 7, height: 7, borderRadius: "50%", background: T.error, border: `2px solid ${c.graphite}` }} />
+                          )}
+                        </span>
+                      </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 );
