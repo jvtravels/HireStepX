@@ -216,10 +216,20 @@ export function useInterviewEngine() {
   const isNewSession = searchParams.get("new") === "1";
   const isResuming = searchParams.get("resume") === "true";
   const draftRef = useRef<InterviewDraft | null>(null);
+  // Tracks "a draft existed in storage for this session" separately from
+  // "the draft validated for restore" — a refresh before the first answer
+  // seeds a draft (currentStep: 0, no user turns) that validateRestoredDraft
+  // correctly refuses to *restore* (nothing worth replaying), but its mere
+  // existence proves the interview legitimately started. Without this, the
+  // bounce guard below couldn't tell that apart from a bare back-button
+  // entry with no draft at all, and kicked a mid-interview refresh back to
+  // /dashboard after the session had already been counted/charged.
+  const rawDraftExistedRef = useRef(false);
   if (!draftRef.current) {
     try {
       const raw = localStorage.getItem(draftKey);
       if (raw) {
+        rawDraftExistedRef.current = true;
         if (isNewSession && !isResuming) {
           // Explicit new session from SessionSetup — clear old draft
           localStorage.removeItem(draftKey);
@@ -291,7 +301,7 @@ export function useInterviewEngine() {
   //   the user never saw — router.replace() only kicks off navigation, it
   //   doesn't stop already-scheduled effects. missingStartIntentRef lets
   //   the later effect check "are we bouncing?" before spending a credit.
-  const missingStartIntentRef = useRef(!(isNewSession || isResuming) && !draftRef.current);
+  const missingStartIntentRef = useRef(!(isNewSession || isResuming) && !draftRef.current && !rawDraftExistedRef.current);
   useEffect(() => {
     if (missingStartIntentRef.current) {
       console.warn("[interview] Entered /interview with no start intent and no draft — redirecting to /dashboard");
@@ -1035,6 +1045,12 @@ export function useInterviewEngine() {
   const ttsInstanceIdRef = useRef(0);
   const interviewEndedRef = useRef(false);
 
+  // The recovery hook's effect is mount-only, so it reads this ref rather
+  // than closing over `user` directly — user?.id is often still undefined
+  // on the first render while auth is loading.
+  const userIdRef = useRef<string | undefined>(user?.id);
+  useEffect(() => { userIdRef.current = user?.id; }, [user?.id]);
+
   // Online/offline recovery — see ./_recovery.ts for the debounce reasoning.
   useOnlineOfflineRecovery({
     setIsOffline,
@@ -1042,7 +1058,7 @@ export function useInterviewEngine() {
     reconnectAttemptRef,
     currentStepRef,
     interviewEndedRef,
-    retryQueuedEvals,
+    retryQueuedEvals: () => retryQueuedEvals(userIdRef.current),
     fetchPersonalizedQuestions,
     saveWarningRef,
   });
@@ -1057,14 +1073,15 @@ export function useInterviewEngine() {
     return () => window.removeEventListener("beforeunload", handleUnload);
   }, []);
 
-  // Auto-save draft (clear draft when interview completes to prevent stale restore)
+  // Auto-save draft. Stop re-arming the autosave once the interview reaches
+  // "done", but do NOT delete the draft here: handleEnd fires shortly after
+  // phase flips to "done" and owns clearing draftKey itself, only after the
+  // session save has actually been attempted. Deleting it eagerly on the
+  // phase transition used to mean closing the tab during evaluation (scoring
+  // can take up to 45s) lost the whole interview — the draft was already
+  // gone with nothing left to restore even though nothing had been saved yet.
   useEffect(() => {
-    if (phase === "done" || evaluating) {
-      // Interview completed — clear draft so next session starts fresh
-      try { localStorage.removeItem(draftKey); } catch { /* non-critical */ }
-      deleteFromIDB(draftKey);
-      return;
-    }
+    if (phase === "done") return;
     const saveDraft = () => {
       // Snapshot shape lives in src/_session-draft.ts (testable + reusable).
       const draftData = buildDraftSnapshot({
@@ -1110,7 +1127,7 @@ export function useInterviewEngine() {
     };
     // The draft-save fires every 15s and on unload; it reads draftKey/interviewScript/targetCompany/targetRole/totalQuestions latest-values inside the snapshot closure. Adding them as deps would re-bind the beforeunload listener on every keystroke (transcript/currentTranscript change) and was explicitly avoided.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, evaluating, transcript, currentTranscript, currentStep, elapsed, interviewType, interviewDifficulty, interviewFocus]);
+  }, [phase, transcript, currentTranscript, currentStep, elapsed, interviewType, interviewDifficulty, interviewFocus]);
 
   // Cancel speech + recognition on unmount or when voice toggled
   useEffect(() => {

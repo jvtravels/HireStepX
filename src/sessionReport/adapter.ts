@@ -1422,7 +1422,12 @@ function adaptQuestion(
   // exemplar/restructured content but replace the candidate's answer
   // body with an explicit "Skipped" line so the report doesn't show
   // the "[SKIPPED — reason: …]" sentinel verbatim.
-  const isSkipped = q.verdict === "skipped" || /^\[SKIPPED/i.test(q.answerText || "");
+  // STT came back empty but the candidate spent long enough "answering"
+  // that useInterviewEngine falls back to a `[Answer recorded — Ns]`
+  // placeholder instead of blocking — that placeholder still gets scored
+  // like a real (weak) answer unless treated as skipped here too.
+  const noSpeechDetected = /^\[Answer recorded/i.test(q.answerText || "");
+  const isSkipped = q.verdict === "skipped" || /^\[SKIPPED/i.test(q.answerText || "") || noSpeechDetected;
   const skipReasonMatch = (q.answerText || "").match(/reason:\s*([a-z_]+)/i);
   const skipReasonLabel: Record<string, string> = {
     too_easy: "marked it too easy",
@@ -1444,7 +1449,9 @@ function adaptQuestion(
     // signaled by the answer-body line and a 0 score in the row.
     band: isSkipped || q.verdict === "skipped" ? "weak" : q.verdict,
     answer: isSkipped
-      ? [{ text: `(Skipped — you ${reasonText}. Counted as 0/100.)` }]
+      ? [{ text: noSpeechDetected
+          ? "(No speech detected — your mic didn't pick up an answer. Counted as 0/100.)"
+          : `(Skipped — you ${reasonText}. Counted as 0/100.)` }]
       : highlightAnswer(q.answerText),
     restructured: q.restructured ? plainSpans(q.restructured.text) : undefined,
     topPerformerAnswer: q.topPerformerAnswer
@@ -1483,10 +1490,19 @@ function adaptQuestion(
     likelyFollowUp: q.likelyFollowUp
       ? stripProsodyMarkup(`${q.likelyFollowUp.question} ${q.likelyFollowUp.why}`)
       : undefined,
-    idealAnswerSnippet: pickIdealAnswerSnippet(
-      stripProsodyMarkup(q.question),
-      isSkipped || q.verdict === "skipped" ? "weak" : q.verdict
-    ),
+    // Prefer the LLM-generated topPerformerAnswer (already mapped above as
+    // the "Top Performer Answer" tab) over the hardcoded snippet library —
+    // the canned "Acme" examples only stand in when evaluate-session.ts
+    // didn't return a real exemplar for this question.
+    idealAnswerSnippet: q.topPerformerAnswer
+      ? {
+          text: stripProsodyMarkup(q.topPerformerAnswer.text),
+          whyBetter: q.topPerformerAnswer.whatMakesItStrong.join(" "),
+        }
+      : pickIdealAnswerSnippet(
+          stripProsodyMarkup(q.question),
+          isSkipped || q.verdict === "skipped" ? "weak" : q.verdict
+        ),
     focusMetrics: q.focusMetrics?.length
       ? q.focusMetrics.map((m) => ({
           label: m.label,

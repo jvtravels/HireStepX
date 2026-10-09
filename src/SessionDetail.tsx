@@ -175,6 +175,10 @@ export default function SessionDetail() {
   const [session, setSession] = useState<LocalSession | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  // Bumped by the retry button to force the load effect to re-run — `id`
+  // and `user?.id` don't change on retry, so without this the effect never
+  // fires again and setLoading(true) leaves the user stuck on the skeleton.
+  const [reloadToken, setReloadToken] = useState(0);
 
   useEffect(() => {
     if (!id) {
@@ -237,7 +241,7 @@ export default function SessionDetail() {
     } else {
       setLoading(false);
     }
-  }, [id, user?.id]);
+  }, [id, user?.id, reloadToken]);
 
   const dashboardSession = useMemo(
     () => (session ? localSessionToDashboardSession(session) : null),
@@ -262,7 +266,7 @@ export default function SessionDetail() {
   );
 
   if (loading) return <LoadingSkeleton />;
-  if (loadError) return <LoadErrorScreen message={loadError} onRetry={() => { setLoadError(null); setLoading(true); /* trigger effect */ }} onBack={onBack} />;
+  if (loadError) return <LoadErrorScreen message={loadError} onRetry={() => { setLoadError(null); setLoading(true); setReloadToken((n) => n + 1); }} onBack={onBack} />;
   if (!dashboardSession) return <NotFoundScreen onBack={onBack} />;
 
   return <SessionReport session={dashboardSession} onBack={onBack} backLabel={backTarget.label} />;

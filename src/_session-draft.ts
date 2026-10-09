@@ -106,7 +106,7 @@ export function validateRestoredDraft(
   if (!parsed || typeof parsed !== "object") return null;
   const draft = parsed as Partial<InterviewDraftSnapshot>;
   if (!Array.isArray(draft.transcript)) return null;
-  if (typeof draft.currentStep !== "number" || draft.currentStep <= 0) return null;
+  if (typeof draft.currentStep !== "number" || draft.currentStep < 0) return null;
   // OA-B40: an abandoned session where the AI asked Q1 but the user never
   // answered has currentStep > 0 (question was shown) yet no user turn in the
   // transcript. Restoring such a draft shows a near-empty partial report as if
