@@ -91,6 +91,11 @@ const navItems = [
   { id: "jobs", path: "/jobs", label: "Jobs" },
 ];
 
+const EXTRA_ROUTE_LABELS: { prefix: string; label: string }[] = [
+  { prefix: "/messages", label: "Messages" },
+  { prefix: "/settings", label: "Settings" },
+];
+
 function NavIcon({ id }: { id: string }) {
   const props = { size: 18, "aria-hidden": true as const };
   switch (id) {
@@ -247,9 +252,14 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
     return () => window.removeEventListener("keydown", handler);
   }, []);
 
-  // Determine active nav from current route
+  const extraRoute = EXTRA_ROUTE_LABELS.find(r => pathname === r.prefix || pathname?.startsWith(r.prefix + "/"));
+
+  // Determine active nav from current route. Messages and Settings have no
+  // sidebar entry (reached via the bell / account menu), so no item is
+  // highlighted there instead of falling back to Dashboard.
   const activeNav = (() => {
     const path = pathname;
+    if (extraRoute) return "";
     if (path === "/dashboard" || path === "/dashboard/") return "dashboard";
     // /session/[id] is the Sessions detail view, not its own nav item —
     // treat it as a sub-route of "/sessions" so the sidebar highlights
@@ -469,8 +479,8 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
       }
       onLogout={() => { authLogout(); }}
       breadcrumbRoot={{ label: "HireStepX", path: "/dashboard" }}
-      pageLabel={navItems.find((item) => item.id === activeNav)?.label || "Dashboard"}
-      pageLabelPath={navItems.find((item) => item.id === activeNav)?.path}
+      pageLabel={extraRoute?.label ?? (navItems.find((item) => item.id === activeNav)?.label || "Dashboard")}
+      pageLabelPath={extraRoute?.prefix ?? navItems.find((item) => item.id === activeNav)?.path}
       extraCrumbs={breadcrumbExtra}
       isMobile={isMobile}
       mainId="dashboard-main"
