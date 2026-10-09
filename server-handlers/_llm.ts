@@ -51,7 +51,7 @@ async function emitAiGeneration(entry: {
   userId?: string; endpoint?: string; model: string; isFallback: boolean;
   promptTokens: number; completionTokens: number; totalTokens: number;
   latencyMs: number; status: "success" | "error" | "timeout"; errorMessage?: string;
-  sessionId?: string;
+  sessionId?: string; cachedTokens?: number;
 }): Promise<void> {
   const distinctId = entry.userId || "anonymous";
   await captureServerEvent("$ai_generation", distinctId, {
@@ -61,6 +61,7 @@ async function emitAiGeneration(entry: {
     $ai_input_tokens: entry.promptTokens,
     $ai_output_tokens: entry.completionTokens,
     $ai_total_tokens: entry.totalTokens,
+    $ai_cache_read_input_tokens: entry.cachedTokens ?? 0,
     $ai_latency: entry.latencyMs / 1000,
     $ai_is_error: entry.status !== "success",
     $ai_span_name: entry.endpoint || "unknown",
@@ -74,7 +75,7 @@ async function logUsage(entry: {
   userId?: string; endpoint?: string; model: string; isFallback: boolean;
   promptTokens: number; completionTokens: number; totalTokens: number;
   latencyMs: number; status: "success" | "error" | "timeout"; errorMessage?: string;
-  sessionId?: string;
+  sessionId?: string; cachedTokens?: number;
 }): Promise<void> {
   await emitAiGeneration(entry);
   if (!USAGE_LOGGING_ENABLED) return;
@@ -214,7 +215,7 @@ interface LLMResult {
   text: string;
   model: string;
   fallback: boolean;
-  tokensUsed?: { prompt: number; completion: number; total: number };
+  tokensUsed?: { prompt: number; completion: number; total: number; cached?: number };
   latencyMs?: number;
 }
 
@@ -277,7 +278,7 @@ async function callGroq(opts: LLMOptions, signal?: AbortSignal): Promise<LLMResu
   }
   const data = await res.json();
   const usage = data.usage;
-  const tokensUsed = usage ? { prompt: usage.prompt_tokens, completion: usage.completion_tokens, total: usage.total_tokens } : undefined;
+  const tokensUsed = usage ? { prompt: usage.prompt_tokens, completion: usage.completion_tokens, total: usage.total_tokens, cached: usage.prompt_tokens_details?.cached_tokens } : undefined;
   return { text: data.choices?.[0]?.message?.content || "", model, fallback: false, tokensUsed, latencyMs };
 }
 
@@ -323,7 +324,7 @@ async function callGemini(opts: LLMOptions, signal?: AbortSignal): Promise<LLMRe
   }
   const data = await res.json();
   const usage = data.usageMetadata;
-  const tokensUsed = usage ? { prompt: usage.promptTokenCount, completion: usage.candidatesTokenCount, total: usage.totalTokenCount } : undefined;
+  const tokensUsed = usage ? { prompt: usage.promptTokenCount, completion: usage.candidatesTokenCount, total: usage.totalTokenCount, cached: usage.cachedContentTokenCount } : undefined;
   return { text: data.candidates?.[0]?.content?.parts?.[0]?.text || "", model, fallback: false, tokensUsed, latencyMs };
 }
 
@@ -447,7 +448,7 @@ export async function callLLM(opts: LLMOptions, timeoutMs = 15000, meta?: { user
       if (remainingBudget() <= 0) throw new Error(`${provider.name} skipped — total LLM budget exhausted`);
       try {
         const result = await callOnce(provider);
-        await logUsage({ userId: meta?.userId, endpoint: meta?.endpoint, model: result.model, isFallback, promptTokens: result.tokensUsed?.prompt ?? 0, completionTokens: result.tokensUsed?.completion ?? 0, totalTokens: result.tokensUsed?.total ?? 0, latencyMs: result.latencyMs ?? 0, status: "success", sessionId: meta?.sessionId });
+        await logUsage({ userId: meta?.userId, endpoint: meta?.endpoint, model: result.model, isFallback, promptTokens: result.tokensUsed?.prompt ?? 0, completionTokens: result.tokensUsed?.completion ?? 0, totalTokens: result.tokensUsed?.total ?? 0, latencyMs: result.latencyMs ?? 0, status: "success", sessionId: meta?.sessionId, cachedTokens: result.tokensUsed?.cached });
         return result;
       } catch (err) {
         const msg = err instanceof Error ? err.message : "";
