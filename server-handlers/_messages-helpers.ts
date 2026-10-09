@@ -41,6 +41,12 @@ export function resolveRole(authUserId: string, employerId: string, candidateUse
   return null;
 }
 
+/** conversations has CHECK (employer_id <> candidate_user_id); a match where
+ *  both sides are the same account can never hold a conversation. */
+export function isSelfConversation(employerId: string, candidateUserId: string): boolean {
+  return employerId === candidateUserId;
+}
+
 /** A conversation is unread for a viewer when its most recent message came
  *  from the other side (or the system) and landed after the viewer's own
  *  last-read mark — never when the viewer sent that last message themself. */

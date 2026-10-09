@@ -56,7 +56,12 @@ export default async function handler(req: Request): Promise<Response> {
       `${SUPABASE_URL}/rest/v1/employer_unlock_payments?employer_id=eq.${encodeURIComponent(auth.userId)}&select=id,match_id,match_ids,amount,currency,created_at&order=created_at.desc&limit=100`,
       { headers: serviceHeaders() },
     );
-    if (!res.ok) throw new Error(`unlock history read failed: ${res.status}`);
+    if (!res.ok) {
+      // Include the PostgREST body: a missing column (unapplied migration)
+      // otherwise logs as a bare status code with no hint of the cause.
+      const detail = await res.text().catch(() => "");
+      throw new Error(`unlock history read failed: ${res.status} ${detail.slice(0, 160)}`);
+    }
     const rows = (await res.json().catch(() => [])) as Array<{
       id: string;
       match_id: string | null;

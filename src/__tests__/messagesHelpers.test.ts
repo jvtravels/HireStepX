@@ -7,6 +7,7 @@ import {
   detectContactInfoFlag,
   inferAttachmentExtension,
   isConversationUnread,
+  isSelfConversation,
   MAX_MESSAGE_BODY_LEN,
 } from "../../server-handlers/_messages-helpers";
 
@@ -115,5 +116,15 @@ describe("isConversationUnread", () => {
 
   it("is true when a new message arrives after the viewer's last read", () => {
     expect(isConversationUnread("employer", "2026-01-02T00:00:00Z", "candidate", "2026-01-01T00:00:00Z")).toBe(true);
+  });
+});
+
+describe("isSelfConversation", () => {
+  it("flags a match whose employer and candidate are the same account", () => {
+    expect(isSelfConversation("u1", "u1")).toBe(true);
+  });
+
+  it("allows distinct parties", () => {
+    expect(isSelfConversation("u1", "u2")).toBe(false);
   });
 });

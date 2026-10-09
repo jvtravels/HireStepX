@@ -27,6 +27,7 @@ import {
   detectContactInfoFlag,
   isConversationUnread,
   MATCH_ID_RE,
+  isSelfConversation,
   type MessageRole,
   type MessageSenderRole,
 } from "./_messages-helpers";
@@ -97,6 +98,14 @@ async function resolveMatchAndRole(
     return new Response(JSON.stringify({ error: "Candidate match not found" }), { status: 404, headers });
   }
   const match = matchRows[0];
+  // conversations carries a CHECK (employer_id <> candidate_user_id), so a
+  // match where the employer is also the candidate (stale row from before the
+  // matcher excluded the owner, or one account used on both sides) can never
+  // get a conversation — reject it as a client error instead of letting the
+  // insert fail downstream as a 500.
+  if (isSelfConversation(match.employer_requirements!.employer_id, match.candidate_user_id)) {
+    return new Response(JSON.stringify({ error: "You can't message yourself" }), { status: 400, headers });
+  }
   const role = resolveRole(authUserId, match.employer_requirements!.employer_id, match.candidate_user_id);
   if (!role) {
     return new Response(JSON.stringify({ error: "Not authorized for this conversation" }), { status: 403, headers });
@@ -122,7 +131,9 @@ async function findOrCreateConversation(match: MatchRow): Promise<ConversationRo
       candidate_user_id: match.candidate_user_id,
     }),
   });
-  const createdRows = (await createRes.json().catch(() => [])) as ConversationRow[];
+  const createText = await createRes.text().catch(() => "");
+  let createdRows: ConversationRow[] = [];
+  try { createdRows = JSON.parse(createText) as ConversationRow[]; } catch { /* PostgREST error body — logged below if the re-read also fails */ }
   if (createRes.ok && createdRows[0]) return createdRows[0];
 
   // Lost the create race to a concurrent sender — re-read.
@@ -131,7 +142,18 @@ async function findOrCreateConversation(match: MatchRow): Promise<ConversationRo
     { headers: serviceHeaders() },
   );
   const retryRows = (await retryRes.json().catch(() => [])) as ConversationRow[];
-  return retryRows[0] ?? null;
+  if (retryRows[0]) return retryRows[0];
+  // Only log once the race re-read has also come up empty, so a benign lost
+  // race doesn't page as an error. Keep the PostgREST error (constraint / FK /
+  // grant) — the caller's log only says "failed to resolve conversation",
+  // which hid the real cause.
+  slog.error("messages: conversation insert failed", {
+    code: "messages_conversation_insert_failed",
+    httpStatus: createRes.status,
+    body: createText.slice(0, 300),
+    matchId: match.id,
+  });
+  return null;
 }
 
 function toMessageShape(row: MessageRow) {
