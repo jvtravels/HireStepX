@@ -358,7 +358,7 @@ export function CompetenceCoverage({ d, narrow }: { d: Fixture; narrow: boolean 
         {d.skills.length ? (
           <>
             <div style={{ display: "flex", flexDirection: "column", gap: 13 }}>
-              {d.skills.map((s) => <SkillBar key={s.name} s={s} />)}
+              {d.skills.map((s) => <SkillBar key={s.name} s={s} modelled={d.meta.modelled.includes("skills.percentile")} />)}
             </div>
             {weakest && (
               <p style={{ marginTop: 16, marginBottom: 0, padding: "10px 14px", background: t.creamSoft, borderRadius: 10, fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft }}>

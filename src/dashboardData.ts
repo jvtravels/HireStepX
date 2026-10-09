@@ -822,48 +822,12 @@ export function computePracticeCoverage(skills: SkillData[]): PracticeCoverage {
 }
 
 /* ─── Evidence Capabilities ───
- * A fixed set of 4 capabilities a candidate can build verified proof of
- * through practice. "Verified" means 2+ sessions scoring 70+ on the
- * underlying competency, applied consistently across all four rows —
- * a single good run could be a fluke, two can't both be. */
-export interface EvidenceCapability {
-  key: string;
-  label: string;
-  verified: boolean;
-  verifiedDateLabel: string | null;
-}
-
-const EVIDENCE_VERIFY_THRESHOLD = 70;
-const EVIDENCE_VERIFY_MIN_SESSIONS = 2;
-
-function formatVerifiedDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
-}
-
-export function computeEvidenceCapabilities(sessions: RealSession[]): EvidenceCapability[] {
-  const bySkill = (skillKey: string) =>
-    sessions
-      .filter(s => s.skill_scores && skillKey in s.skill_scores && extractScore(s.skill_scores[skillKey]) >= EVIDENCE_VERIFY_THRESHOLD)
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-
-  const byFocus = (focus: string) =>
-    sessions
-      .filter(s => s.focus === focus && s.score >= EVIDENCE_VERIFY_THRESHOLD)
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-
-  const build = (label: string, key: string, hits: RealSession[]): EvidenceCapability => ({
-    key, label,
-    verified: hits.length >= EVIDENCE_VERIFY_MIN_SESSIONS,
-    verifiedDateLabel: hits.length >= EVIDENCE_VERIFY_MIN_SESSIONS ? formatVerifiedDate(hits[0].date) : null,
-  });
-
-  return [
-    build("Communication", "communication", bySkill("communication")),
-    build("Salary Negotiation", "salary-negotiation", byFocus("salary-negotiation")),
-    build("Problem Solving", "problemSolving", bySkill("problemSolving")),
-    build("Leadership", "leadership", bySkill("leadership")),
-  ];
-}
+ * Verification logic now lives in ./evidenceCapabilities (dependency-free,
+ * also imported by server-handlers/_employer-candidate-evidence-helpers.ts
+ * so the candidate dashboard and the employer-facing evidence panel can
+ * never apply a different bar for "verified"). Re-exported here so existing
+ * imports from dashboardData.ts keep working unchanged. */
+export { computeEvidenceCapabilities, type EvidenceCapability } from "./evidenceCapabilities";
 
 /* ─── Role readiness target ───
  * The "N points away from your <role> readiness target" header line is
@@ -987,9 +951,16 @@ export function computeWeekActivity(sessions: DashboardSession[]): boolean[] {
 
 export function computeStreak(sessions: DashboardSession[]): number {
   const sessionDates = new Set(sessions.map(s => s.date));
+  const today = toISTDateString(Date.now());
+  const yesterday = toISTDateString(Date.now() - 24 * 60 * 60 * 1000);
+  // A streak only counts as "active" if the candidate practiced today or
+  // yesterday. Without this check, one isolated session from weeks ago
+  // (found while scanning back 30 days) reported a "streak" of 1 even
+  // though the candidate hasn't practiced in a month.
+  if (!sessionDates.has(today) && !sessionDates.has(yesterday)) return 0;
+
   let streak = 0;
   let checkTime = Date.now();
-
   for (let i = 0; i < 30; i++) {
     const dateStr = toISTDateString(checkTime);
     if (sessionDates.has(dateStr)) {

@@ -236,15 +236,15 @@ export function Spark({ points, color = t.indigo, width = 96, height = 28 }: { p
   );
 }
 
-export function SkillBar({ s }: { s: Skill }) {
+export function SkillBar({ s, modelled }: { s: Skill; modelled?: boolean }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
       <span style={{ fontFamily: f.sans, fontSize: 13, color: t.coal, width: 122, flexShrink: 0 }}>{s.name}</span>
-      <div role="img" aria-label={`${s.name}: ${s.score} out of 100, ${s.percentile}${ordinalSuffix(s.percentile)} percentile`} style={{ flex: 1, height: 8, background: t.creamSoft, borderRadius: 999, overflow: "hidden" }}>
+      <div role="img" aria-label={`${s.name}: ${s.score} out of 100, ${modelled ? "estimated " : ""}${s.percentile}${ordinalSuffix(s.percentile)} percentile`} style={{ flex: 1, height: 8, background: t.creamSoft, borderRadius: 999, overflow: "hidden" }}>
         <div style={{ width: `${s.score}%`, height: "100%", background: scoreColor(s.score), borderRadius: 999 }} />
       </div>
       <span style={{ fontFamily: f.mono, fontSize: 12, color: t.coal, width: 26, textAlign: "right" }}>{s.score}</span>
-      <span style={{ fontFamily: f.mono, fontSize: 10, color: t.inkSoft, width: 44, textAlign: "right" }} title={`Better than ${s.percentile}% of candidates targeting this role`}>p{s.percentile}</span>
+      <span style={{ fontFamily: f.mono, fontSize: 10, color: t.inkSoft, width: 44, textAlign: "right" }} title={`${modelled ? "Estimated: better" : "Better"} than ${s.percentile}% of candidates targeting this role`}>p{s.percentile}{modelled ? "*" : ""}</span>
       <span style={{ width: 30, textAlign: "right" }}><DeltaTag value={s.delta} /></span>
     </div>
   );

@@ -28,7 +28,7 @@ function ProgressBar({ value, max = 100, color }: { value: number; max?: number;
   );
 }
 
-function Tag({ label, tone = "neutral" }: { label: string; tone?: "neutral" | "error" | "success" | "indigo" }) {
+function Tag({ label, tone = "neutral", title }: { label: string; tone?: "neutral" | "error" | "success" | "indigo"; title?: string }) {
   const palette = {
     neutral: { bg: t.creamSoft, fg: t.inkSoft },
     error: { bg: t.error100, fg: t.error },
@@ -36,7 +36,7 @@ function Tag({ label, tone = "neutral" }: { label: string; tone?: "neutral" | "e
     indigo: { bg: t.indigo100, fg: t.indigo },
   }[tone];
   return (
-    <span style={{
+    <span title={title} style={{
       display: "inline-flex", alignItems: "center",
       fontFamily: f.sans, fontSize: textSize.xs, fontWeight: 600,
       color: palette.fg, background: palette.bg,
@@ -72,7 +72,10 @@ export function DashboardHeader({
   onConnectCalendar: () => void;
 }) {
   const roleLabel = targetRole || "your target role";
-  const seniorityPrefix = seniorityLevel ? `${seniorityLevel} ` : "";
+  // Role titles often already carry the level ("Senior Product Designer") —
+  // prefixing again rendered "Senior Senior Product Designer".
+  const seniorityPrefix = seniorityLevel && !roleLabel.toLowerCase().startsWith(seniorityLevel.toLowerCase())
+    ? `${seniorityLevel} ` : "";
   return (
     <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 20, flexWrap: "wrap" }}>
       <div style={{ minWidth: 0 }}>
@@ -137,7 +140,7 @@ function formatEventDateShort(date: string): string {
 
 export function StatCardsRow({
   hasData, readinessScore, readinessDelta, resumeScore, improvementsCount,
-  practiceCoverage, onViewResume, onViewJobs,
+  practiceCoverage, totalSessions, onViewResume, onViewJobs,
 }: {
   hasData: boolean;
   readinessScore: number;
@@ -145,6 +148,7 @@ export function StatCardsRow({
   resumeScore: number | null;
   improvementsCount: number;
   practiceCoverage: PracticeCoverage;
+  totalSessions: number;
   onViewResume: () => void;
   onViewJobs: () => void;
 }) {
@@ -160,7 +164,11 @@ export function StatCardsRow({
           <span style={{ fontFamily: f.sans, fontSize: textSize["2xl"], fontWeight: 700, color: t.coal }}>{hasData ? readinessScore : 0}</span>
           <span style={{ fontFamily: f.sans, fontSize: textSize.sm, color: t.inkFaint }}>/ 100</span>
           {readinessDelta != null && readinessDelta !== 0 && (
-            <Tag tone={readinessDelta > 0 ? "success" : "error"} label={`${readinessDelta > 0 ? "+" : ""}${readinessDelta}`} />
+            <Tag
+              tone={readinessDelta > 0 ? "success" : "error"}
+              label={`${readinessDelta > 0 ? "+" : ""}${readinessDelta}`}
+              title={`Change since your last session — ${readinessDelta > 0 ? "up" : "down"} ${Math.abs(readinessDelta)} points. A drop usually means your latest session covered a tougher question type or role than before.`}
+            />
           )}
         </div>
         <ProgressBar value={hasData ? readinessScore : 0} color={t.coal} />
@@ -197,6 +205,15 @@ export function StatCardsRow({
           ))}
         </div>
         {practiceCoverage.biggestGapLabel && <Tag tone="error" label={`Biggest Gap: ${practiceCoverage.biggestGapLabel}`} />}
+        {/* practicedCount tracks the 5 scored competency areas, not session
+            count — a long history of pre-skill-tracking sessions can leave
+            this at 0 even with plenty of total sessions. Spell that out so
+            it doesn't read as a contradiction/bug. */}
+        {practiceCoverage.practicedCount === 0 && totalSessions > 0 && (
+          <div style={{ fontFamily: f.sans, fontSize: textSize.xs, color: t.inkFaint }}>
+            Your {totalSessions} session{totalSessions === 1 ? "" : "s"} predate skill-area scoring — practice once more to start tracking coverage.
+          </div>
+        )}
       </StatCard>
 
       <StatCard>
@@ -327,7 +344,7 @@ const NEXT_MOVE_COPY: Record<string, { description: string; tags: [string, strin
   },
 };
 
-export function NextMoveCard({ isFirstTimer, weakestSkillKey, ctaLabel, onStart, sessionMinutes, sessionQuestionCount, chips }: {
+export function NextMoveCard({ isFirstTimer, weakestSkillKey, ctaLabel, onStart, sessionMinutes, sessionQuestionCount, chips, headline }: {
   isFirstTimer: boolean;
   weakestSkillKey: string | null;
   ctaLabel: string;
@@ -339,10 +356,14 @@ export function NextMoveCard({ isFirstTimer, weakestSkillKey, ctaLabel, onStart,
   /** Streak / smart-schedule context chips from nextMove.ts — optional,
    *  omitted entirely (not even an empty row) when there's nothing to show. */
   chips?: { kind: "streak" | "schedule"; label: string }[];
+  /** nextMove.ts's own headline (streak-aware, gap-aware, first-time-aware) —
+   *  preferred over the generic "Practice X" title derived from the skill
+   *  key alone, which ignored streak/gap context nextMove.ts already computed. */
+  headline?: string;
 }) {
   const key = weakestSkillKey && NEXT_MOVE_COPY[weakestSkillKey] ? weakestSkillKey : "communication";
   const copy = NEXT_MOVE_COPY[key];
-  const title = `Practice ${skillLabel(key)}`;
+  const title = headline || `Practice ${skillLabel(key)}`;
 
   return (
     <section aria-labelledby="dh-next-heading" style={{

@@ -89,7 +89,7 @@ function OutlineCta({ children, onClick, size = "md" }: {
   return (
     <Button type="button" variant="outline" onClick={onClick} style={{
       display: "inline-flex", alignItems: "center", gap: 8,
-      padding: pad, borderRadius: 12, minHeight: 44, height: "auto",
+      padding: pad, borderRadius: 8, minHeight: 44, height: "auto",
       fontFamily: f.sans, fontSize: 14,
     }}>{children}</Button>
   );
@@ -501,6 +501,7 @@ export default function DashboardHome() {
         resumeScore={resumeScore}
         improvementsCount={improvementsCount}
         practiceCoverage={sessions.practiceCoverage}
+        totalSessions={sessions.overallStats.sessionsCompleted}
         onViewResume={goToResume}
         onViewJobs={goToJobs}
       />
@@ -522,6 +523,7 @@ export default function DashboardHome() {
               sessionMinutes={nextMove.sessionMinutes}
               sessionQuestionCount={nextMove.sessionQuestionCount}
               chips={nextMove.chips}
+              headline={nextMove.headline}
             />
           </div>
           <div style={{ flex: "2 1 280px", minWidth: 260 }}>
@@ -541,6 +543,7 @@ export default function DashboardHome() {
           sessionMinutes={nextMove.sessionMinutes}
           sessionQuestionCount={nextMove.sessionQuestionCount}
           chips={nextMove.chips}
+          headline={nextMove.headline}
         />
       )}
 
