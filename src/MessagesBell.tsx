@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
+import { usePolling } from "./usePolling";
 import { playUiSound } from "./uiSounds";
 import {
   DropdownMenu,
@@ -61,25 +62,20 @@ export default function MessagesBell({
 }) {
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [open, setOpen] = useState(false);
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const prevUnreadRef = useRef<number | null>(null);
 
-  async function load() {
+  async function load(): Promise<boolean> {
     const result = await fetchConversations();
-    if (!result) return;
+    if (!result) return false;
     setConversations(result);
     const unread = result.filter((c) => c.unread).length;
     if (prevUnreadRef.current !== null && unread > prevUnreadRef.current) playUiSound("receive");
     prevUnreadRef.current = unread;
+    return true;
   }
 
-  useEffect(() => {
-    load();
-    pollRef.current = setInterval(load, POLL_MS);
-    return () => { if (pollRef.current) clearInterval(pollRef.current); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  usePolling(load, POLL_MS);
 
   function handleItemClick(c: ConversationSummary) {
     setOpen(false);

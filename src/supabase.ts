@@ -401,15 +401,53 @@ export async function saveSession(session: Omit<SessionRecord, "created_at">) {
   return result;
 }
 
+/* List view needs the card fields plus a handful of report_json keys — never
+   the transcript, JD analysis or the rest of the report body, which dominate
+   the payload. Postgres extracts the keys server-side, so the TOASTed jsonb
+   isn't shipped to the browser. getSessionById still returns the full row. */
+const SESSION_LIST_COLUMNS = [
+  "id", "user_id", "date", "type", "difficulty", "focus", "duration", "score", "questions",
+  "ai_feedback", "skill_scores", "target_role", "target_company", "negotiation_metrics", "created_at",
+  "rj_overall:report_json->overallScore",
+  "rj_coaching:report_json->coaching",
+  "rj_wins:report_json->wins",
+  "rj_fixes:report_json->fixes",
+  "rj_focus:report_json->focusMetrics",
+  "rj_perq:report_json->perQuestion",
+].join(",");
+
+type SessionListRow = Omit<SessionRecord, "transcript" | "report_json"> & {
+  rj_overall: number | null;
+  rj_coaching: unknown;
+  rj_wins: unknown;
+  rj_fixes: unknown;
+  rj_focus: unknown;
+  rj_perq: unknown;
+};
+
 export async function getUserSessions(userId: string): Promise<SessionRecord[]> {
   const client = await getSupabase();
   const { data, error } = await client
     .from("sessions")
-    .select("*")
+    .select(SESSION_LIST_COLUMNS)
     .eq("user_id", userId)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .returns<SessionListRow[]>();
   if (error) throw new Error(error.message);
-  return data || [];
+  return (data || []).map(({ rj_overall, rj_coaching, rj_wins, rj_fixes, rj_focus, rj_perq, ...row }) => {
+    const hasReport = [rj_overall, rj_coaching, rj_wins, rj_fixes, rj_focus, rj_perq].some((v) => v != null);
+    const report_json = hasReport
+      ? {
+          ...(rj_overall != null ? { overallScore: rj_overall } : {}),
+          ...(rj_coaching != null ? { coaching: rj_coaching } : {}),
+          ...(rj_wins != null ? { wins: rj_wins } : {}),
+          ...(rj_fixes != null ? { fixes: rj_fixes } : {}),
+          ...(rj_focus != null ? { focusMetrics: rj_focus } : {}),
+          ...(rj_perq != null ? { perQuestion: rj_perq } : {}),
+        } as SessionRecord["report_json"]
+      : null;
+    return { ...row, transcript: [], report_json } as SessionRecord;
+  });
 }
 
 export async function getSessionById(sessionId: string, userId: string): Promise<SessionRecord | null> {
@@ -675,7 +713,20 @@ export async function syncGoogleEvents(userId: string): Promise<{ synced: number
  *
  * Retries up to `maxRetries` times on 502/503 (transient infra errors) with
  * exponential back-off before giving up. */
-export async function getCreditBalance(_userId: string, maxRetries = 2): Promise<number> {
+const creditBalanceInFlight = new Map<string, Promise<number>>();
+
+/* Concurrent callers (dashboard provider + session setup mounting together)
+   share one request. Only in-flight sharing — never a TTL — so a read made
+   right after a purchase is always fresh. */
+export function getCreditBalance(userId: string, maxRetries = 2): Promise<number> {
+  const pending = creditBalanceInFlight.get(userId);
+  if (pending) return pending;
+  const p = fetchCreditBalance(userId, maxRetries).finally(() => creditBalanceInFlight.delete(userId));
+  creditBalanceInFlight.set(userId, p);
+  return p;
+}
+
+async function fetchCreditBalance(_userId: string, maxRetries: number): Promise<number> {
   if (!_userId) return 0;
 
   // authHeaders() reads the JWT from localStorage — must be done before fetch.

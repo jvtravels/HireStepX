@@ -651,10 +651,13 @@ async function redisRateLimit(ip: string, bucket: string, limit: number, windowS
        bucket that's ever crossed `limit` never goes idle long enough to
        reset while traffic (e.g. a client polling on a fixed interval)
        keeps arriving, locking that caller out indefinitely. */
+    // Bounded wait: a stalled Redis degrades to the in-memory limiter instead
+    // of holding every request for the platform's full function timeout.
     const res = await fetch(`${UPSTASH_URL}/pipeline`, {
       method: "POST",
       headers: { Authorization: `Bearer ${UPSTASH_TOKEN}`, "Content-Type": "application/json" },
       body: JSON.stringify([["INCR", key], ["EXPIRE", key, windowSec, "NX"]]),
+      signal: AbortSignal.timeout(1500),
     });
     if (!res.ok) return inMemoryRateLimit(ip, bucket, limit, windowSec * 1000);
     const results = await res.json();
@@ -1221,18 +1224,24 @@ export async function withAuthAndRateLimit(
   if (checkBodySize(req, opts.maxBytes ?? 1048576)) return tooLargeResponse(headers);
   if (!opts.skipOriginCheck && !validateOrigin(req)) return forbiddenResponse(headers);
 
+  const t0 = Date.now();
   const ip = getClientIp(req);
-  if (opts.ipLimit && await isRateLimited(ip, opts.endpoint, opts.ipLimit, 60_000)) {
-    return rateLimitResponse(headers);
-  }
-
-  const auth = await verifyAuth(req);
+  // The IP limit and auth don't depend on each other — run them concurrently
+  // so the Redis round trip hides behind (or alongside) token verification.
+  // A limited IP still answers 429 before any 401, as before.
+  const [ipLimited, auth] = await Promise.all([
+    opts.ipLimit ? isRateLimited(ip, opts.endpoint, opts.ipLimit, 60_000) : Promise.resolve(false),
+    verifyAuth(req),
+  ]);
+  if (ipLimited) return rateLimitResponse(headers);
   if (!auth.authenticated) return unauthorizedResponse(headers);
 
   if (opts.userLimit && auth.userId
       && await isRateLimited(`user:${auth.userId}`, opts.endpoint, opts.userLimit, 60_000)) {
     return rateLimitResponse(headers);
   }
+  // Surfaces in DevTools → Network → Timing; region reveals function/DB distance.
+  headers["Server-Timing"] = `pre;dur=${Date.now() - t0}, region;desc="${process.env.VERCEL_REGION || "local"}"`;
 
   let quota: { allowed: boolean; reason?: string; count?: number; limit?: number; warning?: boolean; tier?: string } | undefined;
   if (opts.checkQuota && auth.userId) {

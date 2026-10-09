@@ -47,6 +47,8 @@ function cardCoachingFromWinsFixes(
   return { strength: { headline: headline(win), meaning: win }, gap: { headline: headline(fix), meaning: fix, example: "" } };
 }
 
+const SESSIONS_FRESH_MS = 60_000;
+
 /* Single mapping from the raw Supabase row to the app's RealSession shape —
  * shared by the initial load and refreshSessions() so a tab-refocus refetch
  * can't drift from what first paint showed (previously refreshSessions
@@ -564,6 +566,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     Promise.allSettled([
       getUserSessions(user.id).then(sessions => {
         if (cancelled) return;
+        sessionsFetchedAtRef.current = Date.now();
         const mapped = sessions.map(mapSessionRecord);
         setSupabaseSessions(mapped);
         try { localStorage.setItem(sessionsCacheKey, JSON.stringify(mapped)); } catch { /* expected: localStorage may be unavailable */ }
@@ -652,14 +655,20 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   // on tab-switch. Debounce reduced from 5s → 1s: it now only guards against
   // rapid visibilitychange retriggers, not the normal post-session navigation.)
   const refreshTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const sessionsFetchedAtRef = useRef(0);
   const refreshSessions = useCallback(() => {
     if (!user?.id) return;
     // Debounce: skip if a refresh was triggered within the last 1 second
     if (refreshTimeoutRef.current) return;
+    // Freshness window: a tab-switch within SESSIONS_FRESH_MS of the last
+    // successful fetch has nothing new to show. Saves invalidate explicitly
+    // (invalidateSessions), so this only gates passive refocus refetches.
+    if (Date.now() - sessionsFetchedAtRef.current < SESSIONS_FRESH_MS) return;
     refreshTimeoutRef.current = setTimeout(() => { refreshTimeoutRef.current = null; }, 1000);
     getUserSessions(user.id).then(sessions => {
+      sessionsFetchedAtRef.current = Date.now();
       const mapped = sessions.map(mapSessionRecord);
-      setSupabaseSessions(mapped);
+      setSupabaseSessions(prev => (JSON.stringify(prev) === JSON.stringify(mapped) ? prev : mapped));
       try { localStorage.setItem(`hirestepx_cache_sessions_${user.id}`, JSON.stringify(mapped)); } catch { /* expected: localStorage may be unavailable */ }
     }).catch(() => {});
   }, [user?.id]);

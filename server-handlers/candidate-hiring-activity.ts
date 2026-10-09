@@ -96,27 +96,30 @@ export default async function handler(req: Request): Promise<Response> {
   }
 
   try {
-    const profileRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(auth.userId)}&select=target_role,resume_data`,
-      { headers: serviceHeaders() },
-    );
+    // Independent reads — fetch concurrently so the endpoint costs one
+    // database round trip of latency instead of two.
+    const [profileRes, matchesRes] = await Promise.all([
+      fetch(
+        `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(auth.userId)}&select=target_role,resume_data`,
+        { headers: serviceHeaders() },
+      ),
+      fetch(
+        `${SUPABASE_URL}/rest/v1/requirement_matches?candidate_user_id=eq.${encodeURIComponent(auth.userId)}` +
+          `&select=id,unlocked,unlocked_at,match_score,created_at,` +
+          `employer_requirements(title,location,locations,status,work_mode,salary_type,budget_min,budget_max,experience_min,experience_max,skills,` +
+          `notice_period_pref,open_positions,description,responsibilities,nice_to_have,perks_and_benefits,preferred_industry,due_date,employment_type,` +
+          `employers(company_name,logo_path,website))` +
+          `&order=created_at.desc`,
+        { headers: serviceHeaders() },
+      ),
+    ]);
     if (!profileRes.ok) throw new Error(`profile read failed: ${profileRes.status}`);
-    const profileRows = (await profileRes.json().catch(() => [])) as Array<{
-      target_role: string | null; resume_data: unknown;
-    }>;
-    const candidateProfile = { target_role: profileRows[0]?.target_role ?? null, resume_data: profileRows[0]?.resume_data ?? null };
-
-    const matchesRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/requirement_matches?candidate_user_id=eq.${encodeURIComponent(auth.userId)}` +
-        `&select=id,unlocked,unlocked_at,match_score,created_at,` +
-        `employer_requirements(title,location,locations,status,work_mode,salary_type,budget_min,budget_max,experience_min,experience_max,skills,` +
-        `notice_period_pref,open_positions,description,responsibilities,nice_to_have,perks_and_benefits,preferred_industry,due_date,employment_type,` +
-        `employers(company_name,logo_path,website))` +
-        `&order=created_at.desc`,
-      { headers: serviceHeaders() },
-    );
     if (!matchesRes.ok) throw new Error(`matches read failed: ${matchesRes.status}`);
-    const matches = (await matchesRes.json().catch(() => [])) as MatchRow[];
+    const [profileRows, matches] = (await Promise.all([
+      profileRes.json().catch(() => []),
+      matchesRes.json().catch(() => []),
+    ])) as [Array<{ target_role: string | null; resume_data: unknown }>, MatchRow[]];
+    const candidateProfile = { target_role: profileRows[0]?.target_role ?? null, resume_data: profileRows[0]?.resume_data ?? null };
 
     // A closed/failed requirement is no longer actually hiring — don't count or
     // list it as an active match. An unlock that already happened is a real

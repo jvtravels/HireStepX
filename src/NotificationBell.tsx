@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
+import { usePolling } from "./usePolling";
 import { playUiSound } from "./uiSounds";
 import {
   Sheet,
@@ -59,7 +60,6 @@ export default function NotificationBell({
   const [unreadCount, setUnreadCount] = useState(0);
   const [open, setOpen] = useState(false);
   const [announcement, setAnnouncement] = useState("");
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   // Guards the poll from clobbering an optimistic mark-read/mark-all-read
   // update that's still in flight — without this, a poll tick landing
   // between the optimistic state write and the PATCH response could
@@ -68,7 +68,7 @@ export default function NotificationBell({
   const prevUnreadRef = useRef(0);
   const firstLoadRef = useRef(true);
 
-  async function load() {
+  async function load(): Promise<boolean> {
     const res = await apiFetch<{ notifications: Notification[]; unreadCount: number }>(
       `/api/notifications/list?audience=${audience}`,
       {},
@@ -84,13 +84,10 @@ export default function NotificationBell({
       firstLoadRef.current = false;
       prevUnreadRef.current = res.data.unreadCount;
     }
+    return res.ok;
   }
 
-  useEffect(() => {
-    load();
-    pollRef.current = setInterval(load, POLL_MS);
-    return () => { if (pollRef.current) clearInterval(pollRef.current); };
-  }, [audience]);
+  usePolling(load, POLL_MS, { restartKey: audience });
 
   async function markRead(id: string) {
     pendingMutations.current += 1;

@@ -36,6 +36,7 @@ import {
 import { groupConversationsByCounterpart } from "./conversationGrouping";
 import { useToast } from "./Toast";
 import { playUiSound } from "./uiSounds";
+import { usePolling } from "./usePolling";
 import { useMaxWidth } from "./hooks/useMaxWidth";
 import { hoursOrDaysAgo } from "./hiringMatchFormat";
 
@@ -134,24 +135,10 @@ export default function MessagesV2() {
     return false;
   }, []);
 
-  /* A fixed-interval poll that keeps firing through failures (e.g. a 429)
-     never lets the caller's rate-limit window go idle, turning a transient
-     block into a permanent one for the rest of the session. Back off on
-     each consecutive failure and reset to the normal cadence on success. */
-  useEffect(() => {
-    let cancelled = false;
-    let timer: ReturnType<typeof setTimeout>;
-    let failures = 0;
-    const tick = async () => {
-      const ok = await loadConversations();
-      if (cancelled) return;
-      failures = ok ? 0 : failures + 1;
-      const delay = ok ? LIST_POLL_MS : Math.min(LIST_POLL_MS * 2 ** failures, 120_000);
-      timer = setTimeout(tick, delay);
-    };
-    tick();
-    return () => { cancelled = true; clearTimeout(timer); };
-  }, [loadConversations]);
+  /* Backs off on consecutive failures (a fixed-interval poll that keeps
+     firing through a 429 would never let the rate-limit window go idle) and
+     pauses entirely while the tab is hidden — see usePolling. */
+  usePolling(loadConversations, LIST_POLL_MS);
 
   const seenMessageIdsRef = useRef<Set<string>>(new Set());
 
@@ -175,21 +162,14 @@ export default function MessagesV2() {
     if (!activeMatchId) {
       setMessages([]);
       setContext(null);
-      return;
     }
-    let cancelled = false;
-    let timer: ReturnType<typeof setTimeout>;
-    let failures = 0;
-    const tick = async (showSpinner: boolean) => {
-      const ok = await loadThread(activeMatchId, showSpinner);
-      if (cancelled) return;
-      failures = ok ? 0 : failures + 1;
-      const delay = ok ? THREAD_POLL_MS : Math.min(THREAD_POLL_MS * 2 ** failures, 60_000);
-      timer = setTimeout(() => tick(false), delay);
-    };
-    tick(true);
-    return () => { cancelled = true; clearTimeout(timer); };
-  }, [activeMatchId, loadThread]);
+  }, [activeMatchId]);
+
+  usePolling(
+    (first) => loadThread(activeMatchId as string, first),
+    THREAD_POLL_MS,
+    { restartKey: activeMatchId, enabled: !!activeMatchId, maxBackoffMs: 60_000 },
+  );
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
