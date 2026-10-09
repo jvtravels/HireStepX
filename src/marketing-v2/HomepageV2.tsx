@@ -3568,88 +3568,6 @@ function RosterPreviewCard() {
   );
 }
 
-function HiredDirectlyNotifyForm() {
-  const [email, setEmail] = useState("");
-  const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
-  const [error, setError] = useState("");
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (status === "loading" || status === "done") return;
-    setStatus("loading");
-    setError("");
-    try {
-      const res = await fetch("/api/waitlist-signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, source: "homepage_talent_roster" }),
-      });
-      const data = (await res.json().catch(() => ({}))) as { error?: string };
-      if (!res.ok) {
-        setError(data.error || "Something went wrong. Please try again.");
-        setStatus("error");
-        return;
-      }
-      setStatus("done");
-    } catch {
-      setError("Something went wrong. Please try again.");
-      setStatus("error");
-    }
-  }
-
-  if (status === "done") {
-    return (
-      <div style={{ display: "inline-flex", alignItems: "center", gap: 8, fontFamily: fonts.sans, fontSize: 14.5, fontWeight: 700, color: t.success }}>
-        <span aria-hidden>✓</span>
-        You&rsquo;re on the list. We&rsquo;ll email you when discovery opens.
-      </div>
-    );
-  }
-
-  return (
-    <form onSubmit={handleSubmit} style={{ display: "flex", flexWrap: "wrap" as const, gap: 10 }}>
-      <label htmlFor="hired-directly-email" style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clip: "rect(0,0,0,0)" }}>
-        Email address
-      </label>
-      <input
-        id="hired-directly-email"
-        type="email"
-        required
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        placeholder="you@company.com"
-        className="mv2-tap-44"
-        style={{
-          flex: "1 1 200px",
-          minWidth: 0,
-          background: t.creamRaised,
-          border: `1px solid ${t.line}`,
-          borderRadius: 999,
-          padding: "0 18px",
-          fontFamily: fonts.sans,
-          fontSize: 14.5,
-          color: t.coal,
-        }}
-      />
-      <Button
-        type="submit"
-        size="lg"
-        disabled={status === "loading"}
-        className="mv2-tap-44"
-        style={{ fontFamily: fonts.sans, fontSize: 14.5, fontWeight: 700, whiteSpace: "nowrap" as const }}
-      >
-        {status === "loading" ? "Joining…" : "Notify me"}
-        {status !== "loading" && <span aria-hidden>→</span>}
-      </Button>
-      {status === "error" && (
-        <div role="alert" style={{ width: "100%", fontFamily: fonts.sans, fontSize: 13, color: t.copperDark }}>
-          {error}
-        </div>
-      )}
-    </form>
-  );
-}
-
 export function HiredDirectlyV2() {
   return (
     <section style={{ background: t.creamSoft, borderTop: `1px solid ${t.line}`, borderBottom: `1px solid ${t.line}`, padding: "64px 0" }}>
@@ -3678,7 +3596,6 @@ export function HiredDirectlyV2() {
           <p style={{ fontFamily: fonts.sans, fontSize: 15.5, lineHeight: 1.6, color: t.coal, margin: "0 0 24px", maxWidth: "48ch" }}>
             Hiring teams will soon be able to browse a roster of practiced candidates and reach out for real roles, no extra applications. Opt in anytime, off by default, showing only what you choose.
           </p>
-          <HiredDirectlyNotifyForm />
         </MotionReveal>
         <MotionReveal delay={90} style={{ display: "flex", justifyContent: "center" }}>
           <RosterPreviewCard />

@@ -16,7 +16,7 @@ describe("isAllowedOnGate", () => {
   });
 
   it("allows API, Next internals, and shared views by prefix", () => {
-    for (const p of ["/api/waitlist-signup", "/_next/static/x.js", "/blog/post-1", "/page/foo", "/profile/abc", "/report/share/xyz"]) {
+    for (const p of ["/api/uptime-check", "/_next/static/x.js", "/blog/post-1", "/page/foo", "/profile/abc", "/report/share/xyz"]) {
       expect(isAllowedOnGate(p)).toBe(true);
     }
   });
