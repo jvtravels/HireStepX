@@ -10,6 +10,7 @@ import {
   isSessionExpiredByPreference,
 } from "./auth/_shell";
 import { captureClientEvent, identifyClient, resetClient } from "./posthogClient";
+import { preloadRouteChunk } from "./routeChunkPreload";
 import { isSlowConnection, sendGtagEvent } from "./_browser-api-guards";
 
 import type { Session } from "@supabase/supabase-js";
@@ -2090,6 +2091,9 @@ export function RequireAuth({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const retryCount = useRef(0);
+
+  // Overlap the destination screen's chunk download with session restore.
+  useEffect(() => { preloadRouteChunk(pathname); }, [pathname]);
 
   // Track the last authenticated route so users return where they left off
   useEffect(() => {

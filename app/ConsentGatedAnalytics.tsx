@@ -25,7 +25,13 @@ export default function ConsentGatedAnalytics({ nonce, ga4 = true }: { nonce: st
     // pageviews are still counted (GDPR-safe, no id written). This closes the
     // visibility gap where DAU read near-zero because only consented visitors
     // ever loaded the SDK.
-    void initPostHog(isAccepted ? "localStorage+cookie" : "memory");
+    // Deferred to idle so the SDK's import/init stays off the critical path;
+    // posthogClient buffers events captured before it's ready, so nothing is lost.
+    const startPostHog = () => { void initPostHog(isAccepted ? "localStorage+cookie" : "memory"); };
+    const idleApi: Partial<Pick<Window, "requestIdleCallback" | "cancelIdleCallback">> = window;
+    const idleHandle = idleApi.requestIdleCallback
+      ? idleApi.requestIdleCallback(startPostHog, { timeout: 3000 })
+      : window.setTimeout(startPostHog, 1500);
     const handler = (e: Event) => {
       const detail = (e as CustomEvent<{ accepted: boolean }>).detail;
       const nowAccepted = !!detail?.accepted;
@@ -39,7 +45,11 @@ export default function ConsentGatedAnalytics({ nonce, ga4 = true }: { nonce: st
       }
     };
     window.addEventListener("hirestepx:cookie-consent", handler);
-    return () => window.removeEventListener("hirestepx:cookie-consent", handler);
+    return () => {
+      window.removeEventListener("hirestepx:cookie-consent", handler);
+      if (idleApi.requestIdleCallback && idleApi.cancelIdleCallback) idleApi.cancelIdleCallback(idleHandle);
+      else window.clearTimeout(idleHandle);
+    };
   }, []);
 
   return (
@@ -55,10 +65,10 @@ export default function ConsentGatedAnalytics({ nonce, ga4 = true }: { nonce: st
         <>
           <Script
             src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
-            strategy="afterInteractive"
+            strategy="lazyOnload"
             nonce={nonce}
           />
-          <Script id="ga4-init" strategy="afterInteractive" nonce={nonce}>{buildGa4InitScript(GA_ID)}</Script>
+          <Script id="ga4-init" strategy="lazyOnload" nonce={nonce}>{buildGa4InitScript(GA_ID)}</Script>
         </>
       )}
     </>

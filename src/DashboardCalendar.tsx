@@ -28,7 +28,6 @@ import {
   hourInZone, isAwkwardHour, describeReminders, parseNaturalEvent, timezoneLabel,
 } from "./dashboardHelpers";
 import { ROLE_SUGGESTIONS } from "./onboardingData";
-import { COMPANY_SUGGESTIONS } from "../data/company-suggestions";
 import { useDashboardUIActions, useDashboardSubscription, useDashboardSessions } from "./DashboardContext";
 import { PaywallGate } from "./dashboardComponents";
 import { SkeletonReveal } from "./SkeletonReveal";
@@ -398,6 +397,16 @@ function ReminderRow({ label, on }: { label: string; on: boolean }) {
 }
 
 export default function CalendarPage() {
+  /* The suggestion list is ~300KB of source and only feeds a datalist, so it
+     loads as its own chunk after first paint instead of weighing down /calendar. */
+  const [companySuggestions, setCompanySuggestions] = useState<string[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    import("../data/company-suggestions").then((m) => {
+      if (!cancelled) setCompanySuggestions(m.COMPANY_SUGGESTIONS.slice(0, 200));
+    }).catch(() => { /* datalist is a convenience — free-text entry still works */ });
+    return () => { cancelled = true; };
+  }, []);
   useDocTitle("Calendar");
   const router = useRouter();
   // Launch a mock pre-configured for the interview being prepped: deep-link the
@@ -887,7 +896,7 @@ export default function CalendarPage() {
                 <input id="cal-company" list="cal-company-list" value={formCompany} onChange={(e) => setFormCompany(e.target.value)} placeholder="e.g. Google" style={inputStyle}
                   onFocus={fieldFocus} onBlur={fieldBlur} />
                 <datalist id="cal-company-list">
-                  {COMPANY_SUGGESTIONS.slice(0, 200).map((co) => <option key={co} value={co} />)}
+                  {companySuggestions.map((co) => <option key={co} value={co} />)}
                 </datalist>
               </Field>
 

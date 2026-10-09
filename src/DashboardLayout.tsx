@@ -24,6 +24,7 @@ import {
   UserPlusIcon,
 } from "lucide-react";
 import { DropdownMenuGroup, DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import { preloadRouteChunk } from "./routeChunkPreload";
 import AppShellFrame from "./AppShellFrame";
 import { listConversations } from "./messagesApi";
 import { useDashboardCore, useDashboardSessions, useDashboardSubscription, useDashboardUI } from "./DashboardContext";
@@ -60,21 +61,6 @@ const font = {
   ui: F.sans,
   mono: F.mono,
 } as const;
-
-/* ─── Prefetch route JS chunks on nav hover/touch ───
- * Pairs with router.prefetch(path) in the hover/touch handler below, which
- * fetches the route's RSC payload — this map only warms the client chunk.
- * Both are needed: router.prefetch alone doesn't pull in a dynamic()-wrapped
- * client component's chunk, and the chunk import alone skips the route data. */
-const prefetchMap: Record<string, () => void> = {
-  dashboard: () => { import("./DashboardHome"); },
-  sessions: () => { import("./SessionsV2"); },
-  calendar: () => { import("./DashboardCalendar"); },
-  analytics: () => { import("./DashboardAnalytics"); },
-  resume: () => { import("./ResumeV2"); },
-  jobs: () => { import("./DashboardJobs"); },
-  settings: () => { import("./DashboardSettings"); },
-};
 
 /* ─── Sidebar Nav Items ───
  * One continuous list, rendered at full weight — matches the Figma
@@ -297,8 +283,8 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
       messaging={{ fetchConversations: listConversations, basePath: "/messages" }}
       audience="candidate"
       onNavHover={(id) => {
-        prefetchMap[id]?.();
         const path = navItems.find((item) => item.id === id)?.path;
+        preloadRouteChunk(path);
         if (path) nav.prefetch(path);
       }}
       sidebarFooterExtra={
@@ -544,7 +530,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
               <CommandItem
                 key={item.id}
                 onSelect={() => { setPaletteOpen(false); nav.push(item.path); }}
-                onMouseEnter={() => prefetchMap[item.id]?.()}
+                onMouseEnter={() => preloadRouteChunk(item.path)}
               >
                 <NavIcon id={item.id} />
                 {item.label}
