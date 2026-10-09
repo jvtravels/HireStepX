@@ -63,6 +63,15 @@ export function isPostHogReady(): boolean {
   return _instance !== null;
 }
 
+/** Remote flag value, or undefined when PostHog isn't loaded or the flag isn't defined there. */
+export function getClientFeatureFlag(key: string): boolean | undefined {
+  try {
+    return _instance?.isFeatureEnabled(key, { send_event: false });
+  } catch {
+    return undefined;
+  }
+}
+
 /**
  * Upgrade an already-initialized instance from cookieless (memory) to
  * persistent storage after the user accepts cookies. No-op if PostHog never

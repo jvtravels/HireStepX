@@ -28,6 +28,7 @@ export const config = { runtime: "edge" };
 import { withAuthAndRateLimit, corsHeaders, withRequestId, validateContentType, hashStable, redisGet, redisSetEx, checkSessionLimit, countPriorNegotiationSessions, readPriorNegotiationCompanies } from "./_shared";
 import { computeScenarioSeed, reconstructSeenPersonas, tierBucketForCompanyTier } from "./_scenario-seed";
 import { callLLM } from "./_llm";
+import { isServerFlagEnabled } from "./_feature-flags";
 import { captureServerEvent, captureServerException, distinctIdFrom } from "./_posthog";
 import { deriveKernelEvents, type KernelEvent } from "./_kernel-audit";
 import {
@@ -284,6 +285,13 @@ export default async function handler(
   });
   if (pre instanceof Response) return pre;
   const { headers, auth } = pre;
+
+  if (!(await isServerFlagEnabled("SALARY_NEGOTIATION_MODE", auth.userId))) {
+    return new Response(
+      JSON.stringify({ error: "Salary negotiation practice is temporarily unavailable. Please try another interview type." }),
+      { status: 503, headers: { ...headers, "Retry-After": "300" } },
+    );
+  }
 
   let rawBody: unknown;
   try {

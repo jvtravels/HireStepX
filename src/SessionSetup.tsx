@@ -12,6 +12,7 @@ import { captureClientEvent } from "./posthogClient";
 import { tokens as T, fonts as F } from "./auth/_tokens";
 import { COMPANY_SUGGESTIONS as COMPANY_SUGGESTIONS_FULL, ROLE_SUGGESTIONS } from "./onboardingData";
 import { profileFromRole, inferRoleFamily, inferSeniority, type InterviewFocus } from "./roleInterviewMatrix";
+import { isEnabled } from "./featureFlags";
 import { detectRoleCompanyFit } from "./_role-company-fit";
 import { getCompanyTier } from "../data/company-tiers";
 import { matchRoleKey } from "../data/salaries";
@@ -270,7 +271,7 @@ const focusToType: Record<string, string> = {
    not yet selectable. The other five (Behavioral, Case Study, Campus
    Placement, HR Round, Salary Negotiation) are live. To ship one of these,
    remove it from this set — no other change needed. */
-const COMING_SOON_FOCUSES = new Set<InterviewFocus>([
+const STATIC_COMING_SOON = new Set<InterviewFocus>([
   "Strategic",
   "Technical Leadership",
   "Case Study",
@@ -278,6 +279,13 @@ const COMING_SOON_FOCUSES = new Set<InterviewFocus>([
   "Panel Interview",
   "Government / PSU",
 ]);
+/* Flag-gated focuses fall back to "Coming soon" when their kill switch is
+   off. Evaluated per call (not at module load) so a PostHog flag that loads
+   after first paint takes effect on the next render. */
+const COMING_SOON_FOCUSES = {
+  has: (f: InterviewFocus): boolean =>
+    STATIC_COMING_SOON.has(f) || (f === "Salary Negotiation" && !isEnabled("SALARY_NEGOTIATION_MODE")),
+};
 
 function getRecommendedFocus(role?: string, experienceLevel?: string): string {
   // Profile-level "fresher" setting wins over role-name heuristics so a user

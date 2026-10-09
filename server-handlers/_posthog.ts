@@ -49,6 +49,29 @@ export function distinctIdFrom(req: Request, userId?: string): string {
   return "anonymous";
 }
 
+/** Evaluate a PostHog feature flag. undefined when PostHog is unconfigured,
+ *  the flag isn't defined, the call fails, or it exceeds timeoutMs — callers
+ *  fall back to the code default, so flag lookups never block a request. */
+export async function getServerFeatureFlag(
+  key: string,
+  distinctId: string,
+  timeoutMs = 800,
+): Promise<boolean | undefined> {
+  const client = getClient();
+  if (!client) return undefined;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      client.isFeatureEnabled(key, distinctId, { sendFeatureFlagEvents: false }),
+      new Promise<undefined>((resolve) => { timer = setTimeout(() => resolve(undefined), timeoutMs); }),
+    ]);
+  } catch {
+    return undefined;
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
 /** Capture a server-side event. Fire-and-forget — never throws. */
 export async function captureServerEvent(
   event: string,
