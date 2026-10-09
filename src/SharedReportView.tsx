@@ -241,7 +241,7 @@ function ReportBody({ data }: { data: SharedReportPayload }) {
             // one brand/interactive color; copper stays reserved for
             // score/streak/reward visuals.
             background: `linear-gradient(135deg, ${T.indigo}, ${T.indigoDeep})`,
-            border: "none", borderRadius: 10, padding: "10px 22px",
+            border: "none", borderRadius: 8, padding: "10px 22px",
             textDecoration: "none",
             boxShadow: "0 6px 18px rgba(49,46,129,0.18)",
           }}

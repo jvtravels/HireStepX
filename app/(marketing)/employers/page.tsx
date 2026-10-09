@@ -46,7 +46,7 @@ export default function EmployersLandingPage() {
             alignItems: "center",
             gap: 8,
             padding: "14px 26px",
-            borderRadius: 12,
+            borderRadius: 8,
             background: t.indigo,
             color: t.white,
             fontFamily: f.sans,

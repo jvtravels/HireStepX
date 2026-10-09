@@ -361,7 +361,7 @@ export function CanvasKeycapButton({ state, label, hint, onClick, kbd = "Space" 
         onClick={onClick}
         disabled={!isInteractive}
         aria-pressed={state === "active"}
-        className="hsx-iv-keycap rounded-full"
+        className="hsx-iv-keycap rounded-[8px]"
         data-state={state}
       >
         <kbd aria-hidden style={{

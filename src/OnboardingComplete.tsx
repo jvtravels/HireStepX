@@ -278,7 +278,7 @@ export default function OnboardingComplete() {
                 size="lg"
                 onClick={() => router.push("/dashboard?upgrade=1")}
                 style={{
-                  fontFamily: font.ui, fontSize: 14, fontWeight: 600, padding: "12px 32px", borderRadius: 10,
+                  fontFamily: font.ui, fontSize: 14, fontWeight: 600, padding: "12px 32px", borderRadius: 8,
                   background: `linear-gradient(135deg, ${T.indigo}, ${T.indigoDeep})`, color: c.obsidian,
                   boxShadow: "0 8px 32px rgba(49,46,129,0.25)", transition: "all 0.2s",
                 }}

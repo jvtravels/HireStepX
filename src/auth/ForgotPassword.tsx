@@ -274,7 +274,7 @@ export default function ForgotPassword() {
                       color: t.cream,
                       background: t.indigo,
                       border: "1px solid transparent",
-                      borderRadius: 10,
+                      borderRadius: 8,
                       padding: "16px 18px",
                       cursor: "pointer",
                       boxShadow: shadows.cta,

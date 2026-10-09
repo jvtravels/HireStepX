@@ -384,7 +384,7 @@ export default function DesignSystemCanvas() {
 defineAsset(Button, {
   libraries: ["shadcn"],
   usageInstructions:
-    "Primary action button — variants default/destructive/outline/secondary/ghost/link, sizes xs/sm/default/lg/cta/icon. `size=\"cta\"` is the single canonical hero/pill treatment for main-CTA buttons (dashboard empty states, upgrade, start-session) — use it instead of inline padding/radius/color overrides. Use for form submits and CTAs, not navigation.",
+    "Primary action button — variants default/destructive/outline/secondary/ghost/link, sizes xs/sm/default/lg/cta/icon. `size=\"cta\"` is the single canonical hero treatment for main-CTA buttons (8px radius, same as every other button — no pill buttons anywhere in the product) (dashboard empty states, upgrade, start-session) — use it instead of inline padding/radius/color overrides. Use for form submits and CTAs, not navigation.",
   variants: {
     Default: { props: { children: "Continue" } },
     Destructive: { props: { children: "Delete account", variant: "destructive" } },

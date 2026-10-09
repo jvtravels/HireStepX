@@ -409,7 +409,7 @@ export default function ResumeV2Screen() {
                   size="sm"
                   onClick={triggerUpload}
                   disabled={phase === "extracting" || phase === "analyzing"}
-                  style={{ fontFamily: font.ui, fontSize: S.base, fontWeight: 500, gap: 6, minHeight: 44, borderRadius: 0 }}
+                  style={{ fontFamily: font.ui, fontSize: S.base, fontWeight: 500, gap: 6, minHeight: 44, borderRadius: 8 }}
                 >
                   <UploadIcon size={14} aria-hidden="true" />
                   Replace
@@ -443,7 +443,7 @@ export default function ResumeV2Screen() {
                     aria-label="Delete resume"
                     title="Remove resume"
                     onClick={() => setConfirmDelete(true)}
-                    style={{ minHeight: 44, minWidth: 44, borderRadius: 0 }}
+                    style={{ minHeight: 44, minWidth: 44, borderRadius: 8 }}
                   >
                     <Trash2Icon size={14} color={T.error} aria-hidden="true" />
                   </Button>

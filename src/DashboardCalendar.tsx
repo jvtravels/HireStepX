@@ -875,7 +875,7 @@ export default function CalendarPage() {
                       onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); applyQuickAdd(); } }}
                       placeholder="Amazon SDE phone screen tuesday 3pm" style={inputStyle} onFocus={fieldFocus} onBlur={fieldBlur} />
                     <button className="cpr-tap" onClick={applyQuickAdd} disabled={!formQuickAdd.trim()}
-                      style={{ flexShrink: 0, display: "inline-flex", alignItems: "center", gap: 6, background: formQuickAdd.trim() ? c.graphite : "transparent", color: formQuickAdd.trim() ? c.ivory : c.stone, border: `1px solid ${c.border}`, borderRadius: radius.md, padding: "0 16px", fontFamily: font.ui, fontSize: 12.5, fontWeight: 600, cursor: formQuickAdd.trim() ? "pointer" : "not-allowed", whiteSpace: "nowrap" }}>
+                      style={{ flexShrink: 0, display: "inline-flex", alignItems: "center", gap: 6, background: formQuickAdd.trim() ? c.graphite : "transparent", color: formQuickAdd.trim() ? c.ivory : c.stone, border: `1px solid ${c.border}`, borderRadius: 8, padding: "0 16px", fontFamily: font.ui, fontSize: 12.5, fontWeight: 600, cursor: formQuickAdd.trim() ? "pointer" : "not-allowed", whiteSpace: "nowrap" }}>
                       Fill
                     </button>
                   </div>
@@ -1063,20 +1063,20 @@ export default function CalendarPage() {
                     <Icon size={13}>{I.play}</Icon> {practiceLabel}
                   </Button>
                   <div style={{ position: "relative" }}>
-                    <button className="cpr-tap" onClick={() => handleExportICS(focused)} style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "transparent", color: c.chalk, border: `1px solid ${c.border}`, borderRadius: radius.sm, padding: "8px 12px", fontFamily: font.ui, fontSize: 12, fontWeight: 500, cursor: "pointer" }}>
+                    <button className="cpr-tap" onClick={() => handleExportICS(focused)} style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "transparent", color: c.chalk, border: `1px solid ${c.border}`, borderRadius: 8, padding: "8px 12px", fontFamily: font.ui, fontSize: 12, fontWeight: 500, cursor: "pointer" }}>
                       <Icon size={13}>{I.download}</Icon> Export .ics
                     </button>
                     {exportTooltip === focused.id && (
                       <div style={{ position: "absolute", top: -28, left: "50%", transform: "translateX(-50%)", background: c.sage, color: c.carbon, fontFamily: font.ui, fontSize: 10, fontWeight: 600, padding: "3px 8px", borderRadius: 4, whiteSpace: "nowrap" }}>Downloaded</div>
                     )}
                   </div>
-                  <a className="cpr-tap" href={generateGoogleCalendarURL(focused)} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "transparent", color: c.chalk, border: `1px solid ${c.border}`, borderRadius: radius.sm, padding: "8px 12px", fontFamily: font.ui, fontSize: 12, fontWeight: 500, cursor: "pointer", textDecoration: "none" }}>
+                  <a className="cpr-tap" href={generateGoogleCalendarURL(focused)} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "transparent", color: c.chalk, border: `1px solid ${c.border}`, borderRadius: 8, padding: "8px 12px", fontFamily: font.ui, fontSize: 12, fontWeight: 500, cursor: "pointer", textDecoration: "none" }}>
                     <Icon size={13}>{I.cal}</Icon> Add to Google
                   </a>
-                  <button className="cpr-tap" onClick={() => openEditForm(focused)} style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "transparent", color: c.stone, border: `1px solid ${c.border}`, borderRadius: radius.sm, padding: "8px 12px", fontFamily: font.ui, fontSize: 12, fontWeight: 500, cursor: "pointer" }}>
+                  <button className="cpr-tap" onClick={() => openEditForm(focused)} style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "transparent", color: c.stone, border: `1px solid ${c.border}`, borderRadius: 8, padding: "8px 12px", fontFamily: font.ui, fontSize: 12, fontWeight: 500, cursor: "pointer" }}>
                     <Icon size={13}>{I.pencil}</Icon> Edit
                   </button>
-                  <button className="cpr-tap" onClick={() => handleCancel(focused.id)} style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "transparent", color: c.ember, border: `1px solid ${c.emberLight}`, borderRadius: radius.sm, padding: "8px 12px", fontFamily: font.ui, fontSize: 12, fontWeight: 500, cursor: "pointer" }}>
+                  <button className="cpr-tap" onClick={() => handleCancel(focused.id)} style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "transparent", color: c.ember, border: `1px solid ${c.emberLight}`, borderRadius: 8, padding: "8px 12px", fontFamily: font.ui, fontSize: 12, fontWeight: 500, cursor: "pointer" }}>
                     <Icon size={13}>{I.x}</Icon> Cancel
                   </button>
                 </div>
@@ -1186,7 +1186,7 @@ export default function CalendarPage() {
                 : "Connect to sync your interviews both ways with Google Calendar."}
             </p>
             {!googleConnected && !googleUnavailable && (
-              <button className="cpr-tap" onClick={handleConnectGoogle} disabled={googleBusy} style={{ marginTop: sp.md, display: "inline-flex", alignItems: "center", gap: 7, background: "transparent", color: c.ivory, border: `1px solid ${c.border}`, borderRadius: radius.md, padding: "9px 14px", fontFamily: font.ui, fontSize: 12.5, fontWeight: 600, cursor: googleBusy ? "default" : "pointer" }}>
+              <button className="cpr-tap" onClick={handleConnectGoogle} disabled={googleBusy} style={{ marginTop: sp.md, display: "inline-flex", alignItems: "center", gap: 7, background: "transparent", color: c.ivory, border: `1px solid ${c.border}`, borderRadius: 8, padding: "9px 14px", fontFamily: font.ui, fontSize: 12.5, fontWeight: 600, cursor: googleBusy ? "default" : "pointer" }}>
                 <Icon size={14} stroke={c.slate}>{I.google}</Icon> {googleBusy ? "Connecting…" : "Connect"}
               </button>
             )}

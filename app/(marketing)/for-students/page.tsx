@@ -189,7 +189,7 @@ export default async function ForStudentsPage() {
             <Link href="/signup?source=for-students" style={{
               display: "inline-flex", alignItems: "center", gap: 8,
               background: copper, color: cream, textDecoration: "none",
-              padding: "14px 24px", borderRadius: 999, fontSize: 15, fontWeight: 500,
+              padding: "14px 24px", borderRadius: 8, fontSize: 15, fontWeight: 500,
             }}>
               Start free mock interview → 2 sessions, no card
             </Link>
@@ -386,7 +386,7 @@ export default async function ForStudentsPage() {
               <Link href="/signup?source=for-students-cta" style={{
                 display: "inline-flex", alignItems: "center", gap: 8,
                 background: copper, color: cream, textDecoration: "none",
-                padding: "14px 28px", borderRadius: 999, fontSize: 15, fontWeight: 500,
+                padding: "14px 28px", borderRadius: 8, fontSize: 15, fontWeight: 500,
               }}>
                 Start free practice → 2 sessions, no card
               </Link>

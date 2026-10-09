@@ -29,7 +29,7 @@ export function HeroCta() {
           color: t.cream,
           background: t.indigo,
           padding: "15px 28px",
-          borderRadius: 999,
+          borderRadius: 8,
           textDecoration: "none",
           display: "inline-flex",
           alignItems: "center",

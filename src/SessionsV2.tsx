@@ -439,7 +439,7 @@ export function SessionsTable({
                     variant="outline"
                     size="sm"
                     onClick={onClearFilters}
-                    style={{ height: 36, borderRadius: 6, fontFamily: font.ui, fontSize: 13, fontWeight: 500, color: T.inkSoft }}
+                    style={{ height: 36, borderRadius: 8, fontFamily: font.ui, fontSize: 13, fontWeight: 500, color: T.inkSoft }}
                   >
                     Clear filters
                   </Button>

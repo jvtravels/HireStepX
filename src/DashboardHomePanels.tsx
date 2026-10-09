@@ -135,7 +135,7 @@ export function NotificationsList({ notifications, onAction, onDismiss }: Notifi
           </svg>
           <span style={{ fontFamily: font.ui, fontSize: 14, color: c.chalk, flex: 1, lineHeight: 1.5 }}>{notif.text}</span>
           {notif.action && (
-            <Button onClick={() => onAction(notif.action!)} size="sm" style={{ fontFamily: font.ui, fontSize: 12, color: c.sage, background: "rgba(21,128,61,0.08)", border: `1px solid rgba(21,128,61,0.2)`, borderRadius: 10, whiteSpace: "nowrap" }}
+            <Button onClick={() => onAction(notif.action!)} size="sm" style={{ fontFamily: font.ui, fontSize: 12, color: c.sage, background: "rgba(21,128,61,0.08)", border: `1px solid rgba(21,128,61,0.2)`, borderRadius: 8, whiteSpace: "nowrap" }}
             >{notif.action}</Button>
           )}
           {notif.dismissible && (
@@ -156,7 +156,7 @@ export function PracticeReminderBanner({ text, onStart }: { text: string; onStar
     <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 20px", borderRadius: radius.md, background: `oklch(from ${T.indigo} l c h / 0.03)`, borderLeft: `3px solid ${T.indigo}`, marginBottom: sp.xl }}>
       <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={T.indigo} strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
       <span style={{ fontFamily: font.ui, fontSize: 14, color: c.chalk, flex: 1, lineHeight: 1.5 }}>{text}</span>
-      <Button onClick={onStart} size="sm" style={{ fontFamily: font.ui, fontSize: 12, color: T.indigo, background: `oklch(from ${T.indigo} l c h / 0.08)`, border: `1px solid oklch(from ${T.indigo} l c h / 0.2)`, borderRadius: 10, whiteSpace: "nowrap" }}
+      <Button onClick={onStart} size="sm" style={{ fontFamily: font.ui, fontSize: 12, color: T.indigo, background: `oklch(from ${T.indigo} l c h / 0.08)`, border: `1px solid oklch(from ${T.indigo} l c h / 0.2)`, borderRadius: 8, whiteSpace: "nowrap" }}
       >Practice Now</Button>
     </div>
   );

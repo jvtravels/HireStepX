@@ -480,7 +480,7 @@ export default function Signup() {
                         color: t.cream,
                         background: t.indigo,
                         border: "1px solid transparent",
-                        borderRadius: 10,
+                        borderRadius: 8,
                         padding: "12px 20px",
                         textDecoration: "none",
                         boxShadow: shadows.cta,
@@ -523,7 +523,7 @@ export default function Signup() {
                   style={{
                     minWidth: 200,
                     height: "auto",
-                    borderRadius: 10,
+                    borderRadius: 8,
                     padding: "12px 20px",
                     fontFamily: f.sans,
                     fontSize: 15,

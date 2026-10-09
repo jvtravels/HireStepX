@@ -648,7 +648,7 @@ export default function ComingSoon() {
                     fontSize: 15,
                     fontWeight: 600,
                     padding: "14px 24px",
-                    borderRadius: 12,
+                    borderRadius: 8,
                     background: T.indigo,
                     color: T.cream,
                     border: 0,

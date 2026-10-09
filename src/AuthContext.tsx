@@ -2037,7 +2037,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             style={{
               fontFamily: "inherit", fontSize: 12, fontWeight: 600,
               color: "#060607", background: "#E5A590",
-              border: "none", borderRadius: 6, padding: "6px 14px",
+              border: "none", borderRadius: 8, padding: "6px 14px",
               cursor: restoring ? "default" : "pointer", opacity: restoring ? 0.6 : 1,
             }}
           >
@@ -2065,7 +2065,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             style={{
               fontFamily: "inherit", fontSize: 12, fontWeight: 600,
               color: "#C9A96E", background: "transparent",
-              border: "1px solid rgba(212,179,127,0.4)", borderRadius: 6, padding: "4px 10px",
+              border: "1px solid rgba(212,179,127,0.4)", borderRadius: 8, padding: "4px 10px",
               cursor: refreshing ? "default" : "pointer", opacity: refreshing ? 0.6 : 1,
             }}
           >

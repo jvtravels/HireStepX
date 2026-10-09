@@ -7691,7 +7691,7 @@ export default function BlogPage({
         <Link href="/blog" style={{
           display: "inline-flex", alignItems: "center", justifyContent: "center",
           fontFamily: fonts.sans, fontSize: 14, fontWeight: 600,
-          padding: "11px 22px", borderRadius: 999, textDecoration: "none",
+          padding: "11px 22px", borderRadius: 8, textDecoration: "none",
           background: t.indigo, color: t.white,
         }}>
           Back to blog
