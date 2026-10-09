@@ -326,13 +326,13 @@ describe("Groq TPM-cap-aware sizing", () => {
       return new Response("{}", { status: 200 });
     });
 
-    // 6000-token prompt leaves 8000 - 400 - 6000 = 1600 available, below
-    // the default 2000 maxTokens but above the 256-token default floor.
+    // 6000-token prompt leaves 8000 - 400 - 600 (10% estimator margin) - 6000
+    // = 1000 available, below the default 2000 maxTokens but above the floor.
     await callLLM({ prompt: tokenPaddedPrompt(6000), fast: true });
 
     const groqCall = fetchSpy.mock.calls.find((args: unknown[]) => String(args[0]).includes("api.groq.com"));
     const body = JSON.parse(groqCall?.[1]?.body as string);
-    expect(body.max_tokens).toBe(1600);
+    expect(body.max_tokens).toBe(1000);
   });
 
   it("passes requestedMaxTokens through unmodified when the prompt is small", async () => {

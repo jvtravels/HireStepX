@@ -127,6 +127,55 @@ export function isQuotaExhausted(msg: string): boolean {
   return /current quota|plan and billing|billing details|resource_exhausted|quota.?exceeded|exceeded.*quota/i.test(msg);
 }
 
+/* A quota-exhausted provider stays exhausted for minutes, but callers like
+   evaluate-session chain 2-3 callLLM invocations back to back, each of which
+   used to re-hit the dead provider first. Remember it per isolate so the
+   follow-up calls skip straight to a provider that can answer. */
+const QUOTA_COOLDOWN_MS = 5 * 60_000;
+const quotaCooldownUntil = new Map<string, number>();
+
+export function markProviderQuotaExhausted(name: string, now = Date.now()): void {
+  quotaCooldownUntil.set(name, now + QUOTA_COOLDOWN_MS);
+}
+
+export function isProviderCoolingDown(name: string, now = Date.now()): boolean {
+  const until = quotaCooldownUntil.get(name);
+  if (until === undefined) return false;
+  if (now >= until) { quotaCooldownUntil.delete(name); return false; }
+  return true;
+}
+
+export function resetProviderCooldowns(): void {
+  quotaCooldownUntil.clear();
+}
+
+/** A provider failure that re-sending the same request cannot fix: hard
+    quota, "request too large", or a rejected request (4xx other than 429),
+    or a provider we deliberately skipped (prompt too big / budget spent). */
+export function isDeterministicLLMFailure(msg: string): boolean {
+  if (isQuotaExhausted(msg)) return true;
+  if (/\b413\b/.test(msg)) return true;
+  if (/\b(400|401|403|404|422)\b/.test(msg)) return true;
+  return /\bskipped\b/i.test(msg);
+}
+
+/** Thrown when every provider fails. Carries each provider's message so
+    callers can tell "retry might work" from "same input will fail again". */
+export class LLMChainError extends Error {
+  providerErrors: string[];
+  constructor(message: string, providerErrors: string[]) {
+    super(message);
+    this.name = "LLMChainError";
+    this.providerErrors = providerErrors;
+  }
+}
+
+/** True when retrying the same prompt through the same chain is pointless. */
+export function isNonRetryableChainFailure(err: unknown): boolean {
+  if (!(err instanceof LLMChainError) || err.providerErrors.length === 0) return false;
+  return err.providerErrors.every(isDeterministicLLMFailure);
+}
+
 /** Transient = worth one short-backoff retry on the SAME provider before
  *  failover. Quota exhaustion is explicitly excluded (it's permanent). */
 export function isTransientLLMError(msg: string): boolean {
@@ -187,7 +236,11 @@ async function callGroq(opts: LLMOptions, signal?: AbortSignal): Promise<LLMResu
   const model = opts.fast ? "openai/gpt-oss-20b" : "openai/gpt-oss-120b";
   const requestedMaxTokens = opts.maxTokens ?? 2000;
   const promptTokens = countTokens(opts.prompt);
-  const availableCompletionBudget = GROQ_TPM_CAP - GROQ_TPM_SAFETY_MARGIN - promptTokens;
+  // The estimator undercounts dense text (Indic scripts, punctuation-heavy
+  // transcripts), and Groq's 413 counts the real tokens. Scale the margin
+  // with prompt size so a near-cap prompt skips Groq up front instead of
+  // paying a doomed round trip.
+  const availableCompletionBudget = GROQ_TPM_CAP - GROQ_TPM_SAFETY_MARGIN - Math.ceil(promptTokens * 0.1) - promptTokens;
   const minCompletionTokens = opts.groqMinCompletionTokens ?? GROQ_DEFAULT_MIN_COMPLETION_TOKENS;
   if (availableCompletionBudget < minCompletionTokens) {
     throw new Error(
@@ -322,6 +375,13 @@ export async function callLLM(opts: LLMOptions, timeoutMs = 15000, meta?: { user
 
   if (providers.length === 0) throw new Error("No LLM configured — set GROQ_API_KEY, GEMINI_API_KEY, or CEREBRAS_API_KEY");
 
+  // Drop providers in quota cooldown, but never empty the chain: if every
+  // provider is cooling down, try them all rather than fail without a call.
+  const available = providers.filter((p) => !isProviderCoolingDown(p.name));
+  if (available.length > 0 && available.length < providers.length) {
+    providers.splice(0, providers.length, ...available);
+  }
+
   // Per-provider timeout: cap Groq at 10s so a real incident fails over
   // fast, but don't kneecap normal large-output calls (a 1400-token JSON
   // response on llama-3.3-70b regularly takes 6-9s — the previous 6s cap
@@ -399,6 +459,7 @@ export async function callLLM(opts: LLMOptions, timeoutMs = 15000, meta?: { user
           await new Promise((r) => setTimeout(r, 800));
           continue;
         }
+        if (isQuotaExhausted(msg)) markProviderQuotaExhausted(provider.name);
         console.error(`[LLM] ${provider.name} failed (${isTimeout ? "timeout" : "error"}): ${msg.slice(0, 150)}`);
         await logUsage({ userId: meta?.userId, endpoint: meta?.endpoint, model: provider.name, isFallback, promptTokens: 0, completionTokens: 0, totalTokens: 0, latencyMs: 0, status: isTimeout ? "timeout" : "error", errorMessage: msg.slice(0, 200), sessionId: meta?.sessionId });
         throw err;
@@ -409,6 +470,7 @@ export async function callLLM(opts: LLMOptions, timeoutMs = 15000, meta?: { user
   // Walk providers in order (fast: groq→gemini, slow: gemini→groq→cerebras). First success wins.
   console.warn(`[LLM] Provider chain: ${providers.map(p => p.name).join(" → ")} (timeout: ${timeoutMs}ms${meta?.totalBudgetMs != null ? `, totalBudget: ${meta.totalBudgetMs}ms` : ""})`);
   let lastErr: unknown;
+  const providerErrors: string[] = [];
   for (let i = 0; i < providers.length; i++) {
     const provider = providers[i];
     if (remainingBudget() <= 0) {
@@ -421,12 +483,16 @@ export async function callLLM(opts: LLMOptions, timeoutMs = 15000, meta?: { user
       return result;
     } catch (err) {
       lastErr = err;
+      providerErrors.push(err instanceof Error ? err.message : String(err));
       const next = providers[i + 1];
       if (next) console.warn(`[LLM] ${provider.name} failed, falling back to ${next.name}`);
     }
   }
   await Promise.all([recordSlo("llm_availability", false), recordSlo("llm_primary", false)]);
-  throw lastErr instanceof Error ? lastErr : new Error("All LLM providers failed");
+  throw new LLMChainError(
+    lastErr instanceof Error ? lastErr.message : "All LLM providers failed",
+    providerErrors,
+  );
 }
 
 export function extractJSON<T = unknown>(text: string): T | null {
