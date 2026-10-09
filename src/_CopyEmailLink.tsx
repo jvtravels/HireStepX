@@ -48,7 +48,7 @@ export function CopyEmailLink({ email, children, style, className }: CopyEmailLi
       type="button"
       onClick={handleClick}
       title={copied ? "Copied!" : `Click to copy ${email}`}
-      aria-label={copied ? "Email address copied" : `Copy email address ${email}`}
+      aria-label={copied ? "Copied! Email address copied" : `${typeof children === "string" ? children : email}, copy email address`}
       className={className}
       style={{
         background: "none",

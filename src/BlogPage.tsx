@@ -113,7 +113,7 @@ const CATEGORIES = ["All", ...CATEGORY_BUCKETS];
 /* ─── Compact card: 3-col grid variant ───────────────────────────────
  * All cards share the same 200px image height for a balanced grid row.
  * Visual hierarchy comes from column width (3fr vs 2fr), not image height. */
-function CompactCard({ post }: { post: BlogMeta }) {
+function CompactCard({ post, priority = false, heading: Heading = "h3" }: { post: BlogMeta; priority?: boolean; heading?: "h2" | "h3" }) {
   const [imgFailed, setImgFailed] = useState(false);
   const d = new Date(post.datePublished);
   const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
@@ -126,6 +126,7 @@ function CompactCard({ post }: { post: BlogMeta }) {
           <Image
             src={post.heroImage} alt={post.heroAlt}
             fill sizes="(max-width: 640px) 100vw, (max-width: 880px) 50vw, 33vw"
+            priority={priority}
             onError={() => setImgFailed(true)}
             style={
               post.heroImageFit === "contain"
@@ -158,14 +159,14 @@ function CompactCard({ post }: { post: BlogMeta }) {
 
       {/* Text: sits directly on page background, no card box */}
       <div style={{ paddingTop: 16, display: "flex", flexDirection: "column", gap: 7, flex: 1 }}>
-        <h3
+        <Heading
           className="blog-clamp2 blog-card-title"
           style={{ fontFamily: fonts.serif, fontSize: 21, fontWeight: 400, color: t.coal, lineHeight: 1.2, letterSpacing: "-0.016em", margin: 0 }}
         >
           <Link href={`/blog/${post.slug}`} className="blog-card-link">
             {post.title}
           </Link>
-        </h3>
+        </Heading>
         <p
           className="blog-clamp3"
           style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.62, margin: 0 }}
@@ -321,7 +322,7 @@ function BlogIndex({ metas, initialPage }: { metas: BlogMeta[]; initialPage?: nu
         {/* Post grid */}
         {paginated.length > 0 ? (
           <div className="blog-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 28 }}>
-            {paginated.map((p) => <CompactCard key={p.slug} post={p} />)}
+            {paginated.map((p, i) => <CompactCard key={p.slug} post={p} heading="h2" priority={i < 3} />)}
           </div>
         ) : (
           <div style={{ textAlign: "center", padding: "80px 0", fontFamily: fonts.sans }}>
@@ -368,7 +369,7 @@ function BlogIndex({ metas, initialPage }: { metas: BlogMeta[]; initialPage?: nu
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="15 18 9 12 15 6" />
                 </svg>
-                Prev
+                Previous
               </Link>
             ) : (
               <button
