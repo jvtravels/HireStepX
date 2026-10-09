@@ -824,6 +824,10 @@ export const SESSION_REPORT_STYLES = `
   .ir-poll-yes:hover, .ir-poll-no:hover { border-color: #312E81; color: #312E81; }
   .ir-poll-yes.active, .ir-poll-no.active { background: rgba(49,46,129,0.08); border-color: #312E81; color: #312E81; font-weight: 600; }
 
+  .ir-more-detail { display: none; }
+  .ir-more-detail.is-open { display: flex; }
+  .ir-more-detail-toggle:hover { background: rgba(49,46,129,0.05); }
+
   /* ─── Print styles ───
      PDF generation goes through window.print(). We hide chrome (jump
      nav, header buttons, sticky CTAs, footer thumbs) and force every
@@ -836,6 +840,7 @@ export const SESSION_REPORT_STYLES = `
       display: none !important;
     }
     .ir-q-card-trigger { pointer-events: none; }
+    .ir-more-detail { display: flex !important; flex-direction: column; gap: 16px; }
     [role="region"][hidden] { display: block !important; }
     [hidden] { display: revert !important; }
     section { break-inside: avoid; page-break-inside: avoid; }

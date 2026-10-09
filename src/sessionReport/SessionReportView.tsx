@@ -15,6 +15,9 @@
 
 "use client";
 
+import { useState, type ReactNode } from "react";
+import { captureClientEvent } from "../posthogClient";
+
 import { t, f } from "./tokens";
 import { Button } from "@/components/ui/button";
 import { SESSION_REPORT_STYLES } from "./styles";
@@ -322,6 +325,54 @@ function FocusBannerStrip({ banner, daysUntilInterview }: { banner: FocusBannerD
 
 /* ─── Main component ──────────────────────────────────────────────── */
 
+const DETAIL_PREF_KEY = "hsx_report_full_analysis";
+
+/* Secondary sections stay mounted while collapsed (display:none) so PDF
+   print (forced visible in styles.ts), analytics and anchors keep working. */
+function MoreDetail({ children }: { children: ReactNode }) {
+  const [open, setOpen] = useState(() => {
+    try { return localStorage.getItem(DETAIL_PREF_KEY) === "1"; } catch { return false; }
+  });
+  const toggle = () => {
+    const next = !open;
+    setOpen(next);
+    try { localStorage.setItem(DETAIL_PREF_KEY, next ? "1" : "0"); } catch { /* storage unavailable */ }
+    captureClientEvent("report_full_analysis_toggled", { open: next });
+  };
+  return (
+    <>
+      <button
+        type="button"
+        className="ir-more-detail-toggle ir-print-hide"
+        aria-expanded={open}
+        aria-controls="ir-more-detail"
+        onClick={toggle}
+        style={{
+          alignSelf: "stretch",
+          padding: "14px 16px",
+          borderRadius: 12,
+          border: `1px solid ${t.inkFaint}33`,
+          background: "transparent",
+          color: t.coal,
+          fontFamily: f.sans,
+          fontSize: 14,
+          fontWeight: 600,
+          cursor: "pointer",
+        }}
+      >
+        {open ? "Hide full analysis" : "Show full analysis — trends, metrics, coach notes"}
+      </button>
+      <div
+        id="ir-more-detail"
+        className={open ? "ir-more-detail is-open" : "ir-more-detail"}
+        style={{ flexDirection: "column", gap: 16 }}
+      >
+        {children}
+      </div>
+    </>
+  );
+}
+
 export interface SessionReportViewProps {
   data: InterviewResultData;
   /** Session id — wired to ProductRating so the 1-5 star widget can POST
@@ -594,15 +645,7 @@ export default function SessionReportView({
           {data.kernelMetrics && (
             <KernelNegotiationQualitySection m={data.kernelMetrics} />
           )}
-          {data.priorSessionCount !== undefined && data.priorSessionCount >= 3 && behaviouralCrossSessionInsights && (
-            <TrendStrip
-              priorSessionCount={data.priorSessionCount}
-              insights={behaviouralCrossSessionInsights}
-            />
-          )}
           <TopScoreDriversSection questions={data.questions} />
-          <CoreMetricsSection metrics={data.metrics} />
-          {progressTrends && <ProgressTrendPanel trends={progressTrends} />}
           <SkillsSection
             skills={data.skills}
             weakest={data.weakestSkill}
@@ -612,22 +655,7 @@ export default function SessionReportView({
                 : undefined
             }
           />
-          {data.thoughtBubble && data.thoughtBubble.length > 0 && (
-            <ThoughtBubbleSection segments={data.thoughtBubble} />
-          )}
           <PerQuestionSection questions={data.questions} onTryQuestionAgain={onTryQuestionAgain} />
-          <CoachNotesSection
-            insights={behaviouralCrossSessionInsights}
-            storyReuse={data.negotiationOutcome ? undefined : data.storyReuseFindings}
-            blindSpots={data.blindSpots}
-            coaching={data.coaching}
-          />
-          {data.biasFindings && data.biasFindings.length > 0 && (
-            <BiasSection findings={data.biasFindings} />
-          )}
-          {data.reverseInterview && (
-            <ReverseInterviewSection reverse={data.reverseInterview} />
-          )}
           <NextStepsSection
             daysUntilInterview={data.daysUntilInterview}
             readinessSentence={data.readinessSentence}
@@ -645,7 +673,37 @@ export default function SessionReportView({
                 : undefined
             }
           />
-          <ScheduleNextSection todayIso={new Date().toISOString()} />
+          {(() => {
+            const secondary = (
+              <>
+                {data.priorSessionCount !== undefined && data.priorSessionCount >= 3 && behaviouralCrossSessionInsights && (
+                  <TrendStrip
+                    priorSessionCount={data.priorSessionCount}
+                    insights={behaviouralCrossSessionInsights}
+                  />
+                )}
+                <CoreMetricsSection metrics={data.metrics} />
+                {progressTrends && <ProgressTrendPanel trends={progressTrends} />}
+                {data.thoughtBubble && data.thoughtBubble.length > 0 && (
+                  <ThoughtBubbleSection segments={data.thoughtBubble} />
+                )}
+                <CoachNotesSection
+                  insights={behaviouralCrossSessionInsights}
+                  storyReuse={data.negotiationOutcome ? undefined : data.storyReuseFindings}
+                  blindSpots={data.blindSpots}
+                  coaching={data.coaching}
+                />
+                {data.biasFindings && data.biasFindings.length > 0 && (
+                  <BiasSection findings={data.biasFindings} />
+                )}
+                {data.reverseInterview && (
+                  <ReverseInterviewSection reverse={data.reverseInterview} />
+                )}
+                <ScheduleNextSection todayIso={new Date().toISOString()} />
+              </>
+            );
+            return data.negotiationOutcome ? secondary : <MoreDetail>{secondary}</MoreDetail>;
+          })()}
           <TestimonialNudge score={data.overallScore} priorSessionCount={data.priorSessionCount} role={data.role} />
         </main>
       </div>
