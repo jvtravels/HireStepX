@@ -118,6 +118,39 @@ export async function fetchCount(table: string, filter = ""): Promise<number> {
   return 0;
 }
 
+/* Employer accounts also get a profiles row (signup trigger), so every
+ * candidate-facing admin stat has to subtract them. These helpers do that
+ * without a URL-length cap, whatever the number of employers. */
+const EMPLOYER_PAGE = 1000;
+const COUNT_IN_CHUNK = 80;
+
+export async function fetchEmployerIds(): Promise<Set<string>> {
+  const ids = new Set<string>();
+  for (let offset = 0; ; offset += EMPLOYER_PAGE) {
+    const rows = await fetchJSON<{ id: string }>(`employers?select=id&order=id.asc&offset=${offset}&limit=${EMPLOYER_PAGE}`);
+    for (const r of rows) ids.add(r.id);
+    if (rows.length < EMPLOYER_PAGE) return ids;
+  }
+}
+
+/** Profiles that belong to employers and also match `filter`. */
+async function countEmployerProfiles(employerIds: Set<string>, filter: string): Promise<number> {
+  const all = [...employerIds].map(encodeURIComponent);
+  const chunks: string[] = [];
+  for (let i = 0; i < all.length; i += COUNT_IN_CHUNK) chunks.push(all.slice(i, i + COUNT_IN_CHUNK).join(","));
+  const counts = await Promise.all(chunks.map((c) => fetchCount("profiles", `&id=in.(${c})${filter}`)));
+  return counts.reduce((a, b) => a + b, 0);
+}
+
+/** Number of candidate (non-employer) profiles matching `filter`. */
+export async function fetchCandidateCount(employerIds: Set<string>, filter = ""): Promise<number> {
+  const [total, employers] = await Promise.all([
+    fetchCount("profiles", filter),
+    countEmployerProfiles(employerIds, filter),
+  ]);
+  return Math.max(0, total - employers);
+}
+
 export function daysAgo(n: number): string {
   return new Date(Date.now() - n * 86400000).toISOString();
 }

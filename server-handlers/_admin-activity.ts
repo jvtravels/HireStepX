@@ -1,6 +1,6 @@
 /* Admin sections: overview, users, sessions, feedback, calendar, outcomes. */
 
-import { daysAgo, fetchCount, fetchJSON, LIMIT_PROFILES, LIMIT_SESSIONS, LIMIT_PAYMENTS, LIMIT_LLM, TTS_SERVICES, STT_SERVICES, supa, LIMIT_RECENT } from "./_admin-shared";
+import { daysAgo, fetchCandidateCount, fetchCount, fetchEmployerIds, fetchJSON, LIMIT_PROFILES, LIMIT_SESSIONS, LIMIT_PAYMENTS, LIMIT_LLM, TTS_SERVICES, STT_SERVICES, LIMIT_RECENT } from "./_admin-shared";
 import { costBreakdown, DEFAULT_COST_RATES } from "./_cost-helpers";
 import { getSarvamMonthlySpend } from "./_sarvam-credit-guard";
 import { getDeepgramMonthlySpend } from "./_deepgram-credit-guard";
@@ -13,20 +13,21 @@ export async function getOverview() {
   const today = daysAgo(0).slice(0, 10);
 
   // Use counts + targeted queries instead of loading everything
+  const employerIds = await fetchEmployerIds();
   const [
     totalUserCount,
     weekUserCount,
     totalSessionCount,
     weekSessionCount,
     monthSessionCount,
-    profiles,
+    allProfiles,
     recentSessions,
     payments,
     llmRecent,
     serviceRecent,
   ] = await Promise.all([
-    fetchCount("profiles"),
-    fetchCount("profiles", `&created_at=gte.${weekAgo}`),
+    fetchCandidateCount(employerIds),
+    fetchCandidateCount(employerIds, `&created_at=gte.${weekAgo}`),
     fetchCount("sessions"),
     fetchCount("sessions", `&created_at=gte.${weekAgo}`),
     fetchCount("sessions", `&created_at=gte.${monthAgo}`),
@@ -49,6 +50,8 @@ export async function getOverview() {
       `service_usage?select=service,request_chars,status,created_at&created_at=gte.${monthAgo}&limit=5000`
     ),
   ]);
+
+  const profiles = allProfiles.filter((p) => !employerIds.has(p.id));
 
   const now = Date.now();
 
@@ -203,31 +206,39 @@ export async function getOverview() {
   };
 }
 
-/* Employer signups also get a profiles row (auth trigger), so they would
- * otherwise show up as candidates in the Users tab. They live in the Employers
- * tab. ids go in the URL, so only the first USERS_EXCLUDE_IN_URL are excluded
- * in the query; any beyond that are dropped from the returned page instead. */
-const USERS_EXCLUDE_IN_URL = 200;
+const USERS_SCAN_PAGE = 1000;
 
+/* Candidates only — employer accounts share the profiles table but belong to
+ * the Employers tab. Walks ids in signup order, skipping employers, so the page
+ * and total are exact for any number of employers. Only ids are scanned; full
+ * rows are fetched for the final page. */
 export async function getUsers(search?: string, offset = 0, limit = 50) {
-  const employerRows = await fetchJSON<{ id: string }>("employers?select=id&limit=2000");
-  const inUrl = employerRows.slice(0, USERS_EXCLUDE_IN_URL).map((e) => encodeURIComponent(e.id));
-  const overflowIds = new Set(employerRows.slice(USERS_EXCLUDE_IN_URL).map((e) => e.id));
-  const notEmployer = inUrl.length > 0 ? `&id=not.in.(${inUrl.join(",")})` : "";
+  const employerIds = await fetchEmployerIds();
   const searchFilter = search
     ? `&or=(name.ilike.*${encodeURIComponent(search)}*,email.ilike.*${encodeURIComponent(search)}*)`
     : "";
 
-  const profilePath = `profiles?select=id,name,email,subscription_tier,created_at,practice_timestamps,has_completed_onboarding,subscription_end&order=created_at.desc&offset=${offset}&limit=${limit}${notEmployer}${searchFilter}`;
+  const wanted = offset + limit;
+  const candidateIds: string[] = [];
+  for (let raw = 0; candidateIds.length < wanted; raw += USERS_SCAN_PAGE) {
+    const rows = await fetchJSON<{ id: string }>(
+      `profiles?select=id&order=created_at.desc&offset=${raw}&limit=${USERS_SCAN_PAGE}${searchFilter}`,
+    );
+    for (const r of rows) if (!employerIds.has(r.id)) candidateIds.push(r.id);
+    if (rows.length < USERS_SCAN_PAGE) break;
+  }
+  const pageIds = candidateIds.slice(offset, wanted);
 
-  // Get total count and profiles in parallel — use Supabase count header instead of fetching all sessions
-  const [profilesRes, totalCount] = await Promise.all([
-    supa(profilePath),
-    fetchCount("profiles", `${notEmployer}${searchFilter}`),
+  const [rowsForPage, totalCount] = await Promise.all([
+    pageIds.length > 0
+      ? fetchJSON<{ id: string }>(
+          `profiles?select=id,name,email,subscription_tier,created_at,practice_timestamps,has_completed_onboarding,subscription_end&id=in.(${pageIds.map(encodeURIComponent).join(",")})`,
+        )
+      : Promise.resolve([]),
+    fetchCandidateCount(employerIds, searchFilter),
   ]);
-
-  const profiles = ((profilesRes.ok ? await profilesRes.json() : []) as Array<{ id: string }>)
-    .filter((p) => !overflowIds.has(p.id));
+  const byId = new Map(rowsForPage.map((r) => [r.id, r]));
+  const profiles = pageIds.flatMap((id) => (byId.has(id) ? [byId.get(id)!] : []));
 
   // Get session counts + last-7d counts for the users on this page
   const userIds = (profiles as Array<{ id: string }>).map(p => p.id);
