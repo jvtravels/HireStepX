@@ -145,13 +145,13 @@ export const AUTH_STYLES = `
     animation: hsx-fade-up 220ms cubic-bezier(0.16, 1, 0.3, 1);
   }
 
-  /* Wordmark — italic X glows on hover */
+  /* Wordmark — X lifts on hover */
   .hsx-wordmark-x {
     transition: color 220ms ease, transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
   }
   .hsx-wordmark:hover .hsx-wordmark-x {
     transform: translateY(-1px);
-    color: #92400E;
+    color: oklch(0.30 0.135 278.697);
   }
 
   /* Respect reduced motion preference */

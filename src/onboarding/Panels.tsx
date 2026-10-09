@@ -130,7 +130,7 @@ export function TopBar({
                       display: "inline-flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      fontFamily: f.serif,
+                      fontFamily: f.sans,
                       fontSize: 13,
                     }}
                   >
@@ -237,10 +237,10 @@ export function ResumeEmptyState({
             the drop zone — supplements the stack's 16px gap. */}
         <div className="hsx-login-hero hsx-onb-hero" style={{ width: "100%", textAlign: "center", marginBottom: 12 }}>
           <h1
-            style={{ fontFamily: f.serif, fontSize: "clamp(2rem, 5vw, 3.5rem)", lineHeight: 1.05, fontWeight: 400, letterSpacing: "-0.02em", margin: 0, color: t.coal, textWrap: "balance" }}
+            style={{ fontFamily: f.sans, fontSize: "clamp(2rem, 5vw, 3.5rem)", lineHeight: 1.05, fontWeight: 700, letterSpacing: "-0.03em", margin: 0, color: t.coal, textWrap: "balance" }}
           >
             Drop your{" "}
-            <em style={{ fontStyle: "italic", fontWeight: 400, color: t.copper }}>
+            <em style={{ fontStyle: "normal", fontWeight: 700, color: t.indigo }}>
               resume
             </em>
           </h1>
@@ -302,9 +302,9 @@ export function ResumeEmptyState({
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 14 }}>
             <div
               aria-hidden="true"
-              style={{ width: 56, height: 56, borderRadius: 14, background: t.copperSoft, display: "flex", alignItems: "center", justifyContent: "center" }}
+              style={{ width: 56, height: 56, borderRadius: 14, background: t.indigo100, display: "flex", alignItems: "center", justifyContent: "center" }}
             >
-              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke={t.copper} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke={t.indigo} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                 <polyline points="17 8 12 3 7 8" />
                 <line x1="12" y1="3" x2="12" y2="15" />
@@ -367,7 +367,7 @@ export function ResumeEmptyState({
                 borderRadius: 999,
               }}
             >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={t.copper} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={t.indigo} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 {p.icon === "lock" && (
                   <>
                     <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
@@ -493,10 +493,10 @@ export function ResumeLoadingState({
       <div className="hsx-onb-stack hsx-onb-state-enter" style={{ width: "100%", maxWidth: 540, margin: "0 auto" }}>
         <div className="hsx-login-hero hsx-onb-hero" style={{ width: "100%", textAlign: "center" }}>
           <h1
-            style={{ fontFamily: f.serif, fontSize: "clamp(2rem, 5vw, 3.5rem)", lineHeight: 1.05, fontWeight: 400, letterSpacing: "-0.02em", margin: 0, color: t.coal }}
+            style={{ fontFamily: f.sans, fontSize: "clamp(2rem, 5vw, 3.5rem)", lineHeight: 1.05, fontWeight: 700, letterSpacing: "-0.03em", margin: 0, color: t.coal }}
           >
             Reading your{" "}
-            <em style={{ fontStyle: "italic", fontWeight: 400, color: t.copper }}>
+            <em style={{ fontStyle: "normal", fontWeight: 700, color: t.indigo }}>
               resume
             </em>
           </h1>
@@ -522,14 +522,14 @@ export function ResumeLoadingState({
               marginTop: 12,
             }}
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={t.copper} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={t.indigo} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
               <polyline points="14 2 14 8 20 8" />
             </svg>
             <span style={{ fontFamily: f.sans, fontSize: 14, fontWeight: 500, color: t.coal, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               {fileName}
             </span>
-            <span style={{ fontFamily: f.mono, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: t.copper }}>
+            <span style={{ fontFamily: f.mono, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: t.indigo }}>
               Analysing
             </span>
           </div>
@@ -548,7 +548,7 @@ export function ResumeLoadingState({
               position: "relative",
               width: `${Math.min(100, Math.max(0, progress))}%`,
               height: "100%",
-              background: `linear-gradient(90deg, ${t.indigo} 0%, ${t.copper} 100%)`,
+              background: `${t.indigo}`,
               borderRadius: 999,
               transition: "width 220ms cubic-bezier(0.16, 1, 0.3, 1)",
               overflow: "hidden",
@@ -611,7 +611,7 @@ export function ResumeLoadingState({
         <div
           style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 4, fontFamily: f.sans, fontSize: 13, color: t.inkSoft }}
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={t.copper} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={t.indigo} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M12 2 4 6v6c0 5 3.5 9 8 10 4.5-1 8-5 8-10V6l-8-4z" />
             <polyline points="9 12 11 14 15 10" />
           </svg>
@@ -792,7 +792,7 @@ export function ProfileReadyState({
 
             <h1
               className="hsx-onb-profile-headline"
-              style={{ fontFamily: f.serif, fontSize: "clamp(1.75rem, 3.2vw, 2.25rem)", lineHeight: 1.15, fontWeight: 400, color: t.coal, letterSpacing: "-0.01em", margin: 0, marginBottom: 12 }}
+              style={{ fontFamily: f.sans, fontSize: "clamp(1.75rem, 3.2vw, 2.25rem)", lineHeight: 1.15, fontWeight: 700, color: t.coal, letterSpacing: "-0.02em", margin: 0, marginBottom: 12 }}
             >
               {aiProfile.headline || "Your profile"}
             </h1>
@@ -886,7 +886,7 @@ export function ProfileReadyState({
               className="hsx-onb-source-row"
               style={{ display: "flex", alignItems: "center", gap: 10, paddingTop: 12, borderTop: `1px solid ${t.line}`, fontFamily: f.sans, fontSize: 13, color: t.inkSoft, flexWrap: "wrap" }}
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={t.copper} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={t.indigo} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                 <polyline points="14 2 14 8 20 8" />
               </svg>
@@ -990,7 +990,7 @@ export function ProfileReadyState({
                 <ul style={{ margin: 0, paddingLeft: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 10 }}>
                   {aiProfile.keyAchievements.map((line, i) => (
                     <li key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10, fontFamily: f.sans, fontSize: 13.5, lineHeight: 1.55, color: t.coal }}>
-                      <span style={{ flexShrink: 0, marginTop: 6, width: 4, height: 4, borderRadius: 999, background: t.copper }} aria-hidden="true" />
+                      <span style={{ flexShrink: 0, marginTop: 6, width: 4, height: 4, borderRadius: 999, background: t.indigo }} aria-hidden="true" />
                       {line}
                     </li>
                   ))}
@@ -1020,7 +1020,7 @@ export function ProfileReadyState({
                 <ul style={{ margin: 0, paddingLeft: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 10 }}>
                   {aiProfile.improvements.map((line, i) => (
                     <li key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10, fontFamily: f.sans, fontSize: 13.5, lineHeight: 1.55, color: t.coal }}>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={t.copper} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0, marginTop: 4 }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={t.indigo} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0, marginTop: 4 }}>
                         <line x1="12" y1="20" x2="12" y2="10" />
                         <polyline points="7 14 12 9 17 14" />
                       </svg>
@@ -1181,7 +1181,7 @@ function ScoreGauge({
             style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end", paddingBottom: 4 }}
           >
             <div style={{ display: "flex", alignItems: "baseline", gap: 3 }}>
-              <span style={{ fontFamily: f.serif, fontSize: 40, fontWeight: 400, color, lineHeight: 1, letterSpacing: "-0.02em" }}>
+              <span style={{ fontFamily: f.sans, fontSize: 40, fontWeight: 700, color, lineHeight: 1, letterSpacing: "-0.02em" }}>
                 {score == null ? "—" : score}
               </span>
               {score != null && (
