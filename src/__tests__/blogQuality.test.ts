@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { blogPostWordCount, isThinBlogPost, THIN_BLOG_WORD_THRESHOLD } from "../blogQuality";
+import { blogPostWordCount, isThinBlogPost, shouldNoindexBlogPost, THIN_BLOG_WORD_THRESHOLD } from "../blogQuality";
 import { BLOG_POSTS } from "../../data/blog-posts";
 
 describe("blogQuality", () => {
@@ -15,6 +15,17 @@ describe("blogQuality", () => {
     for (const p of BLOG_POSTS) {
       expect(isThinBlogPost(p.slug)).toBe(blogPostWordCount(p) < THIN_BLOG_WORD_THRESHOLD);
     }
+  });
+
+  it("keeps thin posts that already rank indexable", () => {
+    expect(isThinBlogPost("plivo-interview-experience-2026")).toBe(true);
+    expect(shouldNoindexBlogPost("plivo-interview-experience-2026")).toBe(false);
+  });
+
+  it("noindexes only thin posts outside the ranking allowlist", () => {
+    const noindexed = BLOG_POSTS.filter((p) => shouldNoindexBlogPost(p.slug));
+    expect(noindexed.length).toBeGreaterThan(0);
+    for (const p of noindexed) expect(isThinBlogPost(p.slug)).toBe(true);
   });
 
   it("keeps a healthy majority of posts indexable", () => {

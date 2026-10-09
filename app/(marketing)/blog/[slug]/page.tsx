@@ -5,7 +5,7 @@ import BlogPage from "@/BlogPage";
 import { getBlogMetaBySlug, getBlogMetasBySlugs } from "@/blog-meta";
 import { getBlogPostBySlug } from "../../../../data/blog-posts";
 import { buildBlogJsonLd } from "./_jsonld";
-import { isThinBlogPost } from "@/blogQuality";
+import { isThinBlogPost, shouldNoindexBlogPost } from "@/blogQuality";
 
 /* /blog/[slug] — per-post route.
  *
@@ -74,7 +74,7 @@ export async function generateMetadata({
     title: pageTitle,
     description,
     alternates: { canonical: `/blog/${slug}` },
-    ...(isThinBlogPost(slug) ? { robots: { index: false, follow: true } } : {}),
+    ...(shouldNoindexBlogPost(slug) ? { robots: { index: false, follow: true } } : {}),
     openGraph: {
       title,
       description,
