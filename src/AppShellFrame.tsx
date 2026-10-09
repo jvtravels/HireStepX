@@ -132,7 +132,7 @@ export default function AppShellFrame({
     // 60-80px gap at the bottom when the bar collapses. The vh value
     // is the fallback for pre-iOS 15.4 / Android <108.
     <TooltipProvider delayDuration={0}>
-    <SidebarProvider style={{ height: "100dvh", minHeight: "100vh", background: c.surface, overflow: "hidden" }}>
+    <SidebarProvider className="app-vh" style={{ background: c.surface, overflow: "hidden" }}>
       <a href={`#${mainId}`} style={{
         position: "absolute", left: -9999, top: "auto", width: 1, height: 1, overflow: "hidden",
         zIndex: 100, padding: "12px 24px", background: c.accent, color: c.graphite,
@@ -275,26 +275,27 @@ export default function AppShellFrame({
         </aside>
       </Sidebar>
 
-      <SidebarInset id={mainId} tabIndex={-1} className="dash-main" style={{ padding: isMobile ? "0 16px" : "0 16px 0 8px", display: "flex", flexDirection: "column", height: "100dvh", minHeight: "100vh", overflow: "hidden", background: c.surface }}>
+      <SidebarInset id={mainId} tabIndex={-1} className="dash-main app-vh" style={{ padding: isMobile ? "0 12px" : "0 16px 0 8px", display: "flex", flexDirection: "column", minWidth: 0, overflow: "hidden", background: c.surface }}>
 
         {/* Top bar — sidebar toggle + current page label */}
         <header style={{
           display: "flex", alignItems: "center", gap: 12,
-          padding: isMobile ? "12px 16px" : "0 16px",
+          padding: isMobile ? "0 8px" : "0 16px",
           height: 62, boxSizing: "border-box", flexShrink: 0,
           background: c.graphite, border: `1px solid ${c.border}`, borderRadius: 8,
           marginTop: 8, marginBottom: 16,
         }}>
           <SidebarTrigger aria-label="Toggle navigation" style={{ color: c.ink }} />
           <Separator orientation="vertical" style={{ height: 16, alignSelf: "center", flexShrink: 0 }} />
-          <Breadcrumb style={{ flex: 1 }}>
-            <BreadcrumbList style={{ fontFamily: F.sans, fontSize: 13 }}>
-              <BreadcrumbItem>
+          <Breadcrumb style={{ flex: 1, minWidth: 0 }}>
+            <BreadcrumbList style={{ fontFamily: F.sans, fontSize: 13, flexWrap: "nowrap", overflow: "hidden" }}>
+              {/* Root crumb is dropped on narrow phones so the current page label keeps the room. */}
+              <BreadcrumbItem className="max-[480px]:hidden">
                 <BreadcrumbLink onClick={() => onNavigate(breadcrumbRoot.path)} style={{ color: c.inkSoft, cursor: "pointer" }}>
                   {breadcrumbRoot.label}
                 </BreadcrumbLink>
               </BreadcrumbItem>
-              <BreadcrumbSeparator />
+              <BreadcrumbSeparator className="max-[480px]:hidden" />
               {extraCrumbs && extraCrumbs.length > 0 ? (
                 <BreadcrumbItem>
                   <BreadcrumbLink onClick={() => onNavigate(pageLabelPath ?? breadcrumbRoot.path)} style={{ color: c.inkSoft, cursor: "pointer" }}>
@@ -303,7 +304,7 @@ export default function AppShellFrame({
                 </BreadcrumbItem>
               ) : (
                 <BreadcrumbItem>
-                  <BreadcrumbPage style={{ fontSize: 13, fontWeight: 600, color: c.ink }}>
+                  <BreadcrumbPage style={{ fontSize: 13, fontWeight: 600, color: c.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>
                     {pageLabel}
                   </BreadcrumbPage>
                 </BreadcrumbItem>
@@ -315,7 +316,7 @@ export default function AppShellFrame({
                     <BreadcrumbSeparator />
                     <BreadcrumbItem>
                       {isLast || !crumb.path ? (
-                        <BreadcrumbPage style={{ fontSize: 13, fontWeight: 600, color: c.ink }}>
+                        <BreadcrumbPage style={{ fontSize: 13, fontWeight: 600, color: c.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>
                           {crumb.label}
                         </BreadcrumbPage>
                       ) : (

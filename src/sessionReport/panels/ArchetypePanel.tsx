@@ -60,11 +60,11 @@ export function ArchetypePanel({ outcome, priorSessionCount }: { outcome: Negoti
                       borderRadius: "6px 6px 2px 2px",
                     }}
                   />
-                  <div style={{ fontSize: 10, color: t.inkSoft, fontFamily: f.mono, marginTop: 2 }}>
+                  <div style={{ fontSize: 11, color: t.inkSoft, fontFamily: f.mono, marginTop: 2 }}>
                     {p.label}
                   </div>
                   {p.highlight && (
-                    <div style={{ fontSize: 9, color: t.inkFaint, fontStyle: "italic", textAlign: "center", lineHeight: 1.3 }}>
+                    <div style={{ fontSize: 11, color: t.inkFaint, fontStyle: "italic", textAlign: "center", lineHeight: 1.3 }}>
                       {p.highlight}
                     </div>
                   )}

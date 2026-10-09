@@ -187,11 +187,11 @@ function AccountMenu({ name, email, onLogout }: { name?: string; email?: string;
   );
 }
 
-/* Pre-approval states (none/pending/rejected) use the same bare, centered
+/* Until the company profile is captured (status "none") the shell uses the same bare, centered
    top bar as the candidate onboarding flow (src/onboarding/Panels.tsx
    TopBar) — no console nav, no bordered header — so signup reads as one
    continuous flow instead of dropping into a dashboard shell before the
-   company is even approved. */
+   company profile exists. */
 export default function EmployerShell({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
   const { companyStatus, companyName, listConversations } = useEmployerData();

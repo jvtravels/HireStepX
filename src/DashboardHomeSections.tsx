@@ -38,7 +38,7 @@ function Tag({ label, tone = "neutral", title }: { label: string; tone?: "neutra
   return (
     <span title={title} style={{
       display: "inline-flex", alignItems: "center",
-      fontFamily: f.sans, fontSize: textSize.xs, fontWeight: 600,
+      fontFamily: f.sans, fontSize: textSize.sm, fontWeight: 600,
       color: palette.fg, background: palette.bg,
       padding: "3px 9px", borderRadius: 999,
     }}>{label}</span>
@@ -210,7 +210,7 @@ export function StatCardsRow({
             this at 0 even with plenty of total sessions. Spell that out so
             it doesn't read as a contradiction/bug. */}
         {practiceCoverage.practicedCount === 0 && totalSessions > 0 && (
-          <div style={{ fontFamily: f.sans, fontSize: textSize.xs, color: t.inkFaint }}>
+          <div style={{ fontFamily: f.sans, fontSize: textSize.sm, color: t.inkFaint }}>
             Your {totalSessions} session{totalSessions === 1 ? "" : "s"} predate skill-area scoring — practice once more to start tracking coverage.
           </div>
         )}
@@ -228,7 +228,7 @@ export function StatCardsRow({
           {unlockedCount > 0 && <span aria-hidden style={{ color: t.inkFaint }}>→</span>}
         </Button>
         {latestMatch && (
-          <div style={{ fontFamily: f.sans, fontSize: textSize.xs, color: t.inkFaint }}>
+          <div style={{ fontFamily: f.sans, fontSize: textSize.sm, color: t.inkFaint }}>
             {latestMatch.companyName} · {hoursOrDaysAgo(latestMatch.matchedAt)}
           </div>
         )}
@@ -439,7 +439,7 @@ export function PracticeActivityCard({ sessionsCompleted, hoursLogged, questions
         textAlign: "center",
       }}>
         <div style={{ fontFamily: f.sans, fontSize: textSize["2xl"], fontWeight: 700, color: t.coal }}>{sessionsCompleted}</div>
-        <div style={{ fontFamily: f.sans, fontSize: textSize.xs, color: t.inkSoft, marginTop: 4 }}>Total Sessions</div>
+        <div style={{ fontFamily: f.sans, fontSize: textSize.sm, color: t.inkSoft, marginTop: 4 }}>Total Sessions</div>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
         {subStats.map((s) => (
@@ -448,7 +448,7 @@ export function PracticeActivityCard({ sessionsCompleted, hoursLogged, questions
             textAlign: "center",
           }}>
             <div style={{ fontFamily: f.sans, fontSize: textSize.xl, fontWeight: 700, color: t.coal }}>{s.value}</div>
-            <div style={{ fontFamily: f.sans, fontSize: textSize.xs, color: t.inkSoft, marginTop: 4 }}>{s.label}</div>
+            <div style={{ fontFamily: f.sans, fontSize: textSize.sm, color: t.inkSoft, marginTop: 4 }}>{s.label}</div>
           </div>
         ))}
       </div>
@@ -468,7 +468,7 @@ export function EvidenceCapabilitiesCard({ capabilities }: { capabilities: Evide
         <h2 id="dh-evidence-heading" style={{ fontFamily: f.sans, fontSize: textSize.lg, fontWeight: 700, color: t.coal, margin: 0 }}>
           Evidence Capabilities
         </h2>
-        <span style={{ fontFamily: f.sans, fontSize: textSize.xs, fontWeight: 600, color: t.inkSoft }}>
+        <span style={{ fontFamily: f.sans, fontSize: textSize.sm, fontWeight: 600, color: t.inkSoft }}>
           {verifiedCount} of {capabilities.length} Verified
         </span>
       </div>

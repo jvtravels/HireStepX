@@ -483,7 +483,7 @@ function CandidateTableRow({
         {candidate.resume?.currentCtc ? (
           <>
             {candidate.resume.currentCtc}
-            <div style={{ fontFamily: f.sans, fontSize: textSize.xs, color: t.inkFaint, marginTop: 2 }}>self-reported</div>
+            <div style={{ fontFamily: f.sans, fontSize: textSize.sm, color: t.inkFaint, marginTop: 2 }}>self-reported</div>
           </>
         ) : (
           <span style={{ color: t.inkFaint }}>—</span>
@@ -882,7 +882,7 @@ function MessagesDialog({
                 </div>
               )}
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4 }}>
-                <span style={{ fontFamily: f.sans, fontSize: 11, color: t.inkFaint }}>
+                <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkFaint }}>
                   {new Date(m.createdAt).toLocaleString()}
                 </span>
                 {m.flagged && <Badge variant="destructive">Flagged</Badge>}
@@ -890,7 +890,7 @@ function MessagesDialog({
                   type="button"
                   variant="link"
                   onClick={() => handleFlag(m.id)}
-                  style={{ fontSize: 11, height: "auto", padding: 0, color: t.inkFaint, display: "flex", alignItems: "center", gap: 2 }}
+                  style={{ fontSize: 12, height: "auto", padding: 0, color: t.inkFaint, display: "flex", alignItems: "center", gap: 2 }}
                 >
                   <FlagIcon size={11} aria-hidden="true" /> Report
                 </Button>
@@ -967,7 +967,7 @@ function CandidatesFiltersPopover({
   };
 
   const sectionLabelStyle: CSSProperties = {
-    fontFamily: f.sans, fontSize: 11, fontWeight: 600, letterSpacing: "0.06em",
+    fontFamily: f.sans, fontSize: 12, fontWeight: 600, letterSpacing: "0.06em",
     textTransform: "uppercase", color: t.inkFaint, marginBottom: 10,
   };
 
@@ -985,7 +985,7 @@ function CandidatesFiltersPopover({
             <span
               style={{
                 display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: 18, height: 18,
-                borderRadius: 9, background: t.indigo, color: t.white, fontFamily: f.sans, fontSize: 11, fontWeight: 600, padding: "0 5px",
+                borderRadius: 9, background: t.indigo, color: t.white, fontFamily: f.sans, fontSize: 12, fontWeight: 600, padding: "0 5px",
               }}
             >
               {activeCount}
@@ -1426,9 +1426,9 @@ export default function RequirementDetailPage() {
   return (
     <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
       <div style={{ display: "flex", alignItems: "stretch", gap: 16, flexWrap: "wrap" }}>
-      <Card style={{ flex: "3 1 560px", boxShadow: "none" }}>
+      <Card style={{ flex: "3 1 min(560px, 100%)", minWidth: 0, boxShadow: "none" }}>
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 0, flex: "1 1 280px" }}>
             <div
               style={{
                 width: 48,
@@ -1444,8 +1444,8 @@ export default function RequirementDetailPage() {
             >
               <BriefcaseIcon size={22} aria-hidden="true" />
             </div>
-            <div>
-              <h1 style={{ fontFamily: f.sans, fontSize: 28, fontWeight: 700, letterSpacing: "-0.02em", lineHeight: 1.2, color: t.coal, margin: 0 }}>{requirement.title}</h1>
+            <div style={{ minWidth: 0 }}>
+              <h1 style={{ overflowWrap: "anywhere", fontFamily: f.sans, fontSize: "clamp(22px, 6vw, 28px)", fontWeight: 700, letterSpacing: "-0.02em", lineHeight: 1.2, color: t.coal, margin: 0 }}>{requirement.title}</h1>
               <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", columnGap: 12, rowGap: 4, marginTop: 8, fontFamily: f.sans, fontSize: 14, fontWeight: 500, color: t.coal }}>
                 {budget && (
                   <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
@@ -1728,7 +1728,7 @@ export default function RequirementDetailPage() {
                 <Icon size={14} aria-hidden="true" />
               </div>
               <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
-                <span style={{ fontFamily: f.sans, fontSize: 11, color: t.inkFaint }}>{label}</span>
+                <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkFaint }}>{label}</span>
                 <span style={{ fontFamily: f.sans, fontSize: 13.5, fontWeight: 500, color: t.coal }}>{value}</span>
               </div>
             </div>
@@ -1738,7 +1738,7 @@ export default function RequirementDetailPage() {
               <FolderIcon size={14} aria-hidden="true" />
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              <span style={{ fontFamily: f.sans, fontSize: 11, color: t.inkFaint }}>Portfolio</span>
+              <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkFaint }}>Portfolio</span>
               <Pill tone={requirement.portfolioRequired ? "indigo" : "neutral"}>
                 {requirement.portfolioRequired ? "Required" : "Optional"}
               </Pill>
@@ -1760,9 +1760,9 @@ export default function RequirementDetailPage() {
       </div>
 
       <div style={{ marginTop: 24, flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
-        <div style={{ display: "flex", alignItems: "center", flexWrap: "nowrap", gap: 10, marginBottom: 16, overflowX: "auto" }}>
+        <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 10, marginBottom: 16 }}>
           <h2 style={{ fontFamily: f.sans, fontSize: 18, fontWeight: 600, color: t.coal, margin: 0, flexShrink: 0 }}>Candidates</h2>
-          <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", flexWrap: "nowrap", gap: 10, justifyContent: "flex-end" }}>
+          <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", flexWrap: "wrap", gap: 10, justifyContent: "flex-end", minWidth: 0 }}>
           {(requirement.status === "ready" || requirement.status === "partial" || requirement.status === "closed") && (
             <>
               <SearchWithSuggestions
@@ -1773,7 +1773,7 @@ export default function RequirementDetailPage() {
                 placeholder="Search by name, role, skill, or notice period…"
                 storageKey={CANDIDATES_RECENT_SEARCHES_KEY}
                 suggestedFilters={suggestedFilters}
-                style={{ flex: "0 1 280px", minWidth: 140, maxWidth: 280 }}
+                style={{ flex: "1 1 200px", minWidth: 140, maxWidth: 280 }}
                 inputStyle={{ background: t.white }}
                 inputClassName="focus-visible:ring-0"
               />

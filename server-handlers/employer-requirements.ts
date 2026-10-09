@@ -346,12 +346,12 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
 
   try {
     const employerRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/employers?id=eq.${encodeURIComponent(userId)}&select=status`,
+      `${SUPABASE_URL}/rest/v1/employers?id=eq.${encodeURIComponent(userId)}&select=id`,
       { headers: serviceHeaders() },
     );
-    const employerRows = (await employerRes.json().catch(() => [])) as Array<{ status: string }>;
-    if (!employerRes.ok || !employerRows[0] || employerRows[0].status !== "approved") {
-      return new Response(JSON.stringify({ error: "Employer profile is not approved" }), { status: 403, headers });
+    const employerRows = (await employerRes.json().catch(() => [])) as Array<{ id: string }>;
+    if (!employerRes.ok || !employerRows[0]) {
+      return new Response(JSON.stringify({ error: "Add your company profile before posting a requirement" }), { status: 403, headers });
     }
 
     const insertRes = await fetch(`${SUPABASE_URL}/rest/v1/employer_requirements`, {

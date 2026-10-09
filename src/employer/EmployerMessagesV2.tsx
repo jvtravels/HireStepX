@@ -7,8 +7,9 @@
    deep-links via ?matchId=... the same way the candidate page does. */
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useMaxWidth } from "../hooks/useMaxWidth";
 import { useRouter, useSearchParams } from "next/navigation";
-import { AlertCircleIcon, FlagIcon, MessagesSquareIcon, PaperclipIcon, SendIcon } from "lucide-react";
+import { AlertCircleIcon, FlagIcon, MessagesSquareIcon, PaperclipIcon, SendIcon, ArrowLeftIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
@@ -45,7 +46,23 @@ export default function EmployerMessagesV2() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
-  const { listConversations, fetchMessages, sendMessage, uploadMessageAttachment, flagMessage, updateCandidateStatus, fetchCandidateEvidence, companyName } = useEmployerData();
+  const mobile = useMaxWidth(768);
+  const { listConversations, fetchMessages, sendMessage, uploadMessageAttachment, flagMessage, updateCandidateStatus, fetchCandidateEvidence, fetchMessageAttachmentUrl, companyName } = useEmployerData();
+
+  const openAttachment = useCallback(async (messageId: string) => {
+    // Window must open synchronously on click or popup blockers kill it after the await.
+    const win = window.open("", "_blank");
+    if (win) win.opener = null;
+    const url = await fetchMessageAttachmentUrl(messageId);
+    if (!url) {
+      win?.close();
+      toast("Couldn't open attachment — please try again", "error");
+      return;
+    }
+    if (win) win.location.href = url;
+    else window.location.href = url;
+  }, [toast, fetchMessageAttachmentUrl]);
+
 
   const [conversations, setConversations] = useState<ConversationSummary[] | null>(null);
   const [listError, setListError] = useState(false);
@@ -262,8 +279,8 @@ export default function EmployerMessagesV2() {
   };
 
   const heading = (
-    <div style={{ padding: "16px 20px", borderBottom: `1px solid ${t.line}` }}>
-      <h1 style={{ fontFamily: f.sans, fontSize: 26, fontWeight: 700, color: t.coal, margin: 0, letterSpacing: "-0.01em", lineHeight: "32px" }}>Messages</h1>
+    <div style={{ padding: mobile ? "12px 16px" : "16px 20px", borderBottom: `1px solid ${t.line}` }}>
+      <h1 style={{ fontFamily: f.sans, fontSize: mobile ? 22 : 26, fontWeight: 700, color: t.coal, margin: 0, letterSpacing: "-0.01em", lineHeight: "32px" }}>Messages</h1>
       <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkFaint, margin: "2px 0 0" }}>
         Chat with candidates you&apos;ve unlocked.
       </p>
@@ -316,11 +333,11 @@ export default function EmployerMessagesV2() {
 
   return shell(
     <div style={{ display: "flex", flex: 1, minHeight: 0 }}>
-      <nav style={{ width: 280, borderRight: `1px solid ${t.line}`, overflowY: "auto", flexShrink: 0 }} aria-label="Conversations">
+      <nav style={{ width: mobile ? "100%" : 280, display: mobile && active ? "none" : undefined, borderRight: mobile ? "none" : `1px solid ${t.line}`, overflowY: "auto", flexShrink: 0 }} aria-label="Conversations">
         {groups.map((group) => (
           <div key={group.counterpartName}>
             <div aria-hidden="true" style={{
-              padding: "10px 16px 4px", fontFamily: f.sans, fontSize: 11, fontWeight: 700,
+              padding: "10px 16px 4px", fontFamily: f.sans, fontSize: 12, fontWeight: 700,
               color: t.inkFaint, textTransform: "uppercase", letterSpacing: "0.04em",
             }}>
               {group.counterpartName}
@@ -344,7 +361,7 @@ export default function EmployerMessagesV2() {
                       {c.roleTitle}
                     </div>
                     {c.lastMessageAt && (
-                      <div style={{ fontFamily: f.sans, fontSize: 11.5, color: t.inkFaint, marginTop: 2 }}>
+                      <div style={{ fontFamily: f.sans, fontSize: 12, color: t.inkFaint, marginTop: 2 }}>
                         {new Date(c.lastMessageAt).toLocaleDateString()}
                       </div>
                     )}
@@ -355,7 +372,7 @@ export default function EmployerMessagesV2() {
           </div>
         ))}
       </nav>
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
+      <div style={{ flex: 1, display: mobile && !active ? "none" : "flex", flexDirection: "column", minWidth: 0 }}>
         {!active ? (
           <div style={{ display: "flex", flex: 1, alignItems: "center", justifyContent: "center", color: t.inkFaint, fontFamily: f.sans, fontSize: 13 }}>
             Select a conversation
@@ -363,8 +380,13 @@ export default function EmployerMessagesV2() {
         ) : (
           <>
             <div style={{ padding: "12px 16px", borderBottom: `1px solid ${t.line}` }}>
+              {mobile && (
+                <Button type="button" variant="ghost" size="sm" onClick={() => { setActiveMatchId(null); router.replace("/employer/messages"); }} style={{ marginBottom: 6, marginLeft: -8, minHeight: 36 }}>
+                  <ArrowLeftIcon size={14} aria-hidden="true" /> All conversations
+                </Button>
+              )}
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
-                <div>
+                <div style={{ minWidth: 0 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                     <span style={{ fontFamily: f.sans, fontSize: 14, fontWeight: 600, color: t.coal }}>{active.counterpartName}</span>
                     <CandidateStatusChip status={active.candidateStatus} />
@@ -429,15 +451,20 @@ export default function EmployerMessagesV2() {
                         <BubbleContent>
                           {m.body && <p className="whitespace-pre-wrap">{m.body}</p>}
                           {m.attachmentPath && (
-                            <div style={{ fontFamily: f.sans, fontSize: 12.5, marginTop: m.body ? 4 : 0, display: "flex", alignItems: "center", gap: 4 }}>
+                            <button
+                              type="button"
+                              onClick={() => openAttachment(m.id)}
+                              aria-label={`Open attachment ${m.attachmentName || ""}`.trim()}
+                              style={{ fontFamily: f.sans, fontSize: 12.5, marginTop: m.body ? 4 : 0, display: "flex", alignItems: "center", gap: 4, background: "none", border: "none", padding: 0, color: "inherit", textDecoration: "underline", cursor: "pointer" }}
+                            >
                               <PaperclipIcon size={12} aria-hidden="true" />
                               {m.attachmentName || "Attachment"}
-                            </div>
+                            </button>
                           )}
                         </BubbleContent>
                       </Bubble>
                       <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "0 12px" }}>
-                        <span style={{ fontFamily: f.sans, fontSize: 11, color: t.inkFaint }}>
+                        <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkFaint }}>
                           {new Date(m.createdAt).toLocaleString()}
                         </span>
                         {m.flagged && <Badge variant="destructive">Flagged</Badge>}
@@ -445,7 +472,7 @@ export default function EmployerMessagesV2() {
                           type="button"
                           variant="link"
                           onClick={() => setFlagMessageId(m.id)}
-                          style={{ fontSize: 11, height: "auto", padding: 0, color: t.inkFaint, display: "flex", alignItems: "center", gap: 2 }}
+                          style={{ fontSize: 12, height: "auto", padding: 0, color: t.inkFaint, display: "flex", alignItems: "center", gap: 2 }}
                         >
                           <FlagIcon size={11} aria-hidden="true" /> Report
                         </Button>
@@ -465,6 +492,7 @@ export default function EmployerMessagesV2() {
                 placeholder="Write a message…"
                 aria-label="Message"
                 rows={2}
+                style={mobile ? { fontSize: 16 } : undefined}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
@@ -500,11 +528,11 @@ export default function EmployerMessagesV2() {
                 <div style={{ display: "grid", gap: 14, padding: "4px 0" }}>
                   <div style={{ display: "grid", gap: 8 }}>
                     <Label htmlFor="msg-invite-scheduled-at">Scheduled date (optional)</Label>
-                    <Input id="msg-invite-scheduled-at" type="date" value={inviteDate} onChange={(e) => setInviteDate(e.target.value)} />
+                    <Input id="msg-invite-scheduled-at" type="date" style={mobile ? { fontSize: 16 } : undefined} value={inviteDate} onChange={(e) => setInviteDate(e.target.value)} />
                   </div>
                   <div style={{ display: "grid", gap: 8 }}>
                     <Label htmlFor="msg-invite-note">Note (optional)</Label>
-                    <Textarea id="msg-invite-note" rows={3} value={inviteNote} onChange={(e) => setInviteNote(e.target.value)} placeholder="Anything you want on record about this invite…" />
+                    <Textarea id="msg-invite-note" rows={3} style={mobile ? { fontSize: 16 } : undefined} value={inviteNote} onChange={(e) => setInviteNote(e.target.value)} placeholder="Anything you want on record about this invite…" />
                   </div>
                 </div>
                 <DialogFooter>
@@ -524,7 +552,7 @@ export default function EmployerMessagesV2() {
                 </DialogHeader>
                 <div style={{ display: "grid", gap: 8, padding: "4px 0" }}>
                   <Label htmlFor="msg-reject-note">Reason (optional)</Label>
-                  <Textarea id="msg-reject-note" rows={3} value={rejectNote} onChange={(e) => setRejectNote(e.target.value)} placeholder="Anything you want on record about this decision…" />
+                  <Textarea id="msg-reject-note" rows={3} style={mobile ? { fontSize: 16 } : undefined} value={rejectNote} onChange={(e) => setRejectNote(e.target.value)} placeholder="Anything you want on record about this decision…" />
                 </div>
                 <DialogFooter>
                   <OutlineCta onClick={() => setRejectOpen(false)}>Cancel</OutlineCta>
@@ -546,6 +574,7 @@ export default function EmployerMessagesV2() {
                   <Textarea
                     id="msg-flag-reason"
                     rows={3}
+                    style={mobile ? { fontSize: 16 } : undefined}
                     value={flagReason}
                     onChange={(e) => setFlagReason(e.target.value)}
                     placeholder="What's wrong with this message?"

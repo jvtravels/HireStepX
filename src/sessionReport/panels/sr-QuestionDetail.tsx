@@ -81,7 +81,7 @@ function CornerBadge({ bg, color, children }: { bg: string; color: string; child
         background: bg,
         color,
         fontFamily: f.mono,
-        fontSize: 9,
+        fontSize: 11,
         fontWeight: 700,
         letterSpacing: "0.06em",
       }}
@@ -158,7 +158,7 @@ export function QuestionDetail({ q, onTryQuestionAgain }: { q: Question; onTryQu
               background: t.copperSoft,
               color: t.copper,
               fontFamily: f.mono,
-              fontSize: 9,
+              fontSize: 11,
               fontWeight: 700,
               letterSpacing: "0.06em",
             }}
@@ -259,7 +259,7 @@ export function QuestionDetail({ q, onTryQuestionAgain }: { q: Question; onTryQu
               ]
           ).map((m) => (
             <div key={m.label} style={{ display: "flex", flexDirection: "column", minWidth: 64 }}>
-              <span style={{ fontFamily: f.mono, fontSize: 9, fontWeight: 600, letterSpacing: "0.10em", textTransform: "uppercase", color: t.inkSoft }}>{m.label}</span>
+              <span style={{ fontFamily: f.mono, fontSize: 11, fontWeight: 600, letterSpacing: "0.10em", textTransform: "uppercase", color: t.inkSoft }}>{m.label}</span>
               <span style={{ fontFamily: f.mono, fontSize: size.md, fontWeight: 600, color: m.tone, marginTop: 2 }}>{m.value}</span>
             </div>
           ))}

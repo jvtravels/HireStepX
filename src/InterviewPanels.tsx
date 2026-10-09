@@ -74,7 +74,7 @@ export const StatusToasts = memo(function StatusToasts({ tabConflict, isOffline,
   const showTts = !!(ttsError && ttsError.length > 0);
   if (!tabConflict && !isOffline && !showTts && !ttsFailed) return null;
   return (
-    <div style={stStackStyle}>
+    <div className="iv-status-stack" style={stStackStyle}>
       {tabConflict && (
         <div role="alert" style={stTabToast}>
           <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={e.indigo} strokeWidth="2" strokeLinecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
@@ -284,7 +284,7 @@ export const AvatarStage = memo(function AvatarStage({ phase, interviewerName, i
           animation: "fadeUp 0.3s ease",
         }}>
           <div className="hsx-rec-pip" style={{ width: 6, height: 6, borderRadius: "50%", background: e.success, animation: "recordPulse 1s ease-in-out infinite" }} />
-          <span role="status" aria-live="polite" style={{ fontFamily: ef.sans, fontSize: 10, fontWeight: 600, color: e.success, letterSpacing: "0.05em", textTransform: "uppercase" }}>Listening</span>
+          <span role="status" aria-live="polite" style={{ fontFamily: ef.sans, fontSize: 11, fontWeight: 600, color: e.success, letterSpacing: "0.05em", textTransform: "uppercase" }}>Listening</span>
         </div>
       )}
       {phase === "speaking" && (
@@ -369,7 +369,7 @@ export const PanelAvatarStage = memo(function PanelAvatarStage({ phase, panelMem
                   <div style={{
                     position: "absolute", bottom: -2, left: "50%", transform: "translateX(-50%)",
                     padding: "1px 8px", borderRadius: 10,
-                    background: member.color, fontSize: 8, fontFamily: ef.sans,
+                    background: member.color, fontSize: 11, fontFamily: ef.sans,
                     fontWeight: 700, color: e.white, letterSpacing: "0.04em",
                     textTransform: "uppercase", whiteSpace: "nowrap",
                   }}>
@@ -422,7 +422,7 @@ export const PanelAvatarStage = memo(function PanelAvatarStage({ phase, panelMem
           animation: "fadeUp 0.3s ease",
         }}>
           <div className="hsx-rec-pip" style={{ width: 6, height: 6, borderRadius: "50%", background: e.success, animation: "recordPulse 1s ease-in-out infinite" }} />
-          <span role="status" aria-live="polite" style={{ fontFamily: ef.sans, fontSize: 10, fontWeight: 600, color: e.success, letterSpacing: "0.05em", textTransform: "uppercase" }}>Listening</span>
+          <span role="status" aria-live="polite" style={{ fontFamily: ef.sans, fontSize: 11, fontWeight: 600, color: e.success, letterSpacing: "0.05em", textTransform: "uppercase" }}>Listening</span>
         </div>
       )}
 
@@ -474,7 +474,7 @@ export const QuestionCard = memo(function QuestionCard({ step, phase, showCaptio
           background: `${panelPersona.color}10`, border: `1px solid ${panelPersona.color}20`,
         }}>
           <div style={{ width: 5, height: 5, borderRadius: "50%", background: panelPersona.color }} />
-          <span style={{ fontFamily: ef.sans, fontSize: 10, fontWeight: 600, color: panelPersona.color }}>
+          <span style={{ fontFamily: ef.sans, fontSize: 11, fontWeight: 600, color: panelPersona.color }}>
             {panelPersona.name} · {panelPersona.title}
           </span>
         </div>
@@ -712,19 +712,19 @@ export const UserAnswerArea = memo(function UserAnswerArea({ currentTranscript, 
             <span style={{ fontFamily: ef.mono, fontSize: 11, fontWeight: 600, color: liveMetrics.wpm > 180 ? e.error : liveMetrics.wpm < 100 ? e.indigo : e.success }}>
               {liveMetrics.wpm}
             </span>
-            <span style={{ fontFamily: ef.sans, fontSize: 10, color: e.inkSoft }}>WPM</span>
+            <span style={{ fontFamily: ef.sans, fontSize: 11, color: e.inkSoft }}>WPM</span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
             <span style={{ fontFamily: ef.mono, fontSize: 11, fontWeight: 600, color: liveMetrics.fillerCount > 5 ? e.error : liveMetrics.fillerCount > 2 ? e.indigo : e.success }}>
               {liveMetrics.fillerCount}
             </span>
-            <span style={{ fontFamily: ef.sans, fontSize: 10, color: e.inkSoft }}>fillers</span>
+            <span style={{ fontFamily: ef.sans, fontSize: 11, color: e.inkSoft }}>fillers</span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
             <span style={{ fontFamily: ef.mono, fontSize: 11, fontWeight: 600, color: e.coal }}>
               {liveMetrics.wordCount}
             </span>
-            <span style={{ fontFamily: ef.sans, fontSize: 10, color: e.inkSoft }}>words</span>
+            <span style={{ fontFamily: ef.sans, fontSize: 11, color: e.inkSoft }}>words</span>
           </div>
           {liveMetrics.ownership && (
             <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
@@ -734,7 +734,7 @@ export const UserAnswerArea = memo(function UserAnswerArea({ currentTranscript, 
               }}>
                 {liveMetrics.ownership === "we-heavy" ? "we" : liveMetrics.ownership === "i-led" ? "I" : "I/we"}
               </span>
-              <span style={{ fontFamily: ef.sans, fontSize: 10, color: e.inkSoft }}>voice</span>
+              <span style={{ fontFamily: ef.sans, fontSize: 11, color: e.inkSoft }}>voice</span>
             </div>
           )}
           {typeof liveMetrics.specificityHits === "number" && (
@@ -745,13 +745,13 @@ export const UserAnswerArea = memo(function UserAnswerArea({ currentTranscript, 
               }}>
                 {liveMetrics.specificityHits}
               </span>
-              <span style={{ fontFamily: ef.sans, fontSize: 10, color: e.inkSoft }}>metrics</span>
+              <span style={{ fontFamily: ef.sans, fontSize: 11, color: e.inkSoft }}>metrics</span>
             </div>
           )}
           {liveMetrics.specificityHint && (
             <>
               <div style={{ width: 1, height: 12, background: "rgba(20,17,10,0.05)" }} />
-              <span style={{ fontFamily: ef.sans, fontSize: 10, color: e.error }}>
+              <span style={{ fontFamily: ef.sans, fontSize: 11, color: e.error }}>
                 {liveMetrics.specificityHint}
               </span>
             </>
@@ -840,7 +840,7 @@ export const CompletionCard = memo(function CompletionCard({ currentQuestionNum,
       )}
       {videoURL && (
         <div style={{ width: "100%", marginTop: 8 }}>
-          <p style={{ fontFamily: ef.mono, fontSize: 10, textTransform: "uppercase", letterSpacing: 1.4, color: e.inkSoft, marginBottom: 6 }}>Your recording</p>
+          <p style={{ fontFamily: ef.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1.4, color: e.inkSoft, marginBottom: 6 }}>Your recording</p>
           <video
             src={videoURL}
             controls
@@ -923,7 +923,7 @@ export const MicroFeedbackPanel = memo(function MicroFeedbackPanel({ transcript,
     }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
         <span style={{
-          fontFamily: ef.mono, fontSize: 10, textTransform: "uppercase",
+          fontFamily: ef.mono, fontSize: 11, textTransform: "uppercase",
           letterSpacing: 1.4, color: e.indigo,
         }}>
           Your last answer
@@ -1067,14 +1067,14 @@ export const CampusReadinessChips = memo(function CampusReadinessChips({ transcr
     }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
         <span style={{
-          fontFamily: ef.mono, fontSize: 10, textTransform: "uppercase",
+          fontFamily: ef.mono, fontSize: 11, textTransform: "uppercase",
           letterSpacing: 1.4, color: e.copper,
         }}>
           Campus readiness
         </span>
         {wordCount >= 50 && (
           <span style={{
-            fontFamily: ef.mono, fontSize: 10, color: fillerWarn ? e.copper : e.inkFaint,
+            fontFamily: ef.mono, fontSize: 11, color: fillerWarn ? e.copper : e.inkFaint,
           }}>
             fillers {count}{wordCount >= 100 ? ` (${per100.toFixed(1)}/100w)` : ""}
           </span>
@@ -1289,7 +1289,7 @@ export const TranscriptPanel = memo(function TranscriptPanel({ transcript, inter
             <span style={{ fontFamily: ef.sans, fontSize: 18, fontWeight: 500, color: e.coal, letterSpacing: "-0.01em", display: "block" }}>
               Transcript
             </span>
-            <span style={{ fontFamily: ef.mono, fontSize: 10, textTransform: "uppercase", letterSpacing: 1.4, color: e.inkSoft, marginTop: 2, display: "block" }}>
+            <span style={{ fontFamily: ef.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1.4, color: e.inkSoft, marginTop: 2, display: "block" }}>
               Live transcript · audio is never recorded
             </span>
           </div>
@@ -1358,7 +1358,7 @@ export const TranscriptPanel = memo(function TranscriptPanel({ transcript, inter
                     }}>
                       {speakerName}
                     </span>
-                    <span style={{ fontFamily: ef.mono, fontSize: 10, color: e.inkFaint }}>{msg.time}</span>
+                    <span style={{ fontFamily: ef.mono, fontSize: 11, color: e.inkFaint }}>{msg.time}</span>
                   </div>
                   <p style={{
                     fontFamily: ef.sans,

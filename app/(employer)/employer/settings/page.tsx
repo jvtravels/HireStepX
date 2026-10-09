@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useMaxWidth } from "@/hooks/useMaxWidth";
 import { useEmployerData } from "@/employer/EmployerDataContext";
 import { tokens as t, fonts as f } from "@/auth/_tokens";
 import { FieldLabel, HelpText, PrimaryCta, EmployerIcon } from "@/employer/_atoms";
@@ -19,6 +20,7 @@ import {
    and no risk of losing console access from a routine edit. */
 export default function EmployerSettingsPage() {
   const { companyName: savedName, companyWebsite: savedWebsite, companyLogoUrl, submitCompanyProfile } = useEmployerData();
+  const phone = useMaxWidth(768);
   const [companyName, setCompanyName] = useState(savedName);
   const [website, setWebsite] = useState(savedWebsite);
   const [websiteTouched, setWebsiteTouched] = useState(false);
@@ -78,7 +80,7 @@ export default function EmployerSettingsPage() {
               <input
                 value={companyName}
                 onChange={(e) => setCompanyName(e.target.value)}
-                style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: `1px solid ${t.line}`, fontFamily: f.sans, fontSize: 14, boxSizing: "border-box" }}
+                style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: `1px solid ${t.line}`, fontFamily: f.sans, fontSize: phone ? 16 : 14, boxSizing: "border-box" }}
               />
             </div>
             <div>
@@ -94,7 +96,7 @@ export default function EmployerSettingsPage() {
                   borderRadius: 10,
                   border: `1px solid ${websiteFormatError ? t.error : t.line}`,
                   fontFamily: f.sans,
-                  fontSize: 14,
+                  fontSize: phone ? 16 : 14,
                   boxSizing: "border-box",
                 }}
               />

@@ -268,7 +268,7 @@ export function PlayableTime({ at }: { at: string }) {
      until audio-playback wiring lands). */
   return (
     <span className="nfr-time-pill">
-      <span style={{ fontSize: 9 }} aria-hidden>▶</span>
+      <span style={{ fontSize: 11 }} aria-hidden>▶</span>
       <span className="sr-only">at </span>
       {at}
     </span>

@@ -147,7 +147,7 @@ function ReportBody({ data }: { data: SharedReportPayload }) {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 20 }}>
           <div style={{ flex: 1, minWidth: 240 }}>
             <span style={{
-              display: "inline-block", fontFamily: font.ui, fontSize: 10, fontWeight: 700,
+              display: "inline-block", fontFamily: font.ui, fontSize: 11, fontWeight: 700,
               letterSpacing: "0.08em", textTransform: "uppercase",
               color: bandMeta.color, background: bandMeta.bg, padding: "4px 10px", borderRadius: 4, marginBottom: 10,
             }}>{bandMeta.label}</span>
@@ -267,7 +267,7 @@ function WinFixList({ items, label, tone }: {
       padding: "12px 14px", display: "flex", flexDirection: "column", gap: 8,
     }}>
       <span style={{
-        fontFamily: font.ui, fontSize: 10, fontWeight: 700, color: accent,
+        fontFamily: font.ui, fontSize: 11, fontWeight: 700, color: accent,
         letterSpacing: "0.08em", textTransform: "uppercase",
       }}>{label}</span>
       <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 8 }}>

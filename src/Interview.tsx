@@ -325,9 +325,10 @@ function InterviewInner() {
 
   return (
     <InterviewProvider value={engine}>
-    <div style={{
-      width: "100%", height: "100dvh", minHeight: "100vh", background: e.cream,
+    <div className="app-vh" style={{
+      width: "100%", background: e.cream,
       display: "flex", flexDirection: "column", overflow: "hidden",
+      paddingLeft: "env(safe-area-inset-left, 0px)", paddingRight: "env(safe-area-inset-right, 0px)",
       fontFamily: ef.sans, color: e.coal,
     }}>
       <style>{`
@@ -385,22 +386,40 @@ function InterviewInner() {
           .iv-canvas-topbar-right span { font-size: 11px !important; }
           .iv-canvas-stage { padding: 16px 14px !important; gap: 14px !important; }
           .iv-center { padding: 16px !important; }
-          .iv-controls { padding: 8px 12px !important; gap: 6px !important; }
-          .iv-controls button { min-width: 48px !important; min-height: 48px !important; }
-          .iv-controls .iv-hide-mobile { display: none !important; }
           .iv-transcript-panel { width: 100% !important; max-width: none !important; position: fixed !important; bottom: 0 !important; top: auto !important; right: 0 !important; left: 0 !important; height: min(60vh, calc(100dvh - 96px)) !important; max-height: calc(100dvh - 96px) !important; border-radius: 20px 20px 0 0 !important; animation: slideUpSheet 0.35s cubic-bezier(0.16, 1, 0.3, 1) both !important; }
-          /* Video preview default is 160×120 — 43% of a 375px viewport.
-             Shrinks to ~90px to stay out of the way of the main stage.
-             top respects notch/safe-area-inset on iOS. */
-          .iv-video-preview { width: 90px !important; height: 68px !important; top: calc(64px + env(safe-area-inset-top, 0px)) !important; right: 8px !important; }
+          /* Self-view default is 148×96 — ~40% of a 360px viewport.
+             Shrinks so it stays out of the way of the question. */
+          .iv-canvas-selfview { width: 96px !important; height: 64px !important; right: 10px !important; bottom: calc(84px + env(safe-area-inset-bottom, 0px)) !important; }
         }
         @media (max-width: 420px) {
-          .iv-canvas-topbar { padding: 10px 12px !important; }
+          .iv-canvas-avatar-wrap { display: none !important; }
+          .iv-canvas-topbar { padding: 10px 12px !important; padding-top: max(10px, env(safe-area-inset-top, 10px)) !important; }
           .iv-canvas-stage { padding: 12px 10px !important; }
           .iv-info-bar-row { padding: 8px 12px !important; }
         }
-        @media (hover: none) and (pointer: coarse) {
-          .iv-controls button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+        .app-vh { height: 100vh; height: 100dvh; }
+        .iv-touch-hint { display: none; }
+        /* Keyboard-only hints (Space / T) are noise on touch devices. */
+        @media (hover: none), (pointer: coarse) {
+          .iv-kbd-hint { display: none !important; }
+          .iv-touch-hint { display: inline; }
+        }
+        @media (max-width: 600px) {
+          .iv-status-stack { top: auto !important; bottom: calc(64px + env(safe-area-inset-bottom, 0px)) !important; }
+        }
+        /* Landscape phones (~360-430px tall): the portrait stack of
+           header + visualizer + question + controls can't fit, so drop
+           the decorative visualizer and tighten every vertical gap. */
+        @media (max-height: 500px) and (orientation: landscape) {
+          .iv-canvas-topbar { padding-top: max(6px, env(safe-area-inset-top, 6px)) !important; padding-bottom: 6px !important; }
+          .iv-info-bar-row { padding-top: 6px !important; padding-bottom: 6px !important; }
+          .iv-canvas-stage { padding: 8px 24px !important; gap: 8px !important; }
+          .iv-viz-disc { display: none !important; }
+          .iv-canvas-footer { padding: 6px 24px max(6px, env(safe-area-inset-bottom, 6px)) !important; }
+          .iv-status-stack { top: auto !important; bottom: calc(52px + env(safe-area-inset-bottom, 0px)) !important; }
+          .iv-question-h1 { font-size: clamp(1rem, 2.4vw, 1.2rem) !important; line-height: 1.25 !important; }
+          .iv-canvas-selfview { width: 84px !important; height: 56px !important; bottom: 12px !important; right: 12px !important; }
+          .iv-transcript-panel { height: calc(100dvh - 24px) !important; max-height: calc(100dvh - 24px) !important; border-radius: 16px 16px 0 0 !important; }
         }
       `}</style>
 

@@ -117,7 +117,7 @@ export const SESSION_REPORT_STYLES = `
     padding: 22px 0 26px;
   }
   .nfr-tldr-eyebrow {
-    font-size: 10px; font-weight: 700; letter-spacing: 1.5px;
+    font-size: 11px; font-weight: 700; letter-spacing: 1.5px;
     text-transform: uppercase; font-family: 'Geist Sans', sans-serif;
     color: #B45309;
     margin-bottom: 14px;
@@ -185,7 +185,7 @@ export const SESSION_REPORT_STYLES = `
   }
   .nfr-table { width: 100%; border-collapse: collapse; font-size: 13px; }
   .nfr-table th {
-    padding: 11px 14px; font-size: 10px; font-weight: 700;
+    padding: 11px 14px; font-size: 11px; font-weight: 700;
     letter-spacing: 0.8px; text-transform: uppercase;
     color: #52525B; text-align: left; background: #F4F4F5;
   }
@@ -244,7 +244,7 @@ export const SESSION_REPORT_STYLES = `
   .nfr-tone-dot-warn { background: #B45309; }
   .nfr-tone-dot-bad  { background: #B91C1C; }
   .nfr-eyebrow {
-    font-size: 10px; font-weight: 700; letter-spacing: 0.8px;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.8px;
     text-transform: uppercase;
     font-family: 'Geist Sans', sans-serif;
     color: #52525B;
@@ -317,9 +317,9 @@ export const SESSION_REPORT_STYLES = `
     .nfr-tldr-verdict { font-size: 24px !important; line-height: 1.3 !important; }
     .nfr-tldr-evidence { grid-template-columns: 1fr !important; gap: 0 !important; }
     .nfr-tldr-evidence-value { font-size: 15px !important; }
-    .nfr-section-band { padding: 14px 16px !important; gap: 12px !important; }
+    .nfr-section-band { padding: 14px 16px !important; gap: 8px !important; flex-direction: column !important; align-items: flex-start !important; }
     .nfr-table th, .nfr-table td { padding: 8px 10px !important; font-size: 12px !important; }
-    .nfr-table th { font-size: 9px !important; }
+    .nfr-table th { font-size: 11px !important; }
     .nfr-table-wrap { overflow-x: auto !important; -webkit-overflow-scrolling: touch; }
   }
   @media (max-width: 420px) {
@@ -486,7 +486,7 @@ export const SESSION_REPORT_STYLES = `
   .ir-jump-link:hover { color: #312E81; background: #E5E2F2; }
   .ir-jump-link-num {
     font-family: 'Geist Sans', sans-serif;
-    font-size: 10px;
+    font-size: 11px;
     color: #71717A;
     font-weight: 700;
     letter-spacing: 0.06em;
@@ -552,7 +552,7 @@ export const SESSION_REPORT_STYLES = `
     color: #B45309;
     border: 1px solid rgba(180,83,9,0.40);
     font-family: 'Geist Sans', sans-serif;
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.06em;
     text-transform: uppercase;
@@ -574,7 +574,7 @@ export const SESSION_REPORT_STYLES = `
   }
   .ir-trend-eyebrow {
     font-family: 'Geist Sans', sans-serif;
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 700;
     color: #B45309;
     letter-spacing: 0.10em;
@@ -600,7 +600,7 @@ export const SESSION_REPORT_STYLES = `
     padding: 2px 8px;
     border-radius: 999px;
     font-family: 'Geist Sans', sans-serif;
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 600;
     letter-spacing: 0.04em;
     background: #FFFFFF;
@@ -622,7 +622,7 @@ export const SESSION_REPORT_STYLES = `
     background: rgba(196,112,90,0.10);
     color: #B91C1C;
     font-family: 'Geist Sans', sans-serif;
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.04em;
   }
@@ -658,7 +658,7 @@ export const SESSION_REPORT_STYLES = `
   .ir-likely-followup-eyebrow {
     display: block;
     font-family: 'Geist Sans', sans-serif;
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -698,7 +698,7 @@ export const SESSION_REPORT_STYLES = `
   }
   .ir-coach-note-eyebrow {
     font-family: 'Geist Sans', sans-serif;
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.10em;
     text-transform: uppercase;

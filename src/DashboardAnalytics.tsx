@@ -36,7 +36,7 @@ function ReadinessGauge({ score }: { score: number }) {
       </svg>
       <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
         <span style={{ fontFamily: font.mono, fontSize: 28, fontWeight: 700, color, lineHeight: 1 }}>{score}</span>
-        <span style={{ fontFamily: font.ui, fontSize: 10, color: c.stone, marginTop: 2 }}>readiness</span>
+        <span style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, marginTop: 2 }}>readiness</span>
       </div>
     </div>
   );
@@ -206,15 +206,16 @@ export default function AnalyticsPage() {
   return (
     <div style={{ margin: "0 auto" }}>
       <style>{`
+        @media (max-width: 1023px) {
+          .analytics-kpi-grid { grid-template-columns: repeat(2, 1fr) !important; }
+          .analytics-type-grid { grid-template-columns: repeat(2, 1fr) !important; }
+        }
         @media (max-width: 768px) {
           .analytics-hero-grid { grid-template-columns: 1fr !important; }
           .analytics-charts-grid { grid-template-columns: 1fr !important; }
           .analytics-two-col { grid-template-columns: 1fr !important; }
-          .analytics-kpi-grid { grid-template-columns: repeat(2, 1fr) !important; }
-          .analytics-type-grid { grid-template-columns: repeat(2, 1fr) !important; }
         }
-        @media (max-width: 480px) {
-          .analytics-kpi-grid { grid-template-columns: 1fr !important; }
+        @media (max-width: 400px) {
           .analytics-type-grid { grid-template-columns: 1fr !important; }
         }
       `}</style>
@@ -277,8 +278,8 @@ export default function AnalyticsPage() {
               { label: "Consistency", value: `${recentDays}/7d`, weight: "20%" },
             ].map(r => (
               <div key={r.label} style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <span style={{ fontFamily: font.ui, fontSize: 10, color: c.stone }}>{r.label}</span>
-                <span style={{ fontFamily: font.mono, fontSize: 10, color: c.chalk, fontWeight: 600 }}>{r.value}</span>
+                <span style={{ fontFamily: font.ui, fontSize: 12, color: c.stone }}>{r.label}</span>
+                <span style={{ fontFamily: font.mono, fontSize: 12, color: c.chalk, fontWeight: 600 }}>{r.value}</span>
               </div>
             ))}
           </div>
@@ -293,7 +294,7 @@ export default function AnalyticsPage() {
             </div>
             <div>
               <span style={{ fontFamily: font.mono, fontSize: 24, fontWeight: 700, color: currentStreak > 0 ? T.copper : c.stone, display: "block", lineHeight: 1 }}>{currentStreak}</span>
-              <span style={{ fontFamily: font.ui, fontSize: 11, color: c.stone }}>day streak</span>
+              <span style={{ fontFamily: font.ui, fontSize: 12, color: c.stone }}>day streak</span>
             </div>
           </div>
           {/* Best score */}
@@ -303,7 +304,7 @@ export default function AnalyticsPage() {
             </div>
             <div>
               <span style={{ fontFamily: font.mono, fontSize: 24, fontWeight: 700, color: c.sage, display: "block", lineHeight: 1 }}>{bestSession?.score || "—"}</span>
-              <span style={{ fontFamily: font.ui, fontSize: 11, color: c.stone }}>best score{bestSession ? ` · ${bestSession.type}` : ""}</span>
+              <span style={{ fontFamily: font.ui, fontSize: 12, color: c.stone }}>best score{bestSession ? ` · ${bestSession.type}` : ""}</span>
             </div>
           </div>
         </div>
@@ -313,7 +314,7 @@ export default function AnalyticsPage() {
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
             <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={T.indigo} strokeWidth="1.5" strokeLinecap="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
             <span style={{ fontFamily: font.ui, fontSize: 12, fontWeight: 600, color: c.ivory }}>Today's Challenge</span>
-            <span style={{ fontFamily: font.ui, fontSize: 10, fontWeight: 500, color: c.obsidian, background: dailyChallenge.completed ? c.sage : T.indigo, borderRadius: 4, padding: "2px 6px", marginLeft: "auto" }}>
+            <span style={{ fontFamily: font.ui, fontSize: 12, fontWeight: 500, color: c.obsidian, background: dailyChallenge.completed ? c.sage : T.indigo, borderRadius: 4, padding: "2px 6px", marginLeft: "auto" }}>
               {dailyChallenge.completed ? "Done" : dailyChallenge.difficulty}
             </span>
           </div>
@@ -358,16 +359,16 @@ export default function AnalyticsPage() {
               { label: "Hours Logged", value: overallStats.hoursLogged.toFixed(1), color: c.slate, sub: "practice time", delta: null },
             ].map((card, i) => (
               <div key={i} style={{ background: c.carbon, boxShadow: shadow.md, borderRadius: 14, border: `1px solid ${c.border}`, padding: 18 }}>
-                <span style={{ fontFamily: font.ui, fontSize: 11, color: c.stone, display: "block", marginBottom: 8 }}>{card.label}</span>
+                <span style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, display: "block", marginBottom: 8 }}>{card.label}</span>
                 <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
                   <span style={{ fontFamily: font.mono, fontSize: 28, fontWeight: 600, color: card.color, letterSpacing: "-0.02em" }}>{card.value}</span>
                   {card.delta !== null && card.delta !== 0 && (
-                    <span style={{ fontFamily: font.mono, fontSize: 11, fontWeight: 600, color: card.delta > 0 ? c.sage : c.ember }}>
+                    <span style={{ fontFamily: font.mono, fontSize: 12, fontWeight: 600, color: card.delta > 0 ? c.sage : c.ember }}>
                       {card.delta > 0 ? "+" : ""}{card.delta}
                     </span>
                   )}
                 </div>
-                <span style={{ fontFamily: font.ui, fontSize: 10, color: c.stone }}>{card.sub}{card.delta !== null ? ` · vs prev ${range.label}` : ""}</span>
+                <span style={{ fontFamily: font.ui, fontSize: 12, color: c.stone }}>{card.sub}{card.delta !== null ? ` · vs prev ${range.label}` : ""}</span>
               </div>
             ))}
           </div>
@@ -378,13 +379,13 @@ export default function AnalyticsPage() {
       <div className="analytics-charts-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginBottom: 24 }}>
         <div style={{ background: c.carbon, boxShadow: shadow.md, borderRadius: 14, border: `1px solid ${c.border}`, padding: "24px 28px" }}>
           <h3 style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: c.ivory, marginBottom: 4 }}>Score Progression</h3>
-          <p style={{ fontFamily: font.ui, fontSize: 11, color: c.stone, marginBottom: 16 }}>{trend.length >= 2 ? `Your trajectory over ${trend.length} sessions` : "Complete sessions to see progress"}</p>
+          <p style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, marginBottom: 16 }}>{trend.length >= 2 ? `Your trajectory over ${trend.length} sessions` : "Complete sessions to see progress"}</p>
           {trend.length >= 2 ? (
             <>
               <ScoreTrendChart data={trend} />
               <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, padding: "0 24px" }}>
-                <span style={{ fontFamily: font.mono, fontSize: 10, color: c.stone }}>{trend[0]?.date}</span>
-                <span style={{ fontFamily: font.mono, fontSize: 10, color: c.stone }}>{trend[trend.length - 1]?.date}</span>
+                <span style={{ fontFamily: font.mono, fontSize: 12, color: c.stone }}>{trend[0]?.date}</span>
+                <span style={{ fontFamily: font.mono, fontSize: 12, color: c.stone }}>{trend[trend.length - 1]?.date}</span>
               </div>
               {(() => {
                 const gain = (trend[trend.length - 1]?.score || 0) - (trend[0]?.score || 0);
@@ -392,17 +393,17 @@ export default function AnalyticsPage() {
                   <div style={{ display: "flex", justifyContent: "center", gap: 20, marginTop: 16, padding: "12px 0", borderTop: `1px solid ${c.border}` }}>
                     <div style={{ textAlign: "center" }}>
                       <span style={{ fontFamily: font.mono, fontSize: 16, fontWeight: 600, color: c.ivory, display: "block" }}>{trend[0]?.score}</span>
-                      <span style={{ fontFamily: font.ui, fontSize: 10, color: c.stone }}>First</span>
+                      <span style={{ fontFamily: font.ui, fontSize: 12, color: c.stone }}>First</span>
                     </div>
                     <div style={{ width: 1, background: c.border }} />
                     <div style={{ textAlign: "center" }}>
                       <span style={{ fontFamily: font.mono, fontSize: 16, fontWeight: 600, color: gain >= 0 ? c.sage : c.ember, display: "block" }}>{gain >= 0 ? "+" : ""}{gain}</span>
-                      <span style={{ fontFamily: font.ui, fontSize: 10, color: c.stone }}>{gain >= 0 ? "Total gain" : "Change"}</span>
+                      <span style={{ fontFamily: font.ui, fontSize: 12, color: c.stone }}>{gain >= 0 ? "Total gain" : "Change"}</span>
                     </div>
                     <div style={{ width: 1, background: c.border }} />
                     <div style={{ textAlign: "center" }}>
                       <span style={{ fontFamily: font.mono, fontSize: 16, fontWeight: 600, color: c.ivory, display: "block" }}>{trend[trend.length - 1]?.score}</span>
-                      <span style={{ fontFamily: font.ui, fontSize: 10, color: c.stone }}>Latest</span>
+                      <span style={{ fontFamily: font.ui, fontSize: 12, color: c.stone }}>Latest</span>
                     </div>
                   </div>
                 );
@@ -418,7 +419,7 @@ export default function AnalyticsPage() {
 
         <div style={{ background: c.carbon, boxShadow: shadow.md, borderRadius: 14, border: `1px solid ${c.border}`, padding: "24px 28px" }}>
           <h3 style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: c.ivory, marginBottom: 4 }}>Skill Radar</h3>
-          <p style={{ fontFamily: font.ui, fontSize: 11, color: c.stone, marginBottom: 12 }}>{sk.length > 0 ? "Current vs first session — dashed line shows where you started" : "Complete sessions to see your skill radar"}</p>
+          <p style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, marginBottom: 12 }}>{sk.length > 0 ? "Current vs first session — dashed line shows where you started" : "Complete sessions to see your skill radar"}</p>
           {sk.length > 0 ? (
             <div style={{ display: "flex", gap: 28, alignItems: "center" }}>
               <div style={{ flex: "1 1 55%", minWidth: 0 }}>
@@ -436,7 +437,7 @@ export default function AnalyticsPage() {
                         </div>
                         <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
                           <span style={{ fontFamily: font.mono, fontSize: 14, fontWeight: 600, color: c.ivory }}>{s.score}</span>
-                          <span style={{ fontFamily: font.mono, fontSize: 11, color: delta >= 0 ? c.sage : c.ember }}>{delta >= 0 ? "+" : ""}{delta}</span>
+                          <span style={{ fontFamily: font.mono, fontSize: 12, color: delta >= 0 ? c.sage : c.ember }}>{delta >= 0 ? "+" : ""}{delta}</span>
                         </div>
                       </div>
                       <div style={{ width: "100%", height: 4, background: c.border, borderRadius: 2, overflow: "hidden" }}>
@@ -465,7 +466,7 @@ export default function AnalyticsPage() {
               <h3 style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: c.ivory }}>Resume Skills vs Interview Performance</h3>
             </div>
             {resumeProfile.resumeScore != null && (
-              <span style={{ fontFamily: font.mono, fontSize: 11, color: resumeProfile.resumeScore >= 65 ? c.sage : T.copper }}>Resume score: {resumeProfile.resumeScore}/100</span>
+              <span style={{ fontFamily: font.mono, fontSize: 12, color: resumeProfile.resumeScore >= 65 ? c.sage : T.copper }}>Resume score: {resumeProfile.resumeScore}/100</span>
             )}
           </div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: resumeProfile.interviewGaps && resumeProfile.interviewGaps.length > 0 ? 14 : 0 }}>
@@ -474,7 +475,7 @@ export default function AnalyticsPage() {
               const isGap = resumeProfile.interviewGaps?.some(g => g.toLowerCase().includes(skill.toLowerCase()));
               return (
                 <span key={i} style={{
-                  fontFamily: font.ui, fontSize: 11, padding: "5px 12px", borderRadius: 100,
+                  fontFamily: font.ui, fontSize: 12, padding: "5px 12px", borderRadius: 100,
                   background: isStrength ? T.success100 : isGap ? T.error100 : "rgba(14,12,8,0.04)",
                   border: `1px solid ${isStrength ? T.successLine : isGap ? T.errorLine : c.border}`,
                   color: isStrength ? c.sage : isGap ? c.ember : c.chalk,
@@ -504,7 +505,7 @@ export default function AnalyticsPage() {
                 <div key={i}>
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
                     <span style={{ fontFamily: font.ui, fontSize: 12, color: c.chalk }}>{g.label}</span>
-                    <span style={{ fontFamily: font.mono, fontSize: 11, color: c.stone }}>{g.progress}/{g.total}</span>
+                    <span style={{ fontFamily: font.mono, fontSize: 12, color: c.stone }}>{g.progress}/{g.total}</span>
                   </div>
                   <div style={{ height: 6, background: c.border, borderRadius: 3, overflow: "hidden" }}>
                     <div style={{ height: "100%", width: `${Math.min(100, (g.progress / g.total) * 100)}%`, background: g.progress >= g.total ? c.sage : T.indigo, borderRadius: 3, transition: "width 0.4s ease" }} />
@@ -525,7 +526,7 @@ export default function AnalyticsPage() {
               {earnedBadges.map(b => (
                 <div key={b.id} title={b.description} style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 12px", background: c.obsidian, borderRadius: 8, border: `1px solid ${c.border}` }}>
                   <span style={{ fontSize: 16 }}>{b.icon}</span>
-                  <span style={{ fontFamily: font.ui, fontSize: 11, color: c.chalk }}>{b.label}</span>
+                  <span style={{ fontFamily: font.ui, fontSize: 12, color: c.chalk }}>{b.label}</span>
                 </div>
               ))}
             </div>
@@ -535,8 +536,8 @@ export default function AnalyticsPage() {
           {nextBadge && (
             <div style={{ padding: "12px 16px", background: c.obsidian, borderRadius: 8, border: `1px solid ${c.border}` }}>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-                <span style={{ fontFamily: font.ui, fontSize: 11, color: c.stone }}>Next: <span style={{ color: c.chalk }}>{nextBadge.icon} {nextBadge.label}</span></span>
-                <span style={{ fontFamily: font.mono, fontSize: 10, color: c.stone }}>{Math.round(nextBadge.progress * 100)}%</span>
+                <span style={{ fontFamily: font.ui, fontSize: 12, color: c.stone }}>Next: <span style={{ color: c.chalk }}>{nextBadge.icon} {nextBadge.label}</span></span>
+                <span style={{ fontFamily: font.mono, fontSize: 12, color: c.stone }}>{Math.round(nextBadge.progress * 100)}%</span>
               </div>
               <div style={{ height: 4, background: c.border, borderRadius: 2, overflow: "hidden" }}>
                 <div style={{ height: "100%", width: `${nextBadge.progress * 100}%`, background: T.copper, borderRadius: 2 }} />
@@ -552,9 +553,9 @@ export default function AnalyticsPage() {
         <div className="analytics-type-grid" style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(typeBreakdown.length, 4)}, 1fr)`, gap: 12 }}>
           {typeBreakdown.map(tb => (
             <div key={tb.type} style={{ background: c.obsidian, borderRadius: 10, border: `1px solid ${c.border}`, padding: "18px 20px", textAlign: "center" }}>
-              <span style={{ fontFamily: font.ui, fontSize: 10, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: T.indigo, display: "block", marginBottom: 12 }}>{tb.type}</span>
+              <span style={{ fontFamily: font.ui, fontSize: 12, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: T.indigo, display: "block", marginBottom: 12 }}>{tb.type}</span>
               <span style={{ fontFamily: font.mono, fontSize: 32, fontWeight: 600, color: scoreLabelColor(tb.avgScore), display: "block", marginBottom: 4 }}>{tb.avgScore}</span>
-              <span style={{ fontFamily: font.ui, fontSize: 11, color: c.stone }}>{tb.count} session{tb.count !== 1 ? "s" : ""}</span>
+              <span style={{ fontFamily: font.ui, fontSize: 12, color: c.stone }}>{tb.count} session{tb.count !== 1 ? "s" : ""}</span>
               <div style={{ height: 4, background: c.border, borderRadius: 2, marginTop: 12, overflow: "hidden" }}>
                 <div style={{ height: "100%", width: `${tb.avgScore}%`, background: scoreLabelColor(tb.avgScore), borderRadius: 2, transition: "width 0.5s ease" }} />
               </div>
@@ -566,11 +567,11 @@ export default function AnalyticsPage() {
       {/* ─── Practice Consistency ─── */}
       <div style={{ background: c.carbon, boxShadow: shadow.md, borderRadius: 14, border: `1px solid ${c.border}`, padding: "24px 28px", marginBottom: 24 }}>
         <h3 style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: c.ivory, marginBottom: 4 }}>Practice Consistency</h3>
-        <p style={{ fontFamily: font.ui, fontSize: 11, color: c.stone, marginBottom: 16 }}>Sessions per week — {range.days === 0 ? "all time" : `last ${range.label}`}</p>
+        <p style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, marginBottom: 16 }}>Sessions per week — {range.days === 0 ? "all time" : `last ${range.label}`}</p>
         <div style={{ display: "flex", gap: 6, alignItems: "flex-end", height: 100 }}>
           {weeklyData.map((w, i) => (
             <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-              <span style={{ fontFamily: font.mono, fontSize: 10, color: w.sessions > 0 ? c.ivory : "transparent" }}>{w.sessions}</span>
+              <span style={{ fontFamily: font.mono, fontSize: 12, color: w.sessions > 0 ? c.ivory : "transparent" }}>{w.sessions}</span>
               <div style={{
                 width: "100%", borderRadius: 4,
                 height: Math.max(4, (w.sessions / maxWeeklySessions) * 72),
@@ -589,7 +590,7 @@ export default function AnalyticsPage() {
           ].map(l => (
             <div key={l.label} style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <div style={{ width: 10, height: 10, borderRadius: 2, background: l.color }} />
-              <span style={{ fontFamily: font.ui, fontSize: 10, color: c.stone }}>{l.label}</span>
+              <span style={{ fontFamily: font.ui, fontSize: 12, color: c.stone }}>{l.label}</span>
             </div>
           ))}
         </div>
@@ -618,7 +619,7 @@ export default function AnalyticsPage() {
                   <div key={name} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 0", borderBottom: i < topStrengths.length - 1 ? `1px solid ${c.border}` : "none" }}>
                     <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={c.sage} strokeWidth="2"><polyline points="20 6 9 17 4 12" /></svg>
                     <span style={{ fontFamily: font.ui, fontSize: 13, color: c.chalk, flex: 1 }}>{name}</span>
-                    <span style={{ fontFamily: font.mono, fontSize: 10, color: c.stone }}>{count}×</span>
+                    <span style={{ fontFamily: font.mono, fontSize: 12, color: c.stone }}>{count}×</span>
                   </div>
                 )) : (
                   <p style={{ fontFamily: font.ui, fontSize: 12, color: c.stone }}>Complete sessions to see strengths</p>
@@ -633,7 +634,7 @@ export default function AnalyticsPage() {
                   <div key={name} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 0", borderBottom: i < topWeaknesses.length - 1 ? `1px solid ${c.border}` : "none" }}>
                     <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={c.ember} strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
                     <span style={{ fontFamily: font.ui, fontSize: 13, color: c.chalk, flex: 1 }}>{name}</span>
-                    <span style={{ fontFamily: font.mono, fontSize: 10, color: c.stone }}>{count}×</span>
+                    <span style={{ fontFamily: font.mono, fontSize: 12, color: c.stone }}>{count}×</span>
                   </div>
                 )) : (
                   <p style={{ fontFamily: font.ui, fontSize: 12, color: c.stone }}>Complete sessions to see areas for improvement</p>

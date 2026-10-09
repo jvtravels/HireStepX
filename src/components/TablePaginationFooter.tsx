@@ -55,7 +55,7 @@ export function TablePaginationFooter({
           ? `${totalCount} ${plural(totalCount)} total`
           : `Showing ${filteredCount} of ${totalCount} ${plural(totalCount)}`}
       </span>
-      <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+      <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: "8px 16px", minWidth: 0, maxWidth: "100%" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <span style={{ fontFamily: F.sans, fontSize: 13, color: T.inkFaint }}>Rows per page</span>
           <Select value={String(rowsPerPage)} onValueChange={(v) => onRowsPerPageChange(Number(v))}>
@@ -72,7 +72,7 @@ export function TablePaginationFooter({
             </SelectContent>
           </Select>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: "8px 16px" }}>
           <span style={{ fontFamily: F.sans, fontSize: 13, fontWeight: 500, color: T.inkFaint }}>
             Page {page} of {totalPages}
           </span>

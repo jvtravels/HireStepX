@@ -45,6 +45,7 @@ import { tokens as t, fonts as f, textSize } from "./auth/_tokens";
 import { dur, ease } from "./_motion";
 import { daysAgo, formatComp, formatExperience, WORK_MODE_LABEL, EMPLOYMENT_TYPE_LABEL, type SalaryType } from "./hiringMatchFormat";
 import JobDetailModal from "./JobDetailModal";
+import { useMaxWidth } from "./hooks/useMaxWidth";
 
 export interface JobMatch {
   id: string;
@@ -161,7 +162,7 @@ function Badge({ tone, title, children }: { tone: BadgeTone; title?: string; chi
     <span
       title={title}
       style={{
-        fontFamily: f.sans, fontSize: textSize.xs, fontWeight: 600, color, background,
+        fontFamily: f.sans, fontSize: textSize.sm, fontWeight: 600, color, background,
         padding: "3px 9px", borderRadius: 999, whiteSpace: "nowrap",
       }}
     >
@@ -170,9 +171,71 @@ function Badge({ tone, title, children }: { tone: BadgeTone; title?: string; chi
   );
 }
 
+/* Narrow layout (<1024px): one stacked card per match instead of the 8-column
+   table, which can't fit without crushing every column. */
+function JobCard({ r, onOpen }: { r: JobMatch; onOpen: () => void }) {
+  const mode = r.workMode ? WORK_MODE_LABEL[r.workMode] || r.workMode : null;
+  const closed = r.status === "closed" || r.status === "failed";
+  const comp = formatComp(r.budgetMin, r.budgetMax, r.salaryType);
+  const exp = formatExperience(r.experienceMin, r.experienceMax);
+  const jobType = r.employmentType ? EMPLOYMENT_TYPE_LABEL[r.employmentType] || r.employmentType : null;
+  const isNew = !r.unlocked && Math.floor((Date.now() - new Date(r.matchedAt).getTime()) / 86_400_000) <= 2;
+  const meta = [r.location || "Location not specified", mode, exp, comp || "Salary not disclosed"].filter(Boolean).join(" · ");
+  return (
+    <li style={{ background: t.white, boxShadow: `inset 0 -1px 0 ${t.line}, inset -1px 0 0 ${t.line}` }}>
+      <div
+        role="button"
+        tabIndex={0}
+        aria-label={`View details for ${r.roleTitle} at ${r.companyName}`}
+        onClick={onOpen}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onOpen();
+          }
+        }}
+        style={{ display: "flex", flexDirection: "column", gap: 10, padding: "14px 16px", cursor: "pointer", minWidth: 0 }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+          {r.companyLogoPath ? (
+            <img src={r.companyLogoPath} alt={`${r.companyName} logo`} width={36} height={36} loading="lazy" style={{ borderRadius: "50%", objectFit: "cover", flexShrink: 0, border: `1px solid ${t.line}` }} />
+          ) : (
+            <div style={{ width: 36, height: 36, borderRadius: "50%", background: t.creamSoft, border: `1px solid ${t.line}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontFamily: f.sans, fontSize: 14, fontWeight: 600, color: t.inkSoft }}>
+              {r.companyName.charAt(0).toUpperCase()}
+            </div>
+          )}
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div style={{ fontFamily: f.sans, fontSize: 15, fontWeight: 600, color: t.coal, wordBreak: "break-word" }}>{r.roleTitle}</div>
+            <div style={{ fontFamily: f.sans, fontSize: 13, color: t.inkFaint, wordBreak: "break-word" }}>
+              {r.companyName}{r.preferredIndustry ? ` · ${r.preferredIndustry}` : ""}
+            </div>
+          </div>
+          <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkFaint, flexShrink: 0, alignSelf: "flex-start" }}>{daysAgo(r.matchedAt)}</span>
+        </div>
+        <div style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.4 }}>{meta}</div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+          {r.unlocked ? <Badge tone="brand">Contacted</Badge> : <Badge tone="success">Matched</Badge>}
+          {closed && <Badge tone="neutral">Role closed</Badge>}
+          {isNew && <Badge tone="info">New</Badge>}
+          {jobType && <Badge tone="neutral">{jobType}</Badge>}
+        </div>
+        {r.matchReason && <div style={{ fontFamily: f.sans, fontSize: 13, color: t.inkFaint, lineHeight: 1.4 }}>{r.matchReason}</div>}
+        {r.skills.length > 0 && (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+            {r.skills.slice(0, 3).map((sk, si) => (
+              <span key={si} style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, background: t.creamSoft, padding: "2px 8px", borderRadius: 999 }}>{sk}</span>
+            ))}
+          </div>
+        )}
+      </div>
+    </li>
+  );
+}
+
 export default function DashboardJobs() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const isNarrow = useMaxWidth(1280);
   const { user: authUser } = useAuth();
   // Cache-first like DashboardContext's sessions/events: a tab switch back
   // into Jobs shows the last-known list instantly instead of a spinner,
@@ -298,6 +361,14 @@ export default function DashboardJobs() {
   const pageSafe = Math.min(page, totalPages);
   const pageRows = filtered.slice((pageSafe - 1) * rowsPerPage, pageSafe * rowsPerPage);
 
+  const clearAllFilters = () => {
+    setSearch("");
+    setLocationFilter("");
+    setJobTypeFilter("");
+    setExperienceFilter("");
+    setIndustryFilter("");
+  };
+
   const heading = (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: `1px solid ${t.line}`, flexWrap: "wrap", gap: 12 }}>
       <div>
@@ -385,6 +456,30 @@ export default function DashboardJobs() {
             <FilterPill label="Industry" value={industryFilter} options={filterPillOptions(industryOptions)} onChange={setIndustryFilter} />
           </div>
 
+          {isNarrow ? (
+            <div style={{ flex: 1, minHeight: 0, overflowY: "auto" }}>
+              {pageRows.length === 0 ? (
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, padding: "40px 16px" }}>
+                  <SearchXIcon size={22} color={t.inkFaint} aria-hidden="true" />
+                  <p style={{ fontFamily: f.sans, fontSize: 14, fontWeight: 600, color: t.coal, margin: 0, textAlign: "center" }}>No opportunities match these filters</p>
+                  <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkFaint, margin: 0, textAlign: "center" }}>Try adjusting or clearing your filters.</p>
+                  <Button
+                    variant="outline"
+                    onClick={clearAllFilters}
+                    style={{ marginTop: 4, borderRadius: 8, height: 44, fontFamily: f.sans, fontSize: 13, fontWeight: 500 }}
+                  >
+                    Clear filters
+                  </Button>
+                </div>
+              ) : (
+                <ul aria-label="Job matches" style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 340px), 1fr))", gap: 0, background: t.white }}>
+                  {pageRows.map((r) => (
+                    <JobCard key={r.id} r={r} onOpen={() => setSelected(r)} />
+                  ))}
+                </ul>
+              )}
+            </div>
+          ) : (
           <div className="[&>div]:h-full [&>div]:overflow-y-auto" style={{ overflow: "hidden", flex: 1, minHeight: 0 }}>
           <Table aria-label="Job matches" className="table-fixed">
             <TableHeader>
@@ -486,7 +581,7 @@ export default function DashboardJobs() {
                       {r.skills.length > 0 && (
                         <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 6 }}>
                           {r.skills.slice(0, 3).map((s, si) => (
-                            <span key={si} style={{ fontSize: textSize.xs, color: t.inkSoft, background: t.creamSoft, padding: "2px 7px", borderRadius: 999 }}>
+                            <span key={si} style={{ fontSize: textSize.sm, color: t.inkSoft, background: t.creamSoft, padding: "2px 7px", borderRadius: 999 }}>
                               {s}
                             </span>
                           ))}
@@ -539,6 +634,7 @@ export default function DashboardJobs() {
             </TableBody>
           </Table>
           </div>
+          )}
 
           <TablePaginationFooter
             entityLabel="opportunity"

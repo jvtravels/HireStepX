@@ -11,16 +11,11 @@ import { RequirementSummary, Requirement, Candidate, RequirementStage, Requireme
    employer-verify-unlock-payment.ts and the "Employer talent-roster
    feature" block in supabase-schema.sql.
 
-   Company profile submission is instantly approved (see handlePost in
-   employer-profile.ts) — there's no review queue to wait on. "pending"
-   stays in CompanyStatus only for any legacy row from before that change;
-   the UI treats it the same as "none". "rejected" is still real: an admin
-   can reject a profile after the fact from src/AdminDashboard.tsx
-   ("Employers" tab) via server-handlers/admin-data.ts's
-   "approve-employer"/"reject-employer" actions, which blocks posting via
-   the status check in employer-requirements.ts. */
+   Employers need no admin approval: the server reports "approved" for every
+   company row (see employer-profile.ts), so the only real states are "none"
+   (profile not loaded / not yet captured) and "approved". */
 
-export type CompanyStatus = "none" | "pending" | "approved" | "rejected";
+export type CompanyStatus = "none" | "approved";
 
 export interface UnlockOrder {
   orderId: string;
@@ -136,7 +131,6 @@ interface EmployerDataContextValue {
   requirementsLoading: boolean;
   requirementsError: boolean;
   submitCompanyProfile: (fields: { companyName: string; website: string; logoBase64?: string; logoContentType?: string }) => Promise<boolean>;
-  resetCompanyProfile: () => void;
   addRequirement: (r: RequirementFormValues) => Promise<{ id: string } | { error: string }>;
   updateRequirement: (id: string, r: RequirementFormValues) => Promise<{ ok: true } | { error: string }>;
   createUnlockOrder: (request: { mode: "single"; matchId: string } | { mode: "batch"; requirementId: string }) => Promise<UnlockOrder | null>;
@@ -239,11 +233,6 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
     }
     return false;
   }, []);
-
-  // Server-side status stays "rejected" until a real resubmission lands —
-  // this just lets the client show the onboarding form again so the user
-  // can resubmit via submitCompanyProfile, which instantly re-approves.
-  const resetCompanyProfile = useCallback(() => setCompanyStatus("none"), []);
 
   const addRequirement = useCallback(async (r: RequirementFormValues) => {
     const res = await apiFetch<{ id: string }>("/api/employer-requirements", r, { method: "POST" });
@@ -463,7 +452,6 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
     requirementsLoading,
     requirementsError,
     submitCompanyProfile,
-    resetCompanyProfile,
     addRequirement,
     updateRequirement,
     createUnlockOrder,

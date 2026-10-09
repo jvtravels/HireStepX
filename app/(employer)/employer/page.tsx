@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useAuth } from "@/AuthContext";
+import { useMaxWidth } from "@/hooks/useMaxWidth";
 import { useEmployerData } from "@/employer/EmployerDataContext";
 import { tokens as t, fonts as f } from "@/auth/_tokens";
 import {
@@ -230,23 +231,6 @@ function CompanyOnboarding() {
   );
 }
 
-function CompanyRejected() {
-  const { resetCompanyProfile } = useEmployerData();
-  return (
-    <div style={{ maxWidth: 480, margin: "0 auto", textAlign: "center" }}>
-      <div style={{ width: 48, height: 48, borderRadius: 12, background: t.error100, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px", color: t.error }}>
-        <EmployerIcon.Alert />
-      </div>
-      <h1 style={{ fontFamily: f.sans, fontSize: 26, color: t.coal, margin: "0 0 8px" }}>We couldn't approve this profile</h1>
-      <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft, lineHeight: 1.6, marginBottom: 20 }}>
-        We couldn't verify this as a genuine hiring company from the details provided. You're welcome to
-        resubmit with more information.
-      </p>
-      <OutlineCta onClick={resetCompanyProfile}>Resubmit company profile</OutlineCta>
-    </div>
-  );
-}
-
 interface ChecklistStep {
   label: string;
   body: string;
@@ -296,7 +280,7 @@ function OnboardingChecklist({ steps }: { steps: ChecklistStep[] }) {
                   border: step.done ? "none" : `1.5px solid ${t.lineStrong}`,
                   color: step.done ? t.white : t.inkFaint,
                   fontFamily: f.sans,
-                  fontSize: 11.5,
+                  fontSize: 12,
                   fontWeight: 700,
                 }}
               >
@@ -343,6 +327,8 @@ function EmployerDashboard() {
   const { user } = useAuth();
   const { requirements, companyLogoUrl, fetchUnlockHistory } = useEmployerData();
   const [unlockCount, setUnlockCount] = useState<number | null>(null);
+  const stackRail = useMaxWidth(900);
+  const compact = useMaxWidth(640);
 
   useEffect(() => {
     let cancelled = false;
@@ -394,17 +380,17 @@ function EmployerDashboard() {
         background: t.white,
         border: `1px solid ${t.line}`,
         borderRadius: 12,
-        padding: 24,
+        padding: compact ? 16 : 24,
         display: "grid",
-        gridTemplateColumns: "minmax(0, 1fr) minmax(280px, 360px)",
-        gap: 32,
+        gridTemplateColumns: stackRail ? "minmax(0, 1fr)" : "minmax(0, 1fr) minmax(280px, 360px)",
+        gap: compact ? 24 : 32,
         minHeight: "100%",
       }}
     >
       {/* ─── Main stage ─── */}
       <main style={{ display: "flex", flexDirection: "column", gap: 28, minWidth: 0 }}>
         <section>
-          <h1 style={{ fontFamily: f.sans, fontSize: "clamp(28px, 6vw, 44px)", fontWeight: 400, lineHeight: 1.1, letterSpacing: "-0.02em", color: t.coal, margin: "0 0 6px" }}>
+          <h1 style={{ fontFamily: f.sans, fontSize: "clamp(28px, 6vw, 44px)", fontWeight: 400, lineHeight: 1.1, letterSpacing: "-0.02em", color: t.coal, margin: "0 0 6px", overflowWrap: "anywhere" }}>
             Welcome <em style={{ fontWeight: 600, color: t.indigo }}>back</em>, {user?.name || "there"}.
           </h1>
           <p style={{ fontFamily: f.sans, fontSize: 15, color: t.inkSoft, margin: 0, maxWidth: 560 }}>
@@ -507,11 +493,6 @@ export default function EmployerHomePage() {
   const { companyStatus, companyStatusLoading } = useEmployerData();
 
   if (companyStatusLoading) return null;
-  // "pending" has no live path from signup anymore (see employer-profile.ts
-  // handlePost — every submission comes back "approved" instantly) but is
-  // kept in the type for any legacy row; treat it the same as "none" rather
-  // than showing a dead-end waiting screen.
-  if (companyStatus === "none" || companyStatus === "pending") return <CompanyOnboarding />;
-  if (companyStatus === "rejected") return <CompanyRejected />;
+  if (companyStatus === "none") return <CompanyOnboarding />;
   return <EmployerDashboard />;
 }

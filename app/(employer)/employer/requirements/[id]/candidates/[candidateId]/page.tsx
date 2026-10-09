@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { useMaxWidth } from "@/hooks/useMaxWidth";
 import { Textarea } from "@/components/ui/textarea";
 import {
   CandidateStatusChip,
@@ -242,10 +243,12 @@ function ContactBox({ icon, children }: { icon: React.ReactNode; children: React
         fontSize: 13,
         color: t.coal,
         flex: "1 1 180px",
+        minWidth: 0,
+        overflowWrap: "anywhere",
       }}
     >
-      <span style={{ color: t.inkFaint, display: "flex" }}>{icon}</span>
-      {children}
+      <span style={{ color: t.inkFaint, display: "flex", flexShrink: 0 }}>{icon}</span>
+      <span style={{ minWidth: 0 }}>{children}</span>
     </div>
   );
 }
@@ -254,7 +257,7 @@ function KpiCard({ label, value, sub, tone }: { label: string; value: string; su
   const toneColor = tone === "success" ? t.success : tone === "error" ? t.error : tone === "indigo" ? t.indigo : t.coal;
   return (
     <Card style={{ boxShadow: "none",  padding: 16 }}>
-      <div style={{ fontFamily: f.sans, fontSize: 11, fontWeight: 700, letterSpacing: 0.3, textTransform: "uppercase", color: t.inkFaint }}>{label}</div>
+      <div style={{ fontFamily: f.sans, fontSize: 12, fontWeight: 700, letterSpacing: 0.3, textTransform: "uppercase", color: t.inkFaint }}>{label}</div>
       <div style={{ fontFamily: f.sans, fontSize: 24, fontWeight: 700, color: toneColor, marginTop: 6 }}>{value}</div>
       {sub && <div style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, marginTop: 4 }}>{sub}</div>}
     </Card>
@@ -264,7 +267,7 @@ function KpiCard({ label, value, sub, tone }: { label: string; value: string; su
 function SnapshotCell({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div style={{ fontFamily: f.sans, fontSize: 11, color: t.inkFaint, textTransform: "uppercase", letterSpacing: 0.3 }}>{label}</div>
+      <div style={{ fontFamily: f.sans, fontSize: 12, color: t.inkFaint, textTransform: "uppercase", letterSpacing: 0.3 }}>{label}</div>
       <div style={{ fontFamily: f.sans, fontSize: 13.5, fontWeight: 600, color: t.coal, marginTop: 3 }}>{value}</div>
     </div>
   );
@@ -334,6 +337,8 @@ function HiringProgress({ status }: { status: CandidateStatus }) {
 
 export default function CandidateDetailPage() {
   const params = useParams<{ id: string; candidateId: string }>();
+  const phone = useMaxWidth(640);
+  const narrow = useMaxWidth(900);
   const { fetchRequirementDetail, updateCandidateStatus, fetchCandidateEvidence } = useEmployerData();
   const { toast } = useToast();
   const [requirement, setRequirement] = useState<Requirement | null>(null);
@@ -511,9 +516,9 @@ export default function CandidateDetailPage() {
           >
             {candidate.unlocked ? initials(displayName) : "?"}
           </div>
-          <div style={{ minWidth: 0, flex: 1 }}>
+          <div style={{ minWidth: 0, flex: phone ? "1 1 calc(100% - 72px)" : 1 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-              <h1 style={{ fontFamily: f.sans, fontSize: 22, color: t.coal, margin: 0 }}>{displayName}</h1>
+              <h1 style={{ fontFamily: f.sans, fontSize: 22, color: t.coal, margin: 0, overflowWrap: "anywhere" }}>{displayName}</h1>
               <Pill tone="indigo">{candidate.targetRole}</Pill>
               <CandidateStatusChip status={candidate.candidateStatus} />
               <Pill tone={candidate.unlocked ? "success" : "neutral"}>{candidate.unlocked ? "Unlocked" : "Locked"}</Pill>
@@ -568,7 +573,7 @@ export default function CandidateDetailPage() {
               )}
             </div>
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8, flexShrink: 0 }}>
+          <div style={{ display: "flex", flexDirection: phone ? "row" : "column", flexWrap: "wrap", gap: 8, flexShrink: 0, width: phone ? "100%" : undefined }}>
             {canInvite && (
               <PrimaryCta size="sm" onClick={() => setInviteOpen(true)}>
                 Send Interview Invite
@@ -627,7 +632,7 @@ export default function CandidateDetailPage() {
         </DialogContent>
       </Dialog>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 12, marginTop: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: phone ? "repeat(2, minmax(0, 1fr))" : narrow ? "repeat(3, minmax(0, 1fr))" : "repeat(5, minmax(0, 1fr))", gap: 12, marginTop: 16 }}>
         <KpiCard label="Evidence score" value={`${evidenceAvg}`} sub="From practice sessions" tone={evidenceAvg >= 70 ? "success" : evidenceAvg >= 50 ? "indigo" : "neutral"} />
         <KpiCard label="AI verdict" value={verdict.label} sub={evidence?.readiness ? `${evidence.readiness.confidence} confidence` : "Estimated from match score"} tone={verdict.tone} />
         <KpiCard label="Required skills" value={`${matchedSkills.length}/${requirement.skills.length}`} sub="Matched on resume" tone={matchedSkills.length === requirement.skills.length ? "success" : "indigo"} />
@@ -635,7 +640,7 @@ export default function CandidateDetailPage() {
         <KpiCard label="Risk flags" value={`${riskFlags.length}`} sub={riskFlags.length ? "Worth a follow-up question" : "Nothing flagged"} tone={riskFlags.length ? "neutral" : "success"} />
       </div>
 
-      <div style={{ display: "flex", gap: 4, borderBottom: `1px solid ${t.line}`, margin: "20px 0 20px" }}>
+      <div role="tablist" style={{ display: "flex", gap: 4, borderBottom: `1px solid ${t.line}`, margin: "20px 0 20px", overflowX: "auto" }}>
         {([
           { key: "overview" as const, label: "Overview" },
           { key: "practice" as const, label: "Practice & communication" },
@@ -646,7 +651,9 @@ export default function CandidateDetailPage() {
             type="button"
             onClick={() => setActiveTab(tb.key)}
             style={{
-              padding: "10px 18px",
+              padding: phone ? "12px 14px" : "10px 18px",
+              whiteSpace: "nowrap",
+              flexShrink: 0,
               border: "none",
               borderRadius: "10px 10px 0 0",
               background: activeTab === tb.key ? t.indigo : "transparent",
@@ -662,7 +669,7 @@ export default function CandidateDetailPage() {
         ))}
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr", gap: 16, alignItems: "start" }}>
+      <div style={{ display: "grid", gridTemplateColumns: narrow ? "minmax(0, 1fr)" : "minmax(0, 1.6fr) minmax(0, 1fr)", gap: 16, alignItems: "start" }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           {activeTab === "overview" && (
             <>
@@ -767,7 +774,7 @@ export default function CandidateDetailPage() {
 
               <Card style={{ boxShadow: "none" }}>
                 <SectionTitle>STAR evidence breakdown</SectionTitle>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
+                <div style={{ display: "grid", gridTemplateColumns: phone ? "repeat(2, minmax(0, 1fr))" : "repeat(4, minmax(0, 1fr))", gap: 16 }}>
                   {starBreakdown.map((s) => (
                     <BarRow key={s.label} label={s.label} pct={s.pct} tone={s.pct >= 70 ? "success" : s.pct >= 50 ? "indigo" : "neutral"} />
                   ))}
@@ -780,7 +787,7 @@ export default function CandidateDetailPage() {
                   {skillTrend.map((v, i) => (
                     <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
                       <div style={{ width: "100%", height: `${v / 100 * 64}px`, borderRadius: "4px 4px 0 0", background: i === skillTrend.length - 1 ? t.indigo : t.indigo100 }} />
-                      <span style={{ fontFamily: f.sans, fontSize: 10, color: t.inkFaint }}>S{i + 1}</span>
+                      <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkFaint }}>S{i + 1}</span>
                     </div>
                   ))}
                 </div>
@@ -809,12 +816,12 @@ export default function CandidateDetailPage() {
 
               <Card style={{ boxShadow: "none" }}>
                 <SectionTitle>Communication signals</SectionTitle>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
+                <div style={{ display: "grid", gridTemplateColumns: phone ? "repeat(2, minmax(0, 1fr))" : "repeat(3, minmax(0, 1fr))", gap: 16 }}>
                   {communicationSignals.map((sig) => (
                     <div key={sig.label}>
                       <div style={{ fontFamily: f.sans, fontSize: 20, fontWeight: 700, color: t.coal }}>{sig.value}</div>
                       <div style={{ fontFamily: f.sans, fontSize: 12.5, fontWeight: 600, color: t.inkSoft, marginTop: 4 }}>{sig.label}</div>
-                      <div style={{ fontFamily: f.sans, fontSize: 11.5, color: t.inkFaint, marginTop: 2, lineHeight: 1.5 }}>{sig.detail}</div>
+                      <div style={{ fontFamily: f.sans, fontSize: 12, color: t.inkFaint, marginTop: 2, lineHeight: 1.5 }}>{sig.detail}</div>
                     </div>
                   ))}
                 </div>
@@ -862,7 +869,7 @@ export default function CandidateDetailPage() {
                   <HelpText>No resume summary available for this candidate.</HelpText>
                 )}
 
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16, marginTop: 16 }}>
+                <div style={{ display: "grid", gridTemplateColumns: phone ? "repeat(2, minmax(0, 1fr))" : "repeat(3, minmax(0, 1fr))", gap: 16, marginTop: 16 }}>
                   <SnapshotCell label="Seniority" value={resume?.seniorityLevel || "—"} />
                   <SnapshotCell label="Experience" value={resume?.yearsExperience != null ? `${resume.yearsExperience} yrs` : "—"} />
                   <SnapshotCell label="Sessions" value={`${candidate.sessionsCompleted}`} />
@@ -871,7 +878,7 @@ export default function CandidateDetailPage() {
                 {(!!resume?.keyAchievements.length || riskFlags.length > 0) && (
                   <>
                     <Divider />
-                    <div style={{ marginTop: 14, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+                    <div style={{ marginTop: 14, display: "grid", gridTemplateColumns: phone ? "minmax(0, 1fr)" : "1fr 1fr", gap: 20 }}>
                       {!!resume?.keyAchievements.length && (
                         <div>
                           <SectionTitle>Strengths</SectionTitle>
@@ -1019,7 +1026,7 @@ export default function CandidateDetailPage() {
                 </div>
               </div>
               {resume?.currentCtc && (
-                <div style={{ fontFamily: f.sans, fontSize: 11.5, color: t.inkFaint, marginTop: 10 }}>
+                <div style={{ fontFamily: f.sans, fontSize: 12, color: t.inkFaint, marginTop: 10 }}>
                   Candidate's current CTC (self-reported): {resume.currentCtc}
                 </div>
               )}

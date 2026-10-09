@@ -5,7 +5,7 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { verifyAuth, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, ValidationError, RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET, RESEND_API_KEY, fetchJSON } from "./_admin-shared";
 import { getOverview, getUsers, getUserDetail, getSessionDetail, getSessions, getFeedback, getCalendar, getOutcomes } from "./_admin-activity";
 import { getFinancials, getLLMUsage, getCostData, saveCostReconciliation } from "./_admin-financials";
-import { getSupportMessages, getMessaging, reviewMessageFlag, getReferrals, getEmployers, getPromoCodes, updateSupportStatus, notifyEmployerStatus } from "./_admin-community";
+import { getSupportMessages, getMessaging, reviewMessageFlag, getReferrals, getEmployers, getPromoCodes, updateSupportStatus } from "./_admin-community";
 import { getHealthAlerts } from "./_health-alerts";
 import { listUnlockRequirements, getUnlockMatches, adminUnlockCandidates } from "./_admin-unlock";
 import { razorpayBasicAuth } from "./_razorpay-auth";
@@ -155,44 +155,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             },
           );
           if (!banRes.ok) return { ok: false, error: `Auth ban failed: HTTP ${banRes.status}` };
-          return { ok: true };
-        }
-        case "approve-employer": {
-          if (!body?.id) throw new ValidationError("id required");
-          const patchRes = await fetch(
-            `${SUPABASE_URL}/rest/v1/employers?id=eq.${encodeURIComponent(body.id)}`,
-            {
-              method: "PATCH",
-              headers: {
-                apikey: SUPABASE_SERVICE_ROLE_KEY,
-                Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-                "Content-Type": "application/json",
-                Prefer: "return=minimal",
-              },
-              body: JSON.stringify({ status: "approved", approved_at: new Date().toISOString() }),
-            },
-          );
-          if (!patchRes.ok) return { ok: false, error: `Approve failed: HTTP ${patchRes.status}` };
-          await notifyEmployerStatus(String(body.id), "approved");
-          return { ok: true };
-        }
-        case "reject-employer": {
-          if (!body?.id) throw new ValidationError("id required");
-          const patchRes = await fetch(
-            `${SUPABASE_URL}/rest/v1/employers?id=eq.${encodeURIComponent(body.id)}`,
-            {
-              method: "PATCH",
-              headers: {
-                apikey: SUPABASE_SERVICE_ROLE_KEY,
-                Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-                "Content-Type": "application/json",
-                Prefer: "return=minimal",
-              },
-              body: JSON.stringify({ status: "rejected", approved_at: null }),
-            },
-          );
-          if (!patchRes.ok) return { ok: false, error: `Reject failed: HTTP ${patchRes.status}` };
-          await notifyEmployerStatus(String(body.id), "rejected");
           return { ok: true };
         }
         case "unban-user": {

@@ -168,7 +168,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
         aria-live="polite"
         aria-atomic="false"
         role="status"
-        style={{ position: "fixed", bottom: 24, right: 24, zIndex: 9999, pointerEvents: "none" }}
+        style={{ position: "fixed", bottom: "max(24px, calc(env(safe-area-inset-bottom, 0px) + 12px))", right: "max(24px, env(safe-area-inset-right, 0px))", zIndex: 9999, pointerEvents: "none" }}
       >
         <div ref={stackRef} style={{ position: "relative", width: `min(${STACK_WIDTH}px, calc(100vw - 48px))` }}>
           {toasts.map((t) => {

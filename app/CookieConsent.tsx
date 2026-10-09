@@ -58,9 +58,12 @@ export default function CookieConsent() {
             right: 0 !important;
             max-width: 100% !important;
             border-radius: 14px 14px 0 0 !important;
-            padding: 14px 16px env(safe-area-inset-bottom, 16px) !important;
+            padding: 12px 16px max(12px, env(safe-area-inset-bottom, 0px)) !important;
             gap: 10px !important;
           }
+          .hsx-cookie-banner > div:first-child { flex: 1 1 100% !important; font-size: 12.5px !important; line-height: 1.5 !important; }
+          .hsx-cookie-actions { width: 100% !important; flex-wrap: nowrap !important; }
+          .hsx-cookie-actions > button { flex: 1 1 0 !important; }
         }
       `}</style>
     <div
@@ -93,7 +96,7 @@ export default function CookieConsent() {
         </a>
         .
       </div>
-      <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+      <div className="hsx-cookie-actions" style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
         <Button
           type="button"
           variant="outline"

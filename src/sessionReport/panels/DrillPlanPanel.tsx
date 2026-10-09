@@ -18,7 +18,7 @@ export function DrillPlanPanel({ outcome, onLaunchDrill }: { outcome: Negotiatio
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <EyebrowLabel color={t.indigo} marginBottom={0}>DRILL {i + 1}</EyebrowLabel>
-              <div style={{ fontSize: 10, color: t.inkFaint, fontFamily: f.mono, letterSpacing: 0.4 }}>
+              <div style={{ fontSize: 11, color: t.inkFaint, fontFamily: f.mono, letterSpacing: 0.4 }}>
                 {d.effort}
               </div>
             </div>

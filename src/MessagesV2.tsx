@@ -14,7 +14,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { AlertCircleIcon, MessagesSquareIcon, PaperclipIcon, SendIcon } from "lucide-react";
+import { AlertCircleIcon, ArrowLeftIcon, MessagesSquareIcon, PaperclipIcon, SendIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
@@ -28,12 +28,14 @@ import {
   fetchThread,
   sendMessage as apiSendMessage,
   uploadMessageAttachment,
+  fetchMessageAttachmentUrl,
   type ConversationContext,
   type ConversationMessage,
   type ConversationSummary,
 } from "./messagesApi";
 import { groupConversationsByCounterpart } from "./conversationGrouping";
 import { useToast } from "./Toast";
+import { useMaxWidth } from "./hooks/useMaxWidth";
 
 const LIST_POLL_MS = 15000;
 const THREAD_POLL_MS = 6000;
@@ -78,7 +80,7 @@ function StatusBadge({ status }: { status: string }) {
   return (
     <span
       style={{
-        display: "inline-flex", alignItems: "center", fontFamily: f.sans, fontSize: 11.5, fontWeight: 600,
+        display: "inline-flex", alignItems: "center", fontFamily: f.sans, fontSize: 12, fontWeight: 600,
         color: tone.fg, background: tone.bg, borderRadius: 999, padding: "2px 9px",
       }}
     >
@@ -91,6 +93,21 @@ export default function MessagesV2() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
+  const isNarrow = useMaxWidth(768);
+
+  const openAttachment = useCallback(async (messageId: string) => {
+    // Window must open synchronously on click or popup blockers kill it after the await.
+    const win = window.open("", "_blank");
+    if (win) win.opener = null;
+    const url = await fetchMessageAttachmentUrl(messageId);
+    if (!url) {
+      win?.close();
+      toast("Couldn't open attachment — please try again", "error");
+      return;
+    }
+    if (win) win.location.href = url;
+    else window.location.href = url;
+  }, [toast]);
 
   const [conversations, setConversations] = useState<ConversationSummary[] | null>(null);
   const [listError, setListError] = useState(false);
@@ -173,6 +190,11 @@ export default function MessagesV2() {
     router.replace(`/messages?matchId=${matchId}`);
   };
 
+  const backToList = () => {
+    setActiveMatchId(null);
+    router.replace("/messages");
+  };
+
   const handleSend = async () => {
     const text = draft.trim();
     if (!text || !activeMatchId) return;
@@ -238,9 +260,9 @@ export default function MessagesV2() {
     </div>
   );
 
-  const shell = (body: React.ReactNode) => (
+  const shell = (body: React.ReactNode, hideHeading = false) => (
     <div style={{ background: t.white, display: "flex", flexDirection: "column", flex: 1, minHeight: 0, borderRadius: 12, border: `1px solid ${t.line}`, overflow: "hidden" }}>
-      {heading}
+      {!hideHeading && heading}
       {body}
     </div>
   );
@@ -282,13 +304,19 @@ export default function MessagesV2() {
     );
   }
 
+  // Phones: one pane at a time — the list, or the open thread with a back
+  // button — instead of squeezing a fixed 280px list beside the thread.
+  const showList = !isNarrow || !active;
+  const showThread = !isNarrow || !!active;
+
   return shell(
     <div style={{ display: "flex", flex: 1, minHeight: 0 }}>
-      <nav style={{ width: 280, borderRight: `1px solid ${t.line}`, overflowY: "auto", flexShrink: 0 }} aria-label="Conversations">
+      {showList && (
+      <nav style={{ width: isNarrow ? "100%" : 280, borderRight: isNarrow ? "none" : `1px solid ${t.line}`, overflowY: "auto", flexShrink: 0 }} aria-label="Conversations">
         {groups.map((group) => (
           <div key={group.counterpartName}>
             <div aria-hidden="true" style={{
-              padding: "10px 16px 4px", fontFamily: f.sans, fontSize: 11, fontWeight: 700,
+              padding: "10px 16px 4px", fontFamily: f.sans, fontSize: 12, fontWeight: 700,
               color: t.inkFaint, textTransform: "uppercase", letterSpacing: "0.04em",
             }}>
               {group.counterpartName}
@@ -321,6 +349,8 @@ export default function MessagesV2() {
           </div>
         ))}
       </nav>
+      )}
+      {showThread && (
       <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
         {!active ? (
           <div style={{ display: "flex", flex: 1, alignItems: "center", justifyContent: "center", color: t.inkFaint, fontFamily: f.sans, fontSize: 13 }}>
@@ -328,13 +358,20 @@ export default function MessagesV2() {
           </div>
         ) : (
           <>
-            <div style={{ padding: "12px 16px", borderBottom: `1px solid ${t.line}` }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                <span style={{ fontFamily: f.sans, fontSize: 14, fontWeight: 600, color: t.coal }}>{context?.companyName || active.companyName}</span>
-                <StatusBadge status={active.candidateStatus} />
-              </div>
-              <div style={{ fontFamily: f.sans, fontSize: 12, color: t.inkFaint, marginTop: 2 }}>
-                {active.roleTitle}{context?.companyName ? ` · ${context.companyName}` : ""}
+            <div style={{ padding: "12px 16px", borderBottom: `1px solid ${t.line}`, display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+              {isNarrow && (
+                <Button variant="ghost" size="icon" aria-label="Back to conversations" onClick={backToList} style={{ flexShrink: 0, width: 44, height: 44, marginLeft: -8 }}>
+                  <ArrowLeftIcon size={20} aria-hidden="true" />
+                </Button>
+              )}
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                  <span style={{ fontFamily: f.sans, fontSize: 14, fontWeight: 600, color: t.coal }}>{context?.companyName || active.companyName}</span>
+                  <StatusBadge status={active.candidateStatus} />
+                </div>
+                <div style={{ fontFamily: f.sans, fontSize: 12, color: t.inkFaint, marginTop: 2 }}>
+                  {active.roleTitle}{context?.companyName ? ` · ${context.companyName}` : ""}
+                </div>
               </div>
             </div>
             <div
@@ -369,15 +406,20 @@ export default function MessagesV2() {
                         <BubbleContent>
                           {m.body && <p className="whitespace-pre-wrap">{m.body}</p>}
                           {m.attachmentPath && (
-                            <div style={{ fontFamily: f.sans, fontSize: 12.5, marginTop: m.body ? 4 : 0, display: "flex", alignItems: "center", gap: 4 }}>
+                            <button
+                              type="button"
+                              onClick={() => openAttachment(m.id)}
+                              aria-label={`Open attachment ${m.attachmentName || ""}`.trim()}
+                              style={{ fontFamily: f.sans, fontSize: 12.5, marginTop: m.body ? 4 : 0, display: "flex", alignItems: "center", gap: 4, background: "none", border: "none", padding: 0, color: "inherit", textDecoration: "underline", cursor: "pointer" }}
+                            >
                               <PaperclipIcon size={12} aria-hidden="true" />
                               {m.attachmentName || "Attachment"}
-                            </div>
+                            </button>
                           )}
                         </BubbleContent>
                       </Bubble>
                       <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "0 12px" }}>
-                        <span style={{ fontFamily: f.sans, fontSize: 11, color: t.inkFaint }}>
+                        <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkFaint }}>
                           {new Date(m.createdAt).toLocaleString()}
                         </span>
                         {m.flagged && <Badge variant="destructive">Flagged</Badge>}
@@ -390,13 +432,14 @@ export default function MessagesV2() {
                 ),
               )}
             </div>
-            <div style={{ padding: "12px 16px", borderTop: `1px solid ${t.line}`, display: "flex", flexDirection: "column", gap: 8 }}>
+            <div style={{ padding: "12px 16px", paddingBottom: "max(12px, env(safe-area-inset-bottom))", borderTop: `1px solid ${t.line}`, display: "flex", flexDirection: "column", gap: 8, flexShrink: 0 }}>
               <Textarea
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
                 placeholder="Write a message…"
                 aria-label="Message"
                 rows={2}
+                style={isNarrow ? { fontSize: 16 } : undefined}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
@@ -425,6 +468,8 @@ export default function MessagesV2() {
           </>
         )}
       </div>
+      )}
     </div>,
+    isNarrow && !!active,
   );
 }

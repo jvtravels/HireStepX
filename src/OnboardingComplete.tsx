@@ -254,7 +254,7 @@ export default function OnboardingComplete() {
               <p style={{ fontFamily: font.ui, fontSize: 13, color: c.stone, marginTop: 8, lineHeight: 1.6, maxWidth: 380, margin: "8px auto 0" }}>
                 You've finished all {FREE_SESSION_LIMIT} free sessions. Your score went from your first session to {score} — that's real progress.
               </p>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginTop: 20, marginBottom: 20 }}>
+              <div className="obc-steps" style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 12, marginTop: 20, marginBottom: 20 }}>
                 {[
                   { num: "1", label: "Warmup", done: true },
                   { num: "2", label: weakestSkill ? `Focus: ${weakestSkill}` : "Focus", done: true },
@@ -264,8 +264,8 @@ export default function OnboardingComplete() {
                     padding: "12px", borderRadius: 10, textAlign: "center",
                     background: "rgba(21,128,61,0.06)", border: "1px solid rgba(21,128,61,0.2)",
                   }}>
-                    <span style={{ fontFamily: font.mono, fontSize: 10, fontWeight: 600, color: c.sage, letterSpacing: "0.06em" }}>DONE</span>
-                    <span style={{ fontFamily: font.ui, fontSize: 11, color: c.chalk, display: "block", marginTop: 4 }}>{s.label}</span>
+                    <span style={{ fontFamily: font.mono, fontSize: 11, fontWeight: 600, color: c.sage, letterSpacing: "0.06em" }}>DONE</span>
+                    <span style={{ fontFamily: font.ui, fontSize: 12, color: c.chalk, display: "block", marginTop: 4 }}>{s.label}</span>
                   </div>
                 ))}
               </div>
@@ -304,7 +304,7 @@ export default function OnboardingComplete() {
                     : `Session ${sessionCount + 1} will dig deeper into targeted practice. Most users improve 15+ points after focused sessions.`}
                 </p>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginTop: 16 }}>
+              <div className="obc-steps" style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 12, marginTop: 16 }}>
                 {[
                   { num: "1", label: "Warmup", done: sessionCount >= 1 },
                   { num: "2", label: weakestSkill ? `Focus: ${weakestSkill}` : "Focus Session", done: sessionCount >= 2 },
@@ -316,10 +316,10 @@ export default function OnboardingComplete() {
                     border: `1px solid ${s.done ? "rgba(21,128,61,0.2)" : c.border}`,
                     opacity: s.done ? 1 : 0.6,
                   }}>
-                    <span style={{ fontFamily: font.mono, fontSize: 10, fontWeight: 600, color: s.done ? c.sage : c.stone, letterSpacing: "0.06em" }}>
+                    <span style={{ fontFamily: font.mono, fontSize: 11, fontWeight: 600, color: s.done ? c.sage : c.stone, letterSpacing: "0.06em" }}>
                       {s.done ? "DONE" : `SESSION ${s.num}`}
                     </span>
-                    <span style={{ fontFamily: font.ui, fontSize: 11, color: c.chalk, display: "block", marginTop: 4 }}>{s.label}</span>
+                    <span style={{ fontFamily: font.ui, fontSize: 12, color: c.chalk, display: "block", marginTop: 4 }}>{s.label}</span>
                   </div>
                 ))}
               </div>
@@ -353,6 +353,7 @@ export default function OnboardingComplete() {
           <style>{`
             @keyframes spin { to { transform: rotate(360deg); } }
             @keyframes obcFadeIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+            @media (max-width: 520px) { .obc-steps { grid-template-columns: 1fr !important; gap: 8px !important; } }
             @keyframes obcScaleIn { from { opacity: 0; transform: scale(0.6); } to { opacity: 1; transform: scale(1); } }
           `}</style>
         </div>

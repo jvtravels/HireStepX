@@ -134,7 +134,7 @@ export function SectionHead({ kicker: k, title, desc, tone }: { kicker?: string;
     <div style={{ marginTop: 8, marginBottom: 16 }}>
       {k && (
         <div style={{
-          fontFamily: font.mono, fontSize: 11, fontWeight: 700, letterSpacing: "0.18em",
+          fontFamily: font.mono, fontSize: 12, fontWeight: 700, letterSpacing: "0.18em",
           color: tone === "danger" ? c.ember : c.indigo, textTransform: "uppercase",
         }}>{k}</div>
       )}
@@ -234,7 +234,7 @@ function TinyChip({ children, tone }: { children: React.ReactNode; tone?: "succe
     { bg: c.indigo100, fg: c.indigo };
   return (
     <span style={{
-      fontFamily: font.mono, fontSize: 10, letterSpacing: "0.08em", textTransform: "uppercase",
+      fontFamily: font.mono, fontSize: 12, letterSpacing: "0.08em", textTransform: "uppercase",
       padding: "4px 8px", borderRadius: 4, background: palette.bg, color: palette.fg, fontWeight: 700,
     }}>{children}</span>
   );
@@ -444,7 +444,7 @@ export const PortfolioLinksSection = memo(function PortfolioLinksSection(props: 
               maxLength={120}
               aria-label="Link title"
               style={{
-                fontFamily: font.ui, fontSize: 13, color: c.ink, background: c.cream,
+                fontFamily: font.ui, fontSize: "clamp(13px, calc(13px + (768px - 100vw) * 1000), 16px)", color: c.ink, background: c.cream,
                 border: `1px solid ${c.borderStrong}`, borderRadius: 9, padding: "10px 14px",
                 outline: "none", minHeight: 40, boxSizing: "border-box",
               }}
@@ -457,7 +457,7 @@ export const PortfolioLinksSection = memo(function PortfolioLinksSection(props: 
               maxLength={500}
               aria-label="Link URL"
               style={{
-                fontFamily: font.ui, fontSize: 13, color: c.ink, background: c.cream,
+                fontFamily: font.ui, fontSize: "clamp(13px, calc(13px + (768px - 100vw) * 1000), 16px)", color: c.ink, background: c.cream,
                 border: `1px solid ${c.borderStrong}`, borderRadius: 9, padding: "10px 14px",
                 outline: "none", minHeight: 40, boxSizing: "border-box",
               }}
@@ -863,13 +863,13 @@ export const PlanUsageSection = memo(function PlanUsageSection(props: PlanUsageS
                     <TableRow key={p.id}>
                       <TableCell style={{ padding: "12px 20px" }}>
                         <div style={{ fontFamily: font.ui, fontSize: 13, color: c.ink, fontWeight: 500 }}>{purchaseTitle}</div>
-                        {subLine && <div style={{ fontFamily: font.ui, fontSize: 11, color: c.inkSoft, marginTop: 2 }}>{subLine}</div>}
+                        {subLine && <div style={{ fontFamily: font.ui, fontSize: 12, color: c.inkSoft, marginTop: 2 }}>{subLine}</div>}
                       </TableCell>
                       <TableCell style={{ padding: "12px 20px", fontFamily: font.ui, fontSize: 13, color: c.ink, whiteSpace: "nowrap" }}>{dateLabel}</TableCell>
                       <TableCell style={{ padding: "12px 20px", fontFamily: font.mono, fontSize: 13, fontWeight: 600, color: c.ink }}>{amountDisplay}</TableCell>
                       <TableCell style={{ padding: "12px 20px" }}>
                         <div style={{
-                          fontFamily: font.ui, fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
+                          fontFamily: font.ui, fontSize: 12, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
                           color: tone.fg, background: tone.bg, border: `1px solid ${tone.border}`,
                           borderRadius: 6, padding: "4px 8px", display: "inline-block",
                         }}>{tone.label}</div>
@@ -975,7 +975,7 @@ export const DangerZoneSection = memo(function DangerZoneSection(props: DangerZo
               aria-label="Confirm email for account deletion"
               autoComplete="off"
               style={{
-                fontFamily: font.ui, fontSize: 13, color: c.ink, background: c.graphite,
+                fontFamily: font.ui, fontSize: "clamp(13px, calc(13px + (768px - 100vw) * 1000), 16px)", color: c.ink, background: c.graphite,
                 border: `1px solid ${t.errorLine}`, borderRadius: 9, padding: "10px 14px",
                 outline: "none", minWidth: 0, width: "100%", minHeight: 40, boxSizing: "border-box",
               }} />
@@ -986,7 +986,7 @@ export const DangerZoneSection = memo(function DangerZoneSection(props: DangerZo
                 placeholder="Re-enter your password"
                 autoComplete="current-password"
                 style={{
-                  fontFamily: font.ui, fontSize: 13, color: c.ink, background: c.graphite,
+                  fontFamily: font.ui, fontSize: "clamp(13px, calc(13px + (768px - 100vw) * 1000), 16px)", color: c.ink, background: c.graphite,
                   border: `1px solid ${t.errorLine}`, borderRadius: 9, padding: "10px 14px",
                   outline: "none", minWidth: 0, width: "100%", minHeight: 40, boxSizing: "border-box",
                 }} />

@@ -35,6 +35,7 @@ import {
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { SortableHead, type Sort as SharedSort } from "@/components/SortableHead";
 import { TablePaginationFooter } from "@/components/TablePaginationFooter";
+import { useMaxWidth } from "./hooks/useMaxWidth";
 import { FilterPill } from "@/components/FilterPill";
 import { SearchWithSuggestions } from "@/components/SearchWithSuggestions";
 
@@ -248,7 +249,7 @@ function WorkspaceHeader({
   return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 20px", borderBottom: `1px solid ${T.line}`, flexWrap: "wrap", gap: 12 }}>
       <h1 style={{ fontFamily: font.ui, fontSize: 26, lineHeight: "32px", fontWeight: 700, color: T.coal, margin: 0, letterSpacing: "-0.01em", flexShrink: 0 }}>Sessions</h1>
-      <div style={{ display: "flex", alignItems: "center", flex: "1 1 auto", flexWrap: "nowrap", gap: 8, justifyContent: "flex-end", minWidth: 0 }}>
+      <div style={{ display: "flex", alignItems: "center", flex: "1 1 auto", flexWrap: "wrap", gap: 8, justifyContent: "flex-end", minWidth: 0 }}>
         <SearchWithSuggestions
           id="sessions-search"
           label="Search sessions"
@@ -257,13 +258,13 @@ function WorkspaceHeader({
           placeholder="Search sessions..."
           storageKey="hirestepx-sessions-recent-searches"
           suggestedFilters={suggestedFilters}
-          style={{ flex: "1 1 200px", minWidth: 140, maxWidth: 560 }}
+          style={{ flex: "1 1 240px", minWidth: 200, maxWidth: 560 }}
         />
         {/* Only this inner group scrolls horizontally on narrow viewports —
             keeping overflowX off the row above avoids clipping the search
             dropdown's absolutely-positioned panel (overflow-x: auto forces
             overflow-y to auto too, per spec, which clips it invisibly). */}
-        <div style={{ display: "flex", alignItems: "center", gap: 8, overflowX: "auto" }}>
+        <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
           <FilterPill
             label="Type"
             value={typeFilter}
@@ -390,8 +391,60 @@ export function SessionsTable({
   sortable?: boolean;
   hideFooter?: boolean;
 }) {
+  const isNarrow = useMaxWidth(1280);
   return (
     <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
+      {isNarrow ? (
+        <div style={{ flex: 1, minHeight: 0, overflowY: "auto" }}>
+          {rows.length === 0 ? (
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, padding: "40px 16px", textAlign: "center" }}>
+              <SearchXIcon size={22} color={T.inkFaint} aria-hidden="true" />
+              <p style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: T.coal, margin: 0 }}>No sessions match your filters</p>
+              <p style={{ fontFamily: font.ui, fontSize: 13, color: T.inkFaint, margin: 0 }}>Try a different search term or clear a filter.</p>
+              <Button variant="outline" size="sm" onClick={onClearFilters} style={{ height: 44, borderRadius: 8, fontFamily: font.ui, fontSize: 13, fontWeight: 500, color: T.inkSoft }}>
+                Clear filters
+              </Button>
+            </div>
+          ) : (
+            <ul aria-label="Practice session history" style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 340px), 1fr))", gap: 0, background: T.white }}>
+              {rows.map((row) => (
+                <li key={row.id} style={{ background: T.white, boxShadow: `inset 0 -1px 0 ${T.line}, inset -1px 0 0 ${T.line}` }}>
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`View details for ${row.title}${row.company ? ` at ${row.company}` : ""}`}
+                    onClick={() => onOpenSession(row.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        onOpenSession(row.id);
+                      }
+                    }}
+                    style={{ display: "flex", flexDirection: "column", gap: 8, padding: "14px 16px", cursor: "pointer", minWidth: 0 }}
+                  >
+                    <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
+                      <div style={{ minWidth: 0 }}>
+                        <p style={{ fontFamily: font.ui, fontSize: 15, fontWeight: 600, color: T.coal, margin: 0, wordBreak: "break-word" }}>
+                          {row.title}{row.company ? ` · ${row.company}` : ""}
+                        </p>
+                        <p style={{ fontFamily: font.ui, fontSize: 13, color: T.inkFaint, margin: "2px 0 0" }}>
+                          {row.category} · {row.questionCount} questions
+                        </p>
+                      </div>
+                      <span style={{ fontFamily: font.mono, fontSize: 12, color: T.inkFaint, flexShrink: 0, paddingTop: 2 }}>{row.date}</span>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: "6px 16px" }}>
+                      <ScoreCell score={row.score} band={row.band} />
+                      <ProgressCell progress={row.progress} />
+                    </div>
+                    <TakeawayCell points={row.takeaways} />
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      ) : (
       <div className="[&>div]:h-full [&>div]:overflow-y-auto" style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
       <Table aria-label="Practice session history" className="table-fixed">
         <TableHeader style={{ position: "sticky", top: 0, zIndex: 1 }}>
@@ -490,6 +543,7 @@ export function SessionsTable({
         </TableBody>
       </Table>
       </div>
+      )}
 
       {!hideFooter && (
         <TablePaginationFooter

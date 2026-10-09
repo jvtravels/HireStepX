@@ -50,6 +50,7 @@ const SERIF = f.serif;
 function Panel({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
   return (
     <div
+      className="hrfr-panel"
       style={{
         background: "#FFFFFF",
         border: `1px solid ${LINE}`,
@@ -70,7 +71,7 @@ function Eyebrow({ kicker, title, sub }: { kicker: string; title: string; sub?: 
       <div
         style={{
           fontFamily: MONO,
-          fontSize: 10,
+          fontSize: 11,
           letterSpacing: "0.10em",
           textTransform: "uppercase",
           color: COPPER,
@@ -112,7 +113,7 @@ function Pill({
         display: "inline-flex",
         alignItems: "center",
         fontFamily: MONO,
-        fontSize: 10,
+        fontSize: 11,
         letterSpacing: "0.08em",
         textTransform: "uppercase",
         background: c.bg,
@@ -174,6 +175,7 @@ function DimensionGate({ skills }: { skills: Skill[] }) {
           return (
             <div
               key={skill.name}
+              className="hrfr-dim"
               style={{
                 display: "grid",
                 gridTemplateColumns: "200px 1fr auto auto",
@@ -377,6 +379,7 @@ function ProbeRow({
 }) {
   return (
     <div
+      className="hrfr-probe"
       style={{
         display: "grid",
         gridTemplateColumns: "140px 1fr",
@@ -388,7 +391,7 @@ function ProbeRow({
       <div
         style={{
           fontFamily: MONO,
-          fontSize: 10,
+          fontSize: 11,
           letterSpacing: "0.10em",
           textTransform: "uppercase",
           color: accent,
@@ -430,7 +433,7 @@ function SectorNormStrip({
       <div
         style={{
           fontFamily: MONO,
-          fontSize: 10,
+          fontSize: 11,
           letterSpacing: "0.10em",
           textTransform: "uppercase",
           color: COPPER,
@@ -479,7 +482,7 @@ function NoticePanel({ hrReport }: { hrReport: HrReportData }) {
         title="What you said about notice and salary"
         sub="HR needs both these committed before they write up the offer. Vague answers here stall the process."
       />
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 240px), 1fr))", gap: 16 }}>
         {noticeDays !== null && (
           <div
             style={{
@@ -492,7 +495,7 @@ function NoticePanel({ hrReport }: { hrReport: HrReportData }) {
             <div
               style={{
                 fontFamily: MONO,
-                fontSize: 10,
+                fontSize: 11,
                 letterSpacing: "0.10em",
                 textTransform: "uppercase",
                 color: COPPER,
@@ -529,7 +532,7 @@ function NoticePanel({ hrReport }: { hrReport: HrReportData }) {
             <div
               style={{
                 fontFamily: MONO,
-                fontSize: 10,
+                fontSize: 11,
                 letterSpacing: "0.10em",
                 textTransform: "uppercase",
                 color: INDIGO,
@@ -683,7 +686,7 @@ function CounterOfferPanel({ risk }: { risk: HrReportData["counterOfferRisk"] })
         <div
           style={{
             fontFamily: MONO,
-            fontSize: 10,
+            fontSize: 11,
             letterSpacing: "0.10em",
             textTransform: "uppercase",
             color: COPPER,
@@ -724,7 +727,7 @@ function MotivationRewritePanel({ hrReport }: { hrReport: HrReportData }) {
         title="Your 'why this company' — rewritten"
         sub="Generic answers ('great culture, great opportunity') signal you'll churn. This is the version that lands."
       />
-      <div style={{ display: "grid", gridTemplateColumns: twoUp ? "1fr 1fr" : "1fr", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: twoUp ? "repeat(auto-fit, minmax(min(100%, 240px), 1fr))" : "1fr", gap: 14 }}>
         {motivationBefore && (
           <div
             style={{
@@ -737,7 +740,7 @@ function MotivationRewritePanel({ hrReport }: { hrReport: HrReportData }) {
             <div
               style={{
                 fontFamily: MONO,
-                fontSize: 10,
+                fontSize: 11,
                 letterSpacing: "0.10em",
                 textTransform: "uppercase",
                 color: ERROR,
@@ -771,7 +774,7 @@ function MotivationRewritePanel({ hrReport }: { hrReport: HrReportData }) {
             <div
               style={{
                 fontFamily: MONO,
-                fontSize: 10,
+                fontSize: 11,
                 letterSpacing: "0.10em",
                 textTransform: "uppercase",
                 color: SUCCESS,
@@ -828,6 +831,7 @@ function DrillCtaPanel({
   return (
     <Panel style={{ background: `linear-gradient(135deg, #0E0C08 0%, ${INDIGO} 100%)` }}>
       <div
+        className="hrfr-cta"
         style={{
           display: "grid",
           gridTemplateColumns: "1fr auto",
@@ -840,7 +844,7 @@ function DrillCtaPanel({
           <div
             style={{
               fontFamily: MONO,
-              fontSize: 10,
+              fontSize: 11,
               letterSpacing: "0.10em",
               textTransform: "uppercase",
               color: "#B8B5D4",
@@ -877,7 +881,7 @@ function DrillCtaPanel({
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: `repeat(${weakest.length}, 1fr)`,
+            gridTemplateColumns: `repeat(auto-fit, minmax(min(100%, 200px), 1fr))`,
             gap: 10,
           }}
         >
@@ -894,7 +898,7 @@ function DrillCtaPanel({
               <div
                 style={{
                   fontFamily: MONO,
-                  fontSize: 9,
+                  fontSize: 11,
                   letterSpacing: "0.10em",
                   textTransform: "uppercase",
                   color: "#FCA5A5",
@@ -932,6 +936,22 @@ interface HrFullReportProps {
   onDrillSkill?: (name: string) => void;
 }
 
+const HR_RESPONSIVE_CSS = `
+  .hrfr-panel { min-width: 0; overflow-wrap: anywhere; }
+  .hrfr-dim > *, .hrfr-probe > * { min-width: 0; }
+  @media (max-width: 640px) {
+    .hrfr-panel { padding: 16px !important; }
+    .hrfr-dim { grid-template-columns: 1fr auto auto !important; row-gap: 6px !important; column-gap: 10px !important; }
+    .hrfr-dim > :first-child { grid-column: 1 / -1; }
+    .hrfr-probe { grid-template-columns: 1fr !important; gap: 4px !important; }
+    .hrfr-cta { grid-template-columns: 1fr !important; gap: 16px !important; }
+    .hrfr-bridge { grid-template-columns: 1fr 1fr !important; padding: 18px 16px !important; gap: 14px !important; }
+    .hrfr-bridge-sep { display: none !important; }
+    .hrfr-bridge-msg { grid-column: 1 / -1 !important; }
+    .hrfr-bridge-pill { grid-column: 1 / -1 !important; justify-self: start; }
+  }
+`;
+
 export default function HrFullReport({
   overallScore,
   skills,
@@ -948,8 +968,10 @@ export default function HrFullReport({
 
   return (
     <ReportCardShell ariaLabelledBy="ir-section-hr">
+      <style>{HR_RESPONSIVE_CSS}</style>
       {/* Reconcile bridge — ties the hero score to the dim-gate count */}
       <div
+        className="hrfr-bridge"
         style={{
           background: `linear-gradient(135deg, ${COAL} 0%, ${INDIGO} 100%)`,
           borderRadius: 14,
@@ -963,7 +985,7 @@ export default function HrFullReport({
         }}
       >
         <div>
-          <div style={{ fontFamily: MONO, fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", color: "#B8B5D4", marginBottom: 4 }}>
+          <div style={{ fontFamily: MONO, fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", color: "#B8B5D4", marginBottom: 4 }}>
             Overall
           </div>
           <div style={{ fontFamily: MONO, fontSize: 28, fontWeight: 700 }}>
@@ -971,11 +993,11 @@ export default function HrFullReport({
             <span style={{ fontSize: 14, color: "#B8B5D4", marginLeft: 2 }}>/100</span>
           </div>
         </div>
-        <div style={{ width: 1, height: 36, background: "rgba(255,255,255,0.18)" }} />
+        <div className="hrfr-bridge-sep" style={{ width: 1, height: 36, background: "rgba(255,255,255,0.18)" }} />
         {totalDims > 0 && (
           <>
             <div>
-              <div style={{ fontFamily: MONO, fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", color: "#B8B5D4", marginBottom: 4 }}>
+              <div style={{ fontFamily: MONO, fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", color: "#B8B5D4", marginBottom: 4 }}>
                 Failing dims
               </div>
               <div style={{ fontFamily: MONO, fontSize: 28, fontWeight: 700, color: failingDims > 0 ? "#FCA5A5" : "#BBF7D0" }}>
@@ -983,7 +1005,7 @@ export default function HrFullReport({
                 <span style={{ fontSize: 14, color: "#B8B5D4", marginLeft: 2 }}>/{totalDims}</span>
               </div>
             </div>
-            <div style={{ fontFamily: SANS, fontSize: 13, lineHeight: 1.5, color: "#E5E2F2" }}>
+            <div className="hrfr-bridge-msg" style={{ fontFamily: SANS, fontSize: 13, lineHeight: 1.5, color: "#E5E2F2" }}>
               {failingDims === 0
                 ? "All dimensions cleared — strong HR signal across the board."
                 : `${failingDims} dimension${failingDims > 1 ? "s" : ""} below the 60/100 floor. Fix any one of them and you cross the line.`}
@@ -991,14 +1013,14 @@ export default function HrFullReport({
           </>
         )}
         {totalDims === 0 && (
-          <div style={{ fontFamily: SANS, fontSize: 13, lineHeight: 1.5, color: "#E5E2F2", gridColumn: "3 / -1" }}>
+          <div className="hrfr-bridge-msg" style={{ fontFamily: SANS, fontSize: 13, lineHeight: 1.5, color: "#E5E2F2", gridColumn: "3 / -1" }}>
             HR Round for {role} at {company}
           </div>
         )}
         <div
           style={{
             fontFamily: MONO,
-            fontSize: 10,
+            fontSize: 11,
             letterSpacing: "0.12em",
             textTransform: "uppercase",
             background: failingDims === 0 ? SUCCESS : failingDims <= 2 ? COPPER : ERROR,
@@ -1007,6 +1029,7 @@ export default function HrFullReport({
             borderRadius: 999,
             whiteSpace: "nowrap",
           }}
+          className="hrfr-bridge-pill"
         >
           {failingDims === 0 ? "Hire Signal" : failingDims <= 2 ? "Lean Hire" : "No Hire"}
         </div>

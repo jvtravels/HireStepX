@@ -194,7 +194,7 @@ function FocusBannerStrip({ banner, daysUntilInterview }: { banner: FocusBannerD
         <div style={{ minWidth: 0 }}>
           <div
             style={{
-              fontSize: 10,
+              fontSize: 11,
               fontWeight: 700,
               letterSpacing: 0.8,
               textTransform: "uppercase",
@@ -216,7 +216,7 @@ function FocusBannerStrip({ banner, daysUntilInterview }: { banner: FocusBannerD
         <div style={{ textAlign: "right" }}>
           <div
             style={{
-              fontSize: 10,
+              fontSize: 11,
               fontWeight: 700,
               letterSpacing: 0.8,
               textTransform: "uppercase",
@@ -253,7 +253,7 @@ function FocusBannerStrip({ banner, daysUntilInterview }: { banner: FocusBannerD
           >
             <div
               style={{
-                fontSize: 10,
+                fontSize: 11,
                 fontWeight: 700,
                 letterSpacing: 0.8,
                 textTransform: "uppercase",
@@ -305,7 +305,7 @@ function FocusBannerStrip({ banner, daysUntilInterview }: { banner: FocusBannerD
                   color: t.neutralInk,
                 }}
               >
-                <span style={{ fontWeight: 700, color: t.inkSoft, textTransform: "uppercase", fontSize: 10, letterSpacing: 0.5 }}>
+                <span style={{ fontWeight: 700, color: t.inkSoft, textTransform: "uppercase", fontSize: 11, letterSpacing: 0.5 }}>
                   {m.label}
                 </span>
                 <span style={{ fontWeight: 700, color: mColor, fontFamily: "monospace" }}>

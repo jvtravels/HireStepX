@@ -225,7 +225,7 @@ function AutocompleteInput({
             position: "sticky", bottom: 0,
             display: "flex", alignItems: "center", justifyContent: "space-between",
             padding: "8px 14px", background: T.creamSoft, borderTop: `1px solid ${T.line}`,
-            fontFamily: F.mono, fontSize: 10, color: T.inkFaint, letterSpacing: 0.4,
+            fontFamily: F.mono, fontSize: 11, color: T.inkFaint, letterSpacing: 0.4,
           }}>
             <span>↑↓ navigate</span>
             <span>↵ select · esc to close</span>
@@ -2025,10 +2025,10 @@ export default function SessionSetup() {
                               position: "relative", fontFamily: F.sans,
                             }}>
                             {isRecommended && (
-                              <span className="hsx-recommend-badge" style={{ position: "absolute", top: -8, right: 10, fontFamily: F.sans, fontSize: 10, fontWeight: 600, color: T.cream, background: T.indigo, padding: "2px 8px", borderRadius: 4, letterSpacing: "0.04em", textTransform: "uppercase" }}>For you</span>
+                              <span className="hsx-recommend-badge" style={{ position: "absolute", top: -8, right: 10, fontFamily: F.sans, fontSize: 11, fontWeight: 600, color: T.cream, background: T.indigo, padding: "2px 8px", borderRadius: 4, letterSpacing: "0.04em", textTransform: "uppercase" }}>For you</span>
                             )}
                             {comingSoon && (
-                              <span style={{ position: "absolute", top: -8, right: 10, fontFamily: F.sans, fontSize: 10, fontWeight: 600, color: T.inkSoft, background: T.white, border: `1px solid ${T.line}`, padding: "2px 8px", borderRadius: 4, letterSpacing: "0.04em", textTransform: "uppercase" }}>Coming soon</span>
+                              <span style={{ position: "absolute", top: -8, right: 10, fontFamily: F.sans, fontSize: 11, fontWeight: 600, color: T.inkSoft, background: T.white, border: `1px solid ${T.line}`, padding: "2px 8px", borderRadius: 4, letterSpacing: "0.04em", textTransform: "uppercase" }}>Coming soon</span>
                             )}
                             <span style={{ width: 32, height: 32, borderRadius: 6, background: comingSoon ? T.line : T.indigo100, color: T.coal, display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                               {opt.icon}

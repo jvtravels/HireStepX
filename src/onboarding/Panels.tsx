@@ -802,7 +802,7 @@ export function ProfileReadyState({
                 without re-analyzing. */}
             {onTargetRoleChange && (
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: roleMissingHint && roleRequired ? 4 : 14, flexWrap: "wrap" }}>
-                <span style={{ fontFamily: f.mono, fontSize: 10, letterSpacing: "0.10em", textTransform: "uppercase", color: t.inkFaint }}>
+                <span style={{ fontFamily: f.mono, fontSize: 11, letterSpacing: "0.10em", textTransform: "uppercase", color: t.inkFaint }}>
                   Target role
                 </span>
                 {roleEditing ? (
@@ -1189,7 +1189,7 @@ function ScoreGauge({
               )}
             </div>
             {score != null && (
-              <span style={{ fontFamily: f.mono, fontSize: 10, letterSpacing: "0.10em", textTransform: "uppercase", color, marginTop: 4, fontWeight: 500 }}>
+              <span style={{ fontFamily: f.mono, fontSize: 11, letterSpacing: "0.10em", textTransform: "uppercase", color, marginTop: 4, fontWeight: 500 }}>
                 {label}
               </span>
             )}
@@ -1291,7 +1291,7 @@ function StatRow({
 }) {
   return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-      <span style={{ fontFamily: f.mono, fontSize: 10, letterSpacing: "0.10em", textTransform: "uppercase", color: t.inkFaint, flexShrink: 0 }}>
+      <span style={{ fontFamily: f.mono, fontSize: 11, letterSpacing: "0.10em", textTransform: "uppercase", color: t.inkFaint, flexShrink: 0 }}>
         {label}
       </span>
       <span

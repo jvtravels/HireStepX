@@ -102,7 +102,7 @@ function Card({ children, pad = 24, style }: { children: React.ReactNode; pad?: 
 
 function Eyebrow({ children, color = T.indigo }: { children: React.ReactNode; color?: string }) {
   return (
-    <span style={{ fontFamily: font.mono, fontSize: 10.5, fontWeight: 600, letterSpacing: 1.1, textTransform: "uppercase", color }}>
+    <span style={{ fontFamily: font.mono, fontSize: 12, fontWeight: 600, letterSpacing: 1.1, textTransform: "uppercase", color }}>
       {children}
     </span>
   );
@@ -110,7 +110,7 @@ function Eyebrow({ children, color = T.indigo }: { children: React.ReactNode; co
 
 function Pill({ children, bg, fg, bd, icon }: { children: React.ReactNode; bg: string; fg: string; bd?: string; icon?: React.ReactNode }) {
   return (
-    <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "4px 10px", borderRadius: radius.pill, background: bg, color: fg, border: bd ? `1px solid ${bd}` : "none", fontFamily: font.mono, fontSize: 10.5, fontWeight: 600, letterSpacing: 0.4, textTransform: "uppercase", whiteSpace: "nowrap" }}>
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "4px 10px", borderRadius: radius.pill, background: bg, color: fg, border: bd ? `1px solid ${bd}` : "none", fontFamily: font.mono, fontSize: 12, fontWeight: 600, letterSpacing: 0.4, textTransform: "uppercase", whiteSpace: "nowrap" }}>
       {icon}
       {children}
     </span>
@@ -120,7 +120,7 @@ function Pill({ children, bg, fg, bd, icon }: { children: React.ReactNode; bg: s
 function Field({ label, htmlFor, required, children }: { label: string; htmlFor?: string; required?: boolean; children: React.ReactNode }) {
   return (
     <div>
-      <label htmlFor={htmlFor} style={{ fontFamily: font.mono, fontSize: 10.5, fontWeight: 600, letterSpacing: 0.6, textTransform: "uppercase", color: c.stone, display: "block", marginBottom: 7 }}>
+      <label htmlFor={htmlFor} style={{ fontFamily: font.mono, fontSize: 12, fontWeight: 600, letterSpacing: 0.6, textTransform: "uppercase", color: c.stone, display: "block", marginBottom: 7 }}>
         {label}{required && <span style={{ color: T.indigo }}> *</span>}
       </label>
       {children}
@@ -254,7 +254,7 @@ function PrepRunwayRail({ interview, all, onStart, onBuild, building }: {
           <h2 style={{ fontFamily: font.ui, fontSize: 18, fontWeight: 400, color: c.ivory, margin: 0 }}>Prep Runway</h2>
           {hasPrep && <Pill bg={T.indigo100} fg={T.indigoDeep} bd={T.indigoRing}>{nodes.length - 1} sessions</Pill>}
         </div>
-        <span style={{ fontFamily: font.mono, fontSize: 11, color: c.stone, letterSpacing: 0.3 }}>
+        <span style={{ fontFamily: font.mono, fontSize: 12, color: c.stone, letterSpacing: 0.3 }}>
           Mock-session countdown
         </span>
       </div>
@@ -270,9 +270,9 @@ function PrepRunwayRail({ interview, all, onStart, onBuild, building }: {
                   <Icon size={16}>{n.state === "done" ? I.check : n.state === "anchor" ? I.target : n.state === "active" ? I.play : I.clock}</Icon>
                 </div>
                 <div style={{ marginTop: sp.md }}>
-                  <div style={{ fontFamily: font.mono, fontSize: 10.5, fontWeight: 600, letterSpacing: 0.6, color: v.fg, marginBottom: 4 }}>{n.tag}</div>
+                  <div style={{ fontFamily: font.mono, fontSize: 12, fontWeight: 600, letterSpacing: 0.6, color: v.fg, marginBottom: 4 }}>{n.tag}</div>
                   <div style={{ fontSize: 13, fontWeight: 600, color: c.ivory, lineHeight: 1.25 }}>{n.title}</div>
-                  <div style={{ fontSize: 11.5, color: c.chalk, marginTop: 3, lineHeight: 1.35 }}>{n.detail}</div>
+                  <div style={{ fontSize: 12, color: c.chalk, marginTop: 3, lineHeight: 1.35 }}>{n.detail}</div>
                   {n.state === "active" && (
                     <Button className="cpr-tap" size="sm" onClick={onStart} style={{ marginTop: sp.sm, fontFamily: font.ui, boxShadow: shadow.sm }}>
                       <Icon size={13}>{I.play}</Icon> Start practice
@@ -354,7 +354,7 @@ function MiniMonth({ events, focusedId, onDateClick }: { events: InterviewEvent[
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(7, minmax(0, 1fr))", gap: 3 }}>
         {dow.map((d, i) => (
-          <div key={i} style={{ textAlign: "center", fontFamily: font.mono, fontSize: 10, color: c.stone, padding: "2px 0" }}>{d}</div>
+          <div key={i} style={{ textAlign: "center", fontFamily: font.mono, fontSize: 12, color: c.stone, padding: "2px 0" }}>{d}</div>
         ))}
         {Array.from({ length: firstDay }).map((_, i) => <div key={`lead-${i}`} />)}
         {Array.from({ length: daysInMonth }, (_, i) => i + 1).map((d) => {
@@ -370,7 +370,7 @@ function MiniMonth({ events, focusedId, onDateClick }: { events: InterviewEvent[
               title={hasEvent ? dayEvents.map((e) => e.title).join(", ") : undefined}
               style={{
                 aspectRatio: "1", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                borderRadius: radius.sm, fontFamily: font.mono, fontSize: 11.5, fontWeight: isToday ? 700 : 400,
+                borderRadius: radius.sm, fontFamily: font.mono, fontSize: 12, fontWeight: isToday ? 700 : 400,
                 color: isToday ? c.carbon : hasEvent ? c.ivory : c.chalk,
                 background: isToday ? T.indigo : isFocused ? T.indigo100 : hasEvent ? "oklch(0.359 0.135 278.697 / 0.12)" : "transparent",
                 border: "none", cursor: hasEvent ? "pointer" : "default", position: "relative",
@@ -746,7 +746,7 @@ export default function CalendarPage() {
   const focused = (focusedId ? upcoming.find((e) => e.id === focusedId) : undefined) || upcoming[0] || null;
 
   const inputStyle = {
-    width: "100%", padding: "11px 14px", fontFamily: font.ui, fontSize: 13.5,
+    width: "100%", padding: "11px 14px", fontFamily: font.ui, /* 16px below 768px stops iOS focus-zoom */ fontSize: "clamp(13px, calc(13px + (768px - 100vw) * 1000), 16px)",
     color: c.ivory, background: c.obsidian, border: `1px solid ${c.borderHover}`,
     borderRadius: radius.md, outline: "none", boxSizing: "border-box" as const,
     transition: "border-color 0.18s ease, box-shadow 0.18s ease",
@@ -827,7 +827,7 @@ export default function CalendarPage() {
               return (
                 <button key={ev.id} className="cpr-tap" aria-pressed={on} onClick={() => setFocusedId(ev.id)} style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 2, background: on ? c.graphite : "transparent", border: `1px solid ${on ? T.indigoRing : c.border}`, borderRadius: radius.md, padding: "10px 16px", cursor: "pointer", boxShadow: on ? shadow.sm : "none", transition: `background-color 0.15s ${ease.out}, border-color 0.15s ${ease.out}` }}>
                   <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: on ? c.ivory : c.chalk }}>{ev.company || ev.title}</span>
-                  <span style={{ fontFamily: font.mono, fontSize: 10, color: on ? T.indigo : c.stone, letterSpacing: 0.3 }}>{formatEventDate(ev.date)} · {ev.type}</span>
+                  <span style={{ fontFamily: font.mono, fontSize: 12, color: on ? T.indigo : c.stone, letterSpacing: 0.3 }}>{formatEventDate(ev.date)} · {ev.type}</span>
                 </button>
               );
             })}
@@ -867,7 +867,7 @@ export default function CalendarPage() {
               {/* natural-language quick add — type a phrase, we fill the form */}
               {!editingId && (
                 <div>
-                  <label htmlFor="cal-quick" style={{ fontFamily: font.mono, fontSize: 10.5, fontWeight: 600, letterSpacing: 0.6, textTransform: "uppercase", color: c.stone, display: "flex", alignItems: "center", gap: 6, marginBottom: 7 }}>
+                  <label htmlFor="cal-quick" style={{ fontFamily: font.mono, fontSize: 12, fontWeight: 600, letterSpacing: 0.6, textTransform: "uppercase", color: c.stone, display: "flex", alignItems: "center", gap: 6, marginBottom: 7 }}>
                     <span style={{ color: T.indigo, display: "flex" }}><Icon size={12}>{I.sparkle}</Icon></span> Quick add
                   </label>
                   <div style={{ display: "flex", gap: 8 }}>
@@ -879,7 +879,7 @@ export default function CalendarPage() {
                       Fill
                     </button>
                   </div>
-                  <p style={{ fontSize: 11, color: c.stone, margin: "6px 0 0", fontFamily: font.ui }}>We fill what we can. Review the fields below before saving.</p>
+                  <p style={{ fontSize: 12, color: c.stone, margin: "6px 0 0", fontFamily: font.ui }}>We fill what we can. Review the fields below before saving.</p>
                 </div>
               )}
 
@@ -982,14 +982,14 @@ export default function CalendarPage() {
                 </span>
                 <span>
                   <span style={{ display: "block", fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory }}>Reminders</span>
-                  <span style={{ display: "block", fontFamily: font.ui, fontSize: 11.5, color: c.stone, marginTop: 1 }}>{formReminders ? reminderCopy : "Off. No email reminders for this interview."}</span>
+                  <span style={{ display: "block", fontFamily: font.ui, fontSize: 12, color: c.stone, marginTop: 1 }}>{formReminders ? reminderCopy : "Off. No email reminders for this interview."}</span>
                 </span>
               </div>
 
               {/* prep-runway disclosure — set expectation that saving a real
                   interview auto-schedules the mock countdown */}
               {!editingId && (
-                <div style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: 11.5, color: c.stone, fontFamily: font.ui, lineHeight: 1.45 }}>
+                <div style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: 12, color: c.stone, fontFamily: font.ui, lineHeight: 1.45 }}>
                   <span style={{ color: T.indigo, display: "flex", marginTop: 1 }}><Icon size={13}>{I.sparkle}</Icon></span>
                   Saving schedules a Prep Runway: an adaptive countdown of mock sessions mapped back from this date. Sessions count against your plan quota.
                 </div>
@@ -1067,7 +1067,7 @@ export default function CalendarPage() {
                       <Icon size={13}>{I.download}</Icon> Export .ics
                     </button>
                     {exportTooltip === focused.id && (
-                      <div style={{ position: "absolute", top: -28, left: "50%", transform: "translateX(-50%)", background: c.sage, color: c.carbon, fontFamily: font.ui, fontSize: 10, fontWeight: 600, padding: "3px 8px", borderRadius: 4, whiteSpace: "nowrap" }}>Downloaded</div>
+                      <div style={{ position: "absolute", top: -28, left: "50%", transform: "translateX(-50%)", background: c.sage, color: c.carbon, fontFamily: font.ui, fontSize: 12, fontWeight: 600, padding: "3px 8px", borderRadius: 4, whiteSpace: "nowrap" }}>Downloaded</div>
                     )}
                   </div>
                   <a className="cpr-tap" href={generateGoogleCalendarURL(focused)} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "transparent", color: c.chalk, border: `1px solid ${c.border}`, borderRadius: 8, padding: "8px 12px", fontFamily: font.ui, fontSize: 12, fontWeight: 500, cursor: "pointer", textDecoration: "none" }}>
@@ -1159,7 +1159,7 @@ export default function CalendarPage() {
               <>
                 <ReminderRow label="3 days before" on={focused.reminders && (!heroStartUtc || Date.parse(heroStartUtc) - Date.now() > 4320 * 60000)} />
                 <ReminderRow label="1 day before" on={focused.reminders && (!heroStartUtc || Date.parse(heroStartUtc) - Date.now() > 1440 * 60000)} />
-                <p style={{ fontSize: 11, color: c.stone, margin: "8px 0 0", fontFamily: font.ui }}>
+                <p style={{ fontSize: 12, color: c.stone, margin: "8px 0 0", fontFamily: font.ui }}>
                   {focused.reminders ? `${describeReminders(heroStartUtc, Date.now())}. Toggle them when editing.` : "Reminders off for this interview. Toggle them when editing."}
                 </p>
               </>

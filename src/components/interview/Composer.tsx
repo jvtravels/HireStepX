@@ -104,7 +104,7 @@ function SkipWithReason({
           }}
         >
           <span style={{
-            fontFamily: ef.mono, fontSize: 10, textTransform: "uppercase",
+            fontFamily: ef.mono, fontSize: 11, textTransform: "uppercase",
             letterSpacing: 1.4, color: e.inkSoft, padding: "6px 10px 4px",
           }}>
             Why are you skipping?
@@ -242,7 +242,7 @@ function CanvasLiveMetricsRow({ metrics, typed }: {
        lets a SR user navigate to it on demand and read the current values. */
     <div role="status" aria-live="off" aria-label="Live answer metrics" style={{
       display: "inline-flex", alignItems: "center", gap: 14,
-      fontFamily: ef.mono, fontSize: 10, textTransform: "uppercase",
+      fontFamily: ef.mono, fontSize: 11, textTransform: "uppercase",
       letterSpacing: 1.2, color: e.inkSoft,
     }}>
       <span><strong style={{ color: e.coal, fontWeight: 600 }}>{metrics.wordCount}</strong> words</span>
@@ -408,11 +408,11 @@ export function Composer({
         <div role="log" aria-live="polite" aria-relevant="additions" aria-label="Live transcript of your answer" style={{
           width: "100%", background: e.white, border: `1px solid ${e.line}`,
           borderRadius: 14, padding: "14px 16px",
-          fontFamily: ef.sans, fontSize: 15, lineHeight: 1.55, color: e.coal,
+          fontFamily: ef.sans, fontSize: 16, lineHeight: 1.55, color: e.coal,
           minHeight: 72, maxHeight: 160, overflowY: "auto", textAlign: "left",
           boxShadow: "0 1px 0 rgba(20,17,10,.03), 0 1px 2px rgba(20,17,10,.04), 0 12px 32px -16px rgba(20,17,10,.10)",
         }}>
-          <span style={{ fontFamily: ef.mono, fontSize: 10, textTransform: "uppercase", letterSpacing: 1.4, color: e.copper, display: "block", marginBottom: 6 }}>
+          <span style={{ fontFamily: ef.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1.4, color: e.copper, display: "block", marginBottom: 6 }}>
             Live transcript
           </span>
           <span>{currentTranscript}</span>
@@ -460,7 +460,7 @@ export function Composer({
               // Sans-serif (Geist Sans/Inter) for the user's answer — typed
               // text reads cleaner in sans, and it visually separates the
               // candidate's voice from the AI's serif question.
-              fontFamily: ef.sans, fontSize: 15, lineHeight: 1.55, color: e.coal,
+              fontFamily: ef.sans, fontSize: 16, lineHeight: 1.55, color: e.coal,
               background: e.white, border: `1px solid ${e.line}`, borderRadius: 14,
               resize: "vertical", outline: "none",
               boxShadow: "0 1px 0 rgba(20,17,10,.03), 0 1px 2px rgba(20,17,10,.04)",
@@ -607,7 +607,7 @@ export function Composer({
               : "0 1px 0 rgba(20,17,10,.04), 0 1px 2px rgba(20,17,10,.04)",
           }}
         >
-          <kbd aria-hidden style={{
+          <kbd aria-hidden className="iv-kbd-hint" style={{
             display: "inline-flex", alignItems: "center", justifyContent: "center",
             minWidth: 56, height: 24, padding: "0 8px",
             background: canSend ? "rgba(250,247,240,0.20)" : e.creamSoft,
@@ -620,7 +620,7 @@ export function Composer({
           <span>
             {showTyping
               ? (canSend ? "Press Enter to send" : "Type your answer…")
-              : "Press Space when done"}
+              : (<><span className="iv-kbd-hint">Press Space when done</span><span className="iv-touch-hint">Done answering</span></>)}
           </span>
         </button>
       )}
@@ -632,7 +632,7 @@ export function Composer({
         {!showTyping && (
           <>
             <CanvasTextLink onClick={() => { setTyping(true); textareaRef.current?.focus(); }}>
-              or type your answer (T)
+              or type your answer<span className="iv-kbd-hint"> (T)</span>
             </CanvasTextLink>
             <span aria-hidden style={{ color: e.inkFaint }}>·</span>
           </>
@@ -720,7 +720,7 @@ export function Composer({
 
       {/* Subtle keyboard-shortcuts discoverability hint */}
       <span aria-hidden style={{
-        fontFamily: ef.mono, fontSize: 9, textTransform: "uppercase",
+        fontFamily: ef.mono, fontSize: 11, textTransform: "uppercase",
         letterSpacing: 1, color: e.inkFaint, marginTop: 2,
       }}>
         Space · send  ·  R · repeat  ·  T · type  ·  Esc · unfocus

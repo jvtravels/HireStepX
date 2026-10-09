@@ -1,43 +1,7 @@
 /* Admin sections: support, messaging moderation, employers, referrals, promo codes. */
 
-import { RESEND_API_KEY, fetchJSON, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, fetchCount, daysAgo } from "./_admin-shared";
-import { slog } from "./_shared";
+import { fetchJSON, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, fetchCount, daysAgo } from "./_admin-shared";
 import { kFactor } from "./_cost-helpers";
-
-/* Employer accounts share the `profiles` table with candidates (see
-   contactEmail derivation in the "employers" list case below) — the
-   employer's own id is the profiles row to read for name/email. Best-effort:
-   swallow failures so a Resend hiccup never blocks the approve/reject PATCH
-   that already committed. */
-export async function notifyEmployerStatus(employerId: string, status: "approved" | "rejected"): Promise<void> {
-  if (!RESEND_API_KEY) return;
-  try {
-    const [employerRows, profileRows] = await Promise.all([
-      fetchJSON<{ company_name: string }>(`employers?id=eq.${encodeURIComponent(employerId)}&select=company_name&limit=1`),
-      fetchJSON<{ email: string; name: string | null }>(`profiles?id=eq.${encodeURIComponent(employerId)}&select=email,name&limit=1`),
-    ]);
-    const toEmail = profileRows[0]?.email;
-    if (!toEmail) return;
-    const companyName = employerRows[0]?.company_name || "your company";
-    const subject = status === "approved"
-      ? "Your HireStepX employer account is approved"
-      : "Update on your HireStepX employer application";
-    const html = status === "approved"
-      ? `<p>Hi,</p><p>Good news — <strong>${companyName}</strong>'s employer account on HireStepX has been approved. You can now post requirements and browse your matched candidate shortlist.</p><p><a href="https://hirestepx.com/employer">Go to your dashboard</a></p>`
-      : `<p>Hi,</p><p>We weren't able to approve <strong>${companyName}</strong>'s employer application on HireStepX at this time. You're welcome to update your details and resubmit.</p>`;
-    const emailRes = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from: "HireStepX <noreply@hirestepx.com>", to: [toEmail], subject, html }),
-    });
-    if (!emailRes.ok) {
-      const txt = await emailRes.text().catch(() => "");
-      slog.error("admin-data: employer status email failed", { status: emailRes.status, body: txt.slice(0, 200) });
-    }
-  } catch (err) {
-    slog.error("admin-data: notifyEmployerStatus threw", { error: err instanceof Error ? err.message : String(err) });
-  }
-}
 
 export async function updateSupportStatus(
   id: string,
@@ -240,14 +204,12 @@ export interface EmployerRow {
   id: string;
   company_name: string;
   website: string;
-  status: "pending" | "approved" | "rejected";
   submitted_at: string;
-  approved_at: string | null;
 }
 
 export async function getEmployers() {
   const [employers, profiles] = await Promise.all([
-    fetchJSON<EmployerRow>("employers?select=id,company_name,website,status,submitted_at,approved_at&order=submitted_at.desc&limit=1000"),
+    fetchJSON<EmployerRow>("employers?select=id,company_name,website,submitted_at&order=submitted_at.desc&limit=1000"),
     fetchJSON<{ id: string; name: string | null; email: string }>("profiles?select=id,name,email&limit=2000"),
   ]);
   const profileMap = new Map(profiles.map((p) => [p.id, { name: p.name || "(no name)", email: p.email }]));
@@ -256,18 +218,13 @@ export async function getEmployers() {
     id: e.id,
     companyName: e.company_name,
     website: e.website,
-    status: e.status,
     submittedAt: e.submitted_at,
-    approvedAt: e.approved_at,
     contactName: profileMap.get(e.id)?.name || "(deleted user)",
     contactEmail: profileMap.get(e.id)?.email || "—",
   }));
 
   return {
     total: rows.length,
-    pending: rows.filter((r) => r.status === "pending").length,
-    approved: rows.filter((r) => r.status === "approved").length,
-    rejected: rows.filter((r) => r.status === "rejected").length,
     rows,
   };
 }

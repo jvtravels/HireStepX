@@ -95,7 +95,7 @@ export function DraftBanner({ type, savedAt, onResume, onDismiss }: DraftBannerP
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory, display: "block", marginBottom: 2 }}>You have an unfinished interview</span>
-        <span style={{ fontFamily: font.ui, fontSize: 11, color: c.stone }}>{type.charAt(0).toUpperCase() + type.slice(1)} · saved {relativeTime(new Date(savedAt).toISOString())}</span>
+        <span style={{ fontFamily: font.ui, fontSize: 12, color: c.stone }}>{type.charAt(0).toUpperCase() + type.slice(1)} · saved {relativeTime(new Date(savedAt).toISOString())}</span>
       </div>
       <Button onClick={onResume}
         style={{ fontFamily: font.ui, fontSize: 12, padding: "8px 18px", height: "auto", whiteSpace: "nowrap" }}>
@@ -187,7 +187,7 @@ export function DailyChallengeBanner({ challenge, onNavigate }: { challenge: Dai
         <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory }}>Daily Challenge: {challenge.label}</span>
         <span style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, marginLeft: 8 }}>{challenge.description}</span>
       </div>
-      <span style={{ fontFamily: font.mono, fontSize: 10, fontWeight: 600, padding: "3px 10px", borderRadius: radius.pill, background: challenge.difficulty === "hard" ? "rgba(185,28,28,0.08)" : `oklch(from ${T.indigo} l c h / 0.08)`, color: challenge.difficulty === "hard" ? c.ember : T.indigo, textTransform: "uppercase" as const, flexShrink: 0 }}>{challenge.difficulty}</span>
+      <span style={{ fontFamily: font.mono, fontSize: 12, fontWeight: 600, padding: "3px 10px", borderRadius: radius.pill, background: challenge.difficulty === "hard" ? "rgba(185,28,28,0.08)" : `oklch(from ${T.indigo} l c h / 0.08)`, color: challenge.difficulty === "hard" ? c.ember : T.indigo, textTransform: "uppercase" as const, flexShrink: 0 }}>{challenge.difficulty}</span>
       <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={T.indigo} strokeWidth="2" strokeLinecap="round" style={{ flexShrink: 0 }}><polyline points="9 18 15 12 9 6"/></svg>
     </div>
   );
@@ -260,7 +260,7 @@ export function UpcomingInterviews({ events, isMobile, onNavigate }: { events: C
               onMouseLeave={(e) => e.currentTarget.style.background = c.obsidian}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
                 <span style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: c.ivory }}>{ev.company}</span>
-                <span style={{ fontFamily: font.mono, fontSize: 10, fontWeight: 600, padding: "3px 10px", borderRadius: radius.pill, background: isToday ? "rgba(185,28,28,0.1)" : urgent ? `oklch(from ${T.indigo} l c h / 0.08)` : "rgba(21,128,61,0.06)", color: isToday ? c.ember : urgent ? T.indigo : c.sage }}>
+                <span style={{ fontFamily: font.mono, fontSize: 12, fontWeight: 600, padding: "3px 10px", borderRadius: radius.pill, background: isToday ? "rgba(185,28,28,0.1)" : urgent ? `oklch(from ${T.indigo} l c h / 0.08)` : "rgba(21,128,61,0.06)", color: isToday ? c.ember : urgent ? T.indigo : c.sage }}>
                   {isToday ? "TODAY" : days === 1 ? "TOMORROW" : `${days}d`}
                 </span>
               </div>
@@ -298,7 +298,7 @@ export function AchievementsSection({ badges, isMobile }: { badges: Badge[]; isM
               {badge.earned && <div style={{ position: "absolute", inset: 0, background: `radial-gradient(circle at 50% 30%, oklch(from ${T.copper} l c h / 0.08) 0%, transparent 60%)`, pointerEvents: "none" }} />}
               <div style={{ marginBottom: 8, display: "flex", justifyContent: "center", position: "relative" }}>{(badgeIcons[badge.icon] || badgeIcons.star)(badge.earned ? T.copper : c.stone)}</div>
               <p style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: badge.earned ? c.ivory : c.stone, marginBottom: 2 }}>{badge.label}</p>
-              <p style={{ fontFamily: font.ui, fontSize: 11, color: c.stone, lineHeight: 1.4, marginBottom: badge.earned ? 0 : 8 }}>{badge.description}</p>
+              <p style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, lineHeight: 1.4, marginBottom: badge.earned ? 0 : 8 }}>{badge.description}</p>
               {!badge.earned && (
                 <div style={{ height: 3, background: "rgba(14,12,8,0.06)", borderRadius: 2, overflow: "hidden" }}>
                   <div style={{ height: "100%", width: `${Math.min(100, badge.progress)}%`, background: T.copper, borderRadius: 2, transition: "width 0.4s cubic-bezier(0.16,1,0.3,1)" }} />
@@ -338,8 +338,8 @@ export function ChartsRow({ scoreTrend, skills, isMobile, onStartSession, onNavi
             <>
               <ScoreTrendChart data={scoreTrend} />
               <div style={{ display: "flex", justifyContent: "space-between", marginTop: 10, padding: "0 24px" }}>
-                <span style={{ fontFamily: font.mono, fontSize: 11, color: c.stone }}>{scoreTrend[0].date}</span>
-                <span style={{ fontFamily: font.mono, fontSize: 11, color: c.stone }}>{scoreTrend[scoreTrend.length - 1].date}</span>
+                <span style={{ fontFamily: font.mono, fontSize: 12, color: c.stone }}>{scoreTrend[0].date}</span>
+                <span style={{ fontFamily: font.mono, fontSize: 12, color: c.stone }}>{scoreTrend[scoreTrend.length - 1].date}</span>
               </div>
             </>
           ) : (
@@ -363,8 +363,8 @@ export function ChartsRow({ scoreTrend, skills, isMobile, onStartSession, onNavi
           {skills.length > 0 ? (
             <>
               <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 8, marginBottom: 8 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 4 }}><div style={{ width: 8, height: 2, background: T.copper, borderRadius: 1 }} /><span style={{ fontFamily: font.ui, fontSize: 11, color: c.stone }}>Current</span></div>
-                <div style={{ display: "flex", alignItems: "center", gap: 4 }}><div style={{ width: 8, height: 2, background: c.stone, borderRadius: 1, opacity: 0.5 }} /><span style={{ fontFamily: font.ui, fontSize: 11, color: c.stone }}>First session</span></div>
+                <div style={{ display: "flex", alignItems: "center", gap: 4 }}><div style={{ width: 8, height: 2, background: T.copper, borderRadius: 1 }} /><span style={{ fontFamily: font.ui, fontSize: 12, color: c.stone }}>Current</span></div>
+                <div style={{ display: "flex", alignItems: "center", gap: 4 }}><div style={{ width: 8, height: 2, background: c.stone, borderRadius: 1, opacity: 0.5 }} /><span style={{ fontFamily: font.ui, fontSize: 12, color: c.stone }}>First session</span></div>
               </div>
               <SkillRadar skills={skills} />
               <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 14 }}>
@@ -378,7 +378,7 @@ export function ChartsRow({ scoreTrend, skills, isMobile, onStartSession, onNavi
                     <span style={{ fontFamily: font.ui, fontSize: 13, color: c.chalk, flex: 1 }}>{skillLabel(sk.name)}</span>
                     <div style={{ width: 60, height: 3, background: "rgba(14,12,8,0.06)", borderRadius: 2, overflow: "hidden" }}><div style={{ height: "100%", width: `${sk.score}%`, background: sk.color, borderRadius: 2, transition: "width 0.4s cubic-bezier(0.16,1,0.3,1)" }} /></div>
                     <span style={{ fontFamily: font.mono, fontSize: 12, fontWeight: 600, color: c.ivory, width: 24, textAlign: "right" }}>{sk.score}</span>
-                    <span style={{ fontFamily: font.mono, fontSize: 11, color: c.sage, width: 30, textAlign: "right" }}>+{sk.score - sk.prev}</span>
+                    <span style={{ fontFamily: font.mono, fontSize: 12, color: c.sage, width: 30, textAlign: "right" }}>+{sk.score - sk.prev}</span>
                   </div>
                 ))}
               </div>
@@ -388,11 +388,11 @@ export function ChartsRow({ scoreTrend, skills, isMobile, onStartSession, onNavi
               <div style={{ display: "flex", flexDirection: "column", gap: 14, opacity: 0.15, padding: "0 4px" }}>
                 {["Communication", "Leadership", "Problem Solving", "Teamwork", "Adaptability"].map((skill, i) => (
                   <div key={skill} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <span style={{ fontFamily: font.ui, fontSize: 11, color: c.chalk, width: 100 }}>{skill}</span>
+                    <span style={{ fontFamily: font.ui, fontSize: 12, color: c.chalk, width: 100 }}>{skill}</span>
                     <div style={{ flex: 1, height: 3, background: "rgba(14,12,8,0.06)", borderRadius: 2, overflow: "hidden" }}>
                       <div style={{ height: "100%", width: `${75 - i * 8}%`, background: T.copper, borderRadius: 2 }} />
                     </div>
-                    <span style={{ fontFamily: font.mono, fontSize: 11, color: c.ivory, width: 22, textAlign: "right" }}>{75 - i * 8}</span>
+                    <span style={{ fontFamily: font.mono, fontSize: 12, color: c.ivory, width: 22, textAlign: "right" }}>{75 - i * 8}</span>
                   </div>
                 ))}
               </div>

@@ -96,7 +96,7 @@ export default function MessagesBell({
           <CountBadge count={unreadCount} />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" style={{ width: 340, padding: 0 }}>
+      <DropdownMenuContent align="end" style={{ width: "min(340px, calc(100vw - 24px))", padding: 0 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 12px" }}>
           <DropdownMenuLabel className="p-0 font-normal" style={{ fontFamily: F.sans, fontSize: 13.5, fontWeight: 600, color: T.coal }}>
             Messages

@@ -58,7 +58,7 @@ export default function HiringActivityCard() {
             Employer Interest
           </h2>
           <span style={{
-            fontFamily: f.sans, fontSize: textSize.xs, fontWeight: 600, color: t.indigo,
+            fontFamily: f.sans, fontSize: textSize.sm, fontWeight: 600, color: t.indigo,
             background: t.indigo100, padding: "3px 10px", borderRadius: 999,
           }}>
             {shortlisted} {shortlisted === 1 ? "Invite" : "Invites"}
@@ -111,7 +111,7 @@ export default function HiringActivityCard() {
               <div style={{ fontFamily: f.sans, fontSize: textSize.sm, color: t.inkSoft, marginBottom: 8 }}>
                 {m.companyName}{empLabel ? ` · ${empLabel}` : ""}
               </div>
-              <div style={{ fontFamily: f.sans, fontSize: textSize.xs, color: t.inkFaint }}>
+              <div style={{ fontFamily: f.sans, fontSize: textSize.sm, color: t.inkFaint }}>
                 {hoursOrDaysAgo(m.matchedAt)}
               </div>
             </div>

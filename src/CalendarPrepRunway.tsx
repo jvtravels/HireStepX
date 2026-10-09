@@ -109,7 +109,7 @@ function Eyebrow({ children, color = T.indigo }: { children: React.ReactNode; co
     <span
       style={{
         fontFamily: font.mono,
-        fontSize: 10.5,
+        fontSize: 12,
         fontWeight: 600,
         letterSpacing: 1.1,
         textTransform: "uppercase",
@@ -146,7 +146,7 @@ function Pill({
         color: fg,
         border: bd ? `1px solid ${bd}` : "none",
         fontFamily: font.mono,
-        fontSize: 10.5,
+        fontSize: 12,
         fontWeight: 600,
         letterSpacing: 0.4,
         textTransform: "uppercase",
@@ -291,7 +291,7 @@ export function PrepRunwayRail({ scenario = SCENARIOS[0] }: { scenario?: Scenari
             {scenario.archetype}
           </Pill>
         </div>
-        <span style={{ fontFamily: font.mono, fontSize: 11, color: c.stone, letterSpacing: 0.3 }}>
+        <span style={{ fontFamily: font.mono, fontSize: 12, color: c.stone, letterSpacing: 0.3 }}>
           {scenario.railLabel}
         </span>
       </div>
@@ -340,7 +340,7 @@ export function PrepRunwayRail({ scenario = SCENARIOS[0] }: { scenario?: Scenari
                 <div
                   style={{
                     fontFamily: font.mono,
-                    fontSize: 10.5,
+                    fontSize: 12,
                     fontWeight: 600,
                     letterSpacing: 0.6,
                     color: v.fg,
@@ -355,7 +355,7 @@ export function PrepRunwayRail({ scenario = SCENARIOS[0] }: { scenario?: Scenari
                   )}
                 </div>
                 <div style={{ fontSize: 13, fontWeight: 600, color: c.ivory, lineHeight: 1.25 }}>{n.title}</div>
-                <div style={{ fontSize: 11.5, color: c.chalk, marginTop: 3, lineHeight: 1.35 }}>{n.detail}</div>
+                <div style={{ fontSize: 12, color: c.chalk, marginTop: 3, lineHeight: 1.35 }}>{n.detail}</div>
 
                 {n.state === "active" && (
                   <button
@@ -373,7 +373,7 @@ export function PrepRunwayRail({ scenario = SCENARIOS[0] }: { scenario?: Scenari
                       borderRadius: 8,
                       padding: "8px 12px",
                       fontFamily: font.ui,
-                      fontSize: 11.5,
+                      fontSize: 12,
                       fontWeight: 600,
                       cursor: "pointer",
                       boxShadow: shadow.sm,
@@ -481,12 +481,12 @@ export function SuggestRunwaySheet() {
               >
                 {on && <Icon size={13}>{I.check}</Icon>}
               </span>
-              <span style={{ fontFamily: font.mono, fontSize: 11, fontWeight: 600, color: T.indigo, width: 30 }}>
+              <span style={{ fontFamily: font.mono, fontSize: 12, fontWeight: 600, color: T.indigo, width: 30 }}>
                 {n.tag}
               </span>
               <span style={{ flex: 1 }}>
                 <span style={{ display: "block", fontSize: 13, fontWeight: 600, color: c.ivory }}>{n.title}</span>
-                <span style={{ display: "block", fontSize: 11.5, color: c.chalk }}>{n.detail}</span>
+                <span style={{ display: "block", fontSize: 12, color: c.chalk }}>{n.detail}</span>
               </span>
             </button>
           );
@@ -580,7 +580,7 @@ function MiniMonth() {
         {dow.map((d, i) => (
           <div
             key={i}
-            style={{ textAlign: "center", fontFamily: font.mono, fontSize: 10, color: c.stone, padding: "2px 0" }}
+            style={{ textAlign: "center", fontFamily: font.mono, fontSize: 12, color: c.stone, padding: "2px 0" }}
           >
             {d}
           </div>
@@ -603,7 +603,7 @@ function MiniMonth() {
                 justifyContent: "center",
                 borderRadius: radius.sm,
                 fontFamily: font.mono,
-                fontSize: 11.5,
+                fontSize: 12,
                 fontWeight: isToday ? 700 : 400,
                 color: isToday ? c.carbon : ev ? c.ivory : c.chalk,
                 background: isToday ? T.indigo : ev ? T.indigo100 : "transparent",
@@ -744,7 +744,7 @@ export default function CalendarPrepRunway() {
               <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: on ? c.ivory : c.chalk }}>
                 {sc.archetype}
               </span>
-              <span style={{ fontFamily: font.mono, fontSize: 10, color: on ? T.indigo : c.stone, letterSpacing: 0.3 }}>
+              <span style={{ fontFamily: font.mono, fontSize: 12, color: on ? T.indigo : c.stone, letterSpacing: 0.3 }}>
                 {sc.badge}
               </span>
             </button>

@@ -1,5 +1,5 @@
 /* Admin complimentary unlock — lets an admin unlock matched candidates for
- * any approved company's job requirement without a Razorpay payment.
+ * any company's job requirement without a Razorpay payment.
  *
  * Reads (listUnlockRequirements / getUnlockMatches) back the admin "Unlock"
  * tab; adminUnlockCandidates performs the write. Every grant is recorded as a
@@ -61,7 +61,7 @@ export function selectUnlockTargets(
   };
 }
 
-interface EmployerLite { id: string; company_name: string; status: string }
+interface EmployerLite { id: string; company_name: string }
 interface RequirementRow { id: string; employer_id: string; title: string; location: string | null; status: string; created_at: string }
 
 async function fetchProfiles(ids: string[]): Promise<Map<string, { name: string | null; email: string | null }>> {
@@ -79,7 +79,7 @@ async function fetchProfiles(ids: string[]): Promise<Map<string, { name: string 
 export async function listUnlockRequirements(rawSearch: unknown) {
   const search = sanitizeSearchTerm(rawSearch);
   const employers = await fetchJSON<EmployerLite>(
-    "employers?status=eq.approved&select=id,company_name,status&order=company_name.asc&limit=1000",
+    "employers?select=id,company_name&order=company_name.asc&limit=1000",
   );
   const employerById = new Map(employers.map((e) => [e.id, e]));
 
@@ -105,7 +105,7 @@ export async function listUnlockRequirements(rawSearch: unknown) {
       status: r.status,
       createdAt: r.created_at,
     }));
-  return { rows, approvedEmployers: employers.length };
+  return { rows, employerCount: employers.length };
 }
 
 async function loadRequirementContext(requirementId: string): Promise<{ requirement: RequirementRow; employer: EmployerLite }> {
@@ -115,7 +115,7 @@ async function loadRequirementContext(requirementId: string): Promise<{ requirem
   );
   if (!req) throw new ValidationError("requirement not found");
   const [employer] = await fetchJSON<EmployerLite>(
-    `employers?id=eq.${encodeURIComponent(req.employer_id)}&select=id,company_name,status&limit=1`,
+    `employers?id=eq.${encodeURIComponent(req.employer_id)}&select=id,company_name&limit=1`,
   );
   if (!employer) throw new ValidationError("employer not found");
   return { requirement: req, employer };
@@ -129,7 +129,7 @@ export async function getUnlockMatches(requirementId: string) {
   const profiles = await fetchProfiles(matches.map((m) => m.candidate_user_id));
   return {
     requirement: { id: requirement.id, title: requirement.title, location: requirement.location || "", status: requirement.status },
-    employer: { id: employer.id, companyName: employer.company_name, status: employer.status },
+    employer: { id: employer.id, companyName: employer.company_name },
     matches: matches.map((m) => ({
       matchId: m.id,
       name: profiles.get(m.candidate_user_id)?.name || "(no name)",
@@ -153,9 +153,6 @@ export async function adminUnlockCandidates(input: { requirementId: unknown; mat
   const note = typeof input.note === "string" ? input.note.trim().slice(0, 200) : "";
 
   const { requirement, employer } = await loadRequirementContext(input.requirementId);
-  if (employer.status !== "approved") {
-    return { ok: false, error: `Employer is ${employer.status} — approve them first.` };
-  }
 
   const matches = await fetchJSON<{ id: string; candidate_user_id: string; unlocked: boolean }>(
     `requirement_matches?requirement_id=eq.${requirement.id}&select=id,candidate_user_id,unlocked&limit=1000`,

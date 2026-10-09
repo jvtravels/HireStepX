@@ -15,12 +15,10 @@
  * scope note in app/(employer) and the schema comment in
  * supabase-schema.sql ("Employer talent-roster feature").
  *
- * Employer signup no longer requires admin approval — a submission is
- * live ("approved") immediately. The admin panel's "Employers" tab
- * (server-handlers/admin-data.ts, actions "employers" / "approve-employer" /
- * "reject-employer") is kept as a post-hoc moderation tool: "reject"
- * suspends an employer (blocks server-handlers/employer-requirements.ts's
- * status check) and "approve" reinstates one.
+ * Employers do not need admin approval: a submission is live immediately.
+ * The `employers.status` column is legacy — nothing gates on it, every write
+ * here sets "approved", and GET reports "approved" for any existing row
+ * (including old "pending"/"rejected" ones) so no row can be stuck.
  */
 
 export const config = { runtime: "edge" };
@@ -224,7 +222,7 @@ async function handleGet(userId: string, headers: Record<string, string>): Promi
 
     return new Response(
       JSON.stringify({
-        status: row.status,
+        status: "approved",
         companyName: row.company_name,
         website: row.website,
         logoUrl: logoUrl(row.logo_path),
@@ -260,11 +258,7 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
     if (uploadedLogoPath) {
       await deleteLogoIfDifferent(userId, existing?.logo_path ?? null, uploadedLogoPath);
     }
-    // A rejected employer resubmitting stays rejected — admin moderation
-    // decides re-approval, this endpoint doesn't get to self-approve (C5).
-    const status = existing?.status === "rejected" ? "rejected" : "approved";
-
-    const now = new Date().toISOString();
+      const now = new Date().toISOString();
     const upsertRes = await fetch(`${SUPABASE_URL}/rest/v1/employers?on_conflict=id`, {
       method: "POST",
       headers: { ...serviceHeaders(), "Content-Type": "application/json", Prefer: "resolution=merge-duplicates,return=representation" },
@@ -273,9 +267,9 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
         company_name: companyName,
         website,
         logo_path: logoPath,
-        status,
+        status: "approved",
         submitted_at: now,
-        approved_at: status === "approved" ? now : existing?.approved_at ?? null,
+        approved_at: existing?.approved_at ?? now,
       }]),
     });
 
@@ -285,7 +279,7 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
       return new Response(JSON.stringify({ error: "Failed to submit company profile" }), { status: 500, headers });
     }
 
-    return new Response(JSON.stringify({ status, companyName, website, logoUrl: logoUrl(logoPath) }), { status: 200, headers });
+    return new Response(JSON.stringify({ status: "approved", companyName, website, logoUrl: logoUrl(logoPath) }), { status: 200, headers });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     slog.error("employer-profile POST threw", { code: "employer_profile_post_unexpected_error", error: msg.slice(0, 200), userId });

@@ -70,7 +70,7 @@ export function AnchorBracketPanel({ outcome }: { outcome: NegotiationOutcome })
       <div
         style={{
           display: "flex", justifyContent: "space-between",
-          marginTop: space.sm, fontSize: 10, color: t.inkFaint, letterSpacing: 0.4,
+          marginTop: space.sm, fontSize: 11, color: t.inkFaint, letterSpacing: 0.4,
         }}
       >
         <span>NONE</span><span>SINGLE</span><span>RANGE</span><span>RANGE + JUSTIFY</span>

@@ -124,7 +124,7 @@ export const NegotiationCoachingCard = memo(function NegotiationCoachingCard({ o
           />
           <span style={{ fontFamily: ef.sans, fontSize: 13, color: e.inkSoft }}>LPA</span>
         </div>
-        <p style={{ fontFamily: ef.sans, fontSize: 10, color: targetInvalid ? e.error : e.inkSoft, margin: 0 }}>
+        <p style={{ fontFamily: ef.sans, fontSize: 11, color: targetInvalid ? e.error : e.inkSoft, margin: 0 }}>
           {targetInvalid
             ? "Enter your target as annual LPA — a number between 1 and 200 (e.g. 25)."
             : "Setting a target helps us coach you on whether you anchored high enough."}
@@ -412,7 +412,7 @@ export const DealSummaryCard = memo(function DealSummaryCard({ transcript, negot
           ),
         ].map(item => (
           <div key={item.label} style={{ flex: 1, minWidth: 80, padding: "10px 12px", borderRadius: 10, background: "rgba(20,17,10,0.07)", border: "1px solid rgba(20,17,10,0.04)" }}>
-            <p style={{ fontFamily: ef.sans, fontSize: 10, color: e.inkSoft, margin: 0, textTransform: "uppercase", letterSpacing: "0.05em" }}>{item.label}</p>
+            <p style={{ fontFamily: ef.sans, fontSize: 11, color: e.inkSoft, margin: 0, textTransform: "uppercase", letterSpacing: "0.05em" }}>{item.label}</p>
             <p style={{ fontFamily: ef.sans, fontSize: 15, fontWeight: 600, color: item.color, margin: "4px 0 0" }}>{item.value}</p>
           </div>
         ))}
@@ -452,7 +452,7 @@ export const DealSummaryCard = memo(function DealSummaryCard({ transcript, negot
               <span style={{ color: e.indigo, fontWeight: 600 }}>Annual take-home</span><span style={{ color: e.indigo, fontWeight: 600 }}>₹{breakdown.annualTakeHomeLpa} LPA</span>
               <span style={{ color: e.indigo, fontWeight: 600 }}>All-in realistic (cash + equity)</span><span style={{ color: e.indigo, fontWeight: 600 }}>₹{breakdown.totalRealisticLpa} LPA</span>
             </div>
-            <p style={{ marginTop: 8, fontFamily: ef.sans, fontSize: 10, color: e.inkFaint, lineHeight: 1.4 }}>
+            <p style={{ marginTop: 8, fontFamily: ef.sans, fontSize: 11, color: e.inkFaint, lineHeight: 1.4 }}>
               Heuristics: ESOP discounted to 30% of face (Indian unicorn buyback history); variable at 85% payout factor; tax under new regime FY 2025-26 incl. ₹75k std deduction + 87A rebate up to ₹12L. HRA / 80C deductions not netted.
             </p>
           </details>
@@ -499,20 +499,20 @@ export const DealSummaryCard = memo(function DealSummaryCard({ transcript, negot
               const captureColor = captured >= 70 ? e.success : captured >= 40 ? e.indigo : e.error;
               return (
                 <div style={{ flex: 1, minWidth: 100, padding: "8px 10px", borderRadius: 8, background: "rgba(20,17,10,0.07)", border: "1px solid rgba(20,17,10,0.04)" }}>
-                  <p style={{ fontFamily: ef.sans, fontSize: 10, color: e.inkSoft, margin: 0, textTransform: "uppercase", letterSpacing: "0.04em" }}>Band Captured</p>
+                  <p style={{ fontFamily: ef.sans, fontSize: 11, color: e.inkSoft, margin: 0, textTransform: "uppercase", letterSpacing: "0.04em" }}>Band Captured</p>
                   <p style={{ fontFamily: ef.sans, fontSize: 16, fontWeight: 700, color: captureColor, margin: "2px 0 0" }}>{Math.max(0, captured)}%</p>
-                  <p style={{ fontFamily: ef.sans, fontSize: 10, color: e.inkSoft, margin: "2px 0 0" }}>of ₹{negotiationBand.initialOffer}–₹{negotiationBand.maxStretch} range</p>
+                  <p style={{ fontFamily: ef.sans, fontSize: 11, color: e.inkSoft, margin: "2px 0 0" }}>of ₹{negotiationBand.initialOffer}–₹{negotiationBand.maxStretch} range</p>
                 </div>
               );
             })()}
             {/* Manager style faced */}
             {negotiationStyle && (
               <div style={{ flex: 1, minWidth: 100, padding: "8px 10px", borderRadius: 8, background: "rgba(20,17,10,0.07)", border: "1px solid rgba(20,17,10,0.04)" }}>
-                <p style={{ fontFamily: ef.sans, fontSize: 10, color: e.inkSoft, margin: 0, textTransform: "uppercase", letterSpacing: "0.04em" }}>Manager Style</p>
+                <p style={{ fontFamily: ef.sans, fontSize: 11, color: e.inkSoft, margin: 0, textTransform: "uppercase", letterSpacing: "0.04em" }}>Manager Style</p>
                 <p style={{ fontFamily: ef.sans, fontSize: 14, fontWeight: 600, color: e.coal, margin: "2px 0 0" }}>
                   {negotiationStyle === "aggressive" ? "Tough" : negotiationStyle === "defensive" ? "Evasive" : "Collaborative"}
                 </p>
-                <p style={{ fontFamily: ef.sans, fontSize: 10, color: e.inkSoft, margin: "2px 0 0" }}>
+                <p style={{ fontFamily: ef.sans, fontSize: 11, color: e.inkSoft, margin: "2px 0 0" }}>
                   {negotiationStyle === "aggressive" ? "Budget-conscious pushback" : negotiationStyle === "defensive" ? "Deflects & delays" : "Open to trade-offs"}
                 </p>
               </div>
@@ -647,7 +647,7 @@ export const NegotiationLiveDashboard = memo(function NegotiationLiveDashboard({
           <span
             data-testid="multi-round-badge"
             style={{
-              fontFamily: ef.sans, fontSize: 10, fontWeight: 600,
+              fontFamily: ef.sans, fontSize: 11, fontWeight: 600,
               color: e.indigo, padding: "2px 8px", borderRadius: 999,
               background: "oklch(0.359 0.135 278.697 / 0.10)",
               border: "1px solid oklch(0.359 0.135 278.697 / 0.24)",
@@ -680,10 +680,10 @@ export const NegotiationLiveDashboard = memo(function NegotiationLiveDashboard({
           return (
             <div data-testid="zopa-band" style={{ paddingTop: 4 }}>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                <span style={{ fontFamily: ef.sans, fontSize: 10, color: e.inkSoft, textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                <span style={{ fontFamily: ef.sans, fontSize: 11, color: e.inkSoft, textTransform: "uppercase", letterSpacing: "0.04em" }}>
                   ZOPA Band
                 </span>
-                <span style={{ fontFamily: ef.sans, fontSize: 10, color: e.inkSoft }}>
+                <span style={{ fontFamily: ef.sans, fontSize: 11, color: e.inkSoft }}>
                   ₹{lo} → ₹{hi}
                 </span>
               </div>
@@ -750,7 +750,7 @@ export const NegotiationLiveDashboard = memo(function NegotiationLiveDashboard({
         {styleInfo && (
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
             <span style={{ fontSize: 11 }}>{styleInfo.icon}</span>
-            <span style={{ fontFamily: ef.sans, fontSize: 10, fontWeight: 600, color: styleInfo.color }}>
+            <span style={{ fontFamily: ef.sans, fontSize: 11, fontWeight: 600, color: styleInfo.color }}>
               {styleInfo.label} Manager
             </span>
           </div>
@@ -764,8 +764,8 @@ export const NegotiationLiveDashboard = memo(function NegotiationLiveDashboard({
       {negotiationBand && negotiationBand.initialOffer > 0 && (
         <div>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-            <span style={{ fontFamily: ef.sans, fontSize: 10, color: e.inkSoft }}>Walk-away ₹{negotiationBand.walkAway}</span>
-            <span style={{ fontFamily: ef.sans, fontSize: 10, color: e.inkSoft }}>Max ₹{negotiationBand.maxStretch}</span>
+            <span style={{ fontFamily: ef.sans, fontSize: 11, color: e.inkSoft }}>Walk-away ₹{negotiationBand.walkAway}</span>
+            <span style={{ fontFamily: ef.sans, fontSize: 11, color: e.inkSoft }}>Max ₹{negotiationBand.maxStretch}</span>
           </div>
           <div style={{ position: "relative", height: 20, borderRadius: 10, background: "rgba(20,17,10,0.04)", overflow: "hidden" }}>
             {/* Band range */}
@@ -786,7 +786,7 @@ export const NegotiationLiveDashboard = memo(function NegotiationLiveDashboard({
                 }}>
                   <div style={{
                     position: "absolute", top: -16, left: "50%", transform: "translateX(-50%)", whiteSpace: "nowrap",
-                    fontFamily: ef.sans, fontSize: 9, fontWeight: 700, color: e.indigo,
+                    fontFamily: ef.sans, fontSize: 11, fontWeight: 700, color: e.indigo,
                   }}>₹{highestOffer}</div>
                 </div>
               );
@@ -804,7 +804,7 @@ export const NegotiationLiveDashboard = memo(function NegotiationLiveDashboard({
                 }}>
                   <div style={{
                     position: "absolute", bottom: -14, left: "50%", transform: "translateX(-50%)", whiteSpace: "nowrap",
-                    fontFamily: ef.sans, fontSize: 9, fontWeight: 600, color: e.success,
+                    fontFamily: ef.sans, fontSize: 11, fontWeight: 600, color: e.success,
                   }}>Target</div>
                 </div>
               );
@@ -817,8 +817,8 @@ export const NegotiationLiveDashboard = memo(function NegotiationLiveDashboard({
       <div style={{ display: "flex", gap: 10 }}>
         <div style={{ flex: 1 }}>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
-            <span style={{ fontFamily: ef.sans, fontSize: 10, color: e.inkSoft, textTransform: "uppercase", letterSpacing: "0.04em" }}>Leverage</span>
-            <span style={{ fontFamily: ef.sans, fontSize: 10, fontWeight: 700, color: leverageColor }}>{liveState.leverage}%</span>
+            <span style={{ fontFamily: ef.sans, fontSize: 11, color: e.inkSoft, textTransform: "uppercase", letterSpacing: "0.04em" }}>Leverage</span>
+            <span style={{ fontFamily: ef.sans, fontSize: 11, fontWeight: 700, color: leverageColor }}>{liveState.leverage}%</span>
           </div>
           <div style={{ height: 6, borderRadius: 3, background: "rgba(20,17,10,0.04)", overflow: "hidden" }}>
             <div style={{ height: "100%", borderRadius: 3, width: `${liveState.leverage}%`, background: leverageColor, transition: "width 0.5s ease, background 0.3s ease" }} />
@@ -827,8 +827,8 @@ export const NegotiationLiveDashboard = memo(function NegotiationLiveDashboard({
         {voiceConfidence && (
           <div style={{ flex: 1 }}>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
-              <span style={{ fontFamily: ef.sans, fontSize: 10, color: e.inkSoft, textTransform: "uppercase", letterSpacing: "0.04em" }}>Voice</span>
-              <span style={{ fontFamily: ef.sans, fontSize: 10, fontWeight: 700, color: voiceConfidence.score >= 60 ? e.success : voiceConfidence.score >= 35 ? e.indigo : e.error }}>{voiceConfidence.score}%</span>
+              <span style={{ fontFamily: ef.sans, fontSize: 11, color: e.inkSoft, textTransform: "uppercase", letterSpacing: "0.04em" }}>Voice</span>
+              <span style={{ fontFamily: ef.sans, fontSize: 11, fontWeight: 700, color: voiceConfidence.score >= 60 ? e.success : voiceConfidence.score >= 35 ? e.indigo : e.error }}>{voiceConfidence.score}%</span>
             </div>
             <div style={{ height: 6, borderRadius: 3, background: "rgba(20,17,10,0.04)", overflow: "hidden" }}>
               <div style={{
@@ -844,13 +844,13 @@ export const NegotiationLiveDashboard = memo(function NegotiationLiveDashboard({
       {/* Topics Checklist (compact) */}
       <div>
         <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-          <span style={{ fontFamily: ef.sans, fontSize: 10, color: e.inkSoft, textTransform: "uppercase", letterSpacing: "0.04em" }}>Topics Discussed</span>
-          <span style={{ fontFamily: ef.sans, fontSize: 10, color: e.inkSoft }}>{coveredCount}/{liveState.topicsCovered.length}</span>
+          <span style={{ fontFamily: ef.sans, fontSize: 11, color: e.inkSoft, textTransform: "uppercase", letterSpacing: "0.04em" }}>Topics Discussed</span>
+          <span style={{ fontFamily: ef.sans, fontSize: 11, color: e.inkSoft }}>{coveredCount}/{liveState.topicsCovered.length}</span>
         </div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
           {liveState.topicsCovered.map(t => (
             <span key={t.topic} style={{
-              fontFamily: ef.sans, fontSize: 9, padding: "2px 6px", borderRadius: 4,
+              fontFamily: ef.sans, fontSize: 11, padding: "2px 6px", borderRadius: 4,
               background: t.covered ? e.success100 : "rgba(20,17,10,0.04)",
               color: t.covered ? e.success : e.inkSoft,
               border: `1px solid ${t.covered ? e.successLine : "rgba(20,17,10,0.04)"}`,
@@ -958,7 +958,7 @@ export const AnnotatedReplayPanel = memo(function AnnotatedReplayPanel({ transcr
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
         <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={e.indigo} strokeWidth="2" strokeLinecap="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
         <span style={{ fontFamily: ef.sans, fontSize: 13, fontWeight: 600, color: e.coal }}>Negotiation Replay</span>
-        <span style={{ fontFamily: ef.sans, fontSize: 10, color: e.inkSoft, marginLeft: "auto" }}>Click any turn for annotations</span>
+        <span style={{ fontFamily: ef.sans, fontSize: 11, color: e.inkSoft, marginLeft: "auto" }}>Click any turn for annotations</span>
       </div>
 
       {annotatedTurns.map((turn, idx) => {
@@ -982,7 +982,7 @@ export const AnnotatedReplayPanel = memo(function AnnotatedReplayPanel({ transcr
           >
             <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
               <span style={{
-                fontFamily: ef.sans, fontSize: 9, fontWeight: 700, color: isUser ? e.indigo : e.inkSoft,
+                fontFamily: ef.sans, fontSize: 11, fontWeight: 700, color: isUser ? e.indigo : e.inkSoft,
                 textTransform: "uppercase", letterSpacing: "0.06em", flexShrink: 0, marginTop: 2,
               }}>
                 {isUser ? "You" : "HR"}
@@ -991,7 +991,7 @@ export const AnnotatedReplayPanel = memo(function AnnotatedReplayPanel({ transcr
                 {turn.text.length > 200 ? turn.text.slice(0, 200) + "..." : turn.text}
               </p>
               {hasAnnotations && (
-                <span style={{ fontFamily: ef.sans, fontSize: 9, color: e.inkSoft, flexShrink: 0, marginTop: 2 }}>
+                <span style={{ fontFamily: ef.sans, fontSize: 11, color: e.inkSoft, flexShrink: 0, marginTop: 2 }}>
                   {turn.annotations.length}
                 </span>
               )}

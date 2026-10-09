@@ -74,7 +74,7 @@ export function EmployerWordmark() {
 export function Eyebrow({ children, tone = "ink" }: { children: React.ReactNode; tone?: "ink" | "copper" | "indigo" | "error" }) {
   const color = tone === "copper" ? t.copper : tone === "indigo" ? t.indigo : tone === "error" ? t.error : t.inkSoft;
   return (
-    <div style={{ fontFamily: f.mono, fontSize: 11, letterSpacing: 1.2, textTransform: "uppercase", color, fontWeight: 600 }}>
+    <div style={{ fontFamily: f.mono, fontSize: 12, letterSpacing: 1.2, textTransform: "uppercase", color, fontWeight: 600 }}>
       {children}
     </div>
   );
@@ -103,9 +103,12 @@ export function Pill({ children, tone = "neutral", filled = false }: { children:
         padding: "4px 10px",
         borderRadius: 999,
         fontFamily: f.sans,
-        fontSize: 11,
+        fontSize: 12,
         fontWeight: 600,
         letterSpacing: 0.2,
+        maxWidth: "100%",
+        minWidth: 0,
+        overflowWrap: "anywhere",
         background: filled ? p.fg : p.bg,
         color: filled ? t.white : p.fg,
       }}
@@ -351,7 +354,7 @@ const BADGE_TONE: Record<BadgeTone, { color: string; background: string }> = {
 export function Badge({ tone, children }: { tone: BadgeTone; children: React.ReactNode }) {
   const { color, background } = BADGE_TONE[tone];
   return (
-    <span style={{ fontFamily: f.sans, fontSize: textSize.xs, fontWeight: 600, color, background, padding: "3px 9px", borderRadius: 999, whiteSpace: "nowrap" }}>
+    <span style={{ fontFamily: f.sans, fontSize: textSize.sm, fontWeight: 600, color, background, padding: "3px 9px", borderRadius: 999, whiteSpace: "nowrap" }}>
       {children}
     </span>
   );
@@ -430,7 +433,7 @@ export function StageCell({
         animate={{ backgroundColor: background, color }}
         transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
         style={{
-          display: "inline-flex", alignItems: "center", gap: 4, fontFamily: f.sans, fontSize: textSize.xs, fontWeight: 600,
+          display: "inline-flex", alignItems: "center", gap: 4, fontFamily: f.sans, fontSize: textSize.sm, fontWeight: 600,
           padding: "3px 8px", borderRadius: 999, whiteSpace: "nowrap",
         }}
       >
@@ -463,7 +466,7 @@ export function StageCell({
           animate={{ backgroundColor: background, color }}
           transition={{ duration: 0.16, ease: [0.2, 0.7, 0.2, 1] }}
           style={{
-            display: "inline-flex", alignItems: "center", gap: 4, fontFamily: f.sans, fontSize: textSize.xs, fontWeight: 600,
+            display: "inline-flex", alignItems: "center", gap: 4, fontFamily: f.sans, fontSize: textSize.sm, fontWeight: 600,
             padding: "7px 9px 7px 10px", borderRadius: 999, whiteSpace: "nowrap", border: "none", cursor: "pointer",
           }}
         >
@@ -920,7 +923,7 @@ export function FormSection({ title, children }: { title?: string; children: Rea
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       {title && (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          <span style={{ fontFamily: f.mono, fontSize: 11, letterSpacing: 1, textTransform: "uppercase", color: t.inkFaint, fontWeight: 600 }}>
+          <span style={{ fontFamily: f.mono, fontSize: 12, letterSpacing: 1, textTransform: "uppercase", color: t.inkFaint, fontWeight: 600 }}>
             {title}
           </span>
           <Divider />
@@ -1028,7 +1031,7 @@ export function Checkbox({ label, checked, onChange }: { label: string; checked:
 export function StatCell({ label, value, unit }: { label: string; value: string; unit: string }) {
   return (
     <div style={{ padding: "16px 4px", borderRight: `1px solid ${t.line}` }}>
-      <dt style={{ fontFamily: f.mono, fontSize: 10, color: t.inkSoft, letterSpacing: 0.6, textTransform: "uppercase", margin: 0 }}>
+      <dt style={{ fontFamily: f.mono, fontSize: 12, color: t.inkSoft, letterSpacing: 0.6, textTransform: "uppercase", margin: 0 }}>
         {label}
       </dt>
       <dd style={{ margin: "6px 0 0", display: "flex", alignItems: "baseline", gap: 3 }}>

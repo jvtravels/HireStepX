@@ -1,5 +1,6 @@
 "use client";
 
+import { useMaxWidth } from "../hooks/useMaxWidth";
 import { useState, Dispatch, SetStateAction } from "react";
 import { useRouter } from "next/navigation";
 import { WorkMode, EmploymentType, SalaryType, Requirement, RequirementFormValues } from "./mockData";
@@ -20,7 +21,7 @@ import {
 import { CITY_SUGGESTIONS } from "../../data/city-tiers";
 import { COMPANY_SUGGESTIONS, ROLE_SUGGESTIONS } from "@/onboardingData";
 
-const inputStyle: React.CSSProperties = {
+const baseInputStyle: React.CSSProperties = {
   width: "100%",
   padding: "12px 14px",
   borderRadius: 10,
@@ -118,6 +119,9 @@ export function RequirementForm({
   setSubmitError: Dispatch<SetStateAction<string | null>>;
 }) {
   const router = useRouter();
+  const phone = useMaxWidth(768);
+  // iOS zooms any focused input under 16px.
+  const inputStyle: React.CSSProperties = phone ? { ...baseInputStyle, fontSize: 16 } : baseInputStyle;
   const [step, setStep] = useState<1 | 2>(1);
 
   const [title, setTitle] = useState(initial?.title ?? "");
@@ -480,7 +484,7 @@ export function RequirementForm({
               <h1 style={{ fontFamily: f.sans, fontSize: 22, fontWeight: 700, color: t.coal, margin: 0, letterSpacing: "-0.01em", lineHeight: "28px" }}>
                 {step === 1 ? "Basic information" : "Preferences & perks"}
               </h1>
-              <span style={{ fontFamily: f.mono, fontSize: 11, letterSpacing: 1.2, textTransform: "uppercase", color: t.indigo, fontWeight: 600 }}>
+              <span style={{ fontFamily: f.mono, fontSize: 12, letterSpacing: 1.2, textTransform: "uppercase", color: t.indigo, fontWeight: 600 }}>
                 Step {step} of 2
               </span>
             </div>

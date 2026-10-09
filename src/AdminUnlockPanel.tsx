@@ -14,7 +14,7 @@ interface MatchRow {
 }
 interface MatchesData {
   requirement: { id: string; title: string; location: string; status: string };
-  employer: { id: string; companyName: string; status: string };
+  employer: { id: string; companyName: string };
   matches: MatchRow[];
 }
 interface UnlockResult { ok: boolean; unlocked?: number; alreadyUnlocked?: number; failed?: number; error?: string }
@@ -183,12 +183,6 @@ export default function AdminUnlockPanel({ getToken, setToken }: Props) {
               {detail.requirement.location || "No location"} · {detail.matches.length} matched · {locked.length} locked
             </p>
 
-            {detail.employer.status !== "approved" && (
-              <p role="alert" style={{ color: c.ember, fontSize: 13 }}>
-                This employer is {detail.employer.status}. Approve them in the Employers tab before unlocking.
-              </p>
-            )}
-
             {detail.matches.length === 0 ? (
               <p style={{ color: c.stone, fontSize: 13 }}>No candidates are matched to this job yet.</p>
             ) : (
@@ -238,7 +232,7 @@ export default function AdminUnlockPanel({ getToken, setToken }: Props) {
               </div>
             )}
 
-            {locked.length > 0 && detail.employer.status === "approved" && (
+            {locked.length > 0 && (
               <div style={{ marginTop: 20, display: "flex", flexWrap: "wrap", gap: 12, alignItems: "center" }}>
                 <input
                   type="text"
@@ -284,7 +278,7 @@ export default function AdminUnlockPanel({ getToken, setToken }: Props) {
       <div style={{ ...card, marginBottom: 20 }}>
         <p style={labelStyle}>Complimentary unlock</p>
         <p style={{ fontSize: 13, color: c.chalk, margin: "0 0 14px", lineHeight: 1.5 }}>
-          Unlock matched candidates for any approved company&apos;s job role without payment. Search by company or job title, then pick the role.
+          Unlock matched candidates for any company&apos;s job role without payment. Search by company or job title, then pick the role.
         </p>
         <input
           type="search"
@@ -299,7 +293,7 @@ export default function AdminUnlockPanel({ getToken, setToken }: Props) {
       {listError && <p role="alert" style={{ color: c.ember, fontSize: 13 }}>{listError}</p>}
       {loadingList && !rows && <p style={{ color: c.stone, fontSize: 13 }}>Loading…</p>}
       {rows && rows.length === 0 && !loadingList && (
-        <p style={{ color: c.stone, fontSize: 13 }}>No job roles found{search ? ` for "${search}"` : ""}. Only approved employers are listed.</p>
+        <p style={{ color: c.stone, fontSize: 13 }}>No job roles found{search ? ` for "${search}"` : ""}.</p>
       )}
       {rows && rows.length > 0 && (
         <div style={{ ...card, overflowX: "auto" }}>

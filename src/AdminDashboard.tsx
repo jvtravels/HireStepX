@@ -228,11 +228,10 @@ export interface ReferralsData {
 }
 
 export interface EmployersData {
-  total: number; pending: number; approved: number; rejected: number;
+  total: number;
   rows: Array<{
     id: string; companyName: string; website: string;
-    status: "pending" | "approved" | "rejected";
-    submittedAt: string; approvedAt: string | null;
+    submittedAt: string;
     contactName: string; contactEmail: string;
   }>;
 }
@@ -676,7 +675,6 @@ export default function AdminDashboard() {
   const [messaging, setMessaging] = useState<MessagingData | null>(null);
   const [referrals, setReferrals] = useState<ReferralsData | null>(null);
   const [employers, setEmployers] = useState<EmployersData | null>(null);
-  const [employerActionBusyId, setEmployerActionBusyId] = useState<string | null>(null);
   const [promoCodes, setPromoCodes] = useState<PromoCodesData | null>(null);
   const [calendar, setCalendar] = useState<CalendarData | null>(null);
   const [outcomes, setOutcomes] = useState<OutcomesData | null>(null);
@@ -4187,127 +4185,39 @@ export default function AdminDashboard() {
   const renderEmployers = () => {
     if (!employers) return <EmptyState title="No employer signups yet" />;
 
-    const decide = async (id: string, action: "approve-employer" | "reject-employer") => {
-      setEmployerActionBusyId(id);
-      const token = getToken();
-      const reqHeaders: Record<string, string> = { "Content-Type": "application/json" };
-      if (token) reqHeaders["x-admin-token"] = token;
-      try {
-        const res = await fetch("/api/admin-data", {
-          method: "POST",
-          headers: reqHeaders,
-          credentials: "include",
-          body: JSON.stringify({ action, id }),
-        });
-        if (res.ok) {
-          const data = await res.json() as { _token?: string };
-          if (data._token) setToken(data._token);
-          const d = await fetchSection("employers", undefined, true) as EmployersData | null;
-          if (d) setEmployers(d);
-        }
-      } finally {
-        setEmployerActionBusyId(null);
-      }
-    };
-
-    const statusColors: Record<string, string> = {
-      pending: T.indigo, approved: c.sage, rejected: c.ember,
-    };
-
-    const pendingRows = employers.rows.filter((e) => e.status === "pending");
-    const decidedRows = employers.rows.filter((e) => e.status !== "pending");
-
     return (
       <div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 16, marginBottom: 24 }}>
-          <div style={statCard}><p style={labelStyle}>Total Signups</p><p style={bigNum}>{employers.total}</p></div>
-          <div style={statCard}><p style={labelStyle}>Pending Review</p><p style={{ ...bigNum, color: T.indigo }}>{employers.pending}</p></div>
-          <div style={statCard}><p style={labelStyle}>Approved</p><p style={{ ...bigNum, color: c.sage }}>{employers.approved}</p></div>
-          <div style={statCard}><p style={labelStyle}>Rejected</p><p style={{ ...bigNum, color: c.ember }}>{employers.rejected}</p></div>
+          <div style={statCard}><p style={labelStyle}>Total Employers</p><p style={bigNum}>{employers.total}</p></div>
         </div>
 
-        <div style={{ ...card, padding: 0, marginBottom: 24, overflow: "auto" }}>
-          <div style={{ padding: "16px 24px 8px" }}>
-            <p style={labelStyle}>Pending Review ({pendingRows.length})</p>
-          </div>
-          {pendingRows.length === 0 ? (
-            <div style={{ padding: "8px 24px 20px", color: c.stone, fontSize: 13 }}>Nothing waiting on review.</div>
-          ) : (
+        {employers.rows.length > 0 && (
+          <div style={{ ...card, padding: 0, overflow: "auto" }}>
+            <div style={{ padding: "16px 24px 8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <p style={labelStyle}>All Employers</p>
+              <Button variant="ghost" size="sm" onClick={() => exportCsv("employers.csv", employers.rows)} style={exportBtn}>Export CSV</Button>
+            </div>
             <table style={tableStyle}>
               <thead>
                 <tr>
                   <th style={thStyle}>Company</th>
                   <th style={thStyle}>Website</th>
                   <th style={thStyle}>Contact</th>
-                  <th style={thStyle}>Submitted</th>
-                  <th style={thStyle}>Action</th>
+                  <th style={thStyle}>Signed up</th>
                 </tr>
               </thead>
               <tbody>
-                {pendingRows.map((e) => (
+                {employers.rows.map((e) => (
                   <tr key={e.id}>
                     <td style={tdStyle}>{e.companyName}</td>
                     <td style={{ ...tdStyle, fontSize: 12 }}>
-                      <a href={e.website} target="_blank" rel="noopener noreferrer" style={{ color: T.indigo }}>{e.website}</a>
+                      {e.website ? <a href={e.website} target="_blank" rel="noopener noreferrer" style={{ color: T.indigo }}>{e.website}</a> : "—"}
                     </td>
                     <td style={tdStyle}>
                       <div>{e.contactName}</div>
                       <div style={{ fontSize: 11, color: c.stone }}>{e.contactEmail}</div>
                     </td>
                     <td style={{ ...tdStyle, fontSize: 12 }}>{formatDateTime(e.submittedAt)}</td>
-                    <td style={tdStyle}>
-                      <div style={{ display: "flex", gap: 8 }}>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => decide(e.id, "approve-employer")}
-                          disabled={employerActionBusyId === e.id}
-                          style={{ ...exportBtn, background: c.sage, color: c.obsidian, opacity: employerActionBusyId === e.id ? 0.6 : 1 }}
-                        >
-                          Approve
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => decide(e.id, "reject-employer")}
-                          disabled={employerActionBusyId === e.id}
-                          style={{ ...exportBtn, background: c.ember, color: c.obsidian, opacity: employerActionBusyId === e.id ? 0.6 : 1 }}
-                        >
-                          Reject
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-
-        {decidedRows.length > 0 && (
-          <div style={{ ...card, padding: 0, overflow: "auto" }}>
-            <div style={{ padding: "16px 24px 8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <p style={labelStyle}>Reviewed</p>
-              <Button variant="ghost" size="sm" onClick={() => exportCsv("employers.csv", decidedRows)} style={exportBtn}>Export CSV</Button>
-            </div>
-            <table style={tableStyle}>
-              <thead>
-                <tr>
-                  <th style={thStyle}>Company</th>
-                  <th style={thStyle}>Contact</th>
-                  <th style={thStyle}>Status</th>
-                  <th style={thStyle}>Submitted</th>
-                  <th style={thStyle}>Decided</th>
-                </tr>
-              </thead>
-              <tbody>
-                {decidedRows.map((e) => (
-                  <tr key={e.id}>
-                    <td style={tdStyle}>{e.companyName}</td>
-                    <td style={{ ...tdStyle, fontSize: 12 }}>{e.contactEmail}</td>
-                    <td style={{ ...tdStyle, color: statusColors[e.status] || c.ivory }}>{e.status}</td>
-                    <td style={{ ...tdStyle, fontSize: 12 }}>{formatDateTime(e.submittedAt)}</td>
-                    <td style={{ ...tdStyle, fontSize: 12 }}>{e.approvedAt ? formatDateTime(e.approvedAt) : "—"}</td>
                   </tr>
                 ))}
               </tbody>

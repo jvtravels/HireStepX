@@ -221,7 +221,7 @@ function ResumeAnalyzingCard({ phase }: { phase: ResumePhase }) {
 
 function ResumeEmptyState({ onUpload, errorMsg }: { onUpload: () => void; errorMsg: string }) {
   return (
-    <div style={{ display: "flex", justifyContent: "center", padding: "80px 16px" }}>
+    <div style={{ display: "flex", justifyContent: "center", padding: "clamp(24px, 8vw, 80px) 16px" }}>
       <SectionCard style={{ maxWidth: 460, alignItems: "center", textAlign: "center" }}>
         <div style={{ width: 56, height: 56, borderRadius: 14, background: T.indigo100, display: "flex", alignItems: "center", justifyContent: "center" }}>
           <FileUpIcon size={24} color={T.indigo} aria-hidden="true" />

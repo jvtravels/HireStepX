@@ -242,7 +242,9 @@ function StarMatrix({ rows }: { rows: BehavioralStarRow[] }) {
         </span>
       </div>
       <div
+        className="bfr-matrix"
         style={{
+          ["--bfr-n" as string]: rows.length,
           display: "grid",
           gridTemplateColumns: `84px repeat(${rows.length}, minmax(0, 1fr)) 1.4fr`,
           gap: "10px 14px",
@@ -401,8 +403,8 @@ function Radar({
       title={`Competency strength · ${radar.track}`}
       status={{ label: radar.statusLabel, tone: radar.statusTone }}
     >
-      <div style={{ display: "grid", gridTemplateColumns: "400px 1fr", gap: 24, alignItems: "center" }}>
-        <svg width={400} height={400} viewBox="0 0 400 400">
+      <div className="bfr-radar" style={{ display: "grid", gridTemplateColumns: "400px 1fr", gap: 24, alignItems: "center" }}>
+        <svg width={400} height={400} viewBox="0 0 400 400" style={{ maxWidth: "100%", height: "auto" }}>
           {[0.25, 0.5, 0.75, 1].map((frac, idx) => (
             <polygon
               key={idx}
@@ -536,6 +538,21 @@ function TranscriptRow({ row }: { row: BehavioralTranscriptRow }) {
 
 /* ─── Main component ──────────────────────────────────────────────────── */
 
+const BFR_RESPONSIVE_CSS = `
+  .bfr-hero > *, .bfr-diag > *, .bfr-evidence > *, .bfr-radar > * { min-width: 0; }
+  @media (max-width: 900px) {
+    .bfr-hero { grid-template-columns: 1fr !important; gap: 16px !important; }
+    .bfr-radar { grid-template-columns: 1fr !important; justify-items: center; }
+    .bfr-diag { grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)) !important; }
+  }
+  @media (max-width: 640px) {
+    .bfr-ribbon { padding: 10px 16px !important; }
+    .bfr-body { padding: 20px 16px 0 !important; }
+    .bfr-evidence { grid-template-columns: 1fr !important; gap: 14px !important; }
+    .bfr-matrix { grid-template-columns: 56px repeat(var(--bfr-n), minmax(0, 1fr)) minmax(0, 1.2fr) !important; gap: 8px 6px !important; }
+  }
+`;
+
 export default function BehavioralFullReport({
   data,
 }: {
@@ -560,10 +577,13 @@ export default function BehavioralFullReport({
         color: t.coal,
         minHeight: "100vh",
         paddingBottom: 120,
+        overflowWrap: "anywhere",
       }}
     >
+      <style>{BFR_RESPONSIVE_CSS}</style>
       {/* Persona ribbon */}
       <div
+        className="bfr-ribbon"
         style={{
           background: t.indigo,
           color: t.white,
@@ -587,9 +607,10 @@ export default function BehavioralFullReport({
         </span>
       </div>
 
-      <div style={{ padding: "32px 40px 0", display: "flex", flexDirection: "column", gap: 24 }}>
+      <div className="bfr-body" style={{ padding: "32px 40px 0", display: "flex", flexDirection: "column", gap: 24 }}>
         {/* Compact hero */}
         <div
+          className="bfr-hero"
           style={{
             background: t.white,
             border: `1px solid ${t.line}`,
@@ -707,6 +728,7 @@ export default function BehavioralFullReport({
 
         {/* Three diagnostic cards — failure / conflict hidden when not asked */}
         <div
+          className="bfr-diag"
           style={{
             display: "grid",
             gridTemplateColumns:
@@ -831,7 +853,7 @@ export default function BehavioralFullReport({
           title="Evidence quality"
           status={{ label: data.evidence.statusLabel, tone: data.evidence.statusTone }}
         >
-          <div style={{ display: "grid", gridTemplateColumns: "200px 1fr", gap: 24, alignItems: "start" }}>
+          <div className="bfr-evidence" style={{ display: "grid", gridTemplateColumns: "200px 1fr", gap: 24, alignItems: "start" }}>
             <div style={{ display: "grid", gridTemplateRows: "repeat(3, auto)", gap: 8 }}>
               {[
                 { l: "Metric claims", n: data.evidence.metricClaims, color: t.coal },
