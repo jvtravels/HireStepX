@@ -142,13 +142,13 @@ export function QuestionDetail({ q, onTryQuestionAgain }: { q: Question; onTryQu
     <div style={{ padding: "0 18px 18px" }}>
       <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
       <TabsList variant="line" aria-label={`Question ${q.index} answer views`} style={{ borderBottom: `1px solid ${t.line}`, marginBottom: 16, width: "100%", justifyContent: "flex-start", overflowX: "auto", overflowY: "hidden" }}>
-        <TabsTrigger value="answer" style={{ flexShrink: 0, whiteSpace: "nowrap" }}>
+        <TabsTrigger value="answer" style={{ flex: "0 0 auto", whiteSpace: "nowrap" }}>
           Your Answer
         </TabsTrigger>
-        <TabsTrigger value="restructured" style={{ flexShrink: 0, whiteSpace: "nowrap" }} disabled={!q.restructured}>
+        <TabsTrigger value="restructured" style={{ flex: "0 0 auto", whiteSpace: "nowrap" }} disabled={!q.restructured}>
           Restructured (STAR)
         </TabsTrigger>
-        <TabsTrigger value="exemplar" style={{ flexShrink: 0, whiteSpace: "nowrap" }} disabled={!q.topPerformerAnswer}>
+        <TabsTrigger value="exemplar" style={{ flex: "0 0 auto", whiteSpace: "nowrap" }} disabled={!q.topPerformerAnswer}>
           Top Performer Answer
           <span
             style={{
