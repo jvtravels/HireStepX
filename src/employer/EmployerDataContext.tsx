@@ -31,13 +31,28 @@ export interface UnlockOrder {
   description: string;
 }
 
+/** A single capability's verification state — mirrors EvidenceCapability in
+ *  src/evidenceCapabilities.ts, the same module the candidate dashboard
+ *  reads. "Verified" means 2+ practice sessions scored 70+ on it; this is
+ *  never computed independently on the employer side, so it can't drift
+ *  from what the candidate's own dashboard shows them. */
+export interface VerifiedCapability {
+  key: string;
+  label: string;
+  verified: boolean;
+  verifiedDateLabel: string | null;
+}
+
 /** A candidate's actual per-skill scores from their most recent completed
  *  practice session — mirrors EvidenceSkill in
  *  server-handlers/_employer-candidate-evidence-helpers.ts. Empty `skills`
  *  means no completed session has skill data yet, not a zero score.
  *  `quotes`/`readiness`/`starCompleteness` mirror the same file's
  *  EvidenceQuote / EvidenceReadiness / StarCompleteness — all `null`/empty
- *  when the session's report predates that data or has none to show. */
+ *  when the session's report predates that data or has none to show.
+ *  `verifiedCapabilities` is computed across the candidate's full recent
+ *  session history (not just the latest session) using the same bar as the
+ *  candidate dashboard's Evidence Capabilities card. */
 export interface CandidateEvidence {
   matchId: string;
   skills: Array<{ name: string; score: number }>;
@@ -45,6 +60,7 @@ export interface CandidateEvidence {
   readiness: { band: "strongHire" | "hire" | "leanHire"; confidence: "low" | "medium" | "high" } | null;
   starCompleteness: { pct: number; questionsConsidered: number } | null;
   sessionDate: string | null;
+  verifiedCapabilities: VerifiedCapability[];
 }
 
 export interface RequirementActivity {

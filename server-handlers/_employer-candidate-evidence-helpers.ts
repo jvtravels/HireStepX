@@ -7,6 +7,9 @@
  * only `name` and `score` are surfaced to the employer console, since
  * `weight` is an internal scoring detail with no display meaning here. */
 
+import { computeEvidenceCapabilities, type EvidenceCapability } from "../src/evidenceCapabilities";
+export type { EvidenceCapability } from "../src/evidenceCapabilities";
+
 export interface EvidenceSkill {
   name: string;
   score: number;
@@ -171,6 +174,12 @@ export interface SessionRow {
   created_at: string;
   report_json: unknown;
   type?: string;
+  /** Same columns computeEvidenceCapabilities() reads off the candidate
+   *  dashboard's RealSession — fetched directly rather than re-derived from
+   *  report_json so "verified" means the exact same thing on both surfaces. */
+  skill_scores?: Record<string, number> | null;
+  score?: number;
+  focus?: string;
 }
 
 /** Mirrors skillFamily() in src/interviewAPI.ts: salary-negotiation sessions
@@ -211,4 +220,26 @@ export function latestSessionByUser(rows: SessionRow[]): Map<string, SessionRow>
     }
   }
   return latest;
+}
+
+/** Computes the SAME 4-capability "2+ sessions at 70+" verification bar the
+ *  candidate dashboard shows (src/dashboardData.ts), from this one
+ *  candidate's rows — unlike latestSessionByUser() this deliberately does
+ *  NOT drop negotiation sessions: Salary Negotiation is one of the four
+ *  capabilities and computeEvidenceCapabilities() matches it by focus
+ *  itself. Rows with no score are harmless no-ops (they satisfy neither the
+ *  skill-score nor the focus+score filters). */
+export function computeVerifiedCapabilitiesForCandidate(
+  rows: SessionRow[],
+  candidateUserId: string,
+): EvidenceCapability[] {
+  const own = rows.filter((r) => r.user_id === candidateUserId);
+  return computeEvidenceCapabilities(
+    own.map((r) => ({
+      date: r.created_at,
+      score: typeof r.score === "number" ? r.score : 0,
+      focus: r.focus || "",
+      skill_scores: r.skill_scores ?? null,
+    })),
+  );
 }

@@ -1,5 +1,12 @@
 import { describe, it, expect, vi } from "vitest";
-import { extractEvidenceSkills, latestSessionByUser, isNegotiationSession, claimProfileView } from "../../server-handlers/_employer-candidate-evidence-helpers";
+import {
+  extractEvidenceSkills,
+  latestSessionByUser,
+  isNegotiationSession,
+  claimProfileView,
+  computeVerifiedCapabilitiesForCandidate,
+  type SessionRow,
+} from "../../server-handlers/_employer-candidate-evidence-helpers";
 
 describe("extractEvidenceSkills", () => {
   it("extracts name + score pairs from a real report_json shape", () => {
@@ -99,6 +106,60 @@ describe("isNegotiationSession", () => {
     expect(isNegotiationSession("behavioral")).toBe(false);
     expect(isNegotiationSession(undefined)).toBe(false);
     expect(isNegotiationSession("")).toBe(false);
+  });
+});
+
+describe("computeVerifiedCapabilitiesForCandidate", () => {
+  function row(overrides: Partial<SessionRow>): SessionRow {
+    return {
+      user_id: "u1",
+      created_at: "2026-01-01T00:00:00Z",
+      report_json: {},
+      score: 0,
+      ...overrides,
+    };
+  }
+
+  it("returns all four capabilities unverified when the candidate has no sessions", () => {
+    const result = computeVerifiedCapabilitiesForCandidate([], "u1");
+    expect(result).toHaveLength(4);
+    expect(result.every((c) => !c.verified)).toBe(true);
+  });
+
+  it("requires 2+ qualifying sessions at 70+, same bar as the candidate dashboard", () => {
+    const oneHit = [row({ skill_scores: { communication: 85 } })];
+    expect(computeVerifiedCapabilitiesForCandidate(oneHit, "u1").find((c) => c.key === "communication")?.verified).toBe(false);
+
+    const twoHits = [
+      row({ created_at: "2026-01-01T00:00:00Z", skill_scores: { communication: 85 } }),
+      row({ created_at: "2026-02-01T00:00:00Z", skill_scores: { communication: 72 } }),
+    ];
+    const verified = computeVerifiedCapabilitiesForCandidate(twoHits, "u1").find((c) => c.key === "communication");
+    expect(verified?.verified).toBe(true);
+    expect(verified?.verifiedDateLabel).toBe("1 Feb");
+  });
+
+  it("scopes to only the requested candidate's rows, ignoring other users in the same batch", () => {
+    const rows = [
+      row({ user_id: "u1", skill_scores: { leadership: 90 } }),
+      row({ user_id: "u2", created_at: "2026-02-01T00:00:00Z", skill_scores: { leadership: 90 } }),
+      row({ user_id: "u2", created_at: "2026-03-01T00:00:00Z", skill_scores: { leadership: 90 } }),
+    ];
+    expect(computeVerifiedCapabilitiesForCandidate(rows, "u1").find((c) => c.key === "leadership")?.verified).toBe(false);
+    expect(computeVerifiedCapabilitiesForCandidate(rows, "u2").find((c) => c.key === "leadership")?.verified).toBe(true);
+  });
+
+  it("matches Salary Negotiation by focus + overall score, not skill_scores, and does not drop negotiation rows", () => {
+    const rows = [
+      row({ created_at: "2026-01-01T00:00:00Z", focus: "salary-negotiation", score: 90 }),
+      row({ created_at: "2026-02-01T00:00:00Z", focus: "salary-negotiation", score: 75 }),
+    ];
+    expect(computeVerifiedCapabilitiesForCandidate(rows, "u1").find((c) => c.key === "salary-negotiation")?.verified).toBe(true);
+  });
+
+  it("treats a missing score column as 0 rather than throwing", () => {
+    const rows = [row({ score: undefined })];
+    expect(() => computeVerifiedCapabilitiesForCandidate(rows, "u1")).not.toThrow();
   });
 });
 

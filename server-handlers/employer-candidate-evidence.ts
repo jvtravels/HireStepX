@@ -9,6 +9,11 @@
  * new one; extraction lives in _employer-candidate-evidence-helpers.ts so
  * it's unit-tested against the real code.
  *
+ * Also returns verifiedCapabilities: the same 4-capability, 2-session/70+
+ * verification bar the candidate's own dashboard shows (computed by the
+ * shared src/evidenceCapabilities.ts module), so what an employer sees as
+ * "Verified" is never looser or stricter than what the candidate sees.
+ *
  * Ownership is never taken on trust from the client: the match's parent
  * employer_requirements row is looked up and its employer_id compared
  * against the authenticated caller before any session data is read.
@@ -23,6 +28,7 @@ import {
   extractReadinessForecast,
   extractStarCompleteness,
   latestSessionByUser,
+  computeVerifiedCapabilitiesForCandidate,
   claimProfileView,
   type SessionRow,
 } from "./_employer-candidate-evidence-helpers";
@@ -166,12 +172,16 @@ export default async function handler(req: Request): Promise<Response> {
       void sendProfileViewedEmail({ candidateUserId, roleTitle, companyName });
     }
 
-    /* limit=20, not 1: the most recent session overall is frequently a
+    /* limit=50, not 1: the most recent session overall is frequently a
        salary-negotiation practice run, which latestSessionByUser() skips.
        Fetching a batch lets it fall through to the most recent session
-       that's actually interview evidence instead of returning none. */
+       that's actually interview evidence instead of returning none. The
+       same batch also backs computeVerifiedCapabilitiesForCandidate() below
+       — 50 gives it the same multi-session depth the candidate's own
+       dashboard draws on, so a capability the candidate sees "Verified"
+       doesn't come up unverified here purely from a shallower fetch. */
     const sessionsRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/sessions?user_id=eq.${encodeURIComponent(candidateUserId)}&select=user_id,created_at,report_json,type&order=created_at.desc&limit=20`,
+      `${SUPABASE_URL}/rest/v1/sessions?user_id=eq.${encodeURIComponent(candidateUserId)}&select=user_id,created_at,report_json,type,skill_scores,score,focus&order=created_at.desc&limit=50`,
       { headers: serviceHeaders() },
     );
     const sessionRows = (await sessionsRes.json().catch(() => [])) as SessionRow[];
@@ -185,6 +195,7 @@ export default async function handler(req: Request): Promise<Response> {
         readiness: latest ? extractReadinessForecast(latest.report_json) : null,
         starCompleteness: latest ? extractStarCompleteness(latest.report_json) : null,
         sessionDate: latest?.created_at ?? null,
+        verifiedCapabilities: computeVerifiedCapabilitiesForCandidate(sessionRows, candidateUserId),
       }),
       { status: 200, headers },
     );

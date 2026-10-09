@@ -722,6 +722,50 @@ export default function CandidateDetailPage() {
               </Card>
 
               <Card style={{ boxShadow: "none" }}>
+                <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 2 }}>
+                  <SectionTitle>Verified capabilities</SectionTitle>
+                  {evidence?.verifiedCapabilities && (
+                    <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkFaint }}>
+                      {evidence.verifiedCapabilities.filter((c) => c.verified).length} of {evidence.verifiedCapabilities.length} verified
+                    </span>
+                  )}
+                </div>
+                {evidenceLoading ? (
+                  <HelpText>Loading practice-session evidence…</HelpText>
+                ) : !evidence?.verifiedCapabilities?.length ? (
+                  <HelpText>No practice session data yet.</HelpText>
+                ) : (
+                  <>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 10, marginBottom: 14 }}>
+                      {evidence.verifiedCapabilities.map((cap) => (
+                        <div
+                          key={cap.key}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            padding: "10px 12px",
+                            borderRadius: 8,
+                            background: cap.verified ? t.success100 : t.creamSoft,
+                            border: `1px solid ${cap.verified ? t.successLine : t.line}`,
+                          }}
+                        >
+                          <span style={{ fontFamily: f.sans, fontSize: 13.5, color: t.coal }}>{cap.label}</span>
+                          <Pill tone={cap.verified ? "success" : "neutral"}>
+                            {cap.verified ? `Verified · ${cap.verifiedDateLabel}` : "Not yet verified"}
+                          </Pill>
+                        </div>
+                      ))}
+                    </div>
+                    <HelpText>
+                      "Verified" means this candidate scored 70+ on the underlying skill across 2 or more separate practice
+                      sessions — the same bar shown on their own dashboard, not a looser or stricter one for employers.
+                    </HelpText>
+                  </>
+                )}
+              </Card>
+
+              <Card style={{ boxShadow: "none" }}>
                 <SectionTitle>STAR evidence breakdown</SectionTitle>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
                   {starBreakdown.map((s) => (
