@@ -155,6 +155,7 @@ export function Card({
   radius = 16,
   background = t.white,
   border = `1px solid ${t.line}`,
+  className,
   style,
 }: {
   children: React.ReactNode;
@@ -162,10 +163,11 @@ export function Card({
   radius?: number;
   background?: string;
   border?: string;
+  className?: string;
   style?: React.CSSProperties;
 }) {
   return (
-    <section style={{ background, border, borderRadius: radius, padding: pad, boxShadow: shadows.card, ...style }}>
+    <section className={className} style={{ background, border, borderRadius: radius, padding: pad, boxShadow: shadows.card, ...style }}>
       {children}
     </section>
   );

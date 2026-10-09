@@ -35,7 +35,7 @@ import { useEmployerData, Requirement, CandidateEvidence, UnlockPurchase, Conver
 import { useEmployerBreadcrumb } from "@/employer/EmployerShell";
 import { useToast } from "@/Toast";
 import { Candidate, RequirementStage, ArchiveDisposition } from "@/employer/mockData";
-import { tokens as t, fonts as f, textSize } from "@/auth/_tokens";
+import { tokens as t, fonts as f, shadows, textSize } from "@/auth/_tokens";
 import LoadingScreen from "@/_LoadingScreen";
 import { UNLOCK_BUNDLE_SIZE, singleUnlockPrice, batchUnlockPrice } from "../../../../../server-handlers/_unlock-pricing";
 import { WORK_MODE_LABEL, EMPLOYMENT_TYPE_LABEL } from "@/hiringMatchFormat";
@@ -334,16 +334,21 @@ function interviewSubstep(candidate: Candidate): string | null {
    stay in one component. Sorting is unavailable at this width. */
 const CAND_CARD_CSS = `
 @media (max-width: 767px) {
+  .cand-shell { border: 0 !important; background: transparent !important; box-shadow: none !important; overflow: visible !important; flex: 0 0 auto !important; min-height: auto !important; }
+  .cand-scroll { overflow: visible !important; flex: 0 0 auto !important; min-height: auto !important; }
+  .cand-shell > div:last-child { background: ${t.white}; border: 1px solid ${t.line}; border-radius: 16px; box-shadow: ${shadows.card}; }
   .cand-table { min-width: 0 !important; }
   .cand-table, .cand-table tbody { display: block; width: 100%; }
   .cand-thead { display: none !important; }
-  .cand-tr { display: flex !important; flex-wrap: wrap; align-items: center; gap: 8px 16px; height: auto !important; padding: 14px 16px; }
+  .cand-tr { display: flex !important; flex-wrap: wrap; align-items: center; gap: 10px 16px; height: auto !important; margin-bottom: 12px; padding: 16px; background: ${t.white} !important; border: 1px solid ${t.line} !important; border-radius: 16px; box-shadow: ${shadows.card}; }
   .cand-td { display: block; width: auto !important; max-width: none !important; padding: 0 !important; height: auto !important; flex: 0 1 auto; order: 3; font-size: 13px; }
-  .cand-td[data-label]::before { content: attr(data-label); display: block; font-size: 12px; color: #6b7280; margin-bottom: 2px; }
+  .cand-td[data-label]::before { content: attr(data-label); display: block; font-size: 12px; color: ${t.inkSoft}; margin-bottom: 2px; }
   .cand-td-chk { order: 0; flex: 0 0 auto; }
+  .cand-td-chk button { min-width: 0 !important; min-height: 0 !important; position: relative; }
+  .cand-td-chk button::after { content: ""; position: absolute; inset: -12px; }
   .cand-td-name { order: 1; flex: 1 1 140px !important; min-width: 140px; }
   .cand-td-act { order: 2; flex: 0 0 auto; }
-  .cand-td-skills { flex: 1 1 100%; }
+  .cand-td-skills { flex: 1 1 100%; padding-top: 10px !important; border-top: 1px solid ${t.line}; }
 }
 `;
 
@@ -1918,8 +1923,8 @@ export default function RequirementDetailPage() {
                   </p>
                 </Card>
               ) : (
-                <Card pad={0} style={{ overflow: "hidden", boxShadow: "none", flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
-                  <div style={{ overflowX: "auto", flex: 1, minHeight: 0 }}>
+                <Card pad={0} className="cand-shell" style={{ overflow: "hidden", boxShadow: "none", flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
+                  <div className="cand-scroll" style={{ overflowX: "auto", flex: 1, minHeight: 0 }}>
                     <style>{CAND_CARD_CSS}</style>
                     <Table className="cand-table" style={{ minWidth: 950 }}>
                       <TableHeader className="cand-thead" style={{ position: "sticky", top: 0, zIndex: 1 }}>
