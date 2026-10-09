@@ -2,6 +2,7 @@
 
 import { captureServerEvent } from "./_posthog";
 import { countTokens } from "./_tokenizer";
+import { recordSlo } from "./_slo";
 
 declare const process: { env: Record<string, string | undefined> };
 
@@ -415,13 +416,16 @@ export async function callLLM(opts: LLMOptions, timeoutMs = 15000, meta?: { user
       break;
     }
     try {
-      return await tryProvider(provider, i > 0);
+      const result = await tryProvider(provider, i > 0);
+      await Promise.all([recordSlo("llm_availability", true), recordSlo("llm_primary", i === 0)]);
+      return result;
     } catch (err) {
       lastErr = err;
       const next = providers[i + 1];
       if (next) console.warn(`[LLM] ${provider.name} failed, falling back to ${next.name}`);
     }
   }
+  await Promise.all([recordSlo("llm_availability", false), recordSlo("llm_primary", false)]);
   throw lastErr instanceof Error ? lastErr : new Error("All LLM providers failed");
 }
 

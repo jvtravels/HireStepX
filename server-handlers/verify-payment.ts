@@ -57,6 +57,7 @@ const UPSTASH_TOKEN = (process.env.UPSTASH_REDIS_REST_TOKEN || "").trim();
 const PAYMENT_ID_HASH_SECRET = (process.env.PAYMENT_ID_HASH_SECRET || "").trim();
 
 import { captureServerEvent, captureServerException } from "./_posthog";
+import { recordSlo } from "./_slo";
 import { emailShell, title, para, b, button, dataCard, mono } from "./_email-theme";
 
 /** Hash a Razorpay payment id before sending it to analytics. The full id
@@ -354,6 +355,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
       if (!orderRes.ok) {
         await releasePaymentLock(razorpay_payment_id);
+        await recordSlo("payment_verification", false);
         return res.status(400).json({ error: "Could not verify order details", code: "ORDER_FETCH_FAILED" });
       }
       const orderData = await orderRes.json();
@@ -386,6 +388,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
       if (!subRes.ok) {
         await releasePaymentLock(razorpay_payment_id);
+        await recordSlo("payment_verification", false);
         return res.status(400).json({ error: "Could not verify subscription details", code: "SUBSCRIPTION_FETCH_FAILED" });
       }
       const subData = await subRes.json();
@@ -414,6 +417,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     } catch (rzpErr) {
       if (rzpErr instanceof DOMException && rzpErr.name === "AbortError") {
         await releasePaymentLock(razorpay_payment_id);
+        await recordSlo("payment_verification", false);
         return res.status(504).json({ error: "Payment verification timed out. Please retry.", code: "RAZORPAY_TIMEOUT" });
       }
       await releasePaymentLock(razorpay_payment_id);
@@ -555,6 +559,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           method: "DELETE",
           headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`, Prefer: "return=minimal" },
         }).catch(() => {});
+        await recordSlo("payment_verification", false);
         return res.status(500).json({ error: "Failed to save payment record" });
       }
       // Money-critical: the payment is already captured, so retry the grant
@@ -574,6 +579,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         void captureServerEvent("verify_payment_credit_grant_failed", userId, {
           payment_id_hash: hashPaymentId(razorpay_payment_id), quantity: sessionQuantity,
         });
+        await recordSlo("payment_verification", false);
         return res.status(500).json({ error: "Could not add your session credit. Your payment was received — please retry in a moment or contact support@hirestepx.com." });
       }
       // Idempotency backstop: record this payment_id on the profile so a
@@ -599,6 +605,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // are a universal top-up available to all tiers, not just free users.
         plan: "single", tier: current?.subscription_tier || "free", amount: purchaseAmount, currency: "INR", payment_id: razorpay_payment_id, quantity: sessionQuantity, credits_after: newBalance,
       });
+      await recordSlo("payment_verification", true);
       return res.status(200).json({
         success: true,
         plan: "single",
@@ -672,6 +679,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`, Prefer: "return=minimal" },
       }).catch(() => {});
       await releasePaymentLock(razorpay_payment_id);
+      await recordSlo("payment_verification", false);
       return res.status(500).json({ error: "Failed to save payment record" });
     }
 
@@ -717,6 +725,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       void captureServerEvent("verify_payment_activation_failed", userId, {
         payment_id_hash: hashPaymentId(razorpay_payment_id), plan, tier,
       });
+      await recordSlo("payment_verification", false);
       return res.status(500).json({ error: "Payment received but activation failed — please contact support@hirestepx.com with your payment ID so we can activate your plan manually." });
     }
 
@@ -827,6 +836,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       subscription_end: end.toISOString(),
       prorated_days: proratedDays,
     });
+    await recordSlo("payment_verification", true);
     return res.status(200).json({
       success: true,
       subscriptionTier: tier,
@@ -844,6 +854,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // evaluate-session.ts fix for the confirmed 2026-10-03 incident this
     // same pattern caused) — worst possible endpoint to lose crash visibility on.
     await captureServerException(err, undefined, { endpoint: "verify-payment" });
+    await recordSlo("payment_verification", false);
     return res.status(500).json({ error: "Internal error" });
   }
 }
