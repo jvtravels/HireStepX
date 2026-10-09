@@ -1,6 +1,9 @@
 {
   "framework": "nextjs",
   "buildCommand": "next build",
+  "regions": [
+    "hnd1"
+  ],
   "crons": [
     {
       "path": "/api/send-renewal-reminders",
