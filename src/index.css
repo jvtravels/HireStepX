@@ -1629,3 +1629,12 @@ input[type="range"]::-moz-range-thumb {
     @apply font-sans;
   }
 }
+
+/* Text links underline on hover/focus everywhere. !important because many
+   links carry inline textDecoration: "none". Skipped for links that are
+   really buttons, nav/menu items, tabs, cards (contain block content) or
+   icon-only/logo links. Opt out with data-no-underline. */
+a[href]:not([data-slot]):not([data-sidebar]):not([role]):not([data-no-underline]):not([aria-current="page"]):not(:has(div, img, h1, h2, h3, h4, h5, h6, p, ul, button, svg:only-child)):is(:hover, :focus-visible) {
+  text-decoration: underline !important;
+  text-underline-offset: 3px;
+}

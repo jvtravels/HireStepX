@@ -1,20 +1,27 @@
 "use client";
 
-/* Full-detail dialog opened by clicking a row in the Jobs tab table
-   (DashboardJobs.tsx). Built on the shared shadcn Dialog (Radix) instead
-   of a hand-rolled backdrop/focus-trap, so Escape, outside-click, and
-   focus trapping come from the same primitive every other dialog in the
-   app uses. */
+/* Full-page detail view for a single employer match, opened from a row in
+   the Jobs table (DashboardJobs.tsx) or the dashboard's Employer Interest
+   card. Mirrors the employer console's /employer/requirements/[id] page
+   (back link, breadcrumb, header, content) with the candidate-relevant
+   fields only. */
 
-import { useRouter } from "next/navigation";
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { GlobeIcon, LockIcon, SendIcon, XIcon } from "lucide-react";
+import { ArrowLeftIcon, GlobeIcon, LockIcon, SendIcon } from "lucide-react";
 import { useMaxWidth } from "./hooks/useMaxWidth";
+import { useAuth } from "./AuthContext";
+import { authHeaders } from "./supabase";
+import { useDashboardBreadcrumb } from "./DashboardLayout";
 import { tokens as t, fonts as f, textSize } from "./auth/_tokens";
 import { daysAgo, formatComp, formatExperience, WORK_MODE_LABEL, EMPLOYMENT_TYPE_LABEL } from "./hiringMatchFormat";
+import { JobDetailRouteSkeleton } from "./routeSkeletons";
 import { CompanyAvatar } from "./CompanyAvatar";
 import type { JobMatch } from "./DashboardJobs";
+
+const BACK_LINK_STYLE = { display: "inline-flex", alignItems: "center", gap: 6, fontFamily: f.sans, fontSize: 13, fontWeight: 500, color: t.inkSoft, textDecoration: "none" } as const;
 
 /* Who the employer is stays hidden until they've contacted the candidate
    (unlocked) — otherwise candidates could go around the platform. The server
@@ -47,9 +54,8 @@ function CompanyCard({ job, stacked, onMessage }: { job: JobMatch; stacked: bool
               href={websiteHref}
               target="_blank"
               rel="noopener noreferrer"
-              style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: f.sans, fontSize: 13, color: t.indigo, textDecoration: "none", minWidth: 0, wordBreak: "break-all" }}
-              onMouseEnter={(e) => { e.currentTarget.style.textDecoration = "underline"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.textDecoration = "none"; }}
+              className="hover:underline underline-offset-4"
+              style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: f.sans, fontSize: 13, color: t.indigo, minWidth: 0, wordBreak: "break-all" }}
             >
               <GlobeIcon size={14} aria-hidden="true" style={{ flexShrink: 0 }} />
               {websiteHost}
@@ -74,9 +80,81 @@ function CompanyCard({ job, stacked, onMessage }: { job: JobMatch; stacked: bool
   );
 }
 
-export default function JobDetailModal({ job, onClose }: { job: JobMatch; onClose: () => void }) {
+function StateScreen({ title, message, children }: { title: string; message: string; children: React.ReactNode }) {
+  return (
+    <div style={{ maxWidth: 560, margin: "80px auto 0", textAlign: "center", padding: "0 16px", fontFamily: f.sans }}>
+      <h1 style={{ fontSize: 28, color: t.coal, margin: "0 0 12px", fontWeight: 600 }}>{title}</h1>
+      <p style={{ fontSize: 14, color: t.inkSoft, margin: "0 0 24px", lineHeight: 1.55 }}>{message}</p>
+      <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>{children}</div>
+    </div>
+  );
+}
+
+export default function JobDetailPage() {
   const router = useRouter();
+  const { id } = useParams() as { id?: string };
+  const { user: authUser } = useAuth();
+  const cacheKey = authUser?.id ? `hirestepx_cache_hiring_activity_full_${authUser.id}` : null;
+  const [matches, setMatches] = useState<JobMatch[] | null>(() => {
+    if (!cacheKey) return null;
+    try {
+      const cached = localStorage.getItem(cacheKey);
+      return cached ? (JSON.parse(cached).recent ?? null) : null;
+    } catch { return null; }
+  });
+  const [fetched, setFetched] = useState(false);
+  const [fetchError, setFetchError] = useState(false);
+
+  const load = useCallback(async (signal: { cancelled: boolean }) => {
+    if (!cacheKey) return;
+    try {
+      const headers = await authHeaders();
+      const res = await fetch("/api/candidate-hiring-activity?full=1", { headers });
+      const json = await res.json().catch(() => null);
+      if (signal.cancelled) return;
+      if (res.ok && json) {
+        setMatches((json.recent as JobMatch[]) ?? []);
+        try { localStorage.setItem(cacheKey, JSON.stringify(json)); } catch { /* expected: localStorage may be unavailable */ }
+        setFetchError(false);
+      } else {
+        setFetchError(true);
+      }
+    } catch {
+      if (!signal.cancelled) setFetchError(true);
+    }
+    if (!signal.cancelled) setFetched(true);
+  }, [cacheKey]);
+
+  useEffect(() => {
+    const signal = { cancelled: false };
+    load(signal);
+    return () => { signal.cancelled = true; };
+  }, [load]);
+
+  const job = useMemo(() => matches?.find((m) => m.id === id) ?? null, [matches, id]);
   const stacked = useMaxWidth(820);
+
+  useDashboardBreadcrumb(job ? [{ label: job.roleTitle }] : null);
+
+  const backToJobs = () => router.push("/jobs");
+
+  if (!job) {
+    if (!fetched) return <JobDetailRouteSkeleton />;
+    if (fetchError && !matches) {
+      return (
+        <StateScreen title="Couldn't load this job" message="Something went wrong fetching the details. This is usually temporary.">
+          <Button type="button" size="lg" onClick={() => { setFetched(false); setFetchError(false); load({ cancelled: false }); }}>Try again</Button>
+          <Button type="button" variant="outline" onClick={backToJobs}>Back to Jobs</Button>
+        </StateScreen>
+      );
+    }
+    return (
+      <StateScreen title="Job not found" message="This opportunity may have been removed or is no longer available to you.">
+        <Button type="button" size="lg" onClick={backToJobs}>Back to Jobs</Button>
+      </StateScreen>
+    );
+  }
+
   const comp = formatComp(job.budgetMin, job.budgetMax, job.salaryType);
   const exp = formatExperience(job.experienceMin, job.experienceMax);
   const mode = job.workMode ? WORK_MODE_LABEL[job.workMode] || job.workMode : null;
@@ -88,51 +166,36 @@ export default function JobDetailModal({ job, onClose }: { job: JobMatch; onClos
   );
 
   return (
-    <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}>
-      <DialogContent
-        showCloseButton={false}
-        style={{
-          display: "block",
-          background: t.creamRaised, border: `1px solid ${t.line}`, borderRadius: 16,
-          padding: "28px 26px", maxWidth: 920, width: "100%", maxHeight: "88vh", overflowY: "auto",
-        }}
-      >
-        <DialogDescription className="sr-only">
-          Full role details for {job.roleTitle}{job.unlocked ? ` at ${job.companyName}` : ""}
-        </DialogDescription>
-        <DialogClose asChild>
-          <Button variant="ghost" size="icon-sm" aria-label="Close dialog" style={{ position: "absolute", top: 14, right: 14 }}>
-            <XIcon aria-hidden="true" />
-          </Button>
-        </DialogClose>
+    <div style={{ flex: 1, minHeight: 0, overflowY: "auto", width: "100%", padding: stacked ? "16px" : "20px 24px", fontFamily: f.sans }}>
+      <Link href="/jobs" className="hover:underline underline-offset-4" style={BACK_LINK_STYLE}>
+        <ArrowLeftIcon size={14} aria-hidden="true" /> Back to Jobs
+      </Link>
 
-        <div style={{ marginBottom: 16, paddingRight: 32 }}>
-          <DialogTitle style={{ fontFamily: f.sans, fontSize: 22, fontWeight: 700, color: t.coal, margin: 0 }}>
-            {job.roleTitle}
-          </DialogTitle>
-          <div style={{ fontFamily: f.sans, fontSize: 13.5, color: t.inkSoft, marginTop: 4 }}>
-            {job.location || "Location not specified"}{mode ? ` · ${mode}` : ""}
-          </div>
+      <div style={{ margin: "14px 0 12px" }}>
+        <h1 style={{ fontFamily: f.sans, fontSize: 24, fontWeight: 700, color: t.coal, margin: 0 }}>{job.roleTitle}</h1>
+        <div style={{ fontFamily: f.sans, fontSize: 13.5, color: t.inkSoft, marginTop: 4 }}>
+          {job.location || "Location not specified"}{mode ? ` · ${mode}` : ""}
         </div>
+      </div>
 
-        <div style={{ display: "flex", gap: 8, marginBottom: 18, flexWrap: "wrap", alignItems: "center" }}>
-          {job.unlocked ? (
-            <span style={{ fontFamily: f.sans, fontSize: textSize.xs, fontWeight: 600, color: t.indigoDeep, background: t.indigo100, padding: "4px 10px", borderRadius: 999 }}>
-              Contacted
-            </span>
-          ) : (
-            <span style={{ fontFamily: f.sans, fontSize: textSize.xs, fontWeight: 600, color: t.successInk, background: t.success100, padding: "4px 10px", borderRadius: 999 }}>
-              Matched
-            </span>
-          )}
-          {closed && (
-            <span style={{ fontFamily: f.sans, fontSize: textSize.xs, fontWeight: 600, color: t.inkSoft, background: t.creamSoft, padding: "4px 10px", borderRadius: 999 }}>
-              Role closed
-            </span>
-          )}
-        </div>
+      <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap", alignItems: "center" }}>
+        {job.unlocked ? (
+          <span style={{ fontFamily: f.sans, fontSize: textSize.xs, fontWeight: 600, color: t.indigoDeep, background: t.indigo100, padding: "4px 10px", borderRadius: 999 }}>
+            Contacted
+          </span>
+        ) : (
+          <span style={{ fontFamily: f.sans, fontSize: textSize.xs, fontWeight: 600, color: t.successInk, background: t.success100, padding: "4px 10px", borderRadius: 999 }}>
+            Matched
+          </span>
+        )}
+        {closed && (
+          <span style={{ fontFamily: f.sans, fontSize: textSize.xs, fontWeight: 600, color: t.inkSoft, background: t.creamSoft, padding: "4px 10px", borderRadius: 999 }}>
+            Role closed
+          </span>
+        )}
+      </div>
 
-        <div style={{ display: "flex", flexDirection: stacked ? "column-reverse" : "row", gap: 24, alignItems: "flex-start" }}>
+      <div style={{ display: "flex", flexDirection: stacked ? "column-reverse" : "row", gap: 24, alignItems: "flex-start" }}>
         <div style={{ flex: 1, minWidth: 0, width: "100%" }}>
         {!job.unlocked && (
           <p style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft, margin: "0 0 16px", lineHeight: 1.5 }}>
@@ -208,14 +271,13 @@ export default function JobDetailModal({ job, onClose }: { job: JobMatch; onClos
 
         </div>
         <CompanyCard job={job} stacked={stacked} onMessage={() => router.push(`/messages?matchId=${job.id}`)} />
-        </div>
+      </div>
 
-        <div style={{ fontFamily: f.sans, fontSize: 11, color: t.inkFaint, paddingTop: 12, marginTop: 18, borderTop: `1px solid ${t.line}` }}>
-          {job.unlocked && job.unlockedAt
-            ? `Contacted ${daysAgo(job.unlockedAt)} · matched ${daysAgo(job.matchedAt)}`
-            : `Matched ${daysAgo(job.matchedAt)}`}
-        </div>
-      </DialogContent>
-    </Dialog>
+      <div style={{ fontFamily: f.sans, fontSize: 11, color: t.inkFaint, paddingTop: 12, marginTop: 18, borderTop: `1px solid ${t.line}` }}>
+        {job.unlocked && job.unlockedAt
+          ? `Contacted ${daysAgo(job.unlockedAt)} · matched ${daysAgo(job.matchedAt)}`
+          : `Matched ${daysAgo(job.matchedAt)}`}
+      </div>
+    </div>
   );
 }

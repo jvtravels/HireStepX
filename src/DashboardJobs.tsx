@@ -44,7 +44,6 @@ import { authHeaders } from "./supabase";
 import { tokens as t, fonts as f, textSize } from "./auth/_tokens";
 import { dur, ease } from "./_motion";
 import { daysAgo, formatComp, formatExperience, WORK_MODE_LABEL, EMPLOYMENT_TYPE_LABEL, type SalaryType } from "./hiringMatchFormat";
-import JobDetailModal from "./JobDetailModal";
 import { CompanyAvatar } from "./CompanyAvatar";
 import { useMaxWidth } from "./hooks/useMaxWidth";
 
@@ -241,7 +240,7 @@ export default function DashboardJobs() {
   const [loaded, setLoaded] = useState(data !== null);
   const [fetchError, setFetchError] = useState(false);
   const [fetchStatus, setFetchStatus] = useState<number | null>(null);
-  const [selected, setSelected] = useState<JobMatch | null>(null);
+  const openJob = useCallback((m: JobMatch) => router.push(`/jobs/${encodeURIComponent(m.id)}`), [router]);
 
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState<FilterSelection>({});
@@ -291,14 +290,11 @@ export default function DashboardJobs() {
 
   const matches = useMemo(() => data?.recent || [], [data]);
 
-  // Deep link from HiringActivityCard's dashboard teaser: ?open=<matchId>
-  // opens that match's detail modal once the full list has loaded.
+  // Old ?open=<matchId> links now live at /jobs/<matchId>.
   useEffect(() => {
     const openId = searchParams.get("open");
-    if (!openId) return;
-    const match = matches.find((m) => m.id === openId);
-    if (match) setSelected(match);
-  }, [searchParams, matches]);
+    if (openId) router.replace(`/jobs/${encodeURIComponent(openId)}`);
+  }, [searchParams, router]);
 
   const locationOptions = useMemo(
     () => Array.from(new Set(matches.map((m) => m.location).filter(Boolean))).sort(),
@@ -458,7 +454,7 @@ export default function DashboardJobs() {
               ) : (
                 <ul aria-label="Job matches" style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 340px), 1fr))", gap: 0, background: t.white }}>
                   {pageRows.map((r) => (
-                    <JobCard key={r.id} r={r} onOpen={() => setSelected(r)} />
+                    <JobCard key={r.id} r={r} onOpen={() => openJob(r)} />
                   ))}
                 </ul>
               )}
@@ -509,11 +505,11 @@ export default function DashboardJobs() {
                     key={r.id}
                     tabIndex={0}
                     aria-label={`View details for ${r.roleTitle}${r.unlocked ? ` at ${r.companyName}` : ""}`}
-                    onClick={() => setSelected(r)}
+                    onClick={() => openJob(r)}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" || e.key === " ") {
                         e.preventDefault();
-                        setSelected(r);
+                        openJob(r);
                       }
                     }}
                     className=""
@@ -613,10 +609,5 @@ export default function DashboardJobs() {
     shortlisted > 0,
   );
 
-  return (
-    <>
-      {body}
-      {selected && <JobDetailModal job={selected} onClose={() => setSelected(null)} />}
-    </>
-  );
+  return <>{body}</>;
 }

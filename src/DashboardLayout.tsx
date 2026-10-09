@@ -265,6 +265,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
     // treat it as a sub-route of "/sessions" so the sidebar highlights
     // Sessions instead of silently falling back to Dashboard.
     if (path?.startsWith("/session/")) return "sessions";
+    if (path?.startsWith("/jobs/")) return "jobs";
     const match = navItems.find(item => item.path !== "/dashboard" && path === item.path);
     return match?.id || "dashboard";
   })();

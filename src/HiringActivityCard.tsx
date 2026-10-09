@@ -89,11 +89,11 @@ export default function HiringActivityCard() {
               role="button"
               tabIndex={0}
               aria-label={`View details for ${m.roleTitle} at ${m.companyName}`}
-              onClick={() => router.push(`/jobs?open=${encodeURIComponent(m.id)}`)}
+              onClick={() => router.push(`/jobs/${encodeURIComponent(m.id)}`)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();
-                  router.push(`/jobs?open=${encodeURIComponent(m.id)}`);
+                  router.push(`/jobs/${encodeURIComponent(m.id)}`);
                 }
               }}
               style={{ padding: "14px", borderRadius: 10, background: t.cream, border: `1px solid ${t.line}`, cursor: "pointer", transition: `background ${dur.instant} ${ease.snap}` }}

@@ -111,6 +111,23 @@ export function ResumeRouteSkeleton() {
   );
 }
 
+export function JobDetailRouteSkeleton() {
+  return (
+    <div role="status" aria-busy="true" style={{ padding: "20px 24px", width: "100%" }}>
+      <span className="sr-only">Loading job details</span>
+      <div className="skeleton skeleton-text-sm" style={{ width: 90, marginBottom: 18 }} />
+      <div className="skeleton skeleton-heading" style={{ width: 280, marginBottom: 10 }} />
+      <div className="skeleton skeleton-text-sm" style={{ width: 180, marginBottom: 22 }} />
+      <div style={{ display: "flex", gap: 24, alignItems: "flex-start" }}>
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 12 }}>
+          {[0, 1, 2, 3, 4, 5].map((i) => <div key={i} className="skeleton" style={{ height: 14, width: `${95 - i * 8}%` }} />)}
+        </div>
+        <div className="skeleton" style={{ width: 280, height: 160, borderRadius: 12 }} />
+      </div>
+    </div>
+  );
+}
+
 export function JobsRouteSkeleton() {
   return (
     <div style={{ padding: "16px 20px" }}>
@@ -346,6 +363,7 @@ const ROUTE_SKELETONS: ReadonlyArray<[prefix: string, render: () => React.ReactN
 
 export function routeSkeletonFor(pathname: string | null | undefined): React.ReactNode | null {
   if (!pathname) return null;
+  if (pathname.startsWith("/jobs/")) return <JobDetailRouteSkeleton />;
   const match = ROUTE_SKELETONS.find(([prefix]) => pathname === prefix || pathname.startsWith(`${prefix}/`));
   return match ? match[1]() : null;
 }

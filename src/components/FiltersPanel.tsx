@@ -11,7 +11,6 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { tokens as t, fonts as f } from "@/auth/_tokens";
 import { dur, ease } from "@/_motion";
 
@@ -80,7 +79,7 @@ export function FiltersPanel({
         <div style={{ padding: "14px 16px", borderBottom: `1px solid ${t.line}` }}>
           <span style={{ fontFamily: f.sans, fontSize: 16, fontWeight: 700, color: t.coal }}>Filters</span>
         </div>
-        <ScrollArea style={{ height: "min(520px, calc(100vh - 220px))", minHeight: 0, overflow: "hidden" }}>
+        <div style={{ maxHeight: "min(520px, calc(100vh - 220px))", overflowY: "auto" }}>
           <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 16 }}>
             {visible.map((section, i) => (
               <div key={section.key} style={{ display: "contents" }}>
@@ -99,7 +98,7 @@ export function FiltersPanel({
               </div>
             ))}
           </div>
-        </ScrollArea>
+        </div>
         <div style={{ display: "flex", gap: 8, padding: "14px 16px", borderTop: `1px solid ${t.line}` }}>
           <Button type="button" variant="outline" className="flex-1" onClick={() => setDraft({})}>
             Reset
