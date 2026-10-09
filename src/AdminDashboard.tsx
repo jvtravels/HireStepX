@@ -1027,14 +1027,14 @@ export default function AdminDashboard() {
             gap: 12,
             flexWrap: "wrap",
           }}>
-            <span style={{ fontSize: 14, color: "#B45309", fontWeight: 700 }}>⚠ Anomalies</span>
+            <span style={{ fontSize: 14, color: T.copper, fontWeight: 700 }}>⚠ Anomalies</span>
             {anom.highSpendUsers.length > 0 && (
-              <span style={{ fontSize: 13, color: "#B45309" }}>
+              <span style={{ fontSize: 13, color: T.copper }}>
                 {anom.highSpendUsers.length} high-spend user{anom.highSpendUsers.length > 1 ? "s" : ""} (24h)
               </span>
             )}
             {anom.runawayCallsToday > 0 && (
-              <span style={{ fontSize: 13, color: "#B45309" }}>
+              <span style={{ fontSize: 13, color: T.copper }}>
                 {anom.runawayCallsToday} runaway LLM call{anom.runawayCallsToday > 1 ? "s" : ""} (&gt;8K tokens)
               </span>
             )}
@@ -1354,7 +1354,7 @@ export default function AdminDashboard() {
                     display: "inline-block",
                     background: "rgba(180,83,9,0.1)", border: "1px solid rgba(180,83,9,0.3)",
                     borderRadius: 6, padding: "4px 10px",
-                    fontFamily: font.mono, fontSize: 12, color: "#B45309", fontWeight: 600,
+                    fontFamily: font.mono, fontSize: 12, color: T.copper, fontWeight: 600,
                   }}>
                     ₹{sessionDetail.costInr.toFixed(3)} LLM
                   </span>
@@ -1591,7 +1591,7 @@ export default function AdminDashboard() {
                     onChange={(e) => setQaExtendTier(e.target.value)}
                     disabled={qaBusy}
                     style={{
-                      flex: 1, background: "#fff", color: "#0E0C08", border: "1px solid rgba(14,12,8,0.18)",
+                      flex: 1, background: T.white, color: T.coal, border: "1px solid rgba(14,12,8,0.18)",
                       borderRadius: 6, padding: "7px 10px", fontSize: 13, fontFamily: font.ui, outline: "none",
                     }}
                   >
@@ -1607,7 +1607,7 @@ export default function AdminDashboard() {
                     disabled={qaBusy}
                     placeholder="days"
                     style={{
-                      width: 70, background: "#fff", color: "#0E0C08", border: "1px solid rgba(14,12,8,0.18)",
+                      width: 70, background: T.white, color: T.coal, border: "1px solid rgba(14,12,8,0.18)",
                       borderRadius: 6, padding: "7px 10px", fontSize: 13, fontFamily: font.mono, outline: "none",
                     }}
                   />
@@ -1656,7 +1656,7 @@ export default function AdminDashboard() {
             <div style={{ padding: "16px 20px", borderRight: `1px solid ${c.border}` }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <div style={{ width: 3, height: 14, borderRadius: 2, background: "#15803D", flexShrink: 0 }} />
+                  <div style={{ width: 3, height: 14, borderRadius: 2, background: T.success, flexShrink: 0 }} />
                   <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: c.stone, fontFamily: font.ui }}>Session Credits</span>
                 </div>
                 <span style={{
@@ -1680,7 +1680,7 @@ export default function AdminDashboard() {
                     disabled={qaBusy}
                     placeholder="qty"
                     style={{
-                      width: 70, background: "#fff", color: "#0E0C08", border: "1px solid rgba(14,12,8,0.18)",
+                      width: 70, background: T.white, color: T.coal, border: "1px solid rgba(14,12,8,0.18)",
                       borderRadius: 6, padding: "7px 10px", fontSize: 13, fontFamily: font.mono, outline: "none",
                     }}
                   />
@@ -1692,7 +1692,7 @@ export default function AdminDashboard() {
                     placeholder="reason (optional)"
                     maxLength={200}
                     style={{
-                      flex: 1, background: "#fff", color: "#0E0C08", border: "1px solid rgba(14,12,8,0.18)",
+                      flex: 1, background: T.white, color: T.coal, border: "1px solid rgba(14,12,8,0.18)",
                       borderRadius: 6, padding: "7px 10px", fontSize: 13, fontFamily: font.ui, outline: "none",
                     }}
                   />
@@ -1726,7 +1726,7 @@ export default function AdminDashboard() {
                     }
                   }}
                   style={{
-                    background: "rgba(21,128,61,0.12)", color: "#166534",
+                    background: "rgba(21,128,61,0.12)", color: T.successInk,
                     border: "1px solid rgba(21,128,61,0.25)", borderRadius: 6,
                     padding: "8px 16px", fontSize: 13, fontWeight: 700, fontFamily: font.ui,
                     opacity: qaBusy ? 0.6 : 1, width: "100%",
@@ -2595,9 +2595,9 @@ export default function AdminDashboard() {
         {/* Anomalies subsection */}
         {llm.anomalies && ((llm.anomalies.highSpendUsers.length > 0) || llm.anomalies.runawayCallsToday > 0) && (
           <div style={{ ...card, marginTop: 24, border: "1px solid rgba(180,83,9,0.35)", background: "rgba(180,83,9,0.06)" }}>
-            <p style={{ ...labelStyle, color: "#B45309", marginBottom: 16 }}>⚠ Anomalies (last 24h)</p>
+            <p style={{ ...labelStyle, color: T.copper, marginBottom: 16 }}>⚠ Anomalies (last 24h)</p>
             {llm.anomalies.runawayCallsToday > 0 && (
-              <div style={{ marginBottom: 12, fontSize: 13, color: "#B45309" }}>
+              <div style={{ marginBottom: 12, fontSize: 13, color: T.copper }}>
                 <strong>{llm.anomalies.runawayCallsToday}</strong> runaway LLM call{llm.anomalies.runawayCallsToday > 1 ? "s" : ""} with &gt;8,000 tokens each
               </div>
             )}
@@ -2616,7 +2616,7 @@ export default function AdminDashboard() {
                     {llm.anomalies.highSpendUsers.map((u, i) => (
                       <tr key={i}>
                         <td style={{ ...tdStyle, fontFamily: font.mono, fontSize: 11 }}>{u.userId.slice(0, 16)}…</td>
-                        <td style={{ ...tdStyle, fontFamily: font.mono, color: "#B45309", fontWeight: 600 }}>{formatNum(u.tokens)}</td>
+                        <td style={{ ...tdStyle, fontFamily: font.mono, color: T.copper, fontWeight: 600 }}>{formatNum(u.tokens)}</td>
                         <td style={{ ...tdStyle, fontFamily: font.mono }}>{u.zScore > 0 ? `+${u.zScore.toFixed(1)}σ` : "—"}</td>
                       </tr>
                     ))}
@@ -2752,7 +2752,7 @@ export default function AdminDashboard() {
               value={recMonth}
               onChange={(e) => setRecMonth(e.target.value)}
               disabled={recBusy}
-              style={{ background: "#fff", color: "#0E0C08", border: "1px solid rgba(14,12,8,0.18)", borderRadius: 6, padding: "7px 10px", fontSize: 13, fontFamily: font.ui, outline: "none" }}
+              style={{ background: T.white, color: T.coal, border: "1px solid rgba(14,12,8,0.18)", borderRadius: 6, padding: "7px 10px", fontSize: 13, fontFamily: font.ui, outline: "none" }}
             />
             <input
               type="number"
@@ -2762,7 +2762,7 @@ export default function AdminDashboard() {
               onChange={(e) => setRecAmount(e.target.value)}
               disabled={recBusy}
               placeholder="actual invoice ₹"
-              style={{ width: 140, background: "#fff", color: "#0E0C08", border: "1px solid rgba(14,12,8,0.18)", borderRadius: 6, padding: "7px 10px", fontSize: 13, fontFamily: font.ui, outline: "none" }}
+              style={{ width: 140, background: T.white, color: T.coal, border: "1px solid rgba(14,12,8,0.18)", borderRadius: 6, padding: "7px 10px", fontSize: 13, fontFamily: font.ui, outline: "none" }}
             />
             <input
               type="text"
@@ -2771,7 +2771,7 @@ export default function AdminDashboard() {
               disabled={recBusy}
               placeholder="note (optional)"
               maxLength={500}
-              style={{ flex: 1, minWidth: 140, background: "#fff", color: "#0E0C08", border: "1px solid rgba(14,12,8,0.18)", borderRadius: 6, padding: "7px 10px", fontSize: 13, fontFamily: font.ui, outline: "none" }}
+              style={{ flex: 1, minWidth: 140, background: T.white, color: T.coal, border: "1px solid rgba(14,12,8,0.18)", borderRadius: 6, padding: "7px 10px", fontSize: 13, fontFamily: font.ui, outline: "none" }}
             />
             <Button
               variant="outline"
@@ -2801,7 +2801,7 @@ export default function AdminDashboard() {
                   setRecBusy(false);
                 }
               }}
-              style={{ background: "rgba(21,128,61,0.12)", color: "#166534", border: "1px solid rgba(21,128,61,0.3)" }}
+              style={{ background: "rgba(21,128,61,0.12)", color: T.successInk, border: "1px solid rgba(21,128,61,0.3)" }}
             >
               Log invoice
             </Button>
@@ -2814,7 +2814,7 @@ export default function AdminDashboard() {
         {/* Daily cost trend */}
         <div style={{ ...card, marginBottom: 24 }}>
           <p style={{ ...labelStyle, marginBottom: 12 }}>LLM Cost / Day — ₹ (30d)</p>
-          <MiniBarChart data={cd.perDay} color="#B45309" height={100} />
+          <MiniBarChart data={cd.perDay} color={T.copper} height={100} />
           <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6, fontSize: 10, color: c.stone }}>
             <span>{Object.keys(cd.perDay)[0]}</span>
             <span>Today</span>
@@ -3896,7 +3896,7 @@ export default function AdminDashboard() {
         <span style={{
           fontSize: 9, fontWeight: 700, fontFamily: font.ui, letterSpacing: "0.06em",
           padding: "2px 6px", borderRadius: 3,
-          background: colors[stage] ?? c.onyx, color: "#fff",
+          background: colors[stage] ?? c.onyx, color: T.white,
           textTransform: "uppercase",
         }}>
           {stage}

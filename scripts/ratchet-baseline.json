@@ -90,7 +90,7 @@
     "app/ServiceWorkerRegistrar.tsx": 1
   },
   "rawHexColors": {
-    "src/AdminDashboard.tsx": 56,
+    "src/AdminDashboard.tsx": 30,
     "src/AdminUnlockPanel.tsx": 1,
     "src/AuthContext.tsx": 7,
     "src/BlogPage.tsx": 9,
