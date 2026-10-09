@@ -477,8 +477,7 @@ Instrument with PostHog.
 | `report_question_expanded` | sessionId, questionIdx, verdict | Card expanded |
 | `report_restructure_viewed` | sessionId, questionIdx | Restructured answer scrolled into view |
 | `report_citation_hovered` | sessionId, questionIdx, citationIdx | Citation marker hover |
-| `report_action_clicked` | action (try_again/save_story/drill_skill/pdf/share), sessionId | CTA click |
-| `report_pdf_downloaded` | sessionId | PDF download click |
+| `report_action_clicked` | action (try_again/save_story/drill_skill/share), sessionId | CTA click |
 | `report_shared` | channel (link/linkedin/whatsapp), sessionId | Share click |
 | `report_retry_requested` | sessionId, reason (timeout/error) | Retry CTA click |
 | `report_llm_completed` | sessionId, latencyMs, tokens, model, fallback | LLM call returned |
