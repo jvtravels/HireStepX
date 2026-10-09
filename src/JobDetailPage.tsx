@@ -196,7 +196,7 @@ export default function JobDetailPage() {
   const metaItem: React.CSSProperties = { display: "inline-flex", alignItems: "center", gap: 6 };
 
   return (
-    <div style={{ flex: 1, minHeight: 0, overflowY: "auto", width: "100%", padding: stacked ? "16px" : "20px 24px", fontFamily: f.sans }}>
+    <div style={{ flex: 1, minHeight: 0, overflowY: "auto", width: "100%", fontFamily: f.sans }}>
       <div style={{ display: "flex", alignItems: "flex-start", gap: 16, flexWrap: "wrap" }}>
         <section aria-labelledby="job-title" style={{ ...PANEL_STYLE, flex: "3 1 min(560px, 100%)" }}>
           <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>

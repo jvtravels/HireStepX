@@ -114,7 +114,7 @@ export function ResumeRouteSkeleton() {
 export function JobDetailRouteSkeleton() {
   const panel = { background: "#fff", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 16, padding: 24, minWidth: 0 } as const;
   return (
-    <div role="status" aria-busy="true" style={{ padding: "20px 24px", width: "100%" }}>
+    <div role="status" aria-busy="true" style={{ width: "100%" }}>
       <span className="sr-only">Loading job details</span>
       <div style={{ display: "flex", alignItems: "flex-start", gap: 16, flexWrap: "wrap" }}>
         <div style={{ ...panel, flex: "3 1 min(560px, 100%)" }}>
