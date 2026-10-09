@@ -7,7 +7,10 @@ import {
   handleCorsPreflightOrMethod, corsHeaders, verifyAuth,
   unauthorizedResponse, isRateLimited, getClientIp, rateLimitResponse,
   checkBodySize, validateOrigin, withRequestId, getSubscriptionTier, checkLLMQuota,
+  redisGet, redisSetEx, hashStable,
 } from "./_shared";
+
+const INSIGHTS_CACHE_TTL_SEC = 6 * 3600;
 
 export default async function handler(req: Request) {
   const preflight = handleCorsPreflightOrMethod(req);
@@ -42,13 +45,6 @@ export default async function handler(req: Request) {
     });
   }
 
-  // Daily LLM quota — paid users still have a per-day cap so a runaway
-  // client (or scripted reload) can't drain spend in a single afternoon.
-  const quota = await checkLLMQuota(auth.userId, "insights");
-  if (!quota.allowed) {
-    return new Response(JSON.stringify({ error: quota.reason || "Daily limit reached", quotaExceeded: true, count: quota.count, limit: quota.limit }), { status: 429, headers });
-  }
-
   try {
     let body: Record<string, unknown>;
     try {
@@ -60,6 +56,24 @@ export default async function handler(req: Request) {
 
     if (!skills || !Array.isArray(skills) || skills.length === 0) {
       return new Response(JSON.stringify({ insights: [] }), { status: 200, headers });
+    }
+
+    // Insights are a pure function of these inputs, so an unchanged profile
+    // (page reload, tab switch, second device) must not pay for another LLM
+    // call. Cache hits also skip the daily quota. Keyed per user.
+    const cacheKey = `ins:${auth.userId}:${await hashStable(JSON.stringify({ role, company, industry, skills, recentSessions, sessionCount }))}`;
+    const cachedRaw = await redisGet(cacheKey).catch(() => null);
+    if (cachedRaw) {
+      try {
+        return new Response(JSON.stringify({ ...JSON.parse(cachedRaw), _cached: true }), { status: 200, headers });
+      } catch { /* corrupt entry: fall through and regenerate */ }
+    }
+
+    // Daily LLM quota — paid users still have a per-day cap so a runaway
+    // client (or scripted reload) can't drain spend in a single afternoon.
+    const quota = await checkLLMQuota(auth.userId, "insights");
+    if (!quota.allowed) {
+      return new Response(JSON.stringify({ error: quota.reason || "Daily limit reached", quotaExceeded: true, count: quota.count, limit: quota.limit }), { status: 429, headers });
     }
 
     const sessionsContext = Array.isArray(recentSessions)
@@ -108,7 +122,11 @@ Return ONLY the JSON array, no other text.`;
       .slice(0, 4)
       .map(i => ({ type: i.type, text: i.text!.slice(0, 200) }));
 
-    return new Response(JSON.stringify({ insights, model: result.model }), { status: 200, headers });
+    const responseBody = { insights, model: result.model };
+    if (insights.length > 0) {
+      await redisSetEx(cacheKey, INSIGHTS_CACHE_TTL_SEC, JSON.stringify(responseBody)).catch(() => {});
+    }
+    return new Response(JSON.stringify(responseBody), { status: 200, headers });
   } catch (err) {
     console.error("[generate-insights] Error:", err);
     return new Response(JSON.stringify({ insights: [], error: "Failed to generate insights" }), { status: 500, headers });
