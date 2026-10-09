@@ -106,6 +106,8 @@ export function PerQuestionSection({ questions, onTryQuestionAgain }: { question
                   fontFamily: "inherit",
                   color: "inherit",
                   borderRadius: 0,
+                  minWidth: 0,
+                  whiteSpace: "normal",
                 }}
               >
                 <span
@@ -126,7 +128,7 @@ export function PerQuestionSection({ questions, onTryQuestionAgain }: { question
                 >
                   {q.index}
                 </span>
-                <span className="ir-q-trigger-text" style={{ flex: 1, fontFamily: f.sans, fontSize: size.md, color: t.coal, fontWeight: open ? 600 : 500 }}>
+                <span className="ir-q-trigger-text" style={{ flex: 1, minWidth: 0, whiteSpace: "normal", overflowWrap: "anywhere", display: "-webkit-box", WebkitLineClamp: open ? "unset" : 3, WebkitBoxOrient: "vertical", overflow: "hidden", fontFamily: f.sans, fontSize: size.md, color: t.coal, fontWeight: open ? 600 : 500 }}>
                   {q.text}
                 </span>
                 {q.frequencyPct !== undefined && q.frequencyPct >= 70 && (
