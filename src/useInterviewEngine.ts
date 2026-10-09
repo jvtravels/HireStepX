@@ -1134,6 +1134,8 @@ export function useInterviewEngine() {
     return () => {
       // We deliberately read the latest ref.current at cleanup time — capturing now would abort an already-replaced STT instance and leak the new one. Refs here point to STT clients, not React-rendered DOM nodes.
       ttsCancelRef.current?.();
+      // Fire-and-forget speak() calls (silence nudges, backchannels) keep no cancel handle, so silence everything at module level when the interview unmounts.
+      hardMuteTTS();
       recognitionRef.current?.stop();
       /* eslint-disable react-hooks/exhaustive-deps */
       deepgramRef.current?.abort();

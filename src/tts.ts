@@ -1062,6 +1062,8 @@ function speakWithBrowser(
 let _activeCancel: (() => void) | null = null;
 /** Version counter — prevents stale fallback chains from overwriting the current cancel handle */
 let _ttsGeneration = 0;
+/** Bumped by cleanupTTS/hardMuteTTS. speak()/speakAs() resolve only after audio.play() has started, so a cancel issued while one is still fetching finds no handle; setCancel uses this to stop it the moment it starts. */
+let _muteEpoch = 0;
 
 // Auto-cleanup on page unload to prevent WebSocket/AudioContext leaks
 if (typeof window !== "undefined") {
@@ -1071,6 +1073,7 @@ if (typeof window !== "undefined") {
 }
 
 export function cleanupTTS() {
+  _muteEpoch++;
   _activeCancel?.();
   _activeCancel = null;
   clearPrefetchCache();
@@ -1101,6 +1104,7 @@ export function cleanupTTS() {
  * playing — Azure speakWithBrowser path uses HTMLAudioElement.
  */
 export function hardMuteTTS() {
+  _muteEpoch++;
   // 1. Cancel the current handle (idempotent w/ cleanupTTS)
   _activeCancel?.();
   _activeCancel = null;
@@ -1182,7 +1186,9 @@ export async function speakAs(
   // Versioned cancel: each new speakAs/speak call gets a generation ID.
   // Stale fallback chains won't overwrite the current cancel handle.
   const gen = ++_ttsGeneration;
+  const epoch = _muteEpoch;
   const setCancel = (fn: () => void) => {
+    if (epoch !== _muteEpoch) { fn(); return; }
     if (gen === _ttsGeneration) _activeCancel = () => { finalizeTtsAttempt(attempt, "cancelled"); fn(); };
   };
 
@@ -1515,7 +1521,9 @@ export async function speak(
 
   // Versioned cancel to prevent stale fallback chains from overwriting current handle
   const gen = ++_ttsGeneration;
+  const epoch = _muteEpoch;
   const setCancel = (fn: () => void) => {
+    if (epoch !== _muteEpoch) { fn(); return; }
     if (gen === _ttsGeneration) _activeCancel = () => { finalizeTtsAttempt(attempt, "cancelled"); fn(); };
   };
 
