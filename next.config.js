@@ -9,6 +9,13 @@ const companyRedirectMap = JSON.parse(
   readFileSync(new URL("./data/company-redirect-map.json", import.meta.url), "utf8"),
 );
 
+// /questions/<slug> pages whose company has zero company-specific questions
+// in the bank (generic fallback content) 301 to the company's blog or salary
+// page. Guarded by src/__tests__/thinQuestionsRedirects.test.ts.
+const thinQuestionsRedirects = JSON.parse(
+  readFileSync(new URL("./data/thin-questions-redirects.json", import.meta.url), "utf8"),
+);
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Enable the behavioral v2 diagnostic-first report. The env-flag gate in
@@ -204,9 +211,14 @@ const nextConfig = {
       // so going through it would cost crawlers and users an extra hop. The
       // in-page permanentRedirect() in companies/[slug]/page.tsx stays as a
       // fallback for any company added since this map was last generated.
+      ...Object.entries(thinQuestionsRedirects).map(([slug, destination]) => ({
+        source: `/questions/${slug}`,
+        destination,
+        permanent: true,
+      })),
       ...Object.entries(companyRedirectMap).map(([company, slug]) => ({
         source: `/companies/${company}`,
-        destination: `/questions/${slug}`,
+        destination: thinQuestionsRedirects[slug] ?? `/questions/${slug}`,
         permanent: true,
       })),
     ];
