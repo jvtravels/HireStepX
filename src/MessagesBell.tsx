@@ -110,7 +110,7 @@ export default function MessagesBell({
           </button>
         </div>
         <DropdownMenuSeparator className="m-0" />
-        <div style={{ maxHeight: 360, overflowY: "auto" }} role="list" aria-label="Conversations">
+        <nav style={{ maxHeight: 360, overflowY: "auto" }} aria-label="Conversations">
           {conversations.length === 0 ? (
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, padding: "28px 16px", textAlign: "center" }}>
               <MessagesSquareIcon size={22} color={T.inkFaint} aria-hidden="true" />
@@ -122,41 +122,43 @@ export default function MessagesBell({
           ) : (
             groups.map((group) => (
               <div key={group.counterpartName}>
-                <p style={{
+                <p aria-hidden="true" style={{
                   margin: 0, padding: "8px 12px 2px", fontFamily: F.sans, fontSize: 10.5, fontWeight: 700,
                   color: T.inkSoft, textTransform: "uppercase", letterSpacing: "0.04em",
                 }}>
                   {group.counterpartName}
                 </p>
-                {group.conversations.map((c) => (
-                  <button
-                    key={c.conversationId}
-                    type="button"
-                    role="listitem"
-                    onClick={() => handleItemClick(c)}
-                    style={{
-                      display: "block", width: "100%", textAlign: "left", cursor: "pointer",
-                      border: "none", borderBottom: `1px solid ${T.line}`, background: c.unread ? T.pageBg : "transparent",
-                      padding: "8px 12px 8px 20px",
-                    }}
-                  >
-                    <p style={{ margin: 0, fontFamily: F.sans, fontSize: 12.5, fontWeight: 600, color: T.coal, lineHeight: 1.4, display: "flex", alignItems: "center", gap: 6 }}>
-                      {c.unread && (
-                        <span aria-hidden="true" style={{ width: 6, height: 6, borderRadius: "50%", background: T.indigo, flexShrink: 0 }} />
-                      )}
-                      {c.roleTitle}
-                    </p>
-                    {c.lastMessageAt && (
-                      <p style={{ margin: "3px 0 0", fontFamily: F.sans, fontSize: 11, color: T.inkSoft }}>
-                        {timeAgo(c.lastMessageAt)}
-                      </p>
-                    )}
-                  </button>
-                ))}
+                <div role="list" aria-label={group.counterpartName}>
+                  {group.conversations.map((c) => (
+                    <div key={c.conversationId} role="listitem">
+                      <button
+                        type="button"
+                        onClick={() => handleItemClick(c)}
+                        style={{
+                          display: "block", width: "100%", textAlign: "left", cursor: "pointer",
+                          border: "none", borderBottom: `1px solid ${T.line}`, background: c.unread ? T.pageBg : "transparent",
+                          padding: "8px 12px 8px 20px",
+                        }}
+                      >
+                        <p style={{ margin: 0, fontFamily: F.sans, fontSize: 12.5, fontWeight: 600, color: T.coal, lineHeight: 1.4, display: "flex", alignItems: "center", gap: 6 }}>
+                          {c.unread && (
+                            <span aria-hidden="true" style={{ width: 6, height: 6, borderRadius: "50%", background: T.indigo, flexShrink: 0 }} />
+                          )}
+                          {c.roleTitle}
+                        </p>
+                        {c.lastMessageAt && (
+                          <p style={{ margin: "3px 0 0", fontFamily: F.sans, fontSize: 11, color: T.inkSoft }}>
+                            {timeAgo(c.lastMessageAt)}
+                          </p>
+                        )}
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
             ))
           )}
-        </div>
+        </nav>
       </DropdownMenuContent>
     </DropdownMenu>
   );

@@ -205,19 +205,19 @@ export default function NotificationBell({
                 );
               }
               return (
-                <button
-                  key={n.id}
-                  type="button"
-                  role="listitem"
-                  onClick={() => handleItemClick(n)}
-                  style={{
-                    display: "block", width: "100%", textAlign: "left", cursor: "pointer",
-                    border: "none", borderBottom: `1px solid ${T.line}`, background: n.read_at ? "transparent" : T.pageBg,
-                    padding: "12px 16px",
-                  }}
-                >
-                  {body}
-                </button>
+                <div key={n.id} role="listitem">
+                  <button
+                    type="button"
+                    onClick={() => handleItemClick(n)}
+                    style={{
+                      display: "block", width: "100%", textAlign: "left", cursor: "pointer",
+                      border: "none", borderBottom: `1px solid ${T.line}`, background: n.read_at ? "transparent" : T.pageBg,
+                      padding: "12px 16px",
+                    }}
+                  >
+                    {body}
+                  </button>
+                </div>
               );
             })
           )}

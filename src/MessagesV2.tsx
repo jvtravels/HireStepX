@@ -284,41 +284,43 @@ export default function MessagesV2() {
 
   return shell(
     <div style={{ display: "flex", flex: 1, minHeight: 0 }}>
-      <div style={{ width: 280, borderRight: `1px solid ${t.line}`, overflowY: "auto", flexShrink: 0 }} role="list" aria-label="Conversations">
+      <nav style={{ width: 280, borderRight: `1px solid ${t.line}`, overflowY: "auto", flexShrink: 0 }} aria-label="Conversations">
         {groups.map((group) => (
           <div key={group.counterpartName}>
-            <div style={{
+            <div aria-hidden="true" style={{
               padding: "10px 16px 4px", fontFamily: f.sans, fontSize: 11, fontWeight: 700,
               color: t.inkFaint, textTransform: "uppercase", letterSpacing: "0.04em",
             }}>
               {group.counterpartName}
             </div>
-            {group.conversations.map((c) => (
-              <button
-                key={c.matchId}
-                role="listitem"
-                aria-current={c.matchId === activeMatchId ? "true" : undefined}
-                onClick={() => selectConversation(c.matchId)}
-                style={{
-                  display: "block", width: "100%", textAlign: "left", padding: "10px 16px 10px 24px",
-                  border: "none", borderBottom: `1px solid ${t.line}`, cursor: "pointer",
-                  background: c.matchId === activeMatchId ? t.creamSoft : c.unread ? t.pageBg : "transparent",
-                }}
-              >
-                <div style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.coal, display: "flex", alignItems: "center", gap: 6 }}>
-                  {c.unread && (
-                    <span aria-hidden="true" style={{ width: 6, height: 6, borderRadius: "50%", background: t.indigo, flexShrink: 0 }} />
-                  )}
-                  {c.roleTitle}
+            <div role="list" aria-label={group.counterpartName}>
+              {group.conversations.map((c) => (
+                <div key={c.matchId} role="listitem">
+                  <button
+                    aria-current={c.matchId === activeMatchId ? "true" : undefined}
+                    onClick={() => selectConversation(c.matchId)}
+                    style={{
+                      display: "block", width: "100%", textAlign: "left", padding: "10px 16px 10px 24px",
+                      border: "none", borderBottom: `1px solid ${t.line}`, cursor: "pointer",
+                      background: c.matchId === activeMatchId ? t.creamSoft : c.unread ? t.pageBg : "transparent",
+                    }}
+                  >
+                    <div style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.coal, display: "flex", alignItems: "center", gap: 6 }}>
+                      {c.unread && (
+                        <span aria-hidden="true" style={{ width: 6, height: 6, borderRadius: "50%", background: t.indigo, flexShrink: 0 }} />
+                      )}
+                      {c.roleTitle}
+                    </div>
+                    <div style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, marginTop: 2 }}>
+                      {c.counterpartName}
+                    </div>
+                  </button>
                 </div>
-                <div style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, marginTop: 2 }}>
-                  {c.counterpartName}
-                </div>
-              </button>
-            ))}
+              ))}
+            </div>
           </div>
         ))}
-      </div>
+      </nav>
       <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
         {!active ? (
           <div style={{ display: "flex", flex: 1, alignItems: "center", justifyContent: "center", color: t.inkFaint, fontFamily: f.sans, fontSize: 13 }}>
