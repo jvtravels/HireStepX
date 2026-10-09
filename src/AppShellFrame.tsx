@@ -288,17 +288,17 @@ export default function AppShellFrame({
           <SidebarTrigger aria-label="Toggle navigation" style={{ color: c.ink }} />
           <Separator orientation="vertical" style={{ height: 16, alignSelf: "center", flexShrink: 0 }} />
           <Breadcrumb style={{ flex: 1, minWidth: 0 }}>
-            <BreadcrumbList style={{ fontFamily: F.sans, fontSize: 13, flexWrap: "nowrap", overflow: "hidden" }}>
+            <BreadcrumbList style={{ fontFamily: F.sans, fontSize: 13, flexWrap: "nowrap", overflow: "hidden", alignItems: "center" }}>
               {/* Root crumb is dropped on narrow phones so the current page label keeps the room. */}
               <BreadcrumbItem className="max-[480px]:hidden">
-                <BreadcrumbLink onClick={() => onNavigate(breadcrumbRoot.path)} style={{ color: c.inkSoft, cursor: "pointer" }}>
+                <BreadcrumbLink onClick={() => onNavigate(breadcrumbRoot.path)} style={{ color: c.inkSoft, cursor: "pointer", display: "flex", alignItems: "center" }}>
                   {breadcrumbRoot.label}
                 </BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator className="max-[480px]:hidden" />
               {extraCrumbs && extraCrumbs.length > 0 ? (
                 <BreadcrumbItem>
-                  <BreadcrumbLink onClick={() => onNavigate(pageLabelPath ?? breadcrumbRoot.path)} style={{ color: c.inkSoft, cursor: "pointer" }}>
+                  <BreadcrumbLink onClick={() => onNavigate(pageLabelPath ?? breadcrumbRoot.path)} style={{ color: c.inkSoft, cursor: "pointer", display: "flex", alignItems: "center" }}>
                     {pageLabel}
                   </BreadcrumbLink>
                 </BreadcrumbItem>
@@ -320,7 +320,7 @@ export default function AppShellFrame({
                           {crumb.label}
                         </BreadcrumbPage>
                       ) : (
-                        <BreadcrumbLink onClick={() => onNavigate(crumb.path!)} style={{ color: c.inkSoft, cursor: "pointer" }}>
+                        <BreadcrumbLink onClick={() => onNavigate(crumb.path!)} style={{ color: c.inkSoft, cursor: "pointer", display: "flex", alignItems: "center" }}>
                           {crumb.label}
                         </BreadcrumbLink>
                       )}

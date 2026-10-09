@@ -180,7 +180,7 @@ function JobCard({ r, onOpen }: { r: JobMatch; onOpen: () => void }) {
   const exp = formatExperience(r.experienceMin, r.experienceMax);
   const jobType = r.employmentType ? EMPLOYMENT_TYPE_LABEL[r.employmentType] || r.employmentType : null;
   const isNew = !r.unlocked && Math.floor((Date.now() - new Date(r.matchedAt).getTime()) / 86_400_000) <= 2;
-  const meta = [r.location || "Location not specified", mode, exp, comp || "Salary not disclosed"].filter(Boolean).join(" · ");
+  const meta = [r.location || "Location not specified", mode, exp, comp || "Salary not disclosed"].filter(Boolean);
   return (
     <li style={{ background: t.white, boxShadow: `inset 0 -1px 0 ${t.line}, inset -1px 0 0 ${t.line}` }}>
       <div
@@ -212,7 +212,7 @@ function JobCard({ r, onOpen }: { r: JobMatch; onOpen: () => void }) {
           </div>
           <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkFaint, flexShrink: 0, alignSelf: "flex-start" }}>{daysAgo(r.matchedAt)}</span>
         </div>
-        <div style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.4 }}>{meta}</div>
+        <div style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.4, display: "flex", flexWrap: "wrap", columnGap: 6 }}>{meta.map((m, i) => <span key={i} style={{ whiteSpace: "nowrap" }}>{m}{i < meta.length - 1 && <span aria-hidden="true"> ·</span>}</span>)}</div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
           {r.unlocked ? <Badge tone="brand">Contacted</Badge> : <Badge tone="success">Matched</Badge>}
           {closed && <Badge tone="neutral">Role closed</Badge>}
