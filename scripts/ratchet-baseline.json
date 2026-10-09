@@ -111,7 +111,7 @@
     "src/marketing-v2/SalaryReport2026.tsx": 1,
     "src/marketing-v2/_blog-infographics.tsx": 2,
     "src/routeSkeletons.tsx": 2,
-    "src/sessionReport/HrFullReport.tsx": 31,
+    "src/sessionReport/HrFullReport.tsx": 16,
     "src/sessionReport/SessionReport.tsx": 1,
     "src/sessionReport/SessionReportView.tsx": 2,
     "src/sessionReport/panels/_primitives.tsx": 1,

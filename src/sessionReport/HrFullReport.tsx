@@ -30,17 +30,17 @@ import { Button } from "@/components/ui/button";
 const COAL = t.coal;
 const INK_SOFT = t.inkSoft;
 const LINE = t.line;
-const LINE_STRONG = "#D6CDB5";
+const LINE_STRONG = t.lineStrong;
 const CREAM = t.cream;
-const CREAM_SOFT = "#F4EFE3";
-const ERROR = "#B91C1C";
-const ERROR_SOFT = "#FEE2E2";
-const SUCCESS = "#15803D";
-const SUCCESS_SOFT = "#DCFCE7";
-const COPPER = "#B45309";
+const CREAM_SOFT = t.creamSoft;
+const ERROR = t.error;
+const ERROR_SOFT = t.error100;
+const SUCCESS = t.success;
+const SUCCESS_SOFT = t.success100;
+const COPPER = t.copper;
 const COPPER_SOFT = "#FED7AA";
-const INDIGO = "#312E81";
-const INDIGO_SOFT = "#E5E2F2";
+const INDIGO = t.indigo;
+const INDIGO_SOFT = t.indigo100;
 const MONO = f.mono;
 const SANS = f.sans;
 const SERIF = f.serif;
@@ -52,7 +52,7 @@ function Panel({ children, style }: { children: React.ReactNode; style?: React.C
     <div
       className="hrfr-panel"
       style={{
-        background: "#FFFFFF",
+        background: t.white,
         border: `1px solid ${LINE}`,
         borderRadius: 14,
         padding: 24,
@@ -853,7 +853,7 @@ function DrillCtaPanel({
           >
             DRILL PLAN{daysUntilInterview ? ` · ${daysUntilInterview} DAYS LEFT` : ""}
           </div>
-          <div style={{ fontFamily: SERIF, fontSize: 22, color: "#FFFFFF", lineHeight: 1.2, marginBottom: 6 }}>
+          <div style={{ fontFamily: SERIF, fontSize: 22, color: t.white, lineHeight: 1.2, marginBottom: 6 }}>
             Re-drill the {weakest.length > 0 ? weakest.length : "weakest"} dimensions before your real round
           </div>
           <div style={{ fontFamily: SANS, fontSize: 13, color: "#B8B5D4" }}>
@@ -866,7 +866,7 @@ function DrillCtaPanel({
           onClick={() => onDrillSkill && weakest[0] && onDrillSkill(weakest[0].name)}
           disabled={!onDrillSkill}
           style={{
-            background: "#FFFFFF",
+            background: t.white,
             color: INDIGO,
             fontFamily: SANS,
             fontSize: 14,
@@ -907,7 +907,7 @@ function DrillCtaPanel({
               >
                 Drill {i + 1}
               </div>
-              <div style={{ fontFamily: SANS, fontSize: 13, color: "#FFFFFF", lineHeight: 1.4 }}>
+              <div style={{ fontFamily: SANS, fontSize: 13, color: t.white, lineHeight: 1.4 }}>
                 {s.name}
               </div>
               <div style={{ fontFamily: MONO, fontSize: 11, color: "#9CA3AF", marginTop: 4 }}>
@@ -976,7 +976,7 @@ export default function HrFullReport({
           background: `linear-gradient(135deg, ${COAL} 0%, ${INDIGO} 100%)`,
           borderRadius: 14,
           padding: "22px 26px",
-          color: "#FFFFFF",
+          color: t.white,
           display: "grid",
           gridTemplateColumns: "auto 1px auto 1fr auto",
           gap: 22,
@@ -1024,7 +1024,7 @@ export default function HrFullReport({
             letterSpacing: "0.12em",
             textTransform: "uppercase",
             background: failingDims === 0 ? SUCCESS : failingDims <= 2 ? COPPER : ERROR,
-            color: "#FFFFFF",
+            color: t.white,
             padding: "8px 12px",
             borderRadius: 999,
             whiteSpace: "nowrap",
