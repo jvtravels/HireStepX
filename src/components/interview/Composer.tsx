@@ -634,13 +634,13 @@ export function Composer({
             <CanvasTextLink onClick={() => { setTyping(true); textareaRef.current?.focus(); }}>
               or type your answer<span className="iv-kbd-hint"> (T)</span>
             </CanvasTextLink>
-            <span aria-hidden style={{ color: e.inkFaint }}>·</span>
+            <span aria-hidden className="iv-sep" style={{ color: e.inkFaint }}>·</span>
           </>
         )}
         {hasQuestion && aiVoiceEnabled && (
           <>
             <RepeatButton onClick={replayQuestion} />
-            <span aria-hidden style={{ color: e.inkFaint }}>·</span>
+            <span aria-hidden className="iv-sep" style={{ color: e.inkFaint }}>·</span>
           </>
         )}
         {/* Mid-answer start-over — only useful once the user has actually
@@ -666,7 +666,7 @@ export function Composer({
               </svg>
               Start over
             </Button>
-            <span aria-hidden style={{ color: e.inkFaint }}>·</span>
+            <span aria-hidden className="iv-sep" style={{ color: e.inkFaint }}>·</span>
           </>
         )}
         <SkipWithReason
@@ -719,7 +719,7 @@ export function Composer({
       })()}
 
       {/* Subtle keyboard-shortcuts discoverability hint */}
-      <span aria-hidden style={{
+      <span aria-hidden className="iv-kbd-hint" style={{
         fontFamily: ef.mono, fontSize: 11, textTransform: "uppercase",
         letterSpacing: 1, color: e.inkFaint, marginTop: 2,
       }}>

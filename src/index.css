@@ -1265,8 +1265,9 @@ input[type="range"]::-moz-range-thumb {
 .app-vh { height: 100vh; height: 100dvh; }
 
 /* iOS Safari zooms the page when a focused field is under 16px. Phones and
-   tablets (touch) get a 16px floor; inline font sizes are overridden here. */
-@media (max-width: 1023px) and (pointer: coarse), (max-width: 640px) {
+   tablets (touch, including iPad landscape) get a 16px floor; inline font
+   sizes are overridden here. */
+@media (pointer: coarse), (max-width: 640px) {
   input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="hidden"]),
   textarea,
   select {

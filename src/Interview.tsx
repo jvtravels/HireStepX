@@ -405,6 +405,8 @@ function InterviewInner() {
           .iv-touch-hint { display: inline; }
         }
         @media (max-width: 600px) {
+          .iv-sep { display: none; }
+          .iv-canvas-stage { padding-bottom: 96px !important; }
           .iv-status-stack { top: auto !important; bottom: calc(64px + env(safe-area-inset-bottom, 0px)) !important; }
         }
         /* Landscape phones (~360-430px tall): the portrait stack of
