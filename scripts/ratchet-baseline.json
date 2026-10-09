@@ -239,7 +239,7 @@
     "src/sessionReport/HrFullReport.tsx": 87,
     "src/sessionReport/NegotiationFullReport.tsx": 7,
     "src/sessionReport/SessionReport.tsx": 22,
-    "src/sessionReport/SessionReportView.tsx": 29,
+    "src/sessionReport/SessionReportView.tsx": 31,
     "src/sessionReport/drillMode/DrillSessionView.tsx": 12,
     "src/sessionReport/drillMode/DrillVerdictCard.tsx": 7,
     "src/sessionReport/panels/AnchorBracketPanel.tsx": 6,
