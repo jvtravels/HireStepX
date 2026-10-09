@@ -13,7 +13,7 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { COMPANY_SUGGESTIONS } from "../onboardingData";
+import { COMPANY_SUGGESTIONS } from "../../data/company-suggestions";
 import { generateNegotiationBand } from "../../data/salary-lookup";
 import { getCompanyBandOverride } from "../../data/company-salary-overrides";
 import { getCompanyTier } from "../../data/company-tiers";

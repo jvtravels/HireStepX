@@ -10,7 +10,8 @@ import { captureClientEvent } from "./posthogClient";
    strictly for score/streak/badge visuals elsewhere in the app — this
    surface has none, so no copper appears here. */
 import { tokens as T, fonts as F } from "./auth/_tokens";
-import { COMPANY_SUGGESTIONS as COMPANY_SUGGESTIONS_FULL, ROLE_SUGGESTIONS } from "./onboardingData";
+import { ROLE_SUGGESTIONS } from "./onboardingData";
+import { COMPANY_SUGGESTIONS as COMPANY_SUGGESTIONS_FULL } from "../data/company-suggestions";
 import { profileFromRole, inferRoleFamily, inferSeniority, type InterviewFocus } from "./roleInterviewMatrix";
 import { isEnabled } from "./featureFlags";
 import { detectRoleCompanyFit } from "./_role-company-fit";

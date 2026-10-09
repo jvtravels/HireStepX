@@ -19,7 +19,8 @@ import {
   TagInput,
 } from "@/employer/_atoms";
 import { CITY_SUGGESTIONS } from "../../data/city-tiers";
-import { COMPANY_SUGGESTIONS, ROLE_SUGGESTIONS } from "@/onboardingData";
+import { ROLE_SUGGESTIONS } from "@/onboardingData";
+import { COMPANY_SUGGESTIONS } from "../../data/company-suggestions";
 
 const baseInputStyle: React.CSSProperties = {
   width: "100%",

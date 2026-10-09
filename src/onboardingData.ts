@@ -1351,9 +1351,9 @@ const ROLE_SUGGESTIONS_RAW = [
 export const ROLE_SUGGESTIONS = Array.from(new Set(ROLE_SUGGESTIONS_RAW));
 
 
-/* COMPANY_SUGGESTIONS moved to data/company-suggestions.ts (4000+ entries).
-   Re-exported here so existing imports keep working. */
-export { COMPANY_SUGGESTIONS } from "../data/company-suggestions";
+/* COMPANY_SUGGESTIONS lives in data/company-suggestions.ts (4000+ entries) and is
+   deliberately NOT re-exported here: a re-export drags the whole list into every
+   chunk that only wants ROLE_SUGGESTIONS. Import it from there directly. */
 
 
 /* Sample diverse suggestions by picking evenly spaced items */
