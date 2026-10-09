@@ -17,13 +17,16 @@ import { getSessionById } from "./supabase";
 import { loadLocalSession, type LocalSession } from "./sessionDetailHelpers";
 import type { DashboardSession } from "./dashboardTypes";
 import { Button } from "@/components/ui/button";
-import LoadingScreen from "./_LoadingScreen";
+import { LoadingSkeleton } from "./SessionDetailPanels";
 import { tokens as T, fonts as F } from "./auth/_tokens";
 
-// Lazy-load the report so the dashboard route stays slim.
+// Lazy-load the report so the dashboard route stays slim. Its own loading
+// fallback is shape-matched (dark report shell, score circle, card grid,
+// chart row) rather than the generic LoadingScreen, since this is always
+// the same destination layout.
 const SessionReport = dynamic(
   () => import("./sessionReport/SessionReport").then((m) => ({ default: m.SessionReport })),
-  { ssr: false }
+  { ssr: false, loading: () => <LoadingSkeleton /> }
 );
 
 /* ─── Loading + not-found shells (cream surface) ─────────────────── */
@@ -258,7 +261,7 @@ export default function SessionDetail() {
       : null
   );
 
-  if (loading) return <LoadingScreen message="Loading your session…" />;
+  if (loading) return <LoadingSkeleton />;
   if (loadError) return <LoadErrorScreen message={loadError} onRetry={() => { setLoadError(null); setLoading(true); /* trigger effect */ }} onBack={onBack} />;
   if (!dashboardSession) return <NotFoundScreen onBack={onBack} />;
 

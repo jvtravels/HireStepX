@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import dynamic from "next/dynamic";
-import LoadingScreen from "@/_LoadingScreen";
+import { DashboardRouteSkeleton } from "@/routeSkeletons";
 
 export const metadata: Metadata = {
   title: "Dashboard | HireStepX",
@@ -16,9 +16,10 @@ export const metadata: Metadata = {
 // `"use client"`, so SSR of the shell produces a lightweight fallback and
 // the real component hydrates on the client without a wasted server render.
 // This fallback (not the route's loading.tsx) is what renders on a hard
-// reload / direct navigation, so it uses the same shared LoadingScreen.
+// reload / direct navigation, so it's shaped like the dashboard's own
+// card-grid layout instead of a generic spinner/blob.
 const DashboardHome = dynamic(() => import("@/DashboardHome"), {
-  loading: () => <LoadingScreen />,
+  loading: () => <DashboardRouteSkeleton />,
 });
 
 export default function Page() {

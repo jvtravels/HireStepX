@@ -21,7 +21,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Message, MessageAvatar, MessageContent, MessageFooter } from "@/components/ui/message";
 import { Bubble, BubbleContent } from "@/components/ui/bubble";
-import LoadingScreen from "@/_LoadingScreen";
+import { MessagesRouteSkeleton, MessageThreadRouteSkeleton } from "@/routeSkeletons";
 import { tokens as t, fonts as f } from "./auth/_tokens";
 import {
   listConversations,
@@ -246,11 +246,7 @@ export default function MessagesV2() {
   );
 
   if (conversations === null && !listError) {
-    return shell(
-      <div style={{ display: "flex", flex: 1, minHeight: 0 }}>
-        <LoadingScreen fullScreen={false} message="Loading your conversations…" />
-      </div>,
-    );
+    return shell(<MessagesRouteSkeleton />);
   }
 
   if (listError) {
@@ -346,11 +342,7 @@ export default function MessagesV2() {
               aria-label={`Conversation with ${context?.companyName || active.companyName}`}
               style={{ flex: 1, overflowY: "auto", padding: "14px 16px", display: "flex", flexDirection: "column", gap: 10 }}
             >
-              {threadLoading && (
-                <div style={{ display: "flex", flex: 1 }}>
-                  <LoadingScreen fullScreen={false} message="Loading messages…" />
-                </div>
-              )}
+              {threadLoading && <MessageThreadRouteSkeleton />}
               {!threadLoading && messages.length === 0 && (
                 <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkFaint }}>No messages yet — say hello.</p>
               )}

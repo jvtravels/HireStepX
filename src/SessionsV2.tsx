@@ -22,7 +22,6 @@ import { Button } from "@/components/ui/button";
 import {
   PlusIcon,
   SearchXIcon,
-  Loader2Icon,
   MicIcon,
 } from "lucide-react";
 import {
@@ -542,8 +541,16 @@ function SessionsLoadingSkeleton() {
           <div key={i} className="skeleton rounded-xl" style={{ flex: 1, height: 68, border: `1px solid ${T.line}` }} />
         ))}
       </div>
-      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <Loader2Icon size={24} color={T.indigo} className="animate-spin" aria-hidden="true" />
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {[0, 1, 2, 3, 4].map((i) => (
+          <div key={i} style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div className="skeleton skeleton-circle" style={{ width: 36, height: 36, flexShrink: 0 }} />
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 6 }}>
+              <div className="skeleton" style={{ height: 12, width: "40%" }} />
+              <div className="skeleton" style={{ height: 10, width: "25%" }} />
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );

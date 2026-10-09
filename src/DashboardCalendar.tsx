@@ -30,8 +30,9 @@ import {
 import { ROLE_SUGGESTIONS } from "./onboardingData";
 import { COMPANY_SUGGESTIONS } from "../data/company-suggestions";
 import { useDashboardUIActions, useDashboardSubscription, useDashboardSessions } from "./DashboardContext";
-import { DataLoadingSkeleton, PaywallGate } from "./dashboardComponents";
+import { PaywallGate } from "./dashboardComponents";
 import { SkeletonReveal } from "./SkeletonReveal";
+import { CalendarRouteSkeleton } from "./routeSkeletons";
 
 /* Scoped stylesheet — inline styles can't express :focus-visible, media
  * queries, or :hover, so the responsive grid + keyboard focus rings live here. */
@@ -1198,7 +1199,7 @@ export default function CalendarPage() {
   })();
 
   return (
-    <SkeletonReveal loading={eventsLoading} skeleton={<DataLoadingSkeleton />}>
+    <SkeletonReveal loading={eventsLoading} skeleton={<CalendarRouteSkeleton />}>
       {content}
     </SkeletonReveal>
   );

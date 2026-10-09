@@ -3,6 +3,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { track } from "@vercel/analytics";
 import { Button } from "@/components/ui/button";
 import LoadingScreen from "./_LoadingScreen";
+import { routeSkeletonFor } from "./routeSkeletons";
 import { getSupabase, preloadSupabase, supabaseConfigured, getProfile, upsertProfile, authHeaders, type Profile } from "./supabase";
 import {
   clearSessionStart,
@@ -2136,7 +2137,9 @@ export function RequireAuth({ children }: { children: ReactNode }) {
     }
   }, [isLoggedIn, loading, user, router, pathname]);
 
-  if (loading || (!isLoggedIn && hasStoredSession())) return <LoadingScreen />;
+  // Session restore runs on every hard load, so this is the first loader the
+  // user sees — show the destination screen's shape, not a generic blob.
+  if (loading || (!isLoggedIn && hasStoredSession())) return routeSkeletonFor(pathname) ?? <LoadingScreen />;
   if (!isLoggedIn) return null;
   if (user && !user.hasCompletedOnboarding && !getLocalOnboardingDone(user.id) && !["/onboarding", "/interview", "/onboarding/complete"].includes(pathname) && !pathname.startsWith("/session/")) return null;
 

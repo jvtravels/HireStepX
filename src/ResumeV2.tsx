@@ -19,6 +19,7 @@ import { useResumeUpload, type ResumePhase } from "./useResumeUpload";
 import { PortfolioLinksSection } from "./settingsSections";
 import LoadingScreen from "./_LoadingScreen";
 import { SkeletonReveal } from "./SkeletonReveal";
+import { Skeleton } from "@/components/ui/skeleton";
 import { computeATSScore } from "./resumeAts";
 import { computeAllFitness, type InterviewType, type FitnessBand } from "./resumeFitness";
 import { Button } from "@/components/ui/button";
@@ -168,7 +169,7 @@ function ProgressBar({
 /* ── Loading / empty states ── */
 
 function SkeletonBlock({ w, h = 12 }: { w: number | string; h?: number }) {
-  return <span style={{ display: "block", width: w, height: h, borderRadius: 4, background: T.creamSoft }} aria-hidden="true" />;
+  return <Skeleton style={{ width: w, height: h }} aria-hidden="true" />;
 }
 
 function ResumeSkeleton() {

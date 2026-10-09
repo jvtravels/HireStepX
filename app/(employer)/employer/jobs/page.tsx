@@ -19,9 +19,10 @@ import { motion } from "motion/react";
 import {
   PlusIcon, SearchXIcon, ChevronRightIcon, BriefcaseIcon, SlidersHorizontalIcon,
   MoreVerticalIcon, PencilIcon, ArchiveIcon, ArchiveRestoreIcon, HistoryIcon, XIcon,
-  EyeIcon, InfoIcon, LoaderCircleIcon, AlertTriangleIcon, RefreshCwIcon,
+  EyeIcon, InfoIcon, AlertTriangleIcon, RefreshCwIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
@@ -1208,7 +1209,7 @@ export default function EmployerJobsPage() {
                   <TableCell style={{ padding: "12px 20px", verticalAlign: "top", whiteSpace: "normal" }}>
                     {r.status === "generating" ? (
                       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                        <LoaderCircleIcon size={12} className="animate-spin" color={t.inkFaint} aria-hidden="true" />
+                        <Spinner style={{ width: 12, height: 12 }} color={t.inkFaint} aria-hidden="true" />
                         <Badge tone="brand">Finding candidates</Badge>
                       </div>
                     ) : r.aiScreening.evaluated === 0 ? (

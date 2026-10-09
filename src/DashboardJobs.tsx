@@ -27,7 +27,7 @@ import {
   BriefcaseIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import LoadingScreen from "@/_LoadingScreen";
+import { JobsRouteSkeleton } from "@/routeSkeletons";
 import { SearchWithSuggestions } from "@/components/SearchWithSuggestions";
 import { FilterPill } from "@/components/FilterPill";
 import {
@@ -321,11 +321,7 @@ export default function DashboardJobs() {
   );
 
   if (!loaded) {
-    return shell(
-      <div style={{ display: "flex", flex: 1, minHeight: 0 }}>
-        <LoadingScreen fullScreen={false} message="Loading your matches…" />
-      </div>,
-    );
+    return shell(<JobsRouteSkeleton />);
   }
 
   if (fetchError) {

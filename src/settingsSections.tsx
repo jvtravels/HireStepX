@@ -831,7 +831,16 @@ export const PlanUsageSection = memo(function PlanUsageSection(props: PlanUsageS
           <div style={{ fontFamily: font.ui, fontSize: 16, fontWeight: 600, color: c.ink }}>Payment history</div>
         </div>
         {paymentsLoading ? (
-          <div style={{ fontFamily: font.ui, fontSize: 13, color: c.inkSoft, padding: "16px 0" }}>Loading payment history…</div>
+          <div style={{ border: `1px solid ${c.border}`, borderRadius: 12, padding: "16px 20px", display: "flex", flexDirection: "column", gap: 14 }}>
+            {[0, 1, 2].map((i) => (
+              <div key={i} style={{ display: "flex", gap: 24 }}>
+                <div className="skeleton" style={{ height: 12, width: "30%" }} />
+                <div className="skeleton" style={{ height: 12, width: "20%" }} />
+                <div className="skeleton" style={{ height: 12, width: "15%" }} />
+                <div className="skeleton" style={{ height: 12, width: "15%" }} />
+              </div>
+            ))}
+          </div>
         ) : payments.length === 0 ? (
           <div style={{ fontFamily: font.ui, fontSize: 13, color: c.inkSoft, padding: "16px 0" }}>No payments yet.</div>
         ) : (
