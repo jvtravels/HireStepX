@@ -1660,10 +1660,10 @@ create table if not exists employers (
   -- manually — see runbook note next to `resume-files` — not this file),
   -- e.g. "{employer_id}/logo.png". NULL when no logo was uploaded.
   logo_path text,
-  -- Default is 'approved': signup no longer waits on admin review (see
-  -- handlePost in server-handlers/employer-profile.ts). 'pending' stays a
-  -- valid value only for rows from before that change; 'rejected' is still
-  -- live, set by the admin panel's post-hoc moderation action.
+  -- Legacy column: employers need no admin approval and nothing in the app
+  -- reads this value any more (employer-profile.ts reports 'approved' for
+  -- every row). Kept, rather than dropped, to avoid a destructive migration;
+  -- default is 'approved'.
   status text not null default 'approved' check (status in ('pending', 'approved', 'rejected')),
   submitted_at timestamptz default now(),
   approved_at timestamptz,

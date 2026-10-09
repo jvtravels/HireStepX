@@ -63,7 +63,6 @@ describe("selectUnlockTargets", () => {
 type Call = { url: string; method: string; body: unknown };
 
 function stubSupabase(opts: {
-  employerStatus?: string;
   matches?: Array<{ id: string; candidate_user_id: string; unlocked: boolean }>;
   auditStatus?: number;
   failPatchFor?: string;
@@ -84,7 +83,7 @@ function stubSupabase(opts: {
       return json([{ id: REQ, employer_id: EMP, title: "Backend Engineer", location: "Pune", status: "ready", created_at: "2026-01-01" }]);
     }
     if (url.includes("/employers?")) {
-      return json([{ id: EMP, company_name: "Acme", status: opts.employerStatus ?? "approved" }]);
+      return json([{ id: EMP, company_name: "Acme" }]);
     }
     if (url.includes("/requirement_matches") && method === "GET") return json(matches);
     if (url.includes("/profiles")) {
@@ -138,11 +137,13 @@ describe("adminUnlockCandidates", () => {
     expect(patches[0].url).toContain(M3);
   });
 
-  it("refuses employers that are not approved, without writing anything", async () => {
-    const calls = stubSupabase({ employerStatus: "rejected" });
+  it("never reads or filters on the employer's status — no approval needed", async () => {
+    const calls = stubSupabase({});
     const out = await adminUnlockCandidates({ requirementId: REQ });
-    expect(out).toMatchObject({ ok: false });
-    expect(calls.some((c) => c.method === "PATCH" || c.method === "POST")).toBe(false);
+    expect(out).toMatchObject({ ok: true, unlocked: 2 });
+    const employerReads = calls.filter((c) => c.url.includes("/employers?"));
+    expect(employerReads.length).toBeGreaterThan(0);
+    expect(employerReads.every((c) => !c.url.includes("status"))).toBe(true);
   });
 
   it("does not unlock anything if the audit row cannot be written", async () => {
@@ -189,12 +190,12 @@ describe("read sections", () => {
   it("getUnlockMatches joins candidate names and keeps locked state", async () => {
     stubSupabase({});
     const out = await getUnlockMatches(REQ);
-    expect(out.employer).toMatchObject({ companyName: "Acme", status: "approved" });
+    expect(out.employer).toEqual({ id: EMP, companyName: "Acme" });
     expect(out.matches.find((m) => m.matchId === M1)).toMatchObject({ name: "Asha", unlocked: false });
     expect(out.matches.find((m) => m.matchId === M2)).toMatchObject({ name: "(no name)", unlocked: true });
   });
 
-  it("listUnlockRequirements only returns requirements of approved employers", async () => {
+  it("listUnlockRequirements lists requirements for every employer", async () => {
     stubSupabase({});
     const out = await listUnlockRequirements("acme");
     expect(out.rows).toEqual([expect.objectContaining({ requirementId: REQ, companyName: "Acme", title: "Backend Engineer" })]);

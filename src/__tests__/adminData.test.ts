@@ -150,8 +150,6 @@ describe("admin-data — input validation", () => {
     ["ban-user missing userId", { action: "ban-user" }],
     ["unban-user missing userId", { action: "unban-user" }],
     ["delete-user missing userId", { action: "delete-user" }],
-    ["approve-employer missing id", { action: "approve-employer" }],
-    ["reject-employer missing id", { action: "reject-employer" }],
     ["refund-payment missing paymentId", { action: "refund-payment" }],
     ["send-email missing fields", { action: "send-email", userId: "u1" }],
     ["save-cost-reconciliation bad month format", { action: "save-cost-reconciliation", month: "2026", actualInvoiceInr: 100 }],
