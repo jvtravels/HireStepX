@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { isQuotaExhausted, isTransientLLMError, markProviderQuotaExhausted, isProviderCoolingDown, resetProviderCooldowns, isDeterministicLLMFailure, isNonRetryableChainFailure, LLMChainError, recordProviderFailure, recordProviderSuccess } from "../../server-handlers/_llm";
+import { isQuotaExhausted, isTransientLLMError, markProviderQuotaExhausted, isProviderCoolingDown, resetProviderCooldowns, isDeterministicLLMFailure, isNonRetryableChainFailure, LLMChainError, recordProviderFailure, recordProviderSuccess, isTokenGated } from "../../server-handlers/_llm";
 
 /* The retry path on each LLM provider does one short-backoff retry for
    transient errors before failing over. A 429 from a per-second rate limit is
@@ -96,5 +96,17 @@ describe("provider circuit breaker", () => {
     for (let i = 0; i < 5; i++) recordProviderFailure("gemini", "Gemini error 400: INVALID_ARGUMENT", false);
     for (let i = 0; i < 5; i++) recordProviderFailure("gemini", "Groq error 413: too large", false);
     expect(isProviderCoolingDown("gemini")).toBe(false);
+  });
+});
+
+describe("token gate scope", () => {
+  it("gates enhancement endpoints but never the core interview loop", () => {
+    expect(isTokenGated("insights")).toBe(true);
+    expect(isTokenGated("requirement-match-llm")).toBe(true);
+    expect(isTokenGated("generate")).toBe(false);
+    expect(isTokenGated("follow-up")).toBe(false);
+    expect(isTokenGated("follow-up-dedup-retry")).toBe(false);
+    expect(isTokenGated("evaluate-session-fast")).toBe(false);
+    expect(isTokenGated(undefined)).toBe(false);
   });
 });

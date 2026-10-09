@@ -3,6 +3,7 @@
 import { captureServerEvent } from "./_posthog";
 import { countTokens } from "./_tokenizer";
 import { recordSlo } from "./_slo";
+import { redisGet, redisIncrByWithExpiry } from "./_shared";
 
 declare const process: { env: Record<string, string | undefined> };
 
@@ -126,6 +127,29 @@ async function logUsage(entry: {
  * Treat quota exhaustion as permanent so the chain fails over immediately. */
 export function isQuotaExhausted(msg: string): boolean {
   return /current quota|plan and billing|billing details|resource_exhausted|quota.?exceeded|exceeded.*quota/i.test(msg);
+}
+
+/* Per-user daily token ceiling: an abuse/runaway backstop on top of the
+   per-day call quota (which can't see that one call is 20x another). Only
+   enhancement endpoints are gated; the core interview loop (generate,
+   follow-up, evaluate-session) is never blocked mid-session. Fail-open when
+   Redis is unavailable. */
+const TOKEN_GATE_EXEMPT = ["generate", "follow-up", "evaluate-session"];
+const DAILY_TOKEN_CAP = Number(process.env.LLM_DAILY_TOKEN_CAP) || 600_000;
+
+export function isTokenGated(endpoint: string | undefined): boolean {
+  if (!endpoint) return false;
+  return !TOKEN_GATE_EXEMPT.some((p) => endpoint === p || endpoint.startsWith(`${p}-`));
+}
+
+function tokenKey(userId: string): string {
+  return `llm_tok:${userId}:${new Date().toISOString().slice(0, 10)}`;
+}
+
+async function isOverTokenBudget(userId: string, endpoint: string | undefined): Promise<boolean> {
+  if (!isTokenGated(endpoint)) return false;
+  const raw = await redisGet(tokenKey(userId)).catch(() => null);
+  return raw != null && Number(raw) >= DAILY_TOKEN_CAP;
 }
 
 /* A quota-exhausted provider stays exhausted for minutes, but callers like
@@ -435,6 +459,10 @@ export async function callLLM(opts: LLMOptions, timeoutMs = 15000, meta?: { user
   // the handler's own catch block could return a graceful "timed out"
   // response. totalBudgetMs lets a caller cap the chain's real wall-clock
   // time regardless of how many providers or retries fire.
+  if (meta?.userId && await isOverTokenBudget(meta.userId, meta.endpoint)) {
+    throw new LLMChainError("Daily AI token budget reached for this account", ["Daily token budget reached 400"]);
+  }
+
   const startedAt = Date.now();
   const remainingBudget = () => meta?.totalBudgetMs != null
     ? Math.max(0, meta.totalBudgetMs - (Date.now() - startedAt))
@@ -474,6 +502,9 @@ export async function callLLM(opts: LLMOptions, timeoutMs = 15000, meta?: { user
       try {
         const result = await callOnce(provider);
         recordProviderSuccess(provider.name);
+        if (meta?.userId && result.tokensUsed?.total) {
+          await redisIncrByWithExpiry(tokenKey(meta.userId), result.tokensUsed.total, 90_000);
+        }
         await logUsage({ userId: meta?.userId, endpoint: meta?.endpoint, model: result.model, isFallback, promptTokens: result.tokensUsed?.prompt ?? 0, completionTokens: result.tokensUsed?.completion ?? 0, totalTokens: result.tokensUsed?.total ?? 0, latencyMs: result.latencyMs ?? 0, status: "success", sessionId: meta?.sessionId, cachedTokens: result.tokensUsed?.cached });
         return result;
       } catch (err) {
