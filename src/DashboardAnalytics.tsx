@@ -9,7 +9,8 @@ import { markAnalyticsVisited } from "./dashboardHelpers";
 import { sessionTypes, scoreLabel, scoreLabelColor } from "./dashboardTypes";
 import { ScoreTrendChart, SkillRadar } from "./DashboardCharts";
 import { useDashboardSessions, useDashboardCore, useDashboardUIActions, useDashboardSubscription } from "./DashboardContext";
-import { DataLoadingSkeleton, PaywallGate } from "./dashboardComponents";
+import { PaywallGate } from "./dashboardComponents";
+import { AnalyticsRouteSkeleton } from "./routeSkeletons";
 import { SkeletonReveal } from "./SkeletonReveal";
 import type { ResumeProfile } from "./dashboardData";
 import { isAiResume } from "./resumeParser";
@@ -649,7 +650,7 @@ export default function AnalyticsPage() {
   })();
 
   return (
-    <SkeletonReveal loading={sessionsLoading} skeleton={<DataLoadingSkeleton />}>
+    <SkeletonReveal loading={sessionsLoading} skeleton={<AnalyticsRouteSkeleton />}>
       {content}
     </SkeletonReveal>
   );

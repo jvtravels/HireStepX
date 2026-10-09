@@ -60,9 +60,9 @@ describe("DashboardJobs", () => {
               employmentType: "full-time",
               matchScore: 87,
               matchReason: "Your practice history in backend roles lines up with this role.",
-              unlocked: false,
+              unlocked: true,
               matchedAt: new Date().toISOString().slice(0, 10),
-              unlockedAt: null,
+              unlockedAt: new Date().toISOString().slice(0, 10),
             },
           ],
         }),
@@ -75,24 +75,21 @@ describe("DashboardJobs", () => {
     expect(within(table).getByText("Acme Corp")).toBeInTheDocument();
     expect(within(table).getByText(/Bengaluru/)).toBeInTheDocument();
     expect(within(table).getByText("Full-time")).toBeInTheDocument();
-    expect(within(table).getByText("Matched")).toBeInTheDocument();
+    expect(within(table).getByText("Contacted")).toBeInTheDocument();
     expect(within(table).getByText(/Your practice history in backend roles/)).toBeInTheDocument();
     // The Figma table shows a short description snippet under the job title.
     expect(within(table).getByText("We're growing the payments platform team.")).toBeInTheDocument();
 
     // Filter dropdowns are populated from the real fetched match data.
-    expect(screen.getByRole("button", { name: "Location" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Job type" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Experience" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Industry" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Filters" })).toBeInTheDocument();
 
     fireEvent.click(within(table).getByText("Backend Engineer"));
 
     const dialog = await screen.findByRole("dialog");
-    expect(within(dialog).getByRole("link", { name: "Acme Corp" })).toHaveAttribute("href", "https://acme.example");
+    expect(within(dialog).getByRole("link", { name: /acme\.example/ })).toHaveAttribute("href", "https://acme.example");
     expect(within(dialog).getByText("2 openings")).toBeInTheDocument();
     expect(within(dialog).getByText(/Notice: 30 days/)).toBeInTheDocument();
-    expect(within(dialog).getByText("Fintech")).toBeInTheDocument();
+    expect(within(dialog).getAllByText("Fintech").length).toBeGreaterThan(0);
     expect(within(dialog).getByText("Full-time")).toBeInTheDocument();
     expect(within(dialog).getByText("We're growing the payments platform team.")).toBeInTheDocument();
     expect(within(dialog).getByText(/Own the payments service\./)).toBeInTheDocument();
@@ -126,8 +123,8 @@ describe("DashboardJobs", () => {
       employmentType: null,
       matchScore: 60,
       matchReason: "Matched on your overall profile and practice history.",
-      unlocked: false,
-      unlockedAt: null,
+      unlocked: true,
+      unlockedAt: "2026-09-21",
     };
     global.fetch = vi.fn(() =>
       Promise.resolve({

@@ -110,6 +110,10 @@ describe("candidate-hiring-activity handler", () => {
     ]);
     expect(body.recent[0].companyName).toBe("Acme");
     expect(body.recent[0].unlockedAt).toBe("2026-08-01T00:00:00Z");
+    // m3 is only matched (not unlocked): the employer's identity must not leave the server.
+    expect(body.recent[1].companyName).toBe("Confidential company");
+    expect(body.recent[1].companyLogoPath).toBeNull();
+    expect(body.recent[1].companyWebsite).toBeNull();
   });
 
   it("returns 500 and logs when the profile read fails", async () => {

@@ -12,6 +12,7 @@ import { dur, ease } from "./_motion";
 import { hoursOrDaysAgo, EMPLOYMENT_TYPE_LABEL } from "./hiringMatchFormat";
 import { useHiringActivity } from "./useHiringActivity";
 import { Button } from "@/components/ui/button";
+import { LockIcon } from "lucide-react";
 
 // Cycles through 4 existing status tokens so every badge is sourced from
 // the design system rather than a one-off hex literal.
@@ -68,6 +69,7 @@ export default function HiringActivityCard() {
           type="button"
           variant="ghost"
           onClick={() => router.push("/jobs")}
+          className="hover:bg-transparent hover:underline underline-offset-4"
           style={{
             fontFamily: f.sans, fontSize: textSize.sm, fontWeight: 600, color: t.indigo,
             background: "none", border: "none", padding: 0, height: "auto", cursor: "pointer",
@@ -103,7 +105,7 @@ export default function HiringActivityCard() {
                 display: "flex", alignItems: "center", justifyContent: "center",
                 fontFamily: f.sans, fontSize: textSize.sm, fontWeight: 700, marginBottom: 10,
               }}>
-                {initials(m.companyName)}
+                {m.unlocked === false ? <LockIcon size={14} aria-hidden="true" /> : initials(m.companyName)}
               </div>
               <div style={{ fontFamily: f.sans, fontSize: textSize.base, fontWeight: 700, color: t.coal, marginBottom: 4 }}>
                 {m.roleTitle}

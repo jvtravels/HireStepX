@@ -36,7 +36,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { SortableHead, type Sort as SharedSort } from "@/components/SortableHead";
 import { TablePaginationFooter } from "@/components/TablePaginationFooter";
 import { useMaxWidth } from "./hooks/useMaxWidth";
-import { FilterPill } from "@/components/FilterPill";
+import { FiltersPanel, type FilterSection, type FilterSelection } from "@/components/FiltersPanel";
 import { SearchWithSuggestions } from "@/components/SearchWithSuggestions";
 
 const font = { ui: F.sans, mono: F.mono };
@@ -215,36 +215,30 @@ function WorkspaceHeader({
   search,
   onSearchChange,
   typeOptions,
-  typeFilter,
-  onTypeFilterChange,
-  scoreFilter,
-  onScoreFilterChange,
-  dateFilter,
-  onDateFilterChange,
+  filters,
+  onFiltersChange,
 }: {
   onStartSession: () => void;
   search: string;
   onSearchChange: (value: string) => void;
   typeOptions: string[];
-  typeFilter: string;
-  onTypeFilterChange: (value: string) => void;
-  scoreFilter: "All" | ScoreBand;
-  onScoreFilterChange: (value: "All" | ScoreBand) => void;
-  dateFilter: string;
-  onDateFilterChange: (value: string) => void;
+  filters: FilterSelection;
+  onFiltersChange: (next: FilterSelection) => void;
 }) {
-  const dateOptions = useMemo(() => ["All", ...GROUP_ORDER], []);
+  const sections = useMemo<FilterSection[]>(() => [
+    { key: "type", label: "Type", options: typeOptions.map((o) => ({ value: o, label: o })) },
+    { key: "score", label: "Score", options: SCORE_OPTIONS.filter((o) => o.value !== "All").map((o) => ({ value: o.value, label: o.label })) },
+    { key: "date", label: "Date", options: GROUP_ORDER.map((o) => ({ value: o, label: o })) },
+  ], [typeOptions]);
 
   const suggestedFilters = useMemo(() => {
     const suggestions: Array<{ label: string; apply: () => void }> = [];
-    const firstType = typeOptions.find((o) => o !== "All" && o !== typeFilter);
-    if (firstType) suggestions.push({ label: `Type: ${firstType}`, apply: () => onTypeFilterChange(firstType) });
-    const firstScore = SCORE_OPTIONS.find((o) => o.value !== "All" && o.value !== scoreFilter);
-    if (firstScore) suggestions.push({ label: `Score: ${firstScore.label}`, apply: () => onScoreFilterChange(firstScore.value) });
-    const firstDate = dateOptions.find((o) => o !== "All" && o !== dateFilter);
-    if (firstDate) suggestions.push({ label: `Date: ${firstDate}`, apply: () => onDateFilterChange(firstDate) });
+    for (const section of sections) {
+      const first = section.options.find((o) => !(filters[section.key] ?? []).includes(o.value));
+      if (first) suggestions.push({ label: `${section.label}: ${first.label}`, apply: () => onFiltersChange({ ...filters, [section.key]: [...(filters[section.key] ?? []), first.value] }) });
+    }
     return suggestions.slice(0, 4);
-  }, [typeOptions, typeFilter, onTypeFilterChange, scoreFilter, onScoreFilterChange, dateOptions, dateFilter, onDateFilterChange]);
+  }, [sections, filters, onFiltersChange]);
 
   return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 20px", borderBottom: `1px solid ${T.line}`, flexWrap: "wrap", gap: 12 }}>
@@ -260,29 +254,11 @@ function WorkspaceHeader({
           suggestedFilters={suggestedFilters}
           style={{ flex: "1 1 240px", minWidth: 200, maxWidth: 560 }}
         />
-        {/* Only this inner group scrolls horizontally on narrow viewports —
-            keeping overflowX off the row above avoids clipping the search
-            dropdown's absolutely-positioned panel (overflow-x: auto forces
-            overflow-y to auto too, per spec, which clips it invisibly). */}
-        <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
-          <FilterPill
-            label="Type"
-            value={typeFilter}
-            options={typeOptions.map((t) => ({ value: t, label: t }))}
-            onChange={onTypeFilterChange}
-          />
-          <FilterPill label="Score" value={scoreFilter} options={SCORE_OPTIONS} onChange={onScoreFilterChange} />
-          <FilterPill
-            label="Date"
-            value={dateFilter}
-            options={dateOptions.map((d) => ({ value: d, label: d }))}
-            onChange={onDateFilterChange}
-          />
-          <Button size="lg" className="gap-2 px-4" onClick={onStartSession}>
-            <PlusIcon size={16} strokeWidth={2.5} aria-hidden="true" />
-            Start session
-          </Button>
-        </div>
+        <FiltersPanel sections={sections} value={filters} onApply={onFiltersChange} />
+        <Button size="lg" className="gap-2 px-4" onClick={onStartSession}>
+          <PlusIcon size={16} strokeWidth={2.5} aria-hidden="true" />
+          Start session
+        </Button>
       </div>
     </div>
   );
@@ -623,9 +599,7 @@ function SessionsWorkspace({
   onOpenSession: (id: string) => void;
 }) {
   const [search, setSearch] = useState("");
-  const [typeFilter, setTypeFilter] = useState("All");
-  const [scoreFilter, setScoreFilter] = useState<"All" | ScoreBand>("All");
-  const [dateFilter, setDateFilter] = useState("All");
+  const [filters, setFilters] = useState<FilterSelection>({});
   const [sort, setSort] = useState<Sort>(DEFAULT_SORT);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [page, setPage] = useState(1);
@@ -642,21 +616,21 @@ function SessionsWorkspace({
   }, [rows]);
 
   const typeOptions = useMemo(
-    () => ["All", ...Array.from(new Set(rows.map((r) => r.category)))],
+    () => Array.from(new Set(rows.map((r) => r.category))),
     [rows],
   );
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     const filteredRows = rows.filter((r) => {
-      if (typeFilter !== "All" && r.category !== typeFilter) return false;
-      if (scoreFilter !== "All" && r.band !== scoreFilter) return false;
-      if (dateFilter !== "All" && r.groupLabel !== dateFilter) return false;
+      if (filters.type?.length && !filters.type.includes(r.category)) return false;
+      if (filters.score?.length && !filters.score.includes(r.band)) return false;
+      if (filters.date?.length && !filters.date.includes(r.groupLabel)) return false;
       if (q && !`${r.title} ${r.category} ${r.company ?? ""}`.toLowerCase().includes(q)) return false;
       return true;
     });
     return [...filteredRows].sort((a, b) => compareRows(a, b, sort));
-  }, [rows, search, typeFilter, scoreFilter, dateFilter, sort]);
+  }, [rows, search, filters, sort]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / rowsPerPage));
   const page_ = Math.min(page, totalPages);
@@ -664,9 +638,7 @@ function SessionsWorkspace({
 
   const clearFilters = () => {
     setSearch("");
-    setTypeFilter("All");
-    setScoreFilter("All");
-    setDateFilter("All");
+    setFilters({});
     setPage(1);
   };
 
@@ -683,12 +655,8 @@ function SessionsWorkspace({
           search={search}
           onSearchChange={(v) => { setSearch(v); setPage(1); }}
           typeOptions={typeOptions}
-          typeFilter={typeFilter}
-          onTypeFilterChange={(v) => { setTypeFilter(v); setPage(1); }}
-          scoreFilter={scoreFilter}
-          onScoreFilterChange={(v) => { setScoreFilter(v); setPage(1); }}
-          dateFilter={dateFilter}
-          onDateFilterChange={(v) => { setDateFilter(v); setPage(1); }}
+          filters={filters}
+          onFiltersChange={(v) => { setFilters(v); setPage(1); }}
         />
         <SessionsTable
           rows={pageRows}

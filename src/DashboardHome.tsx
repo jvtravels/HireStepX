@@ -485,7 +485,7 @@ export default function DashboardHome() {
         nearestEvent={nearestEvent}
         hasGoogleToken={account.hasGoogleToken}
         googleSyncStatus={account.googleSyncStatus}
-        onConnectCalendar={() => void account.syncGoogleCalendar()}
+        onConnectCalendar={() => router.push("/calendar")}
       />
 
       <ResumeFreshnessStrip parsedAt={resumeData?.parsedAt} onRefresh={goToResume} />
@@ -583,7 +583,7 @@ export default function DashboardHome() {
             Recent Sessions
           </h2>
           {sessions.hasData && (
-            <Button variant="ghost" onClick={goToSessions} style={{
+            <Button variant="ghost" onClick={goToSessions} className="hover:bg-transparent hover:underline underline-offset-4" style={{
               fontFamily: f.sans, fontSize: 13, color: t.indigo,
               padding: "10px 14px", minHeight: 44, height: "auto",
             }}>View all →</Button>

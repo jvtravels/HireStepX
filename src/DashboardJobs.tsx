@@ -29,7 +29,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { JobsRouteSkeleton } from "@/routeSkeletons";
 import { SearchWithSuggestions } from "@/components/SearchWithSuggestions";
-import { FilterPill } from "@/components/FilterPill";
+import { FiltersPanel, type FilterSection, type FilterSelection } from "@/components/FiltersPanel";
 import {
   Table,
   TableBody,
@@ -45,6 +45,7 @@ import { tokens as t, fonts as f, textSize } from "./auth/_tokens";
 import { dur, ease } from "./_motion";
 import { daysAgo, formatComp, formatExperience, WORK_MODE_LABEL, EMPLOYMENT_TYPE_LABEL, type SalaryType } from "./hiringMatchFormat";
 import JobDetailModal from "./JobDetailModal";
+import { CompanyAvatar } from "./CompanyAvatar";
 import { useMaxWidth } from "./hooks/useMaxWidth";
 
 export interface JobMatch {
@@ -128,10 +129,6 @@ function compareRows(a: JobMatch, b: JobMatch, sort: Sort<SortColumn>): number {
   }
 }
 
-function filterPillOptions(options: string[]): Array<{ value: string; label: string }> {
-  return [{ value: "", label: "All" }, ...options.map((o) => ({ value: o, label: o }))];
-}
-
 function experienceBucket(m: JobMatch): string | null {
   const min = m.experienceMin ?? m.experienceMax;
   if (min == null) return null;
@@ -186,7 +183,7 @@ function JobCard({ r, onOpen }: { r: JobMatch; onOpen: () => void }) {
       <div
         role="button"
         tabIndex={0}
-        aria-label={`View details for ${r.roleTitle} at ${r.companyName}`}
+        aria-label={`View details for ${r.roleTitle}${r.unlocked ? ` at ${r.companyName}` : ""}`}
         onClick={onOpen}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
@@ -197,13 +194,7 @@ function JobCard({ r, onOpen }: { r: JobMatch; onOpen: () => void }) {
         style={{ display: "flex", flexDirection: "column", gap: 10, padding: "14px 16px", cursor: "pointer", minWidth: 0 }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
-          {r.companyLogoPath ? (
-            <img src={r.companyLogoPath} alt={`${r.companyName} logo`} width={36} height={36} loading="lazy" style={{ borderRadius: "50%", objectFit: "cover", flexShrink: 0, border: `1px solid ${t.line}` }} />
-          ) : (
-            <div style={{ width: 36, height: 36, borderRadius: "50%", background: t.creamSoft, border: `1px solid ${t.line}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontFamily: f.sans, fontSize: 14, fontWeight: 600, color: t.inkSoft }}>
-              {r.companyName.charAt(0).toUpperCase()}
-            </div>
-          )}
+          <CompanyAvatar job={r} size={36} />
           <div style={{ minWidth: 0, flex: 1 }}>
             <div style={{ fontFamily: f.sans, fontSize: 15, fontWeight: 600, color: t.coal, wordBreak: "break-word" }}>{r.roleTitle}</div>
             <div style={{ fontFamily: f.sans, fontSize: 13, color: t.inkFaint, wordBreak: "break-word" }}>
@@ -253,10 +244,7 @@ export default function DashboardJobs() {
   const [selected, setSelected] = useState<JobMatch | null>(null);
 
   const [search, setSearch] = useState("");
-  const [locationFilter, setLocationFilter] = useState("");
-  const [jobTypeFilter, setJobTypeFilter] = useState("");
-  const [experienceFilter, setExperienceFilter] = useState("");
-  const [industryFilter, setIndustryFilter] = useState("");
+  const [filters, setFilters] = useState<FilterSelection>({});
   const [sort, setSort] = useState<Sort<SortColumn>>(DEFAULT_SORT);
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -329,33 +317,37 @@ export default function DashboardJobs() {
     [matches],
   );
 
+  const filterSections = useMemo<FilterSection[]>(() => [
+    { key: "location", label: "Location", options: locationOptions.map((o) => ({ value: o, label: o })) },
+    { key: "jobType", label: "Job type", options: jobTypeOptions.map((o) => ({ value: o, label: o })) },
+    { key: "experience", label: "Experience", options: experienceOptions.map((o) => ({ value: o, label: o })) },
+    { key: "industry", label: "Industry", options: industryOptions.map((o) => ({ value: o, label: o })) },
+  ], [locationOptions, jobTypeOptions, experienceOptions, industryOptions]);
+
   const suggestedFilters = useMemo(() => {
     const suggestions: Array<{ label: string; apply: () => void }> = [];
-    const firstLocation = locationOptions.find((o) => o !== locationFilter);
-    if (firstLocation) suggestions.push({ label: `Location: ${firstLocation}`, apply: () => setLocationFilter(firstLocation) });
-    const firstJobType = jobTypeOptions.find((o) => o !== jobTypeFilter);
-    if (firstJobType) suggestions.push({ label: `Job type: ${firstJobType}`, apply: () => setJobTypeFilter(firstJobType) });
-    const firstExperience = experienceOptions.find((o) => o !== experienceFilter);
-    if (firstExperience) suggestions.push({ label: `Experience: ${firstExperience}`, apply: () => setExperienceFilter(firstExperience) });
-    const firstIndustry = industryOptions.find((o) => o !== industryFilter);
-    if (firstIndustry) suggestions.push({ label: `Industry: ${firstIndustry}`, apply: () => setIndustryFilter(firstIndustry) });
+    for (const section of filterSections) {
+      const first = section.options.find((o) => !(filters[section.key] ?? []).includes(o.value));
+      if (first) suggestions.push({ label: `${section.label}: ${first.label}`, apply: () => setFilters({ ...filters, [section.key]: [...(filters[section.key] ?? []), first.value] }) });
+    }
     return suggestions.slice(0, 4);
-  }, [locationOptions, jobTypeOptions, experienceOptions, industryOptions, locationFilter, jobTypeFilter, experienceFilter, industryFilter]);
+  }, [filterSections, filters]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     const list = matches.filter((m) => {
-      if (q && !(`${m.roleTitle} ${m.companyName} ${m.location}`.toLowerCase().includes(q))) return false;
-      if (locationFilter && m.location !== locationFilter) return false;
-      if (jobTypeFilter && (m.employmentType ? EMPLOYMENT_TYPE_LABEL[m.employmentType] || m.employmentType : null) !== jobTypeFilter) return false;
-      if (experienceFilter && experienceBucket(m) !== experienceFilter) return false;
-      if (industryFilter && m.preferredIndustry !== industryFilter) return false;
+      const company = m.unlocked ? m.companyName : "";
+      if (q && !(`${m.roleTitle} ${company} ${m.location}`.toLowerCase().includes(q))) return false;
+      if (filters.location?.length && !filters.location.includes(m.location)) return false;
+      if (filters.jobType?.length && !filters.jobType.includes(jobTypeLabel(m))) return false;
+      if (filters.experience?.length && !filters.experience.includes(experienceBucket(m) ?? "")) return false;
+      if (filters.industry?.length && !filters.industry.includes(m.preferredIndustry ?? "")) return false;
       return true;
     });
     return [...list].sort((a, b) => compareRows(a, b, sort));
-  }, [matches, search, locationFilter, jobTypeFilter, experienceFilter, industryFilter, sort]);
+  }, [matches, search, filters, sort]);
 
-  useEffect(() => { setPage(1); }, [search, locationFilter, jobTypeFilter, experienceFilter, industryFilter, sort, rowsPerPage]);
+  useEffect(() => { setPage(1); }, [search, filters, sort, rowsPerPage]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / rowsPerPage));
   const pageSafe = Math.min(page, totalPages);
@@ -363,30 +355,39 @@ export default function DashboardJobs() {
 
   const clearAllFilters = () => {
     setSearch("");
-    setLocationFilter("");
-    setJobTypeFilter("");
-    setExperienceFilter("");
-    setIndustryFilter("");
+    setFilters({});
   };
 
-  const heading = (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: `1px solid ${t.line}`, flexWrap: "wrap", gap: 12 }}>
-      <div>
-        <h1 style={{ fontFamily: f.sans, fontSize: 26, fontWeight: 700, color: t.coal, margin: 0, letterSpacing: "-0.01em", lineHeight: "32px" }}>Jobs</h1>
-        <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkFaint, margin: "2px 0 0" }}>
-          These are job opportunities where employers have shown interest in your profile.
-        </p>
+  const renderHeading = (withFilters: boolean) => (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: isNarrow ? "14px 16px" : "16px 20px", borderBottom: `1px solid ${t.line}`, flexWrap: "wrap", gap: 12 }}>
+      <h1 style={{ fontFamily: f.sans, fontSize: 26, fontWeight: 700, color: t.coal, margin: 0, letterSpacing: "-0.01em", lineHeight: "32px", flexShrink: 0 }}>Jobs</h1>
+      <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap", justifyContent: isNarrow ? "stretch" : "flex-end", flex: isNarrow ? "1 1 100%" : 1, minWidth: 0 }}>
+        {withFilters && (
+          <>
+            <SearchWithSuggestions
+              id="jobs-search"
+              label="Search jobs"
+              value={search}
+              onChange={setSearch}
+              placeholder="Search by job title, location, or skill"
+              storageKey={RECENT_SEARCHES_KEY}
+              suggestedFilters={suggestedFilters}
+              style={isNarrow ? { flex: "1 1 160px", minWidth: 0 } : { flex: "1 1 240px", minWidth: 200, maxWidth: "50%" }}
+            />
+            <FiltersPanel sections={filterSections} value={filters} onApply={setFilters} />
+          </>
+        )}
+        <Button size="lg" className={isNarrow ? "gap-2 px-4 w-full" : "gap-2 px-4"} onClick={() => router.push("/session/new")}>
+          <PlusIcon size={16} strokeWidth={2.5} aria-hidden="true" />
+          Start session
+        </Button>
       </div>
-      <Button size="lg" className="gap-2 px-4" onClick={() => router.push("/interview")}>
-        <PlusIcon size={16} strokeWidth={2.5} aria-hidden="true" />
-        Start session
-      </Button>
     </div>
   );
 
-  const shell = (body: React.ReactNode) => (
+  const shell = (body: React.ReactNode, withFilters = false) => (
     <div style={{ background: t.white, display: "flex", flexDirection: "column", flex: 1, minHeight: 0, borderRadius: 12, border: `1px solid ${t.line}`, overflow: "hidden" }}>
-      {heading}
+      {renderHeading(withFilters)}
       {body}
     </div>
   );
@@ -430,7 +431,7 @@ export default function DashboardJobs() {
           Your match score is driven by your practice history, so completing more sessions improves how you rank.
         </p>
         <Button
-          onClick={() => router.push("/interview")}
+          onClick={() => router.push("/session/new")}
           variant="outline"
           style={{ marginTop: 4, borderRadius: 8, height: 36, fontFamily: f.sans, fontSize: 13, fontWeight: 500 }}
         >
@@ -439,23 +440,6 @@ export default function DashboardJobs() {
       </div>
     ) : (
       <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
-          <div style={{ padding: "16px 18px", borderBottom: `1px solid ${t.line}`, display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}>
-            <SearchWithSuggestions
-              id="jobs-search"
-              label="Search jobs"
-              value={search}
-              onChange={setSearch}
-              placeholder="Search by job title, company, or location"
-              storageKey={RECENT_SEARCHES_KEY}
-              suggestedFilters={suggestedFilters}
-              style={{ flex: "1 1 240px", minWidth: 200 }}
-            />
-            <FilterPill label="Location" value={locationFilter} options={filterPillOptions(locationOptions)} onChange={setLocationFilter} />
-            <FilterPill label="Job type" value={jobTypeFilter} options={filterPillOptions(jobTypeOptions)} onChange={setJobTypeFilter} />
-            <FilterPill label="Experience" value={experienceFilter} options={filterPillOptions(experienceOptions)} onChange={setExperienceFilter} />
-            <FilterPill label="Industry" value={industryFilter} options={filterPillOptions(industryOptions)} onChange={setIndustryFilter} />
-          </div>
-
           {isNarrow ? (
             <div style={{ flex: 1, minHeight: 0, overflowY: "auto" }}>
               {pageRows.length === 0 ? (
@@ -481,17 +465,17 @@ export default function DashboardJobs() {
             </div>
           ) : (
           <div className="[&>div]:h-full [&>div]:overflow-y-auto" style={{ overflow: "hidden", flex: 1, minHeight: 0 }}>
-          <Table aria-label="Job matches" className="table-fixed">
+          <Table aria-label="Job matches" className="table-fixed" style={{ width: "100%", minWidth: 1120 }}>
             <TableHeader>
               <TableRow style={{ background: t.rowTint, height: 40, position: "sticky", top: 0, zIndex: 1 }}>
-                <SortableHead column="company" columnLabel={COLUMN_LABEL.company} defaultDirection="asc" width="16%" minWidth={160} sort={sort} onSortChange={setSort}>Company</SortableHead>
-                <SortableHead column="title" columnLabel={COLUMN_LABEL.title} defaultDirection="asc" width="22%" minWidth={220} sort={sort} onSortChange={setSort}>Job title</SortableHead>
+                <SortableHead column="company" columnLabel={COLUMN_LABEL.company} defaultDirection="asc" width="15%" minWidth={150} sort={sort} onSortChange={setSort}>Company</SortableHead>
+                <SortableHead column="title" columnLabel={COLUMN_LABEL.title} defaultDirection="asc" width="23%" minWidth={220} sort={sort} onSortChange={setSort}>Job title</SortableHead>
                 <SortableHead column="location" columnLabel={COLUMN_LABEL.location} defaultDirection="asc" width="10%" minWidth={110} sort={sort} onSortChange={setSort}>Location</SortableHead>
-                <SortableHead column="experience" columnLabel={COLUMN_LABEL.experience} width="9%" minWidth={100} sort={sort} onSortChange={setSort}>Experience</SortableHead>
+                <SortableHead column="experience" columnLabel={COLUMN_LABEL.experience} width="9%" minWidth={110} sort={sort} onSortChange={setSort}>Experience</SortableHead>
                 <SortableHead column="jobType" columnLabel={COLUMN_LABEL.jobType} defaultDirection="asc" width="9%" minWidth={100} sort={sort} onSortChange={setSort}>Job type</SortableHead>
-                <SortableHead column="salary" columnLabel={COLUMN_LABEL.salary} width="12%" minWidth={120} sort={sort} onSortChange={setSort}>Salary</SortableHead>
-                <SortableHead column="interest" columnLabel={COLUMN_LABEL.interest} width="16%" minWidth={180} sort={sort} onSortChange={setSort}>Employer interest</SortableHead>
-                <SortableHead column="date" columnLabel={COLUMN_LABEL.date} width="6%" minWidth={90} sort={sort} onSortChange={setSort}>Date</SortableHead>
+                <SortableHead column="salary" columnLabel={COLUMN_LABEL.salary} width="13%" minWidth={140} sort={sort} onSortChange={setSort}>Salary</SortableHead>
+                <SortableHead column="interest" columnLabel={COLUMN_LABEL.interest} width="14%" minWidth={180} sort={sort} onSortChange={setSort}>Employer interest</SortableHead>
+                <SortableHead column="date" columnLabel={COLUMN_LABEL.date} width="8%" minWidth={110} sort={sort} onSortChange={setSort}>Date</SortableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -504,13 +488,7 @@ export default function DashboardJobs() {
                       <p style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkFaint, margin: 0 }}>Try adjusting or clearing your filters.</p>
                       <Button
                         variant="outline"
-                        onClick={() => {
-                          setSearch("");
-                          setLocationFilter("");
-                          setJobTypeFilter("");
-                          setExperienceFilter("");
-                          setIndustryFilter("");
-                        }}
+                        onClick={clearAllFilters}
                         style={{ marginTop: 4, borderRadius: 8, height: 44, fontFamily: f.sans, fontSize: 12.5, fontWeight: 500 }}
                       >
                         Clear filters
@@ -519,7 +497,7 @@ export default function DashboardJobs() {
                   </TableCell>
                 </TableRow>
               )}
-              {pageRows.map((r, i) => {
+              {pageRows.map((r) => {
                 const mode = r.workMode ? WORK_MODE_LABEL[r.workMode] || r.workMode : null;
                 const closed = r.status === "closed" || r.status === "failed";
                 const comp = formatComp(r.budgetMin, r.budgetMax, r.salaryType);
@@ -530,7 +508,7 @@ export default function DashboardJobs() {
                   <TableRow
                     key={r.id}
                     tabIndex={0}
-                    aria-label={`View details for ${r.roleTitle} at ${r.companyName}`}
+                    aria-label={`View details for ${r.roleTitle}${r.unlocked ? ` at ${r.companyName}` : ""}`}
                     onClick={() => setSelected(r)}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" || e.key === " ") {
@@ -543,26 +521,9 @@ export default function DashboardJobs() {
                     onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
                     style={{ cursor: "pointer", minHeight: 72, transition: `background ${dur.instant} ${ease.snap}` }}
                   >
-                    <TableCell style={{ width: "20%", minWidth: 200, padding: "12px 20px", fontSize: textSize.base, color: t.inkSoft, verticalAlign: "top" }}>
+                    <TableCell style={{ padding: "12px 20px", fontSize: textSize.base, color: t.inkSoft, verticalAlign: "top" }}>
                       <div style={{ display: "flex", alignItems: "flex-start", gap: 8, minWidth: 0 }}>
-                        {r.companyLogoPath ? (
-                          <img
-                            src={r.companyLogoPath}
-                            alt={`${r.companyName} logo`}
-                            width={32}
-                            height={32}
-                            loading="lazy"
-                            style={{ borderRadius: "50%", objectFit: "cover", flexShrink: 0, border: `1px solid ${t.line}` }}
-                          />
-                        ) : (
-                          <div style={{
-                            width: 32, height: 32, borderRadius: "50%", background: t.creamSoft, border: `1px solid ${t.line}`,
-                            display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-                            fontFamily: f.sans, fontSize: textSize.sm, fontWeight: 600, color: t.inkSoft,
-                          }}>
-                            {r.companyName.charAt(0).toUpperCase()}
-                          </div>
-                        )}
+                        <CompanyAvatar job={r} size={32} />
                         <div style={{ minWidth: 0 }}>
                           <div style={{ fontSize: textSize.md, fontWeight: 500, color: t.coal, whiteSpace: "normal", wordBreak: "break-word" }}>{r.companyName}</div>
                           {r.preferredIndustry && (
@@ -648,7 +609,8 @@ export default function DashboardJobs() {
             onPageChange={setPage}
           />
         </div>
-      )
+      ),
+    shortlisted > 0,
   );
 
   return (

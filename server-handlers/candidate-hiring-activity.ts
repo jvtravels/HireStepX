@@ -28,6 +28,12 @@ function serviceHeaders(): Record<string, string> {
 // Mirrors employer-profile.ts's logoUrl() — logo_path is a storage-relative
 // path, not a servable URL, so the Jobs tab's <img src> needs it turned into
 // a full public-bucket URL exactly like the employer's own profile screen does.
+// Candidates must not learn who the employer is until the employer has
+// unlocked them (contacted) — otherwise they could bypass the platform and
+// reach out directly. Redacted here, server-side, so the identity never
+// reaches the browser for a merely "Matched" row.
+export const CONFIDENTIAL_COMPANY_NAME = "Confidential company";
+
 function logoUrl(logoPath: string | null): string | null {
   return logoPath ? `${SUPABASE_URL}/storage/v1/object/public/${LOGO_BUCKET}/${logoPath}` : null;
 }
@@ -137,9 +143,9 @@ export default async function handler(req: Request): Promise<Response> {
       return {
         id: m.id,
         roleTitle: req?.title || "Open role",
-        companyName: req?.employers?.company_name || "A HireStepX employer",
-        companyLogoPath: logoUrl(req?.employers?.logo_path || null),
-        companyWebsite: req?.employers?.website || null,
+        companyName: m.unlocked ? req?.employers?.company_name || "A HireStepX employer" : CONFIDENTIAL_COMPANY_NAME,
+        companyLogoPath: m.unlocked ? logoUrl(req?.employers?.logo_path || null) : null,
+        companyWebsite: m.unlocked ? req?.employers?.website || null : null,
         location: locations.join(" / "),
         workMode: req?.work_mode || null,
         salaryType: asBoundedSalaryType(req?.salary_type),

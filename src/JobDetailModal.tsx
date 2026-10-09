@@ -9,13 +9,74 @@
 import { useRouter } from "next/navigation";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { SendIcon, XIcon } from "lucide-react";
+import { GlobeIcon, LockIcon, SendIcon, XIcon } from "lucide-react";
+import { useMaxWidth } from "./hooks/useMaxWidth";
 import { tokens as t, fonts as f, textSize } from "./auth/_tokens";
 import { daysAgo, formatComp, formatExperience, WORK_MODE_LABEL, EMPLOYMENT_TYPE_LABEL } from "./hiringMatchFormat";
+import { CompanyAvatar } from "./CompanyAvatar";
 import type { JobMatch } from "./DashboardJobs";
+
+/* Who the employer is stays hidden until they've contacted the candidate
+   (unlocked) — otherwise candidates could go around the platform. The server
+   already redacts these fields for matched-only rows; the locked branch just
+   explains why. */
+function CompanyCard({ job, stacked, onMessage }: { job: JobMatch; stacked: boolean; onMessage: () => void }) {
+  const websiteHost = job.companyWebsite ? job.companyWebsite.replace(/^https?:\/\//i, "").replace(/\/$/, "") : null;
+  const websiteHref = job.companyWebsite && /^https?:\/\//i.test(job.companyWebsite) ? job.companyWebsite : job.companyWebsite ? `https://${job.companyWebsite}` : null;
+  return (
+    <aside
+      aria-label="Company profile"
+      style={{
+        width: stacked ? "100%" : 280, flexShrink: 0, border: `1px solid ${t.line}`, borderRadius: 12,
+        background: t.white, padding: 18, display: "flex", flexDirection: "column", gap: 14,
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
+        <CompanyAvatar job={job} size={48} />
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontFamily: f.sans, fontSize: 15, fontWeight: 700, color: t.coal, wordBreak: "break-word" }}>{job.companyName}</div>
+          {job.preferredIndustry && (
+            <div style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkFaint, marginTop: 2 }}>{job.preferredIndustry}</div>
+          )}
+        </div>
+      </div>
+      {job.unlocked ? (
+        <>
+          {websiteHref && websiteHost && (
+            <a
+              href={websiteHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: f.sans, fontSize: 13, color: t.indigo, textDecoration: "none", minWidth: 0, wordBreak: "break-all" }}
+              onMouseEnter={(e) => { e.currentTarget.style.textDecoration = "underline"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.textDecoration = "none"; }}
+            >
+              <GlobeIcon size={14} aria-hidden="true" style={{ flexShrink: 0 }} />
+              {websiteHost}
+            </a>
+          )}
+          <p style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft, margin: 0, lineHeight: 1.5 }}>
+            This employer has viewed your profile and can reach you directly.
+          </p>
+          <Button variant="outline" size="sm" onClick={onMessage} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <SendIcon size={13} aria-hidden="true" /> Message employer
+          </Button>
+        </>
+      ) : (
+        <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+          <LockIcon size={14} color={t.inkFaint} aria-hidden="true" style={{ marginTop: 2, flexShrink: 0 }} />
+          <p style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft, margin: 0, lineHeight: 1.5 }}>
+            Company details are shared once this employer contacts you. Keep practising to rank higher in their search.
+          </p>
+        </div>
+      )}
+    </aside>
+  );
+}
 
 export default function JobDetailModal({ job, onClose }: { job: JobMatch; onClose: () => void }) {
   const router = useRouter();
+  const stacked = useMaxWidth(820);
   const comp = formatComp(job.budgetMin, job.budgetMax, job.salaryType);
   const exp = formatExperience(job.experienceMin, job.experienceMax);
   const mode = job.workMode ? WORK_MODE_LABEL[job.workMode] || job.workMode : null;
@@ -33,11 +94,11 @@ export default function JobDetailModal({ job, onClose }: { job: JobMatch; onClos
         style={{
           display: "block",
           background: t.creamRaised, border: `1px solid ${t.line}`, borderRadius: 16,
-          padding: "28px 26px", maxWidth: 640, width: "100%", maxHeight: "88vh", overflowY: "auto",
+          padding: "28px 26px", maxWidth: 920, width: "100%", maxHeight: "88vh", overflowY: "auto",
         }}
       >
         <DialogDescription className="sr-only">
-          Full role details for {job.roleTitle} at {job.companyName}
+          Full role details for {job.roleTitle}{job.unlocked ? ` at ${job.companyName}` : ""}
         </DialogDescription>
         <DialogClose asChild>
           <Button variant="ghost" size="icon-sm" aria-label="Close dialog" style={{ position: "absolute", top: 14, right: 14 }}>
@@ -45,36 +106,12 @@ export default function JobDetailModal({ job, onClose }: { job: JobMatch; onClos
           </Button>
         </DialogClose>
 
-        <div style={{ display: "flex", alignItems: "flex-start", gap: 12, marginBottom: 16, paddingRight: 24 }}>
-          {job.companyLogoPath ? (
-            <img
-              src={job.companyLogoPath}
-              alt={`${job.companyName} logo`}
-              width={44}
-              height={44}
-              style={{ borderRadius: "50%", objectFit: "cover", flexShrink: 0, border: `1px solid ${t.line}` }}
-            />
-          ) : (
-            <div style={{
-              width: 44, height: 44, borderRadius: "50%", background: t.creamSoft, border: `1px solid ${t.line}`,
-              display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-              fontFamily: f.sans, fontSize: textSize.lg, fontWeight: 600, color: t.inkSoft,
-            }}>
-              {job.companyName.charAt(0).toUpperCase()}
-            </div>
-          )}
-          <div style={{ minWidth: 0 }}>
-            <DialogTitle style={{ fontFamily: f.sans, fontSize: 19, fontWeight: 700, color: t.coal, margin: 0 }}>
-              {job.roleTitle}
-            </DialogTitle>
-            <div style={{ fontFamily: f.sans, fontSize: 13.5, color: t.inkSoft, marginTop: 3 }}>
-              {job.companyWebsite ? (
-                <a href={job.companyWebsite} target="_blank" rel="noopener noreferrer" style={{ color: t.inkSoft, textDecoration: "underline" }}>
-                  {job.companyName}
-                </a>
-              ) : job.companyName}
-              {" · "}{job.location || "Location not specified"}{mode ? ` · ${mode}` : ""}
-            </div>
+        <div style={{ marginBottom: 16, paddingRight: 32 }}>
+          <DialogTitle style={{ fontFamily: f.sans, fontSize: 22, fontWeight: 700, color: t.coal, margin: 0 }}>
+            {job.roleTitle}
+          </DialogTitle>
+          <div style={{ fontFamily: f.sans, fontSize: 13.5, color: t.inkSoft, marginTop: 4 }}>
+            {job.location || "Location not specified"}{mode ? ` · ${mode}` : ""}
           </div>
         </div>
 
@@ -85,7 +122,7 @@ export default function JobDetailModal({ job, onClose }: { job: JobMatch; onClos
             </span>
           ) : (
             <span style={{ fontFamily: f.sans, fontSize: textSize.xs, fontWeight: 600, color: t.successInk, background: t.success100, padding: "4px 10px", borderRadius: 999 }}>
-              Interested
+              Matched
             </span>
           )}
           {closed && (
@@ -93,18 +130,10 @@ export default function JobDetailModal({ job, onClose }: { job: JobMatch; onClos
               Role closed
             </span>
           )}
-          {job.unlocked && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => router.push(`/messages?matchId=${job.id}`)}
-              style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 6 }}
-            >
-              <SendIcon size={13} aria-hidden="true" /> Message employer
-            </Button>
-          )}
         </div>
 
+        <div style={{ display: "flex", flexDirection: stacked ? "column-reverse" : "row", gap: 24, alignItems: "flex-start" }}>
+        <div style={{ flex: 1, minWidth: 0, width: "100%" }}>
         {!job.unlocked && (
           <p style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft, margin: "0 0 16px", lineHeight: 1.5 }}>
             {job.matchReason}
@@ -177,7 +206,11 @@ export default function JobDetailModal({ job, onClose }: { job: JobMatch; onClos
           </p>
         )}
 
-        <div style={{ fontFamily: f.sans, fontSize: 11, color: t.inkFaint, paddingTop: 12, borderTop: `1px solid ${t.line}` }}>
+        </div>
+        <CompanyCard job={job} stacked={stacked} onMessage={() => router.push(`/messages?matchId=${job.id}`)} />
+        </div>
+
+        <div style={{ fontFamily: f.sans, fontSize: 11, color: t.inkFaint, paddingTop: 12, marginTop: 18, borderTop: `1px solid ${t.line}` }}>
           {job.unlocked && job.unlockedAt
             ? `Contacted ${daysAgo(job.unlockedAt)} · matched ${daysAgo(job.matchedAt)}`
             : `Matched ${daysAgo(job.matchedAt)}`}

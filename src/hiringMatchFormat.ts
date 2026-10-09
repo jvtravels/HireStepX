@@ -30,11 +30,18 @@ export function hoursOrDaysAgo(dateStr: string): string {
 // budgetMin/budgetMax's unit depends on salaryType — whole INR lakhs for
 // per-annum roles, a raw INR amount for per-month/fixed ones. Mirrors
 // asBoundedBudget in server-handlers/_employer-requirements-helpers.ts.
+// Per-annum values that look like raw rupees (>= 1000, e.g. 1800000) are
+// converted to lakhs so legacy/malformed rows read "₹18–28 LPA".
+const toLakhs = (n: number) => (n >= 1000 ? Math.round((n / 100_000) * 100) / 100 : n);
+
 export function formatComp(min: number | null, max: number | null, salaryType?: SalaryType | null): string | null {
   if (min == null && max == null) return null;
   if (salaryType === "per-annum" || salaryType == null) {
-    if (min != null && max != null) return `₹${min}–${max}L`;
-    return `₹${min ?? max}L`;
+    const lo = min != null ? toLakhs(min) : null;
+    const hi = max != null ? toLakhs(max) : null;
+    if (lo != null && hi != null) return `₹${lo}–${hi} LPA`;
+    if (lo != null) return `₹${lo}+ LPA`;
+    return `Up to ₹${hi} LPA`;
   }
   const suffix = salaryType === "per-month" ? "/month" : " fixed";
   const fmt = (n: number) => `₹${formatNumber(n)}`;

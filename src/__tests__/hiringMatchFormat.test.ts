@@ -33,20 +33,24 @@ describe("formatComp", () => {
   });
 
   it("formats a range when both bounds are present", () => {
-    expect(formatComp(10, 15)).toBe("₹10–15L");
+    expect(formatComp(10, 15)).toBe("₹10–15 LPA");
   });
 
   it("formats a single value when only min is present", () => {
-    expect(formatComp(12, null)).toBe("₹12L");
+    expect(formatComp(12, null)).toBe("₹12+ LPA");
   });
 
   it("formats a single value when only max is present", () => {
-    expect(formatComp(null, 18)).toBe("₹18L");
+    expect(formatComp(null, 18)).toBe("Up to ₹18 LPA");
   });
 
   it("defaults to LPA when salaryType is per-annum or omitted", () => {
-    expect(formatComp(10, 15, "per-annum")).toBe("₹10–15L");
-    expect(formatComp(12, null, null)).toBe("₹12L");
+    expect(formatComp(10, 15, "per-annum")).toBe("₹10–15 LPA");
+    expect(formatComp(12, null, null)).toBe("₹12+ LPA");
+  });
+
+  it("converts raw-rupee per-annum values to lakhs", () => {
+    expect(formatComp(1800000, 2800000, "per-annum")).toBe("₹18–28 LPA");
   });
 
   it("formats a raw INR amount with a /month suffix", () => {

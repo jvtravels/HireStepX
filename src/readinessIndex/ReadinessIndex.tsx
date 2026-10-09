@@ -16,6 +16,7 @@ import { authHeaders } from "../supabase";
 import { captureClientEvent } from "../posthogClient";
 import { useAuth } from "../AuthContext";
 import { markAnalyticsVisited } from "../dashboardHelpers";
+import { AnalyticsRouteSkeleton } from "../routeSkeletons";
 import type { Fixture, RangeKeyLocal as RangeKey, Pillar } from "./types";
 import { SHEET, BAND_META } from "./ui";
 import {
@@ -198,15 +199,9 @@ function CenterPane({ children }: { children: React.ReactNode }) {
 
 function LoadingState() {
   return (
-    <div style={{ display: "flex", flexDirection: "column", width: "100%" }}>
-      <style dangerouslySetInnerHTML={{ __html: SHEET }} />
-      <div style={{ padding: "22px 0 64px", display: "flex", flexDirection: "column", gap: 16 }}>
-        {[0, 1, 2, 3].map((i) => (
-          <div key={i} className="rix-skel" aria-hidden="true"
-            style={{ height: i === 0 ? 220 : 150, borderRadius: 16, background: t.creamSoft, border: `1px solid ${t.line}` }} />
-        ))}
-        <span style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clip: "rect(0 0 0 0)" }}>Loading your Readiness Index</span>
-      </div>
+    <div role="status" aria-busy="true" style={{ width: "100%" }}>
+      <span style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clip: "rect(0 0 0 0)" }}>Loading your Readiness Index</span>
+      <AnalyticsRouteSkeleton />
     </div>
   );
 }

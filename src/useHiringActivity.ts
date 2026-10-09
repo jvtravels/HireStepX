@@ -14,6 +14,7 @@ export interface HiringMatch {
   id: string;
   roleTitle: string;
   companyName: string;
+  unlocked?: boolean;
   employmentType: string | null;
   matchedAt: string;
 }

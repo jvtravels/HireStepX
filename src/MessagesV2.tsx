@@ -37,6 +37,7 @@ import { groupConversationsByCounterpart } from "./conversationGrouping";
 import { useToast } from "./Toast";
 import { playUiSound } from "./uiSounds";
 import { useMaxWidth } from "./hooks/useMaxWidth";
+import { hoursOrDaysAgo } from "./hiringMatchFormat";
 
 const LIST_POLL_MS = 15000;
 const THREAD_POLL_MS = 6000;
@@ -116,6 +117,7 @@ export default function MessagesV2() {
   const [messages, setMessages] = useState<ConversationMessage[]>([]);
   const [context, setContext] = useState<ConversationContext | null>(null);
   const [threadLoading, setThreadLoading] = useState(false);
+  const [resolvedMatchId, setResolvedMatchId] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [attaching, setAttaching] = useState(false);
@@ -165,6 +167,7 @@ export default function MessagesV2() {
       setContext(result.context);
     }
     if (showSpinner) setThreadLoading(false);
+    setResolvedMatchId(matchId);
     return !!result;
   }, []);
 
@@ -292,7 +295,26 @@ export default function MessagesV2() {
     );
   }
 
-  const list = conversations ?? [];
+  const realList = conversations ?? [];
+  // A thread opened via "Message employer" has no conversations row until the
+  // first message is sent, so it isn't in the inbox list yet — build a
+  // placeholder entry from the thread context so the composer still opens.
+  const pendingConversation: ConversationSummary | null =
+    activeMatchId && context && !realList.some((c) => c.matchId === activeMatchId)
+      ? {
+          matchId: activeMatchId,
+          conversationId: "",
+          role: "candidate",
+          counterpartName: context.companyName,
+          companyName: context.companyName,
+          roleTitle: context.roleTitle,
+          lastMessageAt: null,
+          unread: false,
+          candidateStatus: context.candidateStatus,
+          matchScore: context.matchScore,
+        }
+      : null;
+  const list = pendingConversation ? [pendingConversation, ...realList] : realList;
   const active = list.find((c) => c.matchId === activeMatchId) ?? null;
   // Group by companyName, not the generic counterpartName — a candidate's
   // "counterpart" must always be the hiring company, never a person.
@@ -300,6 +322,10 @@ export default function MessagesV2() {
     list.map((c) => ({ ...c, counterpartName: c.companyName })),
   );
   const lastOwnMessageId = messages.filter((mm) => mm.senderRole === "candidate").at(-1)?.id;
+
+  if (list.length === 0 && activeMatchId && resolvedMatchId !== activeMatchId) {
+    return shell(<MessagesRouteSkeleton />);
+  }
 
   if (list.length === 0) {
     return shell(
@@ -325,10 +351,13 @@ export default function MessagesV2() {
         {groups.map((group) => (
           <div key={group.counterpartName}>
             <div aria-hidden="true" style={{
-              padding: "10px 16px 4px", fontFamily: f.sans, fontSize: 12, fontWeight: 700,
-              color: t.inkFaint, textTransform: "uppercase", letterSpacing: "0.04em",
+              display: "flex", alignItems: "center", gap: 8, padding: "12px 16px 6px",
+              fontFamily: f.sans, fontSize: 13, fontWeight: 700, color: t.coal,
             }}>
-              {group.counterpartName}
+              <Avatar size="sm">
+                <AvatarFallback>{initialsOf(group.counterpartName)}</AvatarFallback>
+              </Avatar>
+              <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{group.counterpartName}</span>
             </div>
             <div role="list" aria-label={group.counterpartName}>
               {group.conversations.map((c) => (
@@ -348,8 +377,8 @@ export default function MessagesV2() {
                       )}
                       {c.roleTitle}
                     </div>
-                    <div style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, marginTop: 2 }}>
-                      {c.counterpartName}
+                    <div style={{ fontFamily: f.sans, fontSize: 12, color: t.inkFaint, marginTop: 2 }}>
+                      {c.lastMessageAt ? hoursOrDaysAgo(c.lastMessageAt) : "No messages yet"}
                     </div>
                   </button>
                 </div>
@@ -379,7 +408,7 @@ export default function MessagesV2() {
                   <StatusBadge status={active.candidateStatus} />
                 </div>
                 <div style={{ fontFamily: f.sans, fontSize: 12, color: t.inkFaint, marginTop: 2 }}>
-                  {active.roleTitle}{context?.companyName ? ` · ${context.companyName}` : ""}
+                  {active.roleTitle}
                 </div>
               </div>
             </div>
