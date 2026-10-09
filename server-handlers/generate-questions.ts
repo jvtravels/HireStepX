@@ -1396,13 +1396,15 @@ Example bad question: "Tell me about your experience." (too vague, not role-spec
     // prompt assembly / JSON parsing before the isolate gets killed.
     const result = await callLLM({ prompt, temperature: 0.85, maxTokens: 1400, jsonMode: true }, 8000, { userId: auth.userId, endpoint: "generate", totalBudgetMs: 20000 });
     const parsed = extractJSON<Record<string, unknown>>(result.text);
+    // Throw (not return 500) so unusable model output takes the same static /
+    // salary-kernel fallback as a provider outage instead of a dead-end error.
     if (!parsed) {
-      return new Response(JSON.stringify({ error: "Failed to parse questions" }), { status: 500, headers });
+      throw new Error("Failed to parse questions");
     }
 
     const questions = extractQuestionsArray(parsed);
     if (!questions || questions.length === 0) {
-      return new Response(JSON.stringify({ error: "Failed to generate valid questions" }), { status: 500, headers });
+      throw new Error("Failed to generate valid questions");
     }
 
     // Salary negotiation requires enough turns for a complete conversation arc
