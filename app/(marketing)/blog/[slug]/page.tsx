@@ -5,6 +5,7 @@ import BlogPage from "@/BlogPage";
 import { getBlogMetaBySlug, getBlogMetasBySlugs } from "@/blog-meta";
 import { getBlogPostBySlug } from "../../../../data/blog-posts";
 import { buildBlogJsonLd } from "./_jsonld";
+import { isThinBlogPost } from "@/blogQuality";
 
 /* /blog/[slug] — per-post route.
  *
@@ -73,6 +74,7 @@ export async function generateMetadata({
     title: pageTitle,
     description,
     alternates: { canonical: `/blog/${slug}` },
+    ...(isThinBlogPost(slug) ? { robots: { index: false, follow: true } } : {}),
     openGraph: {
       title,
       description,
@@ -123,12 +125,14 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
 
   return (
     <>
-      <Script
-        async
-        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7810403590527236"
-        crossOrigin="anonymous"
-        strategy="lazyOnload"
-      />
+      {!isThinBlogPost(slug) && (
+        <Script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7810403590527236"
+          crossOrigin="anonymous"
+          strategy="lazyOnload"
+        />
+      )}
       {jsonLdScripts.map((html, i) => (
         <script key={i} type="application/ld+json" dangerouslySetInnerHTML={html} />
       ))}

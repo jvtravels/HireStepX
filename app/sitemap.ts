@@ -6,6 +6,7 @@ import { getAllSalarySlugs, getSalaryPage } from "../data/salary-seo";
 import { getAllCitySlugs } from "../data/city-pages";
 import { COMPANY_KNOWN_FACTS } from "../data/company-known-facts";
 import { buildRoleSections } from "./(marketing)/salary/[company]/_jsonld";
+import { isThinBlogPost } from "../src/blogQuality";
 import { isThinDuplicateQuestionsPage } from "./(marketing)/questions/[slug]/_jsonld";
 
 /* sitemap.xml — generated at build time. Includes:
@@ -94,7 +95,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   /* Blog posts — each post uses its own datePublished so Google's freshness
      signal reflects actual content age, not the deploy timestamp. */
   const blogMetaMap = new Map(BLOG_META.map((m) => [m.slug, m]));
-  const blogEntries: MetadataRoute.Sitemap = getAllBlogSlugs().map((slug) => ({
+  const blogEntries: MetadataRoute.Sitemap = getAllBlogSlugs().filter((slug) => !isThinBlogPost(slug)).map((slug) => ({
     url: `${baseUrl}/blog/${slug}`,
     lastModified: new Date(blogMetaMap.get(slug)?.datePublished ?? seoPagesLastModified),
     changeFrequency: "monthly" as const,
