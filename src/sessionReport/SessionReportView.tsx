@@ -351,16 +351,16 @@ function MoreDetail({ children }: { children: ReactNode }) {
           alignSelf: "stretch",
           padding: "14px 16px",
           borderRadius: 12,
-          border: `1px solid ${t.inkFaint}33`,
-          background: "transparent",
-          color: t.coal,
+          border: `1px solid ${t.indigoRing}`,
+          background: t.white,
+          color: t.indigoDeep,
           fontFamily: f.sans,
           fontSize: 14,
           fontWeight: 600,
           cursor: "pointer",
         }}
       >
-        {open ? "Hide full analysis" : "Show full analysis — trends, metrics, coach notes"}
+        {open ? "Hide full analysis ▴" : "Show full analysis — trends, metrics, coach notes ▾"}
       </button>
       <div
         id="ir-more-detail"
