@@ -75,7 +75,7 @@ describe("DashboardJobs", () => {
     expect(within(table).getByText("Acme Corp")).toBeInTheDocument();
     expect(within(table).getByText(/Bengaluru/)).toBeInTheDocument();
     expect(within(table).getByText("Full-time")).toBeInTheDocument();
-    expect(within(table).getByText("Interested")).toBeInTheDocument();
+    expect(within(table).getByText("Matched")).toBeInTheDocument();
     expect(within(table).getByText(/Your practice history in backend roles/)).toBeInTheDocument();
     // The Figma table shows a short description snippet under the job title.
     expect(within(table).getByText("We're growing the payments platform team.")).toBeInTheDocument();

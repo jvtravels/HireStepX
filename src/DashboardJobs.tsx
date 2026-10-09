@@ -144,7 +144,7 @@ function experienceBucket(m: JobMatch): string | null {
 // "employer interest", "job type", and "role closed" read as the same
 // visual language instead of five hand-tuned one-offs (mono vs sans,
 // five different font sizes, a green success color used for a neutral
-// job-type label). Color is reserved for genuine state (Interested,
+// job-type label). Color is reserved for genuine state (Matched,
 // Contacted, New); job type is a category, not a state, so it stays
 // neutral per the design system's "accent for state, not decoration" rule.
 type BadgeTone = "neutral" | "success" | "brand" | "info";
@@ -513,8 +513,8 @@ export default function DashboardJobs() {
                             Contacted
                           </Badge>
                         ) : (
-                          <Badge tone="success" title="This employer has shown interest in your profile">
-                            Interested
+                          <Badge tone="success" title="Your profile matched this role's requirements">
+                            Matched
                           </Badge>
                         )}
                         {closed && (
