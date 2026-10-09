@@ -23,7 +23,7 @@ jobs:
           set -u
           fail=0
           for path in / /pricing /login /api/health; do
-            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 --retry 3 --retry-delay 5 "$BASE$path")
+            code=$(curl -sL -o /dev/null -w '%{http_code}' --max-time 20 --retry 3 --retry-delay 5 "$BASE$path")
             echo "$path -> $code"
             [ "$code" = "200" ] || fail=1
           done
