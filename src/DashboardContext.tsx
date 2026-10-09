@@ -722,7 +722,10 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       }
     } catch { /* expected: cache read may fail */ }
 
-    const ac = new AbortController();
+    // Not aborted on cleanup: this effect re-runs whenever `user`/`skills`/`recentSessions`
+    // change identity, and an aborted request still burns the server's 5/hour limit while
+    // insightsFetchedRef blocks any refetch — so the result was lost and later calls 429'd.
+    const requestUserId = user.id;
     (async () => {
       try {
         const { authHeaders } = await import("./supabase");
@@ -730,7 +733,6 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
         const res = await fetch("/api/generate-insights", {
           method: "POST",
           headers: hdrs,
-          signal: ac.signal,
           body: JSON.stringify({
             role: user.targetRole,
             company: user.targetCompany,
@@ -746,15 +748,15 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
         if (res.ok) {
           const data = await res.json();
           if (data.insights && data.insights.length > 0) {
-            setLlmInsights(data.insights);
+            if (insightsUserRef.current === requestUserId) setLlmInsights(data.insights);
             try { localStorage.setItem(cacheKey, JSON.stringify({ insights: data.insights, ts: Date.now() })); } catch { /* expected: localStorage may be unavailable */ }
           }
         }
       } catch {
-        // Silently fall back to template insights (also handles AbortError)
+        // Fall back to template insights; allow a later retry after a network failure
+        if (insightsFetchedRef.current === cacheKey) insightsFetchedRef.current = "";
       }
     })();
-    return () => ac.abort();
   }, [user, skills, recentSessions]);
 
   const aiInsights = llmInsights || fallbackInsights;
@@ -857,19 +859,20 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   // previous calendar-week anchor (Sunday 00:00) wrongly swept in free-tier
   // practice sessions the user did earlier the same week, so a freshly
   // purchased pack could show "5 of 5 used" before any paid session ran.
-  const EIGHT_DAYS_MS = 8 * 24 * 60 * 60 * 1000; // clamp slightly over 7-day pack
-  const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+  const PACK_VALIDITY_CLAMP_MS = 31 * 24 * 60 * 60 * 1000; // clamp to the 30-day pack + 1 day slack — mirrors the server gate
+  const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
   const subStartMs = user?.subscriptionStart ? new Date(user.subscriptionStart).getTime() : NaN;
-  // Anchor on subscription_start when present; clamp to at most 8 days back
-  // (just over the 7-day pack — mirrors the server gate). If start is missing
-  // derive from subscription_end - 7d; last resort: rolling 7-day lookback.
+  // Anchor on subscription_start when present; clamp to at most 31 days back
+  // (the 30-day pack + 1 day slack — mirrors the server gate). If start is
+  // missing, derive from subscription_end - 30d; last resort: rolling 30-day
+  // lookback.
   const subEndMs = user?.subscriptionEnd ? new Date(user.subscriptionEnd).getTime() : NaN;
   const derivedStartMs = Number.isFinite(subStartMs)
     ? subStartMs
     : Number.isFinite(subEndMs)
-      ? subEndMs - SEVEN_DAYS_MS
-      : Date.now() - SEVEN_DAYS_MS;
-  const packStartMs = Math.max(derivedStartMs, Date.now() - EIGHT_DAYS_MS);
+      ? subEndMs - THIRTY_DAYS_MS
+      : Date.now() - THIRTY_DAYS_MS;
+  const packStartMs = Math.max(derivedStartMs, Date.now() - PACK_VALIDITY_CLAMP_MS);
   const weekStart = new Date(); weekStart.setDate(weekStart.getDate() - weekStart.getDay()); weekStart.setHours(0, 0, 0, 0);
   // For starter, count within the pack window; other tiers keep the calendar
   // week (used only for informational display, not gating).

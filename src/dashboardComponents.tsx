@@ -167,13 +167,47 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
       .catch(() => { /* leave null — UI uses fallback */ });
   }, []);
   // Store Razorpay response + plan in state so useEffect handles verification
-  // (fetch inside Razorpay's handler callback doesn't work reliably)
-  const [pendingVerification, setPendingVerification] = useState<{
+  // (fetch inside Razorpay's handler callback doesn't work reliably). Also
+  // mirrored to sessionStorage: the user has already been charged at this
+  // point, so if the modal unmounts before verification resolves (backdrop
+  // click slipping through, parent re-render, etc.) the next mount picks the
+  // payment back up and finishes verifying instead of silently dropping it.
+  const PENDING_VERIFICATION_KEY = "hirestepx_pending_payment_verification";
+  type PendingVerification = {
     razorpay_order_id: string;
     razorpay_payment_id: string;
     razorpay_signature: string;
     plan: string;
-  } | null>(null);
+  };
+  const [pendingVerification, setPendingVerificationState] = useState<PendingVerification | null>(() => {
+    try {
+      const raw = sessionStorage.getItem(PENDING_VERIFICATION_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as { savedAt?: number; data?: PendingVerification };
+      // Only resume a payment recorded in the last 10 minutes — older entries
+      // are almost certainly stale (verification already completed or failed
+      // permanently in a prior session) rather than genuinely still pending.
+      if (!parsed.savedAt || Date.now() - parsed.savedAt > 10 * 60 * 1000) {
+        sessionStorage.removeItem(PENDING_VERIFICATION_KEY);
+        return null;
+      }
+      return parsed.data ?? null;
+    } catch {
+      return null;
+    }
+  });
+  // Wrap the setter so every write also mirrors to sessionStorage (or clears
+  // it once verification resolves) without touching every call site below.
+  const setPendingVerification = (value: PendingVerification | null) => {
+    setPendingVerificationState(value);
+    try {
+      if (value) {
+        sessionStorage.setItem(PENDING_VERIFICATION_KEY, JSON.stringify({ savedAt: Date.now(), data: value }));
+      } else {
+        sessionStorage.removeItem(PENDING_VERIFICATION_KEY);
+      }
+    } catch { /* sessionStorage unavailable — in-memory state still works for this tab */ }
+  };
   const authHeadersRef = useRef<Record<string, string>>({});
 
   const [verifyRetries, setVerifyRetries] = useState(0);
@@ -188,7 +222,16 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
     setLoading("verifying");
     setError("");
 
-    const attemptVerify = (attempt: number) => {
+    const attemptVerify = async (attempt: number) => {
+      // On a fresh mount (e.g. the modal was remounted and resumed a pending
+      // verification restored from sessionStorage), authHeadersRef is never
+      // populated by handleCheckout. Hydrate it before the first attempt so
+      // the resumed verify-payment call doesn't go out unauthenticated.
+      if (Object.keys(authHeadersRef.current).length === 0) {
+        try {
+          authHeadersRef.current = await import("./supabase").then(m => m.authHeaders());
+        } catch { /* fall through — request will 401 and surface as an error below */ }
+      }
       fetch("/api/verify-payment", {
         method: "POST",
         headers: authHeadersRef.current,
@@ -205,6 +248,7 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
               // not the new total balance (credits). If you had 2 and bought 10,
               // the message should read "10 sessions added", not "12 sessions added".
               const purchased = typeof verifyData.quantity === "number" ? verifyData.quantity : null;
+              try { sessionStorage.removeItem(PENDING_VERIFICATION_KEY); } catch { /* best effort */ }
               captureClientEvent("payment_success", { plan: "single", quantity: purchased ?? 1 });
               // GA4 ecommerce — revenue visibility independent of PostHog
               sendGtagEvent("purchase", { currency: "INR", transaction_id: pendingVerification?.razorpay_payment_id ?? "", value: 9 * (purchased ?? 1), items: [{ item_id: "single_session", item_name: "Single Interview Session", price: 9, quantity: purchased ?? 1 }] });
@@ -218,6 +262,7 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
               }
               return;
             }
+            try { sessionStorage.removeItem(PENDING_VERIFICATION_KEY); } catch { /* best effort */ }
             captureClientEvent("payment_success", { plan: pendingVerification?.plan, tier: verifyData?.subscriptionTier });
             captureClientEvent("plan_upgraded", {
               tier: verifyData?.subscriptionTier,
@@ -231,6 +276,10 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
             }
             onPaymentSuccess(verifyData.subscriptionTier, verifyData.subscriptionStart, verifyData.subscriptionEnd);
           } else {
+            // A definitive rejection from the server (signature/amount mismatch,
+            // plan conflict, etc.) won't change on a blind retry — drop the
+            // persisted copy so a stale resume doesn't keep re-surfacing it.
+            try { sessionStorage.removeItem(PENDING_VERIFICATION_KEY); } catch { /* best effort */ }
             setError(verifyData.error || "Payment verification failed. Please try again or contact hello@hirestepx.com");
             setLoading(null);
           }
@@ -242,6 +291,10 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
             setError("Verification taking longer than expected — retrying...");
             setTimeout(() => { if (!cancelled) attemptVerify(attempt + 1); }, 2000);
           } else {
+            // Transient failure (network/timeout) — keep the sessionStorage copy.
+            // The payment was captured server-side; "retryVerification" (and a
+            // future remount via the sessionStorage resume above) should still
+            // be able to pick it back up rather than losing it here.
             setError("Payment verification failed. Your payment was received — try refreshing, or contact hello@hirestepx.com for help.");
             setVerifyRetries(attempt + 1);
             setLoading(null);
@@ -410,10 +463,21 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
 
   const modalRef = useRef<HTMLDivElement>(null);
 
+  // Guard against closing mid-verification: the charge has already gone
+  // through at this point, so dismissing now (Escape, backdrop click, the
+  // close button) used to just abandon the in-flight check with no record
+  // of it anywhere the user could find again. sessionStorage persistence
+  // above means a resume is still possible, but blocking the close is the
+  // simplest way to stop the user from walking away mid-verification at all.
+  const guardedClose = () => {
+    if (loading === "verifying") return;
+    onClose();
+  };
+
   // Focus trap + Escape to close
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") { onClose(); return; }
+      if (e.key === "Escape") { guardedClose(); return; }
       if (e.key !== "Tab" || !modalRef.current) return;
       const focusable = modalRef.current.querySelectorAll<HTMLElement>("button, [href], input, select, textarea, [tabindex]:not([tabindex='-1'])");
       if (focusable.length === 0) return;
@@ -427,14 +491,15 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
     // orange outline ring immediately when the modal opens via mouse click.
     modalRef.current?.focus();
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [onClose]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- guardedClose closes over `loading`; re-running this effect is intentional whenever it changes
+  }, [onClose, loading]);
 
   return (
     // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- dialog backdrop dismissal
-    <div style={{ position: "fixed", inset: 0, zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(20,17,10,0.40)" }} onClick={onClose} role="dialog" aria-modal="true" aria-labelledby="upgrade-modal-title">
+    <div style={{ position: "fixed", inset: 0, zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(20,17,10,0.40)" }} onClick={guardedClose} role="dialog" aria-modal="true" aria-labelledby="upgrade-modal-title">
       {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- stops click propagation to backdrop */}
       <div ref={modalRef} tabIndex={-1} onClick={(e) => e.stopPropagation()} className="upgrade-modal-inner" style={{ background: c.graphite, border: `1px solid ${c.border}`, borderRadius: 20, padding: "36px 28px 28px", maxWidth: 1120, width: "96%", maxHeight: "92vh", overflowY: "auto", position: "relative", boxShadow: "0 24px 64px rgba(20,17,10,0.18)", outline: "none" }}>
-        <Button variant="ghost" size="icon-sm" onClick={onClose} aria-label="Close dialog" style={{ position: "absolute", top: 14, right: 14, color: c.stone }}>
+        <Button variant="ghost" size="icon-sm" onClick={guardedClose} disabled={loading === "verifying"} aria-label={loading === "verifying" ? "Verifying payment — please wait" : "Close dialog"} style={{ position: "absolute", top: 14, right: 14, color: c.stone }}>
           <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </Button>
 

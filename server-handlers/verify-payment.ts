@@ -81,6 +81,24 @@ async function clearPaymentIntent(orderId: string): Promise<void> {
   } catch { /* best effort */ }
 }
 
+/** Release the Upstash idempotency lock set at step 1b (pay_dedup:<id>).
+ * The lock is acquired BEFORE order/subscription verification and the
+ * Supabase-side dedup record, so every non-success return after it was
+ * acquired must release it — otherwise a legitimate client retry (network
+ * blip, slow Razorpay response, transient Supabase error) hits the
+ * "duplicate call" branch on its next attempt and gets back a false
+ * success response built from the user's unchanged pre-payment profile,
+ * even though the payment was never actually processed. Best-effort: a
+ * failed DEL just means the lock expires naturally after its 24h TTL. */
+async function releasePaymentLock(paymentId: string): Promise<void> {
+  if (!UPSTASH_URL || !UPSTASH_TOKEN || !paymentId) return;
+  try {
+    await fetch(`${UPSTASH_URL}/DEL/${encodeURIComponent(`pay_dedup:${paymentId}`)}`, {
+      headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` },
+    });
+  } catch { /* best effort */ }
+}
+
 // Plan catalog, signature check, and end-date math live in
 // _payment-verification.ts so the money path is tested against real code.
 // "single" stays on the free tier — it grants session credits, not a tier.
@@ -335,6 +353,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         headers: { Authorization: `Basic ${rzpAuth}` }, signal: rzpAc.signal,
       });
       if (!orderRes.ok) {
+        await releasePaymentLock(razorpay_payment_id);
         return res.status(400).json({ error: "Could not verify order details", code: "ORDER_FETCH_FAILED" });
       }
       const orderData = await orderRes.json();
@@ -357,6 +376,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const expectedAmount = Math.max(0, baseAmount - promoDiscount);
       if (orderData.amount !== expectedAmount) {
         slog.error("verify-payment: plan/amount mismatch", { orderRef: razorpay_order_id.slice(0, 8) });
+        await releasePaymentLock(razorpay_payment_id);
         return res.status(400).json({ error: "Plan does not match payment amount", code: "AMOUNT_MISMATCH" });
       }
     } else if (razorpay_subscription_id) {
@@ -365,10 +385,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         headers: { Authorization: `Basic ${rzpAuth}` }, signal: rzpAc.signal,
       });
       if (!subRes.ok) {
+        await releasePaymentLock(razorpay_payment_id);
         return res.status(400).json({ error: "Could not verify subscription details", code: "SUBSCRIPTION_FETCH_FAILED" });
       }
       const subData = await subRes.json();
       if (!["active", "authenticated", "created"].includes(subData.status)) {
+        await releasePaymentLock(razorpay_payment_id);
         return res.status(400).json({ error: "Subscription is not active", code: "SUBSCRIPTION_INACTIVE" });
       }
       // C-3 (prior audit): Cross-validate that the subscription's Razorpay plan_id
@@ -385,13 +407,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           actual_plan_id: subData.plan_id,
           subscription_id: razorpay_subscription_id.slice(0, 12),
         });
+        await releasePaymentLock(razorpay_payment_id);
         return res.status(400).json({ error: "Subscription plan mismatch", code: "PLAN_ID_MISMATCH" });
       }
     }
     } catch (rzpErr) {
       if (rzpErr instanceof DOMException && rzpErr.name === "AbortError") {
+        await releasePaymentLock(razorpay_payment_id);
         return res.status(504).json({ error: "Payment verification timed out. Please retry.", code: "RAZORPAY_TIMEOUT" });
       }
+      await releasePaymentLock(razorpay_payment_id);
       throw rzpErr;
     } finally { clearTimeout(rzpTimer); }
 
@@ -507,6 +532,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // Single-session credit top-ups are tier-neutral, so they're never a
       // "downgrade" even when the buyer holds an active paid plan.
       if (plan !== "single" && isActive && (TIER_RANK[current.subscription_tier] || 0) > (TIER_RANK[newTier] || 0)) {
+        await releasePaymentLock(razorpay_payment_id);
         return res.status(400).json({ error: `You already have an active ${current.subscription_tier} plan. Downgrading is not supported — wait for it to expire or contact support.` });
       }
     }
@@ -524,6 +550,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
       if (!paymentRecordRes.ok) {
         slog.error("verify-payment: single payment record save failed", { status: paymentRecordRes.status });
+        await releasePaymentLock(razorpay_payment_id);
+        await fetchWithTimeout(`${SUPABASE_URL}/rest/v1/payment_dedup?razorpay_payment_id=eq.${encodeURIComponent(razorpay_payment_id)}`, {
+          method: "DELETE",
+          headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`, Prefer: "return=minimal" },
+        }).catch(() => {});
         return res.status(500).json({ error: "Failed to save payment record" });
       }
       // Money-critical: the payment is already captured, so retry the grant
@@ -539,6 +570,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           method: "DELETE",
           headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`, Prefer: "return=minimal" },
         }).catch(() => {});
+        await releasePaymentLock(razorpay_payment_id);
         void captureServerEvent("verify_payment_credit_grant_failed", userId, {
           payment_id_hash: hashPaymentId(razorpay_payment_id), quantity: sessionQuantity,
         });
@@ -592,6 +624,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       currentTier: current?.subscription_tier ?? null,
     });
     if (!dates) {
+      await releasePaymentLock(razorpay_payment_id);
+      await fetchWithTimeout(`${SUPABASE_URL}/rest/v1/payment_dedup?razorpay_payment_id=eq.${encodeURIComponent(razorpay_payment_id)}`, {
+        method: "DELETE",
+        headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`, Prefer: "return=minimal" },
+      }).catch(() => {});
       return res.status(400).json({ error: "Invalid plan duration", code: "INVALID_PLAN" });
     }
     const { end, proratedDays } = dates;
@@ -634,6 +671,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         method: "DELETE",
         headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`, Prefer: "return=minimal" },
       }).catch(() => {});
+      await releasePaymentLock(razorpay_payment_id);
       return res.status(500).json({ error: "Failed to save payment record" });
     }
 
