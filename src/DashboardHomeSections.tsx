@@ -9,7 +9,6 @@
 
 import { tokens as t, fonts as f, textSize } from "./auth/_tokens";
 import type { PracticeCoverage, EvidenceCapability } from "./dashboardData";
-import { skillLabel } from "./skillCopy";
 import { hoursOrDaysAgo } from "./hiringMatchFormat";
 import { useHiringActivity } from "./useHiringActivity";
 import { Button } from "@/components/ui/button";
@@ -249,81 +248,11 @@ export function StatCardsRow({
 
 /* ─── Your Next Move / Your First Step ─── */
 
-const NEXT_MOVE_COPY: Record<string, { description: string }> = {
-  communication: {
-    description: "Clear, confident communication is the fastest lever for your overall score. This session drills the fundamentals.",
-  },
-  structure: {
-    description: "A well-structured answer is easier to follow and score. This session drills organizing your response before you speak.",
-  },
-  technicalDepth: {
-    description: "Real technical depth separates a good answer from a great one. This session drills going past the surface level.",
-  },
-  leadership: {
-    description: "Owning the work as a leader is what interviewers listen for. This session drills showing ownership, not just participation.",
-  },
-  problemSolving: {
-    description: "Breaking a problem down step by step shows how you think, not just what you did. This session drills that structure.",
-  },
-  confidence: {
-    description: "Sounding certain changes how an answer is received, even when the content is the same. This session drills delivery.",
-  },
-  specificity: {
-    description: "Numbers and specifics make a claim credible. This session drills backing up every answer with real detail.",
-  },
-  adaptability: {
-    description: "Pivoting cleanly when a follow-up catches you off guard shows real command of the material. This session drills staying flexible under pressure.",
-  },
-  businessImpact: {
-    description: "Tying your work to revenue, efficiency, or growth turns a feature story into a business story. This session drills that connection.",
-  },
-  answerCompleteness: {
-    description: "Leaving part of a multi-part question unanswered costs easy points. This session drills covering every angle asked.",
-  },
-  anchoring: {
-    description: "Anchoring the number first sets the frame for the entire negotiation. This session drills opening with confidence.",
-  },
-  packageThinking: {
-    description: "Looking beyond base salary unlocks real negotiation leverage. This session drills thinking in total compensation.",
-  },
-  leverageUse: {
-    description: "Building leverage before you ask changes the entire conversation. This session drills surfacing your strongest cards.",
-  },
-  concessionStrategy: {
-    description: "Trading concessions instead of just giving them protects your position. This session drills give-to-get negotiation.",
-  },
-  closingTechnique: {
-    description: "A clear written summary at the close avoids ambiguity later. This session drills closing the loop properly.",
-  },
-  composure: {
-    description: "Staying composed under pressure is itself a signal to the other side. This session drills holding steady when pushed.",
-  },
-  professionalTone: {
-    description: "A professional, collaborative tone keeps negotiation productive instead of adversarial. This session drills that balance.",
-  },
-  empathy: {
-    description: "Leading with user empathy shows you understand who you're building for. This session drills grounding answers in the user.",
-  },
-  metricsLiteracy: {
-    description: "Picking the right success metric shows product judgment. This session drills reasoning with the metrics that matter.",
-  },
-  prioritization: {
-    description: "Being clear about trade-offs is what separates prioritization from just listing ideas. This session drills that clarity.",
-  },
-  productSense: {
-    description: "Sharp product instincts show up in how you reason, not just what you ship. This session drills that reasoning.",
-  },
-  systemThinking: {
-    description: "Thinking in systems instead of features shows you can scale a solution. This session drills that broader lens.",
-  },
-  starStructure: {
-    description: "Hitting every STAR beat cleanly keeps your answers complete and easy to score. This session drills the full structure.",
-  },
-};
+const NEXT_MOVE_DESCRIPTION =
+  "Practice real interview questions and get AI feedback on your response. This helps you improve your readiness and build stronger evidence for employers.";
 
-export function NextMoveCard({ isFirstTimer, weakestSkillKey, ctaLabel, onStart, sessionMinutes, sessionQuestionCount, chips, headline }: {
+export function NextMoveCard({ isFirstTimer, ctaLabel, onStart, sessionMinutes, sessionQuestionCount, chips, headline }: {
   isFirstTimer: boolean;
-  weakestSkillKey: string | null;
   ctaLabel: string;
   onStart: () => void;
   /** Real minutes + question count for the session this CTA launches
@@ -338,9 +267,7 @@ export function NextMoveCard({ isFirstTimer, weakestSkillKey, ctaLabel, onStart,
    *  key alone, which ignored streak/gap context nextMove.ts already computed. */
   headline?: string;
 }) {
-  const key = weakestSkillKey && NEXT_MOVE_COPY[weakestSkillKey] ? weakestSkillKey : "communication";
-  const copy = NEXT_MOVE_COPY[key];
-  const title = headline || `Practice ${skillLabel(key)}`;
+  const title = headline || "Start a new practice session";
 
   return (
     <section aria-labelledby="dh-next-heading" style={{
@@ -364,7 +291,7 @@ export function NextMoveCard({ isFirstTimer, weakestSkillKey, ctaLabel, onStart,
         {title}
       </h2>
       <p style={{ fontFamily: f.sans, fontSize: textSize.lg, color: t.inkSoft, margin: 0, lineHeight: 1.55, maxWidth: 640 }}>
-        {copy.description}
+        {NEXT_MOVE_DESCRIPTION}
       </p>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", columnGap: 20, rowGap: 12, marginTop: 4 }}>
         <Button type="button" size="cta" onClick={onStart} style={{ fontFamily: f.sans }}>

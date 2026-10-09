@@ -265,16 +265,14 @@ export function pickNextMove(input: NextMoveInput): NextMove {
     currentStreak < 30 ? 30 :
     null;
 
-  // CTA priority: matched gap > weakest skill > streak > cold start.
-  // Gap CTAs win because they're concrete coaching directives, not
-  // generic "practice X" nudges.
+  // A matched gap names a real session type (HR round, salary negotiation,
+  // campus placement), so it keeps its own CTA. Competency keys like
+  // "businessImpact" are score dimensions, not session types — there is no
+  // session called "Business impact" — so a weak skill must not be promised
+  // as the session ("Practice Business impact"); it just steers the focus.
   const ctaLabel = matchedGap
     ? matchedGap.cta.label
-    : weakestSkillLabel
-      ? `Practice ${weakestSkillLabel}`
-      : currentStreak > 0
-        ? "Keep the streak going"
-        : "Start a session";
+    : "Start New Session";
   /* Gap entries may carry their own ctaHref (campus-placement entries do).
    * HR-round and salary-negotiation gaps without a custom ctaHref fall back
    * to the drill URL (drill is always set for those entries). */
@@ -291,7 +289,7 @@ export function pickNextMove(input: NextMoveInput): NextMove {
   const headline = matchedGap
     ? matchedGap.cta.headline
     : weakestSkillLabel
-      ? `Your ${weakestSkillLabel} is the highest-leverage thing to practice today.`
+      ? "Start a new practice session"
       : currentStreak >= 3
         ? `You're on a ${currentStreak}-day streak — don't break it.`
         : isFirstTime

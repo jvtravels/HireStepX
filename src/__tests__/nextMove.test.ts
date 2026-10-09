@@ -21,7 +21,7 @@ describe("pickNextMove", () => {
         currentStreak: 0,
       });
       expect(out.weakestSkillName).toBe("Communication");
-      expect(out.ctaLabel).toBe("Practice Communication");
+      expect(out.ctaLabel).toBe("Start New Session");
       expect(out.ctaHref).toBe("/session/new?focus=Communication");
     });
 
@@ -65,8 +65,9 @@ describe("pickNextMove", () => {
       expect(out.ctaHref).toBe("/session/new?focus=leverageUse");
       // humanized everywhere a human reads it
       expect(out.weakestSkillLabel).toBe("Leverage use");
-      expect(out.ctaLabel).toBe("Practice Leverage use");
-      expect(out.headline).toContain("Leverage use");
+      // a score dimension is not a session type, so it is never promised as one
+      expect(out.ctaLabel).toBe("Start New Session");
+      expect(out.headline).toBe("Start a new practice session");
       // and the raw token must NOT appear in any user-facing string
       expect(out.ctaLabel).not.toContain("leverageUse");
       expect(out.headline).not.toContain("leverageUse");
@@ -88,23 +89,24 @@ describe("pickNextMove", () => {
   });
 
   describe("CTA fallback when no weakness", () => {
-    it("active streak → 'Keep the streak going'", () => {
+    it("active streak → 'Start New Session'", () => {
       const out = pickNextMove({ skills: [], currentStreak: 5 });
-      expect(out.ctaLabel).toBe("Keep the streak going");
+      expect(out.ctaLabel).toBe("Start New Session");
       expect(out.ctaHref).toBe("/session/new");
     });
 
-    it("no streak, no weakness → 'Start a session'", () => {
+    it("no streak, no weakness → 'Start New Session'", () => {
       const out = pickNextMove({ skills: [], currentStreak: 0 });
-      expect(out.ctaLabel).toBe("Start a session");
+      expect(out.ctaLabel).toBe("Start New Session");
     });
 
-    it("weakness wins over streak CTA (weakness is higher-leverage)", () => {
+    it("weakness still steers the session focus even though the label is generic", () => {
       const out = pickNextMove({
         skills: [{ name: "Communication", score: 40 }],
         currentStreak: 10,
       });
-      expect(out.ctaLabel).toBe("Practice Communication");
+      expect(out.ctaLabel).toBe("Start New Session");
+      expect(out.ctaHref).toBe("/session/new?focus=Communication");
     });
   });
 
@@ -179,13 +181,13 @@ describe("pickNextMove", () => {
   });
 
   describe("headline", () => {
-    it("weakness → weakness-specific headline", () => {
+    it("weakness → neutral headline, never a skill dressed up as a session", () => {
       const out = pickNextMove({
-        skills: [{ name: "Structure", score: 45 }],
+        skills: [{ name: "businessImpact", score: 45 }],
         currentStreak: 0,
       });
-      expect(out.headline).toContain("Structure");
-      expect(out.headline).toContain("highest-leverage");
+      expect(out.headline).toBe("Start a new practice session");
+      expect(out.headline).not.toMatch(/business impact/i);
     });
 
     it("no weakness, streak ≥ 3 → streak-specific headline", () => {
@@ -234,7 +236,7 @@ describe("pickNextMove", () => {
         topGaps: ["some_future_gap_we_dont_handle_yet"],
       });
       expect(out.coachingFocus).toBe(null);
-      expect(out.ctaLabel).toBe("Practice Structure");
+      expect(out.ctaLabel).toBe("Start New Session");
     });
 
     it("first unknown then known → walks the list and picks the known one", () => {
@@ -252,7 +254,7 @@ describe("pickNextMove", () => {
         currentStreak: 0,
       });
       expect(out.coachingFocus).toBe(null);
-      expect(out.ctaLabel).toBe("Practice Structure");
+      expect(out.ctaLabel).toBe("Start New Session");
     });
 
     it("topGaps empty array → also a no-op", () => {
@@ -262,7 +264,7 @@ describe("pickNextMove", () => {
         topGaps: [],
       });
       expect(out.coachingFocus).toBe(null);
-      expect(out.ctaLabel).toBe("Keep the streak going");
+      expect(out.ctaLabel).toBe("Start New Session");
     });
 
     it("every gap in GAP_CTA_MAP produces a non-empty label + headline; drill key must be valid when present", () => {

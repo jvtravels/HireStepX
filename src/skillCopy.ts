@@ -126,7 +126,7 @@ export function gapCopy(value: string | null | undefined): string {
 }
 
 /* Short, sentence-embeddable noun label for a skill key — for inline use
- * like "Your Leverage use is the highest-leverage thing to practice".
+ * like "Leverage use" in a score breakdown.
  * Unlike strengthCopy/gapCopy (which return full coaching phrases), this
  * returns the humanized key itself: `leverageUse` → "Leverage use".
  * Already-humanized phrases (anything with whitespace) pass through

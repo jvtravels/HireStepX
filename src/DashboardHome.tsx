@@ -517,7 +517,6 @@ export default function DashboardHome() {
           <div style={{ flex: "3 1 420px", minWidth: 280 }}>
             <NextMoveCard
               isFirstTimer={!sessions.hasData}
-              weakestSkillKey={nextMove.weakestSkillName}
               ctaLabel={nextMoveCtaLabel}
               onStart={nextMoveOnStart}
               sessionMinutes={nextMove.sessionMinutes}
@@ -537,7 +536,6 @@ export default function DashboardHome() {
       ) : (
         <NextMoveCard
           isFirstTimer={!sessions.hasData}
-          weakestSkillKey={nextMove.weakestSkillName}
           ctaLabel={nextMoveCtaLabel}
           onStart={nextMoveOnStart}
           sessionMinutes={nextMove.sessionMinutes}
