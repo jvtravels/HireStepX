@@ -1,16 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { BellIcon, CheckCheckIcon, SettingsIcon } from "lucide-react";
+import { ArrowLeftIcon, BellIcon, CheckCheckIcon, SettingsIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import CountBadge from "./CountBadge";
 import NotificationList from "./notifications/NotificationList";
-import { useNotificationFeed, type FeedNotification } from "./notifications/useNotificationFeed";
+import NotificationPreferences from "./notifications/NotificationPreferences";
+import { useNotificationFeed, type FeedFilter, type FeedNotification } from "./notifications/useNotificationFeed";
 
 /* Header bell, rendered once in AppShellFrame for both consoles. Polls the feed
-   (pauses on hidden tabs) so the badge stays fresh; the full inbox with
-   filters, snooze and preferences lives on /notifications. */
+   (pauses on hidden tabs) so the badge stays fresh. The panel is the only
+   notifications surface: tabs, triage actions and preferences all live here. */
 
 export default function NotificationBell({
   onNavigate,
@@ -20,8 +22,8 @@ export default function NotificationBell({
   audience: "candidate" | "employer";
 }) {
   const [open, setOpen] = useState(false);
-  const feed = useNotificationFeed(audience, { filter: "all" });
-  const inboxPath = audience === "employer" ? "/employer/notifications" : "/notifications";
+  const [view, setView] = useState<FeedFilter | "settings">("all");
+  const feed = useNotificationFeed(audience, { filter: view === "settings" ? "all" : view });
 
   function openItem(n: FeedNotification) {
     if (!n.read_at) feed.act(n.id, "read");
@@ -52,45 +54,58 @@ export default function NotificationBell({
       <span role="status" aria-live="polite" className="sr-only">{feed.announcement}</span>
       <SheetContent side="right" className="flex w-full flex-col gap-0 p-0 sm:max-w-md">
         <SheetHeader className="border-b border-border">
-          <SheetTitle>Notifications</SheetTitle>
+          <SheetTitle>{view === "settings" ? "Notification preferences" : "Notifications"}</SheetTitle>
           <SheetDescription className="sr-only">Recent activity on your account.</SheetDescription>
           <div className="flex items-center gap-1 pt-1">
-            <Button type="button" size="sm" variant="ghost" disabled={feed.unreadCount === 0} onClick={feed.markAllRead}>
+            {view === "settings" ? (
+              <Button type="button" size="sm" variant="ghost" onClick={() => setView("all")}>
+                <ArrowLeftIcon aria-hidden="true" /> Back
+              </Button>
+            ) : (
+              <>
+                <Tabs value={view} onValueChange={(v) => setView(v as FeedFilter)}>
+                  <TabsList>
+                    <TabsTrigger value="all">All</TabsTrigger>
+                    <TabsTrigger value="unread">Unread{feed.unreadCount > 0 ? ` (${feed.unreadCount})` : ""}</TabsTrigger>
+                    <TabsTrigger value="done">Done</TabsTrigger>
+                  </TabsList>
+                </Tabs>
+                <Button
+                  type="button"
+                  size="icon-sm"
+                  variant="ghost"
+                  className="ml-auto"
+                  aria-label="Notification preferences"
+                  onClick={() => setView("settings")}
+                >
+                  <SettingsIcon aria-hidden="true" />
+                </Button>
+              </>
+            )}
+          </div>
+          {view !== "settings" && (
+            <Button type="button" size="sm" variant="ghost" className="self-start" disabled={feed.unreadCount === 0} onClick={feed.markAllRead}>
               <CheckCheckIcon aria-hidden="true" /> Mark all read
             </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              onClick={() => { setOpen(false); onNavigate(inboxPath); }}
-            >
-              View all
-            </Button>
-            <Button
-              type="button"
-              size="icon-sm"
-              variant="ghost"
-              className="ml-auto"
-              aria-label="Notification preferences"
-              onClick={() => { setOpen(false); onNavigate(inboxPath); }}
-            >
-              <SettingsIcon aria-hidden="true" />
-            </Button>
-          </div>
+          )}
         </SheetHeader>
         <div className="min-h-0 flex-1 overflow-y-auto">
-          <NotificationList
-            items={feed.items}
-            loading={feed.loading}
-            error={feed.error}
-            loadingMore={feed.loadingMore}
-            hasMore={feed.hasMore}
-            filter="all"
-            onRetry={feed.reload}
-            onLoadMore={feed.loadMore}
-            onOpen={openItem}
-            onAction={feed.act}
-          />
+          {view === "settings" ? (
+            <NotificationPreferences audience={audience} />
+          ) : (
+            <NotificationList
+              items={feed.items}
+              loading={feed.loading}
+              error={feed.error}
+              loadingMore={feed.loadingMore}
+              hasMore={feed.hasMore}
+              filter={view}
+              onRetry={feed.reload}
+              onLoadMore={feed.loadMore}
+              onOpen={openItem}
+              onAction={feed.act}
+            />
+          )}
         </div>
       </SheetContent>
     </Sheet>

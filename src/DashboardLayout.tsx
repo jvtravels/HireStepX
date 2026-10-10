@@ -79,7 +79,6 @@ const navItems = [
 
 const EXTRA_ROUTE_LABELS: { prefix: string; label: string }[] = [
   { prefix: "/messages", label: "Messages" },
-  { prefix: "/notifications", label: "Notifications" },
   { prefix: "/settings", label: "Settings" },
   { prefix: "/referrals", label: "Referrals" },
 ];
