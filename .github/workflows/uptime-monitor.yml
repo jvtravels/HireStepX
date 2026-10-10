@@ -1,0 +1,73 @@
+name: Uptime monitor
+
+# Minute-level outside-in probe. The only other uptime signal is the daily
+# Vercel cron (06:00 UTC), so without this an outage can go unnoticed for up to
+# 24h. GitHub schedules are best-effort (expect 5-15 min jitter), which is still
+# far better than daily. Opens ONE issue per outage and closes it on recovery;
+# it never comments repeatedly, so a long outage doesn't spam notifications.
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: uptime-monitor
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - name: Probe production
+        id: probe
+        run: |
+          set -u
+          failures=""
+          check() {
+            local url="$1" want="$2" code="000"
+            # 3 attempts, 20s apart, so a single blip or a Groq/Gemini 429 inside
+            # /api/health doesn't page anyone.
+            for attempt in 1 2 3; do
+              code=$(curl -sL -o /dev/null -w '%{http_code}' --max-time 15 "$url" || true)
+              [ "$code" = "$want" ] && { echo "ok   $url -> $code"; return 0; }
+              echo "try $attempt: $url -> $code"
+              [ "$attempt" -lt 3 ] && sleep 20
+            done
+            failures="${failures}- ${url} returned ${code} (expected ${want})"$'\n'
+          }
+          check "https://hirestepx.com/" 200
+          check "https://app.hirestepx.com/login" 200
+          check "https://hirestepx.com/api/health" 200
+          {
+            echo "failures<<EOF"
+            printf '%s' "$failures"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+          [ -z "$failures" ]
+
+      - name: Open issue on outage
+        if: failure() && steps.probe.outputs.failures != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          FAILURES: ${{ steps.probe.outputs.failures }}
+        run: |
+          gh label create outage --color B60205 --description "Production outage detected by uptime monitor" 2>/dev/null || true
+          existing=$(gh issue list --label outage --state open --json number --jq '.[0].number // empty')
+          if [ -z "$existing" ]; then
+            gh issue create --title "Production outage detected" --label outage \
+              --body "$(printf 'The uptime monitor failed 3 consecutive probes:\n\n%s\nRun: %s/%s/actions/runs/%s\n\nSee RUNBOOK.md. Consider Vercel Instant Rollback if this followed a deploy. This issue closes automatically on recovery.' "$FAILURES" "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID")"
+          fi
+
+      - name: Close outage issue on recovery
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for n in $(gh issue list --label outage --state open --json number --jq '.[].number'); do
+            gh issue close "$n" --comment "Recovered: all probes passing as of $(date -u +%H:%M) UTC."
+          done

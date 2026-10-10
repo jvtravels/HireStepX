@@ -20,3 +20,13 @@ updates:
       # resumeParser.ts — skip until migration is done.
       - dependency-name: "pdfjs-dist"
         update-types: ["version-update:semver-major"]
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "04:00"
+      timezone: "Asia/Kolkata"
+    groups:
+      actions:
+        patterns: ["*"]

@@ -55,3 +55,6 @@ qa-*.cjs
 qa-*.mjs
 do_commit.sh
 .env*
+
+# Private outreach contacts (scraped third-party data) must never be committed
+docs/COLD_OUTREACH_CONTACTS.md

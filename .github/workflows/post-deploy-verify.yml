@@ -14,7 +14,7 @@ jobs:
   verify:
     if: github.event.deployment_status.state == 'success' && github.event.deployment.environment == 'Production'
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 12
     steps:
       - name: Probe production
         env:
@@ -29,6 +29,30 @@ jobs:
           done
           [ "$fail" = "0" ]
 
+      # Browser-level smoke (public pages only, no credentials or writes): the
+      # curl probe above only proves the server answers 200, not that the pages
+      # actually render or the API contract holds.
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.deployment.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Smoke tests (@smoke)
+        env:
+          BASE_URL: https://hirestepx.com
+          PLAYWRIGHT_SKIP_WEBSERVER: "1"
+        run: npx playwright test tests/e2e/smoke.spec.ts --project=chromium --reporter=github
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: smoke-test-results
+          path: test-results/
+          retention-days: 14
+
       - name: Open issue on failure
         if: failure()
         env:
@@ -37,4 +61,4 @@ jobs:
         run: |
           gh issue create --repo "$GITHUB_REPOSITORY" \
             --title "Production verification failed for ${SHA:0:7}" \
-            --body "Post-deploy probe failed. Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID. Consider Vercel Instant Rollback."
+            --body "Post-deploy probe or smoke test failed. Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID. Consider Vercel Instant Rollback."
