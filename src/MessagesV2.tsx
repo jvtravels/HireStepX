@@ -227,7 +227,7 @@ export default function MessagesV2() {
   };
 
   const shell = (body: React.ReactNode) => (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl bg-background">{body}</div>
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-border/60 bg-background">{body}</div>
   );
 
   if (conversations === null && !listError) {

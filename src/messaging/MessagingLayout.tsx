@@ -42,7 +42,7 @@ export default function MessagingLayout({ list, thread, rail, railState, narrow,
   const inlineRail = railOpen && !compact && hasActive;
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl bg-background">
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-border/60 bg-background">
       {banner}
       <div className="flex min-h-0 flex-1">
         {showList && (
