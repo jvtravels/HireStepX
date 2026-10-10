@@ -461,18 +461,7 @@ body {
   pointer-events: none;
 }
 
-.gradient-border-card:hover {
-  border-color: oklch(from var(--background) l c h / 0.10);
-  transform: translateY(-3px);
-  box-shadow:
-    0 8px 32px oklch(0 0 0 / 0.35),
-    0 0 48px oklch(0.784 0.078 78.581 / 0.04),
-    inset 0 1px 0 oklch(from var(--background) l c h / 0.04);
-}
 
-.gradient-border-card:hover::before {
-  opacity: 1;
-}
 
 .gradient-border-card::after {
   content: '';
@@ -492,9 +481,6 @@ body {
   pointer-events: none;
 }
 
-.gradient-border-card:hover::after {
-  opacity: 1;
-}
 
 /* ─── Accent Variants ─── */
 
@@ -676,10 +662,6 @@ body {
   transition: filter 0.4s ease, box-shadow 0.4s ease, transform 0.4s ease;
 }
 
-.gradient-border-card:hover .testimonial-avatar {
-  filter: grayscale(0%) brightness(1);
-  box-shadow: 0 0 24px oklch(0.784 0.078 78.581 / 0.1);
-}
 
 /* ─── Icon container pulse ─── */
 
@@ -693,10 +675,6 @@ body {
               filter 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.gradient-border-card:hover .icon-container {
-  transform: scale(1.08);
-  box-shadow: 0 0 28px var(--icon-glow, oklch(0.784 0.078 78.581 / 0.12));
-}
 
 /* ─── Pricing card featured glow ─── */
 
@@ -760,9 +738,6 @@ input[type="range"]::-moz-range-thumb {
   transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.gradient-border-card:hover .stat-icon {
-  transform: scale(1.15) translateY(-2px);
-}
 
 /* ─── Carousel Slide ─── */
 
@@ -1166,7 +1141,6 @@ input[type="range"]::-moz-range-thumb {
     transition-duration: 0.01ms !important;
   }
   .reveal { opacity: 1; transform: none; }
-  .gradient-border-card:hover { transform: none; }
   .mockup-window:hover { transform: none; }
   .shimmer-btn:hover { transform: none; }
   .hero-mesh-gradient { animation: none !important; }
@@ -1698,12 +1672,6 @@ a[href]:not([data-slot]):not([data-sidebar]):not([role]):not([data-no-underline]
 .mx-press { transition: transform 160ms cubic-bezier(0.2, 0.7, 0.2, 1); }
 .mx-press:active { transform: scale(0.98); }
 
-/* Card/row hover lift. */
-.mx-lift { transition: transform 220ms cubic-bezier(0.2, 0.7, 0.2, 1), box-shadow 220ms cubic-bezier(0.2, 0.7, 0.2, 1); }
-@media (hover: hover) {
-  .mx-lift:hover { transform: translateY(-2px); box-shadow: 0 8px 24px -12px rgb(0 0 0 / 0.18); }
-}
-
 /* Progress fill that grows from the left on mount (scaleX, not width, so no layout work). */
 @keyframes mxGrow { from { transform: scaleX(0); } to { transform: none; } }
 .mx-grow { transform-origin: left; animation: mxGrow 700ms cubic-bezier(0.16, 1, 0.3, 1) 150ms backwards; }
@@ -1715,5 +1683,5 @@ a[href]:not([data-slot]):not([data-sidebar]):not([role]):not([data-no-underline]
 @media (prefers-reduced-motion: reduce) {
   .mx-fade, .mx-rise, .mx-pop, .mx-swap, .mx-grow, .mx-stagger > * { animation: none; }
   .mx-live::after { animation: none; opacity: 0; }
-  .mx-press:active, .mx-lift:hover, :is(a, button):hover .mx-nudge { transform: none; }
+  .mx-press:active, :is(a, button):hover .mx-nudge { transform: none; }
 }

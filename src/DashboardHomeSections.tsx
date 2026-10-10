@@ -47,7 +47,7 @@ function Tag({ label, tone = "neutral", title }: { label: string; tone?: "neutra
 
 function StatCard({ children }: { children: React.ReactNode }) {
   return (
-    <div className="mx-lift" style={{
+    <div style={{
       flex: "1 1 220px", minWidth: 220, padding: "18px",
       background: t.cream, border: `1px solid ${t.line}`, borderRadius: 12,
       display: "flex", flexDirection: "column", gap: 10,
