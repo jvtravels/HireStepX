@@ -8,6 +8,8 @@ import { tokens as t, fonts as f } from "../auth/_tokens";
 import { EmployerWordmark } from "./_atoms";
 import { useEmployerData } from "./EmployerDataContext";
 import VerificationBanner from "./VerificationBanner";
+import { ErrorPanel } from "./_consoleParts";
+import LoadingScreen from "../_LoadingScreen";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -138,7 +140,7 @@ function AccountMenu({ name, email, onLogout }: { name?: string; email?: string;
    company profile exists. */
 export default function EmployerShell({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
-  const { companyStatus, companyName, listConversations } = useEmployerData();
+  const { companyStatus, companyStatusLoading, companyStatusError, refreshCompanyStatus, companyName, listConversations } = useEmployerData();
   const isMobile = useIsMobile();
   const router = useRouter();
   const pathname = usePathname();
@@ -151,6 +153,11 @@ export default function EmployerShell({ children }: { children: React.ReactNode 
     await logout();
     router.replace("/login");
   };
+
+  /* companyStatus defaults to "none" until /api/employer-profile answers, so
+     without this an approved employer's refresh would paint the bare
+     onboarding frame (no nav, content centered) before snapping to the console. */
+  if (companyStatusLoading) return <LoadingScreen message="Loading your workspace…" />;
 
   if (!isConsole) {
     const gutter = isMobile ? 16 : 48;
@@ -181,7 +188,13 @@ export default function EmployerShell({ children }: { children: React.ReactNode 
           tabIndex={-1}
           style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: `8px ${isMobile ? 16 : 32}px 40px`, outline: "none" }}
         >
-          {children}
+          {companyStatusError ? (
+            <ErrorPanel
+              title="We couldn't load your company"
+              message="Check your connection and try again. Your details are safe."
+              onRetry={() => { void refreshCompanyStatus(); }}
+            />
+          ) : children}
         </main>
       </div>
     );

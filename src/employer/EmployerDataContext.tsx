@@ -291,7 +291,7 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
   const [limits, setLimits] = useState<EmployerLimits>(DEFAULT_TIER_LIMITS.basic);
   const [suspended, setSuspended] = useState(false);
   const [requirements, setRequirements] = useState<RequirementSummary[]>([]);
-  const [requirementsLoading, setRequirementsLoading] = useState(false);
+  const [requirementsLoaded, setRequirementsLoaded] = useState(false);
   const [requirementsError, setRequirementsError] = useState(false);
 
   // Read by long-lived callbacks so they never close over a stale status/tier.
@@ -333,7 +333,6 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
   const refreshRequirements = useCallback(async () => {
     if (statusRef.current !== "approved") return;
     const seq = ++requirementsSeq.current;
-    setRequirementsLoading(true);
     const res = await getWithRetry("/api/employer-requirements");
     // A newer refresh started while this one was in flight — let it win.
     if (seq !== requirementsSeq.current) return;
@@ -344,8 +343,13 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
       // leave previous list in place on a transient failure, but surface it
       setRequirementsError(true);
     }
-    setRequirementsLoading(false);
+    setRequirementsLoaded(true);
   }, []);
+
+  /* Initial load only: an approved company with no completed fetch yet is
+     "loading", so the first paint is a skeleton instead of a false empty
+     state. Later refreshes (archive, reopen) keep the list on screen. */
+  const requirementsLoading = companyStatus === "approved" && !requirementsLoaded;
 
   useEffect(() => {
     refreshRequirements();
