@@ -4,7 +4,7 @@
  * Pure presentation. */
 
 import { useState } from "react";
-import { t, f, shadows, radius, size } from "../tokens";
+import { t, f, radius, size } from "../tokens";
 import type { CredibilitySummary } from "../../_credibilityCallout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -27,7 +27,6 @@ export function CredibilitySection({
         border: `1px solid ${t.error}`,
         borderRadius: radius.card,
         padding: "clamp(14px, 4vw, 20px) clamp(14px, 4vw, 22px)",
-        boxShadow: shadows.card,
         display: "flex",
         flexDirection: "column",
         gap: 14,
