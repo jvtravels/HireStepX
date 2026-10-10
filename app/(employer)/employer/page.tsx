@@ -209,16 +209,14 @@ function EmployerDashboard() {
               </h2>
               <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft, margin: 0, maxWidth: 520, lineHeight: 1.55 }}>
                 {atJobLimit
-                  ? `Your account can have ${limits.openRequirements} open jobs at a time. Close a job you've filled, or see how to raise your limits in settings.`
+                  ? `Your account can have ${limits.openRequirements} open jobs at a time. Close a job you've filled to post a new one.`
                   : "Tell us the role, location, and notice-period preference — we'll return a scored shortlist from candidates actively practicing on HireStepX."}
               </p>
-              <div style={{ marginTop: 18 }}>
-                {atJobLimit ? (
-                  <OutlineLink href="/employer/settings">Review account limits</OutlineLink>
-                ) : (
+              {!atJobLimit && (
+                <div style={{ marginTop: 18 }}>
                   <PrimaryLink href="/employer/requirements/new" icon={<EmployerIcon.Plus />}>Post a requirement</PrimaryLink>
-                )}
-              </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         )}
@@ -266,12 +264,11 @@ function EmployerDashboard() {
               {suspended
                 ? "Your account is suspended and read-only."
                 : verificationTier === "basic"
-                  ? "Unverified account. Verify with a work email to raise your limits."
+                  ? "Unverified account."
                   : verificationTier === "email_verified"
                     ? "Work email confirmed."
                     : "Fully verified company."}
             </p>
-            <OutlineLink href="/employer/settings" small full>Company details and limits</OutlineLink>
           </CardContent>
         </Card>
 

@@ -280,7 +280,7 @@ export default function EmployerShell({ children }: { children: React.ReactNode 
         isMobile={isMobile}
         mainId="employer-main"
         pageKey={pathname}
-        banners={<VerificationBanner onSettingsPage={isSettingsRoute} />}
+        banners={<VerificationBanner />}
       >
         {isSelfCardedRoute(pathname ?? "") ? pageBody : (
           <div style={{
