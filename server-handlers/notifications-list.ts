@@ -1,20 +1,19 @@
 export const config = { runtime: "edge" };
 
 import { withAuthAndRateLimit, supabaseServiceHeaders, supabaseUrl, errorResponse } from "./_shared";
-import { NOTIFICATION_AUDIENCE, type NotificationType } from "./_notify";
-
-type Audience = "employer" | "candidate";
-function parseAudience(value: string | null): Audience | null {
-  return value === "employer" || value === "candidate" ? value : null;
-}
+import {
+  PAGE_SIZE,
+  buildListQuery,
+  buildUnreadCountQuery,
+  parseAudience,
+  parseCategory,
+  parseContentRange,
+  parseCursor,
+  parseFilter,
+} from "./_notifications-helpers";
 
 interface NotificationRow {
   id: string;
-  type: string;
-  title: string;
-  body: string;
-  link: string | null;
-  read_at: string | null;
   created_at: string;
 }
 
@@ -34,28 +33,33 @@ export default async function handler(req: Request): Promise<Response> {
   if (!audience) return errorResponse(400, "audience must be 'employer' or 'candidate'", headers);
 
   const base = supabaseUrl();
-  if (!base) return new Response(JSON.stringify({ notifications: [], unreadCount: 0 }), { status: 200, headers });
+  if (!base) return new Response(JSON.stringify({ notifications: [], unreadCount: 0, nextCursor: null }), { status: 200, headers });
 
-  const res = await fetch(
-    `${base}/rest/v1/notifications?user_id=eq.${encodeURIComponent(auth.userId)}&select=id,type,title,body,link,read_at,created_at&order=created_at.desc&limit=50`,
-    { headers: supabaseServiceHeaders() },
-  );
-  if (!res.ok) return errorResponse(502, "Could not load notifications", headers);
+  const nowIso = new Date().toISOString();
+  const [listRes, countRes] = await Promise.all([
+    fetch(
+      `${base}/rest/v1/notifications?${buildListQuery({
+        userId: auth.userId,
+        audience,
+        filter: parseFilter(url.searchParams.get("filter")),
+        category: parseCategory(url.searchParams.get("category")),
+        cursor: parseCursor(url.searchParams.get("cursor")),
+        nowIso,
+      })}`,
+      { headers: supabaseServiceHeaders() },
+    ),
+    fetch(`${base}/rest/v1/notifications?${buildUnreadCountQuery(auth.userId, audience, nowIso)}`, {
+      headers: { ...supabaseServiceHeaders(), Prefer: "count=exact" },
+    }),
+  ]);
+  if (!listRes.ok) return errorResponse(502, "Could not load notifications", headers);
 
-  const rows = (await res.json().catch(() => [])) as NotificationRow[];
-  const allRows = Array.isArray(rows) ? rows : [];
+  const rows = (await listRes.json().catch(() => [])) as NotificationRow[];
+  const all = Array.isArray(rows) ? rows : [];
+  const hasMore = all.length > PAGE_SIZE;
+  const notifications = hasMore ? all.slice(0, PAGE_SIZE) : all;
+  const nextCursor = hasMore ? notifications[notifications.length - 1].created_at : null;
+  const unreadCount = countRes.ok ? parseContentRange(countRes.headers.get("content-range")) : 0;
 
-  // A dual-role account (same auth.users.id as both an `employers` row and a
-  // `profiles` row) would otherwise see the other console's notifications
-  // leak in, since the table is keyed only on user_id. `audience` names which
-  // console is asking (validated above — an invalid/missing value is now a
-  // hard 400, not a silent unfiltered fallthrough); types not scoped to that
-  // console are dropped here.
-  const notifications = allRows.filter((n) => {
-    const scope = NOTIFICATION_AUDIENCE[n.type as NotificationType];
-    return scope === undefined || scope === "both" || scope === audience;
-  });
-  const unreadCount = notifications.filter((n) => !n.read_at).length;
-
-  return new Response(JSON.stringify({ notifications, unreadCount }), { status: 200, headers });
+  return new Response(JSON.stringify({ notifications, unreadCount, nextCursor }), { status: 200, headers });
 }

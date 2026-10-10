@@ -1,29 +1,20 @@
-/* Writes a row to the `notifications` table (see supabase-schema.sql).
-   Single call site for both the candidate and employer consoles — the bell
-   in AppShellFrame reads from the same table regardless of which side the
-   signed-in user is on, since `type` carries enough context to route the
-   client-side link/icon.
+/* Writes to the `notifications` table (see supabase-schema.sql). Single call
+   site for both consoles; the registry in src/notifications/registry.ts says
+   which audience, category and priority each type has.
 
-   Best-effort by design: a failed write here must never block the caller's
-   actual mutation (session save, payment verification, status change).
-   Callers fire this after their own write already succeeded and ignore the
-   outcome, mirroring the existing fire-and-forget email helpers. */
+   Best-effort by design: a failed write must never block the caller's real
+   mutation. Callers fire this after their own write succeeded. */
 
 import { supabaseServiceHeaders, supabaseUrl, slog } from "./_shared";
+import {
+  NOTIFICATION_TYPES,
+  isInAppEnabled,
+  sanitizePrefs,
+  type NotificationType,
+  type Priority,
+} from "../src/notifications/registry";
 
-export type NotificationType =
-  | "streak_milestone"
-  | "referral_reward"
-  | "candidate_status_change"
-  | "unlock_confirmed"
-  | "payment_success"
-  | "payment_failed"
-  | "subscription_renewed"
-  | "employer_viewed_profile"
-  | "matches_ready"
-  | "strong_match_found"
-  | "new_message"
-  | "candidate_responded";
+export type { NotificationType } from "../src/notifications/registry";
 
 export interface NotifyInput {
   userId: string;
@@ -31,42 +22,78 @@ export interface NotifyInput {
   title: string;
   body?: string;
   link?: string;
+  /** Defaults to the type's registry priority. */
+  priority?: Priority;
+  /** Unread rows sharing a key collapse into one row with a count. */
+  groupKey?: string;
+  /** Label for the row's primary action button, e.g. "Open chat". */
+  actionLabel?: string;
 }
 
-/** Which console(s) a notification type belongs on. Read by
- *  notifications-list.ts to scope the feed per caller-declared `audience` —
- *  without this, a dual-role account (same auth.users.id as both an
- *  `employers` row and a `profiles` row) sees employer-only notifications
- *  (e.g. "New strong match found") leak into the candidate bell and vice
- *  versa, since the `notifications` table is keyed only on `user_id`. */
-export const NOTIFICATION_AUDIENCE: Record<NotificationType, "employer" | "candidate" | "both"> = {
-  streak_milestone: "candidate",
-  referral_reward: "candidate",
-  candidate_status_change: "candidate",
-  employer_viewed_profile: "candidate",
-  unlock_confirmed: "employer",
-  matches_ready: "employer",
-  strong_match_found: "employer",
-  candidate_responded: "employer",
-  payment_success: "both",
-  payment_failed: "both",
-  subscription_renewed: "both",
-  new_message: "both",
-};
+async function loadPrefs(base: string, userId: string) {
+  try {
+    const res = await fetch(
+      `${base}/rest/v1/notification_preferences?user_id=eq.${encodeURIComponent(userId)}&select=prefs`,
+      { headers: supabaseServiceHeaders(), signal: AbortSignal.timeout(3000) },
+    );
+    if (!res.ok) return sanitizePrefs(null);
+    const rows = (await res.json().catch(() => [])) as { prefs?: unknown }[];
+    return sanitizePrefs(rows[0]?.prefs);
+  } catch {
+    return sanitizePrefs(null);
+  }
+}
+
+async function bumpGroup(base: string, input: NotifyInput, title: string, body: string): Promise<boolean> {
+  const lookup = await fetch(
+    `${base}/rest/v1/notifications?user_id=eq.${encodeURIComponent(input.userId)}&group_key=eq.${encodeURIComponent(input.groupKey ?? "")}&read_at=is.null&archived_at=is.null&select=id,count&order=created_at.desc&limit=1`,
+    { headers: supabaseServiceHeaders(), signal: AbortSignal.timeout(3000) },
+  );
+  if (!lookup.ok) return false;
+  const rows = (await lookup.json().catch(() => [])) as { id: string; count: number }[];
+  const existing = rows[0];
+  if (!existing) return false;
+  const patch = await fetch(`${base}/rest/v1/notifications?id=eq.${encodeURIComponent(existing.id)}`, {
+    method: "PATCH",
+    headers: { ...supabaseServiceHeaders(), Prefer: "return=minimal" },
+    body: JSON.stringify({
+      count: (existing.count || 1) + 1,
+      title,
+      body,
+      snoozed_until: null,
+      created_at: new Date().toISOString(),
+    }),
+    signal: AbortSignal.timeout(3000),
+  });
+  return patch.ok;
+}
 
 export async function notify(input: NotifyInput): Promise<void> {
   const base = supabaseUrl();
   if (!base) return;
+  const meta = NOTIFICATION_TYPES[input.type];
+  const priority = input.priority ?? meta.priority;
   try {
+    const prefs = await loadPrefs(base, input.userId);
+    if (!isInAppEnabled(prefs, input.type, priority)) return;
+
+    const title = input.title.slice(0, 200);
+    const body = (input.body ?? "").slice(0, 1000);
+
+    if (input.groupKey && (await bumpGroup(base, input, title, body))) return;
+
     const res = await fetch(`${base}/rest/v1/notifications`, {
       method: "POST",
       headers: { ...supabaseServiceHeaders(), Prefer: "return=minimal" },
       body: JSON.stringify({
         user_id: input.userId,
         type: input.type,
-        title: input.title,
-        body: input.body ?? "",
+        title,
+        body,
         link: input.link ?? null,
+        priority,
+        group_key: input.groupKey ?? null,
+        action_label: input.actionLabel ?? null,
       }),
       signal: AbortSignal.timeout(5000),
     });

@@ -58,7 +58,7 @@ const navItems: ShellNavItem[] = [
    narrower Card) both own their layout already — wrapping either in the
    fallback double-cards the page and, for the dashboard, caps it at the
    same 1280 the fallback itself uses, just with less usable width inside. */
-const SELF_CARDED_ROUTES = ["/employer", "/employer/jobs", "/employer/requirements/new", "/employer/settings", "/employer/messages"];
+const SELF_CARDED_ROUTES = ["/employer", "/employer/jobs", "/employer/requirements/new", "/employer/settings", "/employer/messages", "/employer/notifications"];
 
 /* Every requirement-scoped page (detail, edit, candidate detail, outcome
    feedback, compare) renders its own header/Card layout designed to fill
@@ -193,6 +193,7 @@ export default function EmployerShell({ children }: { children: React.ReactNode 
      breadcrumb reads "Dashboard" while the page itself says "Settings". */
   const isSettingsRoute = pathname === "/employer/settings";
   const isMessagesRoute = pathname === "/employer/messages";
+  const isNotificationsRoute = pathname === "/employer/notifications";
   const activeItem =
     navItems.find((item) =>
       item.path === "/employer" ? pathname === item.path : pathname === item.path || pathname?.startsWith(`${item.path}/`)
@@ -206,7 +207,7 @@ export default function EmployerShell({ children }: { children: React.ReactNode 
         homeHref="/employer"
         navAriaLabel="Employer navigation"
         navItems={navItems}
-        activeId={isSettingsRoute || isMessagesRoute ? "" : activeItem.id}
+        activeId={isSettingsRoute || isMessagesRoute || isNotificationsRoute ? "" : activeItem.id}
         onNavigate={(path) => router.push(path)}
         messaging={{ fetchConversations: listConversations, basePath: "/employer/messages" }}
         audience="employer"
@@ -223,7 +224,7 @@ export default function EmployerShell({ children }: { children: React.ReactNode 
         }
         onLogout={handleLogout}
         breadcrumbRoot={{ label: companyName || "HireStepX", path: "/employer" }}
-        pageLabel={isSettingsRoute ? "Settings" : isMessagesRoute ? "Messages" : activeItem.label}
+        pageLabel={isSettingsRoute ? "Settings" : isMessagesRoute ? "Messages" : isNotificationsRoute ? "Notifications" : activeItem.label}
         pageLabelPath={activeItem.path}
         extraCrumbs={breadcrumbExtra}
         isMobile={isMobile}

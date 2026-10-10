@@ -420,6 +420,8 @@ async function handlePost(req: Request, headers: Record<string, string>, auth: {
     title: role === "employer" ? "New message from an employer" : "New message from a candidate",
     body: text ? text.slice(0, 140) : "Sent an attachment.",
     link: role === "employer" ? "/messages" : `/employer/requirements/${match.requirement_id}`,
+    groupKey: `msg:${conversation.id}`,
+    actionLabel: "Reply",
   }).catch(() => {});
 
   return new Response(JSON.stringify({ conversationId: conversation.id, message: toMessageShape(inserted) }), { status: 201, headers });
