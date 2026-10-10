@@ -12,7 +12,8 @@
    baseline idiom; this uses a shorter interval since a thread being
    actively read benefits more from freshness. */
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
+import { tokens as t } from "./auth/_tokens";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AlertCircleIcon, MessagesSquareIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -71,6 +72,9 @@ const STATUS_LABEL: Record<string, string> = {
  *  CANDIDATE_STATUS_TONE — kept as its own map (see STATUS_LABEL comment
  *  above) rather than importing the employer module, but aligned on the same
  *  tokens so a given status reads as the same color on both sides. */
+
+/* Same hairline as the dashboard cards (EmployerShell / DashboardLayout). */
+const shellBorder: CSSProperties = { border: `1px solid ${t.line}` };
 
 export default function MessagesV2() {
   const router = useRouter();
@@ -227,7 +231,7 @@ export default function MessagesV2() {
   };
 
   const shell = (body: React.ReactNode) => (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-border/60 bg-background">{body}</div>
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl bg-background" style={shellBorder}>{body}</div>
   );
 
   if (conversations === null && !listError) {
