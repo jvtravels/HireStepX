@@ -120,8 +120,9 @@ const editTitle: CSSProperties = { fontFamily: f.sans, fontSize: 26, fontWeight:
 const actionRow: CSSProperties = { display: "flex", alignItems: "center", gap: 12, flexShrink: 0 };
 const wizardHeader: CSSProperties = { ...barCard, padding: "12px 20px" };
 const wizardTopRow: CSSProperties = { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" };
-const wizardTitleGroup: CSSProperties = { minWidth: 0 };
-const pageHeading: CSSProperties = { marginBottom: 12 };
+const wizardTitleGroup: CSSProperties = { display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" };
+const wizardTitle: CSSProperties = { outline: "none", fontFamily: f.sans, fontSize: 22, fontWeight: 700, color: t.coal, margin: 0, letterSpacing: "-0.01em", lineHeight: "28px" };
+const stepCounter: CSSProperties = { fontFamily: f.mono, fontSize: 12, letterSpacing: 1.2, textTransform: "uppercase", color: t.indigo, fontWeight: 600 };
 const stackedSections: CSSProperties = { display: "flex", flexDirection: "column", gap: 26 };
 
 export function RequirementForm({
@@ -630,19 +631,16 @@ export function RequirementForm({
 
   return (
     <form onSubmit={handleSubmit} noValidate>
-      <div style={pageHeading}>
-        <Eyebrow tone="indigo">New opportunity</Eyebrow>
-        <h1 style={editTitle}>Post a requirement</h1>
-      </div>
       <div style={STICKY_BAR}>
         <div style={wizardHeader}>
           <div style={wizardTopRow}>
             <div style={wizardTitleGroup}>
-              <h2 ref={stepHeadingRef} tabIndex={-1} className="sr-only">
+              <h1 ref={stepHeadingRef} tabIndex={-1} style={wizardTitle}>
                 {STEP_LABELS[step]}
-              </h2>
-              <span className="sr-only">Step {step} of {LAST_STEP}</span>
-              <StepNav step={step} onGoTo={goTo} />
+              </h1>
+              <span style={stepCounter}>
+                Step {step} of {LAST_STEP}
+              </span>
             </div>
             <div style={actionRow}>
               {step > 1 && <OutlineCta size="sm" onClick={() => goTo((step - 1) as FormStep)}>Back</OutlineCta>}
@@ -654,6 +652,7 @@ export function RequirementForm({
               )}
             </div>
           </div>
+          <StepNav step={step} onGoTo={goTo} />
         </div>
       </div>
       <div style={cardStyle}>
