@@ -3,6 +3,10 @@ import {
   pickProfileRow,
   buildExportEnvelope,
   buildExportFilename,
+  shapeMatchesForExport,
+  shapeStatusEventsForExport,
+  shapeConversationsForExport,
+  shapeMessagesForExport,
 } from "../../server-handlers/_export-user-data-helpers";
 
 /**
@@ -117,5 +121,71 @@ describe("buildExportFilename", () => {
   it("truncates user-id prefix to 8 chars even for very long ids", () => {
     const filename = buildExportFilename("a".repeat(50), fixedDate);
     expect(filename).toBe("hirestepx-export-aaaaaaaa-2026-05-02.json");
+  });
+});
+
+describe("employer-discovery export", () => {
+  const rawMatches = [
+    { id: "m-locked", created_at: "2026-10-01", unlocked: false, unlocked_at: null, profile_viewed_at: "2026-10-02", candidate_response: "none", employer_requirements: { title: "Backend Dev", employers: { company_name: "Acme" } } },
+    { id: "m-open", created_at: "2026-10-03", unlocked: true, unlocked_at: "2026-10-04", profile_viewed_at: "2026-10-04", candidate_response: "interested", candidate_responded_at: "2026-10-05", employer_requirements: { title: "SRE", employers: { company_name: "Globex" } } },
+  ];
+
+  it("reveals employer company and role ONLY for unlocked matches", () => {
+    const { shaped, unlockedIds } = shapeMatchesForExport(rawMatches);
+    const [locked, open] = shaped as Array<Record<string, unknown>>;
+    expect(locked.employer_company).toBeNull();
+    expect(locked.role_title).toBeNull();
+    expect(locked.unlocked_at).toBeNull();
+    expect(open.employer_company).toBe("Globex");
+    expect(open.role_title).toBe("SRE");
+    expect(open.your_response).toBe("interested");
+    expect([...unlockedIds]).toEqual(["m-open"]);
+    // the shaped rows never carry raw employer/requirement ids
+    expect(JSON.stringify(shaped)).not.toContain("employer_id");
+  });
+
+  it("skips malformed rows and tolerates non-arrays", () => {
+    expect(shapeMatchesForExport(null).shaped).toEqual([]);
+    expect(shapeMatchesForExport([null, {}, { id: 5 }]).shaped).toEqual([]);
+  });
+
+  it("hides employer-authored event notes until the match is unlocked, but keeps the candidate's own", () => {
+    const events = [
+      { id: "e1", match_id: "m-locked", to_status: "shortlisted", actor: "employer", note: "Acme wants you" },
+      { id: "e2", match_id: "m-open", to_status: "shortlisted", actor: "employer", note: "Globex note" },
+      { id: "e3", match_id: "m-locked", to_status: "candidate_interested", actor: "candidate", note: "mine" },
+    ];
+    const out = shapeStatusEventsForExport(events, new Set(["m-open"])) as Array<{ note: string | null }>;
+    expect(out.map((e) => e.note)).toEqual([null, "Globex note", "mine"]);
+  });
+
+  it("names the employer on a conversation only when its match is unlocked", () => {
+    const { companyByMatch } = shapeMatchesForExport(rawMatches);
+    const out = shapeConversationsForExport([{ id: "c1", match_id: "m-locked" }, { id: "c2", match_id: "m-open" }], companyByMatch) as Array<{ employer_company: string | null }>;
+    expect(out.map((c) => c.employer_company)).toEqual([null, "Globex"]);
+  });
+
+  it("exports message bodies but not storage paths", () => {
+    const out = shapeMessagesForExport([{ id: "x", conversation_id: "c1", sender_role: "employer", body: "hi", attachment_name: "cv.pdf", attachment_path: "secret/path", created_at: "t" }]);
+    expect(JSON.stringify(out)).not.toContain("secret/path");
+    expect(out[0]).toMatchObject({ body: "hi", attachment_name: "cv.pdf" });
+  });
+
+  it("envelope defaults the new sections so older callers keep working", () => {
+    const env = buildExportEnvelope({
+      userId: "u", userEmail: "e", exportedAt: "t", profile: [], sessions: [], calendar_events: [], payments: [], feedback: [], interview_turns: [], llm_usage: [],
+    });
+    expect(env.employer_discovery.consent_log).toEqual([]);
+    expect(env.employer_account).toBeNull();
+  });
+
+  it("envelope carries supplied employer sections through", () => {
+    const env = buildExportEnvelope({
+      userId: "u", userEmail: "e", exportedAt: "t", profile: [], sessions: [], calendar_events: [], payments: [], feedback: [], interview_turns: [], llm_usage: [],
+      employer_discovery: { visibility: "off", visibility_updated_at: "t", consent_log: [{ action: "withdrawn" }], blocks: [], reports_filed: [], matches: [], status_events: [], conversations: [], messages: [] },
+      employer_account: { employer: { id: "u" }, requirements: [], unlock_payments: [{ id: "p" }], unlock_orders: [], messages_sent: [] },
+    });
+    expect(env.employer_discovery.visibility).toBe("off");
+    expect(env.employer_account?.unlock_payments).toHaveLength(1);
   });
 });

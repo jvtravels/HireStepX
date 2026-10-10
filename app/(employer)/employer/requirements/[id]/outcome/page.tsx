@@ -1,146 +1,278 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useParams, useSearchParams, useRouter } from "next/navigation";
-import { useEmployerData, Requirement, CandidateStatus } from "@/employer/EmployerDataContext";
-import { useToast } from "@/Toast";
-import { tokens as t, fonts as f } from "@/auth/_tokens";
-import { Card, Eyebrow, FieldLabel, OutlineCta, PrimaryCta } from "@/employer/_atoms";
+import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
+import { useParams, useSearchParams } from "next/navigation";
+import { useEmployerData, type Requirement } from "@/employer/EmployerDataContext";
+import type { Candidate, CandidateStatus } from "@/employer/mockData";
+import { tokens as t, fonts as f, textSize } from "@/auth/_tokens";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, Eyebrow, PrimaryCta } from "@/employer/_atoms";
+import { EmptyNote, ErrorRetry, IdentityHiddenBadge, InlineNotice, LinkCta, PageSkeleton, SuspendedBanner } from "@/employer/_requirementAtoms";
+import { failureMessage, setCandidateStatus } from "@/employer/_requirementCalls";
+import { useEmployerAccess } from "@/employer/_useEmployerAccess";
+import { candidateDisplayName, candidateResponseOf } from "../_components/requirementFormat";
 
-const OUTCOMES = ["Hired", "Interviewing", "Not a fit", "No response yet"] as const;
+interface OutcomeOption {
+  status: CandidateStatus;
+  label: string;
+  hint: string;
+  /** Needs the candidate unlocked first (the server answers 402 otherwise). */
+  needsUnlock: boolean;
+  /** Terminal on the server: confirm before submitting. */
+  terminal: boolean;
+}
 
-/** Maps this page's outcome labels to the candidate_status enum persisted
- *  by employer-candidate-status.ts. */
-const OUTCOME_TO_CANDIDATE_STATUS: Record<(typeof OUTCOMES)[number], CandidateStatus> = {
-  "Hired": "hired",
-  "Interviewing": "interviewing",
-  "Not a fit": "not_a_fit",
-  "No response yet": "no_response",
+const OPTIONS: Record<Exclude<CandidateStatus, "shortlisted">, OutcomeOption> = {
+  interview_invited: { status: "interview_invited", label: "Interview invited", hint: "You've asked them to interview.", needsUnlock: true, terminal: false },
+  interviewing: { status: "interviewing", label: "Interviewing", hint: "They're in your interview process.", needsUnlock: true, terminal: false },
+  hired: { status: "hired", label: "Hired", hint: "They accepted an offer.", needsUnlock: true, terminal: true },
+  rejected: { status: "rejected", label: "Rejected", hint: "You decided not to move forward.", needsUnlock: false, terminal: true },
+  not_a_fit: { status: "not_a_fit", label: "Not a fit", hint: "The match wasn't right for this role.", needsUnlock: false, terminal: true },
+  no_response: { status: "no_response", label: "No response", hint: "They didn't reply to you.", needsUnlock: false, terminal: true },
 };
+
+/** Mirrors the transition table enforced by employer-candidate-status. */
+const NEXT: Record<CandidateStatus, Array<keyof typeof OPTIONS>> = {
+  shortlisted: ["interview_invited", "rejected", "not_a_fit"],
+  interview_invited: ["interviewing", "rejected", "not_a_fit", "no_response"],
+  interviewing: ["hired", "rejected", "not_a_fit", "no_response"],
+  hired: [],
+  rejected: [],
+  not_a_fit: [],
+  no_response: [],
+};
+
+const STATUS_NAME: Record<CandidateStatus, string> = {
+  shortlisted: "Shortlisted",
+  interview_invited: "Interview invited",
+  interviewing: "Interviewing",
+  hired: "Hired",
+  rejected: "Rejected",
+  not_a_fit: "Not a fit",
+  no_response: "No response",
+};
+
+const OUTCOME_CSS = `
+.out-opt { display: flex; gap: 12px; align-items: flex-start; padding: 12px; border: 1px solid ${t.line}; border-radius: 10px; cursor: pointer; min-height: 44px; }
+.out-opt[data-checked="true"] { border-color: ${t.indigo}; background: ${t.indigo100}; }
+.out-opt[data-disabled="true"] { cursor: not-allowed; opacity: 0.75; }
+.out-opt:focus-within { outline: 2px solid ${t.indigo}; outline-offset: 2px; }
+.out-link:focus-visible { outline: 2px solid ${t.indigo}; outline-offset: 2px; border-radius: 4px; }
+`;
 
 export default function OutcomeFeedbackPage() {
   const params = useParams<{ id: string }>();
   const searchParams = useSearchParams();
-  const router = useRouter();
-  const { fetchRequirementDetail, updateCandidateStatus } = useEmployerData();
-  const { toast } = useToast();
+  const { fetchRequirementDetail } = useEmployerData();
+  const access = useEmployerAccess();
+  const candidateId = searchParams.get("candidate");
+
   const [requirement, setRequirement] = useState<Requirement | null>(null);
   const [loading, setLoading] = useState(true);
-  const candidateId = searchParams.get("candidate");
-  const candidate = requirement?.candidates.find((c) => c.id === candidateId);
-
-  const [outcome, setOutcome] = useState<(typeof OUTCOMES)[number] | null>(null);
+  const [choice, setChoice] = useState<keyof typeof OPTIONS | "">("");
   const [notes, setNotes] = useState("");
-  const [sent, setSent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [savedStatus, setSavedStatus] = useState<CandidateStatus | null>(null);
 
-  useEffect(() => {
+  const load = useCallback(() => {
     let active = true;
     setLoading(true);
     fetchRequirementDetail(params.id).then((r) => {
-      if (active) {
-        setRequirement(r);
-        setLoading(false);
-      }
+      if (!active) return;
+      setRequirement(r);
+      setLoading(false);
     });
     return () => {
       active = false;
     };
   }, [fetchRequirementDetail, params.id]);
 
-  if (loading) {
+  useEffect(() => load(), [load]);
+
+  const backHref = `/employer/requirements/${params.id}`;
+  const backLink = (
+    <Link href={backHref} className="out-link inline-flex items-center pointer-coarse:min-h-11" style={{ fontFamily: f.sans, fontSize: textSize.md, fontWeight: 600, color: t.indigo }}>
+      Back to shortlist
+    </Link>
+  );
+
+  if (loading) return <PageSkeleton label="Loading candidate" />;
+
+  if (!requirement) {
     return (
-      <Card style={{ textAlign: "center", padding: 48 }}>
-        <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft }}>Loading…</p>
-      </Card>
+      <ErrorRetry title="Couldn't load this requirement" message="We couldn't reach HireStepX, or this requirement no longer exists." onRetry={() => load()}>
+        {backLink}
+      </ErrorRetry>
     );
   }
 
-  if (!requirement || !candidate) {
+  const candidate: Candidate | undefined = requirement.candidates.find((c) => c.id === candidateId);
+  if (!candidate) {
     return (
-      <Card style={{ textAlign: "center", padding: 48 }}>
-        <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft }}>Candidate not found for this requirement.</p>
-      </Card>
+      <EmptyNote title="Candidate not found" action={<LinkCta variant="outline" href={backHref}>Back to shortlist</LinkCta>}>
+        This candidate isn&apos;t on the shortlist for {requirement.title}. Open this page from a candidate on the shortlist.
+      </EmptyNote>
     );
   }
 
-  const handleSubmit = async () => {
-    if (!outcome || !candidate) return;
+  const current: CandidateStatus = candidate.candidateStatus ?? "shortlisted";
+  const name = candidateDisplayName(candidate);
+  const declined = candidateResponseOf(candidate) === "declined";
+  const available = NEXT[current];
+  const selected = choice ? OPTIONS[choice] : null;
+  const blocked = access.suspended || declined;
+
+  const save = async () => {
+    if (!selected) return;
+    setConfirmOpen(false);
     setSubmitting(true);
-    const ok = await updateCandidateStatus(candidate.id, {
-      candidateStatus: OUTCOME_TO_CANDIDATE_STATUS[outcome],
-      note: notes.trim() || undefined,
-    });
+    setError(null);
+    const result = await setCandidateStatus(candidate.id, { candidateStatus: selected.status, note: notes.trim() || undefined });
     setSubmitting(false);
-    if (!ok) {
-      toast("Couldn't save this outcome — try again", "error");
+    if (!result.ok) {
+      setError(failureMessage("status", result, { tier: access.tier, limit: undefined }));
       return;
     }
-    setSent(true);
-    toast("Thanks — this helps us improve future shortlists", "success");
+    setSavedStatus(selected.status);
   };
 
-  if (sent) {
+  const onSubmit = () => {
+    if (!selected || blocked) return;
+    if (selected.terminal) setConfirmOpen(true);
+    else void save();
+  };
+
+  if (savedStatus) {
     return (
-      <div style={{ maxWidth: 480, margin: "60px auto", textAlign: "center" }}>
-        <h1 style={{ fontFamily: f.sans, fontSize: 24, color: t.coal, margin: "0 0 8px" }}>Thanks for the feedback</h1>
-        <p style={{ fontFamily: f.sans, fontSize: 13.5, color: t.inkSoft, marginBottom: 20 }}>
-          It's noted against {candidate.name} for {requirement.title}.
-        </p>
-        <OutlineCta onClick={() => router.push(`/employer/requirements/${requirement.id}`)}>Back to shortlist</OutlineCta>
+      <div style={{ maxWidth: 480, margin: "48px auto", textAlign: "center", padding: "0 16px" }}>
+        <div role="status" aria-live="polite">
+          <h1 style={{ fontFamily: f.sans, fontSize: textSize["2xl"], color: t.coal, margin: "0 0 8px" }}>Outcome saved</h1>
+          <p style={{ fontFamily: f.sans, fontSize: textSize.md, color: t.inkSoft, margin: "0 0 20px", overflowWrap: "anywhere" }}>
+            {name} is now marked as {STATUS_NAME[savedStatus].toLowerCase()} for {requirement.title}. This helps us improve future shortlists.
+          </p>
+        </div>
+        <style>{OUTCOME_CSS}</style>
+        <LinkCta variant="outline" href={backHref}>Back to shortlist</LinkCta>
       </div>
     );
   }
 
   return (
-    <div style={{ maxWidth: 520, margin: "0 auto" }}>
-      <Eyebrow tone="indigo">Outcome feedback</Eyebrow>
-      <h1 style={{ fontFamily: f.sans, fontSize: 26, color: t.coal, margin: "8px 0 4px" }}>
-        How did it go with {candidate.name}?
-      </h1>
-      <p style={{ fontFamily: f.sans, fontSize: 13.5, color: t.inkSoft, marginBottom: 20 }}>{requirement.title}</p>
-      <Card>
-        <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-          <div>
-            <FieldLabel required>Outcome</FieldLabel>
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              {OUTCOMES.map((o) => (
-                <button
-                  key={o}
-                  type="button"
-                  onClick={() => setOutcome(o)}
-                  style={{
-                    padding: "8px 14px",
-                    borderRadius: 999,
-                    border: `1px solid ${outcome === o ? t.indigo : t.lineStrong}`,
-                    background: outcome === o ? t.indigo100 : "transparent",
-                    color: outcome === o ? t.indigoDeep : t.coal,
-                    fontFamily: f.sans,
-                    fontSize: 13,
-                    fontWeight: 600,
-                    cursor: "pointer",
-                  }}
-                >
-                  {o}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div>
-            <FieldLabel>Notes (optional)</FieldLabel>
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              rows={4}
-              placeholder="Anything that would help us improve future shortlists?"
-              style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: `1px solid ${t.line}`, fontFamily: f.sans, fontSize: 14, resize: "vertical", boxSizing: "border-box" }}
-            />
-          </div>
-          <PrimaryCta full disabled={!outcome || submitting} onClick={handleSubmit}>
-            {submitting ? "Submitting…" : "Submit feedback"}
-          </PrimaryCta>
+    <div style={{ maxWidth: 520, margin: "0 auto", minWidth: 0 }}>
+      <style>{OUTCOME_CSS}</style>
+      {access.suspended && (
+        <div style={{ marginBottom: 16 }}>
+          <SuspendedBanner />
         </div>
+      )}
+      <Eyebrow tone="indigo">Outcome feedback</Eyebrow>
+      <h1 style={{ fontFamily: f.sans, fontSize: "clamp(22px, 6vw, 26px)", color: t.coal, margin: "8px 0 4px", overflowWrap: "anywhere" }}>How did it go with {name}?</h1>
+      <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", margin: "0 0 20px" }}>
+        <p style={{ fontFamily: f.sans, fontSize: textSize.md, color: t.inkSoft, margin: 0, overflowWrap: "anywhere" }}>{requirement.title}</p>
+        {!candidate.unlocked && <IdentityHiddenBadge compact />}
+      </div>
+
+      <Card aria-label="Record an outcome">
+        {declined && (
+          <div style={{ marginBottom: 16 }}>
+            <InlineNotice tone="warning" title="This candidate declined">
+              They chose not to be contacted for this role, so their status can&apos;t be changed any further.
+            </InlineNotice>
+          </div>
+        )}
+        {!declined && available.length === 0 ? (
+          <InlineNotice tone="info" title={`Already ${STATUS_NAME[current].toLowerCase()}`}>
+            {name} is in a final status, so there is no further outcome to record.
+          </InlineNotice>
+        ) : (
+          !declined && (
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                onSubmit();
+              }}
+              style={{ display: "flex", flexDirection: "column", gap: 18 }}
+            >
+              <p style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.inkSoft, margin: 0 }}>
+                Current status: <strong style={{ color: t.coal }}>{STATUS_NAME[current]}</strong>
+              </p>
+              <fieldset style={{ border: 0, margin: 0, padding: 0, minWidth: 0 }}>
+                <legend style={{ fontFamily: f.sans, fontSize: textSize.base, fontWeight: 600, color: t.coal, marginBottom: 8, padding: 0 }}>
+                  Outcome <span aria-hidden="true">*</span>
+                  <span className="sr-only"> (required)</span>
+                </legend>
+                <RadioGroup value={choice} onValueChange={(v) => { setChoice(v as keyof typeof OPTIONS); setError(null); }} required aria-required="true" disabled={blocked}>
+                  {available.map((key) => {
+                    const o = OPTIONS[key];
+                    const locked = o.needsUnlock && !candidate.unlocked;
+                    const id = `outcome-${key}`;
+                    return (
+                      <label key={key} htmlFor={id} className="out-opt" data-checked={choice === key} data-disabled={locked || blocked}>
+                        <RadioGroupItem id={id} value={key} disabled={locked || blocked} aria-describedby={`${id}-hint`} />
+                        <span style={{ display: "grid", gap: 2, minWidth: 0 }}>
+                          <span style={{ fontFamily: f.sans, fontSize: textSize.md, fontWeight: 600, color: t.coal }}>{o.label}</span>
+                          <span id={`${id}-hint`} style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.inkSoft }}>
+                            {locked ? "Unlock this candidate from the shortlist first." : o.hint}
+                          </span>
+                        </span>
+                      </label>
+                    );
+                  })}
+                </RadioGroup>
+              </fieldset>
+              <div style={{ display: "grid", gap: 8 }}>
+                <Label htmlFor="outcome-notes">Notes (optional)</Label>
+                <Textarea
+                  id="outcome-notes"
+                  rows={4}
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  disabled={blocked}
+                  placeholder="Anything that would help us improve future shortlists?"
+                />
+              </div>
+              <div aria-live="polite">
+                {error && (
+                  <InlineNotice tone="error" title="Couldn't save this outcome" live={false}>
+                    {error}
+                  </InlineNotice>
+                )}
+              </div>
+              <PrimaryCta full disabled={!selected || submitting || blocked} loading={submitting} onClick={onSubmit}>
+                {submitting ? "Saving…" : "Save outcome"}
+              </PrimaryCta>
+            </form>
+          )
+        )}
       </Card>
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Mark {name} as {selected ? selected.label.toLowerCase() : "this outcome"}?</AlertDialogTitle>
+            <AlertDialogDescription>This is a final status. It can&apos;t be changed afterwards.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => void save()}>Confirm</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

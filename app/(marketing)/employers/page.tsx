@@ -65,8 +65,8 @@ export default function EmployersLandingPage() {
       <section style={{ maxWidth: 960, margin: "0 auto", padding: "0 24px 96px", display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 24 }}>
         {[
           { title: "AI-matched, not keyword-matched", body: "Candidates are ranked on interview-performance signal — coherence, STAR structure, technical depth — scored across their real practice sessions." },
-          { title: "Pay only to unlock a contact", body: "Browse match scores, skill breakdowns, and resume summaries for free. Unlock a whole batch of 10 shortlisted candidates for ₹299, or a single candidate for ₹59 — no subscription, no upfront commitment." },
-          { title: "Fair to candidates too", body: "Every shortlist runs through anti-gaming and fairness checks, and candidates consent to being surfaced before you ever see their name." },
+          { title: "Pay only to unlock a contact", body: "Browse match scores, skill breakdowns, and name-redacted resume summaries for free. Unlock a whole batch of 10 shortlisted candidates for ₹299, or a single candidate for ₹59 — no subscription, no upfront commitment." },
+          { title: "Fair to candidates too", body: "Candidates control whether employers can discover them, and can block or report an employer. Until you unlock a candidate you see practice evidence under \"Candidate #…\", not their name or contact details. Employers self-serve sign up and are placed in verification tiers." },
         ].map((f2) => (
           <div key={f2.title} style={{ background: t.white, border: `1px solid ${t.line}`, borderRadius: 16, padding: 24 }}>
             <h3 style={{ fontFamily: f.sans, fontSize: 15, fontWeight: 700, color: t.coal, margin: "0 0 8px" }}>{f2.title}</h3>

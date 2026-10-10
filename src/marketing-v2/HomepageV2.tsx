@@ -2788,7 +2788,7 @@ export function FAQV2() {
     },
     {
       q: "Will my current company know I'm practicing?",
-      a: "No. HireStepX is completely private. We don't connect to LinkedIn, your employer, or your target company. Nothing you practice here is visible to anyone but you.",
+      a: "No. We don't connect to LinkedIn, your current employer, or your target company, and we never tell them you practise here. If employer discovery is on, employers on HireStepX can find your practice evidence, but your name and contact stay hidden until an employer unlocks your profile. You can turn this off any time in Settings.",
     },
     {
       q: "How long does a session take?",
@@ -2804,7 +2804,7 @@ export function FAQV2() {
     },
     {
       q: "Do you share my data with my employer or target company?",
-      a: "Never. Your resume, voice, and practice answers are not shared with your current employer, your target company, or any third party. Encrypted end to end. DPDPA 2023 compliant.",
+      a: "We don't sell your data or share it with advertisers or third parties. Employers on HireStepX can discover your practice evidence with your name and contact hidden until they unlock your profile, and you control that in Settings. Your audio is never stored. Built to align with the DPDP Act 2023.",
     },
     {
       q: "How is this different from just asking ChatGPT?",
@@ -2938,11 +2938,11 @@ function StructuredData() {
     ["What exactly is free? Do I need a card to start?", "2 sessions completely free: no card required, just a free account (email or Google, 30 seconds). You get the full voice interview and the full scored report both times. After that, ₹9 per session with no expiry, or ₹39 for a Sprint Pack of 5 sessions valid for 30 days. Both are one-time purchases — buy another pack whenever you need more, nothing auto-renews."],
     ["Will the AI understand my Indian English accent?", "Yes, built specifically for Indian English. Our voice model is trained on Indian speech patterns, including regional accents. If you can speak to a real interviewer, you can speak to HireStepX."],
     ["Is ₹9 per session really it? What's the catch?", "That's the real price. ₹9 per session with no expiry: buy one, use it whenever. Or get the Sprint Pack: 5 sessions for ₹39, valid for 30 days, a one-time purchase with no auto-renewal. Built on Indian infrastructure at Indian costs. No hidden charges either way."],
-    ["Will my current company know I'm practicing?", "No. HireStepX is completely private. We don't connect to LinkedIn, your employer, or your target company. Nothing you practice here is visible to anyone but you."],
+    ["Will my current company know I'm practicing?", "No. We don't connect to LinkedIn, your current employer, or your target company, and we never tell them you practise here. If employer discovery is on, employers on HireStepX can find your practice evidence, but your name and contact stay hidden until an employer unlocks your profile. You can turn this off any time in Settings."],
     ["How long does a session take?", "18 minutes on average: one focused interview topic, real-time scoring, full report ready immediately after. You don't need an afternoon. You need 20 minutes and headphones."],
     ["Does this work on mobile?", "Yes. Works on any modern Chrome or Safari: phone, tablet, laptop. Optimised for Realme and Redmi-class Android on Indian 4G. No downloads, no app installs."],
     ["Do plans auto-renew? What happens when my Sprint Pack runs out?", "No. Every purchase, including the Sprint Pack, is one-time — we never store your card for recurring billing. The Sprint Pack (₹39 for 5 sessions) stays active for 30 days; if you don't use all the sessions, they expire with no auto-charge for a new pack. Buy another any time you need more."],
-    ["Do you share my data with my employer or target company?", "Never. Your resume, voice, and practice answers are not shared with your current employer, your target company, or any third party. Encrypted end to end. DPDPA 2023 compliant."],
+    ["Do you share my data with my employer or target company?", "We don't sell your data or share it with advertisers or third parties. Employers on HireStepX can discover your practice evidence with your name and contact hidden until they unlock your profile, and you control that in Settings. Your audio is never stored. Built to align with the DPDP Act 2023."],
     ["How is this different from just asking ChatGPT?", "ChatGPT agrees with you. HireStepX disagrees, constructively. It scores your answer on the STAR framework, names which beat is weak, and gives you a coached model answer. You also speak out loud (voice in and out) instead of typing, so you practise the actual skill. ChatGPT has no Indian company rubrics, no role-specific question bank, and no score you can track across sessions."],
   ];
   const org = {
@@ -3436,7 +3436,7 @@ export function SecurityComplianceV2() {
         </MotionReveal>
         <MotionReveal delay={100} style={{ textAlign: "center", margin: "0 auto 64px", maxWidth: 480 }}>
           <p style={{ fontSize: 16, lineHeight: 1.7, color: "#4A4540", margin: 0, fontFamily: fonts.sans }}>
-            Built for India&rsquo;s regulatory landscape. Every piece of data you share is encrypted, private, and deletable on demand.
+            Built for India&rsquo;s regulatory landscape. Your data is encrypted in transit, you decide whether employers can discover your practice evidence, and you can delete it on demand.
           </p>
         </MotionReveal>
 

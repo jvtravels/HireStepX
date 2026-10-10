@@ -1,172 +1,98 @@
 "use client";
 
-import { useState } from "react";
-import { useMaxWidth } from "@/hooks/useMaxWidth";
-import { useEmployerData } from "@/employer/EmployerDataContext";
+import { useEmployerData, type EmployerTier } from "@/employer/EmployerDataContext";
 import { tokens as t, fonts as f } from "@/auth/_tokens";
-import { FieldLabel, HelpText, PrimaryCta, EmployerIcon } from "@/employer/_atoms";
+import { Pill } from "@/employer/_atoms";
+import { PageSkeleton, ErrorPanel } from "@/employer/_consoleParts";
+import CompanyProfileForm from "@/employer/CompanyProfileForm";
 import { PageHeader, FlatSection, SoundsSection } from "@/settingsSections";
-import {
-  LOGO_MAX_MB,
-  LOGO_ACCEPTED_TYPES,
-  LOGO_CONTENT_TYPE_ALLOWLIST,
-  readFileAsDataUrl,
-  isPlausibleWebsite,
-} from "@/employer/_companyProfileHelpers";
+
+const TIER_LABEL: Record<EmployerTier, string> = {
+  basic: "Unverified",
+  email_verified: "Work email confirmed",
+  verified: "Verified company",
+};
+
+const TIER_BLURB: Record<EmployerTier, string> = {
+  basic: "Sign in with a confirmed work email (not Gmail, Yahoo or similar) to raise your limits. A work email on the same domain as your website verifies your company fully.",
+  email_verified: "Your work email is confirmed. Use a work email on the same domain as your company website to verify your company fully and raise your limits again.",
+  verified: "Your email domain matches your company website. You have the highest limits.",
+};
+
+function LimitRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div style={{ display: "flex", justifyContent: "space-between", gap: 16, padding: "10px 0", borderTop: `1px solid ${t.line}` }}>
+      <dt style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft, margin: 0 }}>{label}</dt>
+      <dd style={{ fontFamily: f.sans, fontSize: 14, fontWeight: 600, color: t.coal, margin: 0 }}>{value}</dd>
+    </div>
+  );
+}
 
 /* /employer/settings — edit the company profile submitted during
-   onboarding. Saving re-runs it through the same POST /api/employer-profile
-   upsert onboarding uses, which approves instantly — there's no review wait
-   and no risk of losing console access from a routine edit. */
+   onboarding, and see the account's trust tier and the limits that come with
+   it. Saving re-runs the same POST /api/employer-profile upsert onboarding
+   uses, which re-derives the tier on the server. Billing/GSTIN fields are
+   deliberately absent: no server endpoint accepts them yet. */
 export default function EmployerSettingsPage() {
-  const { companyName: savedName, companyWebsite: savedWebsite, companyLogoUrl, submitCompanyProfile } = useEmployerData();
-  const phone = useMaxWidth(768);
-  const [companyName, setCompanyName] = useState(savedName);
-  const [website, setWebsite] = useState(savedWebsite);
-  const [websiteTouched, setWebsiteTouched] = useState(false);
-  const [logoDataUrl, setLogoDataUrl] = useState<string | null>(null);
-  const [logoError, setLogoError] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
-  const [saved, setSaved] = useState(false);
+  const {
+    companyName, companyWebsite, companyLogoUrl, companyStatus, companyStatusLoading, companyStatusError,
+    refreshCompanyStatus, verificationTier, limits, suspended,
+  } = useEmployerData();
 
-  const nameValid = companyName.trim().length > 1;
-  const websiteValid = isPlausibleWebsite(website);
-  const canSave = nameValid && websiteValid && !saving;
-  const websiteFormatError = websiteTouched && website.trim().length > 0 && !websiteValid;
-
-  const handleLogoChange = async (file: File | undefined) => {
-    setLogoError(null);
-    if (!file) return;
-    if (!LOGO_CONTENT_TYPE_ALLOWLIST.has(file.type)) {
-      setLogoError("Use a PNG, JPG, or WEBP image.");
-      return;
-    }
-    if (file.size > LOGO_MAX_MB * 1_000_000) {
-      setLogoError(`Keep it under ${LOGO_MAX_MB} MB.`);
-      return;
-    }
-    setLogoDataUrl(await readFileAsDataUrl(file));
-  };
-
-  const handleSave = async () => {
-    setSaveError(null);
-    setSaved(false);
-    setSaving(true);
-    const [logoContentType, logoBase64] = logoDataUrl ? logoDataUrl.split(",") : [undefined, undefined];
-    const ok = await submitCompanyProfile({
-      companyName,
-      website,
-      logoBase64,
-      logoContentType: logoContentType?.match(/^data:(.+);base64$/)?.[1],
-    });
-    setSaving(false);
-    if (ok) {
-      setSaved(true);
-    } else {
-      setSaveError("Couldn't save your changes — please try again.");
-    }
-  };
+  if (companyStatusLoading) return <PageSkeleton label="Loading settings" />;
+  if (companyStatusError && companyStatus === "none") {
+    return (
+      <ErrorPanel
+        title="We couldn't load your settings"
+        message="Check your connection and try again."
+        onRetry={() => { void refreshCompanyStatus(); }}
+      />
+    );
+  }
 
   return (
     <div style={{ width: "100%" }}>
       <div style={{ background: t.white, border: `1px solid ${t.line}`, borderRadius: 16, overflow: "hidden" }}>
-        <PageHeader title="Settings" desc="Update your company profile." />
+        <PageHeader title="Settings" desc="Update your company profile and review your account limits." />
 
         <FlatSection title="Company profile">
-          <div style={{ display: "flex", flexDirection: "column", gap: 18, maxWidth: 480 }}>
-            <div>
-              <FieldLabel required>Company name</FieldLabel>
-              <input
-                value={companyName}
-                onChange={(e) => setCompanyName(e.target.value)}
-                style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: `1px solid ${t.line}`, fontFamily: f.sans, fontSize: phone ? 16 : 14, boxSizing: "border-box" }}
-              />
-            </div>
-            <div>
-              <FieldLabel required>Company website</FieldLabel>
-              <input
-                value={website}
-                onChange={(e) => setWebsite(e.target.value)}
-                onBlur={() => setWebsiteTouched(true)}
-                placeholder="https://acme.com"
-                style={{
-                  width: "100%",
-                  padding: "12px 14px",
-                  borderRadius: 10,
-                  border: `1px solid ${websiteFormatError ? t.error : t.line}`,
-                  fontFamily: f.sans,
-                  fontSize: phone ? 16 : 14,
-                  boxSizing: "border-box",
-                }}
-              />
-              {websiteFormatError && (
-                <HelpText tone="error">Include the full address, starting with https:// — e.g. https://acme.com</HelpText>
-              )}
-            </div>
-            <div>
-              <FieldLabel>Company logo (optional)</FieldLabel>
-              <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                <div
-                  style={{
-                    width: 56,
-                    height: 56,
-                    borderRadius: 12,
-                    border: `1px solid ${t.line}`,
-                    background: t.creamSoft,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    overflow: "hidden",
-                    flexShrink: 0,
-                  }}
-                >
-                  {logoDataUrl || companyLogoUrl ? (
-                    <img src={logoDataUrl ?? companyLogoUrl ?? undefined} alt="Company logo" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                  ) : (
-                    <span style={{ color: t.inkFaint }}><EmployerIcon.Building /></span>
-                  )}
-                </div>
-                <label
-                  htmlFor="company-logo-input"
-                  style={{
-                    padding: "9px 16px",
-                    borderRadius: 10,
-                    border: `1px solid ${t.lineStrong}`,
-                    fontFamily: f.sans,
-                    fontSize: 13,
-                    fontWeight: 600,
-                    color: t.coal,
-                    cursor: "pointer",
-                  }}
-                >
-                  {logoDataUrl || companyLogoUrl ? "Change logo" : "Upload logo"}
-                  <input
-                    id="company-logo-input"
-                    type="file"
-                    accept={LOGO_ACCEPTED_TYPES}
-                    onChange={(e) => handleLogoChange(e.target.files?.[0])}
-                    style={{ position: "absolute", width: 1, height: 1, padding: 0, margin: -1, overflow: "hidden", clip: "rect(0,0,0,0)", whiteSpace: "nowrap", border: 0 }}
-                  />
-                </label>
-              </div>
-              {logoError ? (
-                <HelpText tone="error">{logoError}</HelpText>
-              ) : (
-                <HelpText>PNG, JPG, or WEBP · up to {LOGO_MAX_MB} MB.</HelpText>
-              )}
-            </div>
-
-            {saveError && (
-              <p style={{ fontFamily: f.sans, fontSize: 13, color: t.error, margin: 0 }}>{saveError}</p>
+          <div style={{ maxWidth: 480 }}>
+            {suspended && (
+              <p role="status" style={{ fontFamily: f.sans, fontSize: 13, color: t.errorInk, margin: "0 0 16px", lineHeight: 1.5 }}>
+                Your account is suspended, so changes can&apos;t be saved right now.
+              </p>
             )}
-            {saved && (
-              <p style={{ fontFamily: f.sans, fontSize: 13, color: t.success, margin: 0 }}>Saved.</p>
-            )}
+            {/* Keyed so the form re-seeds when the profile arrives or a save
+                changes what the server holds, instead of going stale. */}
+            <CompanyProfileForm
+              key={`${companyName}|${companyWebsite}`}
+              idPrefix="settings"
+              initialName={companyName}
+              initialWebsite={companyWebsite}
+              initialLogoUrl={companyLogoUrl}
+              submitLabel="Save changes"
+              busyLabel="Saving…"
+            />
+          </div>
+        </FlatSection>
 
-            <PrimaryCta full disabled={!canSave} onClick={handleSave}>
-              {saving ? "Saving…" : "Save changes"}
-            </PrimaryCta>
+        <FlatSection title="Account verification">
+          <div style={{ maxWidth: 480 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 8 }}>
+              <Pill tone={suspended ? "error" : verificationTier === "basic" ? "warning" : "success"}>
+                {suspended ? "Suspended" : TIER_LABEL[verificationTier]}
+              </Pill>
+            </div>
+            <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft, lineHeight: 1.6, margin: "0 0 16px" }}>
+              {suspended
+                ? "Unlocking, messaging and posting are turned off while your account is suspended. Contact support to restore access."
+                : TIER_BLURB[verificationTier]}
+            </p>
+            <dl style={{ margin: 0, borderBottom: `1px solid ${t.line}` }}>
+              <LimitRow label="Candidate unlocks per day" value={String(limits.unlocksPerDay)} />
+              <LimitRow label="Open jobs at a time" value={String(limits.openRequirements)} />
+              <LimitRow label="Re-matches per hour" value={String(limits.rematchesPerHour)} />
+            </dl>
           </div>
         </FlatSection>
 

@@ -4,6 +4,7 @@
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { supabaseUrl } from "./_shared";
+import { mustRetainEmployerFinancials } from "./_delete-account-helpers";
 
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const CRON_SECRET = process.env.CRON_SECRET || "";
@@ -51,6 +52,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     for (const { id } of rows) {
       const encodedId = encodeURIComponent(id);
       try {
+        // Employer payment/order rows are the tax ledger and cascade from the
+        // auth user, so an employer that ever paid is never hard-deleted.
+        const countFor = async (table: string): Promise<number> => {
+          const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?employer_id=eq.${encodedId}&select=employer_id&limit=1`, { headers });
+          if (!r.ok) throw new Error(`${table} lookup failed (${r.status})`);
+          return ((await r.json()) as unknown[]).length;
+        };
+        const [payments, orders] = await Promise.all([countFor("employer_unlock_payments"), countFor("employer_unlock_orders")]);
+        if (mustRetainEmployerFinancials({ payments, orders })) continue;
         // service_usage.user_id is declared `on delete set null` in
         // supabase-schema.sql, but the live constraint predates that and
         // still blocks deletion (23503 on profiles via

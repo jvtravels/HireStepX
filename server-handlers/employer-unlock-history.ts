@@ -4,10 +4,13 @@
  * Returns every completed unlock purchase (single or batch) for the caller's
  * employer account, newest first — backs the "Unlock history" panel on the
  * opportunity detail page. Rows are written by
- * employer-verify-unlock-payment.ts; this is the first read path against
- * employer_unlock_payments. Not scoped to one requirement server-side (the
- * table has no requirement_id column) — the client filters by matchIds
- * against the requirement's own candidate list.
+ * the shared unlock fulfilment (_unlock-fulfillment.ts); this is the first
+ * read path against employer_unlock_payments. Not scoped to one requirement
+ * server-side — the client filters by matchIds against the requirement's own
+ * candidate list.
+ *
+ * Each purchase also carries invoiceNo, refundedAt, orderId/orderStatus and the
+ * employer's gstin/billingName (all nullable, additive).
  */
 
 export const config = { runtime: "edge" };
@@ -52,10 +55,20 @@ export default async function handler(req: Request): Promise<Response> {
   }
 
   try {
-    const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/employer_unlock_payments?employer_id=eq.${encodeURIComponent(auth.userId)}&select=id,match_id,match_ids,amount,currency,created_at&order=created_at.desc&limit=100`,
+    const baseUrl = `${SUPABASE_URL}/rest/v1/employer_unlock_payments?employer_id=eq.${encodeURIComponent(auth.userId)}`;
+    // Invoice/refund columns arrive with migration 0032; fall back to the
+    // original column set so the list still loads on a database that hasn't
+    // applied it yet.
+    let res = await fetch(
+      `${baseUrl}&select=id,match_id,match_ids,amount,currency,created_at,razorpay_order_id,invoice_no,refunded_at&order=created_at.desc&limit=100`,
       { headers: serviceHeaders() },
     );
+    if (!res.ok) {
+      res = await fetch(
+        `${baseUrl}&select=id,match_id,match_ids,amount,currency,created_at&order=created_at.desc&limit=100`,
+        { headers: serviceHeaders() },
+      );
+    }
     if (!res.ok) {
       // Include the PostgREST body: a missing column (unapplied migration)
       // otherwise logs as a bare status code with no hint of the cause.
@@ -69,6 +82,9 @@ export default async function handler(req: Request): Promise<Response> {
       amount: number;
       currency: string;
       created_at: string;
+      razorpay_order_id?: string | null;
+      invoice_no?: string | null;
+      refunded_at?: string | null;
     }>;
 
     // Snapshotted at unlock time (supabase-migrations/0026) so a candidate
@@ -106,6 +122,36 @@ export default async function handler(req: Request): Promise<Response> {
       }
     }
 
+    // Order status + the employer's GST billing identity are additive display
+    // data (invoice view); like the snapshot lookup above they soft-fail.
+    const statusByOrderId = new Map<string, string>();
+    const orderIds = Array.from(new Set(rows.map((r) => r.razorpay_order_id).filter((v): v is string => !!v)));
+    if (orderIds.length > 0) {
+      try {
+        const ordRes = await fetch(
+          `${SUPABASE_URL}/rest/v1/employer_unlock_orders?razorpay_order_id=in.(${orderIds.map(encodeURIComponent).join(",")})&select=razorpay_order_id,status`,
+          { headers: serviceHeaders() },
+        );
+        const ordRows = ordRes.ok ? await ordRes.json().catch(() => null) : null;
+        if (Array.isArray(ordRows)) {
+          for (const o of ordRows as Array<{ razorpay_order_id: string; status: string }>) statusByOrderId.set(o.razorpay_order_id, o.status);
+        }
+      } catch { /* status is optional */ }
+    }
+    let gstin: string | null = null;
+    let billingName: string | null = null;
+    try {
+      const empRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/employers?id=eq.${encodeURIComponent(auth.userId)}&select=gstin,billing_name`,
+        { headers: serviceHeaders() },
+      );
+      const empRows = empRes.ok ? await empRes.json().catch(() => null) : null;
+      if (Array.isArray(empRows) && empRows[0]) {
+        gstin = empRows[0].gstin ?? null;
+        billingName = empRows[0].billing_name ?? null;
+      }
+    } catch { /* billing identity is optional */ }
+
     const purchases = rows.map((r) => {
       const matchIds = r.match_id ? [r.match_id] : r.match_ids || [];
       return {
@@ -114,6 +160,12 @@ export default async function handler(req: Request): Promise<Response> {
         amount: r.amount,
         currency: r.currency,
         createdAt: r.created_at,
+        invoiceNo: r.invoice_no ?? null,
+        refundedAt: r.refunded_at ?? null,
+        orderId: r.razorpay_order_id ?? null,
+        orderStatus: (r.razorpay_order_id && statusByOrderId.get(r.razorpay_order_id)) || null,
+        gstin,
+        billingName,
         candidates: matchIds.map((id) => {
           const snapshot = candidateByMatchId.get(id);
           return { matchId: id, name: snapshot?.name || null, email: snapshot?.email || null };

@@ -179,7 +179,7 @@ export function orderedList(items: string[]): string {
 /** Standard footer — compliance + unsubscribe. Defaults to hirestepx.com/settings
     for manage and /settings#notifications for unsubscribe (CAN-SPAM requires
     a functional one-click mechanism on all commercial emails). */
-export function footer(opts: { manageUrl?: string; unsubUrl?: string } = {}): string {
+function footer(opts: { manageUrl?: string; unsubUrl?: string } = {}): string {
   const manage = link("Manage notifications", opts.manageUrl ?? "https://hirestepx.com/settings");
   const unsub = link("Unsubscribe", opts.unsubUrl ?? "https://hirestepx.com/settings#notifications");
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:44px;border-top:1px solid ${C.line};">
@@ -201,6 +201,10 @@ function preheader(text: string): string {
 export function emailShell(opts: {
   preview: string;
   body: string;
+  /** Overrides for the compliance footer. The shell is the footer's only
+      owner (the builder is module-private), so a body can never render a
+      second copy. */
+  footer?: { manageUrl?: string; unsubUrl?: string };
 }): string {
   return `<!DOCTYPE html>
 <html lang="en">
@@ -226,7 +230,7 @@ ${preheader(escapeHtml(opts.preview))}
           <span style="font-family:${SERIF};font-size:18px;font-weight:500;color:${C.coal};letter-spacing:-0.01em;vertical-align:middle;">HireStepX</span>
         </div>
         ${opts.body}
-        ${footer()}
+        ${footer(opts.footer)}
       </td></tr>
     </table>
   </td></tr>

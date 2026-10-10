@@ -1,8 +1,9 @@
 import React from "react";
 import { createPortal } from "react-dom";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { LoaderCircleIcon, ClipboardListIcon, MessageSquareIcon, CheckCircle2Icon, ChevronDownIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { tokens as t, fonts as f, shadows, textSize } from "../auth/_tokens";
 import type { RequirementStage, CandidateStatus } from "./mockData";
@@ -55,7 +56,7 @@ function optionStyle(selected: boolean): React.CSSProperties {
     fontSize: 13,
     cursor: "pointer",
     background: selected ? t.creamSoft : "transparent",
-    color: selected ? t.coal : t.inkSoft,
+    color: selected ? t.coal : t.neutralInk,
   };
 }
 
@@ -72,7 +73,7 @@ export function EmployerWordmark() {
 }
 
 export function Eyebrow({ children, tone = "ink" }: { children: React.ReactNode; tone?: "ink" | "copper" | "indigo" | "error" }) {
-  const color = tone === "copper" ? t.copper : tone === "indigo" ? t.indigo : tone === "error" ? t.error : t.inkSoft;
+  const color = tone === "copper" ? t.copperDark : tone === "indigo" ? t.indigoDeep : tone === "error" ? t.errorInk : t.neutralInk;
   return (
     <div style={{ fontFamily: f.mono, fontSize: 12, letterSpacing: 1.2, textTransform: "uppercase", color, fontWeight: 600 }}>
       {children}
@@ -82,13 +83,16 @@ export function Eyebrow({ children, tone = "ink" }: { children: React.ReactNode;
 
 type PillTone = "indigo" | "copper" | "success" | "neutral" | "warning" | "error" | "violet";
 
+/* fg values are the *Ink shades (AA ≥4.5:1 on their tint) — the base status
+   hues (t.success / t.warning / t.copper / t.inkSoft) measure 3.5–4.3:1 on
+   these backgrounds, which failed WCAG 1.4.3 for 12px pill text. */
 const pillPalette: Record<PillTone, { bg: string; fg: string }> = {
   indigo: { bg: t.indigo100, fg: t.indigoDeep },
-  copper: { bg: t.copper100, fg: t.copper },
-  success: { bg: t.success100, fg: t.success },
-  warning: { bg: t.warning100, fg: t.warning },
-  error: { bg: t.error100, fg: t.error },
-  neutral: { bg: t.creamSoft, fg: t.inkSoft },
+  copper: { bg: t.copper100, fg: t.copperDark },
+  success: { bg: t.success100, fg: t.successInk },
+  warning: { bg: t.warning100, fg: t.warningInk },
+  error: { bg: t.error100, fg: t.errorInk },
+  neutral: { bg: t.creamSoft, fg: t.neutralInk },
   violet: { bg: t.violet100, fg: t.violet },
 };
 
@@ -125,10 +129,13 @@ export function Pill({ children, tone = "neutral", filled = false }: { children:
    relevance — so 20 is "worth a look," not "strong." */
 const FAIR_MATCH_THRESHOLD = 20;
 
-export function ScoreChip({ score }: { score: number }) {
+export function ScoreChip({ score, label = "Match score" }: { score: number; label?: string }) {
   const tone: PillTone = score >= STRONG_MATCH_THRESHOLD ? "success" : score >= FAIR_MATCH_THRESHOLD ? "copper" : "neutral";
+  const band = score >= STRONG_MATCH_THRESHOLD ? "strong" : score >= FAIR_MATCH_THRESHOLD ? "fair" : "low";
   return (
     <div
+      role="img"
+      aria-label={`${label}: ${score} out of 100, ${band}`}
       style={{
         width: 44,
         height: 32,
@@ -157,6 +164,8 @@ export function Card({
   border = `1px solid ${t.line}`,
   className,
   style,
+  "aria-label": ariaLabel,
+  "aria-labelledby": ariaLabelledBy,
 }: {
   children: React.ReactNode;
   pad?: number;
@@ -165,9 +174,13 @@ export function Card({
   border?: string;
   className?: string;
   style?: React.CSSProperties;
+  /** Naming a Card turns its <section> into a region landmark — only do so
+   *  for cards a screen-reader user would want to jump to. */
+  "aria-label"?: string;
+  "aria-labelledby"?: string;
 }) {
   return (
-    <section className={className} style={{ background, border, borderRadius: radius, padding: pad, boxShadow: shadows.card, ...style }}>
+    <section className={className} aria-label={ariaLabel} aria-labelledby={ariaLabelledBy} style={{ background, border, borderRadius: radius, padding: pad, boxShadow: shadows.card, ...style }}>
       {children}
     </section>
   );
@@ -176,24 +189,39 @@ export function Card({
 /* PrimaryCta/OutlineCta wrap the shared shadcn Button — same component,
    sizing, and radius as the rest of the app (e.g. Jobs page's "Post a
    requirement" / outline filter buttons) so employer CTAs read as one
-   product, not a bespoke button system. */
+   product, not a bespoke button system.
+
+   Touch targets: desktop keeps the compact 36px height; coarse pointers
+   (phones/tablets) get 44px via Tailwind's `pointer-coarse:` variant so we
+   meet the 44px guideline without bloating the desktop toolbar density.
+   `loading` sets aria-busy and disables the button so a double-tap can't
+   fire the action twice; `ariaLabel`/`title` cover icon-only or truncated
+   labels. */
+type CtaCommon = {
+  children: React.ReactNode;
+  onClick?: () => void;
+  icon?: React.ReactNode;
+  size?: "sm" | "md";
+  full?: boolean;
+  disabled?: boolean;
+  loading?: boolean;
+  ariaLabel?: string;
+  title?: string;
+};
+
 export function PrimaryCta({
   children,
   onClick,
   icon,
   size = "md",
   disabled = false,
+  loading = false,
   full = false,
   type = "button",
-}: {
-  children: React.ReactNode;
-  onClick?: () => void;
-  icon?: React.ReactNode;
-  size?: "sm" | "md";
-  disabled?: boolean;
-  full?: boolean;
-  type?: "button" | "submit";
-}) {
+  ariaLabel,
+  title,
+}: CtaCommon & { type?: "button" | "submit" }) {
+  const isDisabled = disabled || loading;
   // Full-width CTAs (settings/outcome save bars) keep their own sizing —
   // only the shape (radius/shadow) needs to track the shared Button.
   if (full) {
@@ -202,20 +230,16 @@ export function PrimaryCta({
         type={type}
         variant="default"
         onClick={onClick}
-        disabled={disabled}
+        disabled={isDisabled}
+        aria-label={ariaLabel}
+        aria-busy={loading || undefined}
+        title={title}
+        className={cn("w-full gap-2", size === "sm" ? "h-9 px-[18px] pointer-coarse:h-11" : "h-11 px-5")}
         style={{
-          display: "inline-flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 8,
-          width: "100%",
-          height: size === "sm" ? 36 : 44,
-          padding: size === "sm" ? "0 18px" : "0 20px",
-          borderRadius: 8,
           fontFamily: f.sans,
           fontSize: size === "sm" ? 13 : 15,
           fontWeight: 600,
-          boxShadow: disabled ? "none" : `0px 2px 4px color-mix(in srgb, ${t.indigo} 20%, transparent)`,
+          boxShadow: isDisabled ? "none" : `0px 2px 4px color-mix(in srgb, ${t.indigo} 20%, transparent)`,
         }}
       >
         {children}
@@ -232,9 +256,12 @@ export function PrimaryCta({
       type={type}
       variant="default"
       size="lg"
-      className={size === "sm" ? "gap-2 px-4.5" : "gap-2 px-4"}
+      className={cn("gap-2 pointer-coarse:h-11", size === "sm" ? "px-4.5" : "px-4")}
       onClick={onClick}
-      disabled={disabled}
+      disabled={isDisabled}
+      aria-label={ariaLabel}
+      aria-busy={loading || undefined}
+      title={title}
     >
       {children}
       {icon}
@@ -249,28 +276,26 @@ export function OutlineCta({
   size = "md",
   full = false,
   tone = "neutral",
-}: {
-  children: React.ReactNode;
-  onClick?: () => void;
-  icon?: React.ReactNode;
-  size?: "sm" | "md";
-  full?: boolean;
-  tone?: "neutral" | "indigo";
-}) {
+  disabled = false,
+  loading = false,
+  ariaLabel,
+  title,
+}: CtaCommon & { tone?: "neutral" | "indigo" }) {
   return (
     <Button
       type="button"
       variant="outline"
       onClick={onClick}
+      disabled={disabled || loading}
+      aria-label={ariaLabel}
+      aria-busy={loading || undefined}
+      title={title}
+      className={cn(
+        "gap-2",
+        full && "w-full",
+        size === "sm" ? "h-9 px-4 pointer-coarse:h-11" : "h-11 px-5",
+      )}
       style={{
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 8,
-        width: full ? "100%" : undefined,
-        height: size === "sm" ? 36 : 44,
-        padding: size === "sm" ? "0 16px" : "0 20px",
-        borderRadius: 8,
         fontFamily: f.sans,
         fontSize: size === "sm" ? 13 : 14,
         fontWeight: 600,
@@ -294,7 +319,7 @@ export function SkillTag({ children }: { children: React.ReactNode }) {
         border: `1px solid ${t.line}`,
         fontFamily: f.sans,
         fontSize: 12,
-        color: t.inkSoft,
+        color: t.neutralInk,
         fontWeight: 500,
       }}
     >
@@ -345,7 +370,7 @@ export function StageDot({ tone, label }: { tone: PillTone; label: string }) {
 
 export type BadgeTone = "neutral" | "success" | "brand" | "info" | "warning" | "error";
 const BADGE_TONE: Record<BadgeTone, { color: string; background: string }> = {
-  neutral: { color: t.inkSoft, background: t.creamSoft },
+  neutral: { color: t.neutralInk, background: t.creamSoft },
   success: { color: t.successInk, background: t.success100 },
   brand: { color: t.indigoDeep, background: t.indigo100 },
   info: { color: t.info, background: t.info100 },
@@ -427,13 +452,16 @@ export function StageCell({
 }) {
   const { color, background } = BADGE_TONE[STAGE_TONE[stage]];
   const StageIcon = STAGE_ICON[stage];
+  // The global CSS reduced-motion rule only reaches CSS animations; motion's
+  // JS-driven springs/scales need the hook.
+  const reduceMotion = useReducedMotion();
 
   if (frozen || !hasEvaluatedCandidates) {
     return (
       <motion.span
-        layout
+        layout={!reduceMotion}
         animate={{ backgroundColor: background, color }}
-        transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+        transition={{ duration: reduceMotion ? 0 : 0.22, ease: [0.16, 1, 0.3, 1] }}
         style={{
           display: "inline-flex", alignItems: "center", gap: 4, fontFamily: f.sans, fontSize: textSize.sm, fontWeight: 600,
           padding: "3px 8px", borderRadius: 999, whiteSpace: "nowrap",
@@ -442,10 +470,10 @@ export function StageCell({
         <AnimatePresence mode="wait" initial={false}>
           <motion.span
             key={stage}
-            initial={{ opacity: 0, scale: 0.5, rotate: -90 }}
+            initial={reduceMotion ? false : { opacity: 0, scale: 0.5, rotate: -90 }}
             animate={{ opacity: 1, scale: 1, rotate: 0 }}
             exit={{ opacity: 0, scale: 0.5 }}
-            transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ duration: reduceMotion ? 0 : 0.22, ease: [0.16, 1, 0.3, 1] }}
             style={{ display: "inline-flex" }}
           >
             <StageIcon size={11} className={!frozen && stage === "ai_matching" ? "animate-spin" : undefined} aria-hidden="true" />
@@ -461,12 +489,14 @@ export function StageCell({
       <DropdownMenuTrigger asChild>
         <motion.button
           type="button"
-          layout
+          layout={!reduceMotion}
           onClick={(e) => e.stopPropagation()}
-          whileHover={{ scale: 1.03 }}
-          whileTap={{ scale: 0.97 }}
+          whileHover={reduceMotion ? undefined : { scale: 1.03 }}
+          whileTap={reduceMotion ? undefined : { scale: 0.97 }}
           animate={{ backgroundColor: background, color }}
-          transition={{ duration: 0.16, ease: [0.2, 0.7, 0.2, 1] }}
+          transition={{ duration: reduceMotion ? 0 : 0.16, ease: [0.2, 0.7, 0.2, 1] }}
+          aria-label={`Pipeline stage: ${STAGE_LABEL[stage]}. Change stage`}
+          className="pointer-coarse:min-h-11"
           style={{
             display: "inline-flex", alignItems: "center", gap: 4, fontFamily: f.sans, fontSize: textSize.sm, fontWeight: 600,
             padding: "7px 9px 7px 10px", borderRadius: 999, whiteSpace: "nowrap", border: "none", cursor: "pointer",
@@ -488,20 +518,175 @@ export function StageCell({
   );
 }
 
-export function FieldLabel({ children, required = false }: { children: React.ReactNode; required?: boolean }) {
+/** Pass `htmlFor` (the control's id) so the label is programmatically tied to
+ *  its input — without it a screen reader announces the input unnamed and a
+ *  click on the label doesn't focus the field. */
+export function FieldLabel({ children, required = false, htmlFor, id }: { children: React.ReactNode; required?: boolean; htmlFor?: string; id?: string }) {
   return (
-    <label style={{ display: "block", fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.coal, marginBottom: 6 }}>
+    <label id={id} htmlFor={htmlFor} style={{ display: "block", fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.coal, marginBottom: 6 }}>
       {children}
-      {required && <span style={{ color: t.indigo }}> *</span>}
+      {required && (
+        <>
+          <span aria-hidden="true" style={{ color: t.indigo }}> *</span>
+          <span className="sr-only"> (required)</span>
+        </>
+      )}
     </label>
   );
 }
 
-export function HelpText({ children, tone = "muted" }: { children: React.ReactNode; tone?: "muted" | "error" }) {
+/** Hint/error line under a field. Give it an `id` and reference it from the
+ *  control's `aria-describedby`. `tone="error"` renders as role="alert" so the
+ *  message is announced when it appears (WCAG 3.3.1) — use `live={false}` for
+ *  an error that is already on screen at load. */
+export function HelpText({ children, tone = "muted", id, live = true }: { children: React.ReactNode; tone?: "muted" | "error"; id?: string; live?: boolean }) {
   return (
-    <div style={{ fontFamily: f.sans, fontSize: 12, color: tone === "error" ? t.error : t.inkFaint, marginTop: 6 }}>
+    <div
+      id={id}
+      role={tone === "error" && live ? "alert" : undefined}
+      style={{ fontFamily: f.sans, fontSize: 12, color: tone === "error" ? t.errorInk : t.inkFaint, marginTop: 6 }}
+    >
       {children}
     </div>
+  );
+}
+
+type FieldA11y = {
+  /** Accessible name when no visible <FieldLabel htmlFor> is wired up. */
+  ariaLabel?: string;
+  /** Element id for the text input, so a <FieldLabel htmlFor> can target it. */
+  id?: string;
+  /** id of the HelpText/error describing this field. */
+  describedBy?: string;
+  invalid?: boolean;
+};
+
+/** One removable chip — shared by TagInput and TagAutocompleteInput. The
+ *  remove button is 24px on fine pointers and grows to 44px on touch. */
+function TagChip({ value, onRemove }: { value: string; onRemove: () => void }) {
+  return (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 6,
+        padding: "4px 6px 4px 10px",
+        borderRadius: 8,
+        background: t.creamSoft,
+        border: `1px solid ${t.line}`,
+        fontFamily: f.sans,
+        fontSize: 12,
+        color: t.neutralInk,
+        fontWeight: 500,
+      }}
+    >
+      {value}
+      <button
+        type="button"
+        onClick={onRemove}
+        aria-label={`Remove ${value}`}
+        className="pointer-coarse:size-11 pointer-coarse:-my-3"
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          width: 24,
+          height: 24,
+          margin: "-4px -6px -4px 0",
+          border: "none",
+          background: "transparent",
+          color: t.inkFaint,
+          cursor: "pointer",
+          fontSize: 14,
+          lineHeight: 1,
+          padding: 0,
+        }}
+      >
+        <span aria-hidden="true">×</span>
+      </button>
+    </span>
+  );
+}
+
+const tagFieldStyle = (invalid?: boolean): React.CSSProperties => ({
+  display: "flex",
+  flexWrap: "wrap",
+  gap: 8,
+  padding: "8px 10px",
+  borderRadius: 10,
+  border: `1px solid ${invalid ? t.error : t.line}`,
+  background: t.white,
+});
+
+// No `outline: none` here — the global :focus-visible ring (index.css) is the
+// only focus indicator inside a chip field, since the wrapper itself has none.
+const tagDraftInputStyle: React.CSSProperties = {
+  flex: 1,
+  minWidth: 120,
+  border: "none",
+  fontFamily: f.sans,
+  fontSize: 14,
+  padding: "4px 2px",
+};
+
+/** Keeps the portalled suggestion list glued to its anchor through resize and
+ *  any ancestor scroll while it's open. */
+function useDropdownRect(anchorRef: React.RefObject<HTMLElement | null>, open: boolean, deps: React.DependencyList) {
+  const [rect, setRect] = React.useState<{ top: number; left: number; width: number } | null>(null);
+  React.useEffect(() => {
+    if (open && anchorRef.current) setRect(computeDropdownRect(anchorRef.current));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, ...deps]);
+  React.useEffect(() => {
+    if (!open) return;
+    const recompute = () => {
+      if (anchorRef.current) setRect(computeDropdownRect(anchorRef.current));
+    };
+    window.addEventListener("resize", recompute);
+    window.addEventListener("scroll", recompute, true);
+    return () => {
+      window.removeEventListener("resize", recompute);
+      window.removeEventListener("scroll", recompute, true);
+    };
+  }, [open, anchorRef]);
+  return rect;
+}
+
+function SuggestionList({
+  id,
+  rect,
+  options,
+  selectedIdx,
+  onPick,
+}: {
+  id: string;
+  rect: { top: number; left: number; width: number };
+  options: string[];
+  selectedIdx: number;
+  onPick: (s: string) => void;
+}) {
+  return createPortal(
+    <div id={id} role="listbox" aria-label="Suggestions" style={{ ...dropdownStyle, top: rect.top, left: rect.left, width: rect.width }}>
+      {options.map((s, i) => (
+        <button
+          key={s}
+          id={`${id}-opt-${i}`}
+          type="button"
+          role="option"
+          tabIndex={-1}
+          aria-selected={i === selectedIdx}
+          onMouseDown={(e) => {
+            e.preventDefault();
+            onPick(s);
+          }}
+          className="pointer-coarse:min-h-11"
+          style={optionStyle(i === selectedIdx)}
+        >
+          {s}
+        </button>
+      ))}
+    </div>,
+    document.body,
   );
 }
 
@@ -513,11 +698,15 @@ export function TagInput({
   values,
   onChange,
   placeholder,
+  ariaLabel,
+  id,
+  describedBy,
+  invalid,
 }: {
   values: string[];
   onChange: (next: string[]) => void;
   placeholder?: string;
-}) {
+} & FieldA11y) {
   const [draft, setDraft] = React.useState("");
 
   const commit = () => {
@@ -528,60 +717,12 @@ export function TagInput({
   };
 
   return (
-    <div
-      style={{
-        display: "flex",
-        flexWrap: "wrap",
-        gap: 8,
-        padding: "8px 10px",
-        borderRadius: 10,
-        border: `1px solid ${t.line}`,
-        background: t.white,
-      }}
-    >
+    <div style={tagFieldStyle(invalid)}>
       {values.map((v) => (
-        <span
-          key={v}
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 6,
-            padding: "4px 6px 4px 10px",
-            borderRadius: 8,
-            background: t.creamSoft,
-            border: `1px solid ${t.line}`,
-            fontFamily: f.sans,
-            fontSize: 12,
-            color: t.inkSoft,
-            fontWeight: 500,
-          }}
-        >
-          {v}
-          <button
-            type="button"
-            onClick={() => onChange(values.filter((x) => x !== v))}
-            aria-label={`Remove ${v}`}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: 24,
-              height: 24,
-              margin: "-4px -6px -4px 0",
-              border: "none",
-              background: "transparent",
-              color: t.inkFaint,
-              cursor: "pointer",
-              fontSize: 14,
-              lineHeight: 1,
-              padding: 0,
-            }}
-          >
-            ×
-          </button>
-        </span>
+        <TagChip key={v} value={v} onRemove={() => onChange(values.filter((x) => x !== v))} />
       ))}
       <input
+        id={id}
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
         onKeyDown={(e) => {
@@ -594,22 +735,17 @@ export function TagInput({
         }}
         onBlur={commit}
         placeholder={values.length === 0 ? placeholder : ""}
-        style={{
-          flex: 1,
-          minWidth: 120,
-          border: "none",
-          outline: "none",
-          fontFamily: f.sans,
-          fontSize: 14,
-          padding: "4px 2px",
-        }}
+        aria-label={ariaLabel ?? (id ? undefined : placeholder)}
+        aria-describedby={describedBy}
+        aria-invalid={invalid || undefined}
+        style={tagDraftInputStyle}
       />
     </div>
   );
 }
 
 export function Divider() {
-  return <div style={{ height: 1, background: t.line, width: "100%" }} />;
+  return <div aria-hidden="true" style={{ height: 1, background: t.line, width: "100%" }} />;
 }
 
 /** Single-value text input with a suggestions dropdown, filtered as the
@@ -620,15 +756,18 @@ export function AutocompleteInput({
   onChange,
   placeholder,
   suggestions,
+  ariaLabel,
+  id,
+  describedBy,
+  invalid,
 }: {
   value: string;
   onChange: (next: string) => void;
   placeholder?: string;
   suggestions: string[];
-}) {
+} & FieldA11y) {
   const [focused, setFocused] = React.useState(false);
   const [selectedIdx, setSelectedIdx] = React.useState(-1);
-  const [rect, setRect] = React.useState<{ top: number; left: number; width: number } | null>(null);
   const inputRef = React.useRef<HTMLInputElement>(null);
   const listboxId = React.useId();
   const diverseSample = React.useMemo(() => sampleDiverse(suggestions, 8), [suggestions]);
@@ -639,23 +778,8 @@ export function AutocompleteInput({
       ? diverseSample
       : suggestions.filter((s) => s.toLowerCase().includes(q)).slice(0, 8)
     : [];
-
-  React.useEffect(() => {
-    if (filtered.length > 0 && inputRef.current) setRect(computeDropdownRect(inputRef.current));
-  }, [filtered.length, focused, value]);
-
-  React.useEffect(() => {
-    if (filtered.length === 0) return;
-    const recompute = () => {
-      if (inputRef.current) setRect(computeDropdownRect(inputRef.current));
-    };
-    window.addEventListener("resize", recompute);
-    window.addEventListener("scroll", recompute, true);
-    return () => {
-      window.removeEventListener("resize", recompute);
-      window.removeEventListener("scroll", recompute, true);
-    };
-  }, [filtered.length]);
+  const open = filtered.length > 0;
+  const rect = useDropdownRect(inputRef, open, [value]);
 
   const select = (s: string) => {
     onChange(s);
@@ -667,6 +791,7 @@ export function AutocompleteInput({
     <div>
       <input
         ref={inputRef}
+        id={id}
         value={value}
         onChange={(e) => {
           onChange(e.target.value);
@@ -675,7 +800,7 @@ export function AutocompleteInput({
         onFocus={() => setFocused(true)}
         onBlur={() => setTimeout(() => setFocused(false), 150)}
         onKeyDown={(e) => {
-          if (filtered.length === 0) {
+          if (!open) {
             if (e.key === "Escape") inputRef.current?.blur();
             return;
           }
@@ -696,41 +821,24 @@ export function AutocompleteInput({
         placeholder={placeholder}
         autoComplete="off"
         role="combobox"
-        aria-expanded={filtered.length > 0}
-        aria-controls={listboxId}
+        aria-expanded={open && !!rect}
+        aria-controls={open && rect ? listboxId : undefined}
+        aria-activedescendant={open && selectedIdx >= 0 ? `${listboxId}-opt-${selectedIdx}` : undefined}
         aria-autocomplete="list"
+        aria-label={ariaLabel ?? (id ? undefined : placeholder)}
+        aria-describedby={describedBy}
+        aria-invalid={invalid || undefined}
         style={{
           width: "100%",
           padding: "12px 14px",
           borderRadius: 10,
-          border: `1px solid ${t.line}`,
+          border: `1px solid ${invalid ? t.error : t.line}`,
           fontFamily: f.sans,
           fontSize: 14,
           boxSizing: "border-box",
         }}
       />
-      {filtered.length > 0 &&
-        rect &&
-        createPortal(
-          <div id={listboxId} role="listbox" style={{ ...dropdownStyle, top: rect.top, left: rect.left, width: rect.width }}>
-            {filtered.map((s, i) => (
-              <button
-                key={s}
-                type="button"
-                role="option"
-                aria-selected={i === selectedIdx}
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  select(s);
-                }}
-                style={optionStyle(i === selectedIdx)}
-              >
-                {s}
-              </button>
-            ))}
-          </div>,
-          document.body,
-        )}
+      {open && rect && <SuggestionList id={listboxId} rect={rect} options={filtered} selectedIdx={selectedIdx} onPick={select} />}
     </div>
   );
 }
@@ -743,16 +851,19 @@ export function TagAutocompleteInput({
   onChange,
   placeholder,
   suggestions,
+  ariaLabel,
+  id,
+  describedBy,
+  invalid,
 }: {
   values: string[];
   onChange: (next: string[]) => void;
   placeholder?: string;
   suggestions: string[];
-}) {
+} & FieldA11y) {
   const [draft, setDraft] = React.useState("");
   const [focused, setFocused] = React.useState(false);
   const [selectedIdx, setSelectedIdx] = React.useState(-1);
-  const [rect, setRect] = React.useState<{ top: number; left: number; width: number } | null>(null);
   const inputRef = React.useRef<HTMLInputElement>(null);
   const containerRef = React.useRef<HTMLDivElement>(null);
   const listboxId = React.useId();
@@ -772,81 +883,18 @@ export function TagAutocompleteInput({
         (s) => !values.includes(s),
       )
     : [];
-
-  React.useEffect(() => {
-    if (filtered.length > 0 && containerRef.current) setRect(computeDropdownRect(containerRef.current));
-  }, [filtered.length, focused, draft]);
-
-  React.useEffect(() => {
-    if (filtered.length === 0) return;
-    const recompute = () => {
-      if (containerRef.current) setRect(computeDropdownRect(containerRef.current));
-    };
-    window.addEventListener("resize", recompute);
-    window.addEventListener("scroll", recompute, true);
-    return () => {
-      window.removeEventListener("resize", recompute);
-      window.removeEventListener("scroll", recompute, true);
-    };
-  }, [filtered.length]);
+  const open = filtered.length > 0;
+  const rect = useDropdownRect(containerRef, open, [draft]);
 
   return (
     <div ref={containerRef}>
-      <div
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: 8,
-          padding: "8px 10px",
-          borderRadius: 10,
-          border: `1px solid ${t.line}`,
-          background: t.white,
-        }}
-      >
+      <div style={tagFieldStyle(invalid)}>
         {values.map((v) => (
-          <span
-            key={v}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 6,
-              padding: "4px 6px 4px 10px",
-              borderRadius: 8,
-              background: t.creamSoft,
-              border: `1px solid ${t.line}`,
-              fontFamily: f.sans,
-              fontSize: 12,
-              color: t.inkSoft,
-              fontWeight: 500,
-            }}
-          >
-            {v}
-            <button
-              type="button"
-              onClick={() => onChange(values.filter((x) => x !== v))}
-              aria-label={`Remove ${v}`}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                width: 24,
-                height: 24,
-                margin: "-4px -6px -4px 0",
-                border: "none",
-                background: "transparent",
-                color: t.inkFaint,
-                cursor: "pointer",
-                fontSize: 14,
-                lineHeight: 1,
-                padding: 0,
-              }}
-            >
-              ×
-            </button>
-          </span>
+          <TagChip key={v} value={v} onRemove={() => onChange(values.filter((x) => x !== v))} />
         ))}
         <input
           ref={inputRef}
+          id={id}
           value={draft}
           onChange={(e) => {
             setDraft(e.target.value);
@@ -864,10 +912,10 @@ export function TagAutocompleteInput({
               else commit();
             } else if (e.key === "Backspace" && draft.length === 0 && values.length > 0) {
               onChange(values.slice(0, -1));
-            } else if (e.key === "ArrowDown" && filtered.length > 0) {
+            } else if (e.key === "ArrowDown" && open) {
               e.preventDefault();
               setSelectedIdx((i) => Math.min(i + 1, filtered.length - 1));
-            } else if (e.key === "ArrowUp" && filtered.length > 0) {
+            } else if (e.key === "ArrowUp" && open) {
               e.preventDefault();
               setSelectedIdx((i) => Math.max(i - 1, 0));
             } else if (e.key === "Escape") {
@@ -878,42 +926,17 @@ export function TagAutocompleteInput({
           placeholder={values.length === 0 ? placeholder : ""}
           autoComplete="off"
           role="combobox"
-          aria-expanded={filtered.length > 0}
-          aria-controls={listboxId}
+          aria-expanded={open && !!rect}
+          aria-controls={open && rect ? listboxId : undefined}
+          aria-activedescendant={open && selectedIdx >= 0 ? `${listboxId}-opt-${selectedIdx}` : undefined}
           aria-autocomplete="list"
-          style={{
-            flex: 1,
-            minWidth: 120,
-            border: "none",
-            outline: "none",
-            fontFamily: f.sans,
-            fontSize: 14,
-            padding: "4px 2px",
-          }}
+          aria-label={ariaLabel ?? (id ? undefined : placeholder)}
+          aria-describedby={describedBy}
+          aria-invalid={invalid || undefined}
+          style={tagDraftInputStyle}
         />
       </div>
-      {filtered.length > 0 &&
-        rect &&
-        createPortal(
-          <div id={listboxId} role="listbox" style={{ ...dropdownStyle, top: rect.top, left: rect.left, width: rect.width }}>
-            {filtered.map((s, i) => (
-              <button
-                key={s}
-                type="button"
-                role="option"
-                aria-selected={i === selectedIdx}
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  commit(s);
-                }}
-                style={optionStyle(i === selectedIdx)}
-              >
-                {s}
-              </button>
-            ))}
-          </div>,
-          document.body,
-        )}
+      {open && rect && <SuggestionList id={listboxId} rect={rect} options={filtered} selectedIdx={selectedIdx} onPick={commit} />}
     </div>
   );
 }
@@ -943,13 +966,16 @@ export function SegmentedControl<T extends string>({
   options,
   value,
   onChange,
+  ariaLabel,
 }: {
   options: { value: T; label: string }[];
   value: T;
   onChange: (next: T) => void;
+  /** Names the group for screen readers (e.g. "Work mode"). */
+  ariaLabel?: string;
 }) {
   return (
-    <div style={{ display: "inline-flex", padding: 3, borderRadius: 11, background: t.creamSoft, gap: 2 }}>
+    <div role="group" aria-label={ariaLabel} style={{ display: "inline-flex", padding: 3, borderRadius: 11, background: t.creamSoft, gap: 2 }}>
       {options.map((opt) => {
         const selected = opt.value === value;
         return (
@@ -958,13 +984,14 @@ export function SegmentedControl<T extends string>({
             type="button"
             onClick={() => onChange(opt.value)}
             aria-pressed={selected}
+            className="pointer-coarse:min-h-11"
             style={{
               padding: "8px 16px",
               minHeight: 36,
               borderRadius: 8,
               border: "none",
               background: selected ? t.white : "transparent",
-              color: selected ? t.indigoDeep : t.inkSoft,
+              color: selected ? t.indigoDeep : t.neutralInk,
               boxShadow: selected ? shadows.card : "none",
               fontFamily: f.sans,
               fontSize: 13,
@@ -981,18 +1008,31 @@ export function SegmentedControl<T extends string>({
 }
 
 /** A single boolean checkbox toggle (e.g. "Portfolio required"). */
-export function Checkbox({ label, checked, onChange }: { label: string; checked: boolean; onChange: (next: boolean) => void }) {
+export function Checkbox({
+  label,
+  checked,
+  onChange,
+  disabled,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: (next: boolean) => void;
+  disabled?: boolean;
+}) {
   return (
     <button
       type="button"
       role="checkbox"
       onClick={() => onChange(!checked)}
       aria-checked={checked}
+      disabled={disabled}
+      className="min-h-6 pointer-coarse:min-h-11"
       style={{
         display: "inline-flex",
         alignItems: "center",
         gap: 8,
-        cursor: "pointer",
+        cursor: disabled ? "not-allowed" : "pointer",
+        opacity: disabled ? 0.55 : 1,
         background: "none",
         border: "none",
         padding: 0,
@@ -1046,55 +1086,55 @@ export function StatCell({ label, value, unit }: { label: string; value: string;
 
 export const EmployerIcon = {
   Check: () => (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+    <svg aria-hidden="true" focusable="false" width="14" height="14" viewBox="0 0 24 24" fill="none">
       <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   ),
   Lock: () => (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+    <svg aria-hidden="true" focusable="false" width="14" height="14" viewBox="0 0 24 24" fill="none">
       <rect x="4" y="11" width="16" height="10" rx="2" stroke="currentColor" strokeWidth="2" />
       <path d="M8 11V7a4 4 0 118 0v4" stroke="currentColor" strokeWidth="2" />
     </svg>
   ),
   Arrow: () => (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+    <svg aria-hidden="true" focusable="false" width="14" height="14" viewBox="0 0 24 24" fill="none">
       <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   ),
   Refresh: () => (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+    <svg aria-hidden="true" focusable="false" width="14" height="14" viewBox="0 0 24 24" fill="none">
       <path d="M4 4v6h6M20 20v-6h-6M4.5 15a8 8 0 0013.9 3.4M19.5 9A8 8 0 005.6 5.6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   ),
   Alert: () => (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+    <svg aria-hidden="true" focusable="false" width="16" height="16" viewBox="0 0 24 24" fill="none">
       <path d="M12 9v4M12 17h.01M10.3 3.9L2.7 18a2 2 0 001.8 3h15a2 2 0 001.8-3L13.7 3.9a2 2 0 00-3.4 0z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   ),
   Plus: () => (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+    <svg aria-hidden="true" focusable="false" width="16" height="16" viewBox="0 0 24 24" fill="none">
       <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   ),
   Clock: () => (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+    <svg aria-hidden="true" focusable="false" width="16" height="16" viewBox="0 0 24 24" fill="none">
       <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" />
       <path d="M12 7v5l3 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   ),
   Building: () => (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+    <svg aria-hidden="true" focusable="false" width="16" height="16" viewBox="0 0 24 24" fill="none">
       <rect x="4" y="3" width="10" height="18" rx="1" stroke="currentColor" strokeWidth="2" />
       <path d="M14 8h6v13h-6M8 7h.01M8 11h.01M8 15h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   ),
   ChevronUp: () => (
-    <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
+    <svg aria-hidden="true" focusable="false" width="10" height="10" viewBox="0 0 24 24" fill="none">
       <path d="M6 15l6-6 6 6" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   ),
   ChevronDown: () => (
-    <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
+    <svg aria-hidden="true" focusable="false" width="10" height="10" viewBox="0 0 24 24" fill="none">
       <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   ),

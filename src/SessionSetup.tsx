@@ -2283,7 +2283,7 @@ export default function SessionSetup() {
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={T.success} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
                   </svg>
-                  Your responses stay private and are never shared.
+                  Your name and contact stay hidden from employers. Manage this in Settings.
                 </>
               )}
             </div>

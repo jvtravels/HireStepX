@@ -6,6 +6,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { createHmac, timingSafeEqual } from "crypto";
 import { escapeHtml } from "./_shared";
+import { handleEmployerUnlockWebhook } from "./_employer-unlock-webhook";
 import { captureServerEvent } from "./_posthog";
 import { emailShell, title, para, b, button, dataCard } from "./_email-theme";
 import { grantSessionCredits, revokeSessionCredits } from "./_session-credits";
@@ -54,6 +55,24 @@ async function checkDedup(dedupKey: string): Promise<"new" | "duplicate" | "redi
     return "redis_unavailable";
   }
 }
+
+/** Undo the event-level dedup so a Razorpay re-delivery is processed instead of
+ *  short-circuiting as "duplicate" after a failed attempt. Best effort. */
+async function releaseDedup(dedupKey: string): Promise<void> {
+  _processedEvents.delete(dedupKey);
+  if (!UPSTASH_URL || !UPSTASH_TOKEN) return;
+  try {
+    await fetch(`${UPSTASH_URL}/DEL/${encodeURIComponent(`webhook:${dedupKey}`)}`, {
+      headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` },
+    });
+  } catch { /* the 24h TTL is the backstop */ }
+}
+
+/** Events the employer contact-unlock flow may own (see _employer-unlock-webhook.ts). */
+const EMPLOYER_UNLOCK_EVENTS = new Set([
+  "payment.captured", "order.paid", "refund.created", "refund.processed",
+  "payment.dispute.created", "payment.dispute.won", "payment.dispute.lost",
+]);
 
 /** Atomically CLAIM a payment for processing via the payment_dedup table's
  *  primary-key constraint. This is the cross-instance backstop the in-memory
@@ -205,6 +224,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const HANDLED_EVENTS = [
     "payment.captured",
+    "order.paid",
     "payment.failed",
     "payment.dispute.created",
     "payment.dispute.won",
@@ -225,6 +245,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
+    // ─── Employer contact-unlock orders (payment.captured / order.paid / refunds / disputes) ───
+    // Claims the event only when it belongs to an employer_unlock_orders row;
+    // anything else falls through to the candidate branches below unchanged.
+    if (EMPLOYER_UNLOCK_EVENTS.has(eventType)) {
+      let outcome: Awaited<ReturnType<typeof handleEmployerUnlockWebhook>>;
+      try {
+        outcome = await handleEmployerUnlockWebhook({
+          eventType, event, supabaseUrl: SUPABASE_URL,
+          headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` },
+        });
+      } catch (unlockErr) {
+        console.error("[webhook] employer unlock handler threw:", unlockErr);
+        if (dedupKey.length > 5) await releaseDedup(dedupKey);
+        return res.status(500).json({ error: "Internal error" });
+      }
+      if (outcome.handled) {
+        if (outcome.retry && dedupKey.length > 5) await releaseDedup(dedupKey);
+        return res.status(outcome.status).json(outcome.body);
+      }
+      if (eventType === "order.paid") return res.status(200).json({ received: true, skipped: eventType });
+    }
+
     // ─── Subscription lifecycle events ───
     if (eventType.startsWith("subscription.")) {
       const subscription = event?.payload?.subscription?.entity;

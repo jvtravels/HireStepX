@@ -756,7 +756,7 @@ export function HowItWorksV2() {
       n: "01",
       label: "Upload resume",
       title: "Tell us where you've been.",
-      body: "Drop a PDF or paste plain text. Our parser pulls roles, skills, dates, and projects. The AI uses this to ask questions about your actual experience, not generic ones. Resume stays private; never shared with employers or shown to other users.",
+      body: "Drop a PDF or paste plain text. Our parser pulls roles, skills, dates, and projects. The AI uses this to ask questions about your actual experience, not generic ones. Your resume is never shown to other practice users. If employer discovery is on, employers can see a summary with your name, past employers and schools removed; your name and contact details are released only if an employer unlocks your profile. You control this in Settings.",
       detail: "We support resumes in English. Parsing typically takes 6 seconds. If parsing fails, you can fill in the gaps manually.",
     },
     {
@@ -1097,7 +1097,7 @@ export function AboutV2() {
               ],
               [
                 "Privacy is the default.",
-                "Your recordings are encrypted, auto-deleted after 90 days, and never shown to employers or shared with anyone. Designed against the DPDP Act 2023 from day one.",
+                "We don't store audio of your sessions, and employers never get your recordings. Employers can discover the practice evidence from your sessions with your name and contact hidden until they unlock your profile, and you can switch that off any time in Settings. Designed against the DPDP Act 2023 from day one.",
               ],
             ].map(([title, copy]) => (
               <div key={title}>
@@ -1751,7 +1751,7 @@ function LegalPage({
 
 export function PrivacyV2() {
   return (
-    <LegalPage title="Privacy" accent="explained simply." updated="26 July 2026">
+    <LegalPage title="Privacy" accent="explained simply." updated="10 October 2026">
       <h2>What we collect</h2>
       <p>Account email, your resume (uploaded by you), transcripts of your mock sessions, and basic usage telemetry (page views, session counts, plan type). We do not store audio or video recordings of your sessions: if you answer by voice, your speech is streamed to our speech-to-text provider for live transcription and is not retained. No location, no contacts, no microphone access outside of an active interview round.</p>
 
@@ -1762,7 +1762,7 @@ export function PrivacyV2() {
       <p>Transcripts auto-delete after 90 days unless you explicitly save a session. Account data persists until you delete your account, after which it's purged within 30 days.</p>
 
       <h2>Who we share with</h2>
-      <p>Nobody. We do not share transcripts, scores, or resumes with employers, recruiters, colleges, or third parties. We use the following third-party sub-processors, each under a data-processing agreement that prevents retention or use beyond what we authorise:</p>
+      <p>We do not sell your data, and we do not share your transcripts, scores, or resume with colleges, advertisers, or other third parties. The one exception is employers on HireStepX, covered in the next section. We use the following third-party sub-processors, each under a data-processing agreement that prevents retention or use beyond what we authorise:</p>
       <ul>
         <li><strong>Supabase</strong>: database, authentication, and file storage (Ireland / US-East)</li>
         <li><strong>Vercel</strong>: serverless hosting and edge functions (global CDN)</li>
@@ -1779,6 +1779,14 @@ export function PrivacyV2() {
         <li><strong>Google AdSense</strong>: advertising on public blog, interview questions, and salary pages (US); may use cookies to serve relevant ads. You can opt out via <a href="https://www.google.com/settings/ads" target="_blank" rel="noopener noreferrer">Google Ad Settings</a>.</li>
       </ul>
       <p>Voice audio is streamed live to Deepgram or Sarvam for real-time transcription and is not stored by either provider beyond the duration of the API call. We do not send your resume or session transcripts to Razorpay, Resend, PostHog, or Upstash. Google AdSense is only active on public content pages and is never loaded inside authenticated product surfaces (dashboard, interview sessions, reports).</p>
+
+      <h2>Employer discovery</h2>
+      <p><strong>Purpose.</strong> HireStepX also lets employers find candidates for open roles. If employer discovery is on for your account, employers can find you by role and skills using the evidence from your practice sessions. This is separate from practising: you can use HireStepX fully with it switched off.</p>
+      <p><strong>What employers see before they unlock you.</strong> Your skill strengths and verified capabilities, readiness and answer-structure (STAR) indicators, a resume summary with your name, past employers, schools, phone and LinkedIn removed, your city, and when you last practised. They see you only as &ldquo;Candidate #&hellip;&rdquo;. Your scores come from your own practice sessions on HireStepX; they are not independently verified assessments.</p>
+      <p><strong>What an employer gets by unlocking.</strong> An employer pays to unlock a candidate. Unlocking releases your name, contact details, full resume detail, and short word-for-word excerpts from your practice answers to that employer. Employers sign up on their own and have different verification levels; we do not vet every employer, so treat outreach with the same care as any job approach.</p>
+      <p><strong>Your control and withdrawal.</strong> You can turn employer discovery off at any time in Settings &rarr; Employer visibility. You will stop appearing in employer searches and in matches no employer has unlocked yet. Withdrawing does not retroactively remove what an employer has already unlocked, but they cannot see anything new. We keep a record of when you gave and withdrew consent, which you can see in Settings. You can also block or report a specific employer from your Jobs or Messages screens; blocked employers can no longer see or contact you.</p>
+      <p><strong>Retention.</strong> Employer discovery uses the same practice data described above, so it follows the same retention periods. Deleting your account removes you from employer discovery, and your data is purged within 30 days.</p>
+      <p><strong>Questions or complaints.</strong> Contact our <a href="/grievance">Grievance Officer</a>.</p>
 
       <h2>Your rights under DPDP Act 2023</h2>
       <p>India's Digital Personal Data Protection Act, 2023 gives you the right to access, correct, and erase the data we hold on you, to nominate another person to exercise these rights on your behalf, and to a grievance redressal process. Lawful basis for processing is performance of contract (delivering the service you signed up for) for everything except optional analytics, which run on explicit consent only.</p>
@@ -1799,7 +1807,7 @@ export function PrivacyV2() {
 
 export function TermsV2() {
   return (
-    <LegalPage title="Terms of Service" accent="the rules." updated="30 May 2026">
+    <LegalPage title="Terms of Service" accent="the rules." updated="10 October 2026">
       <h2>Who can use HireStepX</h2>
       <p>Anyone 16 or older with a valid email address. By signing up, you confirm you are 16+ and the information you provide is accurate.</p>
 
@@ -1817,6 +1825,9 @@ export function TermsV2() {
 
       <h2>Acceptable use</h2>
       <p>Don't upload illegal content. Don't use the platform to harass, defame, or harm others. Don't attempt to break our security controls. We may suspend or terminate accounts for serious or repeated violations.</p>
+
+      <h2>Employer discovery</h2>
+      <p>Employers on HireStepX can find candidates using practice evidence from sessions. Employers register themselves and are placed in verification tiers; we do not guarantee that any employer is vetted or that any job is genuine. Your name and contact details are released to an employer only after they unlock your profile, and you can turn discovery off, block, or report an employer from Settings, Jobs, or Messages. See the <a href="/privacy">Privacy Policy</a> for details. Practice scores reflect your performance in HireStepX sessions and are not a certified assessment.</p>
 
       <h2>Disclaimers</h2>
       <p>HireStepX provides interview practice. We do not guarantee any specific employment outcome. AI-generated feedback is a tool for self-improvement, not a substitute for professional career counseling.</p>

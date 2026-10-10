@@ -31,7 +31,12 @@ import {
 } from "./_employer-candidate-status-helpers";
 import { notify } from "./_notify";
 import { findOrCreateConversationId, postSystemMessage } from "./_messages-helpers";
-import { emailShell, title as emailTitle, para, b, button, footer, escapeHtml } from "./_email-theme";
+import { emailShell, title as emailTitle, para, b, button, escapeHtml } from "./_email-theme";
+import { loadEmployerMatchAccess, loadAuthIdentity, DENIED_STATUS } from "./_entitlements";
+
+/** Statuses that put the employer in direct contact with the candidate — only
+ *  reachable after paying to unlock (rejecting/closing out a match is free). */
+const CONTACT_STATUSES = new Set(["interview_invited", "interviewing", "hired"]);
 
 const RESEND_API_KEY = (process.env.RESEND_API_KEY || "").trim();
 const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <noreply@hirestepx.com>";
@@ -116,8 +121,7 @@ async function sendInterviewInviteEmail(opts: {
         emailTitle("You're invited to", { accentWord: "interview" }) +
         para(`Hi ${firstName}, ${headline}`) +
         (when ? para(`They've suggested ${b(when)} — check your dashboard to confirm or message them directly.`) : para("Check your dashboard for next steps and to message them directly.")) +
-        button("View invite", link) +
-        footer(),
+        button("View invite", link),
     });
 
     const controller = new AbortController();
@@ -201,31 +205,43 @@ export default async function handler(req: Request): Promise<Response> {
   }
 
   try {
-    // Ownership check: the match must belong to a requirement this employer
-    // owns. Never trust a client-supplied requirement id for this — resolve
-    // it from the match row itself, then verify the parent's employer_id.
-    const matchRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/requirement_matches?id=eq.${encodeURIComponent(matchId)}&select=id,requirement_id,candidate_status,candidate_user_id`,
-      { headers: serviceHeaders() },
-    );
-    const matchRows = (await matchRes.json().catch(() => [])) as Array<{ id: string; requirement_id: string; candidate_status: string; candidate_user_id: string }>;
-    if (!matchRes.ok || !matchRows[0]) {
-      return new Response(JSON.stringify({ error: "Candidate match not found" }), { status: 404, headers });
+    const identity = await loadAuthIdentity(SUPABASE_URL, serviceHeaders(), auth.userId);
+    const decision = await loadEmployerMatchAccess({
+      supabaseUrl: SUPABASE_URL,
+      headers: serviceHeaders(),
+      employerId: auth.userId,
+      matchId,
+      authEmail: identity.email,
+      emailConfirmed: identity.emailConfirmed,
+    });
+    if (!decision.ok) {
+      if (decision.reason === "error") {
+        return new Response(JSON.stringify({ error: "Failed to update candidate status" }), { status: 502, headers });
+      }
+      const d = DENIED_STATUS[decision.reason];
+      return new Response(JSON.stringify({ error: d.error }), { status: d.status, headers });
     }
-    const requirementId = matchRows[0].requirement_id;
-    const currentStatus = asCandidateStatus(matchRows[0].candidate_status);
+    const { match: accessMatch, unlocked } = decision.access;
+    const matchRows = [{ id: accessMatch.id, requirement_id: accessMatch.requirement_id, candidate_status: accessMatch.candidate_status, candidate_user_id: accessMatch.candidate_user_id }];
+    const requirementId = accessMatch.requirement_id;
+    const currentStatus = asCandidateStatus(accessMatch.candidate_status);
+    const reqRows = [{
+      id: requirementId,
+      status: accessMatch.employer_requirements?.status ?? "open",
+      title: accessMatch.employer_requirements?.title ?? null,
+      employers: accessMatch.employer_requirements?.employers ?? null,
+    }];
 
-    const reqRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&employer_id=eq.${encodeURIComponent(auth.userId)}` +
-        `&select=id,status,title,employers(company_name)`,
-      { headers: serviceHeaders() },
-    );
-    const reqRows = (await reqRes.json().catch(() => [])) as Array<{
-      id: string; status: string; title: string | null; employers: { company_name: string } | null;
-    }>;
-    if (!reqRes.ok || !reqRows[0]) {
-      return new Response(JSON.stringify({ error: "Candidate match not found" }), { status: 404, headers });
+    if (CONTACT_STATUSES.has(candidateStatus) && !unlocked) {
+      return new Response(
+        JSON.stringify({ error: "Unlock this candidate before inviting or hiring them.", code: "unlock_required" }),
+        { status: 402, headers },
+      );
     }
+    if (candidateStatus === "interview_invited" && accessMatch.candidate_response === "declined") {
+      return new Response(JSON.stringify({ error: "This candidate has declined contact for this role." }), { status: 409, headers });
+    }
+
     // A closed/archived requirement is done being worked — the "archive"
     // action already resolved outstanding candidates (see
     // handleStatusAction's reject_remaining path in
@@ -281,19 +297,36 @@ export default async function handler(req: Request): Promise<Response> {
       );
     }
 
+    // Append-only pipeline audit trail (employer-visible timeline + candidate
+    // history). Best-effort: the status write above already succeeded.
+    await fetch(`${SUPABASE_URL}/rest/v1/match_status_events`, {
+      method: "POST",
+      headers: { ...serviceHeaders(), "Content-Type": "application/json", Prefer: "return=minimal" },
+      body: JSON.stringify({
+        match_id: matchId,
+        requirement_id: requirementId,
+        employer_id: auth.userId,
+        candidate_user_id: matchRows[0].candidate_user_id,
+        from_status: currentStatus,
+        to_status: candidateStatus,
+        actor: "employer",
+        note,
+      }),
+    }).catch((err) => slog.warn("employer-candidate-status: event insert failed", { error: (err as Error).message }));
+
     const notifText = STATUS_NOTIFICATION_TEXT[candidateStatus];
     if (notifText) {
-      void notify({
+      await notify({
         userId: matchRows[0].candidate_user_id,
         type: "candidate_status_change",
         title: notifText.title,
         body: notifText.body,
         link: "/jobs",
-      });
+      }).catch(() => {});
     }
 
     if (candidateStatus === "interview_invited") {
-      void sendInterviewInviteEmail({
+      await sendInterviewInviteEmail({
         candidateUserId: matchRows[0].candidate_user_id,
         roleTitle: reqRows[0].title || "a role",
         companyName: reqRows[0].employers?.company_name || "An employer",
@@ -303,7 +336,7 @@ export default async function handler(req: Request): Promise<Response> {
 
     const systemBody = systemMessageFor(candidateStatus, note, row.interview_scheduled_at ?? interviewScheduledAt);
     if (systemBody) {
-      void (async () => {
+      await (async () => {
         const conversationId = await findOrCreateConversationId(SUPABASE_URL, serviceHeaders(), {
           matchId,
           requirementId,
@@ -319,7 +352,7 @@ export default async function handler(req: Request): Promise<Response> {
             body: systemBody,
           });
         }
-      })();
+      })().catch((err) => slog.warn("employer-candidate-status: system message failed", { error: (err as Error).message }));
     }
 
     return new Response(JSON.stringify(toResponseShape(row)), { status: 200, headers });

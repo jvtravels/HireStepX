@@ -72,6 +72,10 @@
     {
       "path": "/api/prune-notifications",
       "schedule": "15 3 * * *"
+    },
+    {
+      "path": "/api/cron-reconcile-unlock-orders",
+      "schedule": "20 5 * * *"
     }
   ]
 }

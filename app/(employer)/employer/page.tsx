@@ -1,232 +1,59 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
 import { useAuth } from "@/AuthContext";
-import { useMaxWidth } from "@/hooks/useMaxWidth";
 import { useEmployerData } from "@/employer/EmployerDataContext";
 import { tokens as t, fonts as f } from "@/auth/_tokens";
-import {
-  Card as AtomCard,
-  Eyebrow,
-  FieldLabel,
-  HelpText,
-  PrimaryCta,
-  OutlineCta,
-  StatCell,
-  EmployerIcon,
-} from "@/employer/_atoms";
+import { Card as AtomCard, Eyebrow, OutlineCta, StatCell, EmployerIcon } from "@/employer/_atoms";
+import { OutlineLink, PrimaryLink, PageSkeleton, ErrorPanel } from "@/employer/_consoleParts";
+import CompanyProfileForm from "@/employer/CompanyProfileForm";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  LOGO_MAX_MB,
-  LOGO_ACCEPTED_TYPES,
-  LOGO_CONTENT_TYPE_ALLOWLIST,
-  readFileAsDataUrl,
-  isPlausibleWebsite,
-} from "@/employer/_companyProfileHelpers";
 
 function CompanyOnboarding() {
-  const { submitCompanyProfile } = useEmployerData();
-  const [companyName, setCompanyName] = useState("");
-  const [website, setWebsite] = useState("");
-  const [websiteTouched, setWebsiteTouched] = useState(false);
-  const [logoDataUrl, setLogoDataUrl] = useState<string | null>(null);
-  const [logoError, setLogoError] = useState<string | null>(null);
-  const [submitted, setSubmitted] = useState(false);
-
-  const [submitError, setSubmitError] = useState<string | null>(null);
-  const nameValid = companyName.trim().length > 1;
-  const websiteValid = isPlausibleWebsite(website);
-  const canSubmit = nameValid && websiteValid;
-  const websiteFormatError = websiteTouched && website.trim().length > 0 && !websiteValid;
-
-  const missingFieldsHint = !nameValid && !websiteValid
-    ? "Enter your company name and website to continue."
-    : !nameValid
-      ? "Enter your company name to continue."
-      : !websiteValid
-        ? "Enter a valid company website to continue."
-        : null;
-
-  const handleLogoChange = async (file: File | undefined) => {
-    setLogoError(null);
-    if (!file) return;
-    if (!LOGO_CONTENT_TYPE_ALLOWLIST.has(file.type)) {
-      setLogoError("Use a PNG, JPG, or WEBP image.");
-      return;
-    }
-    if (file.size > LOGO_MAX_MB * 1_000_000) {
-      setLogoError(`Keep it under ${LOGO_MAX_MB} MB.`);
-      return;
-    }
-    setLogoDataUrl(await readFileAsDataUrl(file));
-  };
-
   return (
     <div style={{ width: "100%", maxWidth: 560, margin: "0 auto" }}>
       <div style={{ textAlign: "center", marginBottom: 28 }}>
-        <h1 style={{ fontFamily: f.sans, fontSize: "clamp(1.75rem, 4vw, 2.5rem)", fontWeight: 400, letterSpacing: "-0.01em", color: t.coal, margin: 0 }}>
+        <h1 style={{ fontFamily: f.sans, fontSize: "clamp(1.75rem, 4vw, 2.5rem)", fontWeight: 400, letterSpacing: "-0.01em", color: t.coal, margin: "0 0 8px" }}>
           Tell us about your company
         </h1>
         <p style={{ fontFamily: f.sans, fontSize: 15, color: t.inkSoft, margin: 0, lineHeight: 1.6 }}>
-          You'll get instant access to the candidate roster — no waiting on approval.
+          Add your company name and website to start posting roles. You can browse your shortlist right away.
         </p>
       </div>
       <AtomCard>
-        <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-          <div>
-            <FieldLabel required>Company name</FieldLabel>
-            <input
-              value={companyName}
-              onChange={(e) => setCompanyName(e.target.value)}
-              placeholder="Acme Technologies Pvt Ltd"
-              style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: `1px solid ${t.line}`, fontFamily: f.sans, fontSize: 14, boxSizing: "border-box" }}
-            />
-          </div>
-          <div>
-            <FieldLabel required>Company website</FieldLabel>
-            <input
-              value={website}
-              onChange={(e) => setWebsite(e.target.value)}
-              onBlur={() => setWebsiteTouched(true)}
-              placeholder="https://acme.com"
-              style={{
-                width: "100%",
-                padding: "12px 14px",
-                borderRadius: 10,
-                border: `1px solid ${websiteFormatError ? t.error : t.line}`,
-                fontFamily: f.sans,
-                fontSize: 14,
-                boxSizing: "border-box",
-              }}
-            />
-            {websiteFormatError ? (
-              <HelpText tone="error">Include the full address, starting with https:// — e.g. https://acme.com</HelpText>
-            ) : (
-              <HelpText>We'll use this to verify your company is real.</HelpText>
-            )}
-          </div>
-          <div>
-            <FieldLabel>Company logo (optional)</FieldLabel>
-            <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-              <div
-                style={{
-                  width: 56,
-                  height: 56,
-                  borderRadius: 12,
-                  border: `1px solid ${t.line}`,
-                  background: t.creamSoft,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  overflow: "hidden",
-                  flexShrink: 0,
-                }}
-              >
-                {logoDataUrl ? (
-                  <img src={logoDataUrl} alt="Company logo preview" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                ) : (
-                  <span style={{ color: t.inkFaint }}><EmployerIcon.Building /></span>
-                )}
-              </div>
-              <label
-                htmlFor="company-logo-input"
-                style={{
-                  padding: "9px 16px",
-                  borderRadius: 10,
-                  border: `1px solid ${t.lineStrong}`,
-                  fontFamily: f.sans,
-                  fontSize: 13,
-                  fontWeight: 600,
-                  color: t.coal,
-                  cursor: "pointer",
-                }}
-              >
-                {logoDataUrl ? "Change logo" : "Upload logo"}
-                <input
-                  id="company-logo-input"
-                  type="file"
-                  accept={LOGO_ACCEPTED_TYPES}
-                  onChange={(e) => handleLogoChange(e.target.files?.[0])}
-                  style={{ position: "absolute", width: 1, height: 1, padding: 0, margin: -1, overflow: "hidden", clip: "rect(0,0,0,0)", whiteSpace: "nowrap", border: 0 }}
-                />
-              </label>
-            </div>
-            {logoError ? (
-              <HelpText tone="error">{logoError}</HelpText>
-            ) : (
-              <HelpText>PNG, JPG, or WEBP · up to {LOGO_MAX_MB} MB.</HelpText>
-            )}
-          </div>
-          {submitError && (
-            <p style={{ fontFamily: f.sans, fontSize: 13, color: t.error, margin: 0 }}>{submitError}</p>
-          )}
-          <div>
-            <PrimaryCta
-              full
-              disabled={!canSubmit || submitted}
-              onClick={async () => {
-                setSubmitError(null);
-                setSubmitted(true);
-                const [logoContentType, logoBase64] = logoDataUrl ? logoDataUrl.split(",") : [undefined, undefined];
-                const ok = await submitCompanyProfile({
-                  companyName,
-                  website,
-                  logoBase64,
-                  logoContentType: logoContentType?.match(/^data:(.+);base64$/)?.[1],
-                });
-                if (!ok) {
-                  setSubmitted(false);
-                  setSubmitError("Couldn't submit your company profile — please try again.");
-                }
-              }}
-            >
-              {submitted ? "Setting up…" : "Create company profile"}
-            </PrimaryCta>
-            {!submitted && missingFieldsHint && (
-              <p style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkFaint, margin: "8px 0 0", textAlign: "center" }}>
-                {missingFieldsHint}
-              </p>
-            )}
-          </div>
-        </div>
+        <CompanyProfileForm
+          idPrefix="onboarding"
+          submitLabel="Create company profile"
+          busyLabel="Setting up…"
+          websiteHelp="Candidates see this on your jobs. Signing in with a work email on this domain raises your limits."
+        />
       </AtomCard>
 
-      <div style={{ marginTop: 48 }}>
-        <div style={{ textAlign: "center", marginBottom: 20 }}>
+      <section aria-labelledby="onboarding-next" style={{ marginTop: 48 }}>
+        <div id="onboarding-next" style={{ textAlign: "center", marginBottom: 20 }}>
           <Eyebrow tone="indigo">What happens next</Eyebrow>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 20 }}>
+        <ol className="grid list-none grid-cols-1 gap-5 p-0 m-0 min-[480px]:grid-cols-2">
           {[
             { icon: <EmployerIcon.Check />, title: "You submit", body: "Company name and website. A logo helps candidates recognize you." },
             { icon: <EmployerIcon.Arrow />, title: "You post roles", body: "Get an AI-matched shortlist, scored on real interview performance." },
           ].map((step) => (
-            <div key={step.title} style={{ textAlign: "center" }}>
+            <li key={step.title} style={{ textAlign: "center" }}>
               <div
+                aria-hidden="true"
                 style={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: 10,
-                  background: t.indigo100,
-                  color: t.indigoDeep,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  margin: "0 auto 10px",
+                  width: 36, height: 36, borderRadius: 10, background: t.indigo100, color: t.indigoDeep,
+                  display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 10px",
                 }}
               >
                 {step.icon}
               </div>
-              <div style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 700, color: t.coal, marginBottom: 4 }}>
-                {step.title}
-              </div>
-              <div style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft, lineHeight: 1.5 }}>
-                {step.body}
-              </div>
-            </div>
+              <div style={{ fontFamily: f.sans, fontSize: 14, fontWeight: 700, color: t.coal, marginBottom: 4 }}>{step.title}</div>
+              <div style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.5 }}>{step.body}</div>
+            </li>
           ))}
-        </div>
-      </div>
+        </ol>
+      </section>
     </div>
   );
 }
@@ -250,68 +77,45 @@ function OnboardingChecklist({ steps }: { steps: ChecklistStep[] }) {
   return (
     <Card>
       <CardContent>
-        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 14 }}>
-          <Eyebrow tone="indigo">Getting started</Eyebrow>
-          <span style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkFaint }}>{doneCount} of {steps.length} done</span>
+        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, marginBottom: 14 }}>
+          <h2 style={{ margin: 0 }}><Eyebrow tone="indigo">Getting started</Eyebrow></h2>
+          <span style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft }}>{doneCount} of {steps.length} done</span>
         </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+        <ol style={{ display: "flex", flexDirection: "column", gap: 4, listStyle: "none", margin: 0, padding: 0 }}>
           {steps.map((step, i) => (
-            <div
+            <li
               key={step.label}
-              style={{
-                display: "flex",
-                alignItems: "flex-start",
-                gap: 12,
-                padding: "10px 0",
-                borderTop: i > 0 ? `1px solid ${t.line}` : "none",
-              }}
+              aria-current={i === nextStepIndex ? "step" : undefined}
+              style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "10px 0", borderTop: i > 0 ? `1px solid ${t.line}` : "none" }}
             >
               <div
+                aria-hidden="true"
                 style={{
-                  width: 24,
-                  height: 24,
-                  borderRadius: "50%",
-                  flexShrink: 0,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  marginTop: 1,
+                  width: 24, height: 24, borderRadius: "50%", flexShrink: 0, display: "flex", alignItems: "center",
+                  justifyContent: "center", marginTop: 1,
                   background: step.done ? t.indigo : "transparent",
                   border: step.done ? "none" : `1.5px solid ${t.lineStrong}`,
-                  color: step.done ? t.white : t.inkFaint,
-                  fontFamily: f.sans,
-                  fontSize: 12,
-                  fontWeight: 700,
+                  color: step.done ? t.white : t.inkSoft,
+                  fontFamily: f.sans, fontSize: 12, fontWeight: 700,
                 }}
               >
                 {step.done ? <EmployerIcon.Check /> : i + 1}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div
-                  style={{
-                    fontFamily: f.sans,
-                    fontSize: 14,
-                    fontWeight: 600,
-                    color: step.done ? t.inkFaint : t.coal,
-                    textDecoration: step.done ? "line-through" : "none",
-                  }}
-                >
+                <div style={{ fontFamily: f.sans, fontSize: 14, fontWeight: 600, color: step.done ? t.inkSoft : t.coal, textDecoration: step.done ? "line-through" : "none" }}>
                   {step.label}
+                  {step.done && <span className="sr-only"> (done)</span>}
                 </div>
                 {i === nextStepIndex && (
                   <>
-                    <p style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft, margin: "3px 0 10px", lineHeight: 1.5 }}>
-                      {step.body}
-                    </p>
-                    <Link href={step.href} style={{ textDecoration: "none" }}>
-                      <PrimaryCta size="sm">{step.cta}</PrimaryCta>
-                    </Link>
+                    <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, margin: "3px 0 10px", lineHeight: 1.5 }}>{step.body}</p>
+                    <PrimaryLink href={step.href}>{step.cta}</PrimaryLink>
                   </>
                 )}
               </div>
-            </div>
+            </li>
           ))}
-        </div>
+        </ol>
       </CardContent>
     </Card>
   );
@@ -320,20 +124,26 @@ function OnboardingChecklist({ steps }: { steps: ChecklistStep[] }) {
 /* Employer landing after approval — lightweight overview only. The full
    requirements list lives on /employer/jobs; this screen is the "how's it
    going" glance (greeting, next move, stat strip, company profile rail).
-   Reuses DashboardHome's (src/DashboardHome.tsx) grid proportions
-   (minmax(0,1fr) / minmax(280px,360px)), full width with no max-width cap,
-   so the employer surface reads as the same product. */
+   The shell already renders the <main> landmark, so this is plain content.
+   The rail stacks below 900px via Tailwind variants (no JS width hook, so
+   there's no layout flash on first paint). */
 function EmployerDashboard() {
   const { user } = useAuth();
-  const { requirements, companyLogoUrl, fetchUnlockHistory } = useEmployerData();
+  const {
+    requirements, requirementsLoading, requirementsError, refreshRequirements,
+    companyName, companyLogoUrl, fetchUnlockHistory, limits, suspended, verificationTier,
+  } = useEmployerData();
   const [unlockCount, setUnlockCount] = useState<number | null>(null);
-  const stackRail = useMaxWidth(900);
-  const compact = useMaxWidth(640);
+  const [unlockSettled, setUnlockSettled] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
+    // On failure the count stays null: we can't claim "no unlocks yet", so the
+    // checklist is withheld rather than shown with a wrong step 3.
     fetchUnlockHistory().then((purchases) => {
-      if (!cancelled) setUnlockCount(purchases ? purchases.length : 0);
+      if (cancelled) return;
+      if (purchases) setUnlockCount(purchases.length);
+      setUnlockSettled(true);
     });
     return () => {
       cancelled = true;
@@ -342,6 +152,8 @@ function EmployerDashboard() {
 
   const openRequirements = requirements.filter((r) => r.status !== "closed");
   const totalCandidates = requirements.reduce((sum, r) => sum + r.candidateCount, 0);
+  const atJobLimit = openRequirements.length >= limits.openRequirements;
+  const statsReady = !requirementsLoading && !requirementsError;
 
   const onboardingSteps: ChecklistStep[] = [
     {
@@ -366,29 +178,15 @@ function EmployerDashboard() {
       cta: "Review candidates",
     },
   ];
-  // Hold off until the unlock count has loaded at least once, so a brand-new
-  // employer doesn't see the plain stat strip flash before the checklist
-  // (which needs that count to know if step 3 is done) swaps in.
-  const showOnboardingChecklist = unlockCount !== null && onboardingSteps.some((s) => !s.done);
+  // Hold off until both the requirements and the unlock count have loaded, so
+  // a brand-new employer doesn't see the plain stat strip flash before the
+  // checklist swaps in, and an existing one doesn't see a wrong "step 1".
+  const showOnboardingChecklist = !suspended && statsReady && unlockCount !== null && onboardingSteps.some((s) => !s.done);
 
   return (
-    <div style={{ minHeight: "100%", width: "100%" }}>
-    <div
-      style={{
-        width: "100%",
-        boxSizing: "border-box",
-        background: t.white,
-        border: `1px solid ${t.line}`,
-        borderRadius: 12,
-        padding: compact ? 16 : 24,
-        display: "grid",
-        gridTemplateColumns: stackRail ? "minmax(0, 1fr)" : "minmax(0, 1fr) minmax(280px, 360px)",
-        gap: compact ? 24 : 32,
-        minHeight: "100%",
-      }}
-    >
+    <div className="grid w-full grid-cols-1 gap-6 rounded-xl border bg-white p-4 min-[640px]:p-6 min-[900px]:grid-cols-[minmax(0,1fr)_minmax(280px,360px)] min-[900px]:gap-8" style={{ borderColor: t.line, boxSizing: "border-box" }}>
       {/* ─── Main stage ─── */}
-      <main style={{ display: "flex", flexDirection: "column", gap: 28, minWidth: 0 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 28, minWidth: 0 }}>
         <section>
           <h1 style={{ fontFamily: f.sans, fontSize: "clamp(28px, 6vw, 44px)", fontWeight: 400, lineHeight: 1.1, letterSpacing: "-0.02em", color: t.coal, margin: "0 0 6px", overflowWrap: "anywhere" }}>
             Welcome <em style={{ fontWeight: 600, color: t.indigo }}>back</em>, {user?.name || "there"}.
@@ -401,83 +199,86 @@ function EmployerDashboard() {
         </section>
 
         {/* Suppressed while the checklist is up — its active step already
-            carries whichever CTA actually applies (post/review/unlock), so
-            this hardcoded "post a requirement" prompt would just duplicate
-            or contradict it. */}
-        {!showOnboardingChecklist && (
+            carries whichever CTA actually applies (post/review/unlock). */}
+        {!showOnboardingChecklist && !suspended && unlockSettled && (
           <Card>
             <CardContent>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 24, flexWrap: "wrap" }}>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <Eyebrow tone="indigo">Your next move</Eyebrow>
-                  <p style={{ fontFamily: f.sans, fontSize: 28, fontWeight: 400, lineHeight: 1.2, letterSpacing: "-0.01em", color: t.coal, margin: "8px 0 10px" }}>
-                    Post a requirement
-                  </p>
-                  <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft, margin: 0, maxWidth: 520, lineHeight: 1.55 }}>
-                    Tell us the role, location, and notice-period preference — we'll return a scored shortlist
-                    from candidates actively practicing on HireStepX.
-                  </p>
-                  <div style={{ marginTop: 18 }}>
-                    <Link href="/employer/requirements/new" style={{ textDecoration: "none" }}>
-                      <PrimaryCta icon={<EmployerIcon.Plus />}>Post a requirement</PrimaryCta>
-                    </Link>
-                  </div>
-                </div>
+              <Eyebrow tone="indigo">Your next move</Eyebrow>
+              <h2 style={{ fontFamily: f.sans, fontSize: 28, fontWeight: 400, lineHeight: 1.2, letterSpacing: "-0.01em", color: t.coal, margin: "8px 0 10px" }}>
+                {atJobLimit ? "You've reached your open-jobs limit" : "Post a requirement"}
+              </h2>
+              <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft, margin: 0, maxWidth: 520, lineHeight: 1.55 }}>
+                {atJobLimit
+                  ? `Your account can have ${limits.openRequirements} open jobs at a time. Close a job you've filled, or see how to raise your limits in settings.`
+                  : "Tell us the role, location, and notice-period preference — we'll return a scored shortlist from candidates actively practicing on HireStepX."}
+              </p>
+              <div style={{ marginTop: 18 }}>
+                {atJobLimit ? (
+                  <OutlineLink href="/employer/settings">Review account limits</OutlineLink>
+                ) : (
+                  <PrimaryLink href="/employer/requirements/new" icon={<EmployerIcon.Plus />}>Post a requirement</PrimaryLink>
+                )}
               </div>
             </CardContent>
           </Card>
         )}
 
-        {showOnboardingChecklist ? (
+        {requirementsLoading ? (
+          <PageSkeleton label="Loading your overview" />
+        ) : requirementsError ? (
+          <section aria-labelledby="overview-heading">
+            <h2 id="overview-heading" style={{ margin: 0 }}><Eyebrow tone="ink">Overview</Eyebrow></h2>
+            <div role="alert" style={{ marginTop: 10, padding: 16, border: `1px solid ${t.line}`, borderRadius: 10, fontFamily: f.sans, fontSize: 14, color: t.errorInk, display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+              <span style={{ flex: 1, minWidth: 200 }}>We couldn't load your jobs just now.</span>
+              <OutlineCta size="sm" onClick={() => { void refreshRequirements(); }}>Retry</OutlineCta>
+            </div>
+          </section>
+        ) : showOnboardingChecklist ? (
           <OnboardingChecklist steps={onboardingSteps} />
         ) : (
-          <section>
-            <Eyebrow tone="ink">Overview</Eyebrow>
+          <section aria-labelledby="overview-heading">
+            <h2 id="overview-heading" style={{ margin: 0 }}><Eyebrow tone="ink">Overview</Eyebrow></h2>
             <dl style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 0, margin: "10px 0 0", borderTop: `1px solid ${t.line}`, borderBottom: `1px solid ${t.line}` }}>
-              <StatCell label="Open requirements" value={String(openRequirements.length)} unit="" />
+              <StatCell label="Open jobs" value={String(openRequirements.length)} unit={`of ${limits.openRequirements}`} />
               <StatCell label="Candidates matched" value={String(totalCandidates)} unit="" />
             </dl>
           </section>
         )}
 
-        <Link href="/employer/jobs" style={{ textDecoration: "none" }}>
-          <OutlineCta full>View all jobs</OutlineCta>
-        </Link>
-      </main>
+        <OutlineLink href="/employer/jobs" full>View all jobs</OutlineLink>
+      </div>
 
       {/* ─── Rail ─── */}
-      <aside style={{ display: "flex", flexDirection: "column", gap: 24, minWidth: 0 }}>
+      <aside aria-label="Company and help" style={{ display: "flex", flexDirection: "column", gap: 24, minWidth: 0 }}>
         <Card>
           <CardContent>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
               {companyLogoUrl ? (
-                <img
-                  src={companyLogoUrl}
-                  alt="Company logo"
-                  style={{ width: 22, height: 22, borderRadius: 6, objectFit: "cover" }}
-                />
+                <img src={companyLogoUrl} alt="" style={{ width: 22, height: 22, borderRadius: 6, objectFit: "cover" }} />
               ) : (
-                <span style={{ color: t.indigo }}><EmployerIcon.Building /></span>
+                <span aria-hidden="true" style={{ color: t.indigo }}><EmployerIcon.Building /></span>
               )}
-              <h2 style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.coal, margin: 0 }}>
-                Company profile
+              <h2 style={{ fontFamily: f.sans, fontSize: 14, fontWeight: 600, color: t.coal, margin: 0, overflowWrap: "anywhere" }}>
+                {companyName || "Company profile"}
               </h2>
             </div>
             <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.55, margin: "0 0 12px" }}>
-              You're approved to browse the candidate roster and view contact details.
+              {suspended
+                ? "Your account is suspended and read-only."
+                : verificationTier === "basic"
+                  ? "Unverified account. Verify with a work email to raise your limits."
+                  : verificationTier === "email_verified"
+                    ? "Work email confirmed."
+                    : "Fully verified company."}
             </p>
-            <Link href="/employer/settings" style={{ textDecoration: "none" }}>
-              <OutlineCta full size="sm">Edit company details</OutlineCta>
-            </Link>
+            <OutlineLink href="/employer/settings" small full>Company details and limits</OutlineLink>
           </CardContent>
         </Card>
 
         <Card>
           <CardContent>
-            <h2 style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.coal, margin: "0 0 8px" }}>
-              How matching works
-            </h2>
-            <p style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft, lineHeight: 1.6, margin: 0 }}>
+            <h2 style={{ fontFamily: f.sans, fontSize: 14, fontWeight: 600, color: t.coal, margin: "0 0 8px" }}>How matching works</h2>
+            <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.6, margin: 0 }}>
               Match score reflects fit against this requirement; roster score reflects lifetime interview
               performance across a candidate's practice sessions.
             </p>
@@ -485,14 +286,22 @@ function EmployerDashboard() {
         </Card>
       </aside>
     </div>
-    </div>
   );
 }
 
 export default function EmployerHomePage() {
-  const { companyStatus, companyStatusLoading } = useEmployerData();
+  const { companyStatus, companyStatusLoading, companyStatusError, refreshCompanyStatus } = useEmployerData();
 
-  if (companyStatusLoading) return null;
+  if (companyStatusLoading) return <PageSkeleton label="Loading your company" />;
+  if (companyStatus === "none" && companyStatusError) {
+    return (
+      <ErrorPanel
+        title="We couldn't load your company"
+        message="Check your connection and try again. Your details are safe."
+        onRetry={() => { void refreshCompanyStatus(); }}
+      />
+    );
+  }
   if (companyStatus === "none") return <CompanyOnboarding />;
   return <EmployerDashboard />;
 }

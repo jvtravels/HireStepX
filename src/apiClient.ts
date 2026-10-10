@@ -17,6 +17,7 @@
 
 import { authHeaders } from "./supabase";
 import { getDistinctId, getSessionId } from "./posthogClient";
+import { reportRequestOutcome } from "./connectionMonitor";
 
 export interface ApiResponse<T> {
   ok: boolean;
@@ -73,7 +74,7 @@ export function throwIfRateLimited(res: ApiResponse<unknown>): void {
 export async function apiFetch<T = unknown>(
   path: string,
   body: unknown,
-  opts: { signal?: AbortSignal; method?: "POST" | "PUT" | "PATCH" | "DELETE" } = {},
+  opts: { signal?: AbortSignal; method?: "POST" | "PUT" | "PATCH" | "DELETE"; timeoutMs?: number } = {},
 ): Promise<ApiResponse<T>> {
   const headers = await authHeaders();
   return new Promise((resolve) => {
@@ -85,6 +86,7 @@ export async function apiFetch<T = unknown>(
       if (settled) return;
       settled = true;
       if (abortListener && opts.signal) opts.signal.removeEventListener("abort", abortListener);
+      reportRequestOutcome(response.status, response.status === 0 ? response.error : null);
       resolve(response);
     };
 
@@ -98,6 +100,7 @@ export async function apiFetch<T = unknown>(
 
     xhr.open(opts.method || "POST", path, true);
     xhr.responseType = "text";
+    if (opts.timeoutMs) xhr.timeout = opts.timeoutMs;
     for (const [k, v] of Object.entries(headers)) xhr.setRequestHeader(k, v);
     // Forward PostHog correlation ids so server-side events join the same person/session
     try {
@@ -138,6 +141,7 @@ export async function apiFetch<T = unknown>(
       });
     };
     xhr.onerror = () => settle({ ok: false, status: 0, data: null, error: "Network error", errorData: null, headers: {} });
+    xhr.ontimeout = () => settle({ ok: false, status: 0, data: null, error: "timeout", errorData: null, headers: {} });
     xhr.onabort = () => settle({ ok: false, status: 0, data: null, error: "aborted", errorData: null, headers: {} });
 
     if (opts.signal) {

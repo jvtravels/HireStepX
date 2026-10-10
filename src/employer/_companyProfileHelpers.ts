@@ -5,22 +5,30 @@ export const LOGO_CONTENT_TYPE_ALLOWLIST = new Set(["image/png", "image/jpeg", "
 export function readFileAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
+    reader.onload = () => resolve(typeof reader.result === "string" ? reader.result : "");
     reader.onerror = () => reject(reader.error);
     reader.readAsDataURL(file);
   });
 }
 
-/* A pragmatic website check, not a full RFC 3986 parser: catches the two
-   real-world mistakes (missing scheme, no dot in the host) without
-   rejecting valid domains our regex doesn't fully understand. */
+/* Mirrors the server's check in server-handlers/employer-profile.ts so the
+   form never blocks a value the server would accept (a bare "acme.com" is
+   fine) nor lets through one it will 400. The server stays the authority —
+   its message is shown when it still disagrees. */
+const WEBSITE_PATTERN = /^(https?:\/\/)?[a-z0-9-]+(\.[a-z0-9-]+)+(\/.*)?$/i;
+
+export const WEBSITE_FORMAT_MESSAGE = "Enter a valid company website, e.g. acme.com";
+
 export function isPlausibleWebsite(value: string): boolean {
-  const v = value.trim();
-  if (!/^https?:\/\//i.test(v)) return false;
-  try {
-    const host = new URL(v).hostname;
-    return host.includes(".") && host.length > 3;
-  } catch {
-    return false;
-  }
+  return WEBSITE_PATTERN.test(value.trim());
+}
+
+/** Splits a `data:<mime>;base64,<payload>` URL into the two fields
+ *  POST /api/employer-profile takes. Returns empty fields for no logo. */
+export function splitLogoDataUrl(dataUrl: string | null): { logoBase64?: string; logoContentType?: string } {
+  if (!dataUrl) return {};
+  const comma = dataUrl.indexOf(",");
+  if (comma < 0) return {};
+  const mime = dataUrl.slice(0, comma).match(/^data:(.+);base64$/)?.[1];
+  return { logoBase64: dataUrl.slice(comma + 1), logoContentType: mime };
 }

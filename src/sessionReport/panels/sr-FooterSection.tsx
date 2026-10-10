@@ -58,7 +58,7 @@ export function FooterSection({
             <path d="M12 2 4 6v6c0 5 3.5 9 8 10 4.5-1 8-5 8-10V6l-8-4z" />
             <polyline points="9 12 11 14 15 10" />
           </svg>
-          Your data is private and secure.
+          Your data is secure. You control employer visibility in Settings.
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10, fontFamily: f.sans, fontSize: size.sm, color: t.inkSoft }}>
           Was this report helpful?

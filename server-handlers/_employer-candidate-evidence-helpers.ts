@@ -229,6 +229,12 @@ export function latestSessionByUser(rows: SessionRow[]): Map<string, SessionRow>
  *  capabilities and computeEvidenceCapabilities() matches it by focus
  *  itself. Rows with no score are harmless no-ops (they satisfy neither the
  *  skill-score nor the focus+score filters). */
+/** skill_scores is relayed by the client through /api/sessions/save, whereas
+ *  `score` is reconciled server-side by /api/evaluate-session. A session whose
+ *  graded overall is below this floor can't plausibly carry a 70+ capability,
+ *  so its skill_scores are ignored for employer-facing verification. */
+export const SKILL_SCORE_PLAUSIBILITY_FLOOR = 50;
+
 export function computeVerifiedCapabilitiesForCandidate(
   rows: SessionRow[],
   candidateUserId: string,
@@ -239,7 +245,7 @@ export function computeVerifiedCapabilitiesForCandidate(
       date: r.created_at,
       score: typeof r.score === "number" ? r.score : 0,
       focus: r.focus || "",
-      skill_scores: r.skill_scores ?? null,
+      skill_scores: typeof r.score === "number" && r.score >= SKILL_SCORE_PLAUSIBILITY_FLOOR ? (r.skill_scores ?? null) : null,
     })),
   );
 }

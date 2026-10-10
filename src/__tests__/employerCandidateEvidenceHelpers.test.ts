@@ -115,10 +115,18 @@ describe("computeVerifiedCapabilitiesForCandidate", () => {
       user_id: "u1",
       created_at: "2026-01-01T00:00:00Z",
       report_json: {},
-      score: 0,
+      score: 75,
       ...overrides,
     };
   }
+
+  it("ignores skill_scores on sessions whose server-graded overall is below the plausibility floor", () => {
+    const rows = [
+      row({ created_at: "2026-01-01T00:00:00Z", score: 30, skill_scores: { communication: 95 } }),
+      row({ created_at: "2026-02-01T00:00:00Z", score: 30, skill_scores: { communication: 95 } }),
+    ];
+    expect(computeVerifiedCapabilitiesForCandidate(rows, "u1").find((c) => c.key === "communication")?.verified).toBe(false);
+  });
 
   it("returns all four capabilities unverified when the candidate has no sessions", () => {
     const result = computeVerifiedCapabilitiesForCandidate([], "u1");

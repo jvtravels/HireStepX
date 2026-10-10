@@ -30,25 +30,49 @@ import {
 } from "./_shared";
 import { singleUnlockPrice, batchUnlockPrice, batchIndexForRank } from "./_unlock-pricing";
 import { razorpayBasicAuth } from "./_razorpay-auth";
+import { loadEmployerMatchAccess, loadAuthIdentity, DENIED_STATUS } from "./_entitlements";
+import { deriveEmployerTier, isSuspended, type EmployerTier } from "./_employer-trust";
+import {
+  isUuid,
+  decideUnlockLimit,
+  pendingOrderMatchCount,
+  findReusableOrder,
+  findOverlappingOrder,
+  loadOpenOrders,
+  countUnlocksLast24h,
+  insertUnlockOrder,
+  tryCreateLock,
+  releaseCreateLock,
+} from "./_employer-unlock-order";
+import type { UnlockOrderRow } from "./_unlock-fulfillment";
 
 const RAZORPAY_KEY_ID = (process.env.RAZORPAY_KEY_ID || "").trim();
 const RAZORPAY_KEY_SECRET = (process.env.RAZORPAY_KEY_SECRET || "").trim();
 const UPSTASH_URL = (process.env.UPSTASH_REDIS_REST_URL || "").trim();
 const UPSTASH_TOKEN = (process.env.UPSTASH_REDIS_REST_TOKEN || "").trim();
 
-const DEDUP_TTL = 90; // seconds — matches create-order.ts's double-click/retry window
-
-interface MatchRow {
-  id: string;
-  requirement_id: string;
-  candidate_user_id: string;
-  match_score: number;
-  unlocked: boolean;
-}
+// Double-click guard only (optimisation). Correctness for duplicate orders is
+// the DB's partial unique index on employer_unlock_orders, which still holds
+// when Upstash is down.
+const LOCK_TTL = 15; // seconds
 
 interface RequirementRow {
   id: string;
   status: string;
+  employers?: { website?: string | null; suspended_at?: string | null; verification_tier?: string | null } | null;
+}
+
+function orderResponse(order: Pick<UnlockOrderRow, "razorpay_order_id" | "amount" | "currency" | "mode" | "match_ids">, extra: Record<string, unknown> = {}) {
+  const label = order.mode === "single" ? singleUnlockPrice().label : batchUnlockPrice(order.match_ids.length).label;
+  return {
+    orderId: order.razorpay_order_id,
+    amount: order.amount,
+    currency: order.currency,
+    keyId: RAZORPAY_KEY_ID,
+    name: label,
+    description: "Employer contact unlock — HireStepX",
+    ...extra,
+  };
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -108,58 +132,64 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (mode === "batch" && !requirementId) {
     return res.status(400).json({ error: "requirementId is required" });
   }
+  if ((mode === "single" && !isUuid(matchId)) || (mode === "batch" && !isUuid(requirementId))) {
+    return res.status(400).json({ error: "Invalid id" });
+  }
 
+  const sh = supabaseServiceHeaders();
+  let lockKey = "";
   try {
-    let price: { amountPaise: number; label: string };
-    let idempotencyKey: string;
-    let orderNotes: Record<string, string>;
+    const identity = await loadAuthIdentity(SUPABASE_URL, sh, employerId);
+    let tier: EmployerTier;
+    let orderRequirementId: string;
+    let targetMatchIds: string[];
 
     if (mode === "single") {
-      const matchRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/requirement_matches?id=eq.${encodeURIComponent(matchId)}&select=id,requirement_id,candidate_user_id,match_score,unlocked`,
-        { headers: supabaseServiceHeaders() },
-      );
-      if (!matchRes.ok) throw new Error(`match read failed: ${matchRes.status}`);
-      const matchRows = (await matchRes.json().catch(() => [])) as MatchRow[];
-      const match = matchRows[0];
-      if (!match) {
-        return res.status(404).json({ error: "Match not found" });
+      const decision = await loadEmployerMatchAccess({
+        supabaseUrl: SUPABASE_URL, headers: sh, employerId, matchId,
+        authEmail: identity.email, emailConfirmed: identity.emailConfirmed,
+      });
+      if (!decision.ok) {
+        if (decision.reason === "error") throw new Error("match read failed");
+        const denied = DENIED_STATUS[decision.reason];
+        return res.status(denied.status).json({ error: denied.error, code: decision.reason });
       }
-      if (match.unlocked) {
+      const { access } = decision;
+      if (access.unlocked) {
         return res.status(409).json({ error: "This candidate is already unlocked" });
       }
-
-      const reqRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(match.requirement_id)}&employer_id=eq.${encodeURIComponent(employerId)}&select=id,status`,
-        { headers: supabaseServiceHeaders() },
-      );
-      const reqRows = (await reqRes.json().catch(() => [])) as RequirementRow[];
-      if (!reqRes.ok || !reqRows[0]) {
-        return res.status(403).json({ error: "Forbidden" });
-      }
-      if (reqRows[0].status === "closed") {
+      if (!access.requirementOpen) {
         return res.status(409).json({ error: "This requirement is closed" });
       }
-
-      price = singleUnlockPrice();
-      idempotencyKey = `order:${employerId}:unlock:${matchId}`;
-      orderNotes = { employerId, mode: "single", matchIds: matchId };
+      tier = access.tier;
+      orderRequirementId = access.match.requirement_id;
+      targetMatchIds = [matchId];
     } else {
       const reqRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&employer_id=eq.${encodeURIComponent(employerId)}&select=id,status`,
-        { headers: supabaseServiceHeaders() },
+        `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&employer_id=eq.${encodeURIComponent(employerId)}` +
+          `&select=id,status,employers(website,suspended_at,verification_tier)`,
+        { headers: sh },
       );
       const reqRows = (await reqRes.json().catch(() => [])) as RequirementRow[];
       if (!reqRes.ok || !reqRows[0]) {
         return res.status(403).json({ error: "Forbidden" });
       }
+      if (isSuspended(reqRows[0].employers)) {
+        return res.status(403).json({ error: DENIED_STATUS.suspended.error, code: "suspended" });
+      }
       if (reqRows[0].status === "closed") {
         return res.status(409).json({ error: "This requirement is closed" });
       }
+      tier = deriveEmployerTier({
+        storedTier: reqRows[0].employers?.verification_tier,
+        email: identity.email,
+        emailConfirmed: identity.emailConfirmed,
+        website: reqRows[0].employers?.website ?? null,
+      });
 
       const matchesRes = await fetch(
         `${SUPABASE_URL}/rest/v1/requirement_matches?requirement_id=eq.${encodeURIComponent(requirementId)}&select=id,unlocked&order=match_score.desc,id.asc`,
-        { headers: supabaseServiceHeaders() },
+        { headers: sh },
       );
       if (!matchesRes.ok) throw new Error(`matches read failed: ${matchesRes.status}`);
       const matches = (await matchesRes.json().catch(() => [])) as Array<{ id: string; unlocked: boolean }>;
@@ -180,80 +210,109 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (!nextBatch) {
         return res.status(409).json({ error: "All candidates are already unlocked" });
       }
-      const targetMatchIds = nextBatch.filter((r) => !r.unlocked).map((r) => r.id);
 
-      price = batchUnlockPrice(targetMatchIds.length);
-      // Scoped to the exact candidate set being purchased, not just the
-      // requirement — once this set is paid for, those match rows flip to
-      // unlocked and a follow-up "unlock next batch" computes a *different*
-      // targetMatchIds, so it naturally gets its own key instead of
-      // colliding with (and reusing) the just-paid order within the 90s
-      // dedup window (C4).
-      idempotencyKey = `order:${employerId}:unlockbatch:${requirementId}:${targetMatchIds.slice().sort().join(",")}`;
-      orderNotes = { employerId, mode: "batch", matchIds: targetMatchIds.join(",") };
+      // Never charge for a candidate the employer can't actually reach (opted
+      // out, blocked) — they are dropped from this batch and from its price.
+      const locked = nextBatch.filter((r) => !r.unlocked);
+      const decisions = await Promise.all(
+        locked.map((r) =>
+          loadEmployerMatchAccess({
+            supabaseUrl: SUPABASE_URL, headers: sh, employerId, matchId: r.id,
+            authEmail: identity.email, emailConfirmed: identity.emailConfirmed,
+          }),
+        ),
+      );
+      if (decisions.some((d) => !d.ok && d.reason === "error")) throw new Error("match access read failed");
+      targetMatchIds = locked.filter((_, i) => decisions[i].ok).map((r) => r.id);
+      if (targetMatchIds.length === 0) {
+        return res.status(409).json({
+          error: "None of the candidates in this batch are currently available to unlock",
+          code: "no_eligible_candidates",
+        });
+      }
+      orderRequirementId = requirementId;
     }
 
-    if (UPSTASH_URL && UPSTASH_TOKEN) {
-      try {
-        const lockRes = await fetch(`${UPSTASH_URL}/SET/${encodeURIComponent(idempotencyKey)}/pending/NX/EX/${DEDUP_TTL}`, {
-          headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` },
-        });
-        if (lockRes.ok) {
-          const lockData = await lockRes.json();
-          if (lockData.result === null) {
-            const oidRes = await fetch(`${UPSTASH_URL}/GET/${encodeURIComponent(`${idempotencyKey}:oid`)}`, {
-              headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` },
-            });
-            if (oidRes.ok) {
-              const oidData = await oidRes.json();
-              if (oidData.result) {
-                return res.status(200).json({
-                  orderId: oidData.result,
-                  amount: price.amountPaise,
-                  currency: "INR",
-                  keyId: RAZORPAY_KEY_ID,
-                  name: price.label,
-                  description: "Employer contact unlock — HireStepX",
-                });
-              }
-            }
-            await new Promise((r) => setTimeout(r, 2000));
-            const retryRes = await fetch(`${UPSTASH_URL}/GET/${encodeURIComponent(`${idempotencyKey}:oid`)}`, {
-              headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` },
-            });
-            if (retryRes.ok) {
-              const retryData = await retryRes.json();
-              if (retryData.result) {
-                return res.status(200).json({
-                  orderId: retryData.result,
-                  amount: price.amountPaise,
-                  currency: "INR",
-                  keyId: RAZORPAY_KEY_ID,
-                  name: price.label,
-                  description: "Employer contact unlock — HireStepX",
-                });
-              }
-            }
-            return res.status(429).json({ error: "Order already in progress. Please wait a moment." });
-          }
-        }
-      } catch (dedupErr) {
-        console.warn("[employer-create-unlock-order] Idempotency check failed:", dedupErr);
+    const nowMs = Date.now();
+    const openOrders = await loadOpenOrders(SUPABASE_URL, sh, employerId);
+    if (!openOrders) {
+      console.error("[employer-create-unlock-order] open-order lookup failed");
+      return res.status(503).json({ error: "Payments are temporarily unavailable. Please try again shortly." });
+    }
+
+    // Retry / double-click / second tab: hand back the existing unpaid order.
+    const reusable = findReusableOrder(openOrders, mode, targetMatchIds);
+    if (reusable) return res.status(200).json(orderResponse(reusable, { reused: true }));
+
+    const overlapping = findOverlappingOrder(openOrders, targetMatchIds, nowMs);
+    if (overlapping) {
+      return res.status(409).json({
+        error: overlapping.status === "paid"
+          ? "A payment for this candidate is already being processed. Refresh in a moment."
+          : "Another unlock order covering this candidate is already open. Complete or wait for it to expire.",
+        code: "order_in_progress",
+      });
+    }
+
+    const unlockedToday = await countUnlocksLast24h(SUPABASE_URL, sh, employerId, nowMs);
+    if (unlockedToday === null) {
+      console.error("[employer-create-unlock-order] daily unlock count failed");
+      return res.status(503).json({ error: "Payments are temporarily unavailable. Please try again shortly." });
+    }
+    const limit = decideUnlockLimit({
+      tier,
+      used: unlockedToday + pendingOrderMatchCount(openOrders, nowMs),
+      requested: targetMatchIds.length,
+    });
+    if (!limit.ok) {
+      res.setHeader("Retry-After", "3600");
+      return res.status(429).json({
+        error: limit.message,
+        code: "unlock_daily_limit",
+        limit: limit.limit,
+        remaining: limit.remaining,
+        tier,
+      });
+    }
+
+    const price = mode === "single" ? singleUnlockPrice() : batchUnlockPrice(targetMatchIds.length);
+
+    lockKey = `order:${employerId}:unlock:${mode}:${targetMatchIds.slice().sort().join(",")}`;
+    const redis = { url: UPSTASH_URL, token: UPSTASH_TOKEN };
+    if ((await tryCreateLock(lockKey, redis, LOCK_TTL)) === "held") {
+      // Another request is creating this exact order — give it a moment, then
+      // reuse its row. If it never appears we proceed anyway: the unique index
+      // (single) / reuse check (batch) are what actually prevent duplicates.
+      for (let i = 0; i < 3; i++) {
+        await new Promise((r) => setTimeout(r, 600));
+        const again = await loadOpenOrders(SUPABASE_URL, sh, employerId);
+        const hit = again && findReusableOrder(again, mode, targetMatchIds);
+        if (hit) return res.status(200).json(orderResponse(hit, { reused: true }));
       }
     }
 
     const auth = razorpayBasicAuth(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET);
     const receipt = `unlock_${Date.now()}`.slice(0, 40);
+    // Razorpay caps note values at 256 chars; a batch's 10 uuids exceed that,
+    // so batch notes carry only counts — employer_unlock_orders.match_ids is
+    // the authoritative record of which matches an order covers.
+    const orderNotes: Record<string, string> = mode === "single"
+      ? { employerId, mode, requirementId: orderRequirementId, matchIds: targetMatchIds[0] }
+      : { employerId, mode, requirementId: orderRequirementId, matchCount: String(targetMatchIds.length) };
 
     const ac = new AbortController();
     const acTimer = setTimeout(() => ac.abort(), 10_000);
-    const response = await fetch("https://api.razorpay.com/v1/orders", {
-      method: "POST",
-      headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/json" },
-      signal: ac.signal,
-      body: JSON.stringify({ amount: price.amountPaise, currency: "INR", receipt, notes: orderNotes }),
-    });
-    clearTimeout(acTimer);
+    let response: Response;
+    try {
+      response = await fetch("https://api.razorpay.com/v1/orders", {
+        method: "POST",
+        headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/json" },
+        signal: ac.signal,
+        body: JSON.stringify({ amount: price.amountPaise, currency: "INR", receipt, notes: orderNotes }),
+      });
+    } finally {
+      clearTimeout(acTimer);
+    }
 
     if (!response.ok) {
       const errText = await response.text().catch(() => "");
@@ -266,22 +325,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const order = await response.json();
 
-    if (UPSTASH_URL && UPSTASH_TOKEN) {
-      fetch(`${UPSTASH_URL}/SET/${encodeURIComponent(`${idempotencyKey}:oid`)}/${encodeURIComponent(order.id)}?EX=${DEDUP_TTL}`, {
-        headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` },
-      }).catch(() => {});
-    }
-
-    return res.status(200).json({
-      orderId: order.id,
+    // Persist BEFORE the client can pay: the webhook and the reconciler find
+    // the order by razorpay_order_id, so a closed tab after paying still
+    // unlocks. The partial unique index turns a racing duplicate single order
+    // into a 409 here; we hand back the winner's order instead.
+    const inserted = await insertUnlockOrder(SUPABASE_URL, sh, {
+      razorpayOrderId: order.id,
+      employerId,
+      requirementId: orderRequirementId,
+      mode,
+      matchIds: targetMatchIds,
       amount: order.amount,
-      currency: order.currency,
-      keyId: RAZORPAY_KEY_ID,
-      name: price.label,
-      description: "Employer contact unlock — HireStepX",
+      currency: order.currency || "INR",
     });
+    if (inserted.kind === "inserted") {
+      return res.status(200).json(orderResponse(inserted.order));
+    }
+    if (inserted.kind === "conflict" && inserted.order) {
+      return res.status(200).json(orderResponse(inserted.order, { reused: true }));
+    }
+    console.error("employer_unlock_orders insert failed:", inserted.kind === "error" ? inserted.detail : "conflict without winner");
+    return res.status(500).json({ error: "Could not start the payment. Please try again." });
   } catch (err) {
     console.error("employer-create-unlock-order error:", err);
     return res.status(500).json({ error: "Internal error" });
+  } finally {
+    if (lockKey) void releaseCreateLock(lockKey, { url: UPSTASH_URL, token: UPSTASH_TOKEN });
   }
 }

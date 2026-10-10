@@ -22,7 +22,8 @@ export type NotificationType =
   | "employer_viewed_profile"
   | "matches_ready"
   | "strong_match_found"
-  | "new_message";
+  | "new_message"
+  | "candidate_responded";
 
 export interface NotifyInput {
   userId: string;
@@ -46,6 +47,7 @@ export const NOTIFICATION_AUDIENCE: Record<NotificationType, "employer" | "candi
   unlock_confirmed: "employer",
   matches_ready: "employer",
   strong_match_found: "employer",
+  candidate_responded: "employer",
   payment_success: "both",
   payment_failed: "both",
   subscription_renewed: "both",

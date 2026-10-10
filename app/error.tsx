@@ -16,6 +16,7 @@ import { c, font } from "@/tokens";
 import { Button } from "@/components/ui/button";
 import { tokens as T } from "@/auth/_tokens";
 import { CopyEmailLink } from "@/_CopyEmailLink";
+import { captureClientEvent } from "@/posthogClient";
 
 const SUPPORT_EMAIL = "hello@hirestepx.com";
 
@@ -31,6 +32,9 @@ export default function GlobalRouteError({
     // Sentry / errorReporter will pick it up if configured.
     try {
       console.error("[app/error] unhandled:", error.message, error.digest);
+      // Digest + path only (never the message, which can echo user data) so an
+      // intermittent crash can be tied to the server log line that shares it.
+      captureClientEvent("route_error", { digest: error.digest ?? null, path: window.location.pathname });
     } catch {
       /* noop */
     }

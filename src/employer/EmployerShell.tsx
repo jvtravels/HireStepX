@@ -1,22 +1,24 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "../AuthContext";
-import { tokens as t, fonts as f, shadows } from "../auth/_tokens";
+import { tokens as t, fonts as f } from "../auth/_tokens";
 import { EmployerWordmark } from "./_atoms";
 import { useEmployerData } from "./EmployerDataContext";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import VerificationBanner from "./VerificationBanner";
 import { Button } from "@/components/ui/button";
-import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { LayoutDashboardIcon, BriefcaseIcon, SettingsIcon } from "lucide-react";
+import { LayoutDashboardIcon, BriefcaseIcon, SettingsIcon, ChevronDownIcon, LogOutIcon } from "lucide-react";
 import AppShellFrame, { type ShellNavItem } from "../AppShellFrame";
 
 export type BreadcrumbCrumb = { label: string; path?: string };
@@ -72,8 +74,10 @@ function isSelfCardedRoute(pathname: string): boolean {
 
 /* Mirrors the account-menu button in src/onboarding/Panels.tsx TopBar
    (initials avatar chip + "Signed in as / Log out" dropdown) so the
-   pre-approval employer flow reads as the same account chrome as the
-   candidate onboarding flow, not a different, plainer pattern. */
+   pre-onboarding employer flow reads as the same account chrome as the
+   candidate onboarding flow. Built on the shared DropdownMenu so arrow-key
+   navigation, Escape, focus return and outside-click all come from Radix
+   instead of a hand-rolled role="menu". */
 function AccountMenu({ name, email, onLogout }: { name?: string; email?: string; onLogout: () => void }) {
   const display = (name || email || "").trim();
   const initials =
@@ -84,106 +88,46 @@ function AccountMenu({ name, email, onLogout }: { name?: string; email?: string;
       .map((p) => p[0]?.toUpperCase())
       .join("") || "?";
 
-  const [menuOpen, setMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement | null>(null);
-  useEffect(() => {
-    if (!menuOpen) return;
-    const onDoc = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setMenuOpen(false);
-      }
-    };
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setMenuOpen(false); };
-    document.addEventListener("mousedown", onDoc);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onDoc);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [menuOpen]);
-
   if (!display) return null;
 
   return (
-    <div ref={menuRef} style={{ position: "relative" }}>
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              type="button"
-              variant={menuOpen ? "outline" : "ghost"}
-              onClick={() => setMenuOpen((v) => !v)}
-              aria-haspopup="menu"
-              aria-expanded={menuOpen}
-              aria-label={`Account: ${display}`}
-              style={{ borderRadius: 999, fontFamily: f.sans, color: t.coal }}
-            >
-              <span
-                aria-hidden="true"
-                style={{
-                  width: 30,
-                  height: 30,
-                  borderRadius: 999,
-                  background: t.indigo100,
-                  color: t.indigo,
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontFamily: f.sans,
-                  fontSize: 13,
-                }}
-              >
-                {initials}
-              </span>
-              <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 160 }}>
-                {display}
-              </span>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <polyline points="6 9 12 15 18 9" />
-              </svg>
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>{display}</TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-      {menuOpen && (
-        <div
-          role="menu"
-          style={{
-            position: "absolute",
-            right: 0,
-            top: "calc(100% + 6px)",
-            minWidth: 200,
-            background: t.white,
-            border: `1px solid ${t.line}`,
-            borderRadius: 10,
-            boxShadow: shadows.card,
-            padding: 6,
-            zIndex: 20,
-            fontFamily: f.sans,
-          }}
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          type="button"
+          variant="ghost"
+          aria-label={`Account menu for ${display}`}
+          className="h-11 max-w-full"
+          style={{ borderRadius: 999, fontFamily: f.sans, color: t.coal }}
         >
-          <div style={{ padding: "6px 10px", fontSize: 12, color: t.inkSoft, borderBottom: `1px solid ${t.line}`, marginBottom: 4 }}>
-            Signed in as<br />
-            <span style={{ color: t.coal, fontWeight: 500 }}>{email || display}</span>
-          </div>
-          <Button
-            type="button"
-            role="menuitem"
-            variant="ghost"
-            onClick={() => { setMenuOpen(false); onLogout(); }}
-            style={{ width: "100%", justifyContent: "flex-start", fontFamily: f.sans, color: t.coal }}
+          <span
+            aria-hidden="true"
+            style={{
+              width: 30, height: 30, borderRadius: 999, background: t.indigo100, color: t.indigo,
+              display: "inline-flex", alignItems: "center", justifyContent: "center",
+              fontFamily: f.sans, fontSize: 13, flexShrink: 0,
+            }}
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-              <polyline points="16 17 21 12 16 7" />
-              <line x1="21" y1="12" x2="9" y2="12" />
-            </svg>
-            Sign out
-          </Button>
-        </div>
-      )}
-    </div>
+            {initials}
+          </span>
+          <span className="max-[480px]:hidden" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 160 }}>
+            {display}
+          </span>
+          <ChevronDownIcon size={12} aria-hidden="true" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" style={{ minWidth: 200, fontFamily: f.sans }}>
+        <DropdownMenuLabel style={{ fontSize: 12, color: t.inkSoft, fontWeight: 400 }}>
+          Signed in as<br />
+          <span style={{ color: t.coal, fontWeight: 500, overflowWrap: "anywhere" }}>{email || display}</span>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onSelect={onLogout} className="min-h-9 pointer-coarse:min-h-11">
+          <LogOutIcon size={14} aria-hidden="true" />
+          Sign out
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
@@ -209,25 +153,34 @@ export default function EmployerShell({ children }: { children: React.ReactNode 
   };
 
   if (!isConsole) {
+    const gutter = isMobile ? 16 : 48;
     return (
-      <div style={{ minHeight: "100vh", background: t.cream, display: "flex", flexDirection: "column" }}>
+      <div style={{ minHeight: "100dvh", background: t.cream, display: "flex", flexDirection: "column" }}>
+        <a href="#employer-main" className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:px-4 focus:py-3"
+          style={{ background: t.indigo, color: t.white, fontFamily: f.sans, fontSize: 14, fontWeight: 600 }}>
+          Skip to main content
+        </a>
         <header
           style={{
             display: "grid",
-            gridTemplateColumns: "1fr auto",
+            gridTemplateColumns: "minmax(0, 1fr) auto",
             alignItems: "center",
-            padding: "32px 48px",
+            padding: `${isMobile ? 16 : 32}px ${gutter}px`,
             gap: 16,
           }}
         >
-          <Link href="/employer" style={{ display: "flex", width: "fit-content", textDecoration: "none" }}>
+          <Link href="/employer" aria-label="HireStepX employer home" style={{ display: "flex", width: "fit-content", textDecoration: "none" }}>
             <EmployerWordmark />
           </Link>
-          <div style={{ justifySelf: "end" }}>
+          <div style={{ justifySelf: "end", minWidth: 0 }}>
             <AccountMenu name={user?.name} email={user?.email} onLogout={handleLogout} />
           </div>
         </header>
-        <main style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "8px 32px 40px" }}>
+        <main
+          id="employer-main"
+          tabIndex={-1}
+          style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: `8px ${isMobile ? 16 : 32}px 40px`, outline: "none" }}
+        >
           {children}
         </main>
       </div>
@@ -276,6 +229,7 @@ export default function EmployerShell({ children }: { children: React.ReactNode 
         isMobile={isMobile}
         mainId="employer-main"
         pageKey={pathname}
+        banners={<VerificationBanner onSettingsPage={isSettingsRoute} />}
       >
         {isSelfCardedRoute(pathname ?? "") ? children : (
           <div style={{

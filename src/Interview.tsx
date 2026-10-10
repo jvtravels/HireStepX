@@ -245,7 +245,7 @@ function InterviewInner() {
     handleNextQuestion, handleSkipQuestion, skipSpeaking, retakeLastAnswer, handleEnd, navigate, replayQuestion,
     restartListening, awaitingSpeechStart, isLastStep, isClosingStep,
     skipsUsed, skipBudget, canSkip,
-    micQuiet, reconnecting, reconnectAttempt,
+    micQuiet, reconnecting, reconnectAttempt, nextProbeAt, retryConnectionNow,
 
     transcriptRef, endModalTriggerRef, textareaRef, nextBtnRef,
     ttsCancelRef, interviewEndedRef,
@@ -829,6 +829,8 @@ function InterviewInner() {
       {reconnecting && (
         <ReconnectingOverlay
           attempt={reconnectAttempt}
+          nextProbeAt={nextProbeAt}
+          onRetryNow={retryConnectionNow}
           currentQuestion={currentQuestionNum}
           totalQuestions={totalQuestions}
           baseQuestionCount={baseQuestionCount}

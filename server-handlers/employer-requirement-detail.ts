@@ -41,6 +41,25 @@ import { extractResumeLocation, explainMatch, extractSkills } from "./_requireme
 import { extractResumeDetail, redactResumeDetailForLock } from "./_resume-detail-helpers";
 import { runMatching, logRequirementActivity } from "./employer-requirements";
 import {
+  fetchKeyset,
+  loadBlockedCandidateIds,
+  loadOptedOutCandidateIds,
+  loadEvidenceFlags,
+  loadGradedSessions,
+  parsePagination,
+  paginate,
+  isTouchedMatch,
+  scrubLockedResume,
+  maskedCandidateName,
+  checkEmployerAllowance,
+  suspendedAllowance,
+  chunk,
+  inList,
+  LOCKED_MASKED_FIELDS,
+  type Allowance,
+  type EmployerGateRow,
+} from "./_employer-matching-helpers";
+import {
   asBoundedString,
   asBoundedStringArray,
   asBoundedExperience,
@@ -93,6 +112,18 @@ function extractPortfolioLinks(raw: unknown): PortfolioLink[] {
     }
   }
   return out;
+}
+
+type EmployerEmbed = EmployerGateRow | null | undefined;
+const isSuspendedEmployer = (e: EmployerEmbed): boolean => !!e?.suspended_at;
+const EMPLOYER_EMBED = "employers(suspended_at,verification_tier,website)";
+
+/** Turns a refused allowance (suspended / tier limit / unreadable count) into
+ *  the response, with `Retry-After` on rate-style refusals. */
+function denyResponse(allowance: Extract<Allowance, { ok: false }>, headers: Record<string, string>): Response {
+  const out: Record<string, string> = { ...headers };
+  if (allowance.retryAfterSeconds) out["Retry-After"] = String(allowance.retryAfterSeconds);
+  return new Response(JSON.stringify(allowance.body), { status: allowance.status, headers: out });
 }
 
 export default async function handler(req: Request): Promise<Response> {
@@ -161,22 +192,55 @@ export default async function handler(req: Request): Promise<Response> {
       return new Response(JSON.stringify({ error: "Requirement not found" }), { status: 404, headers });
     }
 
-    const matchesRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/requirement_matches?requirement_id=eq.${encodeURIComponent(requirementId)}&select=id,candidate_user_id,match_score,roster_score,unlocked,unlocked_at,candidate_status,candidate_status_note,interview_scheduled_at&order=match_score.desc,id.asc`,
-      { headers: serviceHeaders() },
-    );
-    if (!matchesRes.ok) throw new Error(`matches read failed: ${matchesRes.status}`);
-    const matches = (await matchesRes.json().catch(() => [])) as Array<{
+    type MatchRow = {
       id: string; candidate_user_id: string; match_score: number; roster_score: number; unlocked: boolean; unlocked_at: string | null;
       candidate_status: string; candidate_status_note: string | null; interview_scheduled_at: string | null;
-    }>;
+    };
+    // Light columns only, keyset-paginated: the heavy profile/session reads
+    // below run for the requested page, not the whole shortlist.
+    const matchesRead = await fetchKeyset<MatchRow & Record<string, unknown>>({
+      baseUrl: `${SUPABASE_URL}/rest/v1/requirement_matches?requirement_id=eq.${encodeURIComponent(requirementId)}&select=id,candidate_user_id,match_score,roster_score,unlocked,unlocked_at,candidate_status,candidate_status_note,interview_scheduled_at`,
+      headers: serviceHeaders(), keyField: "id", pageSize: 1000, maxRows: 5000,
+    });
+    if (matchesRead.failed) throw new Error("matches read failed");
+    const allMatches: MatchRow[] = matchesRead.rows
+      .slice()
+      .sort((x, y) => y.match_score - x.match_score || (x.id < y.id ? -1 : x.id > y.id ? 1 : 0));
 
-    const candidateIds = matches.map((m) => m.candidate_user_id);
+    // Consent: a candidate who blocked this employer is gone entirely; one who
+    // switched employer visibility off disappears while locked, but an
+    // already-paid-for (unlocked) row stays — the employer bought that
+    // snapshot — flagged so the UI can say the candidate withdrew.
+    const allCandidateIds = Array.from(new Set(allMatches.map((m) => m.candidate_user_id)));
+    const blocked = await loadBlockedCandidateIds(SUPABASE_URL, serviceHeaders(), auth.userId);
+    const optedOut = allCandidateIds.length > 0 ? await loadOptedOutCandidateIds(SUPABASE_URL, serviceHeaders(), allCandidateIds) : new Set<string>();
+    const evidence = allCandidateIds.length > 0 ? await loadEvidenceFlags(SUPABASE_URL, serviceHeaders(), allCandidateIds) : new Map<string, boolean>();
+    // Fail closed: if consent/evidence can't be read, show nothing rather than
+    // candidates who may have withdrawn.
+    if (!blocked || !optedOut || !evidence) throw new Error("candidate consent read failed");
+
+    /* Defense in depth against stale rows: rankAndCap (_requirement-match-helpers.ts)
+       already excludes no-evidence candidates when a requirement is created or
+       re-matched, but a row written before that filter existed — or one
+       "touched" by the employer, which runMatching preserves without
+       re-scoring — never gets cleaned up by re-running matching alone.
+       Re-apply the same evidence rule here at read time so it can't resurface,
+       while never hiding a row the employer has actually interacted with. */
+    const visibleMatches = allMatches.filter((m) => {
+      if (blocked.has(m.candidate_user_id)) return false;
+      if (optedOut.has(m.candidate_user_id) && !m.unlocked) return false;
+      return isTouchedMatch(m) || !!evidence.get(m.candidate_user_id);
+    });
+
+    const pageParams = parsePagination(new URL(req.url).searchParams);
+    const paged = paginate(visibleMatches, pageParams);
+    const pageMatches = paged.items;
+    const candidateIds = pageMatches.map((m) => m.candidate_user_id);
+
     const profileById = new Map<string, { name: string; email: string; target_role: string; resume_data: unknown; practice_timestamps: string[]; portfolio_links: unknown }>();
-    if (candidateIds.length > 0) {
-      const idParam = candidateIds.map((id) => encodeURIComponent(id)).join(",");
+    for (const batch of chunk(candidateIds, 100)) {
       const profilesRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/profiles?id=in.(${idParam})&select=id,name,email,target_role,resume_data,practice_timestamps,portfolio_links`,
+        `${SUPABASE_URL}/rest/v1/profiles?id=in.(${inList(batch)})&select=id,name,email,target_role,resume_data,practice_timestamps,portfolio_links`,
         { headers: serviceHeaders() },
       );
       if (profilesRes.ok) {
@@ -187,33 +251,15 @@ export default async function handler(req: Request): Promise<Response> {
       }
     }
 
+    // Server-graded sessions only (report_generated_at set): a client-relayed
+    // session row is not evidence an employer should see counted.
     const sessionCounts = new Map<string, number>();
     if (candidateIds.length > 0) {
-      const idParam = candidateIds.map((id) => encodeURIComponent(id)).join(",");
-      const sessionsRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/sessions?user_id=in.(${idParam})&select=user_id&limit=20000`,
-        { headers: serviceHeaders() },
-      );
-      if (sessionsRes.ok) {
-        const rows = (await sessionsRes.json().catch(() => [])) as Array<{ user_id: string }>;
-        for (const r of rows) sessionCounts.set(r.user_id, (sessionCounts.get(r.user_id) || 0) + 1);
-      }
+      const graded = await loadGradedSessions(SUPABASE_URL, serviceHeaders(), candidateIds, false);
+      for (const r of graded) sessionCounts.set(r.user_id, (sessionCounts.get(r.user_id) || 0) + 1);
     }
 
-    /* Defense in depth against stale rows: rankAndCap (_requirement-match-helpers.ts)
-       already excludes no-resume/no-session candidates when a requirement is
-       created or re-matched, but a row written before that filter existed — or
-       one "touched" by the employer (unlocked/status-changed/noted/scheduled),
-       which runMatching's preserve-on-edit logic carries over without
-       re-scoring — never gets cleaned up by re-running matching alone. Re-apply
-       the same evidence rule here at read time so it can't resurface, while
-       never hiding a row the employer has actually interacted with. */
-    const isTouchedMatch = (m: (typeof matches)[number]) =>
-      m.unlocked || m.candidate_status !== "shortlisted" || !!m.candidate_status_note || !!m.interview_scheduled_at;
-    const hasEvidence = (m: (typeof matches)[number]) =>
-      profileById.get(m.candidate_user_id)?.resume_data != null || (sessionCounts.get(m.candidate_user_id) || 0) > 0;
-
-    const candidates = matches.filter((m) => isTouchedMatch(m) || hasEvidence(m)).map((m) => {
+    const candidates = pageMatches.map((m) => {
       const profile = profileById.get(m.candidate_user_id);
       const timestamps = Array.isArray(profile?.practice_timestamps) ? profile!.practice_timestamps : [];
       const lastActive = timestamps.length ? timestamps[timestamps.length - 1] : null;
@@ -226,11 +272,14 @@ export default async function handler(req: Request): Promise<Response> {
 
       const unlocked = m.unlocked;
       /* Identity must never leave the server for a Locked match — masking
-         only in the client (candidate.unlocked ? name : "Candidate #...")
-         is cosmetic; anyone reading the network response sees the real
-         name/phone/LinkedIn regardless. Redact here, not just on render. */
-      const name = unlocked ? profile?.name || "Candidate" : `Candidate #${m.id.slice(0, 6)}`;
-      const resume = unlocked ? resumeDetail : redactResumeDetailForLock(resumeDetail, profile?.name || "");
+         only in the client is cosmetic; anyone reading the network response
+         sees the real name/phone/LinkedIn regardless. Redact here: the
+         structured fields via redactResumeDetailForLock, then names that
+         survive inside free text (employers, colleges, emails, links). */
+      const name = unlocked ? profile?.name || "Candidate" : maskedCandidateName(m.id);
+      const resume = unlocked
+        ? resumeDetail
+        : scrubLockedResume(resumeDetail, redactResumeDetailForLock(resumeDetail, profile?.name || ""));
 
       return {
         id: m.id,
@@ -245,15 +294,18 @@ export default async function handler(req: Request): Promise<Response> {
         skills: extractSkills(profile?.resume_data).slice(0, 8),
         unlocked,
         contact: unlocked && profile ? { email: profile.email, phone: resumeDetail.phone || undefined } : undefined,
-        /* Same identity-leak rule as contact/resume above: a personal
-           site/GitHub link lets an employer identify or reach a candidate
-           outside HireStepX without paying to unlock, so it's withheld
-           entirely — not just scrubbed — for a locked match. */
+        /* A personal site/GitHub link lets an employer identify or reach a
+           candidate outside HireStepX without paying to unlock, so it's
+           withheld entirely — not just scrubbed — for a locked match. */
         portfolioLinks: unlocked ? extractPortfolioLinks(profile?.portfolio_links) : [],
         resume,
         candidateStatus: m.candidate_status,
         candidateStatusNote: m.candidate_status_note,
         interviewScheduledAt: m.interview_scheduled_at,
+        // Additive: what was withheld for a locked match, and whether a paid
+        // candidate has since withdrawn employer visibility.
+        maskedFields: unlocked ? [] : [...LOCKED_MASKED_FIELDS],
+        candidateWithdrew: unlocked && optedOut.has(m.candidate_user_id),
       };
     });
 
@@ -299,11 +351,17 @@ export default async function handler(req: Request): Promise<Response> {
         createdAt: requirement.created_at.slice(0, 10),
         lastMatchedAt: requirement.last_matched_at,
         candidates,
+        // Pagination (additive): `candidates` is now one page of the shortlist.
+        page: paged.page,
+        limit: paged.limit,
+        total: paged.total,
+        nextPage: paged.nextPage,
+        pagination: { page: paged.page, limit: paged.limit, total: paged.total, nextPage: paged.nextPage },
         // True pre-cap matched-pool size (see rankAndCap's totalMatched in
         // _requirement-match-helpers.ts) — floored at candidates.length so a
         // requirement matched before this column existed (defaults to 0)
         // never reports fewer matched than it has actual candidates.
-        totalMatched: Math.max(requirement.matched_pool_size ?? 0, candidates.length),
+        totalMatched: Math.max(requirement.matched_pool_size ?? 0, paged.total),
       }),
       { status: 200, headers },
     );
@@ -324,10 +382,10 @@ async function handleStatusAction(
 ): Promise<Response> {
   try {
     const existingRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&employer_id=eq.${encodeURIComponent(userId)}&select=id,status,title,location,description,skills,experience_min,experience_max,min_readiness_band,min_star_completeness,employment_type,duration_weeks,hours_per_week`,
+      `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&employer_id=eq.${encodeURIComponent(userId)}&select=id,status,title,location,description,skills,experience_min,experience_max,min_readiness_band,min_star_completeness,employment_type,duration_weeks,hours_per_week,${EMPLOYER_EMBED}`,
       { headers: serviceHeaders() },
     );
-    const existingRows = (await existingRes.json().catch(() => [])) as Array<{ id: string; status: string; title: string; location: string; description: string | null; skills: string[] | null; experience_min: number | null; experience_max: number | null; min_readiness_band: string | null; min_star_completeness: number | null; employment_type: string | null; duration_weeks: number | null; hours_per_week: number | null }>;
+    const existingRows = (await existingRes.json().catch(() => [])) as Array<{ id: string; employers?: EmployerEmbed; status: string; title: string; location: string; description: string | null; skills: string[] | null; experience_min: number | null; experience_max: number | null; min_readiness_band: string | null; min_star_completeness: number | null; employment_type: string | null; duration_weeks: number | null; hours_per_week: number | null }>;
     if (!existingRes.ok || !existingRows[0]) {
       return new Response(JSON.stringify({ error: "Requirement not found" }), { status: 404, headers });
     }
@@ -337,6 +395,17 @@ async function handleStatusAction(
     }
     if (action === "reopen" && current.status !== "closed") {
       return new Response(JSON.stringify({ error: "Requirement isn't archived" }), { status: 409, headers });
+    }
+    // Archiving is always allowed (it only reduces exposure, even for a
+    // suspended employer). Reopening re-enters matching, so it is gated like a
+    // create: not suspended, a free open-requirement slot, and rematch budget —
+    // checked before anything is written.
+    if (action === "reopen") {
+      const allowance = await checkEmployerAllowance({
+        supabaseUrl: SUPABASE_URL, headers: serviceHeaders(), employerId: userId, employer: current.employers,
+        needsOpenSlot: true, needsRematch: true,
+      });
+      if (!allowance.ok) return denyResponse(allowance, headers);
     }
 
     const nextStatus = action === "archive" ? "closed" : "generating";
@@ -426,13 +495,15 @@ async function handleStageAction(
 ): Promise<Response> {
   try {
     const existingRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&employer_id=eq.${encodeURIComponent(userId)}&select=id,stage,status`,
+      `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&employer_id=eq.${encodeURIComponent(userId)}&select=id,stage,status,employers(suspended_at)`,
       { headers: serviceHeaders() },
     );
-    const existingRows = (await existingRes.json().catch(() => [])) as Array<{ id: string; stage: RequirementStage; status: string }>;
+    const existingRows = (await existingRes.json().catch(() => [])) as Array<{ id: string; stage: RequirementStage; status: string; employers?: EmployerEmbed }>;
     if (!existingRes.ok || !existingRows[0]) {
       return new Response(JSON.stringify({ error: "Requirement not found" }), { status: 404, headers });
     }
+    // A suspended employer is read-only: no pipeline moves either.
+    if (isSuspendedEmployer(existingRows[0].employers)) return denyResponse(suspendedAllowance(), headers);
     const currentStage = existingRows[0].stage;
 
     // Defense in depth: the UI already disables stage controls once a
@@ -534,10 +605,10 @@ async function handlePatch(req: Request, requirementId: string, userId: string, 
 
   try {
     const existingRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&employer_id=eq.${encodeURIComponent(userId)}&select=*`,
+      `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&employer_id=eq.${encodeURIComponent(userId)}&select=*,${EMPLOYER_EMBED}`,
       { headers: serviceHeaders() },
     );
-    const existingRows = (await existingRes.json().catch(() => [])) as Array<RequirementRow & { description: string | null }>;
+    const existingRows = (await existingRes.json().catch(() => [])) as Array<RequirementRow & { description: string | null; employers?: EmployerEmbed }>;
     if (!existingRes.ok || !existingRows[0]) {
       return new Response(JSON.stringify({ error: "Requirement not found" }), { status: 404, headers });
     }
@@ -610,6 +681,17 @@ async function handlePatch(req: Request, requirementId: string, userId: string, 
     }
     if (!isFutureDueDate(dueDate)) {
       return new Response(JSON.stringify({ error: "Due date can't be in the past" }), { status: 400, headers });
+    }
+
+    // Gates run before any write. Suspended = read-only even for a no-rematch
+    // edit; otherwise an edit that re-runs matching spends rematch budget.
+    if (isSuspendedEmployer(existing.employers)) return denyResponse(suspendedAllowance(), headers);
+    if (!skipRematch) {
+      const allowance = await checkEmployerAllowance({
+        supabaseUrl: SUPABASE_URL, headers: serviceHeaders(), employerId: userId, employer: existing.employers,
+        needsOpenSlot: false, needsRematch: true,
+      });
+      if (!allowance.ok) return denyResponse(allowance, headers);
     }
 
     const patchRes = await fetch(`${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}`, {

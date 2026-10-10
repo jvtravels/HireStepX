@@ -192,36 +192,39 @@ export interface Requirement {
     (PATCH) accept. Single source of truth for RequirementForm and
     EmployerDataContext.addRequirement/updateRequirement so the two never
     drift apart. */
+/** Wire contract for create/update. On update, `undefined` (key omitted) means
+ *  "leave unchanged" while `null` means "clear" — JSON drops `undefined`, so an
+ *  editor that must clear a field has to send `null` explicitly. */
 export interface RequirementFormValues {
   title: string;
   locations: string[];
-  department?: string;
+  department?: string | null;
   noticePeriodPref?: string;
   description?: string;
-  experienceMin?: number;
-  experienceMax?: number;
-  dueDate?: string;
-  budgetMin?: number;
-  budgetMax?: number;
-  openPositions?: number;
+  experienceMin?: number | null;
+  experienceMax?: number | null;
+  dueDate?: string | null;
+  budgetMin?: number | null;
+  budgetMax?: number | null;
+  openPositions?: number | null;
   workMode?: WorkMode;
   employmentType?: EmploymentType;
   skills?: string[];
-  responsibilities?: string;
-  niceToHave?: string;
-  preferredIndustry?: string;
+  responsibilities?: string | null;
+  niceToHave?: string | null;
+  preferredIndustry?: string | null;
   preferredColleges?: string[];
   targetCompanies?: string[];
   perksAndBenefits?: string[];
   salaryType?: SalaryType;
-  preferredDomain?: string;
-  workSchedule?: string;
-  availability?: string;
-  relevantExperience?: string;
+  preferredDomain?: string | null;
+  workSchedule?: string | null;
+  availability?: string | null;
+  relevantExperience?: string | null;
   portfolioRequired?: boolean;
   customSkillSets?: string[];
-  durationWeeks?: number;
-  hoursPerWeek?: number;
-  minReadinessBand?: "strongHire" | "hire" | "leanHire";
-  minStarCompleteness?: number;
+  durationWeeks?: number | null;
+  hoursPerWeek?: number | null;
+  minReadinessBand?: "strongHire" | "hire" | "leanHire" | null;
+  minStarCompleteness?: number | null;
 }

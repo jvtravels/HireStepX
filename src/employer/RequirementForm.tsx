@@ -1,9 +1,11 @@
 "use client";
 
 import { useMaxWidth } from "../hooks/useMaxWidth";
-import { useState, Dispatch, SetStateAction } from "react";
+import { useEffect, useRef, useState, Dispatch, SetStateAction, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import { WorkMode, EmploymentType, SalaryType, Requirement, RequirementFormValues } from "./mockData";
+import { buildRequirementPayload } from "./_requirementPayload";
+import DateField from "./DateField";
 import { tokens as t, fonts as f, textSize } from "@/auth/_tokens";
 import {
   AutocompleteInput,
@@ -86,7 +88,7 @@ export type { RequirementFormValues } from "./mockData";
 
 function StepProgress({ step }: { step: 1 | 2 }) {
   return (
-    <div style={{ display: "flex", gap: 6, margin: "10px 0 0" }}>
+    <div aria-hidden="true" style={{ display: "flex", gap: 6, margin: "10px 0 0" }}>
       {[1, 2].map((n) => (
         <div
           key={n}
@@ -106,6 +108,11 @@ function StepProgress({ step }: { step: 1 | 2 }) {
    Create walks a 2-step wizard (Basic Information → Preferences & perks);
    edit renders every field on one flat page with a top Cancel / Save
    changes bar, matching the "Edit Opportunity" reference exactly. */
+/* Pinned to the top of the shell's scroll area so Save / Continue stay reachable
+   on a long form. Needs the card to clip (not hide) overflow: `hidden` makes the
+   card a scroll container and silently disables sticky. */
+const STICKY_HEADER: CSSProperties = { position: "sticky", top: 0, zIndex: 20, background: t.white };
+
 export function RequirementForm({
   mode,
   initial,
@@ -160,10 +167,26 @@ export function RequirementForm({
 
   const [submitting, setSubmitting] = useState(false);
 
-  const today = new Date().toISOString().slice(0, 10);
+  // Moving between wizard steps swaps the whole body; without this, keyboard
+  // and screen-reader focus is left on a button that no longer exists.
+  const stepHeadingRef = useRef<HTMLHeadingElement>(null);
+  const firstStepRender = useRef(true);
+  useEffect(() => {
+    if (firstStepRender.current) {
+      firstStepRender.current = false;
+      return;
+    }
+    stepHeadingRef.current?.focus();
+  }, [step]);
+
+  // Local calendar date — toISOString() is UTC, which is "yesterday" for the
+  // first hours of an IST morning and would let a past due date through.
+  const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
   const experienceRangeValid = !experienceMin.trim() || !experienceMax.trim() || Number(experienceMin) <= Number(experienceMax);
   const budgetRangeValid = !budgetMin.trim() || !budgetMax.trim() || Number(budgetMin) <= Number(budgetMax);
   const dueDateValid = !dueDate || dueDate >= today;
+  const descriptionTooShort = description.trim().length > 0 && description.trim().length < MIN_DESCRIPTION_LENGTH;
 
   const basicInfoValid =
     title.trim().length > 1 &&
@@ -176,49 +199,20 @@ export function RequirementForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!basicInfoValid || submitting) return;
+    // Enter inside a field must not post the job from step 1.
+    if (mode === "create" && step === 1) {
+      setStep(2);
+      return;
+    }
     setSubmitError(null);
     setSubmitting(true);
-    const parsedMin = experienceMin.trim() ? Number(experienceMin) : undefined;
-    const parsedMax = experienceMax.trim() ? Number(experienceMax) : undefined;
-    const parsedBudgetMin = budgetMin.trim() ? Number(budgetMin) : undefined;
-    const parsedBudgetMax = budgetMax.trim() ? Number(budgetMax) : undefined;
-    const parsedOpenPositions = openPositions.trim() ? Number(openPositions) : undefined;
-    const parsedDurationWeeks = durationWeeks.trim() ? Number(durationWeeks) : undefined;
-    const parsedHoursPerWeek = hoursPerWeek.trim() ? Number(hoursPerWeek) : undefined;
-    const parsedMinStarCompleteness = minStarCompleteness.trim() ? Number(minStarCompleteness) : undefined;
-    const ok = await onSubmit({
-      title: title.trim(),
-      department: department.trim() || undefined,
-      locations,
-      noticePeriodPref,
-      description: description.trim(),
-      experienceMin: Number.isFinite(parsedMin) ? parsedMin : undefined,
-      experienceMax: Number.isFinite(parsedMax) ? parsedMax : undefined,
-      dueDate: dueDate || undefined,
-      budgetMin: Number.isFinite(parsedBudgetMin) ? parsedBudgetMin : undefined,
-      budgetMax: Number.isFinite(parsedBudgetMax) ? parsedBudgetMax : undefined,
-      openPositions: Number.isFinite(parsedOpenPositions) ? parsedOpenPositions : undefined,
-      workMode,
-      employmentType,
-      skills,
-      customSkillSets,
-      responsibilities: responsibilities.trim() || undefined,
-      niceToHave: niceToHave.trim() || undefined,
-      preferredIndustry: preferredIndustry.trim() || undefined,
-      preferredColleges,
-      targetCompanies,
-      perksAndBenefits,
-      salaryType,
-      preferredDomain: preferredDomain.trim() || undefined,
-      workSchedule: workSchedule.trim() || undefined,
-      availability: availability.trim() || undefined,
-      relevantExperience: relevantExperience.trim() || undefined,
-      portfolioRequired,
-      durationWeeks: Number.isFinite(parsedDurationWeeks) ? parsedDurationWeeks : undefined,
-      hoursPerWeek: Number.isFinite(parsedHoursPerWeek) ? parsedHoursPerWeek : undefined,
-      minReadinessBand: minReadinessBand || undefined,
-      minStarCompleteness: Number.isFinite(parsedMinStarCompleteness) ? parsedMinStarCompleteness : undefined,
-    });
+    const ok = await onSubmit(buildRequirementPayload({
+      title, department, locations, noticePeriodPref, description, experienceMin, experienceMax, dueDate,
+      budgetMin, budgetMax, openPositions, workMode, employmentType, skills, customSkillSets,
+      responsibilities, niceToHave, preferredIndustry, preferredColleges, targetCompanies, perksAndBenefits,
+      salaryType, preferredDomain, workSchedule, availability, relevantExperience, portfolioRequired,
+      durationWeeks, hoursPerWeek, minReadinessBand, minStarCompleteness,
+    }));
     if (!ok) {
       setSubmitting(false);
       // onSubmit already called setSubmitError with the server's specific
@@ -227,138 +221,147 @@ export function RequirementForm({
     }
   };
 
+  const missingBasics = [
+    title.trim().length <= 1 && "a title",
+    locations.length === 0 && "at least one location",
+    description.trim().length < MIN_DESCRIPTION_LENGTH && `a description of ${MIN_DESCRIPTION_LENGTH}+ characters`,
+  ].filter((m): m is string => typeof m === "string");
+  const basicsHint = missingBasics.length > 0 ? (
+    <HelpText live={false}>To continue, add {missingBasics.join(", ")}.</HelpText>
+  ) : null;
+
   const basicInfoFields = (
     <FormSection>
       <div>
-        <FieldLabel required>Opportunity title</FieldLabel>
-        <AutocompleteInput value={title} onChange={setTitle} placeholder="Senior Frontend Engineer" suggestions={ROLE_SUGGESTIONS} />
+        <FieldLabel required htmlFor="rf-title">Opportunity title</FieldLabel>
+        <AutocompleteInput id="rf-title" value={title} onChange={setTitle} placeholder="Senior Frontend Engineer" suggestions={ROLE_SUGGESTIONS} />
       </div>
 
       <div>
-        <FieldLabel>Department (optional)</FieldLabel>
-        <input value={department} onChange={(e) => setDepartment(e.target.value)} placeholder="Engineering, Sales, Design…" style={inputStyle} />
+        <FieldLabel htmlFor="rf-department">Department (optional)</FieldLabel>
+        <input id="rf-department" value={department} onChange={(e) => setDepartment(e.target.value)} placeholder="Engineering, Sales, Design…" style={inputStyle} />
       </div>
 
       <div style={grid2}>
         <div>
           <FieldLabel>Employment type</FieldLabel>
-          <SegmentedControl options={EMPLOYMENT_TYPES} value={employmentType} onChange={setEmploymentType} />
+          <SegmentedControl ariaLabel="Employment type" options={EMPLOYMENT_TYPES} value={employmentType} onChange={setEmploymentType} />
         </div>
         <div>
           <FieldLabel>Salary type</FieldLabel>
-          <SegmentedControl options={SALARY_TYPES} value={salaryType} onChange={setSalaryType} />
+          <SegmentedControl ariaLabel="Salary type" options={SALARY_TYPES} value={salaryType} onChange={setSalaryType} />
         </div>
       </div>
 
       <div>
         <div style={grid4}>
           <div>
-            <FieldLabel>Minimum salary ({SALARY_UNIT[salaryType].unitLabel})</FieldLabel>
-            <input type="number" min={0} max={SALARY_UNIT[salaryType].max} value={budgetMin} onChange={(e) => setBudgetMin(e.target.value)} placeholder={SALARY_UNIT[salaryType].minPlaceholder} style={inputStyle} />
+            <FieldLabel htmlFor="rf-budget-min">Minimum salary ({SALARY_UNIT[salaryType].unitLabel})</FieldLabel>
+            <input id="rf-budget-min" inputMode="numeric" aria-invalid={!budgetRangeValid || undefined} aria-describedby={!budgetRangeValid ? "rf-budget-err" : undefined} type="number" min={0} max={SALARY_UNIT[salaryType].max} value={budgetMin} onChange={(e) => setBudgetMin(e.target.value)} placeholder={SALARY_UNIT[salaryType].minPlaceholder} style={inputStyle} />
           </div>
           <div>
-            <FieldLabel>Maximum salary ({SALARY_UNIT[salaryType].unitLabel})</FieldLabel>
-            <input type="number" min={0} max={SALARY_UNIT[salaryType].max} value={budgetMax} onChange={(e) => setBudgetMax(e.target.value)} placeholder={SALARY_UNIT[salaryType].maxPlaceholder} style={inputStyle} />
+            <FieldLabel htmlFor="rf-budget-max">Maximum salary ({SALARY_UNIT[salaryType].unitLabel})</FieldLabel>
+            <input id="rf-budget-max" inputMode="numeric" aria-invalid={!budgetRangeValid || undefined} aria-describedby={!budgetRangeValid ? "rf-budget-err" : undefined} type="number" min={0} max={SALARY_UNIT[salaryType].max} value={budgetMax} onChange={(e) => setBudgetMax(e.target.value)} placeholder={SALARY_UNIT[salaryType].maxPlaceholder} style={inputStyle} />
           </div>
           <div>
-            <FieldLabel>Minimum experience (years)</FieldLabel>
-            <input type="number" min={0} max={40} value={experienceMin} onChange={(e) => setExperienceMin(e.target.value)} placeholder="2" style={inputStyle} />
+            <FieldLabel htmlFor="rf-exp-min">Minimum experience (years)</FieldLabel>
+            <input id="rf-exp-min" inputMode="numeric" aria-invalid={!experienceRangeValid || undefined} aria-describedby={!experienceRangeValid ? "rf-exp-err" : undefined} type="number" min={0} max={40} value={experienceMin} onChange={(e) => setExperienceMin(e.target.value)} placeholder="2" style={inputStyle} />
           </div>
           <div>
-            <FieldLabel>Maximum experience (years)</FieldLabel>
-            <input type="number" min={0} max={40} value={experienceMax} onChange={(e) => setExperienceMax(e.target.value)} placeholder="5" style={inputStyle} />
+            <FieldLabel htmlFor="rf-exp-max">Maximum experience (years)</FieldLabel>
+            <input id="rf-exp-max" inputMode="numeric" aria-invalid={!experienceRangeValid || undefined} aria-describedby={!experienceRangeValid ? "rf-exp-err" : undefined} type="number" min={0} max={40} value={experienceMax} onChange={(e) => setExperienceMax(e.target.value)} placeholder="5" style={inputStyle} />
           </div>
         </div>
-        {!budgetRangeValid && <HelpText tone="error">Minimum salary can't be greater than maximum salary.</HelpText>}
-        {!experienceRangeValid && <HelpText tone="error">Minimum experience can't be greater than maximum experience.</HelpText>}
+        {!budgetRangeValid && <HelpText id="rf-budget-err" tone="error">Minimum salary can't be greater than maximum salary.</HelpText>}
+        {!experienceRangeValid && <HelpText id="rf-exp-err" tone="error">Minimum experience can't be greater than maximum experience.</HelpText>}
       </div>
 
       <div>
-        <FieldLabel required>Location</FieldLabel>
-        <TagAutocompleteInput values={locations} onChange={setLocations} placeholder="Mumbai, Bengaluru, Remote…" suggestions={CITY_SUGGESTIONS} />
-        <HelpText>Add each city or "Remote" as its own tag, then press Enter.</HelpText>
+        <FieldLabel required htmlFor="rf-locations">Location</FieldLabel>
+        <TagAutocompleteInput id="rf-locations" describedBy="rf-locations-help" values={locations} onChange={setLocations} placeholder="Mumbai, Bengaluru, Remote…" suggestions={CITY_SUGGESTIONS} />
+        <HelpText id="rf-locations-help">Add each city or "Remote" as its own tag, then press Enter.</HelpText>
       </div>
 
       <div style={grid2}>
         <div>
           <FieldLabel>Opportunity type</FieldLabel>
-          <SegmentedControl options={WORK_MODES} value={workMode} onChange={setWorkMode} />
+          <SegmentedControl ariaLabel="Opportunity type" options={WORK_MODES} value={workMode} onChange={setWorkMode} />
         </div>
         <div>
-          <FieldLabel>Open positions</FieldLabel>
-          <input type="number" min={1} max={500} value={openPositions} onChange={(e) => setOpenPositions(e.target.value)} placeholder="1" style={inputStyle} />
+          <FieldLabel htmlFor="rf-open">Open positions</FieldLabel>
+          <input id="rf-open" inputMode="numeric" type="number" min={1} max={500} value={openPositions} onChange={(e) => setOpenPositions(e.target.value)} placeholder="1" style={inputStyle} />
         </div>
       </div>
 
       <div style={grid2}>
         <div>
-          <FieldLabel>Duration in weeks (optional)</FieldLabel>
-          <input type="number" min={1} max={104} value={durationWeeks} onChange={(e) => setDurationWeeks(e.target.value)} placeholder="12" style={inputStyle} />
-          <HelpText>For contract or project-based roles — shown to candidates alongside the pay rate.</HelpText>
+          <FieldLabel htmlFor="rf-weeks">Duration in weeks (optional)</FieldLabel>
+          <input id="rf-weeks" inputMode="numeric" aria-describedby="rf-weeks-help" type="number" min={1} max={104} value={durationWeeks} onChange={(e) => setDurationWeeks(e.target.value)} placeholder="12" style={inputStyle} />
+          <HelpText id="rf-weeks-help">For contract or project-based roles — shown to candidates alongside the pay rate.</HelpText>
         </div>
         <div>
-          <FieldLabel>Hours per week (optional)</FieldLabel>
-          <input type="number" min={1} max={80} value={hoursPerWeek} onChange={(e) => setHoursPerWeek(e.target.value)} placeholder="20" style={inputStyle} />
+          <FieldLabel htmlFor="rf-hours">Hours per week (optional)</FieldLabel>
+          <input id="rf-hours" inputMode="numeric" type="number" min={1} max={80} value={hoursPerWeek} onChange={(e) => setHoursPerWeek(e.target.value)} placeholder="20" style={inputStyle} />
         </div>
       </div>
 
       <div>
-        <FieldLabel>Required skills</FieldLabel>
-        <TagInput values={skills} onChange={setSkills} placeholder="React, TypeScript, System design…" />
+        <FieldLabel htmlFor="rf-skills">Required skills</FieldLabel>
+        <TagInput id="rf-skills" values={skills} onChange={setSkills} placeholder="React, TypeScript, System design…" />
       </div>
 
       <div>
-        <FieldLabel required>Description</FieldLabel>
-        <textarea value={description} onChange={(e) => setDescription(e.target.value.slice(0, 500))} rows={4} maxLength={500} placeholder="Paste the JD or a few lines about what you're looking for…" style={{ ...inputStyle, resize: "vertical" }} />
-        <HelpText tone={description.trim().length > 0 && description.trim().length < MIN_DESCRIPTION_LENGTH ? "error" : "muted"}>
+        <FieldLabel required htmlFor="rf-description">Description</FieldLabel>
+        <textarea id="rf-description" aria-required="true" aria-describedby="rf-description-help" aria-invalid={descriptionTooShort || undefined} value={description} onChange={(e) => setDescription(e.target.value.slice(0, 500))} rows={4} maxLength={500} placeholder="Paste the JD or a few lines about what you're looking for…" style={{ ...inputStyle, resize: "vertical" }} />
+        <HelpText id="rf-description-help" live={false} tone={descriptionTooShort ? "error" : "muted"}>
           We diff this against each candidate's resume to generate their JD-match report — at least {MIN_DESCRIPTION_LENGTH} characters. {description.length}/500
         </HelpText>
       </div>
 
       <div>
-        <FieldLabel>Responsibilities (optional)</FieldLabel>
-        <textarea value={responsibilities} onChange={(e) => setResponsibilities(e.target.value.slice(0, 500))} rows={4} maxLength={500} placeholder="What will this person own day to day?" style={{ ...inputStyle, resize: "vertical" }} />
-        <HelpText>{responsibilities.length}/500</HelpText>
+        <FieldLabel htmlFor="rf-resp">Responsibilities (optional)</FieldLabel>
+        <textarea id="rf-resp" aria-describedby="rf-resp-count" value={responsibilities} onChange={(e) => setResponsibilities(e.target.value.slice(0, 500))} rows={4} maxLength={500} placeholder="What will this person own day to day?" style={{ ...inputStyle, resize: "vertical" }} />
+        <HelpText id="rf-resp-count" live={false}>{responsibilities.length}/500</HelpText>
       </div>
 
       <div>
-        <FieldLabel>Nice to have (optional)</FieldLabel>
-        <textarea value={niceToHave} onChange={(e) => setNiceToHave(e.target.value.slice(0, 500))} rows={3} maxLength={500} placeholder="Skills or experience that aren't required but would help" style={{ ...inputStyle, resize: "vertical" }} />
-        <HelpText>{niceToHave.length}/500</HelpText>
+        <FieldLabel htmlFor="rf-nice">Nice to have (optional)</FieldLabel>
+        <textarea id="rf-nice" aria-describedby="rf-nice-count" value={niceToHave} onChange={(e) => setNiceToHave(e.target.value.slice(0, 500))} rows={3} maxLength={500} placeholder="Skills or experience that aren't required but would help" style={{ ...inputStyle, resize: "vertical" }} />
+        <HelpText id="rf-nice-count" live={false}>{niceToHave.length}/500</HelpText>
       </div>
 
       <div>
-        <FieldLabel>Custom skill sets (optional)</FieldLabel>
-        <TagInput values={customSkillSets} onChange={setCustomSkillSets} placeholder="Domain-specific or bespoke skills…" />
-        <HelpText>Separate from Required skills — use this for anything role-specific that doesn't fit the standard skill list.</HelpText>
+        <FieldLabel htmlFor="rf-custom-skills">Custom skill sets (optional)</FieldLabel>
+        <TagInput id="rf-custom-skills" describedBy="rf-custom-skills-help" values={customSkillSets} onChange={setCustomSkillSets} placeholder="Domain-specific or bespoke skills…" />
+        <HelpText id="rf-custom-skills-help">Separate from Required skills — use this for anything role-specific that doesn't fit the standard skill list.</HelpText>
       </div>
 
       <div style={grid2}>
         <div>
-          <FieldLabel>Preferred industry (optional)</FieldLabel>
-          <input value={preferredIndustry} onChange={(e) => setPreferredIndustry(e.target.value)} placeholder="Fintech, SaaS, Ecommerce…" style={inputStyle} />
+          <FieldLabel htmlFor="rf-industry">Preferred industry (optional)</FieldLabel>
+          <input id="rf-industry" value={preferredIndustry} onChange={(e) => setPreferredIndustry(e.target.value)} placeholder="Fintech, SaaS, Ecommerce…" style={inputStyle} />
         </div>
         <div>
-          <FieldLabel>Preferred domain (optional)</FieldLabel>
-          <input value={preferredDomain} onChange={(e) => setPreferredDomain(e.target.value)} placeholder="Payments, Growth, Platform…" style={inputStyle} />
-        </div>
-      </div>
-
-      <div style={grid2}>
-        <div>
-          <FieldLabel>Work schedule (optional)</FieldLabel>
-          <input value={workSchedule} onChange={(e) => setWorkSchedule(e.target.value)} placeholder="Mon–Fri, 9 AM–6 PM" style={inputStyle} />
-        </div>
-        <div>
-          <FieldLabel>Availability (optional)</FieldLabel>
-          <input value={availability} onChange={(e) => setAvailability(e.target.value)} placeholder="Immediate, 2 weeks…" style={inputStyle} />
+          <FieldLabel htmlFor="rf-domain">Preferred domain (optional)</FieldLabel>
+          <input id="rf-domain" value={preferredDomain} onChange={(e) => setPreferredDomain(e.target.value)} placeholder="Payments, Growth, Platform…" style={inputStyle} />
         </div>
       </div>
 
       <div style={grid2}>
         <div>
-          <FieldLabel>Relevant experience (optional)</FieldLabel>
-          <input value={relevantExperience} onChange={(e) => setRelevantExperience(e.target.value)} placeholder="3+ years in a similar role" style={inputStyle} />
+          <FieldLabel htmlFor="rf-schedule">Work schedule (optional)</FieldLabel>
+          <input id="rf-schedule" value={workSchedule} onChange={(e) => setWorkSchedule(e.target.value)} placeholder="Mon–Fri, 9 AM–6 PM" style={inputStyle} />
+        </div>
+        <div>
+          <FieldLabel htmlFor="rf-availability">Availability (optional)</FieldLabel>
+          <input id="rf-availability" value={availability} onChange={(e) => setAvailability(e.target.value)} placeholder="Immediate, 2 weeks…" style={inputStyle} />
+        </div>
+      </div>
+
+      <div style={grid2}>
+        <div>
+          <FieldLabel htmlFor="rf-relevant">Relevant experience (optional)</FieldLabel>
+          <input id="rf-relevant" value={relevantExperience} onChange={(e) => setRelevantExperience(e.target.value)} placeholder="3+ years in a similar role" style={inputStyle} />
         </div>
         <div style={{ display: "flex", alignItems: "center", paddingTop: 28 }}>
           <Checkbox label="Portfolio required" checked={portfolioRequired} onChange={setPortfolioRequired} />
@@ -367,8 +370,9 @@ export function RequirementForm({
 
       <div style={grid2}>
         <div>
-          <FieldLabel>Minimum readiness (optional)</FieldLabel>
+          <FieldLabel htmlFor="rf-readiness">Minimum readiness (optional)</FieldLabel>
           <select
+            id="rf-readiness"
             value={minReadinessBand}
             onChange={(e) => setMinReadinessBand(e.target.value as "" | "strongHire" | "hire" | "leanHire")}
             style={{ ...inputStyle, background: t.white }}
@@ -380,8 +384,10 @@ export function RequirementForm({
           </select>
         </div>
         <div>
-          <FieldLabel>Minimum STAR completeness % (optional)</FieldLabel>
+          <FieldLabel htmlFor="rf-star">Minimum STAR completeness % (optional)</FieldLabel>
           <input
+            id="rf-star"
+            inputMode="numeric"
             type="number"
             min={0}
             max={100}
@@ -399,13 +405,14 @@ export function RequirementForm({
     <>
       <FormSection title="Candidate targeting">
         <div>
-          <FieldLabel>Preferred colleges (optional)</FieldLabel>
-          <TagInput values={preferredColleges} onChange={setPreferredColleges} placeholder="IIT, NIT, BITS…" />
+          <FieldLabel htmlFor="rf-colleges">Preferred colleges (optional)</FieldLabel>
+          <TagInput id="rf-colleges" values={preferredColleges} onChange={setPreferredColleges} placeholder="IIT, NIT, BITS…" />
         </div>
 
         <div>
-          <FieldLabel>Target companies (optional)</FieldLabel>
+          <FieldLabel htmlFor="rf-targets">Target companies (optional)</FieldLabel>
           <TagAutocompleteInput
+            id="rf-targets"
             values={targetCompanies}
             onChange={setTargetCompanies}
             placeholder="Companies you'd like candidates to come from"
@@ -416,14 +423,14 @@ export function RequirementForm({
 
       <FormSection title="Perks & logistics">
         <div>
-          <FieldLabel>Perks and benefits (optional)</FieldLabel>
-          <TagInput values={perksAndBenefits} onChange={setPerksAndBenefits} placeholder="Full healthcare, Unlimited vacation…" />
+          <FieldLabel htmlFor="rf-perks">Perks and benefits (optional)</FieldLabel>
+          <TagInput id="rf-perks" values={perksAndBenefits} onChange={setPerksAndBenefits} placeholder="Full healthcare, Unlimited vacation…" />
         </div>
 
         <div style={grid2}>
           <div>
-            <FieldLabel>Notice period preference</FieldLabel>
-            <select value={noticePeriodPref} onChange={(e) => setNoticePeriodPref(e.target.value)} style={{ ...inputStyle, background: t.white }}>
+            <FieldLabel htmlFor="rf-notice">Notice period preference</FieldLabel>
+            <select id="rf-notice" value={noticePeriodPref} onChange={(e) => setNoticePeriodPref(e.target.value)} style={{ ...inputStyle, background: t.white }}>
               <option>Any</option>
               <option>Immediate</option>
               <option>Immediate–30 days</option>
@@ -432,12 +439,12 @@ export function RequirementForm({
             </select>
           </div>
           <div>
-            <FieldLabel>Due date (optional)</FieldLabel>
-            <input type="date" min={today} value={dueDate} onChange={(e) => setDueDate(e.target.value)} style={inputStyle} />
+            <FieldLabel htmlFor="rf-due">Due date (optional)</FieldLabel>
+            <DateField id="rf-due" aria-describedby="rf-due-help" aria-invalid={!dueDateValid || undefined} min={today} value={dueDate} onChange={(e) => setDueDate(e.target.value)} style={inputStyle} />
             {dueDateValid ? (
-              <HelpText>Shown on the Jobs table as a countdown so you know when to follow up.</HelpText>
+              <HelpText id="rf-due-help">Shown on the Jobs table as a countdown so you know when to follow up.</HelpText>
             ) : (
-              <HelpText tone="error">Due date can't be in the past.</HelpText>
+              <HelpText id="rf-due-help" tone="error">Due date can't be in the past.</HelpText>
             )}
           </div>
         </div>
@@ -448,8 +455,8 @@ export function RequirementForm({
   if (mode === "edit") {
     return (
       <form onSubmit={handleSubmit}>
-        <div style={{ background: t.white, borderRadius: 12, border: `1px solid ${t.line}`, overflow: "hidden" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: `1px solid ${t.line}`, flexWrap: "wrap", gap: 12 }}>
+        <div style={{ background: t.white, borderRadius: 12, border: `1px solid ${t.line}`, overflow: "clip" }}>
+          <div style={{ ...STICKY_HEADER, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: `1px solid ${t.line}`, flexWrap: "wrap", gap: 12 }}>
             <div>
               <Eyebrow tone="indigo">Edit opportunity</Eyebrow>
               <h1 style={{ fontFamily: f.sans, fontSize: 26, fontWeight: 700, color: t.coal, margin: "4px 0 0", letterSpacing: "-0.01em", lineHeight: "32px" }}>
@@ -466,7 +473,8 @@ export function RequirementForm({
           <div style={{ padding: "24px clamp(16px, 5vw, 104px)", display: "flex", flexDirection: "column", gap: 26 }}>
             {basicInfoFields}
             {preferencesFields}
-            {submitError && <p role="alert" style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.error, margin: 0 }}>{submitError}</p>}
+            {basicsHint}
+            {submitError && <p role="alert" style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.errorInk, margin: 0 }}>{submitError}</p>}
             <p style={{ fontFamily: f.sans, fontSize: textSize.sm, color: t.inkFaint, margin: 0 }}>
               Saving re-scores your shortlist against the current candidate pool. Candidates you've already unlocked stay unlocked.
             </p>
@@ -478,11 +486,11 @@ export function RequirementForm({
 
   return (
     <form onSubmit={handleSubmit}>
-      <div style={{ background: t.white, borderRadius: 12, border: `1px solid ${t.line}`, overflow: "hidden" }}>
-        <div style={{ padding: "12px 20px", borderBottom: `1px solid ${t.line}` }}>
+      <div style={{ background: t.white, borderRadius: 12, border: `1px solid ${t.line}`, overflow: "clip" }}>
+        <div style={{ ...STICKY_HEADER, padding: "12px 20px", borderBottom: `1px solid ${t.line}` }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
             <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
-              <h1 style={{ fontFamily: f.sans, fontSize: 22, fontWeight: 700, color: t.coal, margin: 0, letterSpacing: "-0.01em", lineHeight: "28px" }}>
+              <h1 ref={stepHeadingRef} tabIndex={-1} style={{ outline: "none", fontFamily: f.sans, fontSize: 22, fontWeight: 700, color: t.coal, margin: 0, letterSpacing: "-0.01em", lineHeight: "28px" }}>
                 {step === 1 ? "Basic information" : "Preferences & perks"}
               </h1>
               <span style={{ fontFamily: f.mono, fontSize: 12, letterSpacing: 1.2, textTransform: "uppercase", color: t.indigo, fontWeight: 600 }}>
@@ -509,9 +517,10 @@ export function RequirementForm({
         </div>
         <div style={{ padding: "24px clamp(16px, 5vw, 104px)", display: "flex", flexDirection: "column", gap: 26 }}>
           {step === 1 && basicInfoFields}
+          {step === 1 && basicsHint}
           {step === 2 && preferencesFields}
 
-          {submitError && <p role="alert" style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.error, margin: 0 }}>{submitError}</p>}
+          {submitError && <p role="alert" style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.errorInk, margin: 0 }}>{submitError}</p>}
         </div>
       </div>
     </form>

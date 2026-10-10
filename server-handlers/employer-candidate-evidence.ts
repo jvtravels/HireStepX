@@ -14,9 +14,10 @@
  * shared src/evidenceCapabilities.ts module), so what an employer sees as
  * "Verified" is never looser or stricter than what the candidate sees.
  *
- * Ownership is never taken on trust from the client: the match's parent
- * employer_requirements row is looked up and its employer_id compared
- * against the authenticated caller before any session data is read.
+ * Ownership, suspension, candidate opt-out and candidate blocks are all
+ * resolved by loadEmployerMatchAccess (_entitlements.ts) before any session
+ * data is read. Only server-graded sessions (report_generated_at set by
+ * /api/evaluate-session) count as evidence — client-written scores never do.
  */
 
 export const config = { runtime: "edge" };
@@ -33,7 +34,8 @@ import {
   type SessionRow,
 } from "./_employer-candidate-evidence-helpers";
 import { notify } from "./_notify";
-import { emailShell, title as emailTitle, para, button, footer, escapeHtml } from "./_email-theme";
+import { emailShell, title as emailTitle, para, button, escapeHtml } from "./_email-theme";
+import { loadEmployerMatchAccess, loadAuthIdentity, DENIED_STATUS } from "./_entitlements";
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
@@ -46,16 +48,13 @@ function serviceHeaders(): Record<string, string> {
   return { apikey: SUPABASE_SERVICE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_KEY}` };
 }
 
-/** Best-effort "an employer viewed your profile" email — fires immediately,
- *  alongside the in-app notify(), the first time an employer opens a given
- *  match's evidence panel (gated upstream by claimProfileView so a single
- *  view doesn't fire twice). Never throws: a failure here must never fail
- *  the evidence read it's attached to. */
-async function sendProfileViewedEmail(opts: {
-  candidateUserId: string;
-  roleTitle: string;
-  companyName: string;
-}): Promise<void> {
+/** Best-effort "an employer viewed your profile" email — fires alongside the
+ *  in-app notify() the first time an employer opens a given match's evidence
+ *  panel (gated upstream by claimProfileView). Deliberately generic: it never
+ *  names the company or role, so the notification can't be used to learn who
+ *  is looking (or to harass the candidate) before the employer has paid to
+ *  unlock. Never throws: a failure here must never fail the evidence read. */
+async function sendProfileViewedEmail(opts: { candidateUserId: string }): Promise<void> {
   if (!RESEND_API_KEY) return;
   try {
     const profileRes = await fetch(
@@ -68,17 +67,14 @@ async function sendProfileViewedEmail(opts: {
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return;
 
     const firstName = escapeHtml((rows[0]?.name || "there").split(" ")[0]);
-    const role = escapeHtml(opts.roleTitle);
-    const company = escapeHtml(opts.companyName);
-    const headline = `${company} looked at your profile for ${role}.`;
+    const headline = "An employer looked at your practice evidence.";
     const link = `${APP_URL}/jobs`;
     const html = emailShell({
       preview: headline,
       body:
         emailTitle("An employer viewed", { accentWord: "your profile" }) +
-        para(`Hi ${firstName}, ${headline} A strong practice score is what gets you from "viewed" to "invited" — keep your evidence sharp.`) +
-        button("View your matches", link) +
-        footer(),
+        para(`Hi ${firstName}, ${headline} Your name and contact details stay hidden unless you choose to respond. You can switch employer visibility off any time in Settings.`) +
+        button("View your matches", link),
     });
 
     const controller = new AbortController();
@@ -137,39 +133,36 @@ export default async function handler(req: Request): Promise<Response> {
   }
 
   try {
-    const matchRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/requirement_matches?id=eq.${encodeURIComponent(matchId)}&select=id,requirement_id,candidate_user_id`,
-      { headers: serviceHeaders() },
-    );
-    const matchRows = (await matchRes.json().catch(() => [])) as Array<{ id: string; requirement_id: string; candidate_user_id: string }>;
-    if (!matchRes.ok || !matchRows[0]) {
-      return new Response(JSON.stringify({ error: "Candidate match not found" }), { status: 404, headers });
+    const identity = await loadAuthIdentity(SUPABASE_URL, serviceHeaders(), auth.userId);
+    const decision = await loadEmployerMatchAccess({
+      supabaseUrl: SUPABASE_URL,
+      headers: serviceHeaders(),
+      employerId: auth.userId,
+      matchId,
+      authEmail: identity.email,
+      emailConfirmed: identity.emailConfirmed,
+    });
+    if (!decision.ok) {
+      if (decision.reason === "error") {
+        return new Response(JSON.stringify({ error: "Failed to load evidence" }), { status: 502, headers });
+      }
+      const d = DENIED_STATUS[decision.reason];
+      return new Response(JSON.stringify({ error: d.error }), { status: d.status, headers });
     }
-    const { requirement_id: requirementId, candidate_user_id: candidateUserId } = matchRows[0];
+    const { match, unlocked } = decision.access;
+    const candidateUserId = match.candidate_user_id;
 
-    const reqRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&employer_id=eq.${encodeURIComponent(auth.userId)}` +
-        `&select=id,title,employers(company_name)`,
-      { headers: serviceHeaders() },
-    );
-    const reqRows = (await reqRes.json().catch(() => [])) as Array<{
-      id: string; title: string; employers: { company_name: string } | null;
-    }>;
-    if (!reqRes.ok || !reqRows[0]) {
-      return new Response(JSON.stringify({ error: "Candidate match not found" }), { status: 404, headers });
-    }
-
-    const roleTitle = reqRows[0].title || "a role";
-    const companyName = reqRows[0].employers?.company_name || "An employer";
     if (await claimProfileView(SUPABASE_URL, serviceHeaders(), matchId, new Date().toISOString())) {
-      void notify({
-        userId: candidateUserId,
-        type: "employer_viewed_profile",
-        title: "An employer viewed your profile",
-        body: `${companyName} looked at your evidence and details for ${roleTitle}.`,
-        link: "/jobs",
-      });
-      void sendProfileViewedEmail({ candidateUserId, roleTitle, companyName });
+      await Promise.all([
+        notify({
+          userId: candidateUserId,
+          type: "employer_viewed_profile",
+          title: "An employer viewed your profile",
+          body: "An employer looked at your practice evidence. Your identity stays hidden until you respond.",
+          link: "/jobs",
+        }).catch(() => {}),
+        sendProfileViewedEmail({ candidateUserId }),
+      ]);
     }
 
     /* limit=50, not 1: the most recent session overall is frequently a
@@ -181,7 +174,7 @@ export default async function handler(req: Request): Promise<Response> {
        dashboard draws on, so a capability the candidate sees "Verified"
        doesn't come up unverified here purely from a shallower fetch. */
     const sessionsRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/sessions?user_id=eq.${encodeURIComponent(candidateUserId)}&select=user_id,created_at,report_json,type,skill_scores,score,focus&order=created_at.desc&limit=50`,
+      `${SUPABASE_URL}/rest/v1/sessions?user_id=eq.${encodeURIComponent(candidateUserId)}&select=user_id,created_at,report_json,type,skill_scores,score,focus&report_generated_at=not.is.null&order=created_at.desc&limit=50`,
       { headers: serviceHeaders() },
     );
     const sessionRows = (await sessionsRes.json().catch(() => [])) as SessionRow[];
@@ -191,7 +184,11 @@ export default async function handler(req: Request): Promise<Response> {
       JSON.stringify({
         matchId,
         skills: latest ? extractEvidenceSkills(latest.report_json) : [],
-        quotes: latest ? extractEvidenceQuotes(latest.report_json) : [],
+        // Verbatim answers often name past employers/colleagues, so they stay
+        // locked until the employer has paid to unlock this candidate.
+        quotes: unlocked && latest ? extractEvidenceQuotes(latest.report_json) : [],
+        quotesLocked: !unlocked,
+        unlocked,
         readiness: latest ? extractReadinessForecast(latest.report_json) : null,
         starCompleteness: latest ? extractStarCompleteness(latest.report_json) : null,
         sessionDate: latest?.created_at ?? null,

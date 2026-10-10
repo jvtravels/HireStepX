@@ -53,6 +53,12 @@ describe("employer-unlock-history handler", () => {
         amount: 5900,
         currency: "INR",
         createdAt: "2026-10-01T00:00:00Z",
+        invoiceNo: null,
+        refundedAt: null,
+        orderId: null,
+        orderStatus: null,
+        gstin: null,
+        billingName: null,
         candidates: [{ matchId: "m1", name: "Priya Sharma", email: "priya@example.com" }],
       },
     ]);
@@ -85,6 +91,12 @@ describe("employer-unlock-history handler", () => {
         amount: 5900,
         currency: "INR",
         createdAt: "2026-10-01T00:00:00Z",
+        invoiceNo: null,
+        refundedAt: null,
+        orderId: null,
+        orderStatus: null,
+        gstin: null,
+        billingName: null,
         candidates: [{ matchId: "m1", name: null, email: null }],
       },
     ]);
@@ -92,6 +104,30 @@ describe("employer-unlock-history handler", () => {
       "employer-unlock-history candidate snapshot lookup failed",
       expect.objectContaining({ status: 400 }),
     );
+  });
+
+  it("surfaces invoice, refund, order status and GST billing identity when present", async () => {
+    global.fetch = vi.fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => [{ id: "p1", match_id: "m1", match_ids: null, amount: 5900, currency: "INR", created_at: "2026-10-01T00:00:00Z", razorpay_order_id: "order_1", invoice_no: "INV-0001", refunded_at: "2026-10-02T00:00:00Z" }],
+      })
+      .mockResolvedValueOnce({ ok: true, json: async () => [{ id: "m1", unlocked_candidate_name: "Priya Sharma", unlocked_candidate_email: "priya@example.com" }] })
+      .mockResolvedValueOnce({ ok: true, json: async () => [{ razorpay_order_id: "order_1", status: "paid" }] })
+      .mockResolvedValueOnce({ ok: true, json: async () => [{ gstin: "29ABCDE1234F1Z5", billing_name: "Acme Pvt Ltd" }] });
+
+    const res = await handler(req());
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(body.purchases[0]).toMatchObject({
+      invoiceNo: "INV-0001",
+      refundedAt: "2026-10-02T00:00:00Z",
+      orderId: "order_1",
+      orderStatus: "paid",
+      gstin: "29ABCDE1234F1Z5",
+      billingName: "Acme Pvt Ltd",
+    });
   });
 
   it("500s when the primary purchase list query itself fails", async () => {

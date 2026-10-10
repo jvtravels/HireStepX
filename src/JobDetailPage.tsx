@@ -22,6 +22,9 @@ import { daysAgo, formatComp, formatExperience, WORK_MODE_LABEL, EMPLOYMENT_TYPE
 import { JobDetailRouteSkeleton } from "./routeSkeletons";
 import { CompanyAvatar } from "./CompanyAvatar";
 import type { JobMatch } from "./DashboardJobs";
+import EmployerActionsMenu, { EmployerResponseBadge } from "./EmployerActionsMenu";
+import { normalizeResponse, readStoredResponse, type EmployerResponse } from "./employerActions";
+import { useToast } from "./Toast";
 
 /* Same surface as the employer console's <Card> (white, 1px line, 16px
    radius, 24px padding, flat) so the two detail screens read as one product. */
@@ -62,7 +65,12 @@ function StatusChip({ label, color, background }: { label: string; color: string
    (unlocked) — otherwise candidates could go around the platform. The server
    already redacts these fields for matched-only rows; the locked branch just
    explains why. */
-function CompanyCard({ job, onMessage }: { job: JobMatch; onMessage: () => void }) {
+function CompanyCard({ job, onMessage, actions, response }: {
+  job: JobMatch;
+  onMessage: () => void;
+  actions: React.ReactNode;
+  response: EmployerResponse | null;
+}) {
   const websiteHost = job.companyWebsite ? job.companyWebsite.replace(/^https?:\/\//i, "").replace(/\/$/, "") : null;
   const websiteHref = job.companyWebsite && /^https?:\/\//i.test(job.companyWebsite) ? job.companyWebsite : job.companyWebsite ? `https://${job.companyWebsite}` : null;
   return (
@@ -78,7 +86,9 @@ function CompanyCard({ job, onMessage }: { job: JobMatch; onMessage: () => void 
             <div style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkFaint, marginTop: 2 }}>{job.preferredIndustry}</div>
           )}
         </div>
+        <div style={{ marginLeft: "auto", flexShrink: 0 }}>{actions}</div>
       </div>
+      {response && <div><EmployerResponseBadge response={response} /></div>}
       {job.unlocked ? (
         <>
           {websiteHref && websiteHost && (
@@ -165,6 +175,13 @@ export default function JobDetailPage() {
 
   const job = useMemo(() => matches?.find((m) => m.id === id) ?? null, [matches, id]);
   const stacked = useMaxWidth(820);
+  const { toast } = useToast();
+  // Local answer wins over the list payload so the badge/menu stay truthful
+  // between the optimistic update and the next refetch.
+  const [localResponse, setLocalResponse] = useState<{ id: string; value: EmployerResponse | null } | null>(null);
+  const response: EmployerResponse | null = localResponse && localResponse.id === job?.id
+    ? localResponse.value
+    : normalizeResponse(job?.candidateResponse) ?? (job ? readStoredResponse(job.id) : null);
 
   useDashboardBreadcrumb(job ? [{ label: job.roleTitle }] : null);
 
@@ -302,7 +319,21 @@ export default function JobDetailPage() {
         </section>
 
         <div style={{ flex: "1 1 260px", minWidth: 260, maxWidth: stacked ? "none" : 340, display: "flex", flexDirection: "column", gap: 16 }}>
-          <CompanyCard job={job} onMessage={() => router.push(`/messages?matchId=${job.id}`)} />
+          <CompanyCard
+            job={job}
+            onMessage={() => router.push(`/messages?matchId=${job.id}`)}
+            response={response}
+            actions={
+              <EmployerActionsMenu
+                matchId={job.id}
+                employerLabel={job.companyName}
+                response={response}
+                onResponseChange={(value) => setLocalResponse({ id: job.id, value })}
+                onRemoved={backToJobs}
+                onToast={(msg, kind) => toast(msg, kind)}
+              />
+            }
+          />
           <section aria-labelledby="job-details-heading" style={PANEL_STYLE}>
             <h2 id="job-details-heading" style={{ ...SECTION_HEADING_STYLE, margin: 0 }}>Role details</h2>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginTop: 16 }}>

@@ -4,6 +4,7 @@ import { useAuth } from "./AuthContext";
 import { useDocTitle } from "./useDocTitle";
 import { authHeaders, getPaymentHistory, type PaymentRecord } from "./supabase";
 import { useDashboardUIActions } from "./DashboardContext";
+import EmployerVisibilityCard from "./EmployerVisibilityCard";
 import {
   PageHeader,
   FlatSection,
@@ -81,7 +82,7 @@ export default function SettingsPage() {
   return (
     <div style={{ width: "100%" }}>
       <div style={{ background: c.graphite, border: `1px solid ${c.border}`, borderRadius: 16, overflow: "hidden" }}>
-        <PageHeader title="Settings" desc="Manage your subscription, payments, and account security." />
+        <PageHeader title="Settings" desc="Manage your subscription, payments, privacy, and account security." />
 
         <FlatSection title="Plan & Usage">
           <PlanUsageSection
@@ -102,6 +103,10 @@ export default function SettingsPage() {
             handlePasswordReset={handlePasswordReset}
             isOAuthOnly={authUser?.signedInVia === "google"}
           />
+        </FlatSection>
+
+        <FlatSection title="Employer visibility">
+          <EmployerVisibilityCard showToast={showToast} />
         </FlatSection>
 
         <FlatSection title="Sounds">

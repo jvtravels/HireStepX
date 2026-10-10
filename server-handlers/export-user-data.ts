@@ -4,7 +4,15 @@
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { withNodeAuthAndRateLimit, supabaseUrl } from "./_shared";
-import { buildExportEnvelope, buildExportFilename } from "./_export-user-data-helpers";
+import {
+  buildExportEnvelope,
+  buildExportFilename,
+  pickProfileRow,
+  shapeConversationsForExport,
+  shapeMatchesForExport,
+  shapeMessagesForExport,
+  shapeStatusEventsForExport,
+} from "./_export-user-data-helpers";
 
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 
@@ -52,6 +60,37 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     safeFetch(`/rest/v1/llm_usage?user_id=eq.${encodedId}&order=created_at.desc&limit=1000`),
   ]);
 
+  // Candidate-agency + employer-feature data (DPDP right of access). Employer
+  // identity is only shaped in for matches the employer unlocked.
+  const [consentLog, blocks, reportsFiled, rawMatches, rawEvents, rawConversations, rawMessages, employerRows] = await Promise.all([
+    safeFetch(`/rest/v1/candidate_consent_log?user_id=eq.${encodedId}&order=created_at.desc&limit=500`),
+    safeFetch(`/rest/v1/employer_blocks?candidate_user_id=eq.${encodedId}&select=created_at`),
+    safeFetch(`/rest/v1/employer_reports?reporter_user_id=eq.${encodedId}&select=reason,note,status,created_at,reviewed_at&order=created_at.desc`),
+    safeFetch(
+      `/rest/v1/requirement_matches?candidate_user_id=eq.${encodedId}` +
+        `&select=id,created_at,unlocked,unlocked_at,profile_viewed_at,candidate_status,candidate_response,candidate_responded_at,employer_requirements(title,employers(company_name))` +
+        `&order=created_at.desc&limit=2000`,
+    ),
+    safeFetch(`/rest/v1/match_status_events?candidate_user_id=eq.${encodedId}&select=id,match_id,from_status,to_status,actor,note,created_at&order=created_at.desc&limit=5000`),
+    safeFetch(`/rest/v1/conversations?candidate_user_id=eq.${encodedId}&select=id,match_id,created_at,last_message_at`),
+    safeFetch(`/rest/v1/conversation_messages?candidate_user_id=eq.${encodedId}&select=id,conversation_id,sender_role,body,attachment_name,created_at&order=created_at.desc&limit=5000`),
+    safeFetch(`/rest/v1/employers?id=eq.${encodedId}`),
+  ]);
+  const matches = shapeMatchesForExport(rawMatches);
+  const profileRow = pickProfileRow(profile) as { employer_visibility?: string | null; employer_visibility_updated_at?: string | null } | null;
+
+  // Employer accounts additionally get their own side (company profile, jobs, payment ledger).
+  let employerAccount = null;
+  if (employerRows.length > 0) {
+    const [requirements, unlockPayments, unlockOrders, messagesSent] = await Promise.all([
+      safeFetch(`/rest/v1/employer_requirements?employer_id=eq.${encodedId}&order=created_at.desc`),
+      safeFetch(`/rest/v1/employer_unlock_payments?employer_id=eq.${encodedId}&order=created_at.desc`),
+      safeFetch(`/rest/v1/employer_unlock_orders?employer_id=eq.${encodedId}&order=created_at.desc`),
+      safeFetch(`/rest/v1/conversation_messages?employer_id=eq.${encodedId}&sender_role=eq.employer&select=id,conversation_id,body,attachment_name,created_at&order=created_at.desc&limit=5000`),
+    ]);
+    employerAccount = { employer: employerRows[0], requirements, unlock_payments: unlockPayments, unlock_orders: unlockOrders, messages_sent: shapeMessagesForExport(messagesSent) };
+  }
+
   const exportData = buildExportEnvelope({
     userId,
     userEmail,
@@ -62,6 +101,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     feedback,
     interview_turns: interviewTurns,
     llm_usage: llmUsage,
+    employer_discovery: {
+      visibility: profileRow?.employer_visibility ?? null,
+      visibility_updated_at: profileRow?.employer_visibility_updated_at ?? null,
+      consent_log: consentLog,
+      blocks,
+      reports_filed: reportsFiled,
+      matches: matches.shaped,
+      status_events: shapeStatusEventsForExport(rawEvents, matches.unlockedIds),
+      conversations: shapeConversationsForExport(rawConversations, matches.companyByMatch),
+      messages: shapeMessagesForExport(rawMessages),
+    },
+    employer_account: employerAccount,
   });
 
   const filename = buildExportFilename(userId);

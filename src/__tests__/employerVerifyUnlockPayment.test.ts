@@ -1,14 +1,15 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { createHmac } from "crypto";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
+import { FakeUnlockDb, match, order, fakeRazorpay, type FakeRzpPayment } from "./unlockTestUtils";
 
-/* Handler-level tests for employer-verify-unlock-payment.ts — the endpoint
- * that turns a completed Razorpay checkout into an actual contact unlock.
- * Real HMAC signatures are generated the same way Razorpay would (mirroring
- * tests/unit/verifyPayment.test.ts), so signature verification runs against
- * the real crypto in _payment-verification.ts, not a stub. Only _shared.ts
- * (Supabase/CORS/rate-limit plumbing) and global.fetch are mocked — no real
- * Razorpay call or Supabase write ever happens, and no money moves. */
+/* Handler-level tests for employer-verify-unlock-payment.ts — the browser fast
+ * path that turns a completed Razorpay checkout into a contact unlock. Real
+ * HMAC signatures are generated the way Razorpay would, so signature
+ * verification runs against the real crypto. The payment is re-fetched from
+ * (a fake) Razorpay and must be "captured"; fulfilment itself is the shared
+ * fulfillUnlockOrder() against a stateful PostgREST fake (unlockTestUtils.ts),
+ * so idempotency and partial outcomes are exercised end to end. */
 
 const RAZORPAY_SECRET = "whsec_test_secret";
 process.env.RAZORPAY_KEY_ID = "rzp_test_key123";
@@ -23,10 +24,6 @@ const supabaseAnonKey = vi.fn();
 const supabaseServiceHeaders = vi.fn();
 
 vi.mock("../../server-handlers/_shared", async (importOriginal) => {
-  // verifyEmployerAuthToken is left as the REAL implementation (it's pure
-  // aside from calling global.fetch, which every test already mocks for the
-  // "auth check" call via authOk() below) so existing tests keep driving
-  // auth through fetch responses rather than needing their own mock.
   const actual = await importOriginal<typeof import("../../server-handlers/_shared")>();
   return {
     applyCorsHeaders: (...args: unknown[]) => applyCorsHeaders(...args),
@@ -37,9 +34,6 @@ vi.mock("../../server-handlers/_shared", async (importOriginal) => {
     supabaseAnonKey: (...args: unknown[]) => supabaseAnonKey(...args),
     supabaseServiceHeaders: (...args: unknown[]) => supabaseServiceHeaders(...args),
     verifyEmployerAuthToken: actual.verifyEmployerAuthToken,
-    // notify()'s failure path (_notify.ts) logs via slog.warn when the
-    // unmocked global.fetch calls below don't match its notifications
-    // insert — stub it so that best-effort write never throws here.
     slog: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
   };
 });
@@ -49,9 +43,8 @@ const { default: handler } = await import("../../server-handlers/employer-verify
 const ORDER_ID = "order_ABCDEF123456";
 const PAYMENT_ID = "pay_ABCDEF123456";
 
-function sign(orderId: string, paymentId: string, secret = RAZORPAY_SECRET) {
-  return createHmac("sha256", secret).update(`${orderId}|${paymentId}`).digest("hex");
-}
+const sign = (orderId: string, paymentId: string, secret = RAZORPAY_SECRET) =>
+  createHmac("sha256", secret).update(`${orderId}|${paymentId}`).digest("hex");
 
 function mockReq(body: Record<string, unknown>, overrides: Partial<VercelRequest> = {}): VercelRequest {
   return {
@@ -75,16 +68,29 @@ function mockRes() {
   return res as unknown as VercelResponse & typeof res;
 }
 
-function authOk(employerId = "emp-1") {
-  return { ok: true, json: async () => ({ id: employerId }) };
-}
+const validBody = (orderId = ORDER_ID, paymentId = PAYMENT_ID) =>
+  ({ razorpay_order_id: orderId, razorpay_payment_id: paymentId, razorpay_signature: sign(orderId, paymentId) });
 
-function razorpayOrderOk(notes: { employerId: string; mode: string; matchIds: string }, amount: number) {
-  return { ok: true, json: async () => ({ amount, notes }) };
-}
+let db: FakeUnlockDb;
+let payments: FakeRzpPayment[];
+let rzpOrders: Record<string, { amount: number; notes?: Record<string, unknown> }>;
+let authed: boolean;
+let rzpDown: boolean;
+let paymentLookups: number;
 
-function validPaymentBody(orderId = ORDER_ID, paymentId = PAYMENT_ID) {
-  return { razorpay_order_id: orderId, razorpay_payment_id: paymentId, razorpay_signature: sign(orderId, paymentId) };
+const capturedPayment = (over: Partial<FakeRzpPayment> = {}): FakeRzpPayment =>
+  ({ id: PAYMENT_ID, status: "captured", amount: 5900, order_id: ORDER_ID, ...over });
+
+function installFetch() {
+  global.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = String(input);
+    if (url.endsWith("/auth/v1/user")) return authed ? new Response(JSON.stringify({ id: "emp-1" })) : new Response("{}", { status: 401 });
+    if (url.includes("api.razorpay.com")) {
+      if (/\/payments\/pay_/.test(url)) paymentLookups += 1;
+      return fakeRazorpay({ payments, orders: rzpOrders, down: rzpDown })(input);
+    }
+    return db.fetch(input, init);
+  }) as unknown as typeof fetch;
 }
 
 beforeEach(() => {
@@ -96,14 +102,25 @@ beforeEach(() => {
   supabaseUrl.mockReturnValue("https://example.supabase.co");
   supabaseAnonKey.mockReturnValue("anon-key");
   supabaseServiceHeaders.mockReturnValue({ apikey: "service-key", Authorization: "Bearer service-key" });
-  global.fetch = vi.fn();
+  authed = true;
+  rzpDown = false;
+  paymentLookups = 0;
+  payments = [capturedPayment()];
+  rzpOrders = {};
+  db = new FakeUnlockDb().seed({
+    orders: [order({ razorpay_order_id: ORDER_ID })],
+    matches: [match("m1")],
+  });
+  installFetch();
 });
+
+afterEach(() => { vi.useRealTimers(); });
 
 describe("employer-verify-unlock-payment — request gating", () => {
   it("403s when the origin isn't allowed", async () => {
     applyCorsHeaders.mockReturnValue("");
     const res = mockRes();
-    await handler(mockReq(validPaymentBody()), res);
+    await handler(mockReq(validBody()), res);
     expect(res.statusCode).toBe(403);
     expect(global.fetch).not.toHaveBeenCalled();
   });
@@ -111,27 +128,22 @@ describe("employer-verify-unlock-payment — request gating", () => {
   it("429s when rate limited", async () => {
     isRateLimited.mockResolvedValue(true);
     const res = mockRes();
-    await handler(mockReq(validPaymentBody()), res);
+    await handler(mockReq(validBody()), res);
     expect(res.statusCode).toBe(429);
   });
 
   it("401s when the Supabase auth lookup rejects the token", async () => {
-    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ ok: false });
+    authed = false;
     const res = mockRes();
-    await handler(mockReq(validPaymentBody()), res);
+    await handler(mockReq(validBody()), res);
     expect(res.statusCode).toBe(401);
   });
 
-  it("400s when payment fields are missing", async () => {
-    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(authOk());
-    const res = mockRes();
+  it("400s when payment fields are missing or malformed", async () => {
+    let res = mockRes();
     await handler(mockReq({ razorpay_order_id: ORDER_ID }), res);
     expect(res.statusCode).toBe(400);
-  });
-
-  it("400s on malformed order/payment id format", async () => {
-    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(authOk());
-    const res = mockRes();
+    res = mockRes();
     await handler(mockReq({ razorpay_order_id: "x", razorpay_payment_id: "y", razorpay_signature: "z" }), res);
     expect(res.statusCode).toBe(400);
   });
@@ -139,272 +151,264 @@ describe("employer-verify-unlock-payment — request gating", () => {
 
 describe("employer-verify-unlock-payment — signature verification (real HMAC)", () => {
   it("rejects a signature produced with the wrong secret — no unlock happens", async () => {
-    const fetchMock = global.fetch as ReturnType<typeof vi.fn>;
-    fetchMock.mockResolvedValueOnce(authOk());
     const res = mockRes();
-    const body = {
-      razorpay_order_id: ORDER_ID,
-      razorpay_payment_id: PAYMENT_ID,
-      razorpay_signature: sign(ORDER_ID, PAYMENT_ID, "wrong_secret"),
-    };
-    await handler(mockReq(body), res);
+    await handler(mockReq({ ...validBody(), razorpay_signature: sign(ORDER_ID, PAYMENT_ID, "attacker") }), res);
     expect(res.statusCode).toBe(400);
-    // Only the auth call happened — no Razorpay order fetch, no Supabase write.
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(db.matches.get("m1")?.unlocked).toBe(false);
+    expect(db.ledger).toHaveLength(0);
   });
 
-  it("rejects a tampered payment id even if it superficially matches format rules", async () => {
-    const fetchMock = global.fetch as ReturnType<typeof vi.fn>;
-    fetchMock.mockResolvedValueOnce(authOk());
+  it("rejects a tampered payment id", async () => {
     const res = mockRes();
-    const validSig = sign(ORDER_ID, PAYMENT_ID);
-    await handler(mockReq({ razorpay_order_id: ORDER_ID, razorpay_payment_id: "pay_TAMPEREDID12", razorpay_signature: validSig }), res);
+    await handler(mockReq({ ...validBody(), razorpay_payment_id: "pay_TAMPERED00000" }), res);
     expect(res.statusCode).toBe(400);
+    expect(db.ledger).toHaveLength(0);
+  });
+});
+
+describe("employer-verify-unlock-payment — payment must be captured at Razorpay", () => {
+  it("502s when Razorpay cannot be reached (nothing is unlocked)", async () => {
+    rzpDown = true;
+    const res = mockRes();
+    await handler(mockReq(validBody()), res);
+    expect(res.statusCode).toBe(502);
+    expect(db.matches.get("m1")?.unlocked).toBe(false);
   });
 
-  it("accepts a correctly signed payload and proceeds past signature verification", async () => {
-    const fetchMock = global.fetch as ReturnType<typeof vi.fn>;
-    fetchMock
-      .mockResolvedValueOnce(authOk())
-      .mockResolvedValueOnce(razorpayOrderOk({ employerId: "emp-1", mode: "single", matchIds: "m1" }, 5900))
-      .mockResolvedValueOnce({ ok: true, status: 201 }) // payment recorded
-      .mockResolvedValueOnce({ ok: true, json: async () => [] }); // match lookup empty -> proves we got past signature check
+  it("400s when the payment belongs to a different order", async () => {
+    payments = [capturedPayment({ order_id: "order_SOMEONEELSE1" })];
     const res = mockRes();
-    await handler(mockReq(validPaymentBody()), res);
+    await handler(mockReq(validBody()), res);
+    expect(res.statusCode).toBe(400);
+    expect(db.ledger).toHaveLength(0);
+  });
+
+  it("409 payment_not_captured (pending:false) for a failed payment, without unlocking", async () => {
+    payments = [capturedPayment({ status: "failed" })];
+    const res = mockRes();
+    await handler(mockReq(validBody()), res);
+    expect(res.statusCode).toBe(409);
+    expect(res.body).toMatchObject({ code: "payment_not_captured", pending: false, orderId: ORDER_ID });
+    expect(db.matches.get("m1")?.unlocked).toBe(false);
+    expect(db.ledger).toHaveLength(0);
+  });
+
+  it("409 pending:true for an authorized payment, after one capture re-check; the webhook finishes it later", async () => {
+    vi.useFakeTimers();
+    payments = [capturedPayment({ status: "authorized" })];
+    const res = mockRes();
+    const p = handler(mockReq(validBody()), res);
+    await vi.advanceTimersByTimeAsync(2_000);
+    await p;
+    expect(res.statusCode).toBe(409);
+    expect(res.body).toMatchObject({ code: "payment_not_captured", pending: true });
+    expect(paymentLookups).toBe(2);
+    expect(db.matches.get("m1")?.unlocked).toBe(false);
+  });
+
+  it("succeeds when the payment becomes captured on the re-check", async () => {
+    vi.useFakeTimers();
+    payments = [capturedPayment({ status: "authorized" })];
+    const res = mockRes();
+    const p = handler(mockReq(validBody()), res);
+    await vi.advanceTimersByTimeAsync(500);
+    payments[0].status = "captured";
+    await vi.advanceTimersByTimeAsync(2_000);
+    await p;
     expect(res.statusCode).toBe(200);
-    expect((res.body as { partial: boolean }).partial).toBe(true);
   });
 });
 
 describe("employer-verify-unlock-payment — order ownership & state", () => {
-  it("403s when the order's noted employer doesn't match the caller", async () => {
-    const fetchMock = global.fetch as ReturnType<typeof vi.fn>;
-    fetchMock
-      .mockResolvedValueOnce(authOk("emp-1"))
-      .mockResolvedValueOnce(razorpayOrderOk({ employerId: "some-other-employer", mode: "single", matchIds: "m1" }, 5900));
+  it("403s when the order belongs to a different employer", async () => {
+    db.orders.get(ORDER_ID)!.employer_id = "someone-else";
     const res = mockRes();
-    await handler(mockReq(validPaymentBody()), res);
+    await handler(mockReq(validBody()), res);
+    expect(res.statusCode).toBe(403);
+    expect(db.ledger).toHaveLength(0);
+    expect(db.matches.get("m1")?.unlocked).toBe(false);
+  });
+
+  it("403s for an unknown order with no usable notes", async () => {
+    db.orders.clear();
+    rzpOrders = { [ORDER_ID]: { amount: 5900, notes: {} } };
+    const res = mockRes();
+    await handler(mockReq(validBody()), res);
     expect(res.statusCode).toBe(403);
   });
 
-  it("403s when the order carries no matchIds", async () => {
-    const fetchMock = global.fetch as ReturnType<typeof vi.fn>;
-    fetchMock
-      .mockResolvedValueOnce(authOk())
-      .mockResolvedValueOnce(razorpayOrderOk({ employerId: "emp-1", mode: "single", matchIds: "" }, 5900));
+  it("rebuilds a legacy order (created before employer_unlock_orders) from its server-written notes", async () => {
+    db.orders.clear();
+    rzpOrders = { [ORDER_ID]: { amount: 5900, notes: { employerId: "emp-1", mode: "single", matchIds: "m1" } } };
     const res = mockRes();
-    await handler(mockReq(validPaymentBody()), res);
-    expect(res.statusCode).toBe(403);
-  });
-
-  it("still records the payment and reports a partial result when the matches referenced by the order no longer exist (C1 — payment already captured by Razorpay)", async () => {
-    const fetchMock = global.fetch as ReturnType<typeof vi.fn>;
-    fetchMock
-      .mockResolvedValueOnce(authOk())
-      .mockResolvedValueOnce(razorpayOrderOk({ employerId: "emp-1", mode: "single", matchIds: "m1" }, 5900))
-      .mockResolvedValueOnce({ ok: true, status: 201 })
-      .mockResolvedValueOnce({ ok: true, json: async () => [] });
-    const res = mockRes();
-    await handler(mockReq(validPaymentBody()), res);
+    await handler(mockReq(validBody()), res);
     expect(res.statusCode).toBe(200);
-    expect(res.body).toMatchObject({ unlocked: [], partial: true });
-    // The payment insert happened before the (failed) match lookup.
-    const insertCall = fetchMock.mock.calls.find(([url]) => String(url).includes("employer_unlock_payments"));
-    expect(insertCall).toBeDefined();
+    expect(db.matches.get("m1")?.unlocked).toBe(true);
+    expect(db.orders.get(ORDER_ID)?.status).toBe("fulfilled");
   });
 
-  it("400s when matches span multiple requirements", async () => {
-    const fetchMock = global.fetch as ReturnType<typeof vi.fn>;
-    fetchMock
-      .mockResolvedValueOnce(authOk())
-      .mockResolvedValueOnce(razorpayOrderOk({ employerId: "emp-1", mode: "batch", matchIds: "m1,m2" }, 29900))
-      .mockResolvedValueOnce({ ok: true, status: 201 })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => [
-          { id: "m1", requirement_id: "req-1", candidate_user_id: "cand-1", unlocked: false },
-          { id: "m2", requirement_id: "req-2", candidate_user_id: "cand-2", unlocked: false },
-        ],
-      });
+  it("does not adopt a legacy order whose notes name another employer", async () => {
+    db.orders.clear();
+    rzpOrders = { [ORDER_ID]: { amount: 5900, notes: { employerId: "emp-2", mode: "single", matchIds: "m1" } } };
     const res = mockRes();
-    await handler(mockReq(validPaymentBody()), res);
+    await handler(mockReq(validBody()), res);
+    expect(res.statusCode).toBe(403);
+    expect(db.matches.get("m1")?.unlocked).toBe(false);
+  });
+
+  it("400s when the captured amount differs from the order amount", async () => {
+    payments = [capturedPayment({ amount: 100 })];
+    const res = mockRes();
+    await handler(mockReq(validBody()), res);
     expect(res.statusCode).toBe(400);
+    expect(db.matches.get("m1")?.unlocked).toBe(false);
   });
 
-  it("still unlocks even if the requirement has since been closed — a captured payment isn't undone by a later status change", async () => {
-    const fetchMock = global.fetch as ReturnType<typeof vi.fn>;
-    fetchMock
-      .mockResolvedValueOnce(authOk())
-      .mockResolvedValueOnce(razorpayOrderOk({ employerId: "emp-1", mode: "single", matchIds: "m1" }, 5900))
-      .mockResolvedValueOnce({ ok: true, status: 201 })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => [{ id: "m1", requirement_id: "req-1", candidate_user_id: "cand-1", unlocked: false }],
-      })
-      .mockResolvedValueOnce({ ok: true, json: async () => [{ id: "cand-1", name: "Priya Sharma", email: "priya@example.com" }] })
-      .mockResolvedValueOnce({ ok: true, status: 200 }); // requirement_matches patch (name/email snapshot included)
+  it("409 order_refunded for a refunded order and order_disputed for a disputed one", async () => {
+    db.orders.get(ORDER_ID)!.status = "refunded";
+    let res = mockRes();
+    await handler(mockReq(validBody()), res);
+    expect(res.statusCode).toBe(409);
+    expect(res.body).toMatchObject({ code: "order_refunded" });
+
+    db.orders.get(ORDER_ID)!.status = "disputed";
+    res = mockRes();
+    await handler(mockReq(validBody()), res);
+    expect(res.body).toMatchObject({ code: "order_disputed" });
+    expect(db.matches.get("m1")?.unlocked).toBe(false);
+  });
+
+  it("still unlocks when the requirement was closed after the order was created", async () => {
+    // Fulfilment has no requirement-status gate: a captured payment is honoured.
     const res = mockRes();
-    await handler(mockReq(validPaymentBody()), res);
+    await handler(mockReq(validBody()), res);
     expect(res.statusCode).toBe(200);
-    expect(res.body).toEqual({
-      unlocked: true,
-      candidates: [{ matchId: "m1", name: "Priya Sharma", contact: { email: "priya@example.com" } }],
-    });
   });
 });
 
 describe("employer-verify-unlock-payment — successful unlock", () => {
-  it("unlocks a single candidate, records the payment, and returns their contact details", async () => {
-    const fetchMock = global.fetch as ReturnType<typeof vi.fn>;
-    fetchMock
-      .mockResolvedValueOnce(authOk())
-      .mockResolvedValueOnce(razorpayOrderOk({ employerId: "emp-1", mode: "single", matchIds: "m1" }, 5900))
-      .mockResolvedValueOnce({ ok: true, status: 201 }) // employer_unlock_payments insert
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => [{ id: "m1", requirement_id: "req-1", candidate_user_id: "cand-1", unlocked: false }],
-      })
-      .mockResolvedValueOnce({ ok: true, json: async () => [{ id: "cand-1", name: "Priya Sharma", email: "priya@example.com" }] })
-      .mockResolvedValueOnce({ ok: true, status: 200 }); // requirement_matches patch (name/email snapshot included)
-
+  it("unlocks a single candidate, records the payment and returns contact details, order status and invoice number", async () => {
     const res = mockRes();
-    await handler(mockReq(validPaymentBody()), res);
-
+    await handler(mockReq(validBody()), res);
     expect(res.statusCode).toBe(200);
-    expect(res.body).toEqual({
+    expect(res.body).toMatchObject({
       unlocked: true,
-      candidates: [{ matchId: "m1", name: "Priya Sharma", contact: { email: "priya@example.com" } }],
+      orderId: ORDER_ID,
+      orderStatus: "fulfilled",
+      invoiceNo: "HSX-2610-000001",
+      candidates: [{ matchId: "m1", name: "Name m1", contact: { email: "m1@example.com" } }],
     });
-
-    const insertCall = fetchMock.mock.calls.find(([url]) => String(url).includes("employer_unlock_payments"));
-    const insertBody = JSON.parse((insertCall![1] as RequestInit).body as string);
-    expect(insertBody).toMatchObject({ match_id: "m1", employer_id: "emp-1", amount: 5900, currency: "INR" });
-
-    const patchCall = fetchMock.mock.calls.find(([, opts]) => (opts as RequestInit | undefined)?.method === "PATCH");
-    expect(patchCall).toBeDefined();
-    expect(String(patchCall![0])).toContain("requirement_matches");
+    expect((res.body as Record<string, unknown>).partial).toBeUndefined();
+    expect(db.matches.get("m1")).toMatchObject({ unlocked: true, unlocked_candidate_email: "m1@example.com" });
+    expect(db.ledger).toHaveLength(1);
+    expect(db.ledger[0]).toMatchObject({ razorpay_payment_id: PAYMENT_ID, razorpay_order_id: ORDER_ID, employer_id: "emp-1", amount: 5900 });
   });
 
-  it("still unlocks when the candidate name/email snapshot columns reject the PATCH (supabase-migrations/0026 not yet applied) — the payment isn't lost to a schema mismatch", async () => {
-    const fetchMock = global.fetch as ReturnType<typeof vi.fn>;
-    fetchMock
-      .mockResolvedValueOnce(authOk())
-      .mockResolvedValueOnce(razorpayOrderOk({ employerId: "emp-1", mode: "single", matchIds: "m1" }, 5900))
-      .mockResolvedValueOnce({ ok: true, status: 201 }) // employer_unlock_payments insert
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => [{ id: "m1", requirement_id: "req-1", candidate_user_id: "cand-1", unlocked: false }],
-      })
-      .mockResolvedValueOnce({ ok: true, json: async () => [{ id: "cand-1", name: "Priya Sharma", email: "priya@example.com" }] })
-      .mockResolvedValueOnce({ ok: false, status: 400, text: async () => "column \"unlocked_candidate_name\" does not exist" })
-      .mockResolvedValueOnce({ ok: true, status: 200 }); // retry without the snapshot fields succeeds
-
+  it("is idempotent: a replay (double click, or webhook already ran) returns the same 200 with no second ledger row", async () => {
+    await handler(mockReq(validBody()), mockRes());
     const res = mockRes();
-    await handler(mockReq(validPaymentBody()), res);
-
+    await handler(mockReq(validBody()), res);
     expect(res.statusCode).toBe(200);
-    expect(res.body).toEqual({
-      unlocked: true,
-      candidates: [{ matchId: "m1", name: "Priya Sharma", contact: { email: "priya@example.com" } }],
-    });
-
-    const patchCalls = fetchMock.mock.calls.filter(([, opts]) => (opts as RequestInit | undefined)?.method === "PATCH");
-    expect(patchCalls).toHaveLength(2);
-    const retryBody = JSON.parse((patchCalls[1][1] as RequestInit).body as string);
-    expect(retryBody).toEqual({ unlocked: true, unlocked_at: expect.any(String) });
-    expect(retryBody).not.toHaveProperty("unlocked_candidate_name");
+    expect(res.body).toMatchObject({ unlocked: true, orderStatus: "fulfilled", invoiceNo: "HSX-2610-000001" });
+    expect(db.ledger).toHaveLength(1);
   });
 
-  it("500s when the retry PATCH without the snapshot fields also fails", async () => {
-    const fetchMock = global.fetch as ReturnType<typeof vi.fn>;
-    fetchMock
-      .mockResolvedValueOnce(authOk())
-      .mockResolvedValueOnce(razorpayOrderOk({ employerId: "emp-1", mode: "single", matchIds: "m1" }, 5900))
-      .mockResolvedValueOnce({ ok: true, status: 201 })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => [{ id: "m1", requirement_id: "req-1", candidate_user_id: "cand-1", unlocked: false }],
-      })
-      .mockResolvedValueOnce({ ok: true, json: async () => [{ id: "cand-1", name: "Priya Sharma", email: "priya@example.com" }] })
-      .mockResolvedValueOnce({ ok: false, status: 400, text: async () => "column does not exist" })
-      .mockResolvedValueOnce({ ok: false, status: 500, text: async () => "db unavailable" });
-
+  it("treats an existing ledger row (webhook beat the browser) as an idempotent success", async () => {
+    db.ledger.push({ razorpay_payment_id: PAYMENT_ID, razorpay_order_id: ORDER_ID, employer_id: "emp-1", amount: 5900, invoice_no: "HSX-2610-000042", refunded_at: null });
     const res = mockRes();
-    await handler(mockReq(validPaymentBody()), res);
+    await handler(mockReq(validBody()), res);
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({ invoiceNo: "HSX-2610-000042" });
+    expect(db.matches.get("m1")?.unlocked).toBe(true);
+    expect(db.ledger).toHaveLength(1);
+  });
+
+  it("still unlocks when the candidate snapshot columns reject the PATCH (migration 0026 not applied)", async () => {
+    const real = db.fetch;
+    let first = true;
+    db.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+      if ((init?.method || "GET") === "PATCH" && String(input).includes("requirement_matches") && first) {
+        first = false;
+        return new Response("{}", { status: 400 });
+      }
+      return real(input, init);
+    }) as typeof db.fetch;
+    const res = mockRes();
+    await handler(mockReq(validBody()), res);
+    expect(res.statusCode).toBe(200);
+    expect(db.matches.get("m1")?.unlocked).toBe(true);
+  });
+
+  it("500s (order left 'paid' for the reconciler) when unlock writes keep failing, then succeeds on retry", async () => {
+    db.failWhen = (m, url) => m === "PATCH" && url.includes("requirement_matches");
+    let res = mockRes();
+    await handler(mockReq(validBody()), res);
     expect(res.statusCode).toBe(500);
-  });
+    expect((res.body as { error: string }).error).toContain("retried automatically");
+    expect(db.orders.get(ORDER_ID)?.status).toBe("paid");
+    expect(db.ledger).toHaveLength(1);
 
-  it("treats a 409 dedup response as an idempotent replay instead of erroring", async () => {
-    const fetchMock = global.fetch as ReturnType<typeof vi.fn>;
-    fetchMock
-      .mockResolvedValueOnce(authOk())
-      .mockResolvedValueOnce(razorpayOrderOk({ employerId: "emp-1", mode: "single", matchIds: "m1" }, 5900))
-      .mockResolvedValueOnce({ ok: false, status: 409 }) // already recorded — replayed verify call
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => [{ id: "m1", requirement_id: "req-1", candidate_user_id: "cand-1", unlocked: true }],
-      })
-      .mockResolvedValueOnce({ ok: true, json: async () => [{ id: "cand-1", name: "Priya Sharma", email: "priya@example.com" }] });
-
-    const res = mockRes();
-    await handler(mockReq(validPaymentBody()), res);
-
+    db.failWhen = null;
+    res = mockRes();
+    await handler(mockReq(validBody()), res);
     expect(res.statusCode).toBe(200);
-    expect(res.body).toEqual({
-      unlocked: true,
-      candidates: [{ matchId: "m1", name: "Priya Sharma", contact: { email: "priya@example.com" } }],
-    });
-    // Already unlocked — no PATCH call should have been issued.
-    const patchCall = fetchMock.mock.calls.find(([, opts]) => (opts as RequestInit | undefined)?.method === "PATCH");
-    expect(patchCall).toBeUndefined();
+    expect(db.ledger).toHaveLength(1);
   });
 
-  it("500s when the payment insert fails for a reason other than dedup", async () => {
-    const fetchMock = global.fetch as ReturnType<typeof vi.fn>;
-    fetchMock
-      .mockResolvedValueOnce(authOk())
-      .mockResolvedValueOnce(razorpayOrderOk({ employerId: "emp-1", mode: "single", matchIds: "m1" }, 5900))
-      .mockResolvedValueOnce({ ok: false, status: 500, text: async () => "db error" });
-
+  it("500s when the ledger insert fails for a reason other than a duplicate", async () => {
+    db.failWhen = (m, url) => m === "POST" && url.includes("employer_unlock_payments");
     const res = mockRes();
-    await handler(mockReq(validPaymentBody()), res);
+    await handler(mockReq(validBody()), res);
     expect(res.statusCode).toBe(500);
+    expect(db.matches.get("m1")?.unlocked).toBe(false);
   });
 
-  it("unlocks a full batch of candidates and charges/records ₹299 total", async () => {
-    const fetchMock = global.fetch as ReturnType<typeof vi.fn>;
-    const matchIds = Array.from({ length: 10 }, (_, i) => `m${i}`);
-    fetchMock
-      .mockResolvedValueOnce(authOk())
-      .mockResolvedValueOnce(razorpayOrderOk({ employerId: "emp-1", mode: "batch", matchIds: matchIds.join(",") }, 29900))
-      .mockResolvedValueOnce({ ok: true, status: 201 })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => matchIds.map((id, i) => ({ id, requirement_id: "req-1", candidate_user_id: `cand-${i}`, unlocked: false })),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => matchIds.map((_, i) => ({ id: `cand-${i}`, name: `Candidate ${i}`, email: `c${i}@example.com` })),
-      })
-      // One PATCH per still-locked match now (so the name/email snapshot can
-      // differ per candidate) rather than a single bulk PATCH — mockResolvedValue
-      // (not Once) covers all of them.
-      .mockResolvedValue({ ok: true, status: 200 });
-
+  it("unlocks a full batch and records the ₹299 total", async () => {
+    const ids = Array.from({ length: 10 }, (_, i) => `b${i}`);
+    db = new FakeUnlockDb().seed({
+      orders: [order({ razorpay_order_id: ORDER_ID, mode: "batch", match_ids: ids, amount: 29900 })],
+      matches: ids.map((id) => match(id)),
+    });
+    payments = [capturedPayment({ amount: 29900 })];
     const res = mockRes();
-    const body = {
-      razorpay_order_id: ORDER_ID,
-      razorpay_payment_id: PAYMENT_ID,
-      razorpay_signature: sign(ORDER_ID, PAYMENT_ID),
-    };
-    await handler(mockReq(body), res);
-
+    await handler(mockReq(validBody()), res);
     expect(res.statusCode).toBe(200);
     expect((res.body as { candidates: unknown[] }).candidates).toHaveLength(10);
+    expect(db.ledger[0]).toMatchObject({ amount: 29900 });
+    expect(ids.every((id) => db.matches.get(id)?.unlocked)).toBe(true);
+  });
+});
 
-    const insertCall = fetchMock.mock.calls.find(([url]) => String(url).includes("employer_unlock_payments"));
-    const insertBody = JSON.parse((insertCall![1] as RequestInit).body as string);
-    expect(insertBody).toMatchObject({ match_ids: matchIds, amount: 29900, currency: "INR" });
-    expect(insertBody.match_id).toBeUndefined();
+describe("employer-verify-unlock-payment — partial fulfilment", () => {
+  it("returns 200 partial:true with failed ids, a refund estimate and a message when a candidate withdrew or blocked the employer", async () => {
+    db = new FakeUnlockDb().seed({
+      orders: [order({ razorpay_order_id: ORDER_ID, mode: "batch", match_ids: ["a", "b", "c"], amount: 8970 })],
+      matches: [match("a"), match("b", { profiles: { name: "B", email: "b@x.com", employer_visibility: "off" } }), match("c")],
+    });
+    db.blockedCandidates.add("cand-c");
+    payments = [capturedPayment({ amount: 8970 })];
+    const res = mockRes();
+    await handler(mockReq(validBody()), res);
+    expect(res.statusCode).toBe(200);
+    const body = res.body as Record<string, unknown>;
+    expect(body).toMatchObject({
+      unlocked: true, partial: true, orderStatus: "partial",
+      failed: [{ matchId: "b", reason: "candidate_opted_out" }, { matchId: "c", reason: "blocked" }],
+      refundDueEstimatePaise: Math.round((8970 * 2) / 3),
+    });
+    expect((body.candidates as Array<{ matchId: string }>).map((c) => c.matchId)).toEqual(["a"]);
+    expect(String(body.message)).toContain("refund");
+    expect(db.matches.get("b")?.unlocked).toBe(false);
+    expect(db.matches.get("c")?.unlocked).toBe(false);
+    expect(db.ledger).toHaveLength(1);
+  });
+
+  it("still records the payment and reports partial when the matched rows no longer exist (candidate deleted)", async () => {
+    db.matches.clear();
+    const res = mockRes();
+    await handler(mockReq(validBody()), res);
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({ partial: true, candidates: [], failed: [{ matchId: "m1", reason: "gone" }] });
+    expect(db.ledger).toHaveLength(1);
   });
 });

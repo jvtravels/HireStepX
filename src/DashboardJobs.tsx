@@ -76,6 +76,8 @@ export interface JobMatch {
   unlocked: boolean;
   matchedAt: string;
   unlockedAt: string | null;
+  /** The candidate's own answer to this employer, when the API echoes it. */
+  candidateResponse?: string | null;
 }
 
 interface HiringActivity {

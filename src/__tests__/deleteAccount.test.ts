@@ -309,3 +309,139 @@ describe("delete-account — hard delete", () => {
     expect(res.body).toEqual({ success: true });
   });
 });
+
+describe("delete-account — candidate-agency + employer data", () => {
+  type Call = { url: string; method: string; body?: string };
+
+  /** Base fetch for hard-delete scenarios; `route` can override any call. */
+  function scenario(route: (c: Call) => Response | undefined) {
+    const calls: Call[] = [];
+    const fn = vi.fn(async (url: string, init?: RequestInit) => {
+      const c: Call = { url: String(url), method: init?.method ?? "GET", body: init?.body as string | undefined };
+      calls.push(c);
+      const custom = route(c);
+      if (custom) return custom;
+      if (c.url.includes("grant_type=password")) return { ok: true } as Response;
+      if (c.url.includes("select=email,name")) return { ok: true, json: async () => [] } as unknown as Response;
+      return { ok: true, status: 200, json: async () => [] } as unknown as Response;
+    });
+    global.fetch = fn as unknown as typeof fetch;
+    return calls;
+  }
+  const json = (rows: unknown[]) => ({ ok: true, status: 200, json: async () => rows }) as unknown as Response;
+
+  it("deletes every candidate-agency table before the profile", async () => {
+    const calls = scenario(() => undefined);
+    const res = mockRes();
+    await handler(mockReq({ password: "correct", hard: true }), res);
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toEqual({ success: true });
+    const deletes = calls.filter((c) => c.method === "DELETE").map((c) => c.url);
+    for (const t of ["candidate_consent_log", "employer_blocks", "employer_reports?reporter_user_id", "match_status_events", "message_flags?flagged_by", "conversation_messages", "conversations", "requirement_matches"]) {
+      expect(deletes.some((u) => u.includes(`/rest/v1/${t}`))).toBe(true);
+    }
+  });
+
+  it("tolerates a 404 from tables of the not-yet-applied migration but not from core tables", async () => {
+    scenario((c) => (c.method === "DELETE" && c.url.includes("/rest/v1/employer_blocks") ? ({ ok: false, status: 404 } as unknown as Response) : undefined));
+    const res = mockRes();
+    await handler(mockReq({ password: "correct", hard: true }), res);
+    expect(res.statusCode).toBe(200);
+
+    scenario((c) => (c.method === "DELETE" && c.url.includes("/rest/v1/sessions") ? ({ ok: false, status: 404 } as unknown as Response) : undefined));
+    const res2 = mockRes();
+    await handler(mockReq({ password: "correct", hard: true }), res2);
+    expect(res2.statusCode).toBe(500);
+    expect((res2.body as { error: string }).error).toContain("sessions");
+  });
+
+  it("removes chat attachment objects from storage before deleting the message rows", async () => {
+    const calls = scenario((c) =>
+      c.url.includes("conversation_messages?or=") ? json([{ attachment_path: "c1/a.pdf" }, { attachment_path: "c1/a.pdf" }, { attachment_path: "../evil" }]) : undefined,
+    );
+    const res = mockRes();
+    await handler(mockReq({ password: "correct", hard: true }), res);
+    expect(res.statusCode).toBe(200);
+    const storageIdx = calls.findIndex((c) => c.url.includes("/storage/v1/object/chat-attachments"));
+    const msgDeleteIdx = calls.findIndex((c) => c.method === "DELETE" && c.url.includes("/rest/v1/conversation_messages?candidate_user_id"));
+    expect(storageIdx).toBeGreaterThan(-1);
+    expect(storageIdx).toBeLessThan(msgDeleteIdx);
+    expect(JSON.parse(calls[storageIdx].body!)).toEqual({ prefixes: ["c1/a.pdf"] });
+  });
+
+  it("does not fail the erasure when storage cleanup throws", async () => {
+    scenario((c) => {
+      if (c.url.includes("conversation_messages?or=")) return json([{ attachment_path: "c1/a.pdf" }]);
+      if (c.url.includes("/storage/v1/")) throw new Error("storage down");
+      return undefined;
+    });
+    const res = mockRes();
+    await handler(mockReq({ password: "correct", hard: true }), res);
+    expect(res.statusCode).toBe(200);
+  });
+
+  it("retains an employer with payment rows: anonymises, deactivates the auth user (PUT) and never DELETEs it", async () => {
+    const calls = scenario((c) => {
+      if (c.url.includes("/rest/v1/employers?id=eq.")) {
+        return c.method === "PATCH" ? ({ ok: true } as Response) : json([{ id: USER_ID, logo_path: "u/logo.png" }]);
+      }
+      if (c.url.includes("/rest/v1/employer_unlock_payments?employer_id")) return json([{ id: "p1" }]);
+      return undefined;
+    });
+    const res = mockRes();
+    await handler(mockReq({ password: "correct", hard: true }), res);
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toEqual({ success: true, retainedFinancialRecords: true });
+    const patch = calls.find((c) => c.method === "PATCH" && c.url.includes("/rest/v1/employers?id="));
+    expect(JSON.parse(patch!.body!)).toMatchObject({ company_name: "", website: "", logo_path: null, suspended_reason: "account deleted by user" });
+    expect(calls.some((c) => c.method === "DELETE" && c.url.includes("/rest/v1/employer_requirements?employer_id"))).toBe(true);
+    expect(calls.some((c) => c.method === "DELETE" && c.url.includes("/storage/v1/object/employer-logos/u/logo.png"))).toBe(true);
+    const put = calls.find((c) => c.method === "PUT" && c.url.includes("/auth/v1/admin/users/"));
+    expect(JSON.parse(put!.body!)).toMatchObject({ ban_duration: "876000h", email: `deleted-${USER_ID}@deleted.invalid` });
+    expect(calls.some((c) => c.method === "DELETE" && c.url.includes("/auth/v1/admin/users/"))).toBe(false);
+    expect(captureServerEvent).toHaveBeenCalledWith("account_deleted", USER_ID, { mode: "hard", retainedFinancialRecords: true });
+  });
+
+  it("hard-deletes the auth user for an employer with no financial rows", async () => {
+    const calls = scenario((c) => (c.url.includes("/rest/v1/employers?id=eq.") ? json([{ id: USER_ID, logo_path: null }]) : undefined));
+    const res = mockRes();
+    await handler(mockReq({ password: "correct", hard: true }), res);
+    expect(res.body).toEqual({ success: true });
+    expect(calls.some((c) => c.method === "DELETE" && c.url.includes("/auth/v1/admin/users/"))).toBe(true);
+    expect(calls.some((c) => c.method === "PUT")).toBe(false);
+  });
+
+  it("treats a missing employer_unlock_orders table (404) as zero orders", async () => {
+    const calls = scenario((c) => {
+      if (c.url.includes("/rest/v1/employers?id=eq.")) return json([{ id: USER_ID }]);
+      if (c.url.includes("employer_unlock_orders")) return { ok: false, status: 404 } as unknown as Response;
+      return undefined;
+    });
+    const res = mockRes();
+    await handler(mockReq({ password: "correct", hard: true }), res);
+    expect(res.statusCode).toBe(200);
+    expect(calls.some((c) => c.method === "PUT")).toBe(false);
+  });
+
+  it("fails closed with 500 (and deletes nothing) when the employer lookup fails", async () => {
+    const calls = scenario((c) => (c.url.includes("/rest/v1/employers?id=eq.") ? ({ ok: false, status: 500 } as unknown as Response) : undefined));
+    const res = mockRes();
+    await handler(mockReq({ password: "correct", hard: true }), res);
+    expect(res.statusCode).toBe(500);
+    expect((res.body as { error: string }).error).toContain("employer data");
+    expect(calls.some((c) => c.method === "DELETE")).toBe(false);
+  });
+
+  it("207s with retainedFinancialRecords when auth deactivation of a retained employer fails", async () => {
+    scenario((c) => {
+      if (c.url.includes("/rest/v1/employers?id=eq.")) return c.method === "PATCH" ? ({ ok: true } as Response) : json([{ id: USER_ID }]);
+      if (c.url.includes("/rest/v1/employer_unlock_payments?employer_id")) return json([{ id: "p1" }]);
+      if (c.method === "PUT") return { ok: false, status: 500 } as unknown as Response;
+      return undefined;
+    });
+    const res = mockRes();
+    await handler(mockReq({ password: "correct", hard: true }), res);
+    expect(res.statusCode).toBe(207);
+    expect(res.body).toMatchObject({ success: true, partial: true, retainedFinancialRecords: true });
+  });
+});

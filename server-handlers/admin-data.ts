@@ -7,6 +7,7 @@ import { getOverview, getUsers, getUserDetail, getSessionDetail, getSessions, ge
 import { getFinancials, getLLMUsage, getCostData, saveCostReconciliation } from "./_admin-financials";
 import { getSupportMessages, getMessaging, reviewMessageFlag, getReferrals, getEmployers, getPromoCodes, updateSupportStatus } from "./_admin-community";
 import { getHealthAlerts } from "./_health-alerts";
+import { listEmployers, setEmployerTier, suspendEmployer, unsuspendEmployer, listEmployerReports, resolveEmployerReport } from "./_admin-employers";
 import { listUnlockRequirements, getUnlockMatches, adminUnlockCandidates } from "./_admin-unlock";
 import { razorpayBasicAuth } from "./_razorpay-auth";
 import { createAdminToken } from "./_admin-auth";
@@ -34,7 +35,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(503).json({ error: "Not configured" });
   }
 
-  const body = req.body as { section?: string; action?: string; search?: string; offset?: number; userId?: string; sessionId?: string; id?: string; status?: string; tier?: string; days?: number; qty?: number; note?: string; paymentId?: string; amountPaise?: number; subject?: string; htmlBody?: string; month?: string; actualInvoiceInr?: number; flagId?: string; flagStatus?: string; requirementId?: string; matchIds?: string[] } | undefined;
+  const body = req.body as { section?: string; action?: string; search?: string; offset?: number; userId?: string; sessionId?: string; id?: string; status?: string; tier?: string; days?: number; qty?: number; note?: string; paymentId?: string; amountPaise?: number; subject?: string; htmlBody?: string; month?: string; actualInvoiceInr?: number; flagId?: string; flagStatus?: string; requirementId?: string; matchIds?: string[]; employerId?: string; reportId?: string; reason?: string } | undefined;
   const section = body?.section || body?.action || "overview";
 
   try {
@@ -62,6 +63,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
         case "referrals": return getReferrals();
         case "employers": return getEmployers();
+        case "employers_list": return listEmployers();
+        case "employer_set_tier": return setEmployerTier(body?.employerId, body?.tier);
+        case "employer_suspend": return suspendEmployer(body?.employerId, body?.reason);
+        case "employer_unsuspend": return unsuspendEmployer(body?.employerId);
+        case "employer_reports_list": return listEmployerReports(body?.status, body?.employerId);
+        case "employer_report_resolve": return resolveEmployerReport(body?.reportId, body?.status);
         case "unlock-requirements": return listUnlockRequirements(body?.search);
         case "unlock-matches": return getUnlockMatches(String(body?.requirementId ?? ""));
         case "admin-unlock-candidates": return adminUnlockCandidates({ requirementId: body?.requirementId, matchIds: body?.matchIds, note: body?.note });

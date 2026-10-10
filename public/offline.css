@@ -1,0 +1,6 @@
+html,body{margin:0;height:100%;background:#faf8f4;color:#14110a;font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:440px;margin:0 auto;padding:20vh 24px 24px;text-align:center}
+h1{font-size:24px;font-weight:500;margin:0 0 12px}
+p{font-size:15px;line-height:1.55;margin:0 0 16px}
+.btn{display:inline-block;padding:12px 22px;border-radius:10px;background:#14110a;color:#faf8f4;text-decoration:none;font-weight:500}
+.hint{font-size:12px;color:#6b6558}

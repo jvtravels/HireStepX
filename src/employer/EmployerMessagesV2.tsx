@@ -7,17 +7,13 @@
    deep-links via ?matchId=... the same way the candidate page does. */
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { useMaxWidth } from "../hooks/useMaxWidth";
 import { useRouter, useSearchParams } from "next/navigation";
-import { AlertCircleIcon, FlagIcon, MessagesSquareIcon, PaperclipIcon, SendIcon, ArrowLeftIcon } from "lucide-react";
+import { AlertCircleIcon, MessagesSquareIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Message, MessageAvatar, MessageContent, MessageFooter } from "@/components/ui/message";
-import { Bubble, BubbleContent } from "@/components/ui/bubble";
 import {
   Dialog,
   DialogContent,
@@ -29,18 +25,49 @@ import {
 import LoadingScreen from "@/_LoadingScreen";
 import { tokens as t, fonts as f } from "../auth/_tokens";
 import { useEmployerData, type ConversationContext, type ConversationMessage, type ConversationSummary, type CandidateEvidence } from "./EmployerDataContext";
-import { groupConversationsByCounterpart } from "../conversationGrouping";
 import { useToast } from "../Toast";
 import { playUiSound } from "../uiSounds";
-import { CandidateStatusChip, OutlineCta, PrimaryCta, Pill, ScoreChip } from "./_atoms";
+import { OutlineCta, PrimaryCta, Pill, ScoreChip } from "./_atoms";
+import { MaskedIdentity, isMaskedName } from "./_atoms2";
+import InterviewInviteDialog, { canInviteToInterview, statusErrorCopy, type InviteResult, type InviteValues } from "./InterviewInviteDialog";
+import type { CandidateStatus } from "./mockData";
+import MessagingLayout, { useRailState } from "../messaging/MessagingLayout";
+import ConversationList from "../messaging/ConversationList";
+import ThreadHeader from "../messaging/ThreadHeader";
+import ThreadLog from "../messaging/ThreadLog";
+import Composer, { ATTACHMENT_MAX_BYTES, type ComposerBlock } from "../messaging/Composer";
+import ContextRail from "../messaging/ContextRail";
+import StatusPill from "../messaging/StatusPill";
+import {
+  EMPLOYER_QUICK_REPLIES,
+  filterInbox,
+  sortInbox,
+  statusTone,
+  useFavorites,
+  type InboxFilter,
+  type InboxItem,
+} from "../messaging/helpers";
 
 const LIST_POLL_MS = 15000;
 const THREAD_POLL_MS = 6000;
 
-/* No profile photos anywhere in this app — every avatar in the thread is
-   two-letter initials derived from a display name. */
-function initialsOf(name: string): string {
-  return name.split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0]?.toUpperCase() ?? "").join("") || "?";
+const STATUS_LABEL: Record<string, string> = {
+  shortlisted: "Shortlisted",
+  interview_invited: "Interview invited",
+  interviewing: "Interviewing",
+  hired: "Hired",
+  rejected: "Rejected",
+  not_a_fit: "Not a fit",
+  no_response: "No response",
+};
+
+function DialogError({ children, unlock }: { children: React.ReactNode; unlock: boolean }) {
+  return (
+    <p role="alert" style={{ margin: 0, padding: "8px 10px", borderRadius: 8, background: t.error100, border: `1px solid ${t.errorLine}`, color: t.errorInk, fontFamily: f.sans, fontSize: 13, lineHeight: 1.5 }}>
+      {children}{" "}
+      {unlock && <Link href="/employer/requirements" style={{ color: t.errorInk, fontWeight: 600, textDecoration: "underline" }}>Go to shortlists</Link>}
+    </p>
+  );
 }
 
 export default function EmployerMessagesV2() {
@@ -48,7 +75,7 @@ export default function EmployerMessagesV2() {
   const searchParams = useSearchParams();
   const { toast } = useToast();
   const mobile = useMaxWidth(768);
-  const { listConversations, fetchMessages, sendMessage, uploadMessageAttachment, flagMessage, updateCandidateStatus, fetchCandidateEvidence, fetchMessageAttachmentUrl, companyName } = useEmployerData();
+  const { listConversations, fetchMessages, uploadMessageAttachment, flagMessage, fetchCandidateEvidence, fetchMessageAttachmentUrl, companyName, suspended, sendMessageResult, updateCandidateStatusResult } = useEmployerData();
 
   const openAttachment = useCallback(async (messageId: string) => {
     // Window must open synchronously on click or popup blockers kill it after the await.
@@ -74,19 +101,29 @@ export default function EmployerMessagesV2() {
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [attaching, setAttaching] = useState(false);
+  const [composerError, setComposerError] = useState<string | null>(null);
+  const [unlockBlocked, setUnlockBlocked] = useState(false);
+  const [threadError, setThreadError] = useState(false);
+  const [announcement, setAnnouncement] = useState({ n: 0, text: "" });
   const scrollRef = useRef<HTMLDivElement>(null);
+  const threadHeadingRef = useRef<HTMLDivElement>(null);
+  const activeMatchRef = useRef<string | null>(activeMatchId);
+  const restoreFocusRef = useRef<string | null>(null);
 
   const [evidence, setEvidence] = useState<CandidateEvidence | null>(null);
   const [evidenceOpen, setEvidenceOpen] = useState(false);
 
   const [inviteOpen, setInviteOpen] = useState(false);
-  const [inviteNote, setInviteNote] = useState("");
-  const [inviteDate, setInviteDate] = useState("");
-  const [inviteSubmitting, setInviteSubmitting] = useState(false);
 
   const [rejectOpen, setRejectOpen] = useState(false);
   const [rejectNote, setRejectNote] = useState("");
   const [rejectSubmitting, setRejectSubmitting] = useState(false);
+  const [rejectError, setRejectError] = useState<string | null>(null);
+
+  const [filter, setFilter] = useState<InboxFilter>("all");
+  const [query, setQuery] = useState("");
+  const { favorites, toggle: toggleFavorite } = useFavorites("employer");
+  const railState = useRailState();
 
   const [flagMessageId, setFlagMessageId] = useState<string | null>(null);
   const [flagReason, setFlagReason] = useState("");
@@ -127,24 +164,33 @@ export default function EmployerMessagesV2() {
   const loadThread = useCallback(async (matchId: string, showSpinner: boolean) => {
     if (showSpinner) setThreadLoading(true);
     const result = await fetchMessages(matchId);
+    // A slow response for a thread the user has already left must not overwrite the current one.
+    if (activeMatchRef.current !== matchId) return !!result;
     if (result) {
       const seen = seenMessageIdsRef.current;
       if (showSpinner) seen.clear();
-      else if (result.messages.some((m) => m.senderRole !== "employer" && !seen.has(m.id))) playUiSound("receive");
+      else if (result.messages.some((m) => m.senderRole !== "employer" && m.senderRole !== "system" && !seen.has(m.id))) {
+        playUiSound("receive");
+        setAnnouncement((a) => ({ n: a.n + 1, text: `New message from ${result.context?.candidateName ?? "the candidate"}` }));
+      }
       for (const m of result.messages) seen.add(m.id);
       setMessages(result.messages);
       setContext(result.context);
     }
+    setThreadError(!result);
     if (showSpinner) setThreadLoading(false);
     return !!result;
   }, [fetchMessages]);
 
   useEffect(() => {
-    if (!activeMatchId) {
-      setMessages([]);
-      setContext(null);
-      return;
-    }
+    activeMatchRef.current = activeMatchId;
+    setMessages([]);
+    setContext(null);
+    setThreadError(false);
+    setComposerError(null);
+    setUnlockBlocked(false);
+    setAnnouncement({ n: 0, text: "" });
+    if (!activeMatchId) return;
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout>;
     let failures = 0;
@@ -177,19 +223,50 @@ export default function EmployerMessagesV2() {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
   }, [messages]);
 
+  // Once the thread's name is no longer the masked placeholder the candidate has been unlocked, so lift the block.
+  const threadCandidateName = context?.candidateName;
+  useEffect(() => {
+    if (threadCandidateName && !isMaskedName(threadCandidateName)) setUnlockBlocked(false);
+  }, [threadCandidateName]);
+
   const selectConversation = (matchId: string) => {
     setActiveMatchId(matchId);
     router.replace(`/employer/messages?matchId=${matchId}`);
+    if (mobile) requestAnimationFrame(() => threadHeadingRef.current?.focus());
+  };
+
+  const backToList = () => {
+    restoreFocusRef.current = activeMatchId;
+    setActiveMatchId(null);
+    router.replace("/employer/messages");
+  };
+
+  // After the mobile "Back" button swaps panes, put focus on the row the user came from.
+  useEffect(() => {
+    if (activeMatchId || !restoreFocusRef.current) return;
+    const id = restoreFocusRef.current;
+    restoreFocusRef.current = null;
+    requestAnimationFrame(() => document.getElementById(`conv-${id}`)?.focus());
+  }, [activeMatchId]);
+
+  /* 402 becomes a persistent composer block (with an unlock CTA); anything else is a recoverable inline error. */
+  const handleSendFailure = (err: { error: string; status?: number; code?: string }) => {
+    if (err.code === "unlock_required" || err.status === 402) {
+      setUnlockBlocked(true);
+      return;
+    }
+    setComposerError(err.status === 403 || err.code === "suspended" ? "Your account is suspended. Contact support to restore access." : err.error || "Couldn't send message — please try again.");
   };
 
   const handleSend = async () => {
     const text = draft.trim();
-    if (!text || !activeMatchId) return;
+    if (!text || !activeMatchId || sending || attaching) return;
     setSending(true);
-    const sent = await sendMessage(activeMatchId, { body: text });
+    setComposerError(null);
+    const sent = await sendMessageResult(activeMatchId, { body: text });
     setSending(false);
-    if (!sent) {
-      toast("Couldn't send message — please try again", "error");
+    if (!sent.ok) {
+      handleSendFailure(sent.error);
       return;
     }
     playUiSound("send");
@@ -198,41 +275,41 @@ export default function EmployerMessagesV2() {
     loadConversations();
   };
 
-  const handleAttach = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file || !activeMatchId) return;
-    if (file.size > 8_000_000) {
-      toast("File is too large — 8MB max", "error");
+  const handleAttach = async (file: File) => {
+    if (!activeMatchId) return;
+    setComposerError(null);
+    if (file.size > ATTACHMENT_MAX_BYTES) {
+      setComposerError(`"${file.name}" is too large — attachments can be 8 MB at most.`);
       return;
     }
     setAttaching(true);
     const dataUrl = await new Promise<string>((resolve, reject) => {
       const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
+      reader.onload = () => resolve(typeof reader.result === "string" ? reader.result : "");
       reader.onerror = () => reject(reader.error);
       reader.readAsDataURL(file);
-    }).catch(() => null);
+    }).catch(() => "");
     if (!dataUrl) {
       setAttaching(false);
-      toast("Couldn't read file", "error");
+      setComposerError(`Couldn't read "${file.name}". Try a different file.`);
       return;
     }
     const fileBase64 = dataUrl.slice(dataUrl.indexOf(",") + 1);
     const uploaded = await uploadMessageAttachment(activeMatchId, { fileName: file.name, contentType: file.type, fileBase64 });
     if ("error" in uploaded) {
       setAttaching(false);
-      toast(uploaded.error, "error");
+      setComposerError(uploaded.error || `Couldn't upload "${file.name}" — please try again.`);
       return;
     }
-    const sent = await sendMessage(activeMatchId, {
+    const sent = await sendMessageResult(activeMatchId, {
       attachmentPath: uploaded.attachmentPath,
       attachmentName: uploaded.attachmentName,
       attachmentMime: uploaded.attachmentMime,
     });
     setAttaching(false);
-    if (!sent) {
-      toast("Attachment uploaded but failed to send — please try again", "error");
+    if (!sent.ok) {
+      if (sent.error.code === "unlock_required" || sent.error.status === 402) handleSendFailure(sent.error);
+      else setComposerError(`"${file.name}" uploaded but wasn't sent. ${sent.error.error || "Please try again."}`);
       return;
     }
     playUiSound("send");
@@ -250,34 +327,28 @@ export default function EmployerMessagesV2() {
     setFlagReason("");
   };
 
-  const handleSendInvite = async () => {
-    if (!activeMatchId) return;
-    setInviteSubmitting(true);
-    const ok = await updateCandidateStatus(activeMatchId, {
+  const handleSendInvite = async ({ note, scheduledAt }: InviteValues): Promise<InviteResult> => {
+    if (!activeMatchId) return { ok: false };
+    const res = await updateCandidateStatusResult(activeMatchId, {
       candidateStatus: "interview_invited",
-      note: inviteNote.trim() || undefined,
-      interviewScheduledAt: inviteDate || undefined,
+      note,
+      interviewScheduledAt: scheduledAt,
     });
-    setInviteSubmitting(false);
-    if (!ok) {
-      toast("Couldn't send the invite — please try again", "error");
-      return;
-    }
+    if (!res.ok) return { ok: false, message: statusErrorCopy(res.error) };
     toast("Interview invite sent", "success");
-    setInviteOpen(false);
-    setInviteNote("");
-    setInviteDate("");
     loadThread(activeMatchId, false);
     loadConversations();
+    return { ok: true };
   };
 
   const handleReject = async () => {
     if (!activeMatchId) return;
     setRejectSubmitting(true);
-    const ok = await updateCandidateStatus(activeMatchId, { candidateStatus: "rejected", note: rejectNote.trim() || undefined });
+    setRejectError(null);
+    const res = await updateCandidateStatusResult(activeMatchId, { candidateStatus: "rejected", note: rejectNote.trim() || undefined });
     setRejectSubmitting(false);
-    if (!ok) {
-      toast("Couldn't reject the candidate — please try again", "error");
+    if (!res.ok) {
+      setRejectError(statusErrorCopy(res.error));
       return;
     }
     toast("Candidate marked as rejected", "success");
@@ -287,281 +358,206 @@ export default function EmployerMessagesV2() {
     loadConversations();
   };
 
-  const heading = (
-    <div style={{ padding: mobile ? "12px 16px" : "16px 20px", borderBottom: `1px solid ${t.line}` }}>
-      <h1 style={{ fontFamily: f.sans, fontSize: mobile ? 22 : 26, fontWeight: 700, color: t.coal, margin: 0, letterSpacing: "-0.01em", lineHeight: "32px" }}>Messages</h1>
-      <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkFaint, margin: "2px 0 0" }}>
-        Chat with candidates you&apos;ve unlocked.
-      </p>
-    </div>
-  );
+  const list = conversations ?? [];
+  const active = list.find((c) => c.matchId === activeMatchId) ?? null;
+  const unreadCount = list.filter((c) => c.unread).length;
 
   const shell = (body: React.ReactNode) => (
-    <div style={{ background: t.white, display: "flex", flexDirection: "column", flex: 1, minHeight: 0, borderRadius: 12, border: `1px solid ${t.line}`, overflow: "hidden" }}>
-      {heading}
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-border bg-background">
+      {suspended && (
+        <div role="status" className="border-b border-red-300 bg-red-50 px-4 py-2.5 text-[13px] leading-normal text-red-900 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-200">
+          <strong>Your account is suspended.</strong> Conversations are read-only until access is restored. Contact support for help.
+        </div>
+      )}
       {body}
     </div>
   );
 
   if (conversations === null && !listError) {
     return shell(
-      <div style={{ display: "flex", flex: 1, minHeight: 0 }}>
+      <div className="flex min-h-0 flex-1">
         <LoadingScreen fullScreen={false} message="Loading your conversations…" />
       </div>,
     );
   }
 
-  if (listError) {
+  if (conversations === null) {
     return shell(
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, padding: "64px 20px", flex: 1 }} role="alert">
-        <AlertCircleIcon size={26} color={t.inkFaint} aria-hidden="true" />
-        <p style={{ fontFamily: f.sans, fontSize: 14, fontWeight: 600, color: t.coal, margin: 0 }}>Couldn&apos;t load your messages</p>
-        <Button variant="outline" onClick={loadConversations} style={{ borderRadius: 8, height: 36, fontFamily: f.sans, fontSize: 13, fontWeight: 500 }}>
-          Retry
+      <div className="flex flex-1 flex-col items-center justify-center gap-3 px-5 py-16 text-center" role="alert">
+        <AlertCircleIcon aria-hidden="true" className="size-6 text-muted-foreground" />
+        <p className="m-0 text-sm font-semibold text-foreground">Couldn&apos;t load your messages</p>
+        <p className="m-0 text-[13px] text-muted-foreground">Check your connection and try again.</p>
+        <Button variant="outline" size="lg" className="pointer-coarse:h-11 px-4" onClick={loadConversations}>Retry</Button>
+      </div>,
+    );
+  }
+
+  if (list.length === 0) {
+    return shell(
+      <div className="flex flex-1 flex-col items-center justify-center gap-2.5 px-6 py-14 text-center">
+        <MessagesSquareIcon aria-hidden="true" className="size-7 text-muted-foreground" />
+        <p className="m-0 text-sm font-semibold text-foreground">No conversations yet</p>
+        <p className="m-0 max-w-sm text-[13px] leading-normal text-muted-foreground">
+          Once you unlock a candidate and send a message, it&apos;ll show up here.
+        </p>
+        <Button asChild size="lg" className="pointer-coarse:h-11 px-4">
+          <Link href="/employer/requirements">Review your shortlists</Link>
         </Button>
       </div>,
     );
   }
 
-  const list = conversations ?? [];
-  const active = list.find((c) => c.matchId === activeMatchId) ?? null;
-  const groups = groupConversationsByCounterpart(list);
-  const lastOwnMessageId = messages.filter((mm) => mm.senderRole === "employer").at(-1)?.id;
+  const items: InboxItem[] = list.map((c) => ({
+    matchId: c.matchId,
+    name: c.counterpartName,
+    masked: isMaskedName(c.counterpartName),
+    roleTitle: c.roleTitle,
+    lastMessageAt: c.lastMessageAt,
+    unread: c.unread,
+    statusLabel: STATUS_LABEL[c.candidateStatus] || c.candidateStatus,
+    statusTone: statusTone(c.candidateStatus),
+  }));
+  const visible = sortInbox(filterInbox(items, filter, query, favorites));
 
-  if (list.length === 0) {
-    return shell(
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10, padding: "56px 24px", flex: 1, textAlign: "center" }}>
-        <MessagesSquareIcon size={26} color={t.inkFaint} aria-hidden="true" />
-        <p style={{ fontFamily: f.sans, fontSize: 14.5, fontWeight: 600, color: t.coal, margin: 0 }}>No conversations yet</p>
-        <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkFaint, margin: 0, lineHeight: 1.5, maxWidth: 380 }}>
-          Once you unlock a candidate and send a message, it&apos;ll show up here.
-        </p>
-      </div>,
-    );
-  }
+  const activeName = active ? active.counterpartName : "";
+  const activeMasked = active ? isMaskedName(context?.candidateName ?? active.counterpartName) : false;
+  const composerBlock: ComposerBlock = suspended ? "suspended" : unlockBlocked ? "unlock" : null;
+  const suspendedTitle = suspended ? "Unavailable while your account is suspended" : undefined;
+
+  const thread = active ? (
+    <>
+      <ThreadHeader
+        name={activeName}
+        masked={activeMasked}
+        title={<MaskedIdentity as="h2" name={activeName} masked={activeMasked} nameStyle={{ fontSize: 15 }} />}
+        subtitle={`${active.roleTitle}${context?.companyName ? ` · ${context.companyName}` : ""}`}
+        headingRef={threadHeadingRef}
+        badges={
+          <>
+            <StatusPill label={STATUS_LABEL[active.candidateStatus] || active.candidateStatus} tone={statusTone(active.candidateStatus)} />
+            {active.matchScore != null && <ScoreChip score={active.matchScore} />}
+          </>
+        }
+        actions={
+          <>
+            {canInviteToInterview(active.candidateStatus as CandidateStatus) && (
+              <PrimaryCta size="sm" disabled={suspended} title={suspendedTitle} onClick={() => setInviteOpen(true)}>
+                Send Interview Invite
+              </PrimaryCta>
+            )}
+            {!["hired", "rejected", "not_a_fit"].includes(active.candidateStatus) && (
+              <OutlineCta size="sm" disabled={suspended} title={suspendedTitle} onClick={() => { setRejectError(null); setRejectOpen(true); }}>
+                Reject
+              </OutlineCta>
+            )}
+          </>
+        }
+        favorite={favorites.has(active.matchId)}
+        onToggleFavorite={() => toggleFavorite(active.matchId)}
+        onBack={mobile ? backToList : undefined}
+        railOpen={railState.open}
+        onToggleRail={() => railState.setOpen(!railState.open)}
+      />
+      <ThreadLog
+        messages={messages}
+        viewerRole="employer"
+        selfName={companyName || "Me"}
+        otherName={activeName}
+        otherMasked={isMaskedName(activeName)}
+        loading={threadLoading}
+        error={threadError}
+        scrollRef={scrollRef}
+        announcement={announcement}
+        emptyHint="Say hello to start the conversation."
+        onRetry={() => activeMatchId && loadThread(activeMatchId, true)}
+        onOpenAttachment={openAttachment}
+        onReport={setFlagMessageId}
+      />
+      <Composer
+        counterpartName={activeName}
+        masked={activeMasked}
+        draft={draft}
+        onDraftChange={setDraft}
+        onSend={handleSend}
+        onAttach={handleAttach}
+        sending={sending}
+        attaching={attaching}
+        block={composerBlock}
+        error={composerError}
+        onDismissError={() => setComposerError(null)}
+        quickReplies={EMPLOYER_QUICK_REPLIES}
+      />
+
+    </>
+  ) : null;
 
   return shell(
-    <div style={{ display: "flex", flex: 1, minHeight: 0 }}>
-      <nav style={{ width: mobile ? "100%" : 280, display: mobile && active ? "none" : undefined, borderRight: mobile ? "none" : `1px solid ${t.line}`, overflowY: "auto", flexShrink: 0 }} aria-label="Conversations">
-        {groups.map((group) => (
-          <div key={group.counterpartName}>
-            <div aria-hidden="true" style={{
-              padding: "10px 16px 4px", fontFamily: f.sans, fontSize: 12, fontWeight: 700,
-              color: t.inkFaint, textTransform: "uppercase", letterSpacing: "0.04em",
-            }}>
-              {group.counterpartName}
-            </div>
-            <div role="list" aria-label={group.counterpartName}>
-              {group.conversations.map((c) => (
-                <div key={c.matchId} role="listitem">
-                  <button
-                    aria-current={c.matchId === activeMatchId ? "true" : undefined}
-                    onClick={() => selectConversation(c.matchId)}
-                    style={{
-                      display: "block", width: "100%", textAlign: "left", padding: "10px 16px 10px 24px",
-                      border: "none", borderBottom: `1px solid ${t.line}`, cursor: "pointer",
-                      background: c.matchId === activeMatchId ? t.creamSoft : c.unread ? t.pageBg : "transparent",
-                    }}
-                  >
-                    <div style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.coal, display: "flex", alignItems: "center", gap: 6 }}>
-                      {c.unread && (
-                        <span aria-hidden="true" style={{ width: 6, height: 6, borderRadius: "50%", background: t.indigo, flexShrink: 0 }} />
-                      )}
-                      {c.roleTitle}
-                    </div>
-                    {c.lastMessageAt && (
-                      <div style={{ fontFamily: f.sans, fontSize: 12, color: t.inkFaint, marginTop: 2 }}>
-                        {new Date(c.lastMessageAt).toLocaleDateString()}
-                      </div>
-                    )}
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        ))}
-      </nav>
-      <div style={{ flex: 1, display: mobile && !active ? "none" : "flex", flexDirection: "column", minWidth: 0 }}>
-        {!active ? (
-          <div style={{ display: "flex", flex: 1, alignItems: "center", justifyContent: "center", color: t.inkFaint, fontFamily: f.sans, fontSize: 13 }}>
-            Select a conversation
-          </div>
-        ) : (
-          <>
-            <div style={{ padding: "12px 16px", borderBottom: `1px solid ${t.line}` }}>
-              {mobile && (
-                <Button type="button" variant="ghost" size="sm" onClick={() => { setActiveMatchId(null); router.replace("/employer/messages"); }} style={{ marginBottom: 6, marginLeft: -8, minHeight: 36 }}>
-                  <ArrowLeftIcon size={14} aria-hidden="true" /> All conversations
-                </Button>
-              )}
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                    <span style={{ fontFamily: f.sans, fontSize: 14, fontWeight: 600, color: t.coal }}>{active.counterpartName}</span>
-                    <CandidateStatusChip status={active.candidateStatus} />
-                    {active.matchScore != null && <ScoreChip score={active.matchScore} />}
-                  </div>
-                  <div style={{ fontFamily: f.sans, fontSize: 12, color: t.inkFaint, marginTop: 2 }}>
-                    {active.roleTitle}{context?.companyName ? ` · ${context.companyName}` : ""}
-                  </div>
-                </div>
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                  {evidence && evidence.skills.length > 0 && (
-                    <OutlineCta size="sm" onClick={() => setEvidenceOpen(true)}>
-                      View evidence
-                    </OutlineCta>
-                  )}
-                  {active.candidateStatus === "shortlisted" && (
-                    <PrimaryCta size="sm" onClick={() => setInviteOpen(true)}>
-                      Send Interview Invite
-                    </PrimaryCta>
-                  )}
-                  {!["hired", "rejected", "not_a_fit"].includes(active.candidateStatus) && (
-                    <OutlineCta size="sm" onClick={() => setRejectOpen(true)}>
-                      Reject
-                    </OutlineCta>
-                  )}
-                </div>
-              </div>
-            </div>
-            <div
-              ref={scrollRef}
-              role="log"
-              aria-live="polite"
-              aria-label={`Conversation with ${active.counterpartName}`}
-              style={{ flex: 1, overflowY: "auto", padding: "14px 16px", display: "flex", flexDirection: "column", gap: 10 }}
+    <>
+      {listError && <span role="status" className="sr-only">Couldn&apos;t refresh conversations. Retrying.</span>}
+      <MessagingLayout
+        list={
+          <ConversationList
+            title="Messages"
+            items={visible}
+            total={items.length}
+            activeMatchId={activeMatchId}
+            favorites={favorites}
+            filter={filter}
+            query={query}
+            unreadCount={unreadCount}
+            refreshFailed={listError}
+            onFilterChange={setFilter}
+            onQueryChange={setQuery}
+            onSelect={selectConversation}
+            onToggleFavorite={toggleFavorite}
+            onRetry={loadConversations}
+          />
+        }
+        thread={thread}
+        rail={
+          active ? (
+            <ContextRail
+              facts={[
+                { label: "Candidate", value: <MaskedIdentity name={activeName} masked={activeMasked} nameStyle={{ fontSize: 13 }} /> },
+                { label: "Role", value: active.roleTitle },
+                { label: "Status", value: STATUS_LABEL[active.candidateStatus] || active.candidateStatus },
+                ...(active.matchScore != null ? [{ label: "Match", value: <ScoreChip score={active.matchScore} /> }] : []),
+              ]}
+              interviewAt={context?.interviewScheduledAt ?? null}
+              messages={messages}
+              onOpenAttachment={openAttachment}
             >
-              {threadLoading && (
-                <div style={{ display: "flex", flex: 1 }}>
-                  <LoadingScreen fullScreen={false} message="Loading messages…" />
-                </div>
+              {evidence && evidence.skills.length > 0 && (
+                <OutlineCta size="sm" onClick={() => setEvidenceOpen(true)}>View evidence</OutlineCta>
               )}
-              {!threadLoading && messages.length === 0 && (
-                <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkFaint }}>No messages yet — say hello.</p>
-              )}
-              {messages.map((m) =>
-                m.senderRole === "system" ? (
-                  <div key={m.id} style={{ alignSelf: "center", textAlign: "center", maxWidth: "85%" }}>
-                    <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkFaint, background: t.creamSoft, borderRadius: 999, padding: "4px 12px", display: "inline-block" }}>
-                      {m.body}
-                    </span>
-                  </div>
-                ) : (
-                  <Message key={m.id} align={m.senderRole === "employer" ? "end" : "start"}>
-                    <MessageAvatar className="self-center">
-                      <Avatar size="sm">
-                        <AvatarFallback>
-                          {initialsOf(m.senderRole === "employer" ? companyName || "Me" : active.counterpartName)}
-                        </AvatarFallback>
-                      </Avatar>
-                    </MessageAvatar>
-                    <MessageContent>
-                      <Bubble variant={m.senderRole === "employer" ? "default" : "secondary"}>
-                        <BubbleContent>
-                          {m.body && <p className="whitespace-pre-wrap">{m.body}</p>}
-                          {m.attachmentPath && (
-                            <button
-                              type="button"
-                              onClick={() => openAttachment(m.id)}
-                              aria-label={`Open attachment ${m.attachmentName || ""}`.trim()}
-                              style={{ fontFamily: f.sans, fontSize: 12.5, marginTop: m.body ? 4 : 0, display: "flex", alignItems: "center", gap: 4, background: "none", border: "none", padding: 0, color: "inherit", textDecoration: "underline", cursor: "pointer" }}
-                            >
-                              <PaperclipIcon size={12} aria-hidden="true" />
-                              {m.attachmentName || "Attachment"}
-                            </button>
-                          )}
-                        </BubbleContent>
-                      </Bubble>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "0 12px" }}>
-                        <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkFaint }}>
-                          {new Date(m.createdAt).toLocaleString()}
-                        </span>
-                        {m.flagged && <Badge variant="destructive">Flagged</Badge>}
-                        <Button
-                          type="button"
-                          variant="link"
-                          onClick={() => setFlagMessageId(m.id)}
-                          style={{ fontSize: 12, height: "auto", padding: 0, color: t.inkFaint, display: "flex", alignItems: "center", gap: 2 }}
-                        >
-                          <FlagIcon size={11} aria-hidden="true" /> Report
-                        </Button>
-                      </div>
-                      {m.senderRole === "employer" && m.id === lastOwnMessageId && (
-                        <MessageFooter>Delivered</MessageFooter>
-                      )}
-                    </MessageContent>
-                  </Message>
-                ),
-              )}
-            </div>
-            <div style={{ padding: "12px 16px", borderTop: `1px solid ${t.line}`, display: "flex", flexDirection: "column", gap: 8 }}>
-              <Textarea
-                value={draft}
-                onChange={(e) => setDraft(e.target.value)}
-                placeholder="Write a message…"
-                aria-label="Message"
-                rows={2}
-                style={mobile ? { fontSize: 16 } : undefined}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSend();
-                  }
-                }}
-              />
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <label style={{ cursor: attaching ? "default" : "pointer" }}>
-                  <input
-                    type="file"
-                    onChange={handleAttach}
-                    disabled={attaching}
-                    aria-label="Attach a file (max 8MB)"
-                    style={{ display: "none" }}
-                  />
-                  <span style={{ display: "flex", alignItems: "center", gap: 4, fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft }}>
-                    <PaperclipIcon size={14} aria-hidden="true" /> {attaching ? "Uploading…" : "Attach file"}
-                  </span>
-                </label>
-                <Button size="sm" className="gap-2" onClick={handleSend} disabled={sending || !draft.trim()}>
-                  <SendIcon size={13} aria-hidden="true" /> {sending ? "Sending…" : "Send"}
-                </Button>
-              </div>
-            </div>
-
-            <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Send interview invite</DialogTitle>
-                  <DialogDescription>Marks {active.counterpartName} as invited to interview for {active.roleTitle}.</DialogDescription>
-                </DialogHeader>
-                <div style={{ display: "grid", gap: 14, padding: "4px 0" }}>
-                  <div style={{ display: "grid", gap: 8 }}>
-                    <Label htmlFor="msg-invite-scheduled-at">Scheduled date (optional)</Label>
-                    <Input id="msg-invite-scheduled-at" type="date" style={mobile ? { fontSize: 16 } : undefined} value={inviteDate} onChange={(e) => setInviteDate(e.target.value)} />
-                  </div>
-                  <div style={{ display: "grid", gap: 8 }}>
-                    <Label htmlFor="msg-invite-note">Note (optional)</Label>
-                    <Textarea id="msg-invite-note" rows={3} style={mobile ? { fontSize: 16 } : undefined} value={inviteNote} onChange={(e) => setInviteNote(e.target.value)} placeholder="Anything you want on record about this invite…" />
-                  </div>
-                </div>
-                <DialogFooter>
-                  <OutlineCta onClick={() => setInviteOpen(false)}>Cancel</OutlineCta>
-                  <PrimaryCta onClick={handleSendInvite} disabled={inviteSubmitting}>
-                    {inviteSubmitting ? "Sending…" : "Send invite"}
-                  </PrimaryCta>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+            </ContextRail>
+          ) : null
+        }
+        railState={railState}
+        narrow={mobile}
+        hasActive={!!active}
+        placeholder={activeMatchId ? "That conversation isn't available. Pick another from the list." : "Select a conversation"}
+      />
+      {active && (
+        <>
+            <InterviewInviteDialog
+              open={inviteOpen}
+              onOpenChange={setInviteOpen}
+              displayName={activeName}
+              requirementTitle={active.roleTitle}
+              onSubmit={handleSendInvite}
+            />
 
             <Dialog open={rejectOpen} onOpenChange={setRejectOpen}>
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Reject this candidate?</DialogTitle>
-                  <DialogDescription>Marks {active.counterpartName} as rejected for {active.roleTitle}. This can&apos;t be undone from here.</DialogDescription>
+                  <DialogDescription>Marks {activeName} as rejected for {active.roleTitle}. This can&apos;t be undone from here.</DialogDescription>
                 </DialogHeader>
                 <div style={{ display: "grid", gap: 8, padding: "4px 0" }}>
                   <Label htmlFor="msg-reject-note">Reason (optional)</Label>
-                  <Textarea id="msg-reject-note" rows={3} style={mobile ? { fontSize: 16 } : undefined} value={rejectNote} onChange={(e) => setRejectNote(e.target.value)} placeholder="Anything you want on record about this decision…" />
+                  <Textarea id="msg-reject-note" rows={3} value={rejectNote} onChange={(e) => setRejectNote(e.target.value)} placeholder="Anything you want on record about this decision…" />
+                  {rejectError && <DialogError unlock={rejectError.startsWith("Unlock")}>{rejectError}</DialogError>}
                 </div>
                 <DialogFooter>
                   <OutlineCta onClick={() => setRejectOpen(false)}>Cancel</OutlineCta>
@@ -583,7 +579,6 @@ export default function EmployerMessagesV2() {
                   <Textarea
                     id="msg-flag-reason"
                     rows={3}
-                    style={mobile ? { fontSize: 16 } : undefined}
                     value={flagReason}
                     onChange={(e) => setFlagReason(e.target.value)}
                     placeholder="What's wrong with this message?"
@@ -602,7 +597,7 @@ export default function EmployerMessagesV2() {
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Practice-session evidence</DialogTitle>
-                  <DialogDescription>{active.counterpartName}&apos;s most recent mock-interview performance.</DialogDescription>
+                  <DialogDescription>{activeName}&apos;s most recent mock-interview performance.</DialogDescription>
                 </DialogHeader>
                 {evidence && (
                   <div style={{ display: "flex", flexDirection: "column", gap: 14, padding: "4px 0" }}>
@@ -656,9 +651,9 @@ export default function EmployerMessagesV2() {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
-          </>
-        )}
-      </div>
-    </div>,
+
+        </>
+      )}
+    </>,
   );
 }

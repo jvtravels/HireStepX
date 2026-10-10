@@ -10,6 +10,15 @@ import {
 } from "./_shared";
 import { captureServerEvent } from "./_posthog";
 import { emailShell, title, para, link, dataCard, graveEyebrow } from "./_email-theme";
+import {
+  CHAT_ATTACHMENT_BUCKET,
+  EMPLOYER_LOGO_BUCKET,
+  anonymisedAuthEmail,
+  anonymisedEmployerPatch,
+  deleteSucceeded,
+  extractAttachmentPaths,
+  mustRetainEmployerFinancials,
+} from "./_delete-account-helpers";
 
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const RESEND_API_KEY = (process.env.RESEND_API_KEY || "").trim();
@@ -215,6 +224,64 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(500).json({ error: `Failed to clear service_usage references: HTTP ${clearUsageRes.status}: ${txt.slice(0, 200)}` });
     }
 
+    // Employer-feature data. An employer row cascades (via auth.users) into the
+    // unlock payment/order ledger, which must be RETAINED for tax records — so an
+    // employer with any financial rows is anonymised + deactivated instead of
+    // having its auth user deleted. See _delete-account-helpers.ts for the FK map.
+    async function readRows(r: Response): Promise<unknown[]> {
+      try { const j = await r.json(); return Array.isArray(j) ? j : []; } catch { return []; }
+    }
+    let retainEmployer = false;
+    try {
+      const empRes = await fetch(`${SUPABASE_URL}/rest/v1/employers?id=eq.${encodedId}&select=id,logo_path&limit=1`, { headers });
+      if (!empRes.ok) throw new Error(`employers lookup HTTP ${empRes.status}`);
+      const empRows = (await readRows(empRes)) as Array<{ id?: string; logo_path?: string | null }>;
+      if (empRows[0]?.id) {
+        const countRows = async (table: string): Promise<number> => {
+          const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?employer_id=eq.${encodedId}&select=id&limit=1`, { headers });
+          // employer_unlock_orders only exists once migration 0032 has run.
+          if (r.status === 404 && table === "employer_unlock_orders") return 0;
+          if (!r.ok) throw new Error(`${table} lookup HTTP ${r.status}`);
+          return (await readRows(r)).length;
+        };
+        const [payments, orders] = await Promise.all([countRows("employer_unlock_payments"), countRows("employer_unlock_orders")]);
+        retainEmployer = mustRetainEmployerFinancials({ payments, orders });
+        if (retainEmployer) {
+          const patchEmp = await fetch(`${SUPABASE_URL}/rest/v1/employers?id=eq.${encodedId}`, {
+            method: "PATCH", headers, body: JSON.stringify(anonymisedEmployerPatch(new Date().toISOString())),
+          });
+          const delReqs = await fetch(`${SUPABASE_URL}/rest/v1/employer_requirements?employer_id=eq.${encodedId}`, { method: "DELETE", headers });
+          if (!patchEmp.ok || !delReqs.ok) throw new Error("employer anonymisation failed");
+          if (empRows[0].logo_path) {
+            await fetch(`${SUPABASE_URL}/storage/v1/object/${EMPLOYER_LOGO_BUCKET}/${empRows[0].logo_path.split("/").map(encodeURIComponent).join("/")}`, { method: "DELETE", headers }).catch(() => null);
+          }
+        }
+      }
+    } catch (empErr) {
+      slog.error("delete-account: employer data handling failed", { error: empErr instanceof Error ? empErr.message : String(empErr) });
+      return res.status(500).json({ error: "Failed to process employer data. Account not deleted. Please try again or contact support." });
+    }
+
+    // Chat attachments live in Storage, which no FK cascade reaches. Best-effort:
+    // an orphaned object must never block the erasure itself. Must run BEFORE the
+    // message rows (our only pointer to the paths) are deleted.
+    try {
+      const attRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/conversation_messages?or=(candidate_user_id.eq.${encodedId},employer_id.eq.${encodedId})&attachment_path=not.is.null&select=attachment_path&limit=1000`,
+        { headers },
+      );
+      if (attRes.ok) {
+        const paths = extractAttachmentPaths(await readRows(attRes));
+        if (paths.length > 0) {
+          await fetch(`${SUPABASE_URL}/storage/v1/object/${CHAT_ATTACHMENT_BUCKET}`, {
+            method: "DELETE", headers, body: JSON.stringify({ prefixes: paths }),
+          });
+        }
+      }
+    } catch (attErr) {
+      slog.warn("delete-account: chat attachment cleanup failed (non-critical)", { error: attErr instanceof Error ? attErr.message : String(attErr) });
+    }
+
     // Delete all user data in parallel with timeout (order doesn't matter — all keyed by user_id).
     // DPDP Act 2023 requires complete erasure: every table that stores PII or
     // user-generated content must be covered here. Gaps were identified in the
@@ -239,6 +306,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       fetch(`${SUPABASE_URL}/rest/v1/google_calendar_sync?user_id=eq.${encodedId}`, { method: "DELETE", headers, signal: ac.signal }),
       fetch(`${SUPABASE_URL}/rest/v1/product_ratings?user_id=eq.${encodedId}`, { method: "DELETE", headers, signal: ac.signal }),
       fetch(`${SUPABASE_URL}/rest/v1/interview_turns?user_id=eq.${encodedId}`, { method: "DELETE", headers, signal: ac.signal }),
+      // Candidate-agency / employer-feature rows. All of these also cascade from
+      // profiles(id) (or auth.users for message_flags); the explicit deletes guard against live-FK drift,
+      // as with service_usage above. employer_reports the user FILED are deleted with them
+      // (decision: no anonymised retention — a report is the reporter's personal data).
+      fetch(`${SUPABASE_URL}/rest/v1/candidate_consent_log?user_id=eq.${encodedId}`, { method: "DELETE", headers, signal: ac.signal }),
+      fetch(`${SUPABASE_URL}/rest/v1/employer_blocks?candidate_user_id=eq.${encodedId}`, { method: "DELETE", headers, signal: ac.signal }),
+      fetch(`${SUPABASE_URL}/rest/v1/employer_reports?reporter_user_id=eq.${encodedId}`, { method: "DELETE", headers, signal: ac.signal }),
+      fetch(`${SUPABASE_URL}/rest/v1/match_status_events?candidate_user_id=eq.${encodedId}`, { method: "DELETE", headers, signal: ac.signal }),
+      fetch(`${SUPABASE_URL}/rest/v1/message_flags?flagged_by=eq.${encodedId}`, { method: "DELETE", headers, signal: ac.signal }),
+      fetch(`${SUPABASE_URL}/rest/v1/conversation_messages?candidate_user_id=eq.${encodedId}`, { method: "DELETE", headers, signal: ac.signal }),
+      fetch(`${SUPABASE_URL}/rest/v1/conversations?candidate_user_id=eq.${encodedId}`, { method: "DELETE", headers, signal: ac.signal }),
+      fetch(`${SUPABASE_URL}/rest/v1/requirement_matches?candidate_user_id=eq.${encodedId}`, { method: "DELETE", headers, signal: ac.signal }),
       fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodedId}`, { method: "DELETE", headers, signal: ac.signal }),
     ]);
     clearTimeout(acTimer);
@@ -247,10 +326,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       "sessions", "calendar_events", "payments", "feedback",
       "resumes", "question_feedback", "credibility_disputes",
       "referrals", "report_shares", "user_outcomes", "llm_usage",
-      "google_calendar_sync", "product_ratings", "interview_turns", "profiles",
+      "google_calendar_sync", "product_ratings", "interview_turns",
+      "candidate_consent_log", "employer_blocks", "employer_reports", "match_status_events",
+      "message_flags", "conversation_messages", "conversations", "requirement_matches", "profiles",
     ];
     const failures = results
-      .map((r, i) => (r.status === "rejected" || (r.status === "fulfilled" && !r.value.ok)) ? tableNames[i] : null)
+      .map((r, i) => (r.status === "rejected" || (r.status === "fulfilled" && !deleteSucceeded(tableNames[i], r.value.status, r.value.ok))) ? tableNames[i] : null)
       .filter(Boolean);
 
     if (failures.length > 0) {
@@ -260,6 +341,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .catch(() => "unknown");
       slog.error("delete-account: partial delete failure", { failures: failures.join(", "), userHash });
       return res.status(500).json({ error: `Failed to delete data from: ${failures.join(", ")}. Account not deleted. Please try again or contact support.` });
+    }
+
+    if (retainEmployer) {
+      // Deactivate instead of delete: deleting the auth user would cascade into
+      // employers -> employer_unlock_payments / employer_unlock_orders.
+      const deactivateRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${encodedId}`, {
+        method: "PUT",
+        headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ email: anonymisedAuthEmail(userId), email_confirm: true, phone: "", user_metadata: {}, ban_duration: "876000h" }),
+      }).catch(() => null);
+      if (!deactivateRes || !deactivateRes.ok) {
+        slog.error("delete-account: employer auth deactivation failed", { statusCode: deactivateRes?.status ?? 0 });
+        return res.status(207).json({ success: true, partial: true, retainedFinancialRecords: true, warning: "Account data deleted but login deactivation incomplete. Please contact support." });
+      }
+      await captureServerEvent("account_deleted", userId, { mode: "hard", retainedFinancialRecords: true });
+      return res.status(200).json({ success: true, retainedFinancialRecords: true });
     }
 
     // Delete the auth user (requires admin/service role)
