@@ -317,6 +317,7 @@ export default function MessagesV2() {
           <EmployerActionsMenu
             matchId={active.matchId}
             employerLabel={companyName}
+            bare
             response={activeResponse}
             onResponseChange={(value) => setResponses((prev) => ({ ...prev, [active.matchId]: value }))}
             onRemoved={() => {

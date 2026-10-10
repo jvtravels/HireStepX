@@ -38,6 +38,8 @@ interface Props {
   /** Called after a successful block/report; the parent should leave/refresh the match view. */
   onRemoved: () => void;
   onToast: (message: string, kind?: "error") => void;
+  /** Borderless trigger, for toolbars where neighbouring icon buttons have no container. */
+  bare?: boolean;
 }
 
 export function EmployerResponseBadge({ response }: { response: EmployerResponse | null | undefined }) {
@@ -51,7 +53,7 @@ export function EmployerResponseBadge({ response }: { response: EmployerResponse
   );
 }
 
-export default function EmployerActionsMenu({ matchId, employerLabel, response, onResponseChange, onRemoved, onToast }: Props) {
+export default function EmployerActionsMenu({ matchId, employerLabel, response, onResponseChange, onRemoved, onToast, bare }: Props) {
   const { user } = useAuth();
   const noteId = useId();
   const errorId = useId();
@@ -121,7 +123,7 @@ export default function EmployerActionsMenu({ matchId, employerLabel, response, 
         <DropdownMenuTrigger asChild>
           <Button
             type="button"
-            variant="outline"
+            variant={bare ? "ghost" : "outline"}
             size="icon"
             aria-label={`Actions for ${employerLabel}`}
             className="size-11 shrink-0"
