@@ -1,12 +1,11 @@
 import Link from "next/link";
-import { ExternalLink, Lightbulb, Sparkles, ThumbsUp } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import type { Requirement } from "@/employer/EmployerDataContext";
 import type { Candidate } from "@/employer/mockData";
-import { CARD, buildResumeInsights, candidateLinks } from "./helpers";
+import { CARD, candidateLinks } from "./helpers";
 import { ResumeDownload } from "./ResumeDownload";
 
 function Tags({ items }: { items: string[] }) {
@@ -23,77 +22,41 @@ function Muted({ children }: { children: React.ReactNode }) {
   return <p className="text-sm text-muted-foreground">{children}</p>;
 }
 
-function Bullets({ icon: Icon, title, items, tone }: { icon: typeof ThumbsUp; title: string; items: string[]; tone: string }) {
-  return (
-    <div className="space-y-2.5">
-      <h3 className="flex items-center gap-2 text-sm font-medium"><Icon aria-hidden="true" className={`size-4 ${tone}`} />{title}</h3>
-      <ul className="space-y-2 text-sm leading-relaxed text-muted-foreground">
-        {items.map((t) => <li key={t}>{t}</li>)}
-      </ul>
-    </div>
-  );
-}
-
 export function ResumeTab({
   candidate,
-  requirement,
-  matched,
-  unmatched,
   shortlistHref,
   resumeFileName,
 }: {
   candidate: Candidate;
-  requirement: Requirement;
-  matched: string[];
-  unmatched: string[];
   shortlistHref: string;
   resumeFileName: string | null;
 }) {
   const resume = candidate.resume;
   const links = candidateLinks(candidate);
-  const insights = buildResumeInsights(candidate, requirement, matched, unmatched);
   const unlockLink = <Link href={shortlistHref} className="font-medium text-primary underline-offset-4 hover:underline">Unlock from the shortlist</Link>;
 
   return (
     <div className="flex flex-col gap-4">
       <Card className={CARD}>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2"><Sparkles aria-hidden="true" className="size-4 text-primary" />Resume analysis</CardTitle>
-          <CardDescription>Generated from the resume against {requirement.title}. Nothing here is added by the candidate.</CardDescription>
+          <CardTitle>Summary and achievements</CardTitle>
+          <CardDescription>As written on the resume.</CardDescription>
           {candidate.unlocked && resumeFileName && (
             <CardAction><ResumeDownload matchId={candidate.id} fileName={resumeFileName} size="sm" /></CardAction>
           )}
         </CardHeader>
-        <CardContent className="space-y-5">
+        <CardContent className="space-y-4">
           {!candidate.unlocked ? (
-            <Muted>The resume analysis is locked. {unlockLink} to view it and download the original file.</Muted>
+            <Muted>Locked. {unlockLink} to read the resume and download the original file.</Muted>
           ) : (
             <>
-              <p className="text-sm leading-relaxed">{insights.snapshot}</p>
-              {(insights.strengths.length > 0 || insights.probes.length > 0) && (
-                <div className="grid gap-6 md:grid-cols-2">
-                  {insights.strengths.length > 0 && <Bullets icon={ThumbsUp} title="What stands out" items={insights.strengths} tone="text-emerald-600" />}
-                  {insights.probes.length > 0 && <Bullets icon={Lightbulb} title="Worth probing in the interview" items={insights.probes} tone="text-amber-600" />}
-                </div>
-              )}
-              {resume?.summary && (
-                <>
-                  <Separator />
-                  <div className="space-y-2">
-                    <h3 className="text-sm font-medium">Summary from the resume</h3>
-                    <p className="text-sm leading-relaxed text-muted-foreground">{resume.summary}</p>
-                  </div>
-                </>
-              )}
+              {resume?.summary ? <p className="text-sm leading-relaxed text-muted-foreground">{resume.summary}</p> : <Muted>No summary on this resume.</Muted>}
               {!!resume?.keyAchievements.length && (
                 <>
                   <Separator />
-                  <div className="space-y-2">
-                    <h3 className="text-sm font-medium">Key achievements</h3>
-                    <ul className="list-disc space-y-1.5 pl-5 text-sm leading-relaxed text-muted-foreground marker:text-border">
-                      {resume.keyAchievements.map((a) => <li key={a}>{a}</li>)}
-                    </ul>
-                  </div>
+                  <ul className="list-disc space-y-1.5 pl-5 text-sm leading-relaxed text-muted-foreground marker:text-border">
+                    {resume.keyAchievements.map((a) => <li key={a}>{a}</li>)}
+                  </ul>
                 </>
               )}
             </>
@@ -161,6 +124,25 @@ export function ResumeTab({
           )}
         </CardContent>
       </Card>
+
+      {!!resume?.education.length && (
+        <Card className={CARD}>
+          <CardHeader><CardTitle>Education</CardTitle></CardHeader>
+          <CardContent>
+            <ul className="divide-y divide-border">
+              {resume.education.map((ed, i) => (
+                <li key={`${ed.school}-${i}`} className="flex flex-col gap-0.5 py-3 first:pt-0 last:pb-0 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium">{ed.degree}</p>
+                    <p className="text-sm text-muted-foreground">{ed.school}</p>
+                  </div>
+                  {ed.year && <p className="shrink-0 text-xs text-muted-foreground">{ed.year}</p>}
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      )}
 
       <Card className={CARD}>
         <CardHeader>

@@ -1,15 +1,16 @@
-import { Check, Minus } from "lucide-react";
+import Link from "next/link";
+import { Check, Lightbulb, Minus, Sparkles, ThumbsUp } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import type { CandidateEvidence } from "@/employer/EmployerDataContext";
 import type { Candidate } from "@/employer/mockData";
+import type { Requirement } from "@/employer/EmployerDataContext";
 import { Meter } from "./parts";
-import { CARD, PROVENANCE, READINESS_LABEL, TONE_SUCCESS, evidenceAverage, formatSessionDate } from "./helpers";
+import { CARD, PROVENANCE, READINESS_LABEL, TONE_SUCCESS, buildResumeInsights, evidenceAverage, formatSessionDate } from "./helpers";
 
 export type EvidenceState = { evidence: CandidateEvidence | null; loading: boolean; failed: boolean; onRetry: () => void };
 
@@ -35,20 +36,21 @@ export function EvidenceStatus({ state, children }: { state: EvidenceState; chil
   return <>{children}</>;
 }
 
-function MatchCard({ candidate, requirementTitle, fitReasons }: { candidate: Candidate; requirementTitle: string; fitReasons: string[] }) {
+function MatchCard({ candidate, fitReasons }: { candidate: Candidate; fitReasons: string[] }) {
   const b = candidate.matchBreakdown;
+  const hasCity = !!candidate.city && candidate.city !== "Not specified";
   return (
     <Card className={CARD}>
       <CardHeader>
-        <CardTitle>Fit for {requirementTitle}</CardTitle>
+        <CardTitle>Why this match</CardTitle>
         <CardDescription>The match score blends role, skill and location fit. Each part is scored out of 100.</CardDescription>
       </CardHeader>
-      <CardContent className={cn("grid gap-6", b && fitReasons.length > 0 && "md:grid-cols-2")}>
+      <CardContent className="space-y-5">
         {b && (
           <div className="space-y-4">
             <Meter label="Role match" pct={b.roleMatch} />
             <Meter label="Skill match" pct={b.skillMatch} />
-            {candidate.city && candidate.city !== "Not specified" && <Meter label="Location match" pct={b.locationMatch} />}
+            {hasCity && <Meter label="Location match" pct={b.locationMatch} />}
           </div>
         )}
         {fitReasons.length > 0 && (
@@ -74,11 +76,6 @@ function SkillsCard({ matched, unmatched }: { matched: string[]; unmatched: stri
       <CardHeader>
         <CardTitle>Required skills</CardTitle>
         {total > 0 && <CardDescription>{matched.length} of {total} found on the resume</CardDescription>}
-        {total > 0 && (
-          <CardAction className="w-24">
-            <Progress aria-hidden="true" value={(matched.length / total) * 100} className={cn("h-1.5", matched.length / total >= 0.75 ? "[&>[data-slot=progress-indicator]]:bg-emerald-600" : matched.length / total >= 0.5 ? "[&>[data-slot=progress-indicator]]:bg-amber-500" : "[&>[data-slot=progress-indicator]]:bg-red-500")} />
-          </CardAction>
-        )}
       </CardHeader>
       <CardContent className="space-y-4">
         {total === 0 && <p className="text-sm text-muted-foreground">This requirement lists no required skills.</p>}
@@ -87,12 +84,7 @@ function SkillsCard({ matched, unmatched }: { matched: string[]; unmatched: stri
             <p className="text-xs font-medium text-muted-foreground">On resume</p>
             <ul className="flex flex-wrap gap-2">
               {matched.map((s) => (
-                <li key={s}>
-                  <Badge className={cn("h-6 px-2.5", TONE_SUCCESS)}>
-                    <Check aria-hidden="true" />
-                    {s}
-                  </Badge>
-                </li>
+                <li key={s}><Badge className={cn("h-6 px-2.5", TONE_SUCCESS)}><Check aria-hidden="true" />{s}</Badge></li>
               ))}
             </ul>
           </div>
@@ -102,15 +94,51 @@ function SkillsCard({ matched, unmatched }: { matched: string[]; unmatched: stri
             <p className="text-xs font-medium text-muted-foreground">Not on resume</p>
             <ul className="flex flex-wrap gap-2">
               {unmatched.map((s) => (
-                <li key={s}>
-                  <Badge variant="outline" className="h-6 px-2.5 text-muted-foreground">
-                    <Minus aria-hidden="true" />
-                    {s}
-                  </Badge>
-                </li>
+                <li key={s}><Badge variant="outline" className="h-6 px-2.5 text-muted-foreground"><Minus aria-hidden="true" />{s}</Badge></li>
               ))}
             </ul>
           </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function Bullets({ icon: Icon, title, items, tone }: { icon: typeof ThumbsUp; title: string; items: string[]; tone: string }) {
+  return (
+    <div className="space-y-2.5">
+      <h3 className="flex items-center gap-2 text-sm font-medium"><Icon aria-hidden="true" className={`size-4 ${tone}`} />{title}</h3>
+      <ul className="space-y-2 text-sm leading-relaxed text-muted-foreground">
+        {items.map((t) => <li key={t}>{t}</li>)}
+      </ul>
+    </div>
+  );
+}
+
+function AnalysisCard({ candidate, requirement, matched, unmatched, shortlistHref }: { candidate: Candidate; requirement: Requirement; matched: string[]; unmatched: string[]; shortlistHref: string }) {
+  const insights = buildResumeInsights(candidate, requirement, matched, unmatched);
+  return (
+    <Card className={CARD}>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2"><Sparkles aria-hidden="true" className="size-4 text-primary" />Resume analysis</CardTitle>
+        <CardDescription>Generated from the resume against {requirement.title}. Nothing here is added by the candidate.</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-5">
+        {!candidate.unlocked ? (
+          <p className="text-sm text-muted-foreground">
+            The resume analysis is locked.{" "}
+            <Link href={shortlistHref} className="font-medium text-primary underline-offset-4 hover:underline">Unlock from the shortlist</Link> to view it.
+          </p>
+        ) : (
+          <>
+            <p className="text-sm leading-relaxed">{insights.snapshot}</p>
+            {(insights.strengths.length > 0 || insights.probes.length > 0) && (
+              <div className="grid gap-6 md:grid-cols-2">
+                {insights.strengths.length > 0 && <Bullets icon={ThumbsUp} title="What stands out" items={insights.strengths} tone="text-emerald-600" />}
+                {insights.probes.length > 0 && <Bullets icon={Lightbulb} title="Worth probing in the interview" items={insights.probes} tone="text-amber-600" />}
+              </div>
+            )}
+          </>
         )}
       </CardContent>
     </Card>
@@ -193,25 +221,30 @@ function EvidenceCard({ candidate, state, onOpenPractice }: { candidate: Candida
 
 export function OverviewTab({
   candidate,
+  requirement,
   fitReasons,
-  requirementTitle,
   matched,
   unmatched,
+  shortlistHref,
   state,
   onOpenPractice,
 }: {
   candidate: Candidate;
+  requirement: Requirement;
   fitReasons: string[];
-  requirementTitle: string;
   matched: string[];
   unmatched: string[];
+  shortlistHref: string;
   state: EvidenceState;
   onOpenPractice: () => void;
 }) {
   return (
     <div className="flex flex-col gap-4">
-      <MatchCard candidate={candidate} requirementTitle={requirementTitle} fitReasons={fitReasons} />
-      <SkillsCard matched={matched} unmatched={unmatched} />
+      <div className="grid items-start gap-4 lg:grid-cols-2">
+        <MatchCard candidate={candidate} fitReasons={fitReasons} />
+        <SkillsCard matched={matched} unmatched={unmatched} />
+      </div>
+      <AnalysisCard candidate={candidate} requirement={requirement} matched={matched} unmatched={unmatched} shortlistHref={shortlistHref} />
       <EvidenceCard candidate={candidate} state={state} onOpenPractice={onOpenPractice} />
     </div>
   );

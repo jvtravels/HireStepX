@@ -9,7 +9,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useEmployerData } from "@/employer/EmployerDataContext";
 import { useEmployerBreadcrumb } from "@/employer/EmployerShell";
-import { CandidateAside } from "./CandidateAside";
 import { CandidateDialogsHost } from "./CandidateDialogsHost";
 import { CandidateHeader } from "./CandidateHeader";
 import { buildFitReasons, maskedName, matchedSkillCount } from "./helpers";
@@ -23,11 +22,9 @@ function LoadingSkeleton() {
   return (
     <div role="status" className="space-y-4">
       <span className="sr-only">Loading candidate…</span>
-      <Skeleton className="h-44 w-full" />
-      <div className="grid gap-4 lg:grid-cols-3">
-        <Skeleton className="h-72 lg:col-span-2" />
-        <Skeleton className="h-72" />
-      </div>
+      <Skeleton className="h-52 w-full" />
+      <Skeleton className="h-24 w-full" />
+      <Skeleton className="h-72 w-full" />
     </div>
   );
 }
@@ -101,6 +98,8 @@ export default function CandidateDetail({ requirementId, matchId }: { requiremen
         declined={d.declinedLocally}
         shortlistHref={shortlistHref}
         resumeFileName={resumeFileName}
+        matchedCount={matched.length}
+        requiredCount={requirement.skills.length}
         onInvite={() => {
           d.clearNotice();
           setDialog("invite");
@@ -121,35 +120,31 @@ export default function CandidateDetail({ requirementId, matchId }: { requiremen
         changeStatus={d.changeStatus}
       />
 
-      <div className="grid items-start gap-4 lg:grid-cols-3">
-        <Tabs value={tab} onValueChange={setTab} className="min-w-0 gap-4 lg:col-span-2">
-          <TabsList variant="line" aria-label="Candidate sections" className="h-10 w-full justify-start gap-2 overflow-x-auto border-b border-border pb-0">
-            <TabsTrigger value="overview" className="flex-none px-3 after:bottom-0">Overview</TabsTrigger>
-            <TabsTrigger value="practice" className="flex-none px-3 after:bottom-0">Practice evidence</TabsTrigger>
-            <TabsTrigger value="resume" className="flex-none px-3 after:bottom-0">Resume</TabsTrigger>
-          </TabsList>
-          <TabsContent value="overview">
-            <OverviewTab
-              candidate={candidate}
-              fitReasons={fitReasons}
-              requirementTitle={requirement.title}
-              matched={matched}
-              unmatched={unmatched}
-              state={evidenceState}
-              onOpenPractice={() => setTab("practice")}
-            />
-          </TabsContent>
-          <TabsContent value="practice">
-            <PracticeTab evidence={d.evidence} candidate={candidate} shortlistHref={shortlistHref} state={evidenceState} />
-          </TabsContent>
-          <TabsContent value="resume">
-            <ResumeTab candidate={candidate} requirement={requirement} matched={matched} unmatched={unmatched} shortlistHref={shortlistHref} resumeFileName={resumeFileName} />
-          </TabsContent>
-        </Tabs>
-        <aside aria-label="Candidate details" className="min-w-0 lg:sticky lg:top-4">
-          <CandidateAside candidate={candidate} shortlistHref={shortlistHref} lastSessionDate={d.evidence?.sessionDate ?? null} />
-        </aside>
-      </div>
+      <Tabs value={tab} onValueChange={setTab} className="min-w-0 gap-4">
+        <TabsList variant="line" aria-label="Candidate sections" className="h-10 w-full justify-start gap-2 overflow-x-auto border-b border-border pb-0">
+          <TabsTrigger value="overview" className="flex-none px-3 after:bottom-0">Overview</TabsTrigger>
+          <TabsTrigger value="resume" className="flex-none px-3 after:bottom-0">Resume</TabsTrigger>
+          <TabsTrigger value="practice" className="flex-none px-3 after:bottom-0">Practice evidence</TabsTrigger>
+        </TabsList>
+        <TabsContent value="overview">
+          <OverviewTab
+            candidate={candidate}
+            requirement={requirement}
+            fitReasons={fitReasons}
+            matched={matched}
+            unmatched={unmatched}
+            shortlistHref={shortlistHref}
+            state={evidenceState}
+            onOpenPractice={() => setTab("practice")}
+          />
+        </TabsContent>
+        <TabsContent value="resume">
+          <ResumeTab candidate={candidate} shortlistHref={shortlistHref} resumeFileName={resumeFileName} />
+        </TabsContent>
+        <TabsContent value="practice">
+          <PracticeTab evidence={d.evidence} candidate={candidate} shortlistHref={shortlistHref} state={evidenceState} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
