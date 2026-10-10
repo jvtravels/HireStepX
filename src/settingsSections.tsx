@@ -879,7 +879,7 @@ export const PlanUsageSection = memo(function PlanUsageSection(props: PlanUsageS
                   <TableHead style={{ padding: "0 20px", fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.inkSoft }}>Status</TableHead>
                 </TableRow>
               </TableHeader>
-              <TableBody>
+              <TableBody className="mx-stagger">
                 {pageRows.map((p) => {
                   const { dateLabel, amountDisplay, tone, purchaseTitle, subLine } = invoiceDetails(p);
                   return (

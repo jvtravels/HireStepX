@@ -451,7 +451,7 @@ export function SessionsTable({
             <TableHead style={{ width: "30%", minWidth: 260, padding: "0 20px", fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: T.inkSoft }}>Key Takeaway</TableHead>
           </TableRow>
         </TableHeader>
-        <TableBody>
+        <TableBody className="mx-stagger">
           {rows.length === 0 ? (
             <TableRow>
               {/* The row spans every (fixed-width) column, so on a viewport

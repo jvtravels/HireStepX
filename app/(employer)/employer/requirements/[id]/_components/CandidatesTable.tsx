@@ -168,7 +168,7 @@ export default function CandidatesTable({
                 </TableHead>
               </TableRow>
             </TableHeader>
-            <TableBody role="rowgroup">
+            <TableBody role="rowgroup" className="mx-stagger">
               {rows.map((c) => (
                 <CandidateRow
                   key={c.id}
