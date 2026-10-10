@@ -1,11 +1,11 @@
 "use client";
 
-/* Candidate-side Messages tab — basic text chat + file sharing with
-   employers who've unlocked your contact details (see supabase-migrations/
-   0027-employer-candidate-messaging.sql). Two-pane layout: conversation
-   list on the left, active thread on the right. Deep-links via
-   ?matchId=... (JobDetailModal's "Message employer" button navigates
-   here with it).
+/* Candidate-side Messages tab — chat + file sharing with employers who've
+   unlocked your contact details (see supabase-migrations/
+   0027-employer-candidate-messaging.sql). Presentation lives in
+   src/messaging (shared with the employer inbox); this file owns the
+   candidate data flow. Deep-links via ?matchId=... (JobDetailModal's
+   "Message employer" button navigates here with it).
 
    Polling-based like every other live surface in this app (no Supabase
    Realtime anywhere in the codebase) — NotificationBell's 60s poll is the
@@ -14,15 +14,9 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { AlertCircleIcon, ArrowLeftIcon, MessagesSquareIcon, PaperclipIcon, SendIcon } from "lucide-react";
+import { AlertCircleIcon, MessagesSquareIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Message, MessageAvatar, MessageContent, MessageFooter } from "@/components/ui/message";
-import { Bubble, BubbleContent } from "@/components/ui/bubble";
-import { MessagesRouteSkeleton, MessageThreadRouteSkeleton } from "@/routeSkeletons";
-import { tokens as t, fonts as f } from "./auth/_tokens";
+import { MessagesRouteSkeleton } from "@/routeSkeletons";
 import {
   listConversations,
   fetchThread,
@@ -33,21 +27,31 @@ import {
   type ConversationMessage,
   type ConversationSummary,
 } from "./messagesApi";
-import { groupConversationsByCounterpart } from "./conversationGrouping";
 import { useToast } from "./Toast";
+import EmployerActionsMenu, { EmployerResponseBadge } from "./EmployerActionsMenu";
+import { readStoredResponse, type EmployerResponse } from "./employerActions";
 import { playUiSound } from "./uiSounds";
 import { usePolling } from "./usePolling";
 import { useMaxWidth } from "./hooks/useMaxWidth";
-import { hoursOrDaysAgo } from "./hiringMatchFormat";
+import MessagingLayout, { useRailState } from "./messaging/MessagingLayout";
+import ConversationList from "./messaging/ConversationList";
+import ThreadHeader from "./messaging/ThreadHeader";
+import ThreadLog from "./messaging/ThreadLog";
+import Composer from "./messaging/Composer";
+import ContextRail from "./messaging/ContextRail";
+import StatusPill from "./messaging/StatusPill";
+import {
+  CANDIDATE_QUICK_REPLIES,
+  filterInbox,
+  sortInbox,
+  statusTone,
+  useFavorites,
+  type InboxFilter,
+  type InboxItem,
+} from "./messaging/helpers";
 
 const LIST_POLL_MS = 15000;
 const THREAD_POLL_MS = 6000;
-
-/* No profile photos anywhere in this app — every avatar in the thread is
-   two-letter initials derived from a display name. */
-function initialsOf(name: string): string {
-  return name.split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0]?.toUpperCase() ?? "").join("") || "?";
-}
 
 /** Candidate-friendly wording for a pipeline status — deliberately separate
  *  from employer/_atoms.tsx's CANDIDATE_STATUS_LABEL (same source enum,
@@ -67,30 +71,6 @@ const STATUS_LABEL: Record<string, string> = {
  *  CANDIDATE_STATUS_TONE — kept as its own map (see STATUS_LABEL comment
  *  above) rather than importing the employer module, but aligned on the same
  *  tokens so a given status reads as the same color on both sides. */
-const STATUS_TONE: Record<string, { bg: string; fg: string }> = {
-  shortlisted: { bg: t.indigo100, fg: t.indigoDeep },
-  interview_invited: { bg: t.violet100, fg: t.violet },
-  interviewing: { bg: t.copper100, fg: t.copper },
-  hired: { bg: t.success100, fg: t.success },
-  rejected: { bg: t.error100, fg: t.error },
-  not_a_fit: { bg: t.creamSoft, fg: t.inkSoft },
-  no_response: { bg: t.creamSoft, fg: t.inkSoft },
-};
-
-function StatusBadge({ status }: { status: string }) {
-  const label = STATUS_LABEL[status] || status;
-  const tone = STATUS_TONE[status] || { bg: t.creamSoft, fg: t.inkSoft };
-  return (
-    <span
-      style={{
-        display: "inline-flex", alignItems: "center", fontFamily: f.sans, fontSize: 12, fontWeight: 600,
-        color: tone.fg, background: tone.bg, borderRadius: 999, padding: "2px 9px",
-      }}
-    >
-      {label}
-    </span>
-  );
-}
 
 export default function MessagesV2() {
   const router = useRouter();
@@ -123,6 +103,11 @@ export default function MessagesV2() {
   const [sending, setSending] = useState(false);
   const [attaching, setAttaching] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [filter, setFilter] = useState<InboxFilter>("all");
+  const [query, setQuery] = useState("");
+  const { favorites, toggle: toggleFavorite } = useFavorites("candidate");
+  const railState = useRailState();
+  const [responses, setResponses] = useState<Record<string, EmployerResponse | null>>({});
 
   const loadConversations = useCallback(async () => {
     const list = await listConversations();
@@ -201,10 +186,8 @@ export default function MessagesV2() {
     loadConversations();
   };
 
-  const handleAttach = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file || !activeMatchId) return;
+  const handleAttach = async (file: File) => {
+    if (!activeMatchId) return;
     if (file.size > 8_000_000) {
       toast("File is too large — 8MB max", "error");
       return;
@@ -243,20 +226,8 @@ export default function MessagesV2() {
     loadConversations();
   };
 
-  const heading = (
-    <div style={{ padding: "16px 20px", borderBottom: `1px solid ${t.line}` }}>
-      <h1 style={{ fontFamily: f.sans, fontSize: 26, fontWeight: 700, color: t.coal, margin: 0, letterSpacing: "-0.01em", lineHeight: "32px" }}>Messages</h1>
-      <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkFaint, margin: "2px 0 0" }}>
-        Chat with employers who&apos;ve unlocked your contact details.
-      </p>
-    </div>
-  );
-
-  const shell = (body: React.ReactNode, hideHeading = false) => (
-    <div style={{ background: t.white, display: "flex", flexDirection: "column", flex: 1, minHeight: 0, borderRadius: 12, border: `1px solid ${t.line}`, overflow: "hidden" }}>
-      {!hideHeading && heading}
-      {body}
-    </div>
+  const shell = (body: React.ReactNode) => (
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-border bg-background">{body}</div>
   );
 
   if (conversations === null && !listError) {
@@ -265,12 +236,10 @@ export default function MessagesV2() {
 
   if (listError) {
     return shell(
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, padding: "64px 20px", flex: 1 }} role="alert">
-        <AlertCircleIcon size={26} color={t.inkFaint} aria-hidden="true" />
-        <p style={{ fontFamily: f.sans, fontSize: 14, fontWeight: 600, color: t.coal, margin: 0 }}>Couldn&apos;t load your messages</p>
-        <Button variant="outline" onClick={loadConversations} style={{ borderRadius: 8, height: 36, fontFamily: f.sans, fontSize: 13, fontWeight: 500 }}>
-          Retry
-        </Button>
+      <div className="flex flex-1 flex-col items-center justify-center gap-3 px-5 py-16" role="alert">
+        <AlertCircleIcon aria-hidden="true" className="size-6 text-muted-foreground" />
+        <p className="m-0 text-sm font-semibold text-foreground">Couldn&apos;t load your messages</p>
+        <Button variant="outline" className="pointer-coarse:h-11 px-4" onClick={loadConversations}>Retry</Button>
       </div>,
     );
   }
@@ -296,12 +265,9 @@ export default function MessagesV2() {
       : null;
   const list = pendingConversation ? [pendingConversation, ...realList] : realList;
   const active = list.find((c) => c.matchId === activeMatchId) ?? null;
-  // Group by companyName, not the generic counterpartName — a candidate's
-  // "counterpart" must always be the hiring company, never a person.
-  const groups = groupConversationsByCounterpart(
-    list.map((c) => ({ ...c, counterpartName: c.companyName })),
-  );
-  const lastOwnMessageId = messages.filter((mm) => mm.senderRole === "candidate").at(-1)?.id;
+  const activeResponse: EmployerResponse | null = active
+    ? (active.matchId in responses ? responses[active.matchId] : readStoredResponse(active.matchId))
+    : null;
 
   if (list.length === 0 && activeMatchId && resolvedMatchId !== activeMatchId) {
     return shell(<MessagesRouteSkeleton />);
@@ -309,185 +275,133 @@ export default function MessagesV2() {
 
   if (list.length === 0) {
     return shell(
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10, padding: "56px 24px", flex: 1, textAlign: "center" }}>
-        <MessagesSquareIcon size={26} color={t.inkFaint} aria-hidden="true" />
-        <p style={{ fontFamily: f.sans, fontSize: 14.5, fontWeight: 600, color: t.coal, margin: 0 }}>No conversations yet</p>
-        <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkFaint, margin: 0, lineHeight: 1.5, maxWidth: 380 }}>
+      <div className="flex flex-1 flex-col items-center justify-center gap-2.5 px-6 py-14 text-center">
+        <MessagesSquareIcon aria-hidden="true" className="size-7 text-muted-foreground" />
+        <p className="m-0 text-sm font-semibold text-foreground">No conversations yet</p>
+        <p className="m-0 max-w-sm text-[13px] leading-normal text-muted-foreground">
           Once an employer unlocks your contact details and sends a message, it&apos;ll show up here.
         </p>
       </div>,
     );
   }
 
-  // Phones: one pane at a time — the list, or the open thread with a back
-  // button — instead of squeezing a fixed 280px list beside the thread.
-  const showList = !isNarrow || !active;
-  const showThread = !isNarrow || !!active;
+  // The candidate's counterpart is always the hiring company, never a person.
+  const items: InboxItem[] = list.map((c) => ({
+    matchId: c.matchId,
+    name: c.companyName,
+    masked: false,
+    roleTitle: c.roleTitle,
+    lastMessageAt: c.lastMessageAt,
+    unread: c.unread,
+    statusLabel: STATUS_LABEL[c.candidateStatus] || c.candidateStatus,
+    statusTone: statusTone(c.candidateStatus),
+  }));
+  const visible = sortInbox(filterInbox(items, filter, query, favorites));
+  const unreadCount = items.filter((i) => i.unread).length;
+  const companyName = active ? context?.companyName || active.companyName : "";
+  const statusLabel = active ? STATUS_LABEL[active.candidateStatus] || active.candidateStatus : "";
+
+  const thread = active ? (
+    <>
+      <ThreadHeader
+        name={companyName}
+        masked={false}
+        subtitle={active.roleTitle}
+        badges={
+          <>
+            <StatusPill label={statusLabel} tone={statusTone(active.candidateStatus)} />
+            <EmployerResponseBadge response={activeResponse} />
+          </>
+        }
+        actions={
+          <EmployerActionsMenu
+            matchId={active.matchId}
+            employerLabel={companyName}
+            response={activeResponse}
+            onResponseChange={(value) => setResponses((prev) => ({ ...prev, [active.matchId]: value }))}
+            onRemoved={() => {
+              setConversations((prev) => prev?.filter((c) => c.matchId !== active.matchId) ?? prev);
+              backToList();
+            }}
+            onToast={(msg, kind) => toast(msg, kind)}
+          />
+        }
+        favorite={favorites.has(active.matchId)}
+        onToggleFavorite={() => toggleFavorite(active.matchId)}
+        onBack={isNarrow ? backToList : undefined}
+        railOpen={railState.open}
+        onToggleRail={() => railState.setOpen(!railState.open)}
+      />
+      <ThreadLog
+        messages={messages}
+        viewerRole="candidate"
+        selfName={context?.candidateName || "Me"}
+        otherName={companyName}
+        otherMasked={false}
+        loading={threadLoading}
+        error={false}
+        scrollRef={scrollRef}
+        announcement={{ n: 0, text: "" }}
+        emptyHint={`Say hello to ${companyName}.`}
+        onRetry={() => activeMatchId && loadThread(activeMatchId, true)}
+        onOpenAttachment={openAttachment}
+      />
+      <Composer
+        counterpartName={companyName}
+        masked={false}
+        draft={draft}
+        onDraftChange={setDraft}
+        onSend={handleSend}
+        onAttach={handleAttach}
+        sending={sending}
+        attaching={attaching}
+        block={null}
+        error={null}
+        onDismissError={() => {}}
+        quickReplies={CANDIDATE_QUICK_REPLIES}
+      />
+    </>
+  ) : null;
 
   return shell(
-    <div style={{ display: "flex", flex: 1, minHeight: 0 }}>
-      {showList && (
-      <nav style={{ width: isNarrow ? "100%" : 280, borderRight: isNarrow ? "none" : `1px solid ${t.line}`, overflowY: "auto", flexShrink: 0 }} aria-label="Conversations">
-        {groups.map((group) => (
-          <div key={group.counterpartName}>
-            <div aria-hidden="true" style={{
-              display: "flex", alignItems: "center", gap: 8, padding: "12px 16px 6px",
-              fontFamily: f.sans, fontSize: 13, fontWeight: 700, color: t.coal,
-            }}>
-              <Avatar size="sm">
-                <AvatarFallback>{initialsOf(group.counterpartName)}</AvatarFallback>
-              </Avatar>
-              <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{group.counterpartName}</span>
-            </div>
-            <div role="list" aria-label={group.counterpartName}>
-              {group.conversations.map((c) => (
-                <div key={c.matchId} role="listitem">
-                  <button
-                    aria-current={c.matchId === activeMatchId ? "true" : undefined}
-                    onClick={() => selectConversation(c.matchId)}
-                    style={{
-                      display: "block", width: "100%", textAlign: "left", padding: "10px 16px 10px 24px",
-                      border: "none", borderBottom: `1px solid ${t.line}`, cursor: "pointer",
-                      background: c.matchId === activeMatchId ? t.creamSoft : c.unread ? t.pageBg : "transparent",
-                    }}
-                  >
-                    <div style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.coal, display: "flex", alignItems: "center", gap: 6 }}>
-                      {c.unread && (
-                        <span aria-hidden="true" style={{ width: 6, height: 6, borderRadius: "50%", background: t.indigo, flexShrink: 0 }} />
-                      )}
-                      {c.roleTitle}
-                    </div>
-                    <div style={{ fontFamily: f.sans, fontSize: 12, color: t.inkFaint, marginTop: 2 }}>
-                      {c.lastMessageAt ? hoursOrDaysAgo(c.lastMessageAt) : "No messages yet"}
-                    </div>
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        ))}
-      </nav>
-      )}
-      {showThread && (
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
-        {!active ? (
-          <div style={{ display: "flex", flex: 1, alignItems: "center", justifyContent: "center", color: t.inkFaint, fontFamily: f.sans, fontSize: 13 }}>
-            Select a conversation
-          </div>
-        ) : (
-          <>
-            <div style={{ padding: "12px 16px", borderBottom: `1px solid ${t.line}`, display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-              {isNarrow && (
-                <Button variant="ghost" size="icon" aria-label="Back to conversations" onClick={backToList} style={{ flexShrink: 0, width: 44, height: 44, marginLeft: -8 }}>
-                  <ArrowLeftIcon size={20} aria-hidden="true" />
-                </Button>
-              )}
-              <div style={{ minWidth: 0, flex: 1 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                  <span style={{ fontFamily: f.sans, fontSize: 14, fontWeight: 600, color: t.coal }}>{context?.companyName || active.companyName}</span>
-                  <StatusBadge status={active.candidateStatus} />
-                </div>
-                <div style={{ fontFamily: f.sans, fontSize: 12, color: t.inkFaint, marginTop: 2 }}>
-                  {active.roleTitle}
-                </div>
-              </div>
-            </div>
-            <div
-              ref={scrollRef}
-              role="log"
-              aria-live="polite"
-              aria-label={`Conversation with ${context?.companyName || active.companyName}`}
-              style={{ flex: 1, overflowY: "auto", padding: "14px 16px", display: "flex", flexDirection: "column", gap: 10 }}
-            >
-              {threadLoading && <MessageThreadRouteSkeleton />}
-              {!threadLoading && messages.length === 0 && (
-                <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkFaint }}>No messages yet — say hello.</p>
-              )}
-              {messages.map((m) =>
-                m.senderRole === "system" ? (
-                  <div key={m.id} style={{ alignSelf: "center", textAlign: "center", maxWidth: "85%" }}>
-                    <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkFaint, background: t.creamSoft, borderRadius: 999, padding: "4px 12px", display: "inline-block" }}>
-                      {m.body}
-                    </span>
-                  </div>
-                ) : (
-                  <Message key={m.id} align={m.senderRole === "candidate" ? "end" : "start"}>
-                    <MessageAvatar className="self-center">
-                      <Avatar size="sm">
-                        <AvatarFallback>
-                          {initialsOf(m.senderRole === "candidate" ? context?.candidateName || "Me" : context?.companyName || active.companyName)}
-                        </AvatarFallback>
-                      </Avatar>
-                    </MessageAvatar>
-                    <MessageContent>
-                      <Bubble variant={m.senderRole === "candidate" ? "default" : "secondary"}>
-                        <BubbleContent>
-                          {m.body && <p className="whitespace-pre-wrap">{m.body}</p>}
-                          {m.attachmentPath && (
-                            <button
-                              type="button"
-                              onClick={() => openAttachment(m.id)}
-                              aria-label={`Open attachment ${m.attachmentName || ""}`.trim()}
-                              style={{ fontFamily: f.sans, fontSize: 12.5, marginTop: m.body ? 4 : 0, display: "flex", alignItems: "center", gap: 4, background: "none", border: "none", padding: 0, color: "inherit", textDecoration: "underline", cursor: "pointer" }}
-                            >
-                              <PaperclipIcon size={12} aria-hidden="true" />
-                              {m.attachmentName || "Attachment"}
-                            </button>
-                          )}
-                        </BubbleContent>
-                      </Bubble>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "0 12px" }}>
-                        <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkFaint }}>
-                          {new Date(m.createdAt).toLocaleString()}
-                        </span>
-                        {m.flagged && <Badge variant="destructive">Flagged</Badge>}
-                      </div>
-                      {m.senderRole === "candidate" && m.id === lastOwnMessageId && (
-                        <MessageFooter>Delivered</MessageFooter>
-                      )}
-                    </MessageContent>
-                  </Message>
-                ),
-              )}
-            </div>
-            <div style={{ padding: "12px 16px", paddingBottom: "max(12px, env(safe-area-inset-bottom))", borderTop: `1px solid ${t.line}`, display: "flex", flexDirection: "column", gap: 8, flexShrink: 0 }}>
-              <Textarea
-                value={draft}
-                onChange={(e) => setDraft(e.target.value)}
-                placeholder="Write a message…"
-                aria-label="Message"
-                rows={2}
-                style={isNarrow ? { fontSize: 16 } : undefined}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSend();
-                  }
-                }}
-              />
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <label style={{ cursor: attaching ? "default" : "pointer" }}>
-                  <input
-                    type="file"
-                    onChange={handleAttach}
-                    disabled={attaching}
-                    aria-label="Attach a file (max 8MB)"
-                    style={{ display: "none" }}
-                  />
-                  <span style={{ display: "flex", alignItems: "center", gap: 4, fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft }}>
-                    <PaperclipIcon size={14} aria-hidden="true" /> {attaching ? "Uploading…" : "Attach file"}
-                  </span>
-                </label>
-                <Button size="sm" className="gap-2" onClick={handleSend} disabled={sending || !draft.trim()}>
-                  <SendIcon size={13} aria-hidden="true" /> {sending ? "Sending…" : "Send"}
-                </Button>
-              </div>
-            </div>
-          </>
-        )}
-      </div>
-      )}
-    </div>,
-    isNarrow && !!active,
+    <MessagingLayout
+      list={
+        <ConversationList
+          title="Messages"
+          items={visible}
+          total={items.length}
+          activeMatchId={activeMatchId}
+          favorites={favorites}
+          filter={filter}
+          query={query}
+          unreadCount={unreadCount}
+          refreshFailed={false}
+          onFilterChange={setFilter}
+          onQueryChange={setQuery}
+          onSelect={selectConversation}
+          onToggleFavorite={toggleFavorite}
+          onRetry={loadConversations}
+        />
+      }
+      thread={thread}
+      rail={
+        active ? (
+          <ContextRail
+            facts={[
+              { label: "Company", value: companyName },
+              { label: "Role", value: active.roleTitle },
+              { label: "Status", value: statusLabel },
+            ]}
+            interviewAt={context?.interviewScheduledAt ?? null}
+            messages={messages}
+            onOpenAttachment={openAttachment}
+          />
+        ) : null
+      }
+      railState={railState}
+      narrow={isNarrow}
+      hasActive={!!active}
+      placeholder="Select a conversation"
+    />,
   );
 }
