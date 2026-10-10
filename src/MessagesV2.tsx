@@ -73,8 +73,8 @@ const STATUS_LABEL: Record<string, string> = {
  *  above) rather than importing the employer module, but aligned on the same
  *  tokens so a given status reads as the same color on both sides. */
 
-/* Same hairline as the dashboard cards (EmployerShell / DashboardLayout). */
-const shellBorder: CSSProperties = { border: `1px solid ${t.line}` };
+/* Same border + radius as the candidate dashboard card (DashboardHome). MessagingLayout draws no outer border of its own. */
+const shellBorder: CSSProperties = { border: `1px solid ${t.line}`, borderRadius: 16 };
 
 export default function MessagesV2() {
   const router = useRouter();
@@ -231,7 +231,7 @@ export default function MessagesV2() {
   };
 
   const shell = (body: React.ReactNode) => (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl bg-background" style={shellBorder}>{body}</div>
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-background" style={shellBorder}>{body}</div>
   );
 
   if (conversations === null && !listError) {

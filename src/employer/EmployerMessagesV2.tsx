@@ -70,8 +70,8 @@ function DialogError({ children, unlock }: { children: React.ReactNode; unlock: 
   );
 }
 
-/* Same hairline as the dashboard cards (EmployerShell). */
-const shellBorder: CSSProperties = { border: `1px solid ${t.line}` };
+/* Same border + radius as the employer page cards (EmployerShell). MessagingLayout draws no outer border of its own. */
+const shellBorder: CSSProperties = { border: `1px solid ${t.line}`, borderRadius: 12 };
 
 export default function EmployerMessagesV2() {
   const router = useRouter();
@@ -366,7 +366,7 @@ export default function EmployerMessagesV2() {
   const unreadCount = list.filter((c) => c.unread).length;
 
   const shell = (body: React.ReactNode) => (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl bg-background" style={shellBorder}>
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-background" style={shellBorder}>
       {suspended && (
         <div role="status" className="border-b border-red-300 bg-red-50 px-4 py-2.5 text-[13px] leading-normal text-red-900 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-200">
           <strong>Your account is suspended.</strong> Conversations are read-only until access is restored. Contact support for help.
