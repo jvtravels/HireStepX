@@ -78,6 +78,8 @@ export function formatDateTime(iso: string): string {
 /** A real border instead of the Card's translucent ring: the ring is clipped
  *  at the page edge by the shell's overflow container and reads too faint. */
 export const CARD = "border border-border ring-0";
+export const TITLE = "flex items-center gap-2 text-lg leading-snug font-bold";
+export const MAIN_SIDE = "grid items-start gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]";
 
 export interface CandidateLink { label: string; url: string; host: string }
 

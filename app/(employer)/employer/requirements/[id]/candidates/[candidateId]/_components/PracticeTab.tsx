@@ -1,4 +1,4 @@
-import { FileSearch, TrendingDown, TrendingUp } from "lucide-react";
+import { BarChart3, FileSearch, ListChecks, MessageSquareQuote, TrendingDown, TrendingUp } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import type { CandidateEvidence } from "@/employer/EmployerDataContext";
 import type { Candidate } from "@/employer/mockData";
 import { readQuotesLocked } from "@/employer/_candidateFields";
-import { CARD, PROVENANCE, TONE_DANGER, TONE_SUCCESS, formatSessionDate } from "./helpers";
+import { CARD, TITLE, MAIN_SIDE, PROVENANCE, TONE_DANGER, TONE_SUCCESS, formatSessionDate } from "./helpers";
 import { LockedQuotes } from "./Notices";
 import { EvidenceStatus, type EvidenceState } from "./OverviewTab";
 import { Meter } from "./parts";
@@ -19,29 +19,29 @@ function TrendCard({ trend, sessions }: { trend: NonNullable<CandidateEvidence["
   return (
     <Card className={CARD}>
       <CardHeader>
-        <CardTitle>Practice history</CardTitle>
-        <CardDescription>Overall score of each graded interview, oldest first. {sessions} session{sessions === 1 ? "" : "s"} in total.</CardDescription>
+        <CardTitle className={TITLE}><BarChart3 aria-hidden="true" className="size-4 text-primary" />Practice history</CardTitle>
+        <CardDescription className="text-md">Overall score of each graded interview, oldest first. {sessions} session{sessions === 1 ? "" : "s"} in total.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-5">
         <dl className="grid grid-cols-3 gap-4">
           <div>
-            <dt className="text-xs text-muted-foreground">Latest</dt>
-            <dd className="mt-1 text-lg font-semibold tabular-nums">{last}<span className="text-sm font-normal text-muted-foreground"> / 100</span></dd>
+            <dt className="text-sm text-muted-foreground">Latest</dt>
+            <dd className="mt-1 text-2xl font-bold tabular-nums">{last}<span className="text-md font-normal text-muted-foreground"> / 100</span></dd>
           </div>
           <div>
-            <dt className="text-xs text-muted-foreground">Best</dt>
-            <dd className="mt-1 text-lg font-semibold tabular-nums">{best}<span className="text-sm font-normal text-muted-foreground"> / 100</span></dd>
+            <dt className="text-sm text-muted-foreground">Best</dt>
+            <dd className="mt-1 text-2xl font-bold tabular-nums">{best}<span className="text-md font-normal text-muted-foreground"> / 100</span></dd>
           </div>
           <div>
-            <dt className="text-xs text-muted-foreground">Since first</dt>
-            <dd className="mt-1 flex items-center gap-1.5 text-lg font-semibold tabular-nums">
+            <dt className="text-sm text-muted-foreground">Since first</dt>
+            <dd className="mt-1 flex items-center gap-1.5 text-2xl font-bold tabular-nums">
               {trend.length > 1 ? (
                 <>
                   {delta > 0 ? <TrendingUp aria-hidden="true" className="size-4 text-emerald-600" /> : delta < 0 ? <TrendingDown aria-hidden="true" className="size-4 text-destructive" /> : null}
                   {delta > 0 ? "+" : ""}{delta}
                 </>
               ) : (
-                <span className="text-sm font-normal text-muted-foreground">One session</span>
+                <span className="text-md font-normal text-muted-foreground">One session</span>
               )}
             </dd>
           </div>
@@ -97,45 +97,14 @@ export function PracticeTab({
   return (
     <div className="flex flex-col gap-4">
       <EvidenceStatus state={state}>
+        <div className={MAIN_SIDE}>
+          <div className="flex min-w-0 flex-col gap-4">
         {trend.length > 0 && <TrendCard trend={trend} sessions={candidate.sessionsCompleted || trend.length} />}
-
-        {skills.length > 0 && (
-          <Card className={CARD}>
-            <CardHeader>
-              <CardTitle>Skill scores</CardTitle>
-              <CardDescription>{PROVENANCE}, from the most recent completed session.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-x-8 gap-y-4 sm:grid-cols-2">
-                {skills.map((s) => (
-                  <Meter key={s.name} label={s.name} pct={s.score} />
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {star && (
-          <Card className={CARD}>
-            <CardHeader>
-              <CardTitle>STAR answer completeness</CardTitle>
-              <CardDescription>Share of answers that covered Situation, Task, Action and Result.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Meter
-                className="max-w-md"
-                label={`Across ${star.questionsConsidered} question${star.questionsConsidered === 1 ? "" : "s"}`}
-                pct={star.pct}
-              />
-            </CardContent>
-          </Card>
-        )}
-
         {(quotesLocked || quotes.length > 0) && (
           <Card className={CARD}>
             <CardHeader>
-              <CardTitle>What they said</CardTitle>
-              <CardDescription>Verbatim lines from practice answers.</CardDescription>
+              <CardTitle className={TITLE}><MessageSquareQuote aria-hidden="true" className="size-4 text-primary" />What they said</CardTitle>
+              <CardDescription className="text-md">Verbatim lines from practice answers.</CardDescription>
             </CardHeader>
             <CardContent>
               {quotesLocked ? (
@@ -148,9 +117,9 @@ export function PracticeTab({
                       <li key={i} className="space-y-2 rounded-lg border border-border p-3">
                         <div className="flex flex-wrap items-center gap-2">
                           <Badge className={cn("h-6 px-2.5", flag ? TONE_DANGER : TONE_SUCCESS)}>{flag ? "Flag" : "Win"}</Badge>
-                          <span className="text-sm font-medium">{q.text}</span>
+                          <span className="text-md font-semibold">{q.text}</span>
                         </div>
-                        <blockquote className="border-l-2 border-border pl-3 text-sm leading-relaxed text-muted-foreground">&ldquo;{q.quote}&rdquo;</blockquote>
+                        <blockquote className="border-l-2 border-border pl-3 text-md leading-relaxed text-muted-foreground">&ldquo;{q.quote}&rdquo;</blockquote>
                       </li>
                     );
                   })}
@@ -159,6 +128,41 @@ export function PracticeTab({
             </CardContent>
           </Card>
         )}
+          </div>
+          <div className="flex min-w-0 flex-col gap-4">
+        {skills.length > 0 && (
+          <Card className={CARD}>
+            <CardHeader>
+              <CardTitle className={TITLE}><ListChecks aria-hidden="true" className="size-4 text-primary" />Skill scores</CardTitle>
+              <CardDescription className="text-md">{PROVENANCE}, from the most recent completed session.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4">
+                {skills.map((s) => (
+                  <Meter key={s.name} label={s.name} pct={s.score} />
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {star && (
+          <Card className={CARD}>
+            <CardHeader>
+              <CardTitle className={TITLE}><ListChecks aria-hidden="true" className="size-4 text-primary" />STAR answer completeness</CardTitle>
+              <CardDescription className="text-md">Share of answers that covered Situation, Task, Action and Result.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Meter
+                                label={`Across ${star.questionsConsidered} question${star.questionsConsidered === 1 ? "" : "s"}`}
+                pct={star.pct}
+              />
+            </CardContent>
+          </Card>
+        )}
+
+          </div>
+        </div>
       </EvidenceStatus>
     </div>
   );

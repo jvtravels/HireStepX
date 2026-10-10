@@ -26,7 +26,7 @@ const STATUS_TONE: Record<CandidateStatus, string> = {
 function ContactLink({ icon: Icon, label, href, children }: { icon: typeof Mail; label: string; href?: string; children: React.ReactNode }) {
   const external = !!href?.startsWith("http");
   return (
-    <a href={href} className="inline-flex items-center gap-2 text-sm text-foreground hover:underline" {...(external ? { target: "_blank", rel: "noreferrer" } : {})}>
+    <a href={href} className="inline-flex items-center gap-2 text-md text-foreground hover:underline" {...(external ? { target: "_blank", rel: "noreferrer" } : {})}>
       <Icon aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
       <span className="sr-only">{label}: </span>
       <span className="break-all">{children}</span>
@@ -43,14 +43,14 @@ function Stat({ label, value, unit, note, badge }: { label: string; value: strin
   return (
     <div className="flex flex-col gap-1.5 bg-card p-4">
       <div className="flex items-center justify-between gap-2">
-        <p className="text-xs text-muted-foreground">{label}</p>
+        <p className="text-sm font-semibold text-muted-foreground">{label}</p>
         {badge && <Badge className={cn("h-5 px-2", badge.className)}>{badge.label}</Badge>}
       </div>
-      <p className="text-3xl leading-none font-bold tabular-nums">
+      <p className="text-2xl leading-none font-bold tabular-nums">
         {value}
         {unit && <span className="text-sm font-normal text-muted-foreground"> {unit}</span>}
       </p>
-      <p className="text-xs text-muted-foreground">{note}</p>
+      <p className="text-sm text-muted-foreground">{note}</p>
     </div>
   );
 }
@@ -86,13 +86,13 @@ function Progress({ status }: { status: CandidateStatus }) {
   const current = negative ? -1 : PIPELINE_STEPS.indexOf(status);
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-      <p className="text-xs font-medium text-muted-foreground">Hiring progress</p>
+      <p className="text-sm font-semibold text-muted-foreground">Hiring progress</p>
       <ol aria-label="Hiring pipeline" className="flex flex-wrap items-center gap-x-3 gap-y-1">
         {PIPELINE_STEPS.map((step, i) => {
           const reached = !negative && i <= current;
           const isCurrent = i === current;
           return (
-            <li key={step} aria-current={isCurrent ? "step" : undefined} className={cn("flex items-center gap-1.5 text-sm", isCurrent ? "font-medium text-foreground" : reached ? "text-foreground" : "text-muted-foreground")}>
+            <li key={step} aria-current={isCurrent ? "step" : undefined} className={cn("flex items-center gap-1.5 text-md", isCurrent ? "font-semibold text-foreground" : reached ? "text-foreground" : "text-muted-foreground")}>
               <span aria-hidden="true" className={cn("flex size-4 items-center justify-center rounded-full border", reached ? "border-primary bg-primary text-primary-foreground" : "border-border")}>
                 {reached && !isCurrent && <Check className="size-2.5" />}
                 {isCurrent && <span className="size-1.5 rounded-full bg-primary-foreground" />}
@@ -104,7 +104,7 @@ function Progress({ status }: { status: CandidateStatus }) {
         })}
       </ol>
       {negative && (
-        <p className="flex items-center gap-1.5 text-sm font-medium text-destructive">
+        <p className="flex items-center gap-1.5 text-md font-semibold text-destructive">
           <X aria-hidden="true" className="size-4" />
           {CANDIDATE_STATUS_LABEL[status]}
         </p>
@@ -160,13 +160,13 @@ export function CandidateHeader({
             </Avatar>
             <div className="min-w-0 space-y-1.5">
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-                <h1 className="text-xl font-semibold tracking-tight break-words">{displayName}</h1>
+                <h1 className="text-2xl font-bold tracking-tight break-words">{displayName}</h1>
                 <Badge className={cn("h-6 px-2.5", STATUS_TONE[candidate.candidateStatus])}>{CANDIDATE_STATUS_LABEL[candidate.candidateStatus]}</Badge>
                 {response === "interested" && <Badge className={cn("h-6 px-2.5", TONE_SUCCESS)}>Candidate is interested</Badge>}
                 {response === "declined" && <Badge className={cn("h-6 px-2.5", TONE_DANGER)}>Declined contact</Badge>}
               </div>
-              <p className="text-sm font-medium">{candidate.targetRole}</p>
-              <ul className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+              <p className="text-md font-semibold">{candidate.targetRole}</p>
+              <ul className="flex flex-wrap gap-x-4 gap-y-1 text-md text-muted-foreground">
                 {hasCity && <li className="inline-flex items-center gap-1.5"><MapPin aria-hidden="true" className="size-3.5" />{candidate.city}</li>}
                 {resume?.yearsExperience != null && <li className="inline-flex items-center gap-1.5"><Briefcase aria-hidden="true" className="size-3.5" />{resume.yearsExperience} yrs experience</li>}
                 {candidate.lastActiveDaysAgo >= 0 && <li className="inline-flex items-center gap-1.5"><Clock aria-hidden="true" className="size-3.5" />Active {candidate.lastActiveDaysAgo === 0 ? "today" : `${candidate.lastActiveDaysAgo}d ago`}</li>}
@@ -178,7 +178,7 @@ export function CandidateHeader({
             {canReject && <Button variant="outline" onClick={onReject} disabled={suspended} className="pointer-coarse:h-11">Reject candidate</Button>}
           </div>
         </div>
-        {blockedReason && (canInvite || canReject) && <p className="px-5 pb-3 text-xs text-muted-foreground">{blockedReason}</p>}
+        {blockedReason && (canInvite || canReject) && <p className="px-5 pb-3 text-sm text-muted-foreground">{blockedReason}</p>}
         <Separator />
         <div className="px-5 py-3">
           {candidate.unlocked ? (
@@ -186,7 +186,7 @@ export function CandidateHeader({
               {candidate.contact?.phone && <ContactLink icon={Phone} label="Phone" href={`tel:${candidate.contact.phone}`}>{candidate.contact.phone}</ContactLink>}
               {candidate.contact?.email && <ContactLink icon={Mail} label="Email" href={`mailto:${candidate.contact.email}`}>{candidate.contact.email}</ContactLink>}
               {links.map((l) => <ContactLink key={l.url} icon={ExternalLink} label={l.label} href={l.url}>{l.label}</ContactLink>)}
-              {!candidate.contact?.phone && !candidate.contact?.email && links.length === 0 && <p className="text-sm text-muted-foreground">No contact details on file.</p>}
+              {!candidate.contact?.phone && !candidate.contact?.email && links.length === 0 && <p className="text-md text-muted-foreground">No contact details on file.</p>}
               {resumeFileName && <div className="sm:ml-auto"><ResumeDownload matchId={candidate.id} fileName={resumeFileName} size="sm" /></div>}
             </div>
           ) : (
