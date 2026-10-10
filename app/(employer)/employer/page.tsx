@@ -99,7 +99,7 @@ function OnboardingChecklist({ steps }: { steps: ChecklistStep[] }) {
                   fontFamily: f.sans, fontSize: 12, fontWeight: 700,
                 }}
               >
-                {step.done ? <EmployerIcon.Check /> : i + 1}
+                {step.done ? <span className="mx-pop mx-check inline-flex"><EmployerIcon.Check /></span> : i + 1}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontFamily: f.sans, fontSize: 14, fontWeight: 600, color: step.done ? t.inkSoft : t.coal, textDecoration: step.done ? "line-through" : "none" }}>
@@ -186,7 +186,7 @@ function EmployerDashboard() {
   return (
     <div className="grid w-full grid-cols-1 gap-6 rounded-xl border bg-white p-4 min-[640px]:p-6 min-[900px]:grid-cols-[minmax(0,1fr)_minmax(280px,360px)] min-[900px]:gap-8" style={{ borderColor: t.line, boxSizing: "border-box" }}>
       {/* ─── Main stage ─── */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 28, minWidth: 0 }}>
+      <div className="mx-stagger" style={{ display: "flex", flexDirection: "column", gap: 28, minWidth: 0 }}>
         <section>
           <h1 style={{ fontFamily: f.sans, fontSize: "clamp(28px, 6vw, 44px)", fontWeight: 400, lineHeight: 1.1, letterSpacing: "-0.02em", color: t.coal, margin: "0 0 6px", overflowWrap: "anywhere" }}>
             Welcome <em style={{ fontWeight: 600, color: t.indigo }}>back</em>, {user?.name || "there"}.
@@ -249,7 +249,7 @@ function EmployerDashboard() {
       </div>
 
       {/* ─── Rail ─── */}
-      <aside aria-label="Company and help" style={{ display: "flex", flexDirection: "column", gap: 24, minWidth: 0 }}>
+      <aside aria-label="Company and help" className="mx-stagger" style={{ display: "flex", flexDirection: "column", gap: 24, minWidth: 0 }}>
         <Card>
           <CardContent>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>

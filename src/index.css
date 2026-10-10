@@ -1657,3 +1657,63 @@ a[href]:not([data-slot]):not([data-sidebar]):not([role]):not([data-no-underline]
   text-decoration: underline !important;
   text-underline-offset: 3px;
 }
+
+/* ─── Motion kit ───
+   Shared micro-interaction primitives (own implementations of common UI
+   motion patterns). Entrances live inside no-preference so reduced-motion
+   users get the final state with no movement; hover/press effects add no
+   layout shift. Transforms are only applied to leaf cards, never page
+   containers (a transformed ancestor breaks position:sticky children). */
+@keyframes mxRise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes mxFade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes mxPop { 0% { transform: scale(0.5); opacity: 0; } 60% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1); } }
+@keyframes mxShake { 10%, 90% { transform: translateX(-1px); } 20%, 80% { transform: translateX(2px); } 30%, 50%, 70% { transform: translateX(-4px); } 40%, 60% { transform: translateX(4px); } }
+@keyframes mxDraw { to { stroke-dashoffset: 0; } }
+@keyframes mxPing { 0% { transform: scale(1); opacity: 0.55; } 100% { transform: scale(2.6); opacity: 0; } }
+@keyframes mxSwap { 0% { opacity: 0.3; transform: translateY(-4px); } 100% { opacity: 1; transform: none; } }
+
+.mx-fade { animation: mxFade 320ms cubic-bezier(0.16, 1, 0.3, 1) backwards; }
+.mx-rise { animation: mxRise 420ms cubic-bezier(0.16, 1, 0.3, 1) backwards; }
+.mx-pop { animation: mxPop 380ms cubic-bezier(0.2, 0.9, 0.3, 1.2) backwards; }
+.mx-shake { animation: mxShake 420ms cubic-bezier(0.36, 0.07, 0.19, 0.97) both; }
+.mx-swap { animation: mxSwap 260ms cubic-bezier(0.16, 1, 0.3, 1) backwards; }
+
+/* Children rise in one after another (capped so long lists don't drag). */
+.mx-stagger > * { animation: mxRise 420ms cubic-bezier(0.16, 1, 0.3, 1) backwards; }
+.mx-stagger > :nth-child(2) { animation-delay: 60ms; }
+.mx-stagger > :nth-child(3) { animation-delay: 120ms; }
+.mx-stagger > :nth-child(4) { animation-delay: 180ms; }
+.mx-stagger > :nth-child(5) { animation-delay: 240ms; }
+.mx-stagger > :nth-child(6) { animation-delay: 300ms; }
+.mx-stagger > :nth-child(n + 7) { animation-delay: 360ms; }
+
+/* Check mark that draws itself; the svg path needs pathLength="1". */
+.mx-check path { stroke-dasharray: 1; stroke-dashoffset: 1; animation: mxDraw 360ms cubic-bezier(0.65, 0, 0.35, 1) 120ms forwards; }
+
+/* Pulsing "live" dot. */
+.mx-live { position: relative; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+.mx-live::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: currentColor; animation: mxPing 1.8s cubic-bezier(0, 0, 0.2, 1) infinite; }
+
+/* Tactile press on anything clickable. */
+.mx-press { transition: transform 160ms cubic-bezier(0.2, 0.7, 0.2, 1); }
+.mx-press:active { transform: scale(0.98); }
+
+/* Card/row hover lift. */
+.mx-lift { transition: transform 220ms cubic-bezier(0.2, 0.7, 0.2, 1), box-shadow 220ms cubic-bezier(0.2, 0.7, 0.2, 1); }
+@media (hover: hover) {
+  .mx-lift:hover { transform: translateY(-2px); box-shadow: 0 8px 24px -12px rgb(0 0 0 / 0.18); }
+}
+
+/* Progress fill that grows from the left on mount (scaleX, not width, so no layout work). */
+@keyframes mxGrow { from { transform: scaleX(0); } to { transform: none; } }
+.mx-grow { transform-origin: left; animation: mxGrow 700ms cubic-bezier(0.16, 1, 0.3, 1) 150ms backwards; }
+
+/* Arrow/chevron nudge when its parent link or button is hovered. */
+.mx-nudge { display: inline-block; transition: transform 200ms cubic-bezier(0.2, 0.7, 0.2, 1); }
+:is(a, button):hover > .mx-nudge, :is(a, button):hover .mx-nudge { transform: translateX(3px); }
+
+@media (prefers-reduced-motion: reduce) {
+  .mx-fade, .mx-rise, .mx-pop, .mx-swap, .mx-grow, .mx-stagger > * { animation: none; }
+  .mx-live::after { animation: none; opacity: 0; }
+  .mx-press:active, .mx-lift:hover, :is(a, button):hover .mx-nudge { transform: none; }
+}

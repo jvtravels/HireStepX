@@ -182,6 +182,7 @@ function JobCard({ r, onOpen }: { r: JobMatch; onOpen: () => void }) {
   return (
     <li style={{ background: t.white, boxShadow: `inset 0 -1px 0 ${t.line}, inset -1px 0 0 ${t.line}` }}>
       <div
+        className="mx-press"
         role="button"
         tabIndex={0}
         aria-label={`View details for ${r.roleTitle}${r.unlocked ? ` at ${r.companyName}` : ""}`}
@@ -454,7 +455,7 @@ export default function DashboardJobs() {
                   </Button>
                 </div>
               ) : (
-                <ul aria-label="Job matches" style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 340px), 1fr))", gap: 0, background: t.white }}>
+                <ul aria-label="Job matches" className="mx-stagger" style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 340px), 1fr))", gap: 0, background: t.white }}>
                   {pageRows.map((r) => (
                     <JobCard key={r.id} r={r} onOpen={() => openJob(r)} />
                   ))}
@@ -476,7 +477,7 @@ export default function DashboardJobs() {
                 <SortableHead column="date" columnLabel={COLUMN_LABEL.date} width="8%" minWidth={110} sort={sort} onSortChange={setSort}>Date</SortableHead>
               </TableRow>
             </TableHeader>
-            <TableBody>
+            <TableBody className="mx-stagger">
               {pageRows.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={8} style={{ padding: "40px 14px" }}>

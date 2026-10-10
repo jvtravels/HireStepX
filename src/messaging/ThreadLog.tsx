@@ -126,7 +126,7 @@ export default function ThreadLog({
           const own = m.senderRole === viewerRole;
           const sender = own ? selfName : otherName;
           return (
-            <div key={row.key} className={cn("group/msg relative flex gap-3 px-4 hover:bg-muted/40", row.showHeader ? "mt-2 pt-1.5 pb-0.5" : "py-0.5")}>
+            <div key={row.key} className={cn("group/msg relative flex gap-3 px-4 hover:bg-muted/40", Date.now() - new Date(m.createdAt).getTime() < 4000 && "mx-rise", row.showHeader ? "mt-2 pt-1.5 pb-0.5" : "py-0.5")}>
               <div className="w-9 shrink-0">
                 {row.showHeader ? (
                   <Avatar size="lg" aria-hidden="true" className="size-9">

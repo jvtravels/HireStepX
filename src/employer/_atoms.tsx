@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { LoaderCircleIcon, ClipboardListIcon, MessageSquareIcon, CheckCircle2Icon, ChevronDownIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import AnimatedNumber from "../AnimatedNumber";
 import { cn } from "@/lib/utils";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { tokens as t, fonts as f, shadows, textSize } from "../auth/_tokens";
@@ -1089,7 +1090,7 @@ export function StatCell({ label, value, unit }: { label: string; value: string;
         {label}
       </dt>
       <dd style={{ margin: "6px 0 0", display: "flex", alignItems: "baseline", gap: 3 }}>
-        <span style={{ fontFamily: f.sans, fontSize: 30, fontWeight: 400, color: t.coal, letterSpacing: -0.5, lineHeight: 1 }}>{value}</span>
+        <span style={{ fontFamily: f.sans, fontSize: 30, fontWeight: 400, color: t.coal, letterSpacing: -0.5, lineHeight: 1 }}>{/^\d+$/.test(value) ? <AnimatedNumber value={Number(value)} /> : value}</span>
         {unit && <span style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft }}>{unit}</span>}
       </dd>
     </div>
@@ -1099,7 +1100,7 @@ export function StatCell({ label, value, unit }: { label: string; value: string;
 export const EmployerIcon = {
   Check: () => (
     <svg aria-hidden="true" focusable="false" width="14" height="14" viewBox="0 0 24 24" fill="none">
-      <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M20 6L9 17l-5-5" pathLength="1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   ),
   Lock: () => (

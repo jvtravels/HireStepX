@@ -300,6 +300,7 @@ export function ErrorSummary({
   return (
     <div
       role="alert"
+      className="mx-shake"
       style={summaryBox}
     >
       <strong style={summaryTitle}>

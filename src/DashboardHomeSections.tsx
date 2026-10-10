@@ -12,6 +12,7 @@ import type { PracticeCoverage, EvidenceCapability } from "./dashboardData";
 import { hoursOrDaysAgo } from "./hiringMatchFormat";
 import { useHiringActivity } from "./useHiringActivity";
 import { Button } from "@/components/ui/button";
+import AnimatedNumber from "./AnimatedNumber";
 
 /* ─── shared bits ─── */
 
@@ -22,7 +23,7 @@ function ProgressBar({ value, max = 100, color }: { value: number; max?: number;
       role="progressbar" aria-valuenow={Math.round(value)} aria-valuemin={0} aria-valuemax={max}
       style={{ height: 6, borderRadius: 999, background: t.line, overflow: "hidden" }}
     >
-      <div style={{ width: `${pct}%`, height: "100%", background: color, borderRadius: 999 }} />
+      <div className="mx-grow" style={{ width: `${pct}%`, height: "100%", background: color, borderRadius: 999 }} />
     </div>
   );
 }
@@ -46,7 +47,7 @@ function Tag({ label, tone = "neutral", title }: { label: string; tone?: "neutra
 
 function StatCard({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{
+    <div className="mx-lift" style={{
       flex: "1 1 220px", minWidth: 220, padding: "18px",
       background: t.cream, border: `1px solid ${t.line}`, borderRadius: 12,
       display: "flex", flexDirection: "column", gap: 10,
@@ -119,11 +120,11 @@ export function StatCardsRow({
   const latestMatch = hiring?.recent?.[0] ?? null;
 
   return (
-    <div style={{ display: "flex", flexWrap: "wrap", gap: 16 }}>
+    <div className="mx-stagger" style={{ display: "flex", flexWrap: "wrap", gap: 16 }}>
       <StatCard>
         <div style={{ fontFamily: f.sans, fontSize: textSize.sm, color: t.inkSoft, fontWeight: 600 }}>Interview Readiness</div>
         <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-          <span style={{ fontFamily: f.sans, fontSize: textSize["2xl"], fontWeight: 700, color: t.coal }}>{hasData ? readinessScore : 0}</span>
+          <span style={{ fontFamily: f.sans, fontSize: textSize["2xl"], fontWeight: 700, color: t.coal }}><AnimatedNumber value={hasData ? readinessScore : 0} /></span>
           <span style={{ fontFamily: f.sans, fontSize: textSize.sm, color: t.inkFaint }}>/ 100</span>
           {readinessDelta != null && readinessDelta !== 0 && (
             <Tag
@@ -139,7 +140,7 @@ export function StatCardsRow({
       <StatCard>
         <div style={{ fontFamily: f.sans, fontSize: textSize.sm, color: t.inkSoft, fontWeight: 600 }}>Resume Strength</div>
         <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-          <span style={{ fontFamily: f.sans, fontSize: textSize["2xl"], fontWeight: 700, color: t.coal }}>{resumeScore ?? 0}</span>
+          <span style={{ fontFamily: f.sans, fontSize: textSize["2xl"], fontWeight: 700, color: t.coal }}><AnimatedNumber value={resumeScore ?? 0} /></span>
           <span style={{ fontFamily: f.sans, fontSize: textSize.sm, color: t.inkFaint }}>/ 100</span>
           {improvementsCount > 0 && <Tag label={`${improvementsCount} to improve`} />}
         </div>
@@ -154,13 +155,13 @@ export function StatCardsRow({
         <div style={{ fontFamily: f.sans, fontSize: textSize.sm, color: t.inkSoft, fontWeight: 600 }}>Practice Coverage</div>
         <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
           <span style={{ fontFamily: f.sans, fontSize: textSize["2xl"], fontWeight: 700, color: t.coal }}>
-            {practiceCoverage.practicedCount}/{practiceCoverage.totalAreas}
+            <AnimatedNumber value={practiceCoverage.practicedCount} suffix={`/${practiceCoverage.totalAreas}`} />
           </span>
           <span style={{ fontFamily: f.sans, fontSize: textSize.sm, color: t.inkFaint }}>areas</span>
         </div>
         <div style={{ display: "flex", gap: 4 }}>
           {Array.from({ length: practiceCoverage.totalAreas }, (_, i) => (
-            <div key={i} style={{
+            <div key={i} className={i < practiceCoverage.practicedCount ? "mx-pop" : undefined} style={{
               flex: 1, height: 6, borderRadius: 999,
               background: i < practiceCoverage.practicedCount ? t.coal : t.line,
             }} />

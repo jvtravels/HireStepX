@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { Button } from "@/components/ui/button";
 import { c, font, sp, radius, shadow } from "./tokens";
 import { tokens as T } from "./auth/_tokens";
@@ -6,6 +6,7 @@ import { daysUntilEvent, formatEventDate, formatEventTime } from "./dashboardHel
 import { SectionErrorBoundary } from "./ErrorBoundary";
 import { ScoreTrendChart, SkillRadar } from "./DashboardCharts";
 import { skillLabel } from "./skillCopy";
+import AnimatedNumber from "./AnimatedNumber";
 
 /* ═══════════════════════════════════════════════
    Extracted presentational components from DashboardHome.tsx
@@ -55,27 +56,11 @@ export function relativeTime(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
-/* ─── Animated counter for stats (uses rAF instead of setInterval) ─── */
+/* ─── Animated counter for stats ─── */
 export function CountUp({ value, suffix = "" }: { value: string; suffix?: string }) {
   const num = parseInt(value, 10);
-  const [display, setDisplay] = useState(0);
-  const isNum = !isNaN(num) && num > 0;
-  useEffect(() => {
-    if (!isNum) return;
-    const duration = 600;
-    const start = performance.now();
-    let raf: number;
-    const step = (now: number) => {
-      const progress = Math.min((now - start) / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      setDisplay(Math.round(eased * num));
-      if (progress < 1) raf = requestAnimationFrame(step);
-    };
-    raf = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(raf);
-  }, [num, isNum]);
-  if (!isNum) return <>{value}</>;
-  return <>{display}{suffix}</>;
+  if (isNaN(num) || num <= 0) return <>{value}</>;
+  return <AnimatedNumber value={num} suffix={suffix} />;
 }
 
 /* ─── Draft Banner ─── */

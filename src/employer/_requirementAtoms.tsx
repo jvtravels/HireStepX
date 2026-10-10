@@ -85,6 +85,7 @@ export function InlineNotice({
     <div
       id={id}
       role={live ? (tone === "error" ? "alert" : "status") : undefined}
+      className={live ? (tone === "error" ? "mx-shake" : "mx-rise") : undefined}
       style={{
         display: "flex",
         alignItems: "flex-start",
