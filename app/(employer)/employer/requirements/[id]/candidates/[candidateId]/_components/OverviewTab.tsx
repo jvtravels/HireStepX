@@ -76,7 +76,7 @@ function SkillsCard({ matched, unmatched }: { matched: string[]; unmatched: stri
         {total > 0 && <CardDescription>{matched.length} of {total} found on the resume</CardDescription>}
         {total > 0 && (
           <CardAction className="w-24">
-            <Progress aria-hidden="true" value={(matched.length / total) * 100} className="h-1.5" />
+            <Progress aria-hidden="true" value={(matched.length / total) * 100} className={cn("h-1.5", matched.length / total >= 0.75 ? "[&>[data-slot=progress-indicator]]:bg-emerald-600" : matched.length / total >= 0.5 ? "[&>[data-slot=progress-indicator]]:bg-amber-500" : "[&>[data-slot=progress-indicator]]:bg-red-500")} />
           </CardAction>
         )}
       </CardHeader>
