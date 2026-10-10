@@ -1,5 +1,5 @@
 {
-  "_comment": "Lighthouse CI against PRODUCTION (mobile, simulated slow 4G + 4x CPU). Run weekly by .github/workflows/lighthouse.yml. Baselines measured 2026-10-10: perf 71-74, LCP 5.0-7.4s, CLS 0-0.097, TBT 160-210ms, a11y/best-practices/seo 100. 'error' assertions are regression guards set just below the measured baseline; 'warn' assertions are the aspirational targets. Ratchet the guards up as perf improves.",
+  "_comment": "Lighthouse CI against PRODUCTION (mobile, simulated slow 4G + 4x CPU). Run weekly by .github/workflows/lighthouse.yml. Baselines measured 2026-10-10: perf 71-74 on a laptop and 55-59 on the GitHub runner (the guard is set below the runner figure), LCP 5.0-7.4s, CLS 0-0.097, TBT 160-210ms, a11y/best-practices/seo 100. 'error' assertions are regression guards set just below the measured baseline; 'warn' assertions are the aspirational targets. Ratchet the guards up as perf improves.",
   "ci": {
     "collect": {
       "url": [
@@ -16,7 +16,7 @@
     },
     "assert": {
       "assertions": {
-        "categories:performance": ["error", { "minScore": 0.6 }],
+        "categories:performance": ["error", { "minScore": 0.5 }],
         "categories:accessibility": ["error", { "minScore": 0.95 }],
         "categories:best-practices": ["error", { "minScore": 0.95 }],
         "categories:seo": ["error", { "minScore": 0.95 }],
