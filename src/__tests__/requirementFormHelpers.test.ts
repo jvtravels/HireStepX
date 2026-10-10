@@ -88,9 +88,8 @@ describe("errorsForStep / allErrors", () => {
   const errors = validateDraft(valid({ title: "", description: "", minStarCompleteness: "500" }), TODAY);
 
   it("groups errors by wizard step", () => {
-    expect(errorsForStep(errors, 1).map(([k]) => k)).toEqual(["title"]);
-    expect(errorsForStep(errors, 2).map(([k]) => k)).toEqual(["description"]);
-    expect(errorsForStep(errors, 3).map(([k]) => k)).toEqual(["minStarCompleteness"]);
+    expect(errorsForStep(errors, 1).map(([k]) => k)).toEqual(["title", "description"]);
+    expect(errorsForStep(errors, 2).map(([k]) => k)).toEqual(["minStarCompleteness"]);
   });
 
   it("returns every error in step order", () => {

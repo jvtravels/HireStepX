@@ -68,6 +68,7 @@ const grid2: CSSProperties = {
 /* Fields that sit side by side when there is room and stack when there isn't.
    Each cell's flex-basis is the narrowest width it stays comfortable at. */
 const flexRow: CSSProperties = { display: "flex", flexWrap: "wrap", gap: "26px 20px", alignItems: "flex-start" };
+const flexRowWide: CSSProperties = { ...flexRow, columnGap: 32 };
 const cell = (grow: number, basis: number): CSSProperties => ({ flex: `${grow} 1 ${basis}px`, minWidth: 0 });
 
 const WORK_MODES: { value: WorkMode; label: string }[] = [
@@ -100,7 +101,7 @@ export type { RequirementFormValues } from "./mockData";
 const STICKY_BAR: CSSProperties = { position: "sticky", top: 0, zIndex: 20, background: t.pageBg, paddingBottom: 12 };
 const barCard: CSSProperties = { background: t.white, border: `1px solid ${t.line}`, borderRadius: 12 };
 
-const LAST_STEP: FormStep = 3;
+const LAST_STEP: FormStep = 2;
 const ADVANCED_ID = "advanced";
 
 const textareaStyle: CSSProperties = { resize: "vertical" };
@@ -120,6 +121,8 @@ const actionRow: CSSProperties = { display: "flex", alignItems: "center", gap: 1
 const wizardHeader: CSSProperties = { ...barCard, padding: "12px 20px" };
 const wizardTopRow: CSSProperties = { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" };
 const wizardTitleGroup: CSSProperties = { minWidth: 0 };
+const pageHeading: CSSProperties = { marginBottom: 12 };
+const stackedSections: CSSProperties = { display: "flex", flexDirection: "column", gap: 26 };
 
 export function RequirementForm({
   mode,
@@ -342,7 +345,7 @@ export function RequirementForm({
       </div>
       </div>
 
-      <div style={{ ...flexRow, columnGap: 32 }}>
+      <div style={flexRowWide}>
       <div>
         <FieldLabel>Employment type</FieldLabel>
         <SegmentedControl ariaLabel="Employment type" options={EMPLOYMENT_TYPES} value={draft.employmentType} onChange={(v) => set("employmentType", v)} />
@@ -612,9 +615,9 @@ export function RequirementForm({
           <div style={bodyPadding}>
             {requiredNote}
             <ErrorSummary errors={attempted ? errors : {}} scope="all" onJump={focusField} />
-            {section(STEP_LABELS[1], roleBasics)}
-            {section(STEP_LABELS[2], requirementsAndPay)}
-            {section(STEP_LABELS[3], targeting)}
+            {section("Role basics", roleBasics)}
+            {section("Requirements and pay", requirementsAndPay)}
+            {section(STEP_LABELS[2], targeting)}
             {submitErrorEl}
             <p style={noteText}>
               Saving re-scores your shortlist against the current candidate pool. Candidates you've already unlocked stay unlocked.
@@ -627,13 +630,17 @@ export function RequirementForm({
 
   return (
     <form onSubmit={handleSubmit} noValidate>
+      <div style={pageHeading}>
+        <Eyebrow tone="indigo">New opportunity</Eyebrow>
+        <h1 style={editTitle}>Post a requirement</h1>
+      </div>
       <div style={STICKY_BAR}>
         <div style={wizardHeader}>
           <div style={wizardTopRow}>
             <div style={wizardTitleGroup}>
-              <h1 ref={stepHeadingRef} tabIndex={-1} className="sr-only">
+              <h2 ref={stepHeadingRef} tabIndex={-1} className="sr-only">
                 {STEP_LABELS[step]}
-              </h1>
+              </h2>
               <span className="sr-only">Step {step} of {LAST_STEP}</span>
               <StepNav step={step} onGoTo={goTo} />
             </div>
@@ -652,9 +659,15 @@ export function RequirementForm({
       <div style={cardStyle}>
         <div style={bodyPadding}>
           {draftBanner}
-          {step === 1 && requiredNote}
           <ErrorSummary errors={attempted ? errors : {}} scope={step} onJump={focusField} />
-          {section(undefined, step === 1 ? roleBasics : step === 2 ? requirementsAndPay : targeting)}
+          {step === 1 ? (
+            <div style={stackedSections}>
+              {section("Role basics", roleBasics)}
+              {section("Requirements and pay", requirementsAndPay)}
+            </div>
+          ) : (
+            section(undefined, targeting)
+          )}
           {submitErrorEl}
           {savedAt && (
             <p style={noteText}>

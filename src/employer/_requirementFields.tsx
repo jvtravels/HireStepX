@@ -11,6 +11,7 @@ import {
   FIELD_FOCUS_ID,
   FIELD_STEP,
   STEP_LABELS,
+  STEPS,
   convertBudget,
   describeExperience,
   describeSalary,
@@ -239,11 +240,10 @@ const stepBadgeStyle = (filled: boolean): CSSProperties => ({
 /** Wizard progress. Finished steps are buttons so a recruiter can jump back;
  *  later steps are plain text, because skipping ahead would skip validation. */
 export function StepNav({ step, onGoTo }: { step: FormStep; onGoTo: (s: FormStep) => void }) {
-  const steps: FormStep[] = [1, 2, 3];
   return (
     <nav aria-label="Form progress">
       <ol style={stepListStyle}>
-        {steps.map((s) => {
+        {STEPS.map((s) => {
           const current = s === step;
           const done = s < step;
           const label = (

@@ -17,13 +17,14 @@ export const SALARY_LIMITS: Record<SalaryType, number> = {
   fixed: 1_00_00_000,
 };
 
-export type FormStep = 1 | 2 | 3;
+export type FormStep = 1 | 2;
 
 export const STEP_LABELS: Record<FormStep, string> = {
-  1: "Role basics",
-  2: "Requirements and pay",
-  3: "Candidate targeting",
+  1: "Role and requirements",
+  2: "Candidate targeting",
 };
+
+export const STEPS: FormStep[] = [1, 2];
 
 export type FieldKey =
   | "title" | "locations" | "openPositions" | "durationWeeks" | "hoursPerWeek" | "dueDate"
@@ -32,8 +33,8 @@ export type FieldKey =
 /** Which wizard step owns each validated field. */
 export const FIELD_STEP: Record<FieldKey, FormStep> = {
   title: 1, locations: 1, openPositions: 1, durationWeeks: 1, hoursPerWeek: 1, dueDate: 1,
-  experience: 2, budget: 2, description: 2,
-  minStarCompleteness: 3,
+  experience: 1, budget: 1, description: 1,
+  minStarCompleteness: 2,
 };
 
 /** DOM id of the first control to focus for each field's error. */
@@ -107,7 +108,7 @@ export function errorsForStep(errors: FormErrors, step: FormStep): [FieldKey, st
 }
 
 export function allErrors(errors: FormErrors): [FieldKey, string][] {
-  return ([1, 2, 3] as FormStep[]).flatMap((s) => errorsForStep(errors, s));
+  return STEPS.flatMap((s) => errorsForStep(errors, s));
 }
 
 /* ── Experience ── */

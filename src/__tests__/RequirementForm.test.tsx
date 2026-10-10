@@ -22,6 +22,7 @@ async function fillStepOne() {
   fireEvent.change(loc, { target: { value: "Pune" } });
   fireEvent.keyDown(loc, { key: "Enter" });
   await screen.findByText("Pune");
+  type(/^description/i, "Own the services behind our hiring platform end to end.");
 }
 
 beforeAll(() => {
@@ -33,33 +34,37 @@ describe("RequirementForm (create)", () => {
     localStorage.clear();
   });
 
+  it("shows a visible page heading so it is clear this is a new requirement", () => {
+    setup();
+    expect(screen.getByRole("heading", { level: 1, name: "Post a requirement" })).toBeInTheDocument();
+    expect(screen.getByText("New opportunity")).toBeInTheDocument();
+  });
+
   it("starts on step 1 and marks it as the current step", () => {
     setup();
-    expect(screen.getByRole("heading", { level: 1, name: "Role basics" })).toBeInTheDocument();
-    expect(screen.getByText("Step 1 of 3")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 2, name: "Role and requirements" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 2, name: "Role basics" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 2, name: "Requirements and pay" })).toBeInTheDocument();
+    expect(screen.getByText("Step 1 of 2")).toBeInTheDocument();
     const current = screen.getByRole("navigation", { name: /form progress/i }).querySelector('[aria-current="step"]');
-    expect(current).toHaveTextContent("Role basics");
+    expect(current).toHaveTextContent("Role and requirements");
   });
 
   it("does not advance with missing required fields, lists them, and focuses the first", () => {
     setup();
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
     const alert = screen.getByRole("alert");
-    expect(alert).toHaveTextContent("2 things need fixing");
-    expect(screen.getByText("Step 1 of 3")).toBeInTheDocument();
+    expect(alert).toHaveTextContent("3 things need fixing");
+    expect(screen.getByText("Step 1 of 2")).toBeInTheDocument();
     expect(screen.getByLabelText(/job title/i)).toHaveAttribute("aria-invalid", "true");
     expect(document.activeElement).toBe(screen.getByLabelText(/job title/i));
   });
 
-  it("walks the three steps once each step is valid", async () => {
+  it("walks the two steps once the first is valid", async () => {
     setup();
     await fillStepOne();
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
-    expect(await screen.findByRole("heading", { level: 1, name: "Requirements and pay" })).toBeInTheDocument();
-
-    type(/^description/i, "Own the services behind our hiring platform end to end.");
-    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
-    expect(await screen.findByRole("heading", { level: 1, name: "Candidate targeting" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 2, name: "Candidate targeting" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Post job" })).toBeInTheDocument();
   });
 
@@ -80,8 +85,7 @@ describe("RequirementForm (create)", () => {
   it("fills experience from a preset and toggles it off again", async () => {
     setup();
     await fillStepOne();
-    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
-    const preset = await screen.findByRole("button", { name: "3 to 5 yrs" });
+    const preset = screen.getByRole("button", { name: "3 to 5 yrs" });
     fireEvent.click(preset);
     expect(screen.getByLabelText(/from \(years\)/i)).toHaveValue("3");
     expect(screen.getByLabelText(/to \(years\)/i)).toHaveValue("5");
@@ -94,8 +98,6 @@ describe("RequirementForm (create)", () => {
   it("converts salary figures when the pay basis changes", async () => {
     setup();
     await fillStepOne();
-    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
-    await screen.findByRole("heading", { level: 1, name: "Requirements and pay" });
     type(/^minimum/i, "12");
     expect(screen.getByText(/₹12,00,000 a year|From ₹12,00,000 a year/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Per month" }));
@@ -105,9 +107,6 @@ describe("RequirementForm (create)", () => {
   it("submits a payload that omits duration and hours for full-time roles", async () => {
     const { onSubmit } = setup();
     await fillStepOne();
-    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
-    await screen.findByRole("heading", { level: 1, name: "Requirements and pay" });
-    type(/^description/i, "Own the services behind our hiring platform end to end.");
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
     await screen.findByRole("button", { name: "Post job" });
     fireEvent.click(screen.getByRole("button", { name: "Post job" }));
@@ -123,9 +122,6 @@ describe("RequirementForm (create)", () => {
     setup();
     await fillStepOne();
     await waitFor(() => expect(localStorage.getItem(DRAFT_STORAGE_KEY)).not.toBeNull(), { timeout: 3000 });
-    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
-    await screen.findByRole("heading", { level: 1, name: "Requirements and pay" });
-    type(/^description/i, "Own the services behind our hiring platform end to end.");
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
     fireEvent.click(await screen.findByRole("button", { name: "Post job" }));
     await waitFor(() => expect(localStorage.getItem(DRAFT_STORAGE_KEY)).toBeNull());
