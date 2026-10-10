@@ -10,7 +10,8 @@ import React from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { tokens as t, fonts as f, shadows } from "../auth/_tokens";
-import { useDashboardUI } from "../DashboardContext";
+import { useDashboardSubscription, useDashboardUI } from "../DashboardContext";
+import { PaywallGate } from "../dashboardComponents";
 import { authHeaders } from "../supabase";
 import { captureClientEvent } from "../posthogClient";
 import { useAuth } from "../AuthContext";
@@ -291,11 +292,14 @@ function useReadinessPayload(): { state: FetchState; reload: () => void } {
 
 export function ReadinessIndex() {
   const { user } = useAuth();
-  const { isMobile } = useDashboardUI();
+  const { isFree } = useDashboardSubscription();
+  const { setShowUpgradeModal, isMobile } = useDashboardUI();
   const { state, reload } = useReadinessPayload();
 
+  React.useEffect(() => { if (isFree) captureClientEvent("analytics_progate"); }, [isFree]);
   React.useEffect(() => { markAnalyticsVisited(user?.id); }, [user?.id]);
 
+  if (isFree) return <PaywallGate feature="The Readiness Index" onUpgrade={() => setShowUpgradeModal(true)} />;
   if (state.status === "loading") return <LoadingState />;
   if (state.status === "error") return <ErrorState onRetry={reload} />;
   if (state.status === "empty") return <EmptyAnalytics />;

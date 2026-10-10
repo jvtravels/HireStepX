@@ -28,7 +28,8 @@ import {
   hourInZone, isAwkwardHour, describeReminders, parseNaturalEvent, timezoneLabel,
 } from "./dashboardHelpers";
 import { ROLE_SUGGESTIONS } from "./onboardingData";
-import { useDashboardUIActions, useDashboardSessions } from "./DashboardContext";
+import { useDashboardUIActions, useDashboardSubscription, useDashboardSessions } from "./DashboardContext";
+import { PaywallGate } from "./dashboardComponents";
 import { SkeletonReveal } from "./SkeletonReveal";
 import { CalendarRouteSkeleton } from "./routeSkeletons";
 
@@ -423,6 +424,7 @@ export default function CalendarPage() {
   };
   const { eventsLoading } = useDashboardSessions();
   const { setShowUpgradeModal, showToast } = useDashboardUIActions();
+  const { isFree } = useDashboardSubscription();
   const { user } = useAuth();
   const [events, setEvents] = useState<InterviewEvent[]>(loadEvents);
   const [showForm, setShowForm] = useState(false);
@@ -541,6 +543,10 @@ export default function CalendarPage() {
     }
   };
 
+  // Calendar is available on any PAID plan (Starter/Sprint Pack + Team); only
+  // the free tier hits the gate. Prep reminders and countdowns are basic
+  // "don't miss your interview" utility a paying user reasonably expects.
+  if (isFree) return <PaywallGate feature="Interview Calendar" onUpgrade={() => setShowUpgradeModal(true)} />;
 
   // Computed as if already loaded — rendered behind the skeleton via
   // SkeletonReveal below, which hides it until eventsLoading clears.
