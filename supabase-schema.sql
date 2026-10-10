@@ -783,8 +783,8 @@ begin
 end;
 $$;
 
-revoke all on function consume_session_credit(uuid, uuid) from public, anon, authenticated;
-grant execute on function consume_session_credit(uuid, uuid) to service_role;
+revoke all on function consume_session_credit(uuid, text) from public, anon, authenticated;
+grant execute on function consume_session_credit(uuid, text) to service_role;
 
 -- Keep old single-arg overload for backward compat with any undeployed callers
 -- (drop after next deploy confirms the new sig is live)
@@ -795,7 +795,7 @@ security definer
 set search_path = public
 as $$
 begin
-  return consume_session_credit(p_user_id, null::uuid);
+  return consume_session_credit(p_user_id, null::text);
 end;
 $$;
 revoke all on function consume_session_credit(uuid) from public, anon, authenticated;
