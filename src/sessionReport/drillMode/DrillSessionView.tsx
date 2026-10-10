@@ -5,7 +5,7 @@
  * engine owns scoring + termination; this view is just the loop driver. */
 
 import { useMemo, useState } from "react";
-import { t, f, radius, space, shadows } from "../tokens";
+import { t, f, radius, space } from "../tokens";
 import { Button } from "@/components/ui/button";
 import {
   startDrill,
@@ -51,7 +51,6 @@ export function DrillSessionView({
         border: `1px solid ${t.line}`,
         borderRadius: radius.shell,
         padding: 28,
-        boxShadow: shadows.card,
       }}
     >
       <header style={{ marginBottom: space.block }}>

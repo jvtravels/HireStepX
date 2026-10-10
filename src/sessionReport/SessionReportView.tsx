@@ -602,21 +602,6 @@ export default function SessionReportView({
         >
           {data.focusBanner && <FocusBannerStrip banner={data.focusBanner} daysUntilInterview={data.daysUntilInterview} />}
           <HeroSection data={data} />
-          <div
-            role="region"
-            aria-label="Report accuracy disclaimer"
-            style={{
-              fontFamily: f.sans,
-              fontSize: 11.5,
-              color: t.inkFaint,
-              textAlign: "center",
-              margin: "4px 0 0",
-              lineHeight: 1.5,
-            }}
-          >
-            AI-generated feedback — a practice tool, not a hiring decision. Scores may not reflect every panel's rubric.{" "}
-            <a href="/contact" style={{ color: t.inkFaint, textUnderlineOffset: 2 }}>Dispute a score</a> if something looks wrong.
-          </div>
           {isFreeUser && (
             <UpgradeNudgeStrip score={data.overallScore} priorSessionCount={data.priorSessionCount} onUpgrade={onUpgrade} />
           )}

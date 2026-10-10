@@ -73,7 +73,6 @@ const navItems = [
   { id: "dashboard", path: "/dashboard", label: "Dashboard" },
   { id: "sessions", path: "/sessions", label: "Sessions" },
   { id: "analytics", path: "/analytics", label: "Analytics" },
-  { id: "calendar", path: "/calendar", label: "Calendar" },
   { id: "resume", path: "/resume", label: "Your Profile" },
   { id: "jobs", path: "/jobs", label: "Jobs" },
 ];

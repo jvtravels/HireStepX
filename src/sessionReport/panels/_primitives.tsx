@@ -15,7 +15,7 @@
  * No state, no side effects. Pure presentation. */
 
 import React from "react";
-import { t, f, radius, shadows, size } from "../tokens";
+import { t, f, radius, size } from "../tokens";
 import {
   Tooltip,
   TooltipContent,
@@ -390,7 +390,6 @@ export function ReportCardShell({
         border: `1px solid ${t.line}`,
         borderRadius: radius.shell,
         padding,
-        boxShadow: shadows.card,
         scrollMarginTop,
         ...style,
       }}

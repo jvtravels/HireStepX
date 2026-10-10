@@ -16,14 +16,14 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "./AuthContext";
-import { useDashboardSessions, useDashboardSubscription, useDashboardUIActions, useDashboardCore } from "./DashboardContext";
+import { useDashboardSessions, useDashboardSubscription, useDashboardUIActions } from "./DashboardContext";
 import { pickNextMove } from "./nextMove";
 import { useDocTitle } from "./useDocTitle";
 import { captureClientEvent } from "./posthogClient";
 import { tokens as T, fonts as F } from "./auth/_tokens";
 import { computeReadinessGap } from "./dashboardData";
 import { isAiResume } from "./resumeParser";
-import { daysUntilEvent, hasVisitedAnalytics } from "./dashboardHelpers";
+import { hasVisitedAnalytics } from "./dashboardHelpers";
 import HiringActivityCard from "./HiringActivityCard";
 import EmployerNoticeBanner from "./EmployerNoticeBanner";
 import { authHeaders } from "./supabase";
@@ -333,7 +333,6 @@ export default function DashboardHome() {
   const router = useRouter();
   useDocTitle("Dashboard");
   const sessions = useDashboardSessions();
-  const account = useDashboardCore();
   const { isFree, sessionsRemaining, creditBalance } = useDashboardSubscription();
   const { setShowUpgradeModal } = useDashboardUIActions();
 
@@ -360,13 +359,6 @@ export default function DashboardHome() {
     () => computeReadinessGap(sessions.hasData, sessions.readinessScore, resumeScore).gap,
     [sessions.hasData, sessions.readinessScore, resumeScore],
   );
-
-  const nearestEvent = useMemo(() => {
-    const upcoming = sessions.calendarEvents
-      .filter((e) => e.status === "upcoming" && daysUntilEvent(e.date, e.time) >= 0)
-      .sort((a, b) => new Date(`${a.date}T${a.time}`).getTime() - new Date(`${b.date}T${b.time}`).getTime());
-    return upcoming[0] ? { date: upcoming[0].date, time: upcoming[0].time } : null;
-  }, [sessions.calendarEvents]);
 
   /* The "Your Next Move" / "Your First Step" card is driven by the real
    * personalization engine: it reads the user's weakest skill, last-session
@@ -483,10 +475,6 @@ export default function DashboardHome() {
         targetRole={user?.targetRole || ""}
         seniorityLevel={seniorityLevel}
         readinessGap={readinessGap}
-        nearestEvent={nearestEvent}
-        hasGoogleToken={account.hasGoogleToken}
-        googleSyncStatus={account.googleSyncStatus}
-        onConnectCalendar={() => router.push("/calendar")}
       />
 
       <ResumeFreshnessStrip parsedAt={resumeData?.parsedAt} onRefresh={goToResume} />

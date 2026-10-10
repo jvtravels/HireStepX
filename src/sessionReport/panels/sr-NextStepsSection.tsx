@@ -10,7 +10,7 @@
  * shell's plain inkSoft subtitle would erase the "this is a callout, not
  * metadata" affordance. */
 
-import { t, f, shadows, radius, size } from "../tokens";
+import { t, f, radius, size } from "../tokens";
 import { SectionEyebrow, CalloutCard } from "./_primitives";
 import { Button } from "@/components/ui/button";
 
@@ -109,7 +109,6 @@ export function NextStepsSection({
         border: `1px solid ${t.line}`,
         borderRadius: radius.shell,
         padding: 28,
-        boxShadow: shadows.card,
         scrollMarginTop: 72,
       }}
     >

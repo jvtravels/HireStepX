@@ -10,7 +10,7 @@
  * the shell encodes. */
 
 import { useState } from "react";
-import { t, f, shadows, radius, size } from "../tokens";
+import { t, f, radius, size } from "../tokens";
 import type { Question } from "../types";
 import { SectionEyebrow } from "./_primitives";
 import { QuestionDetail } from "./sr-QuestionDetail";
@@ -50,7 +50,6 @@ export function PerQuestionSection({ questions, onTryQuestionAgain }: { question
         border: `1px solid ${t.line}`,
         borderRadius: radius.shell,
         padding: 0,
-        boxShadow: shadows.card,
         overflow: "hidden",
         scrollMarginTop: 72,
       }}

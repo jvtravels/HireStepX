@@ -2,7 +2,7 @@
  * Tier-aware CGPA calibration note for campus-placement sessions.
  * Pure presentation. */
 
-import { t, shadows, radius, size } from "../tokens";
+import { t, radius, size } from "../tokens";
 
 export function CampusCgpaCalibrationNote({
   meta,
@@ -45,7 +45,6 @@ export function CampusCgpaCalibrationNote({
         border: `1px solid ${t.success}`,
         borderRadius: radius.card,
         padding: "clamp(12px, 3.5vw, 16px) clamp(14px, 4vw, 20px)",
-        boxShadow: shadows.card,
         display: "flex",
         flexDirection: "column",
         gap: 6,

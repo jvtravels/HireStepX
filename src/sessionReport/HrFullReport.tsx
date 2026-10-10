@@ -56,7 +56,6 @@ function Panel({ children, style }: { children: React.ReactNode; style?: React.C
         border: `1px solid ${LINE}`,
         borderRadius: 14,
         padding: 24,
-        boxShadow: "0 1px 0 rgba(14,12,8,0.02), 0 4px 14px rgba(14,12,8,0.04)",
         ...style,
       }}
     >

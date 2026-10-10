@@ -58,17 +58,12 @@ function StatCard({ children }: { children: React.ReactNode }) {
 
 export function DashboardHeader({
   displayName, hasData, targetRole, seniorityLevel, readinessGap,
-  nearestEvent, hasGoogleToken, googleSyncStatus, onConnectCalendar,
 }: {
   displayName: string;
   hasData: boolean;
   targetRole: string;
   seniorityLevel: string | null;
   readinessGap: number;
-  nearestEvent: { date: string; time: string } | null;
-  hasGoogleToken: boolean;
-  googleSyncStatus: "idle" | "syncing" | "done" | "error";
-  onConnectCalendar: () => void;
 }) {
   const roleLabel = targetRole || "your target role";
   // Role titles often already carry the level ("Senior Product Designer") —
@@ -99,40 +94,8 @@ export function DashboardHeader({
             : `You've hit your ${seniorityPrefix}${roleLabel} readiness target. Keep practicing to stay sharp.`}
         </p>
       </div>
-
-      {hasData && nearestEvent ? (
-        <div style={{
-          display: "flex", alignItems: "center", gap: 10, flexShrink: 0,
-          padding: "10px 16px", borderRadius: 999,
-          background: t.creamSoft, border: `1px solid ${t.line}`,
-        }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={t.coal} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-            <rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" />
-          </svg>
-          <span style={{ fontFamily: f.sans, fontSize: textSize.sm, color: t.coal, fontWeight: 600 }}>
-            Upcoming Interview: {formatEventDateShort(nearestEvent.date)}, {nearestEvent.time}
-          </span>
-        </div>
-      ) : (
-        <Button
-          type="button"
-          size="cta"
-          onClick={onConnectCalendar}
-          disabled={googleSyncStatus === "syncing" || hasGoogleToken}
-          style={{ flexShrink: 0, fontFamily: f.sans }}
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-            <rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" />
-          </svg>
-          {googleSyncStatus === "syncing" ? "Connecting…" : hasGoogleToken ? "Calendar Connected" : "Connect the Calendar"}
-        </Button>
-      )}
     </div>
   );
-}
-
-function formatEventDateShort(date: string): string {
-  return new Date(date + "T00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
 }
 
 /* ─── 4-card stat row ─── */
