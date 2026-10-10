@@ -2,7 +2,8 @@
 
 // Bump this string on intentional SW changes to force clients to swap in the new version
 // (Vercel doesn't substitute __BUILD_TS__, so we version manually.)
-const SW_VERSION = "v4-2026-04-24";
+const SW_VERSION = "v5-2026-10-10";
+const OFFLINE_ASSETS = ["/offline.html", "/offline.css", "/offline.js"];
 const CACHE_NAME = `hirestepx-${SW_VERSION}`;
 
 self.addEventListener("install", (event) => {
@@ -16,7 +17,11 @@ self.addEventListener("install", (event) => {
   //      user visits /interview and keeps it warm for later offline use.
   //      Trade-off: brand-new users can't start an interview while
   //      offline. Acceptable because onboarding requires network anyway.
-  event.waitUntil(caches.open(CACHE_NAME));
+  // The offline fallback page is the one document we do precache: it is static,
+  // carries no app scripts and is only ever served when a navigation has no network.
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(OFFLINE_ASSETS)).catch(() => { /* never block SW install on this */ }),
+  );
   self.skipWaiting();
 });
 
@@ -73,9 +78,10 @@ self.addEventListener("notificationclick", (event) => {
  *   - Never intercept non-GET, /api/, or cross-origin requests. Cross-origin
  *     SDKs (GrowthBook, analytics, etc.) are governed by CSP connect-src and
  *     an SW refetch only obscures CSP errors as "Failed to fetch" rejections.
- *   - Never intercept navigation/HTML: Content-Security-Policy lives on the
+ *   - Never cache navigation/HTML: Content-Security-Policy lives on the
  *     document response headers, and caching HTML means stale CSP until the
- *     cache is explicitly cleared. Always go to network.
+ *     cache is explicitly cleared. Always go to network; only a failed
+ *     navigation falls back to the precached /offline.html.
  *   - Cache static same-origin assets (JS/CSS/fonts/images) with a simple
  *     cache-first strategy. These are content-hashed by Next.js so staleness
  *     is a non-issue.
@@ -93,7 +99,14 @@ self.addEventListener("fetch", (event) => {
 
   // Don't touch API routes or navigation documents.
   if (url.pathname.startsWith("/api/")) return;
-  if (request.mode === "navigate" || request.destination === "document") return;
+  if (request.mode === "navigate" || request.destination === "document") {
+    // Network first, always. Only when the request itself fails do we show the offline page;
+    // the HTML response is never written to the cache.
+    event.respondWith(
+      fetch(request).catch(async () => (await caches.match("/offline.html")) || Response.error()),
+    );
+    return;
+  }
 
   // Only cache static asset extensions.
   const isAsset = /\.(?:js|mjs|css|woff2?|ttf|png|jpg|jpeg|svg|webp|ico)$/i.test(url.pathname);

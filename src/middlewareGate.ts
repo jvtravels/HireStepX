@@ -23,7 +23,7 @@ export const GATE_ALLOWLIST_PREFIXES = ["/blog/", "/api/", "/_next/", "/page/", 
  * Coming Soon page doesn't already.
  */
 export const GATE_ALLOWLIST_EXACT = new Set([
-  "/robots.txt", "/sitemap.xml", "/manifest.json", "/sw.js",
+  "/robots.txt", "/sitemap.xml", "/manifest.json", "/sw.js", "/offline.html",
   "/opengraph-image", "/twitter-image", "/favicon.ico",
 ]);
 

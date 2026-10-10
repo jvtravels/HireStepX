@@ -14,6 +14,8 @@ export function useInterviewTimers(
   initialElapsed: number,
   toast: (msg: string, type?: ToastType) => void,
   isSalaryNegotiation = false,
+  /** True while the connection is down: the clock must not run against the candidate for our outage. */
+  paused = false,
 ) {
   const timeLimit = isSalaryNegotiation ? SALARY_NEG_TIME_LIMIT : QUESTION_TIME_LIMIT;
   const [elapsed, setElapsed] = useState(initialElapsed);
@@ -21,6 +23,8 @@ export function useInterviewTimers(
   const handleNextRef = useRef<() => void>(() => {});
   const tabVisibleRef = useRef(true);
   const autoAdvancedRef = useRef(false);
+  const pausedRef = useRef(paused);
+  pausedRef.current = paused;
 
   // Track tab visibility (pauses timers when backgrounded / laptop sleeps)
   useEffect(() => {
@@ -33,7 +37,7 @@ export function useInterviewTimers(
   useEffect(() => {
     if (phase === "done") return;
     const timer = setInterval(() => {
-      if (!tabVisibleRef.current) return;
+      if (!tabVisibleRef.current || pausedRef.current) return;
       setElapsed(e => e + 1);
     }, 1000);
     return () => clearInterval(timer);
@@ -53,7 +57,7 @@ export function useInterviewTimers(
   useEffect(() => {
     if (phase === "done") return;
     const timer = setInterval(() => setAnswerTimer(t => {
-      if (!tabVisibleRef.current) return t;
+      if (!tabVisibleRef.current || pausedRef.current) return t;
       if (phase !== "listening") return t;
       const next = t + 1;
       if (next === (timeLimit - 20) && !autoAdvancedRef.current) {

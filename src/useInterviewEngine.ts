@@ -8,6 +8,9 @@ import { useAuth, setInterviewInProgress } from "./AuthContext";
 import { speak, speakAs, prefetchTTS, cleanupTTS, fetchCartesiaVoices, isAutoplayBlocked, hardMuteTTS, VOICE_OUTPUT_DISABLED, SARVAM_FEMALE_VOICES } from "./tts";
 import { useForceAudioUnlockOnMount, useClickRecoverAutoplay } from "./_audio-unlock";
 import { useOnlineOfflineRecovery } from "./_recovery";
+import { acquireHeartbeat, getConnectionState, retryNow, useConnectionState, waitForReachable } from "./connectionMonitor";
+import { isReachable } from "./_connection-state";
+import { createOnlineBudget, DEFAULT_MAX_HOLD_MS, runWithHold } from "./_turn-retry";
 import { buildDraftSnapshot, validateRestoredDraft } from "./_session-draft";
 import { useBackchannels } from "./_backchannels";
 import { extractAccentMarkup } from "./_accent-parser";
@@ -28,7 +31,8 @@ import { saveToIDB, loadFromIDB, deleteFromIDB } from "./interviewIDB";
 import type { InterviewStep } from "./interviewScripts";
 import { getMiniScript, getScript, scriptHasQuestion } from "./interviewScripts";
 import { saveSessionResult, fetchLLMQuestions, fetchFollowUp, retryQueuedEvals, getAdaptiveHints, negotiationKernelInit, negotiationKernelTurn } from "./interviewAPI";
-import { initLiveSession, saveInterviewTurn, getLatestSessionInsightFlags } from "./supabase";
+import { initLiveSession, getLatestSessionInsightFlags } from "./supabase";
+import { saveInterviewTurn, flushSessionOutbox, installTurnOutboxDrain } from "./interviewTurns";
 import { deriveCandidateState } from "./_emotional-state";
 import { checkFollowUpCap } from "./_follow-up-cap";
 import { isDuplicateQuestionText } from "./_duplicate-question-guard";
@@ -740,10 +744,11 @@ export function useInterviewEngine() {
   // Pass a "frozen" phase to the timer when we're awaiting the user's
   // manual speech-start tap so the per-question countdown doesn't burn
   // seconds before they realise it's their turn.
+  const connection = useConnectionState();
   const {
     elapsed, setElapsed, answerTimer, timeRemaining, timePercent,
     handleNextRef,
-  } = useInterviewTimers(awaitingSpeechStart ? "speaking" : phase, currentStep, draftRef.current?.elapsed || 0, toast, interviewType === "salary-negotiation");
+  } = useInterviewTimers(awaitingSpeechStart ? "speaking" : phase, currentStep, draftRef.current?.elapsed || 0, toast, interviewType === "salary-negotiation", connection.status === "offline");
 
   // TTS-caption sync: actual audio duration (from TTS provider) and speech-ended flag
   const [ttsDurationMs, setTtsDurationMs] = useState<number | undefined>(undefined);
@@ -845,7 +850,6 @@ export function useInterviewEngine() {
      mid-session. Fired from the offline detector below. Auto-clears when
      navigator.onLine flips back. */
   const [reconnecting, setReconnecting] = useState(false);
-  const reconnectAttemptRef = useRef(1);
   const noSpeechCountRef = useRef(0);
   // Clear per-turn STT error state on every question transition so a single
   // "no-speech" or mic error doesn't permanently silence the mic for the rest
@@ -1051,14 +1055,15 @@ export function useInterviewEngine() {
   const userIdRef = useRef<string | undefined>(user?.id);
   useEffect(() => { userIdRef.current = user?.id; }, [user?.id]);
 
+  useEffect(() => { installTurnOutboxDrain(); }, []);
+
   // Online/offline recovery — see ./_recovery.ts for the debounce reasoning.
   useOnlineOfflineRecovery({
     setIsOffline,
     setReconnecting,
-    reconnectAttemptRef,
-    currentStepRef,
-    interviewEndedRef,
+    active: currentStep > 0 && phase !== "done",
     retryQueuedEvals: () => retryQueuedEvals(userIdRef.current),
+    flushOutbox: () => flushSessionOutbox(),
     fetchPersonalizedQuestions,
     saveWarningRef,
   });
@@ -1978,7 +1983,13 @@ export function useInterviewEngine() {
        * paths the legacy 4 s race is preserved (those code paths are
        * tuned to it). */
       const timeoutMs = isSalaryNegConversation ? 25_000 : 4_000;
-      const timeout = new Promise<null>(r => setTimeout(() => r(null), timeoutMs));
+      /* Salary-neg: the 25 s sentinel only counts reachable time, so a network
+       * drop (which the kernel IIFE now holds through) can't expire it and
+       * force the salvage closing. Non-salary keeps the plain 4 s race. */
+      const budget = isSalaryNegConversation
+        ? createOnlineBudget({ budgetMs: timeoutMs, ceilingMs: DEFAULT_MAX_HOLD_MS + 60_000, isReachable: () => isReachable(getConnectionState()) })
+        : null;
+      const timeout = budget ? budget.promise : new Promise<null>(r => setTimeout(() => r(null), timeoutMs));
 
       // For salary-neg: speak thinking phrase IMMEDIATELY to eliminate dead air,
       // then wait for follow-up API in background. This means the user hears
@@ -2019,6 +2030,7 @@ export function useInterviewEngine() {
       }
 
       Promise.race([pendingFollowUp, timeout]).then(result => {
+        budget?.cancel();
         if (isStale() || interviewEndedRef.current) return;
         // Drop stale follow-ups: we only apply if the engine is exactly one
         // step past the originating question. If the user advanced further
@@ -2432,6 +2444,7 @@ export function useInterviewEngine() {
           }
         }
       }).catch(() => {
+        budget?.cancel();
         if (!isStale() && !interviewEndedRef.current) {
           if (isSalaryNegConversation) {
             // PDF#46 follow-up — same salvage as the null-result branch.
@@ -2998,28 +3011,37 @@ export function useInterviewEngine() {
                   });
                 } catch { /* non-fatal */ }
               }
-              /* Single-retry on transient null. The original
-               * implementation returned null on the first failure —
-               * meaning a single dropped packet / cold-start blip / 502
-               * mid-stream wrote off the entire turn and (with the
-               * salvage path) ended the session prematurely. Production
-               * kernel-turn failures are dominated by transient causes
-               * (LLM provider cold starts, brief 502s during deploys),
-               * so a single retry with a short backoff catches the
-               * majority without doubling the average latency. Two
-               * consecutive nulls is a real outage — we surface that
-               * honestly. */
-              let turnRes = await negotiationKernelTurn({
-                state: negotiationKernelStateRef.current,
-                candidateAnswer: answerText,
-              });
-              if (!turnRes) {
-                track("negotiate_turn_failed", { reason: "null_response_first" });
-                await new Promise(r => setTimeout(r, 600));
-                turnRes = await negotiationKernelTurn({
-                  state: negotiationKernelStateRef.current,
-                  candidateAnswer: answerText,
-                });
+              /* Hold-and-retry (see _turn-retry.ts). A transient null used to
+               * be retried once after 600ms and then ended the session via the
+               * scripted-closing salvage — which is exactly what a 20 s network
+               * drop produced. Now, if the server is unreachable the turn is
+               * HELD until connectivity returns (the server dedupes a replayed
+               * turn by state+answer, so re-sending is safe); only a reachable
+               * server that keeps failing falls through to the salvage. */
+              const releaseHeartbeat = acquireHeartbeat();
+              const kernelAnswer = answerText;
+              const kernelState = negotiationKernelStateRef.current;
+              if (!kernelState) return null;
+              let turnRes: Awaited<ReturnType<typeof negotiationKernelTurn>>;
+              try {
+                ({ value: turnRes } = await runWithHold({
+                  attempt: () => negotiationKernelTurn({
+                    state: kernelState,
+                    candidateAnswer: kernelAnswer,
+                  }),
+                  probe: retryNow,
+                  waitReachable: ({ timeoutMs }) => waitForReachable({ timeoutMs }),
+                  sleep: (ms) => new Promise<void>(r => setTimeout(r, ms)),
+                  now: Date.now,
+                  isCancelled: () => interviewEndedRef.current,
+                  onEvent: (event, detail) => {
+                    if (event === "held" || event === "resumed") {
+                      track(`negotiate_turn_${event}`, { attempts: Number(detail.attempts ?? 0), held_ms: Number(detail.heldMs ?? 0) });
+                    }
+                  },
+                }));
+              } finally {
+                releaseHeartbeat();
               }
               if (!turnRes) {
                 /* Observability — silent null was the original
@@ -3919,6 +3941,11 @@ export function useInterviewEngine() {
         ).catch(() => { /* IDB unavailable — local-only is still saved */ });
       }
     } else if (!localOk && !cloudOk) {
+      if (user?.id) {
+        void import("./saveRetryQueue").then(({ enqueueSave }) =>
+          enqueueSave(savePayload, user.id, "local and cloud save both failed")
+        ).catch(() => { /* IDB unavailable — the reduced backup below is the last resort */ });
+      }
       try {
         await saveToIDB(`hirestepx_unsaved_${sessionId}`, {
           id: sessionId, date: new Date().toISOString(), type: interviewType,
@@ -4250,7 +4277,10 @@ export function useInterviewEngine() {
     ttsFailed,
     micQuiet,
     reconnecting,
-    reconnectAttempt: reconnectAttemptRef.current,
+    reconnectAttempt: connection.attempt,
+    nextProbeAt: connection.nextProbeAt,
+    connectionStatus: connection.status,
+    retryConnectionNow: retryNow,
     usedFallbackScore,
     evalTimedOut,
     lastSessionId,

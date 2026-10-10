@@ -32,6 +32,7 @@ const UpgradeModal = dynamic(() => import("./dashboardComponents").then(m => ({ 
 import { FREE_SESSION_LIMIT, STARTER_WEEKLY_LIMIT } from "./dashboardData";
 import { starterPackFootnote, planCtaLabel, planCtaTitle } from "./planCardCopy";
 import { daysUntilEvent } from "./dashboardHelpers";
+import { useConnectionState } from "./connectionMonitor";
 import dynamic from "next/dynamic";
 import { tokens as T, fonts as F, shadows as shadow } from "./auth/_tokens";
 
@@ -162,7 +163,8 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
     let cancelled = false;
     (async () => {
       try {
-        const { flushPendingTurns } = await import("./supabase");
+        const { flushPendingTurns, installTurnOutboxDrain } = await import("./interviewTurns");
+        installTurnOutboxDrain();
         const result = await flushPendingTurns();
         if (!cancelled && result.flushed > 0) {
           console.warn(`[dashboard] flushed ${result.flushed} pending turn(s) from previous session`);
@@ -179,17 +181,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
 
   // Use the same initial state on the server and browser, then sync to the
   // browser's actual network state after hydration.
-  const [isOffline, setIsOffline] = useState(false);
-
-  useEffect(() => {
-    const syncNetworkState = () => setIsOffline(!navigator.onLine);
-    const goOffline = () => setIsOffline(true);
-    const goOnline = () => setIsOffline(false);
-    syncNetworkState();
-    window.addEventListener("offline", goOffline);
-    window.addEventListener("online", goOnline);
-    return () => { window.removeEventListener("offline", goOffline); window.removeEventListener("online", goOnline); };
-  }, []);
+  const isOffline = useConnectionState().status === "offline";
 
 
   // Haptic feedback on mobile button taps
@@ -513,7 +505,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
         {isOffline && (
           <Alert className="mb-4 flex flex-row items-center gap-2" style={{ background: c.creamSoft, borderColor: "rgba(126,141,152,0.2)", animation: "slideDown 0.2s ease" }}>
             <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c.inkSoft} strokeWidth="2" strokeLinecap="round"><line x1="1" y1="1" x2="23" y2="23"/><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/><path d="M10.71 5.05A16 16 0 0 1 22.56 9"/><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
-            <AlertDescription style={{ fontFamily: font.ui, fontSize: 12, color: c.inkSoft }}>You&apos;re offline — some features may be unavailable</AlertDescription>
+            <AlertDescription style={{ fontFamily: font.ui, fontSize: 12, color: c.inkSoft }}>You&apos;re offline — your work is saved on this device and will sync when you&apos;re back</AlertDescription>
           </Alert>
         )}
         </>

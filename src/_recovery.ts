@@ -1,83 +1,80 @@
 /* HireStepX — Online/offline recovery hook
  *
- * Extracted from useInterviewEngine.ts. Listens for browser online /
- * offline events and:
+ * Driven by the connection monitor (real request outcomes + heartbeat), not
+ * raw `navigator.onLine`, so a captive portal or saturated link is treated as
+ * offline and a flapping one isn't. While an interview is live this hook
+ * holds a heartbeat lease so recovery is detected within seconds.
  *
- *   - Sets isOffline immediately (drives the inline status chip).
- *   - Debounces the full-screen ReconnectingOverlay by 5 seconds so
- *     a single 4G blip on flaky Indian networks doesn't slam the
- *     user with an overlay every few seconds. Only escalates if the
- *     user is genuinely stuck.
- *   - On reconnect: cancels the pending overlay, retries queued
- *     evaluations, and re-fetches questions if we fell back to
- *     practice questions earlier.
- *
- * Pulled out so the engine doesn't have 50 LOC of network plumbing
- * inline. The hook accepts the engine's setters + refs by reference
- * — clean separation of concerns without deeper refactoring.
+ *   - isOffline mirrors monitor status === "offline" (drives the status chip).
+ *   - The full-screen overlay is debounced (default 5s) so a brief blip
+ *     doesn't slam the candidate with a modal.
+ *   - On recovery: clear the overlay, drain queued work (evals, turn outbox)
+ *     and upgrade practice questions to personalized ones if we fell back.
  */
 
 import { useEffect, useRef } from "react";
+import { acquireHeartbeat, getConnectionState, subscribeConnection } from "./connectionMonitor";
+import { isReachable } from "./_connection-state";
 
 export interface RecoveryHookConfig {
   setIsOffline: (v: boolean) => void;
   setReconnecting: (v: boolean) => void;
-  reconnectAttemptRef: React.MutableRefObject<number>;
-  currentStepRef: React.MutableRefObject<number>;
-  interviewEndedRef: React.MutableRefObject<boolean>;
+  /** True while an interview is in progress (started, not finished). */
+  active: boolean;
   /** Called on reconnect to retry queued LLM evaluation requests. */
   retryQueuedEvals: () => Promise<void> | void;
+  /** Called on reconnect to drain locally queued turns / unsaved sessions. */
+  flushOutbox: () => Promise<void> | void;
   /** Called on reconnect IF the engine's saveWarning text contains
       "practice questions" or "retry" (i.e. we fell back to fixed
       questions earlier and now want to upgrade to LLM ones). */
   fetchPersonalizedQuestions: () => void;
-  /** Read at fire-time inside the goOnline closure. */
+  /** Read at fire-time inside the recovery closure. */
   saveWarningRef: React.MutableRefObject<string>;
   /** Debounce window before showing the full-screen reconnect overlay. */
   debounceMs?: number;
 }
 
 export function useOnlineOfflineRecovery(cfg: RecoveryHookConfig): void {
+  const cfgRef = useRef(cfg);
+  cfgRef.current = cfg;
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   useEffect(() => {
-    const debounce = cfg.debounceMs ?? 5000;
-    const goOffline = () => {
-      cfg.setIsOffline(true);
-      // Skip overlay if we haven't started or session is done — those
-      // states have no progress to "save"; the inline chip is enough.
-      if (cfg.currentStepRef.current > 0 && !cfg.interviewEndedRef.current) {
-        if (debounceRef.current) clearTimeout(debounceRef.current);
-        debounceRef.current = setTimeout(() => {
-          if (!navigator.onLine && !cfg.interviewEndedRef.current) {
-            cfg.reconnectAttemptRef.current += 1;
-            cfg.setReconnecting(true);
-          }
-          debounceRef.current = null;
-        }, debounce);
-      }
+    if (!cfg.active) return;
+    return acquireHeartbeat();
+  }, [cfg.active]);
+
+  useEffect(() => {
+    const clearDebounce = () => {
+      if (debounceRef.current) { clearTimeout(debounceRef.current); debounceRef.current = null; }
     };
-    const goOnline = () => {
-      cfg.setIsOffline(false);
-      cfg.setReconnecting(false);
-      if (debounceRef.current) {
-        clearTimeout(debounceRef.current);
+    const onOffline = () => {
+      const c = cfgRef.current;
+      c.setIsOffline(true);
+      if (!c.active) return;
+      clearDebounce();
+      debounceRef.current = setTimeout(() => {
         debounceRef.current = null;
-      }
-      // Best-effort retries — don't await
-      Promise.resolve(cfg.retryQueuedEvals()).catch(() => { /* expected */ });
-      const sw = cfg.saveWarningRef.current;
-      if (sw && (sw.includes("practice questions") || sw.includes("retry"))) {
-        cfg.fetchPersonalizedQuestions();
-      }
+        if (cfgRef.current.active && getConnectionState().status === "offline") cfgRef.current.setReconnecting(true);
+      }, c.debounceMs ?? 5000);
     };
-    window.addEventListener("offline", goOffline);
-    window.addEventListener("online", goOnline);
-    return () => {
-      window.removeEventListener("offline", goOffline);
-      window.removeEventListener("online", goOnline);
-      if (debounceRef.current) clearTimeout(debounceRef.current);
+    const onRecovered = () => {
+      const c = cfgRef.current;
+      c.setIsOffline(false);
+      c.setReconnecting(false);
+      clearDebounce();
+      Promise.resolve(c.retryQueuedEvals()).catch(() => { /* expected */ });
+      Promise.resolve(c.flushOutbox()).catch(() => { /* expected */ });
+      const sw = c.saveWarningRef.current;
+      if (sw && (sw.includes("practice questions") || sw.includes("retry"))) c.fetchPersonalizedQuestions();
     };
-    // Mount-only — config refs read at fire-time, not on render
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
+    if (getConnectionState().status === "offline") onOffline();
+    const unsub = subscribeConnection((next, prev) => {
+      if (next.status === "offline" && prev.status !== "offline") onOffline();
+      else if (isReachable(next) && !isReachable(prev)) onRecovered();
+    });
+    return () => { unsub(); clearDebounce(); };
   }, []);
 }

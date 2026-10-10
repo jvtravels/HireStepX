@@ -147,21 +147,44 @@ export const MicQuietBanner = memo(function MicQuietBanner({ onSwitchToText }: {
  * sustained and blocking interaction is the right move.
  */
 
-export const ReconnectingOverlay = memo(function ReconnectingOverlay({ attempt = 1, currentQuestion, totalQuestions, baseQuestionCount, onPause }: {
+function useSecondsUntil(at: number | null | undefined): number | null {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!at) return;
+    setNow(Date.now());
+    const id = window.setInterval(() => setNow(Date.now()), 500);
+    return () => window.clearInterval(id);
+  }, [at]);
+  if (!at) return null;
+  return Math.max(0, Math.ceil((at - now) / 1000));
+}
+
+export const ReconnectingOverlay = memo(function ReconnectingOverlay({ attempt = 1, nextProbeAt, onRetryNow, currentQuestion, totalQuestions, baseQuestionCount }: {
+  /** Real count of failed reconnect probes, from the connection monitor. */
   attempt?: number;
+  /** Epoch ms of the next automatic probe, from the connection monitor. */
+  nextProbeAt?: number | null;
+  onRetryNow?: () => Promise<unknown> | void;
   currentQuestion: number;
   totalQuestions: number;
   /** Base-question count (questions only, follow-ups excluded). Shares the
    *  numerator's basis so "Q3 of 5" can't render as "Q3 of 8". Falls back to
    *  totalQuestions only when base is 0 (degenerate script). */
   baseQuestionCount?: number;
-  onPause?: () => void;
 }) {
   const escalate = attempt >= 3;
   const questionTotal = baseQuestionCount || totalQuestions;
   const questionPos = Math.min(currentQuestion, questionTotal);
+  const secs = useSecondsUntil(nextProbeAt);
+  const [retrying, setRetrying] = useState(false);
+  const retry = useCallback(async () => {
+    if (!onRetryNow || retrying) return;
+    setRetrying(true);
+    try { await onRetryNow(); } finally { setRetrying(false); }
+  }, [onRetryNow, retrying]);
+  const nextLabel = retrying ? "Checking…" : secs === null ? "" : secs <= 0 ? "Retrying…" : `Next try in ${secs}s`;
 
-  /* ─── Lightweight inline banner (attempts 1–2) ──────────────────── */
+  /* ─── Lightweight inline banner (first attempts) ───────────────── */
   if (!escalate) {
     return (
       <div
@@ -183,14 +206,18 @@ export const ReconnectingOverlay = memo(function ReconnectingOverlay({ attempt =
         }}
       >
         <ThinkingOrb state="connecting" size={20} color={resolveOrbColor(e.indigo)} style={{ width: 14, height: 14, flexShrink: 0 }} />
-        <span style={{ fontFamily: ef.sans, fontSize: 12, color: e.coal, lineHeight: 1.4 }}>
-          Reconnecting… your progress is safe (Q{questionPos} of {questionTotal}).
+        <span style={{ fontFamily: ef.sans, fontSize: 12, color: e.coal, lineHeight: 1.4, flex: 1 }}>
+          Connection lost. Your answers are saved on this device (Q{questionPos} of {questionTotal}) and the timer is paused.
+          {nextLabel ? ` ${nextLabel}.` : ""}
         </span>
+        {onRetryNow && (
+          <Button type="button" variant="outline" size="sm" onClick={retry} disabled={retrying}>Retry now</Button>
+        )}
       </div>
     );
   }
 
-  /* ─── Escalated full-screen modal (attempt 3+) ──────────────────── */
+  /* ─── Escalated full-screen modal (sustained outage) ───────────── */
   return (
     <div role="dialog" aria-modal="true" aria-labelledby="iv-reconnecting-title" className="iv-reconnecting" style={{
       position: "fixed", inset: 0, zIndex: 220,
@@ -212,14 +239,14 @@ export const ReconnectingOverlay = memo(function ReconnectingOverlay({ attempt =
         <h2 id="iv-reconnecting-title" style={{
           margin: 0, fontFamily: ef.sans, fontSize: 22, fontWeight: 400, color: e.coal, letterSpacing: "-0.01em",
         }}>
-          Reconnecting…
+          You&rsquo;re offline
         </h2>
         <p style={{
           margin: "8px 0 0", fontFamily: ef.sans, fontSize: 13, color: e.coal, lineHeight: 1.55,
         }}>
-          Your network blipped. We&rsquo;ve saved everything up to question{" "}
+          Your answers up to question{" "}
           <strong style={{ color: e.coal }}>{questionPos} of {questionTotal}</strong>
-          . You&rsquo;ll pick up where you left off.
+          {" "}are saved on this device and will sync when you&rsquo;re back. The timer is paused. Keep this tab open and the interview will continue automatically.
         </p>
         <div style={{
           marginTop: 18, display: "inline-flex", alignItems: "center", gap: 8,
@@ -228,16 +255,13 @@ export const ReconnectingOverlay = memo(function ReconnectingOverlay({ attempt =
           textTransform: "uppercase", letterSpacing: 1.2, color: e.inkSoft,
         }}>
           <span style={{ width: 5, height: 5, borderRadius: 999, background: e.indigo }} />
-          Attempt {attempt} of 5
+          {attempt} {attempt === 1 ? "check" : "checks"} so far{nextLabel ? ` · ${nextLabel}` : ""}
         </div>
-        {onPause && (
-          <div style={{ marginTop: 22, display: "flex", flexDirection: "column", gap: 6 }}>
-            <Button type="button" variant="outline" onClick={onPause}>
-              Pause and resume later
+        {onRetryNow && (
+          <div style={{ marginTop: 22 }}>
+            <Button type="button" variant="outline" onClick={retry} disabled={retrying}>
+              {retrying ? "Checking…" : "Retry now"}
             </Button>
-            <span style={{ fontFamily: ef.sans, fontSize: 11, color: e.inkSoft }}>
-              We&rsquo;ll email you a link to come back.
-            </span>
           </div>
         )}
       </div>
