@@ -1,6 +1,6 @@
-/* Vercel Edge Function — LLM Interview Question Generation */
+/* LLM Interview Question Generation (Node runtime: edge bundle exceeded the 1 MB plan limit) */
 
-export const config = { runtime: "edge" };
+export const config = { runtime: "nodejs" };
 
 /* Fully static across every call (no interpolation) — deliberately placed at
  * the very start of the prompt template below so Groq's longest-shared-prefix
