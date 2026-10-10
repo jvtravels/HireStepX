@@ -3,6 +3,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { consumeSessionCredit } from "./_session-credits";
 import { verifyJwtLocally, importEs256VerifyKey } from "./_jwt-verify";
+import { after } from "next/server";
 
 declare const process: { env: Record<string, string | undefined> };
 
@@ -1302,7 +1303,7 @@ export function logServiceUsage(entry: {
   meta?: Record<string, unknown>;
 }): void {
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) return;
-  fetch(`${SUPABASE_URL}/rest/v1/service_usage`, {
+  const write = () => fetch(`${SUPABASE_URL}/rest/v1/service_usage`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -1322,4 +1323,7 @@ export function logServiceUsage(entry: {
       meta: entry.meta || null,
     }),
   }).catch(() => {}); // swallow — never block the response
+  // Edge functions freeze when the Response returns and cancel a bare fire-and-forget
+  // fetch, so short handlers (stt-token) lost nearly every usage row. after() keeps it alive.
+  try { after(write); } catch { void write(); } // after() throws outside a request (cron, tests)
 }
