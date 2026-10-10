@@ -121,3 +121,41 @@ export function interviewSubstep(c: Candidate): string | null {
 export function canReject(c: Candidate): boolean {
   return c.candidateStatus === "shortlisted" || c.candidateStatus === "interview_invited" || c.candidateStatus === "interviewing";
 }
+
+const READINESS_LABEL: Record<NonNullable<Requirement["minReadinessBand"]>, string> = {
+  leanHire: "Lean hire or better",
+  hire: "Hire or better",
+  strongHire: "Strong hire only",
+};
+
+export interface RoleDetailRow {
+  label: string;
+  text?: string;
+  tags?: string[];
+  wide?: boolean;
+}
+
+/** Saved posting fields the summary header doesn't render; empty ones are skipped. */
+export function roleDetailRows(r: Requirement): RoleDetailRow[] {
+  const rows: RoleDetailRow[] = [];
+  const text = (label: string, value: string | null | undefined, wide = false) => {
+    if (value && value.trim()) rows.push({ label, text: value.trim(), wide });
+  };
+  const tags = (label: string, values: string[]) => {
+    if (values.length > 0) rows.push({ label, tags: values, wide: true });
+  };
+  text("Department", r.department);
+  if (r.openPositions != null) text("Open positions", String(r.openPositions));
+  text("Notice period", r.noticePeriodPref && r.noticePeriodPref !== "Any" ? r.noticePeriodPref : null);
+  text("Work schedule", r.workSchedule);
+  text("Relevant experience", r.relevantExperience);
+  if (r.minReadinessBand) text("Minimum readiness", READINESS_LABEL[r.minReadinessBand]);
+  if (r.minStarCompleteness != null) text("Minimum STAR completeness", `${r.minStarCompleteness}%`);
+  text("Responsibilities", r.responsibilities, true);
+  text("Nice to have", r.niceToHave, true);
+  tags("Other skills", r.customSkillSets);
+  tags("Preferred colleges", r.preferredColleges);
+  tags("Target companies", r.targetCompanies);
+  tags("Perks and benefits", r.perksAndBenefits);
+  return rows;
+}

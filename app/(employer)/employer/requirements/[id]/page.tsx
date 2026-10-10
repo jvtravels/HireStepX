@@ -24,6 +24,7 @@ import CandidatesFilters from "./_components/CandidatesFilters";
 import CandidatesTable from "./_components/CandidatesTable";
 import EvidenceDialog from "./_components/EvidenceDialog";
 import MessagesDialog from "./_components/MessagesDialog";
+import RequirementDetails from "./_components/RequirementDetails";
 import RequirementHeader from "./_components/RequirementHeader";
 import { FailedState, GeneratingState, ZeroMatchState } from "./_components/StatusStates";
 import UnlockDialog from "./_components/UnlockDialog";
@@ -260,6 +261,8 @@ export default function RequirementDetailPage() {
         onPatch={patchRequirement}
         onReload={load}
       />
+
+      <RequirementDetails requirement={requirement} />
 
       <section aria-labelledby="candidates-heading" style={{ marginTop: 24, flex: "1 0 auto", display: "flex", flexDirection: "column", minWidth: 0 }}>
         <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 10, marginBottom: 16 }}>

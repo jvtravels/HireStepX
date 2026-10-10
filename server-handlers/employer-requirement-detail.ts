@@ -679,7 +679,7 @@ async function handlePatch(req: Request, requirementId: string, userId: string, 
     if (!isValidRange(budgetMin, budgetMax)) {
       return new Response(JSON.stringify({ error: "Minimum budget can't be greater than maximum budget" }), { status: 400, headers });
     }
-    if (!isFutureDueDate(dueDate)) {
+    if (dueDate !== existing.due_date && !isFutureDueDate(dueDate)) {
       return new Response(JSON.stringify({ error: "Due date can't be in the past" }), { status: 400, headers });
     }
 

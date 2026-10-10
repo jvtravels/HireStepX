@@ -230,7 +230,6 @@ export function SalaryField({
   );
 }
 
-const navStyle: CSSProperties = { marginTop: 10 };
 const stepListStyle: CSSProperties = { display: "flex", flexWrap: "wrap", gap: "6px 18px", listStyle: "none", margin: 0, padding: 0 };
 const stepBadgeStyle = (filled: boolean): CSSProperties => ({
   display: "inline-flex", alignItems: "center", justifyContent: "center", width: 22, height: 22, borderRadius: 999,
@@ -242,7 +241,7 @@ const stepBadgeStyle = (filled: boolean): CSSProperties => ({
 export function StepNav({ step, onGoTo }: { step: FormStep; onGoTo: (s: FormStep) => void }) {
   const steps: FormStep[] = [1, 2, 3];
   return (
-    <nav aria-label="Form progress" style={navStyle}>
+    <nav aria-label="Form progress">
       <ol style={stepListStyle}>
         {steps.map((s) => {
           const current = s === step;

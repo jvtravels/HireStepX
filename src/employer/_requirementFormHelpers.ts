@@ -63,7 +63,9 @@ function validateRange(minRaw: string, maxRaw: string, limit: number, noun: stri
   return undefined;
 }
 
-export function validateDraft(d: RequirementDraft, today: string): FormErrors {
+/** `savedDueDate` is the deadline already stored on a requirement being edited:
+ *  keeping an expired deadline untouched must not block saving other fields. */
+export function validateDraft(d: RequirementDraft, today: string, savedDueDate?: string | null): FormErrors {
   const e: FormErrors = {};
   if (d.title.trim().length < 2) e.title = "Enter a job title.";
   if (d.locations.length === 0) e.locations = "Add at least one location, or \"Remote\".";
@@ -90,7 +92,7 @@ export function validateDraft(d: RequirementDraft, today: string): FormErrors {
       e.hoursPerWeek = "Enter hours from 1 to 80.";
     }
   }
-  if (d.dueDate && d.dueDate < today) e.dueDate = "The deadline can't be in the past.";
+  if (d.dueDate && d.dueDate < today && d.dueDate !== savedDueDate) e.dueDate = "The deadline can't be in the past.";
   if (!isBlank(d.minStarCompleteness) && (!WHOLE.test(d.minStarCompleteness.trim()) || Number(d.minStarCompleteness) > 100)) {
     e.minStarCompleteness = "Enter a percentage from 0 to 100.";
   }

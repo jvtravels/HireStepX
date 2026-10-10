@@ -620,8 +620,8 @@ const tagFieldStyle = (invalid?: boolean): React.CSSProperties => ({
   background: t.white,
 });
 
-// No `outline: none` here — the global :focus-visible ring (index.css) is the
-// only focus indicator inside a chip field, since the wrapper itself has none.
+// The inner input draws no ring of its own; `.rf-chipfield:focus-within`
+// (index.css) rings the whole field, so there is one indicator, not two.
 const tagDraftInputStyle: React.CSSProperties = {
   flex: 1,
   minWidth: 120,
@@ -720,7 +720,7 @@ export function TagInput({
   };
 
   return (
-    <div style={tagFieldStyle(invalid)}>
+    <div className="rf-chipfield" data-invalid={invalid || undefined} style={tagFieldStyle(invalid)}>
       {values.map((v) => (
         <TagChip key={v} value={v} onRemove={() => onChange(values.filter((x) => x !== v))} />
       ))}
@@ -899,7 +899,7 @@ export function TagAutocompleteInput({
 
   return (
     <div ref={containerRef}>
-      <div style={tagFieldStyle(invalid)}>
+      <div className="rf-chipfield" data-invalid={invalid || undefined} style={tagFieldStyle(invalid)}>
         {values.map((v) => (
           <TagChip key={v} value={v} onRemove={() => onChange(values.filter((x) => x !== v))} />
         ))}

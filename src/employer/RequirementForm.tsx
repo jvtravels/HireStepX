@@ -1,6 +1,7 @@
 "use client";
 
 import { useMaxWidth } from "../hooks/useMaxWidth";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useCallback, useEffect, useMemo, useRef, useState, Dispatch, SetStateAction, type CSSProperties, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { WorkMode, EmploymentType, Requirement, RequirementFormValues } from "./mockData";
@@ -64,6 +65,11 @@ const grid2: CSSProperties = {
   gap: 20,
 };
 
+/* Fields that sit side by side when there is room and stack when there isn't.
+   Each cell's flex-basis is the narrowest width it stays comfortable at. */
+const flexRow: CSSProperties = { display: "flex", flexWrap: "wrap", gap: "26px 20px", alignItems: "flex-start" };
+const cell = (grow: number, basis: number): CSSProperties => ({ flex: `${grow} 1 ${basis}px`, minWidth: 0 });
+
 const WORK_MODES: { value: WorkMode; label: string }[] = [
   { value: "remote", label: "Remote" },
   { value: "onsite", label: "Onsite" },
@@ -86,18 +92,21 @@ export type { RequirementFormValues } from "./mockData";
    is disabled, a failed Continue/Save explains what is wrong and moves focus
    to the first problem. */
 
-/* Pinned to the top of the shell's scroll area so Save / Continue stay reachable
-   on a long form. Needs the card to clip (not hide) overflow: `hidden` makes the
-   card a scroll container and silently disables sticky. */
-const STICKY_HEADER: CSSProperties = { position: "sticky", top: 0, zIndex: 20, background: t.white };
+/* The action bar is its own bordered card, pinned to the top of the shell's scroll
+   area so Save / Continue stay reachable on a long form. The sticky wrapper is
+   page-coloured and carries the gap below the bar, so scrolled content is hidden
+   behind it instead of showing through a seam, and the bar keeps its full border
+   and rounded corners while stuck. */
+const STICKY_BAR: CSSProperties = { position: "sticky", top: 0, zIndex: 20, background: t.pageBg, paddingBottom: 12 };
+const barCard: CSSProperties = { background: t.white, border: `1px solid ${t.line}`, borderRadius: 12 };
 
 const LAST_STEP: FormStep = 3;
+const ADVANCED_ID = "advanced";
 
 const textareaStyle: CSSProperties = { resize: "vertical" };
-const advancedBox: CSSProperties = { border: `1px solid ${t.line}`, borderRadius: 12, padding: "0 16px" };
-const advancedSummary: CSSProperties = { cursor: "pointer", padding: "14px 0", fontFamily: f.sans, fontSize: textSize.md, fontWeight: 600, color: t.coal, minHeight: 24 };
-const advancedHint: CSSProperties = { fontWeight: 400, color: t.inkFaint, marginLeft: 8, fontSize: textSize.base };
-const advancedBody: CSSProperties = { display: "flex", flexDirection: "column", gap: 20, paddingBottom: 18 };
+const advancedTitle: CSSProperties = { fontFamily: f.sans, fontSize: textSize.md, fontWeight: 600, color: t.coal };
+const advancedHint: CSSProperties = { fontFamily: f.sans, fontSize: textSize.base, fontWeight: 400, color: t.inkFaint };
+const advancedBody: CSSProperties = { display: "flex", flexDirection: "column", gap: 20, padding: "4px 0 16px" };
 const checkboxCell: CSSProperties = { display: "flex", alignItems: "flex-end", paddingBottom: 8 };
 const noteText: CSSProperties = { fontFamily: f.sans, fontSize: textSize.sm, color: t.inkFaint, margin: 0 };
 const requiredStar: CSSProperties = { color: t.indigo };
@@ -105,14 +114,12 @@ const bannerBox: CSSProperties = { display: "flex", flexWrap: "wrap", alignItems
 const bannerText: CSSProperties = { flex: "1 1 240px" };
 const errorText: CSSProperties = { fontFamily: f.sans, fontSize: textSize.base, color: t.errorInk, margin: 0 };
 const cardStyle: CSSProperties = { background: t.white, borderRadius: 12, border: `1px solid ${t.line}`, overflow: "clip" };
-const editHeader: CSSProperties = { ...STICKY_HEADER, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: `1px solid ${t.line}`, flexWrap: "wrap", gap: 12 };
+const editHeader: CSSProperties = { ...barCard, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", flexWrap: "wrap", gap: 12 };
 const editTitle: CSSProperties = { fontFamily: f.sans, fontSize: 26, fontWeight: 700, color: t.coal, margin: "4px 0 0", letterSpacing: "-0.01em", lineHeight: "32px" };
 const actionRow: CSSProperties = { display: "flex", alignItems: "center", gap: 12, flexShrink: 0 };
-const wizardHeader: CSSProperties = { ...STICKY_HEADER, padding: "12px 20px", borderBottom: `1px solid ${t.line}` };
+const wizardHeader: CSSProperties = { ...barCard, padding: "12px 20px" };
 const wizardTopRow: CSSProperties = { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" };
-const wizardTitleGroup: CSSProperties = { display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" };
-const wizardTitle: CSSProperties = { outline: "none", fontFamily: f.sans, fontSize: 22, fontWeight: 700, color: t.coal, margin: 0, letterSpacing: "-0.01em", lineHeight: "28px" };
-const stepCounter: CSSProperties = { fontFamily: f.mono, fontSize: 12, letterSpacing: 1.2, textTransform: "uppercase", color: t.indigo, fontWeight: 600 };
+const wizardTitleGroup: CSSProperties = { minWidth: 0 };
 
 export function RequirementForm({
   mode,
@@ -163,7 +170,7 @@ export function RequirementForm({
   // first hours of an IST morning and would let a past due date through.
   const now = new Date();
   const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-  const errors = useMemo(() => validateDraft(draft, today), [draft, today]);
+  const errors = useMemo(() => validateDraft(draft, today, initial?.dueDate), [draft, today, initial?.dueDate]);
   const shown = (k: FieldKey): string | undefined => (attempted || touched.has(k) ? errors[k] : undefined);
   const errId = (k: FieldKey) => `${FIELD_FOCUS_ID[k]}-err`;
   const descriptionStyle: CSSProperties = { ...longTextStyle, borderColor: shown("description") ? t.error : t.line };
@@ -187,9 +194,12 @@ export function RequirementForm({
 
   const focusField = useCallback((k: FieldKey) => {
     const target = FIELD_STEP[k];
+    if (k === "minStarCompleteness") setAdvancedOpen(true);
     if (isCreate && target !== step) {
       pendingFocus.current = FIELD_FOCUS_ID[k];
       setStep(target);
+    } else if (k === "minStarCompleteness") {
+      requestAnimationFrame(() => focusId(FIELD_FOCUS_ID[k]));
     } else {
       focusId(FIELD_FOCUS_ID[k]);
     }
@@ -319,17 +329,20 @@ export function RequirementForm({
 
   const roleBasics = (
     <>
-      <div>
+      <div style={flexRow}>
+      <div style={cell(1, 280)}>
         <FieldLabel required htmlFor="rf-title">Job title</FieldLabel>
         <AutocompleteInput id="rf-title" value={draft.title} onChange={(v) => set("title", v)} onBlur={() => touch("title")} invalid={!!shown("title")} describedBy={describe("title")} placeholder="Senior Frontend Engineer" suggestions={ROLE_SUGGESTIONS} />
         {fieldError("title")}
       </div>
 
-      <div>
+      <div style={cell(1, 280)}>
         <FieldLabel htmlFor="rf-department">Department</FieldLabel>
         <input id="rf-department" value={draft.department} onChange={(e) => set("department", e.target.value)} placeholder="Engineering, Sales, Design…" autoComplete="off" style={inputStyle} />
       </div>
+      </div>
 
+      <div style={{ ...flexRow, columnGap: 32 }}>
       <div>
         <FieldLabel>Employment type</FieldLabel>
         <SegmentedControl ariaLabel="Employment type" options={EMPLOYMENT_TYPES} value={draft.employmentType} onChange={(v) => set("employmentType", v)} />
@@ -339,25 +352,30 @@ export function RequirementForm({
         <FieldLabel>Work mode</FieldLabel>
         <SegmentedControl ariaLabel="Work mode" options={WORK_MODES} value={draft.workMode} onChange={(v) => set("workMode", v)} />
       </div>
+      </div>
 
-      <div>
+      <div style={flexRow}>
+      <div style={cell(3, 300)}>
         <FieldLabel required htmlFor="rf-locations">Location</FieldLabel>
         <TagAutocompleteInput id="rf-locations" values={draft.locations} onChange={(v) => set("locations", v)} onBlur={() => touch("locations")} invalid={!!shown("locations")} describedBy={describe("locations", "rf-locations-help")} placeholder="Mumbai, Bengaluru, Remote…" suggestions={CITY_SUGGESTIONS} />
         <HelpText id="rf-locations-help" live={false}>Pick a suggestion or type a city and press Enter. Add more than one if the role is open in several.</HelpText>
         {fieldError("locations")}
       </div>
 
-      <div style={grid2}>
-        <div>
+        <div style={cell(1, 150)}>
           <FieldLabel htmlFor="rf-open">Open positions</FieldLabel>
           <NumberField id="rf-open" value={draft.openPositions} onChange={(v) => set("openPositions", v)} onBlur={() => touch("openPositions")} maxDigits={3} placeholder="1" invalid={!!shown("openPositions")} describedBy={describe("openPositions")} style={inputStyle} />
           {fieldError("openPositions")}
         </div>
-        <div>
+        <div style={cell(1, 190)}>
           <FieldLabel htmlFor="rf-due">Application deadline</FieldLabel>
           <DateField id="rf-due" aria-describedby={describe("dueDate", "rf-due-help")} aria-invalid={!!shown("dueDate") || undefined} min={today} value={draft.dueDate} onChange={(e) => set("dueDate", e.target.value)} onBlur={() => touch("dueDate")} style={inputStyle} />
           {shown("dueDate") ? fieldError("dueDate") : null}
-          <HelpText id="rf-due-help" live={false}>Shown on the Jobs table as a countdown so you know when to follow up.</HelpText>
+          <HelpText id="rf-due-help" live={false}>
+            {initial?.dueDate && initial.dueDate < today && draft.dueDate === initial.dueDate
+              ? "This deadline has passed. Pick a new date, or keep it and save your other changes."
+              : "Shown on the Jobs table as a countdown so you know when to follow up."}
+          </HelpText>
         </div>
       </div>
 
@@ -381,6 +399,8 @@ export function RequirementForm({
 
   const requirementsAndPay = (
     <>
+      <div style={flexRow}>
+      <div style={cell(1, 340)}>
       <ExperienceField
         min={draft.experienceMin}
         max={draft.experienceMax}
@@ -389,7 +409,9 @@ export function RequirementForm({
         error={shown("experience")}
         inputStyle={inputStyle}
       />
+      </div>
 
+      <div style={cell(1, 340)}>
       <SalaryField
         salaryType={draft.salaryType}
         min={draft.budgetMin}
@@ -399,6 +421,8 @@ export function RequirementForm({
         error={shown("budget")}
         inputStyle={inputStyle}
       />
+      </div>
+      </div>
 
       <div>
         <FieldLabel htmlFor="rf-skills">Required skills</FieldLabel>
@@ -427,51 +451,59 @@ export function RequirementForm({
         {fieldError("description")}
       </div>
 
-      <div>
+      <div style={flexRow}>
+      <div style={cell(1, 320)}>
         <FieldLabel htmlFor="rf-resp">Responsibilities</FieldLabel>
         <textarea id="rf-resp" aria-describedby="rf-resp-count" value={draft.responsibilities} onChange={(e) => set("responsibilities", e.target.value)} rows={4} maxLength={MAX_LONG_TEXT_LENGTH} placeholder="What will this person own day to day?" style={longTextStyle} />
         <HelpText id="rf-resp-count" live={false}>{draft.responsibilities.length.toLocaleString("en-IN")} / {MAX_LONG_TEXT_LENGTH.toLocaleString("en-IN")}</HelpText>
       </div>
 
-      <div>
+      <div style={cell(1, 320)}>
         <FieldLabel htmlFor="rf-nice">Nice to have</FieldLabel>
         <textarea id="rf-nice" aria-describedby="rf-nice-count" value={draft.niceToHave} onChange={(e) => set("niceToHave", e.target.value)} rows={3} maxLength={MAX_LONG_TEXT_LENGTH} placeholder="Skills or experience that aren't required but would help" style={longTextStyle} />
         <HelpText id="rf-nice-count" live={false}>{draft.niceToHave.length.toLocaleString("en-IN")} / {MAX_LONG_TEXT_LENGTH.toLocaleString("en-IN")}</HelpText>
+      </div>
       </div>
     </>
   );
 
   const targeting = (
     <>
-      <div>
+      <div style={flexRow}>
+      <div style={cell(1, 320)}>
         <FieldLabel htmlFor="rf-colleges">Preferred colleges</FieldLabel>
         <TagAutocompleteInput id="rf-colleges" values={draft.preferredColleges} onChange={(v) => set("preferredColleges", v)} placeholder="IIT Bombay, BITS Pilani, Any NIT…" suggestions={COLLEGE_SUGGESTIONS} />
       </div>
 
-      <div>
+      <div style={cell(1, 320)}>
         <FieldLabel htmlFor="rf-targets">Target companies</FieldLabel>
         <TagAutocompleteInput id="rf-targets" values={draft.targetCompanies} onChange={(v) => set("targetCompanies", v)} placeholder="Companies you'd like candidates to come from" suggestions={COMPANY_SUGGESTIONS} />
       </div>
+      </div>
 
-      <div style={grid2}>
-        <div>
+      <div style={flexRow}>
+        <div style={cell(1, 220)}>
           <FieldLabel htmlFor="rf-notice">Notice period</FieldLabel>
           <select id="rf-notice" value={draft.noticePeriodPref} onChange={(e) => set("noticePeriodPref", e.target.value)} style={selectStyle}>
             {noticeOptions.map((o) => <option key={o} value={o}>{o}</option>)}
           </select>
         </div>
+
+        <div style={cell(2, 320)}>
+          <FieldLabel htmlFor="rf-perks">Perks and benefits</FieldLabel>
+          <TagInput id="rf-perks" values={draft.perksAndBenefits} onChange={(v) => set("perksAndBenefits", v)} placeholder="Health insurance, Flexible hours…" />
+        </div>
       </div>
 
-      <div>
-        <FieldLabel htmlFor="rf-perks">Perks and benefits</FieldLabel>
-        <TagInput id="rf-perks" values={draft.perksAndBenefits} onChange={(v) => set("perksAndBenefits", v)} placeholder="Health insurance, Flexible hours…" />
-      </div>
-
-      <details open={advancedOpen} onToggle={(e) => setAdvancedOpen(e.currentTarget.open)} style={advancedBox}>
-        <summary className="pointer-coarse:min-h-11" style={advancedSummary}>
-          Advanced matching
-          <span style={advancedHint}>Optional. Sharpens who we shortlist.</span>
-        </summary>
+      <Accordion type="single" collapsible value={advancedOpen ? ADVANCED_ID : ""} onValueChange={(v) => setAdvancedOpen(v === ADVANCED_ID)}>
+        <AccordionItem value={ADVANCED_ID} className="rounded-xl border border-border bg-background px-3">
+          <AccordionTrigger className="items-center gap-3 px-1 py-3.5 hover:no-underline pointer-coarse:min-h-11 rf-accordion-trigger">
+            <span className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
+              <span style={advancedTitle}>Advanced matching</span>
+              <span style={advancedHint}>Optional. Sharpens who we shortlist.</span>
+            </span>
+          </AccordionTrigger>
+          <AccordionContent className="h-auto px-1">
         <div style={advancedBody}>
           <div style={grid2}>
             <div>
@@ -529,7 +561,9 @@ export function RequirementForm({
             </div>
           </div>
         </div>
-      </details>
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
     </>
   );
 
@@ -558,7 +592,7 @@ export function RequirementForm({
   if (!isCreate) {
     return (
       <form onSubmit={handleSubmit} noValidate>
-        <div style={cardStyle}>
+        <div style={STICKY_BAR}>
           <div style={editHeader}>
             <div>
               <Eyebrow tone="indigo">Edit opportunity</Eyebrow>
@@ -573,6 +607,8 @@ export function RequirementForm({
               </PrimaryCta>
             </div>
           </div>
+        </div>
+        <div style={cardStyle}>
           <div style={bodyPadding}>
             {requiredNote}
             <ErrorSummary errors={attempted ? errors : {}} scope="all" onJump={focusField} />
@@ -591,16 +627,15 @@ export function RequirementForm({
 
   return (
     <form onSubmit={handleSubmit} noValidate>
-      <div style={cardStyle}>
+      <div style={STICKY_BAR}>
         <div style={wizardHeader}>
           <div style={wizardTopRow}>
             <div style={wizardTitleGroup}>
-              <h1 ref={stepHeadingRef} tabIndex={-1} style={wizardTitle}>
+              <h1 ref={stepHeadingRef} tabIndex={-1} className="sr-only">
                 {STEP_LABELS[step]}
               </h1>
-              <span style={stepCounter}>
-                Step {step} of {LAST_STEP}
-              </span>
+              <span className="sr-only">Step {step} of {LAST_STEP}</span>
+              <StepNav step={step} onGoTo={goTo} />
             </div>
             <div style={actionRow}>
               {step > 1 && <OutlineCta size="sm" onClick={() => goTo((step - 1) as FormStep)}>Back</OutlineCta>}
@@ -612,8 +647,9 @@ export function RequirementForm({
               )}
             </div>
           </div>
-          <StepNav step={step} onGoTo={goTo} />
         </div>
+      </div>
+      <div style={cardStyle}>
         <div style={bodyPadding}>
           {draftBanner}
           {step === 1 && requiredNote}
