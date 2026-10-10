@@ -61,6 +61,7 @@ export function NumberField({
   style: CSSProperties;
   maxDigits?: number;
 }) {
+  const merged: CSSProperties = { ...style, borderColor: invalid ? t.error : style.borderColor };
   return (
     <input
       id={id}
@@ -74,10 +75,24 @@ export function NumberField({
       placeholder={placeholder}
       aria-invalid={invalid || undefined}
       aria-describedby={describedBy}
-      style={{ ...style, borderColor: invalid ? t.error : style.borderColor }}
+      style={merged}
     />
   );
 }
+
+const chipStyle = (pressed: boolean): CSSProperties => ({
+  minHeight: 34,
+  padding: "6px 14px",
+  borderRadius: 999,
+  border: `1px solid ${pressed ? t.indigo : t.line}`,
+  background: pressed ? t.indigo100 : t.white,
+  color: pressed ? t.indigoDeep : t.neutralInk,
+  fontFamily: f.sans,
+  fontSize: textSize.base,
+  fontWeight: pressed ? 700 : 500,
+  cursor: "pointer",
+  whiteSpace: "nowrap",
+});
 
 function ChipToggle({ pressed, onClick, children }: { pressed: boolean; onClick: () => void; children: ReactNode }) {
   return (
@@ -86,19 +101,7 @@ function ChipToggle({ pressed, onClick, children }: { pressed: boolean; onClick:
       aria-pressed={pressed}
       onClick={onClick}
       className="pointer-coarse:min-h-11"
-      style={{
-        minHeight: 34,
-        padding: "6px 14px",
-        borderRadius: 999,
-        border: `1px solid ${pressed ? t.indigo : t.line}`,
-        background: pressed ? t.indigo100 : t.white,
-        color: pressed ? t.indigoDeep : t.neutralInk,
-        fontFamily: f.sans,
-        fontSize: textSize.base,
-        fontWeight: pressed ? 700 : 500,
-        cursor: "pointer",
-        whiteSpace: "nowrap",
-      }}
+      style={chipStyle(pressed)}
     >
       {children}
     </button>
@@ -155,6 +158,8 @@ export function ExperienceField({
   );
 }
 
+const segmentWrap: CSSProperties = { marginBottom: 12 };
+
 const SALARY_OPTIONS: { value: SalaryType; label: string }[] = [
   { value: "per-annum", label: "Per year" },
   { value: "per-month", label: "Per month" },
@@ -200,7 +205,7 @@ export function SalaryField({
   return (
     <fieldset style={fieldsetStyle}>
       <legend style={legendStyle}>Salary</legend>
-      <div style={{ marginBottom: 12 }}>
+      <div style={segmentWrap}>
         <SegmentedControl ariaLabel="Pay basis" options={SALARY_OPTIONS} value={salaryType} onChange={changeType} />
       </div>
       <div style={pairGrid}>
@@ -225,13 +230,20 @@ export function SalaryField({
   );
 }
 
+const navStyle: CSSProperties = { marginTop: 10 };
+const stepListStyle: CSSProperties = { display: "flex", flexWrap: "wrap", gap: "6px 18px", listStyle: "none", margin: 0, padding: 0 };
+const stepBadgeStyle = (filled: boolean): CSSProperties => ({
+  display: "inline-flex", alignItems: "center", justifyContent: "center", width: 22, height: 22, borderRadius: 999,
+  fontSize: textSize.sm, fontWeight: 700, background: filled ? t.indigo : t.creamSoft, color: filled ? t.white : t.neutralInk,
+});
+
 /** Wizard progress. Finished steps are buttons so a recruiter can jump back;
  *  later steps are plain text, because skipping ahead would skip validation. */
 export function StepNav({ step, onGoTo }: { step: FormStep; onGoTo: (s: FormStep) => void }) {
   const steps: FormStep[] = [1, 2, 3];
   return (
-    <nav aria-label="Form progress" style={{ marginTop: 10 }}>
-      <ol style={{ display: "flex", flexWrap: "wrap", gap: "6px 18px", listStyle: "none", margin: 0, padding: 0 }}>
+    <nav aria-label="Form progress" style={navStyle}>
+      <ol style={stepListStyle}>
         {steps.map((s) => {
           const current = s === step;
           const done = s < step;
@@ -239,10 +251,7 @@ export function StepNav({ step, onGoTo }: { step: FormStep; onGoTo: (s: FormStep
             <>
               <span
                 aria-hidden="true"
-                style={{
-                  display: "inline-flex", alignItems: "center", justifyContent: "center", width: 22, height: 22, borderRadius: 999,
-                  fontSize: textSize.sm, fontWeight: 700, background: current || done ? t.indigo : t.creamSoft, color: current || done ? t.white : t.neutralInk,
-                }}
+                style={stepBadgeStyle(current || done)}
               >
                 {done ? "✓" : s}
               </span>
@@ -254,12 +263,14 @@ export function StepNav({ step, onGoTo }: { step: FormStep; onGoTo: (s: FormStep
             display: "inline-flex", alignItems: "center", gap: 8, fontFamily: f.sans, fontSize: textSize.base,
             fontWeight: current ? 700 : 500, color: current ? t.coal : t.neutralInk, background: "none", border: "none", padding: 0,
           };
+          const doneStyle: CSSProperties = { ...common, cursor: "pointer" };
+          const todoStyle: CSSProperties = { ...common, minHeight: 28 };
           return (
             <li key={s} aria-current={current ? "step" : undefined}>
               {done ? (
-                <button type="button" onClick={() => onGoTo(s)} className="pointer-coarse:min-h-11" style={{ ...common, cursor: "pointer" }}>{label}</button>
+                <button type="button" onClick={() => onGoTo(s)} className="pointer-coarse:min-h-11" style={doneStyle}>{label}</button>
               ) : (
-                <span className="pointer-coarse:min-h-11" style={{ ...common, minHeight: 28 }}>{label}</span>
+                <span className="pointer-coarse:min-h-11" style={todoStyle}>{label}</span>
               )}
             </li>
           );
@@ -268,6 +279,11 @@ export function StepNav({ step, onGoTo }: { step: FormStep; onGoTo: (s: FormStep
     </nav>
   );
 }
+
+const summaryBox: CSSProperties = { padding: "12px 16px", borderRadius: 12, background: t.error100, border: `1px solid ${t.errorLine}`, color: t.errorInk, fontFamily: f.sans, fontSize: textSize.base };
+const summaryTitle: CSSProperties = { display: "block", marginBottom: 6 };
+const summaryList: CSSProperties = { margin: 0, paddingLeft: 18 };
+const summaryLink: CSSProperties = { color: "inherit", textDecoration: "underline", fontWeight: 600 };
 
 /** Lists every blocking problem after a failed Continue / Save, each one a
  *  link that moves focus to the offending control. */
@@ -285,12 +301,12 @@ export function ErrorSummary({
   return (
     <div
       role="alert"
-      style={{ padding: "12px 16px", borderRadius: 12, background: t.error100, border: `1px solid ${t.errorLine}`, color: t.errorInk, fontFamily: f.sans, fontSize: textSize.base }}
+      style={summaryBox}
     >
-      <strong style={{ display: "block", marginBottom: 6 }}>
+      <strong style={summaryTitle}>
         {items.length === 1 ? "1 thing needs fixing" : `${items.length} things need fixing`}
       </strong>
-      <ul style={{ margin: 0, paddingLeft: 18 }}>
+      <ul style={summaryList}>
         {items.map(([k, msg]) => (
           <li key={k}>
             <a
@@ -299,7 +315,7 @@ export function ErrorSummary({
                 e.preventDefault();
                 onJump(k);
               }}
-              style={{ color: "inherit", textDecoration: "underline", fontWeight: 600 }}
+              style={summaryLink}
             >
               {msg}
             </a>

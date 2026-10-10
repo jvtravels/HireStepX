@@ -93,6 +93,27 @@ const STICKY_HEADER: CSSProperties = { position: "sticky", top: 0, zIndex: 20, b
 
 const LAST_STEP: FormStep = 3;
 
+const textareaStyle: CSSProperties = { resize: "vertical" };
+const advancedBox: CSSProperties = { border: `1px solid ${t.line}`, borderRadius: 12, padding: "0 16px" };
+const advancedSummary: CSSProperties = { cursor: "pointer", padding: "14px 0", fontFamily: f.sans, fontSize: textSize.md, fontWeight: 600, color: t.coal, minHeight: 24 };
+const advancedHint: CSSProperties = { fontWeight: 400, color: t.inkFaint, marginLeft: 8, fontSize: textSize.base };
+const advancedBody: CSSProperties = { display: "flex", flexDirection: "column", gap: 20, paddingBottom: 18 };
+const checkboxCell: CSSProperties = { display: "flex", alignItems: "flex-end", paddingBottom: 8 };
+const noteText: CSSProperties = { fontFamily: f.sans, fontSize: textSize.sm, color: t.inkFaint, margin: 0 };
+const requiredStar: CSSProperties = { color: t.indigo };
+const bannerBox: CSSProperties = { display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12, padding: "12px 16px", borderRadius: 12, background: t.info100, border: `1px solid ${t.line}`, fontFamily: f.sans, fontSize: textSize.base, color: t.coal };
+const bannerText: CSSProperties = { flex: "1 1 240px" };
+const errorText: CSSProperties = { fontFamily: f.sans, fontSize: textSize.base, color: t.errorInk, margin: 0 };
+const cardStyle: CSSProperties = { background: t.white, borderRadius: 12, border: `1px solid ${t.line}`, overflow: "clip" };
+const editHeader: CSSProperties = { ...STICKY_HEADER, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: `1px solid ${t.line}`, flexWrap: "wrap", gap: 12 };
+const editTitle: CSSProperties = { fontFamily: f.sans, fontSize: 26, fontWeight: 700, color: t.coal, margin: "4px 0 0", letterSpacing: "-0.01em", lineHeight: "32px" };
+const actionRow: CSSProperties = { display: "flex", alignItems: "center", gap: 12, flexShrink: 0 };
+const wizardHeader: CSSProperties = { ...STICKY_HEADER, padding: "12px 20px", borderBottom: `1px solid ${t.line}` };
+const wizardTopRow: CSSProperties = { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" };
+const wizardTitleGroup: CSSProperties = { display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" };
+const wizardTitle: CSSProperties = { outline: "none", fontFamily: f.sans, fontSize: 22, fontWeight: 700, color: t.coal, margin: 0, letterSpacing: "-0.01em", lineHeight: "28px" };
+const stepCounter: CSSProperties = { fontFamily: f.mono, fontSize: 12, letterSpacing: 1.2, textTransform: "uppercase", color: t.indigo, fontWeight: 600 };
+
 export function RequirementForm({
   mode,
   initial,
@@ -111,6 +132,7 @@ export function RequirementForm({
   // iOS zooms any focused input under 16px.
   const inputStyle: CSSProperties = phone ? { ...baseInputStyle, fontSize: 16 } : baseInputStyle;
   const selectStyle: CSSProperties = { ...inputStyle, background: t.white };
+  const longTextStyle: CSSProperties = { ...inputStyle, ...textareaStyle };
   const isCreate = mode === "create";
 
   const [step, setStep] = useState<FormStep>(1);
@@ -144,6 +166,7 @@ export function RequirementForm({
   const errors = useMemo(() => validateDraft(draft, today), [draft, today]);
   const shown = (k: FieldKey): string | undefined => (attempted || touched.has(k) ? errors[k] : undefined);
   const errId = (k: FieldKey) => `${FIELD_FOCUS_ID[k]}-err`;
+  const descriptionStyle: CSSProperties = { ...longTextStyle, borderColor: shown("description") ? t.error : t.line };
   const describe = (k: FieldKey, extra?: string) => [shown(k) ? errId(k) : null, extra].filter(Boolean).join(" ") || undefined;
   const fieldError = (k: FieldKey) => {
     const msg = shown(k);
@@ -396,7 +419,7 @@ export function RequirementForm({
           rows={6}
           maxLength={MAX_DESCRIPTION_LENGTH}
           placeholder="Paste the JD or write a few lines about what you're looking for…"
-          style={{ ...inputStyle, resize: "vertical", borderColor: shown("description") ? t.error : t.line }}
+          style={descriptionStyle}
         />
         <HelpText id="rf-description-help" live={false}>
           We compare this with each candidate's resume to build their match report. {descLen.toLocaleString("en-IN")} / {MAX_DESCRIPTION_LENGTH.toLocaleString("en-IN")}
@@ -406,13 +429,13 @@ export function RequirementForm({
 
       <div>
         <FieldLabel htmlFor="rf-resp">Responsibilities</FieldLabel>
-        <textarea id="rf-resp" aria-describedby="rf-resp-count" value={draft.responsibilities} onChange={(e) => set("responsibilities", e.target.value)} rows={4} maxLength={MAX_LONG_TEXT_LENGTH} placeholder="What will this person own day to day?" style={{ ...inputStyle, resize: "vertical" }} />
+        <textarea id="rf-resp" aria-describedby="rf-resp-count" value={draft.responsibilities} onChange={(e) => set("responsibilities", e.target.value)} rows={4} maxLength={MAX_LONG_TEXT_LENGTH} placeholder="What will this person own day to day?" style={longTextStyle} />
         <HelpText id="rf-resp-count" live={false}>{draft.responsibilities.length.toLocaleString("en-IN")} / {MAX_LONG_TEXT_LENGTH.toLocaleString("en-IN")}</HelpText>
       </div>
 
       <div>
         <FieldLabel htmlFor="rf-nice">Nice to have</FieldLabel>
-        <textarea id="rf-nice" aria-describedby="rf-nice-count" value={draft.niceToHave} onChange={(e) => set("niceToHave", e.target.value)} rows={3} maxLength={MAX_LONG_TEXT_LENGTH} placeholder="Skills or experience that aren't required but would help" style={{ ...inputStyle, resize: "vertical" }} />
+        <textarea id="rf-nice" aria-describedby="rf-nice-count" value={draft.niceToHave} onChange={(e) => set("niceToHave", e.target.value)} rows={3} maxLength={MAX_LONG_TEXT_LENGTH} placeholder="Skills or experience that aren't required but would help" style={longTextStyle} />
         <HelpText id="rf-nice-count" live={false}>{draft.niceToHave.length.toLocaleString("en-IN")} / {MAX_LONG_TEXT_LENGTH.toLocaleString("en-IN")}</HelpText>
       </div>
     </>
@@ -444,12 +467,12 @@ export function RequirementForm({
         <TagInput id="rf-perks" values={draft.perksAndBenefits} onChange={(v) => set("perksAndBenefits", v)} placeholder="Health insurance, Flexible hours…" />
       </div>
 
-      <details open={advancedOpen} onToggle={(e) => setAdvancedOpen(e.currentTarget.open)} style={{ border: `1px solid ${t.line}`, borderRadius: 12, padding: "0 16px" }}>
-        <summary className="pointer-coarse:min-h-11" style={{ cursor: "pointer", padding: "14px 0", fontFamily: f.sans, fontSize: textSize.md, fontWeight: 600, color: t.coal, minHeight: 24 }}>
+      <details open={advancedOpen} onToggle={(e) => setAdvancedOpen(e.currentTarget.open)} style={advancedBox}>
+        <summary className="pointer-coarse:min-h-11" style={advancedSummary}>
           Advanced matching
-          <span style={{ fontWeight: 400, color: t.inkFaint, marginLeft: 8, fontSize: textSize.base }}>Optional. Sharpens who we shortlist.</span>
+          <span style={advancedHint}>Optional. Sharpens who we shortlist.</span>
         </summary>
-        <div style={{ display: "flex", flexDirection: "column", gap: 20, paddingBottom: 18 }}>
+        <div style={advancedBody}>
           <div style={grid2}>
             <div>
               <FieldLabel htmlFor="rf-industry">Preferred industry</FieldLabel>
@@ -483,7 +506,7 @@ export function RequirementForm({
               <FieldLabel htmlFor="rf-relevant">Relevant experience</FieldLabel>
               <input id="rf-relevant" value={draft.relevantExperience} onChange={(e) => set("relevantExperience", e.target.value)} placeholder="3+ years in a similar role" autoComplete="off" style={inputStyle} />
             </div>
-            <div style={{ display: "flex", alignItems: "flex-end", paddingBottom: 8 }}>
+            <div style={checkboxCell}>
               <Checkbox label="Portfolio required" checked={draft.portfolioRequired} onChange={(v) => set("portfolioRequired", v)} />
             </div>
           </div>
@@ -511,14 +534,14 @@ export function RequirementForm({
   );
 
   const requiredNote = (
-    <p style={{ fontFamily: f.sans, fontSize: textSize.sm, color: t.inkFaint, margin: 0 }}>
-      <span aria-hidden="true" style={{ color: t.indigo }}>* </span>Required. Everything else is optional.
+    <p style={noteText}>
+      <span aria-hidden="true" style={requiredStar}>* </span>Required. Everything else is optional.
     </p>
   );
 
   const draftBanner = offer && (
-    <div role="status" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12, padding: "12px 16px", borderRadius: 12, background: t.info100, border: `1px solid ${t.line}`, fontFamily: f.sans, fontSize: textSize.base, color: t.coal }}>
-      <span style={{ flex: "1 1 240px" }}>
+    <div role="status" style={bannerBox}>
+      <span style={bannerText}>
         You have an unfinished requirement{offer.draft.title.trim() ? ` ("${offer.draft.title.trim()}")` : ""} saved on this device.
       </span>
       <OutlineCta size="sm" onClick={() => { setDraft(offer.draft); setDirty(true); setOffer(null); }}>Restore draft</OutlineCta>
@@ -529,21 +552,21 @@ export function RequirementForm({
   const bodyPadding: CSSProperties = { padding: "24px clamp(16px, 5vw, 104px)", display: "flex", flexDirection: "column", gap: 26 };
   const section = (title: string | undefined, children: ReactNode) => <FormSection title={title}>{children}</FormSection>;
   const submitErrorEl = submitError && (
-    <p role="alert" style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.errorInk, margin: 0 }}>{submitError}</p>
+    <p role="alert" style={errorText}>{submitError}</p>
   );
 
   if (!isCreate) {
     return (
       <form onSubmit={handleSubmit} noValidate>
-        <div style={{ background: t.white, borderRadius: 12, border: `1px solid ${t.line}`, overflow: "clip" }}>
-          <div style={{ ...STICKY_HEADER, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: `1px solid ${t.line}`, flexWrap: "wrap", gap: 12 }}>
+        <div style={cardStyle}>
+          <div style={editHeader}>
             <div>
               <Eyebrow tone="indigo">Edit opportunity</Eyebrow>
-              <h1 style={{ fontFamily: f.sans, fontSize: 26, fontWeight: 700, color: t.coal, margin: "4px 0 0", letterSpacing: "-0.01em", lineHeight: "32px" }}>
+              <h1 style={editTitle}>
                 {initial?.title || "Edit opportunity"}
               </h1>
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
+            <div style={actionRow}>
               <OutlineCta size="sm" onClick={leave}>Cancel</OutlineCta>
               <PrimaryCta type="submit" disabled={submitting}>
                 {submitting ? "Saving…" : "Save changes"}
@@ -557,7 +580,7 @@ export function RequirementForm({
             {section(STEP_LABELS[2], requirementsAndPay)}
             {section(STEP_LABELS[3], targeting)}
             {submitErrorEl}
-            <p style={{ fontFamily: f.sans, fontSize: textSize.sm, color: t.inkFaint, margin: 0 }}>
+            <p style={noteText}>
               Saving re-scores your shortlist against the current candidate pool. Candidates you've already unlocked stay unlocked.
             </p>
           </div>
@@ -568,18 +591,18 @@ export function RequirementForm({
 
   return (
     <form onSubmit={handleSubmit} noValidate>
-      <div style={{ background: t.white, borderRadius: 12, border: `1px solid ${t.line}`, overflow: "clip" }}>
-        <div style={{ ...STICKY_HEADER, padding: "12px 20px", borderBottom: `1px solid ${t.line}` }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
-            <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
-              <h1 ref={stepHeadingRef} tabIndex={-1} style={{ outline: "none", fontFamily: f.sans, fontSize: 22, fontWeight: 700, color: t.coal, margin: 0, letterSpacing: "-0.01em", lineHeight: "28px" }}>
+      <div style={cardStyle}>
+        <div style={wizardHeader}>
+          <div style={wizardTopRow}>
+            <div style={wizardTitleGroup}>
+              <h1 ref={stepHeadingRef} tabIndex={-1} style={wizardTitle}>
                 {STEP_LABELS[step]}
               </h1>
-              <span style={{ fontFamily: f.mono, fontSize: 12, letterSpacing: 1.2, textTransform: "uppercase", color: t.indigo, fontWeight: 600 }}>
+              <span style={stepCounter}>
                 Step {step} of {LAST_STEP}
               </span>
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
+            <div style={actionRow}>
               {step > 1 && <OutlineCta size="sm" onClick={() => goTo((step - 1) as FormStep)}>Back</OutlineCta>}
               <OutlineCta size="sm" onClick={leave}>Cancel</OutlineCta>
               {step < LAST_STEP ? (
@@ -598,7 +621,7 @@ export function RequirementForm({
           {section(undefined, step === 1 ? roleBasics : step === 2 ? requirementsAndPay : targeting)}
           {submitErrorEl}
           {savedAt && (
-            <p style={{ fontFamily: f.sans, fontSize: textSize.sm, color: t.inkFaint, margin: 0 }}>
+            <p style={noteText}>
               Draft saved on this device. You can close this page and come back.
             </p>
           )}
