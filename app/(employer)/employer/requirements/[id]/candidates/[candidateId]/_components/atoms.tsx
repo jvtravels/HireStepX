@@ -69,19 +69,6 @@ export function ContactBox({ icon, label, children }: { icon: React.ReactNode; l
 
 export type KpiTone = "success" | "indigo" | "neutral";
 
-export function KpiCard({ label, value, sub, tone = "neutral" }: { label: string; value: string; sub?: string; tone?: KpiTone }) {
-  const toneColor = tone === "success" ? t.successInk : tone === "indigo" ? t.indigoDeep : t.coal;
-  return (
-    <Card style={{ boxShadow: "none", minWidth: 0 }} pad={16}>
-      <dl style={{ margin: 0 }}>
-        <dt style={{ fontFamily: f.sans, fontSize: 12, fontWeight: 700, letterSpacing: 0.3, textTransform: "uppercase", color: t.neutralInk }}>{label}</dt>
-        <dd style={{ fontFamily: f.sans, fontSize: 24, fontWeight: 700, color: toneColor, margin: "6px 0 0", overflowWrap: "anywhere" }}>{value}</dd>
-        {sub && <dd style={{ fontFamily: f.sans, fontSize: 12, color: t.neutralInk, margin: "4px 0 0" }}>{sub}</dd>}
-      </dl>
-    </Card>
-  );
-}
-
 export function SnapshotCell({ label, value }: { label: string; value: string }) {
   return (
     <div>

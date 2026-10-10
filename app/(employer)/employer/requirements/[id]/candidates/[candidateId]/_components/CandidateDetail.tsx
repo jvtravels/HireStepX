@@ -7,11 +7,11 @@ import { useEmployerData } from "@/employer/EmployerDataContext";
 import { useEmployerBreadcrumb } from "@/employer/EmployerShell";
 import { Card, OutlineCta } from "@/employer/_atoms";
 import { useMaxWidth } from "@/hooks/useMaxWidth";
-import { KpiCard } from "./atoms";
+import { CandidateBrief } from "./CandidateBrief";
 import { CandidateDialogsHost } from "./CandidateDialogsHost";
 import { CandidateHeader } from "./CandidateHeader";
 import { CANDIDATE_TABS, CandidateTabs, panelId, tabId, type CandidateTabKey } from "./CandidateTabs";
-import { READINESS_LABEL, READINESS_TONE, buildFitReasons, evidenceAverage, maskedName, matchedSkillCount } from "./helpers";
+import { buildFitReasons, evidenceAverage, maskedName, matchedSkillCount } from "./helpers";
 import { ActionNoticeAlert, SuspendedBanner } from "./Notices";
 import { OverviewTab } from "./OverviewTab";
 import { PracticeTab } from "./PracticeTab";
@@ -85,9 +85,6 @@ export default function CandidateDetail({ requirementId, matchId }: { requiremen
   const unmatchedSkills = requirement.skills.filter((s) => !matchedSkills.some((m) => m.toLowerCase() === s.toLowerCase()));
   const fitReasons = buildFitReasons(candidate, requirement, matchedSkills);
   const avg = evidenceAverage(d.evidence);
-  const readiness = d.evidence?.readiness ?? null;
-  const star = d.evidence?.starCompleteness ?? null;
-  const pending = d.evidenceLoading ? "Loading…" : d.evidenceFailed ? "Couldn't load" : "No graded sessions yet";
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -122,41 +119,15 @@ export default function CandidateDetail({ requirementId, matchId }: { requiremen
         changeStatus={d.changeStatus}
       />
 
-      <dl
-        aria-label="Key figures"
-        style={{
-          display: "grid",
-          gridTemplateColumns: phone ? "repeat(2, minmax(0, 1fr))" : narrow ? "repeat(3, minmax(0, 1fr))" : "repeat(5, minmax(0, 1fr))",
-          gap: 12,
-          margin: 0,
-        }}
-      >
-        <KpiCard
-          label="Practice readiness"
-          value={readiness ? READINESS_LABEL[readiness.band] : "—"}
-          sub={readiness ? `${readiness.confidence} confidence` : pending}
-          tone={readiness ? READINESS_TONE[readiness.band] : "neutral"}
-        />
-        <KpiCard
-          label="Avg skill score"
-          value={avg != null ? `${avg}` : "—"}
-          sub={avg != null ? "From graded practice sessions" : pending}
-          tone={avg == null ? "neutral" : avg >= 70 ? "success" : avg >= 50 ? "indigo" : "neutral"}
-        />
-        <KpiCard
-          label="Required skills"
-          value={`${matchedSkills.length}/${requirement.skills.length}`}
-          sub="Found on resume"
-          tone={requirement.skills.length > 0 && matchedSkills.length === requirement.skills.length ? "success" : "indigo"}
-        />
-        <KpiCard label="Practice sessions" value={`${candidate.sessionsCompleted}`} sub={`Roster score ${candidate.rosterScore}`} />
-        <KpiCard
-          label="STAR completeness"
-          value={star ? `${star.pct}%` : "—"}
-          sub={star ? `${star.questionsConsidered} question${star.questionsConsidered === 1 ? "" : "s"}` : pending}
-          tone={star ? (star.pct >= 70 ? "success" : star.pct >= 50 ? "indigo" : "neutral") : "neutral"}
-        />
-      </dl>
+      <CandidateBrief
+        sessions={candidate.sessionsCompleted}
+        evidence={d.evidence}
+        evidenceLoading={d.evidenceLoading}
+        evidenceFailed={d.evidenceFailed}
+        avg={avg}
+        matchedSkills={matchedSkills}
+        unmatchedSkills={unmatchedSkills}
+      />
 
       <CandidateTabs active={activeTab} onChange={setActiveTab} phone={phone} />
 
@@ -181,7 +152,7 @@ export default function CandidateDetail({ requirementId, matchId }: { requiremen
           </div>
         ))}
         <aside aria-label="Candidate details" style={{ display: "flex", flexDirection: "column", gap: 16, minWidth: 0 }}>
-          <SideRail candidate={candidate} matchedSkills={matchedSkills} unmatchedSkills={unmatchedSkills} shortlistHref={shortlistHref} />
+          <SideRail candidate={candidate} shortlistHref={shortlistHref} />
         </aside>
       </div>
     </div>

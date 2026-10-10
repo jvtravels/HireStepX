@@ -1,17 +1,13 @@
 import { tokens as t, fonts as f } from "@/auth/_tokens";
 import type { Candidate } from "@/employer/mockData";
-import { Card, HelpText, SkillTag } from "@/employer/_atoms";
+import { Card, HelpText } from "@/employer/_atoms";
 import { SectionTitle, SnapshotCell, UnlockLink } from "./atoms";
 
 export function SideRail({
   candidate,
-  matchedSkills,
-  unmatchedSkills,
   shortlistHref,
 }: {
   candidate: Candidate;
-  matchedSkills: string[];
-  unmatchedSkills: string[];
   shortlistHref: string;
 }) {
   const resume = candidate.resume;
@@ -26,45 +22,6 @@ export function SideRail({
           <SnapshotCell label="Roster score · sessions" value={`${candidate.rosterScore} · ${candidate.sessionsCompleted}`} />
         </div>
         {(resume?.noticePeriod || resume?.currentCtc) && <HelpText>Notice period and CTC are self-reported on the resume.</HelpText>}
-      </Card>
-
-      <Card style={{ boxShadow: "none" }} aria-labelledby="skills-match-heading">
-        <SectionTitle id="skills-match-heading">Required skills</SectionTitle>
-        {matchedSkills.length === 0 && unmatchedSkills.length === 0 ? (
-          <HelpText>This requirement lists no required skills.</HelpText>
-        ) : (
-          <>
-            <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", gap: 6, flexWrap: "wrap" }}>
-              {matchedSkills.map((s) => (
-                <li key={s}>
-                  <SkillTag>
-                    {s}
-                    <span className="sr-only"> (found on resume)</span>
-                  </SkillTag>
-                </li>
-              ))}
-              {unmatchedSkills.map((s) => (
-                <li
-                  key={s}
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    padding: "4px 10px",
-                    borderRadius: 999,
-                    border: `1px dashed ${t.lineStrong}`,
-                    fontFamily: f.sans,
-                    fontSize: 12,
-                    color: t.neutralInk,
-                  }}
-                >
-                  {s}
-                  <span className="sr-only"> (not found on resume)</span>
-                </li>
-              ))}
-            </ul>
-            {unmatchedSkills.length > 0 && <HelpText>Dashed tags aren't on this candidate's resume yet.</HelpText>}
-          </>
-        )}
       </Card>
 
       {!!resume?.education.length && (
