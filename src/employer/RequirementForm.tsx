@@ -110,8 +110,8 @@ const bannerBox: CSSProperties = { display: "flex", flexWrap: "wrap", alignItems
 const bannerText: CSSProperties = { flex: "1 1 240px" };
 const errorText: CSSProperties = { fontFamily: f.sans, fontSize: textSize.base, color: t.errorInk, margin: 0 };
 const cardStyle: CSSProperties = { background: t.white, borderRadius: 12, border: `1px solid ${t.line}`, overflow: "clip" };
-const actionRow: CSSProperties = { display: "flex", alignItems: "center", gap: 12, flexShrink: 0, marginLeft: "auto" };
-const cardHeader: CSSProperties = { position: "sticky", top: 0, zIndex: 20, display: "flex", alignItems: "center", flexWrap: "wrap", columnGap: 28, rowGap: 10, padding: "14px 20px", background: t.white, borderBottom: `1px solid ${t.line}` };
+const actionRow: CSSProperties = { display: "flex", alignItems: "center", gap: 12, flexShrink: 0 };
+const cardHeader: CSSProperties = { position: "sticky", top: 0, zIndex: 20, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", columnGap: 28, rowGap: 10, padding: "14px 20px", background: t.white, borderBottom: `1px solid ${t.line}` };
 const formTitle: CSSProperties = { outline: "none", fontFamily: f.sans, fontSize: 22, fontWeight: 700, color: t.coal, margin: 0, letterSpacing: "-0.01em", lineHeight: "28px" };
 const stackedSections: CSSProperties = { display: "flex", flexDirection: "column", gap: 26 };
 
