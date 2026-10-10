@@ -28,6 +28,7 @@ import {
   extractEvidenceQuotes,
   extractReadinessForecast,
   extractStarCompleteness,
+  extractSessionTrend,
   latestSessionByUser,
   computeVerifiedCapabilitiesForCandidate,
   claimProfileView,
@@ -180,9 +181,21 @@ export default async function handler(req: Request): Promise<Response> {
     const sessionRows = (await sessionsRes.json().catch(() => [])) as SessionRow[];
     const latest = latestSessionByUser(sessionRows).get(candidateUserId);
 
+    let resumeFile: { fileName: string } | null = null;
+    if (unlocked) {
+      const fileRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/resume_versions?select=file_name,file_path,resumes!inner(user_id)&resumes.user_id=eq.${encodeURIComponent(candidateUserId)}&file_path=not.is.null&order=created_at.desc&limit=1`,
+        { headers: serviceHeaders() },
+      ).catch(() => null);
+      const fileRows = fileRes && fileRes.ok ? ((await fileRes.json().catch(() => [])) as Array<{ file_name: string | null }>) : [];
+      if (fileRows[0]) resumeFile = { fileName: fileRows[0].file_name || "resume" };
+    }
+
     return new Response(
       JSON.stringify({
         matchId,
+        sessionTrend: extractSessionTrend(sessionRows),
+        resumeFile,
         skills: latest ? extractEvidenceSkills(latest.report_json) : [],
         // Verbatim answers often name past employers/colleagues, so they stay
         // locked until the employer has paid to unlock this candidate.

@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 import type { CandidateEvidence } from "@/employer/EmployerDataContext";
 import type { Candidate } from "@/employer/mockData";
 import { Meter } from "./parts";
-import { PROVENANCE, READINESS_LABEL, TONE_SUCCESS, evidenceAverage, formatSessionDate } from "./helpers";
+import { CARD, PROVENANCE, READINESS_LABEL, TONE_SUCCESS, evidenceAverage, formatSessionDate } from "./helpers";
 
 export type EvidenceState = { evidence: CandidateEvidence | null; loading: boolean; failed: boolean; onRetry: () => void };
 
@@ -39,7 +39,7 @@ export function EvidenceStatus({ state, children }: { state: EvidenceState; chil
 function MatchCard({ candidate, requirementTitle, fitReasons }: { candidate: Candidate; requirementTitle: string; fitReasons: string[] }) {
   const b = candidate.matchBreakdown;
   return (
-    <Card>
+    <Card className={CARD}>
       <CardHeader>
         <CardTitle>Fit for {requirementTitle}</CardTitle>
         <CardDescription>How this candidate lines up with the requirement.</CardDescription>
@@ -49,7 +49,7 @@ function MatchCard({ candidate, requirementTitle, fitReasons }: { candidate: Can
           <div className="space-y-4">
             <Meter label="Role match" pct={b.roleMatch} />
             <Meter label="Skill match" pct={b.skillMatch} />
-            <Meter label="Location match" pct={b.locationMatch} />
+            {candidate.city && <Meter label="Location match" pct={b.locationMatch} />}
           </div>
         )}
         {fitReasons.length > 0 && (
@@ -71,7 +71,7 @@ function MatchCard({ candidate, requirementTitle, fitReasons }: { candidate: Can
 function SkillsCard({ matched, unmatched }: { matched: string[]; unmatched: string[] }) {
   const total = matched.length + unmatched.length;
   return (
-    <Card>
+    <Card className={CARD}>
       <CardHeader>
         <CardTitle>Required skills</CardTitle>
         {total > 0 && <CardDescription>{matched.length} of {total} found on the resume</CardDescription>}
@@ -126,7 +126,7 @@ function EvidenceCard({ candidate, unmatched, state }: { candidate: Candidate; u
   const last = evidence?.sessionDate ? formatSessionDate(evidence.sessionDate) : "";
 
   return (
-    <Card>
+    <Card className={CARD}>
       <CardHeader>
         <CardTitle>Practice evidence</CardTitle>
         {hasEvidence && (
@@ -163,7 +163,7 @@ function EvidenceCard({ candidate, unmatched, state }: { candidate: Candidate; u
                 )}
               </dl>
               {verified.length > 0 && (
-                <ul className="divide-y divide-border/60 rounded-lg border border-border/60">
+                <ul className="divide-y divide-border/60 rounded-lg border border-border">
                   {verified.map((cap) => (
                     <li key={cap.key} className="flex items-center justify-between gap-3 px-3 py-2.5 text-sm">
                       <span>{cap.label}</span>

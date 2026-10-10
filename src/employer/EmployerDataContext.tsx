@@ -90,6 +90,8 @@ export interface CandidateEvidence {
   starCompleteness: { pct: number; questionsConsidered: number } | null;
   sessionDate: string | null;
   verifiedCapabilities: VerifiedCapability[];
+  sessionTrend?: Array<{ date: string; score: number; focus: string | null }>;
+  resumeFile?: { fileName: string } | null;
 }
 
 export interface RequirementActivity {
@@ -201,6 +203,7 @@ interface EmployerDataContextValue {
   /** Same as updateCandidateStatus but exposes `code: "unlock_required"` (402) / suspended (403). */
   updateCandidateStatusResult: (matchId: string, payload: StatusPayload) => Promise<EmployerApiResult<null>>;
   fetchCandidateEvidence: (matchId: string) => Promise<CandidateEvidence | null>;
+  fetchCandidateResumeUrl: (matchId: string) => Promise<{ url: string; fileName: string } | null>;
   fetchRequirementActivity: (id: string) => Promise<RequirementActivity[] | null>;
   fetchUnlockHistory: () => Promise<UnlockPurchase[] | null>;
   refreshRequirements: () => Promise<void>;
@@ -472,6 +475,12 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
     return res.data as CandidateEvidence;
   }, []);
 
+  const fetchCandidateResumeUrl = useCallback(async (matchId: string): Promise<{ url: string; fileName: string } | null> => {
+    const res = await getWithRetry(`/api/employer-candidate-resume-url?matchId=${encodeURIComponent(matchId)}`);
+    if (!res || !res.ok || !isRecord(res.data) || typeof res.data.url !== "string") return null;
+    return { url: res.data.url, fileName: typeof res.data.fileName === "string" ? res.data.fileName : "resume" };
+  }, []);
+
   const fetchRequirementActivity = useCallback(async (id: string): Promise<RequirementActivity[] | null> => {
     const res = await getWithRetry(`/api/employer-requirement-activity?id=${encodeURIComponent(id)}`);
     if (!res || !res.ok || !isRecord(res.data) || !Array.isArray(res.data.activity)) return null;
@@ -575,6 +584,7 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
     updateCandidateStatus,
     updateCandidateStatusResult,
     fetchCandidateEvidence,
+    fetchCandidateResumeUrl,
     fetchRequirementActivity,
     fetchUnlockHistory,
     refreshRequirements,
@@ -591,7 +601,7 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
     refreshCompanyStatus, submitCompanyProfile, submitCompanyProfileResult, addRequirement, updateRequirement,
     createUnlockOrder, createUnlockOrderResult, verifyUnlockPayment, fetchRequirementDetail, archiveRequirement,
     reopenRequirement, updateRequirementStage, updateCandidateStatus, updateCandidateStatusResult,
-    fetchCandidateEvidence, fetchRequirementActivity, fetchUnlockHistory, refreshRequirements, listConversations,
+    fetchCandidateEvidence, fetchCandidateResumeUrl, fetchRequirementActivity, fetchUnlockHistory, refreshRequirements, listConversations,
     fetchMessages, sendMessage, sendMessageResult, uploadMessageAttachment, flagMessage, fetchMessageAttachmentUrl,
   ]);
 

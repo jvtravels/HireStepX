@@ -222,6 +222,32 @@ export function latestSessionByUser(rows: SessionRow[]): Map<string, SessionRow>
   return latest;
 }
 
+export interface SessionTrendPoint {
+  date: string;
+  score: number;
+  focus: string | null;
+}
+
+/** Graded, non-negotiation sessions as an oldest-to-newest score series so an
+ *  employer can see whether the candidate is improving, not just the latest
+ *  snapshot. Unscored rows are skipped; capped so the payload stays small. */
+export function extractSessionTrend(rows: SessionRow[], limit = 8): SessionTrendPoint[] {
+  const points: SessionTrendPoint[] = [];
+  for (const row of rows) {
+    if (isNegotiationSession(row.type)) continue;
+    if (typeof row.score !== "number" || !Number.isFinite(row.score) || row.score <= 0) continue;
+    if (!row.created_at) continue;
+    points.push({
+      date: row.created_at,
+      score: Math.round(Math.min(100, row.score)),
+      focus: typeof row.focus === "string" && row.focus.trim() ? row.focus.trim().slice(0, 60) : null,
+    });
+  }
+  return points
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    .slice(-limit);
+}
+
 /** Computes the SAME 4-capability "2+ sessions at 70+" verification bar the
  *  candidate dashboard shows (src/dashboardData.ts), from this one
  *  candidate's rows — unlike latestSessionByUser() this deliberately does

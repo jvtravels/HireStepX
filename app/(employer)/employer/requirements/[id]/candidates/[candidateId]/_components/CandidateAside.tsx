@@ -1,10 +1,10 @@
-import { Banknote, CalendarClock, Check, GraduationCap, Hourglass, Lock, Trophy, X } from "lucide-react";
+import { Activity, Banknote, CalendarClock, Check, GraduationCap, Hourglass, Lock, MapPin, Target, Trophy, X } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import type { Candidate } from "@/employer/mockData";
 import { CANDIDATE_STATUS_LABEL } from "@/employer/_atoms";
 import { Fact, UnlockLink } from "./parts";
-import { NEGATIVE_STATUSES, PIPELINE_STEPS, formatDateTime } from "./helpers";
+import { CARD, NEGATIVE_STATUSES, PIPELINE_STEPS, formatDateTime, formatSessionDate } from "./helpers";
 
 function Stepper({ status }: { status: Candidate["candidateStatus"] }) {
   const negative = NEGATIVE_STATUSES.includes(status);
@@ -43,14 +43,14 @@ function Stepper({ status }: { status: Candidate["candidateStatus"] }) {
   );
 }
 
-export function CandidateAside({ candidate, shortlistHref }: { candidate: Candidate; shortlistHref: string }) {
+export function CandidateAside({ candidate, shortlistHref, lastSessionDate }: { candidate: Candidate; shortlistHref: string; lastSessionDate: string | null }) {
   const resume = candidate.resume;
   const interview = candidate.interviewScheduledAt ? formatDateTime(candidate.interviewScheduledAt) : "";
-  const hasFacts = !!(resume?.noticePeriod || resume?.currentCtc || resume?.seniorityLevel || interview);
+  const lastPractice = lastSessionDate ? formatSessionDate(lastSessionDate) : "";
 
   return (
     <div className="flex flex-col gap-4">
-      <Card>
+      <Card className={CARD}>
         <CardHeader><CardTitle>Hiring progress</CardTitle></CardHeader>
         <CardContent className="space-y-3">
           <Stepper status={candidate.candidateStatus} />
@@ -60,22 +60,25 @@ export function CandidateAside({ candidate, shortlistHref }: { candidate: Candid
         </CardContent>
       </Card>
 
-      {hasFacts && (
-        <Card>
-          <CardHeader><CardTitle>At a glance</CardTitle></CardHeader>
-          <CardContent>
-            <dl className="space-y-4">
-              {interview && <Fact icon={CalendarClock} label="Interview" value={interview} />}
-              {resume?.seniorityLevel && <Fact icon={Trophy} label="Seniority" value={resume.seniorityLevel} />}
-              {resume?.noticePeriod && <Fact icon={Hourglass} label="Notice period" value={resume.noticePeriod} />}
-              {resume?.currentCtc && <Fact icon={Banknote} label="Current CTC" value={resume.currentCtc} />}
-            </dl>
-          </CardContent>
-        </Card>
-      )}
+      <Card className={CARD}>
+        <CardHeader><CardTitle>At a glance</CardTitle></CardHeader>
+        <CardContent>
+          <dl className="space-y-4">
+            {interview && <Fact icon={CalendarClock} label="Interview" value={interview} />}
+            <Fact icon={MapPin} label="Location" value={candidate.city || "Not specified"} />
+            {resume?.seniorityLevel && <Fact icon={Trophy} label="Seniority" value={resume.seniorityLevel} />}
+            {resume?.noticePeriod && <Fact icon={Hourglass} label="Notice period (self-reported)" value={resume.noticePeriod} />}
+            {resume?.currentCtc && <Fact icon={Banknote} label="Current CTC (self-reported)" value={resume.currentCtc} />}
+            <Fact icon={Activity} label="Practice interviews" value={candidate.sessionsCompleted > 0 ? `${candidate.sessionsCompleted} completed${lastPractice ? `, last ${lastPractice}` : ""}` : "None yet"} />
+            {candidate.sessionsCompleted > 0 && candidate.rosterScore > 0 && (
+              <Fact icon={Target} label="Overall practice score" value={`${Math.round(candidate.rosterScore)} / 100`} />
+            )}
+          </dl>
+        </CardContent>
+      </Card>
 
       {!!resume?.education.length && (
-        <Card>
+        <Card className={CARD}>
           <CardHeader><CardTitle>Education</CardTitle></CardHeader>
           <CardContent>
             <dl className="space-y-4">
@@ -88,7 +91,7 @@ export function CandidateAside({ candidate, shortlistHref }: { candidate: Candid
       )}
 
       {!candidate.unlocked && (
-        <Card className="border-dashed">
+        <Card className={cn(CARD, "border-dashed")}>
           <CardHeader>
             <CardTitle className="flex items-center gap-2"><Lock aria-hidden="true" className="size-4" />Identity locked</CardTitle>
           </CardHeader>

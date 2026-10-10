@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import {
   extractEvidenceSkills,
+  extractSessionTrend,
   latestSessionByUser,
   isNegotiationSession,
   claimProfileView,
@@ -198,5 +199,22 @@ describe("claimProfileView", () => {
     const fetchImpl = vi.fn().mockRejectedValue(new Error("network down"));
     const claimed = await claimProfileView("https://x.supabase.co", { apikey: "k" }, "m1", "2026-01-01T00:00:00Z", fetchImpl as unknown as typeof fetch);
     expect(claimed).toBe(false);
+  });
+});
+
+describe("extractSessionTrend", () => {
+  const row = (created_at: string, score?: number, focus?: string, type?: string): SessionRow => ({ user_id: "u", created_at, report_json: null, score, focus, type });
+
+  it("returns scored sessions oldest first, clamped and rounded", () => {
+    const out = extractSessionTrend([row("2026-03-02", 140), row("2026-01-01", 61.6, "  Behavioral  "), row("2026-02-01", 0), row("2026-02-15")]);
+    expect(out).toEqual([
+      { date: "2026-01-01", score: 62, focus: "Behavioral" },
+      { date: "2026-03-02", score: 100, focus: null },
+    ]);
+  });
+
+  it("skips negotiation sessions and keeps only the latest `limit`", () => {
+    const rows = [row("2026-01-01", 50, undefined, "negotiation"), row("2026-01-02", 60), row("2026-01-03", 70), row("2026-01-04", 80)];
+    expect(extractSessionTrend(rows, 2).map((p) => p.score)).toEqual([70, 80]);
   });
 });

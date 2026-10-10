@@ -10,7 +10,8 @@ import { CANDIDATE_STATUS_LABEL } from "@/employer/_atoms";
 import { canInviteToInterview } from "@/employer/InterviewInviteDialog";
 import { readCandidateResponse } from "@/employer/_candidateFields";
 import { LockedContact } from "./Notices";
-import { TONE_DANGER, TONE_SUCCESS, TONE_WARNING, initials, maskedName, scoreBand } from "./helpers";
+import { CARD, TONE_DANGER, TONE_SUCCESS, TONE_WARNING, candidateLinks, initials, maskedName, scoreBand } from "./helpers";
+import { ResumeDownload } from "./ResumeDownload";
 
 const STATUS_TONE: Record<CandidateStatus, string> = {
   shortlisted: "bg-secondary text-secondary-foreground",
@@ -46,6 +47,7 @@ export function CandidateHeader({
   suspended,
   declined,
   shortlistHref,
+  resumeFileName,
   onInvite,
   onReject,
 }: {
@@ -53,6 +55,7 @@ export function CandidateHeader({
   suspended: boolean;
   declined: boolean;
   shortlistHref: string;
+  resumeFileName: string | null;
   onInvite: () => void;
   onReject: () => void;
 }) {
@@ -63,6 +66,7 @@ export function CandidateHeader({
   const inviteBlocked = suspended || declined;
   const response = declined ? "declined" : readCandidateResponse(candidate);
   const band = scoreBand(candidate.matchScore);
+  const links = candidateLinks(candidate);
   const blockedReason = suspended
     ? "Actions are unavailable while your account is suspended."
     : declined
@@ -70,7 +74,7 @@ export function CandidateHeader({
       : null;
 
   return (
-    <Card className="gap-0 py-0">
+    <Card className={cn(CARD, "gap-0 py-0")}>
       <div className="flex flex-col gap-5 p-5 md:flex-row md:items-start md:justify-between md:p-6">
         <div className="flex min-w-0 gap-4">
           <Avatar className="size-14 shrink-0" aria-hidden="true">
@@ -113,14 +117,14 @@ export function CandidateHeader({
             </div>
             <Badge className={cn("h-6 px-2.5", band.className)}>{band.label}</Badge>
           </div>
-          <div className="flex gap-2 md:flex-col">
+          <div className="flex flex-col gap-2 sm:flex-row md:flex-col">
             {canInvite && (
-              <Button onClick={onInvite} disabled={inviteBlocked} className="flex-1 pointer-coarse:h-11">
+              <Button size="lg" onClick={onInvite} disabled={inviteBlocked} className="w-full pointer-coarse:h-11">
                 Send interview invite
               </Button>
             )}
             {canReject && (
-              <Button variant="outline" onClick={onReject} disabled={suspended} className="flex-1 pointer-coarse:h-11">
+              <Button size="lg" variant="outline" onClick={onReject} disabled={suspended} className="w-full pointer-coarse:h-11">
                 Reject candidate
               </Button>
             )}
@@ -132,17 +136,16 @@ export function CandidateHeader({
       <Separator />
       <div className="px-5 py-3 md:px-6">
         {candidate.unlocked ? (
-          <div className="flex flex-wrap gap-x-6 gap-y-2">
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
             {candidate.contact?.phone && <ContactLink icon={Phone} label="Phone" href={`tel:${candidate.contact.phone}`}>{candidate.contact.phone}</ContactLink>}
             {candidate.contact?.email && <ContactLink icon={Mail} label="Email" href={`mailto:${candidate.contact.email}`}>{candidate.contact.email}</ContactLink>}
-            {resume?.linkedin && (
-              <ContactLink icon={ExternalLink} label="LinkedIn" href={`https://${resume.linkedin.replace(/^https?:\/\//, "")}`}>
-                {resume.linkedin.replace(/^https?:\/\/(www\.)?/, "")}
-              </ContactLink>
-            )}
-            {!candidate.contact?.phone && !candidate.contact?.email && !resume?.linkedin && (
+            {links.map((l) => (
+              <ContactLink key={l.url} icon={ExternalLink} label={l.label} href={l.url}>{l.label}</ContactLink>
+            ))}
+            {!candidate.contact?.phone && !candidate.contact?.email && links.length === 0 && (
               <p className="text-sm text-muted-foreground">No contact details on file.</p>
             )}
+            {resumeFileName && <div className="sm:ml-auto"><ResumeDownload matchId={candidate.id} fileName={resumeFileName} size="sm" /></div>}
           </div>
         ) : (
           <LockedContact shortlistHref={shortlistHref} />

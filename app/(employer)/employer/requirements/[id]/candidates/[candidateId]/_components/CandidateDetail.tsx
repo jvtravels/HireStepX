@@ -86,6 +86,7 @@ export default function CandidateDetail({ requirementId, matchId }: { requiremen
   const evidenceState = { evidence: d.evidence, loading: d.evidenceLoading, failed: d.evidenceFailed, onRetry: d.reloadEvidence };
   const matched = matchedSkillCount(requirement.skills, candidate.skills);
   const unmatched = requirement.skills.filter((s) => !matched.some((m) => m.toLowerCase() === s.toLowerCase()));
+  const resumeFileName = candidate.unlocked ? (d.evidence?.resumeFile?.fileName ?? null) : null;
   const fitReasons = buildFitReasons(candidate, requirement, matched);
 
   return (
@@ -98,6 +99,7 @@ export default function CandidateDetail({ requirementId, matchId }: { requiremen
         suspended={suspended}
         declined={d.declinedLocally}
         shortlistHref={shortlistHref}
+        resumeFileName={resumeFileName}
         onInvite={() => {
           d.clearNotice();
           setDialog("invite");
@@ -120,10 +122,10 @@ export default function CandidateDetail({ requirementId, matchId }: { requiremen
 
       <div className="grid items-start gap-4 lg:grid-cols-3">
         <Tabs defaultValue="overview" className="min-w-0 gap-4 lg:col-span-2">
-          <TabsList variant="line" className="w-full justify-start">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="practice">Practice evidence</TabsTrigger>
-            <TabsTrigger value="resume">Resume</TabsTrigger>
+          <TabsList variant="line" aria-label="Candidate sections" className="h-10 w-full justify-start gap-2 overflow-x-auto border-b border-border pb-0">
+            <TabsTrigger value="overview" className="flex-none px-3 after:bottom-0">Overview</TabsTrigger>
+            <TabsTrigger value="practice" className="flex-none px-3 after:bottom-0">Practice evidence</TabsTrigger>
+            <TabsTrigger value="resume" className="flex-none px-3 after:bottom-0">Resume</TabsTrigger>
           </TabsList>
           <TabsContent value="overview">
             <OverviewTab
@@ -136,14 +138,14 @@ export default function CandidateDetail({ requirementId, matchId }: { requiremen
             />
           </TabsContent>
           <TabsContent value="practice">
-            <PracticeTab evidence={d.evidence} unlocked={candidate.unlocked} shortlistHref={shortlistHref} state={evidenceState} />
+            <PracticeTab evidence={d.evidence} candidate={candidate} shortlistHref={shortlistHref} state={evidenceState} />
           </TabsContent>
           <TabsContent value="resume">
-            <ResumeTab candidate={candidate} shortlistHref={shortlistHref} />
+            <ResumeTab candidate={candidate} requirement={requirement} matched={matched} unmatched={unmatched} shortlistHref={shortlistHref} resumeFileName={resumeFileName} />
           </TabsContent>
         </Tabs>
         <aside aria-label="Candidate details" className="min-w-0 lg:sticky lg:top-4">
-          <CandidateAside candidate={candidate} shortlistHref={shortlistHref} />
+          <CandidateAside candidate={candidate} shortlistHref={shortlistHref} lastSessionDate={d.evidence?.sessionDate ?? null} />
         </aside>
       </div>
     </div>
