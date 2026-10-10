@@ -14,7 +14,7 @@ describe("notifications helpers", () => {
 
   it("builds audience-scoped type filters", () => {
     expect(typeInList("candidate", null)).not.toContain("strong_match_found");
-    expect(typeInList("employer", "messages")).toBe("in.(candidate_responded,new_message)");
+    expect(typeInList("employer", "messages")).toBe("in.(candidate_responded,new_message_employer,new_message)");
   });
 
   it("builds inbox, unread and done queries", () => {

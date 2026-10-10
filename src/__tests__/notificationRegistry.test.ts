@@ -8,8 +8,10 @@ describe("notification registry", () => {
   it("scopes types by audience", () => {
     expect(visibleTo("strong_match_found", "candidate")).toBe(false);
     expect(visibleTo("strong_match_found", "employer")).toBe(true);
-    expect(visibleTo("new_message", "candidate")).toBe(true);
-    expect(visibleTo("new_message", "employer")).toBe(true);
+    expect(visibleTo("new_message_candidate", "candidate")).toBe(true);
+    expect(visibleTo("new_message_candidate", "employer")).toBe(false);
+    expect(visibleTo("new_message_employer", "candidate")).toBe(false);
+    expect(visibleTo("new_message_employer", "employer")).toBe(true);
     expect(typesForAudience("candidate")).not.toContain("unlock_confirmed");
   });
 

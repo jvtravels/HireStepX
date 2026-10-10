@@ -24,6 +24,8 @@ const ICONS: Record<string, ComponentType<{ className?: string; "aria-hidden"?: 
   strong_match_found: SparklesIcon,
   candidate_responded: MessageSquareIcon,
   new_message: MessageSquareIcon,
+  new_message_candidate: MessageSquareIcon,
+  new_message_employer: MessageSquareIcon,
   payment_success: CreditCardIcon,
   payment_failed: AlertTriangleIcon,
   subscription_renewed: CreditCardIcon,

@@ -23,6 +23,8 @@ export const NOTIFICATION_TYPES = {
   payment_success: { audience: "both", category: "billing", priority: "normal" },
   payment_failed: { audience: "both", category: "billing", priority: "critical" },
   subscription_renewed: { audience: "both", category: "billing", priority: "low" },
+  new_message_candidate: { audience: "candidate", category: "messages", priority: "normal" },
+  new_message_employer: { audience: "employer", category: "messages", priority: "normal" },
   new_message: { audience: "both", category: "messages", priority: "normal" },
 } as const satisfies Record<string, TypeMeta>;
 
