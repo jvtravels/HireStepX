@@ -9,7 +9,6 @@ import { markAnalyticsVisited } from "./dashboardHelpers";
 import { sessionTypes, scoreLabel, scoreLabelColor } from "./dashboardTypes";
 import { ScoreTrendChart, SkillRadar } from "./DashboardCharts";
 import { useDashboardSessions, useDashboardCore, useDashboardUIActions, useDashboardSubscription } from "./DashboardContext";
-import { PaywallGate } from "./dashboardComponents";
 import { AnalyticsRouteSkeleton } from "./routeSkeletons";
 import { SkeletonReveal } from "./SkeletonReveal";
 import type { ResumeProfile } from "./dashboardData";
@@ -74,7 +73,7 @@ export default function AnalyticsPage() {
   } = useDashboardSessions();
   const { handleStartSession, aiInsights, dailyChallenge, upcomingGoals, badges } = useDashboardCore();
   const { setShowUpgradeModal } = useDashboardUIActions();
-  const { isFree, atSessionLimit } = useDashboardSubscription();
+  const { atSessionLimit } = useDashboardSubscription();
 
   const [rangeIdx, setRangeIdx] = useState(1); // default: 12 weeks
   const range = DATE_RANGES[rangeIdx];
@@ -166,8 +165,6 @@ export default function AnalyticsPage() {
     prevAvgScore, weakestType, latestScore, avgSkill, weeklyData,
     maxWeeklySessions, earnedBadges, nextBadge,
   } = derived;
-
-  if (isFree) return <PaywallGate feature="Performance Analytics" onUpgrade={() => setShowUpgradeModal(true)} />;
 
   // Computed as if already loaded — rendered behind the skeleton via
   // SkeletonReveal below, which hides it until sessionsLoading clears.

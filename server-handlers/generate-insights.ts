@@ -6,7 +6,7 @@ import { callLLM, extractJSON } from "./_llm";
 import {
   handleCorsPreflightOrMethod, corsHeaders, verifyAuth,
   unauthorizedResponse, isRateLimited, getClientIp, rateLimitResponse,
-  checkBodySize, validateOrigin, withRequestId, getSubscriptionTier, checkLLMQuota,
+  checkBodySize, validateOrigin, withRequestId, checkLLMQuota,
   redisGet, redisSetEx, hashStable,
 } from "./_shared";
 
@@ -35,14 +35,6 @@ export default async function handler(req: Request) {
   const ip = getClientIp(req);
   if (await isRateLimited(ip, "insights", 5, 3600_000)) {
     return rateLimitResponse(headers, 3600);
-  }
-
-  // Only paid users get LLM insights
-  const tier = await getSubscriptionTier(auth.userId);
-  if (tier === "free") {
-    return new Response(JSON.stringify({ error: "Upgrade to any paid plan for AI-powered insights", requiresUpgrade: true }), {
-      status: 403, headers,
-    });
   }
 
   try {
