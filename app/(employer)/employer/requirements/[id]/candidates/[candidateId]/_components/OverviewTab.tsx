@@ -1,9 +1,8 @@
-import { Check, FileSearch, Minus } from "lucide-react";
+import { Check, Minus } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
@@ -42,7 +41,7 @@ function MatchCard({ candidate, requirementTitle, fitReasons }: { candidate: Can
     <Card className={CARD}>
       <CardHeader>
         <CardTitle>Fit for {requirementTitle}</CardTitle>
-        <CardDescription>How this candidate lines up with the requirement.</CardDescription>
+        <CardDescription>The match score blends role, skill and location fit. Each part is scored out of 100.</CardDescription>
       </CardHeader>
       <CardContent className={cn("grid gap-6", b && fitReasons.length > 0 && "md:grid-cols-2")}>
         {b && (
@@ -118,7 +117,7 @@ function SkillsCard({ matched, unmatched }: { matched: string[]; unmatched: stri
   );
 }
 
-function EvidenceCard({ candidate, unmatched, state }: { candidate: Candidate; unmatched: string[]; state: EvidenceState }) {
+function EvidenceCard({ candidate, state, onOpenPractice }: { candidate: Candidate; state: EvidenceState; onOpenPractice: () => void }) {
   const { evidence } = state;
   const avg = evidenceAverage(evidence);
   const hasEvidence = !!(evidence?.readiness || evidence?.starCompleteness || evidence?.skills.length);
@@ -181,25 +180,10 @@ function EvidenceCard({ candidate, unmatched, state }: { candidate: Candidate; u
               </p>
             </div>
           ) : (
-            <Empty className="border p-8">
-              <EmptyHeader>
-                <EmptyMedia variant="icon"><FileSearch /></EmptyMedia>
-                <EmptyTitle>No practice evidence yet</EmptyTitle>
-                <EmptyDescription>
-                  This candidate hasn't completed a graded mock interview, so the match reflects their resume only.
-                </EmptyDescription>
-              </EmptyHeader>
-              {unmatched.length > 0 && (
-                <EmptyContent>
-                  <p className="text-xs font-medium text-muted-foreground">Worth probing in your interview</p>
-                  <ul className="flex flex-wrap justify-center gap-1.5">
-                    {unmatched.slice(0, 5).map((s) => (
-                      <li key={s}><Badge variant="secondary">{s}</Badge></li>
-                    ))}
-                  </ul>
-                </EmptyContent>
-              )}
-            </Empty>
+            <p className="text-sm text-muted-foreground">
+              No graded practice interviews yet, so this match reflects the resume only.{" "}
+              <button type="button" onClick={onOpenPractice} className="font-medium text-primary underline-offset-4 hover:underline">View practice tab</button>
+            </p>
           )}
         </EvidenceStatus>
       </CardContent>
@@ -214,6 +198,7 @@ export function OverviewTab({
   matched,
   unmatched,
   state,
+  onOpenPractice,
 }: {
   candidate: Candidate;
   fitReasons: string[];
@@ -221,12 +206,13 @@ export function OverviewTab({
   matched: string[];
   unmatched: string[];
   state: EvidenceState;
+  onOpenPractice: () => void;
 }) {
   return (
     <div className="flex flex-col gap-4">
       <MatchCard candidate={candidate} requirementTitle={requirementTitle} fitReasons={fitReasons} />
       <SkillsCard matched={matched} unmatched={unmatched} />
-      <EvidenceCard candidate={candidate} unmatched={unmatched} state={state} />
+      <EvidenceCard candidate={candidate} state={state} onOpenPractice={onOpenPractice} />
     </div>
   );
 }

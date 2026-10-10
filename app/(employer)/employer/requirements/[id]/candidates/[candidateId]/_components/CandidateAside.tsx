@@ -23,9 +23,9 @@ function Stepper({ status }: { status: Candidate["candidateStatus"] }) {
                   {reached && !isCurrent && <Check className="size-3" />}
                   {isCurrent && <span className="size-1.5 rounded-full bg-primary-foreground" />}
                 </span>
-                {!last && <span className={cn("min-h-5 w-px flex-1", reached && i < current ? "bg-primary" : "bg-border")} />}
+                {!last && <span className={cn("min-h-3 w-px flex-1", reached && i < current ? "bg-primary" : "bg-border")} />}
               </div>
-              <p className={cn("pb-4 text-sm leading-5", last && "pb-0", isCurrent ? "font-medium text-foreground" : reached ? "text-foreground" : "text-muted-foreground")}>
+              <p className={cn("pb-2 text-sm leading-5", last && "pb-0", isCurrent ? "font-medium text-foreground" : reached ? "text-foreground" : "text-muted-foreground")}>
                 {CANDIDATE_STATUS_LABEL[step]}
                 <span className="sr-only">{isCurrent ? " (current stage)" : reached ? " (completed)" : " (not reached)"}</span>
               </p>
@@ -65,7 +65,7 @@ export function CandidateAside({ candidate, shortlistHref, lastSessionDate }: { 
         <CardContent>
           <dl className="space-y-4">
             {interview && <Fact icon={CalendarClock} label="Interview" value={interview} />}
-            <Fact icon={MapPin} label="Location" value={candidate.city || "Not specified"} />
+            {candidate.city && candidate.city !== "Not specified" && <Fact icon={MapPin} label="Location" value={candidate.city} />}
             {resume?.seniorityLevel && <Fact icon={Trophy} label="Seniority" value={resume.seniorityLevel} />}
             {resume?.noticePeriod && <Fact icon={Hourglass} label="Notice period (self-reported)" value={resume.noticePeriod} />}
             {resume?.currentCtc && <Fact icon={Banknote} label="Current CTC (self-reported)" value={resume.currentCtc} />}

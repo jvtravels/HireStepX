@@ -92,7 +92,7 @@ export function CandidateHeader({
             </div>
             <p className="text-sm font-medium text-foreground">{candidate.targetRole}</p>
             <ul className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
-              {candidate.city && (
+              {candidate.city && candidate.city !== "Not specified" && (
                 <li className="inline-flex items-center gap-1.5"><MapPin aria-hidden="true" className="size-3.5" />{candidate.city}</li>
               )}
               {resume?.yearsExperience != null && (
@@ -102,7 +102,6 @@ export function CandidateHeader({
                 <li className="inline-flex items-center gap-1.5"><Clock aria-hidden="true" className="size-3.5" />Active {candidate.lastActiveDaysAgo === 0 ? "today" : `${candidate.lastActiveDaysAgo}d ago`}</li>
               )}
             </ul>
-            {resume?.headline && <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">{resume.headline}</p>}
           </div>
         </div>
 
@@ -110,7 +109,7 @@ export function CandidateHeader({
           <div className="flex items-center justify-between gap-3 rounded-lg border border-border/60 px-3 py-2">
             <div>
               <p className="text-xs text-muted-foreground">Match score</p>
-              <p className="text-2xl leading-none font-semibold tabular-nums">
+              <p className="text-3xl leading-none font-bold tabular-nums">
                 {candidate.matchScore}
                 <span className="text-sm font-normal text-muted-foreground"> / 100</span>
               </p>

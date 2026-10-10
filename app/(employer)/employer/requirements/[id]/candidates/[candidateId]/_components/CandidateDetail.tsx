@@ -35,6 +35,7 @@ function LoadingSkeleton() {
 export default function CandidateDetail({ requirementId, matchId }: { requirementId: string; matchId: string }) {
   const { suspended } = useEmployerData();
   const d = useCandidateDetail(requirementId, matchId);
+  const [tab, setTab] = useState("overview");
   const [dialog, setDialog] = useState<"invite" | "reject" | null>(null);
 
   const { requirement, candidate } = d;
@@ -121,7 +122,7 @@ export default function CandidateDetail({ requirementId, matchId }: { requiremen
       />
 
       <div className="grid items-start gap-4 lg:grid-cols-3">
-        <Tabs defaultValue="overview" className="min-w-0 gap-4 lg:col-span-2">
+        <Tabs value={tab} onValueChange={setTab} className="min-w-0 gap-4 lg:col-span-2">
           <TabsList variant="line" aria-label="Candidate sections" className="h-10 w-full justify-start gap-2 overflow-x-auto border-b border-border pb-0">
             <TabsTrigger value="overview" className="flex-none px-3 after:bottom-0">Overview</TabsTrigger>
             <TabsTrigger value="practice" className="flex-none px-3 after:bottom-0">Practice evidence</TabsTrigger>
@@ -135,6 +136,7 @@ export default function CandidateDetail({ requirementId, matchId }: { requiremen
               matched={matched}
               unmatched={unmatched}
               state={evidenceState}
+              onOpenPractice={() => setTab("practice")}
             />
           </TabsContent>
           <TabsContent value="practice">

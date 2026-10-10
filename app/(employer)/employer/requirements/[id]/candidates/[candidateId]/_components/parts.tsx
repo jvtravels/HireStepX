@@ -25,7 +25,7 @@ export function Meter({ label, pct, className }: { label: string; pct: number; c
         <span className="text-foreground">{label}</span>
         <span className="font-medium tabular-nums">{v}%</span>
       </div>
-      <Progress aria-hidden="true" value={v} className="h-1.5" />
+      <Progress aria-hidden="true" value={v} className={cn("h-1.5", v >= 75 ? "[&>[data-slot=progress-indicator]]:bg-emerald-600" : v >= 50 ? "[&>[data-slot=progress-indicator]]:bg-amber-500" : "[&>[data-slot=progress-indicator]]:bg-red-500")} />
     </div>
   );
 }
