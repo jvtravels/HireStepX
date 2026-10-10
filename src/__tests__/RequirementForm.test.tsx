@@ -34,9 +34,18 @@ describe("RequirementForm (create)", () => {
     localStorage.clear();
   });
 
+  it("titles the create page and keeps the header inside the form card", () => {
+    setup();
+    const title = screen.getByRole("heading", { level: 1, name: "New job requirement" });
+    const card = title.closest("form")?.firstElementChild;
+    expect(card).toContainElement(title);
+    expect(card).toContainElement(screen.getByRole("button", { name: "Continue" }));
+    expect(card).toContainElement(screen.getByLabelText(/job title/i));
+  });
+
   it("starts on step 1 and marks it as the current step", () => {
     setup();
-    expect(screen.getByRole("heading", { level: 1, name: "Role and requirements" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 2, name: "Role and requirements" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { level: 2, name: "Role basics" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { level: 2, name: "Requirements and pay" })).toBeInTheDocument();
     expect(screen.getByText("Step 1 of 2")).toBeInTheDocument();
@@ -58,7 +67,7 @@ describe("RequirementForm (create)", () => {
     setup();
     await fillStepOne();
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
-    expect(await screen.findByRole("heading", { level: 1, name: "Candidate targeting" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 2, name: "Candidate targeting" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Post job" })).toBeInTheDocument();
   });
 

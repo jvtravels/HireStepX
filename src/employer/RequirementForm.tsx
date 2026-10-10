@@ -11,7 +11,6 @@ import { tokens as t, fonts as f, textSize } from "@/auth/_tokens";
 import {
   AutocompleteInput,
   Checkbox,
-  Eyebrow,
   FieldLabel,
   FormSection,
   HelpText,
@@ -93,14 +92,10 @@ export type { RequirementFormValues } from "./mockData";
    is disabled, a failed Continue/Save explains what is wrong and moves focus
    to the first problem. */
 
-/* The action bar is its own bordered card, pinned to the top of the shell's scroll
-   area so Save / Continue stay reachable on a long form. The sticky wrapper is
-   page-coloured and carries the gap below the bar, so scrolled content is hidden
-   behind it instead of showing through a seam, and the bar keeps its full border
-   and rounded corners while stuck. */
-const STICKY_BAR: CSSProperties = { position: "sticky", top: 0, zIndex: 20, background: t.pageBg, paddingBottom: 12 };
-const barCard: CSSProperties = { background: t.white, border: `1px solid ${t.line}`, borderRadius: 12 };
-
+/* One white card holds the header (title, progress, actions) and the fields. The
+   header is pinned to the top of the shell's scroll area so Save / Continue stay
+   reachable on a long form; it paints its own white background so scrolled
+   fields never show through. */
 const LAST_STEP: FormStep = 2;
 const ADVANCED_ID = "advanced";
 
@@ -115,14 +110,9 @@ const bannerBox: CSSProperties = { display: "flex", flexWrap: "wrap", alignItems
 const bannerText: CSSProperties = { flex: "1 1 240px" };
 const errorText: CSSProperties = { fontFamily: f.sans, fontSize: textSize.base, color: t.errorInk, margin: 0 };
 const cardStyle: CSSProperties = { background: t.white, borderRadius: 12, border: `1px solid ${t.line}`, overflow: "clip" };
-const editHeader: CSSProperties = { ...barCard, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", flexWrap: "wrap", gap: 12 };
-const editTitle: CSSProperties = { fontFamily: f.sans, fontSize: 26, fontWeight: 700, color: t.coal, margin: "4px 0 0", letterSpacing: "-0.01em", lineHeight: "32px" };
-const actionRow: CSSProperties = { display: "flex", alignItems: "center", gap: 12, flexShrink: 0 };
-const wizardHeader: CSSProperties = { ...barCard, padding: "12px 20px" };
-const wizardTopRow: CSSProperties = { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" };
-const wizardTitleGroup: CSSProperties = { display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" };
-const wizardTitle: CSSProperties = { outline: "none", fontFamily: f.sans, fontSize: 22, fontWeight: 700, color: t.coal, margin: 0, letterSpacing: "-0.01em", lineHeight: "28px" };
-const stepCounter: CSSProperties = { fontFamily: f.mono, fontSize: 12, letterSpacing: 1.2, textTransform: "uppercase", color: t.indigo, fontWeight: 600 };
+const actionRow: CSSProperties = { display: "flex", alignItems: "center", gap: 12, flexShrink: 0, marginLeft: "auto" };
+const cardHeader: CSSProperties = { position: "sticky", top: 0, zIndex: 20, display: "flex", alignItems: "center", flexWrap: "wrap", columnGap: 28, rowGap: 10, padding: "14px 20px", background: t.white, borderBottom: `1px solid ${t.line}` };
+const formTitle: CSSProperties = { outline: "none", fontFamily: f.sans, fontSize: 22, fontWeight: 700, color: t.coal, margin: 0, letterSpacing: "-0.01em", lineHeight: "28px" };
 const stackedSections: CSSProperties = { display: "flex", flexDirection: "column", gap: 26 };
 
 export function RequirementForm({
@@ -596,14 +586,9 @@ export function RequirementForm({
   if (!isCreate) {
     return (
       <form onSubmit={handleSubmit} noValidate>
-        <div style={STICKY_BAR}>
-          <div style={editHeader}>
-            <div>
-              <Eyebrow tone="indigo">Edit opportunity</Eyebrow>
-              <h1 style={editTitle}>
-                {initial?.title || "Edit opportunity"}
-              </h1>
-            </div>
+        <div style={cardStyle}>
+          <div style={cardHeader}>
+            <h1 style={formTitle}>Edit job requirement</h1>
             <div style={actionRow}>
               <OutlineCta size="sm" onClick={leave}>Cancel</OutlineCta>
               <PrimaryCta type="submit" disabled={submitting}>
@@ -611,8 +596,6 @@ export function RequirementForm({
               </PrimaryCta>
             </div>
           </div>
-        </div>
-        <div style={cardStyle}>
           <div style={bodyPadding}>
             {requiredNote}
             <ErrorSummary errors={attempted ? errors : {}} scope="all" onJump={focusField} />
@@ -631,31 +614,24 @@ export function RequirementForm({
 
   return (
     <form onSubmit={handleSubmit} noValidate>
-      <div style={STICKY_BAR}>
-        <div style={wizardHeader}>
-          <div style={wizardTopRow}>
-            <div style={wizardTitleGroup}>
-              <h1 ref={stepHeadingRef} tabIndex={-1} style={wizardTitle}>
-                {STEP_LABELS[step]}
-              </h1>
-              <span style={stepCounter}>
-                Step {step} of {LAST_STEP}
-              </span>
-            </div>
-            <div style={actionRow}>
-              {step > 1 && <OutlineCta size="sm" onClick={() => goTo((step - 1) as FormStep)}>Back</OutlineCta>}
-              <OutlineCta size="sm" onClick={leave}>Cancel</OutlineCta>
-              {step < LAST_STEP ? (
-                <PrimaryCta type="button" onClick={goNext}>Continue</PrimaryCta>
-              ) : (
-                <PrimaryCta type="submit" disabled={submitting}>{submitting ? "Posting job…" : "Post job"}</PrimaryCta>
-              )}
-            </div>
-          </div>
-          <StepNav step={step} onGoTo={goTo} />
-        </div>
-      </div>
       <div style={cardStyle}>
+        <div style={cardHeader}>
+          <h1 style={formTitle}>New job requirement</h1>
+          <h2 ref={stepHeadingRef} tabIndex={-1} className="sr-only">
+            {STEP_LABELS[step]}
+          </h2>
+          <span className="sr-only">Step {step} of {LAST_STEP}</span>
+          <StepNav step={step} onGoTo={goTo} />
+          <div style={actionRow}>
+            {step > 1 && <OutlineCta size="sm" onClick={() => goTo((step - 1) as FormStep)}>Back</OutlineCta>}
+            <OutlineCta size="sm" onClick={leave}>Cancel</OutlineCta>
+            {step < LAST_STEP ? (
+              <PrimaryCta type="button" onClick={goNext}>Continue</PrimaryCta>
+            ) : (
+              <PrimaryCta type="submit" disabled={submitting}>{submitting ? "Posting job…" : "Post job"}</PrimaryCta>
+            )}
+          </div>
+        </div>
         <div style={bodyPadding}>
           {draftBanner}
           <ErrorSummary errors={attempted ? errors : {}} scope={step} onJump={focusField} />
