@@ -8,7 +8,7 @@ import { tokens as t, fonts as f } from "../auth/_tokens";
 import { EmployerWordmark } from "./_atoms";
 import { useEmployerData } from "./EmployerDataContext";
 import VerificationBanner from "./VerificationBanner";
-import { ErrorPanel } from "./_consoleParts";
+import { ErrorPanel, PageSkeleton } from "./_consoleParts";
 import LoadingScreen from "../_LoadingScreen";
 import { Button } from "@/components/ui/button";
 import {
@@ -72,6 +72,33 @@ function isSelfCardedRoute(pathname: string): boolean {
     SELF_CARDED_ROUTES.includes(pathname) ||
     /^\/employer\/requirements\/[^/]+(\/edit|\/outcome|\/compare|\/candidates\/[^/]+)?$/.test(pathname)
   );
+}
+
+/* Last-known "this user's company is approved" marker. On a refresh the
+   profile fetch takes a moment; with the marker the shell can draw the real
+   console chrome (header, sidebar) with a page skeleton inside, instead of a
+   blank loader, for the common returning-employer case. Purely a paint hint:
+   the fetched status still decides everything once it arrives. */
+const CONSOLE_HINT_KEY = "hsx_employer_console";
+
+function readConsoleHint(userId?: string): { name: string } | null {
+  if (!userId) return null;
+  try {
+    const raw = window.localStorage.getItem(CONSOLE_HINT_KEY);
+    const parsed: unknown = raw ? JSON.parse(raw) : null;
+    if (parsed && typeof parsed === "object" && (parsed as { userId?: unknown }).userId === userId) {
+      const name = (parsed as { name?: unknown }).name;
+      return { name: typeof name === "string" ? name : "" };
+    }
+  } catch { /* storage blocked or corrupt — fall back to the neutral loader */ }
+  return null;
+}
+
+function writeConsoleHint(userId: string, name: string | null) {
+  try {
+    if (name === null) window.localStorage.removeItem(CONSOLE_HINT_KEY);
+    else window.localStorage.setItem(CONSOLE_HINT_KEY, JSON.stringify({ userId, name }));
+  } catch { /* best effort */ }
 }
 
 /* Mirrors the account-menu button in src/onboarding/Panels.tsx TopBar
@@ -144,7 +171,14 @@ export default function EmployerShell({ children }: { children: React.ReactNode 
   const isMobile = useIsMobile();
   const router = useRouter();
   const pathname = usePathname();
-  const isConsole = companyStatus === "approved";
+  const [consoleHint] = useState(() => readConsoleHint(user?.id));
+  const isConsole = companyStatus === "approved" || (companyStatusLoading && consoleHint !== null);
+  const displayName = companyName || consoleHint?.name || "";
+
+  useEffect(() => {
+    if (!user?.id || companyStatusLoading || companyStatusError) return;
+    writeConsoleHint(user.id, companyStatus === "approved" ? companyName : null);
+  }, [user?.id, companyStatus, companyStatusLoading, companyStatusError, companyName]);
 
   const [breadcrumbState, setBreadcrumbState] = useState<BreadcrumbState>(null);
   const breadcrumbExtra = breadcrumbState && breadcrumbState.pathname === pathname ? breadcrumbState.crumbs : undefined;
@@ -156,8 +190,10 @@ export default function EmployerShell({ children }: { children: React.ReactNode 
 
   /* companyStatus defaults to "none" until /api/employer-profile answers, so
      without this an approved employer's refresh would paint the bare
-     onboarding frame (no nav, content centered) before snapping to the console. */
-  if (companyStatusLoading) return <LoadingScreen message="Loading your workspace…" />;
+     onboarding frame (no nav, content centered) before snapping to the console.
+     Returning employers (hint present) get the console chrome + skeleton below;
+     everyone else gets the neutral loader. */
+  if (companyStatusLoading && !isConsole) return <LoadingScreen message="Loading your workspace…" />;
 
   if (!isConsole) {
     const gutter = isMobile ? 16 : 48;
@@ -213,6 +249,8 @@ export default function EmployerShell({ children }: { children: React.ReactNode 
     (pathname?.startsWith("/employer/requirements/") ? navItems.find((item) => item.id === "jobs") : undefined) ??
     navItems[0];
 
+  const pageBody = companyStatusLoading ? <PageSkeleton label="Loading your workspace" /> : children;
+
   return (
     <EmployerBreadcrumbContext.Provider value={setBreadcrumbState}>
       <AppShellFrame
@@ -224,7 +262,7 @@ export default function EmployerShell({ children }: { children: React.ReactNode 
         messaging={{ fetchConversations: listConversations, basePath: "/employer/messages" }}
         audience="employer"
         account={{
-          name: companyName || "Employer",
+          name: displayName || "Employer",
           subtitle: "Employer account",
           email: user?.email,
         }}
@@ -235,7 +273,7 @@ export default function EmployerShell({ children }: { children: React.ReactNode 
           </DropdownMenuItem>
         }
         onLogout={handleLogout}
-        breadcrumbRoot={{ label: companyName || "HireStepX", path: "/employer" }}
+        breadcrumbRoot={{ label: displayName || "HireStepX", path: "/employer" }}
         pageLabel={isSettingsRoute ? "Settings" : isMessagesRoute ? "Messages" : activeItem.label}
         pageLabelPath={activeItem.path}
         extraCrumbs={breadcrumbExtra}
@@ -244,12 +282,12 @@ export default function EmployerShell({ children }: { children: React.ReactNode 
         pageKey={pathname}
         banners={<VerificationBanner onSettingsPage={isSettingsRoute} />}
       >
-        {isSelfCardedRoute(pathname ?? "") ? children : (
+        {isSelfCardedRoute(pathname ?? "") ? pageBody : (
           <div style={{
             width: "100%", maxWidth: 1280, margin: "0 auto", boxSizing: "border-box",
             background: t.white, border: `1px solid ${t.line}`, borderRadius: 12, padding: 24,
           }}>
-            {children}
+            {pageBody}
           </div>
         )}
       </AppShellFrame>

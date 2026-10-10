@@ -26,6 +26,7 @@ vi.mock("../employer/EmployerDataContext", () => ({
 }));
 
 beforeEach(() => {
+  window.localStorage.clear();
   refreshCompanyStatus.mockClear();
   data = { companyStatus: "none", companyStatusLoading: false, companyStatusError: false };
 });
@@ -36,6 +37,22 @@ describe("EmployerShell first paint", () => {
     render(<EmployerShell><p>Jobs page</p></EmployerShell>);
     expect(screen.getByRole("status")).toBeTruthy();
     expect(screen.queryByText("Jobs page")).toBeNull();
+    expect(screen.queryByTestId("console-frame")).toBeNull();
+  });
+
+  it("draws the console chrome with a skeleton, not the page, for a returning approved employer", () => {
+    window.localStorage.setItem("hsx_employer_console", JSON.stringify({ userId: "u1", name: "Acme" }));
+    data = { companyStatus: "none", companyStatusLoading: true, companyStatusError: false };
+    render(<EmployerShell><p>Jobs page</p></EmployerShell>);
+    expect(screen.getByTestId("console-frame")).toBeTruthy();
+    expect(screen.getByRole("status")).toBeTruthy();
+    expect(screen.queryByText("Jobs page")).toBeNull();
+  });
+
+  it("ignores a hint saved by a different user", () => {
+    window.localStorage.setItem("hsx_employer_console", JSON.stringify({ userId: "someone-else", name: "Other" }));
+    data = { companyStatus: "none", companyStatusLoading: true, companyStatusError: false };
+    render(<EmployerShell><p>Jobs page</p></EmployerShell>);
     expect(screen.queryByTestId("console-frame")).toBeNull();
   });
 
@@ -52,5 +69,13 @@ describe("EmployerShell first paint", () => {
     render(<EmployerShell><p>Jobs page</p></EmployerShell>);
     expect(screen.getByTestId("console-frame")).toBeTruthy();
     expect(screen.getByText("Jobs page")).toBeTruthy();
+    expect(JSON.parse(window.localStorage.getItem("hsx_employer_console") ?? "null")).toEqual({ userId: "u1", name: "Acme" });
+  });
+
+  it("clears the hint when the company turns out not to be approved", () => {
+    window.localStorage.setItem("hsx_employer_console", JSON.stringify({ userId: "u1", name: "Acme" }));
+    data = { companyStatus: "none", companyStatusLoading: false, companyStatusError: false };
+    render(<EmployerShell><p>Onboarding</p></EmployerShell>);
+    expect(window.localStorage.getItem("hsx_employer_console")).toBeNull();
   });
 });
