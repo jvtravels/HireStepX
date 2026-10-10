@@ -559,6 +559,8 @@ type FieldA11y = {
   /** id of the HelpText/error describing this field. */
   describedBy?: string;
   invalid?: boolean;
+  /** Fired when the field loses focus (after any pending tag is committed). */
+  onBlur?: () => void;
 };
 
 /** One removable chip — shared by TagInput and TagAutocompleteInput. The
@@ -702,6 +704,7 @@ export function TagInput({
   id,
   describedBy,
   invalid,
+  onBlur,
 }: {
   values: string[];
   onChange: (next: string[]) => void;
@@ -733,7 +736,10 @@ export function TagInput({
             onChange(values.slice(0, -1));
           }
         }}
-        onBlur={commit}
+        onBlur={() => {
+          commit();
+          onBlur?.();
+        }}
         placeholder={values.length === 0 ? placeholder : ""}
         aria-label={ariaLabel ?? (id ? undefined : placeholder)}
         aria-describedby={describedBy}
@@ -760,6 +766,7 @@ export function AutocompleteInput({
   id,
   describedBy,
   invalid,
+  onBlur,
 }: {
   value: string;
   onChange: (next: string) => void;
@@ -798,7 +805,10 @@ export function AutocompleteInput({
           setSelectedIdx(-1);
         }}
         onFocus={() => setFocused(true)}
-        onBlur={() => setTimeout(() => setFocused(false), 150)}
+        onBlur={() => {
+          setTimeout(() => setFocused(false), 150);
+          onBlur?.();
+        }}
         onKeyDown={(e) => {
           if (!open) {
             if (e.key === "Escape") inputRef.current?.blur();
@@ -855,6 +865,7 @@ export function TagAutocompleteInput({
   id,
   describedBy,
   invalid,
+  onBlur,
 }: {
   values: string[];
   onChange: (next: string[]) => void;
@@ -904,6 +915,7 @@ export function TagAutocompleteInput({
           onBlur={() => {
             setTimeout(() => setFocused(false), 150);
             commit();
+            onBlur?.();
           }}
           onKeyDown={(e) => {
             if (e.key === "Enter" || e.key === ",") {
@@ -948,9 +960,9 @@ export function FormSection({ title, children }: { title?: string; children: Rea
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       {title && (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          <span style={{ fontFamily: f.mono, fontSize: 12, letterSpacing: 1, textTransform: "uppercase", color: t.inkFaint, fontWeight: 600 }}>
+          <h2 style={{ margin: 0, fontFamily: f.mono, fontSize: 12, letterSpacing: 1, textTransform: "uppercase", color: t.inkFaint, fontWeight: 600 }}>
             {title}
-          </span>
+          </h2>
           <Divider />
         </div>
       )}
@@ -975,7 +987,7 @@ export function SegmentedControl<T extends string>({
   ariaLabel?: string;
 }) {
   return (
-    <div role="group" aria-label={ariaLabel} style={{ display: "inline-flex", padding: 3, borderRadius: 11, background: t.creamSoft, gap: 2 }}>
+    <div role="group" aria-label={ariaLabel} style={{ display: "inline-flex", flexWrap: "wrap", padding: 3, borderRadius: 11, background: t.creamSoft, gap: 2 }}>
       {options.map((opt) => {
         const selected = opt.value === value;
         return (
