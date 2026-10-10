@@ -36,7 +36,7 @@ export function VerificationBadge({ tier, showHint = false }: { tier: Verificati
 const MASKED_NAME = /^Candidate #[a-z0-9]+$/i;
 
 /** True when the server (or the page, pre-unlock) is showing the anonymous
- *  `Candidate #abc123` placeholder rather than a real name. */
+ *  anonymous "Candidate" + short-id placeholder rather than a real name. */
 export function isMaskedName(name: string): boolean {
   return MASKED_NAME.test(name.trim());
 }

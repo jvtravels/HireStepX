@@ -11,6 +11,7 @@ vi.mock("../../server-handlers/_shared", () => ({
 const { fulfillUnlockOrder, backfillLegacyUnlockOrder, findCapturedPaymentForOrder, toCapturedPayment } =
   await import("../../server-handlers/_unlock-fulfillment");
 const { handleEmployerUnlockWebhook } = await import("../../server-handlers/_employer-unlock-webhook");
+import type { UnlockWebhookEvent } from "../../server-handlers/_employer-unlock-webhook";
 
 const PAY = { id: "pay_1", status: "captured", amount: 5900, orderId: "order_1" };
 
@@ -233,7 +234,7 @@ describe("backfillLegacyUnlockOrder", () => {
 
 /* ── webhook branches ── */
 
-function hook(eventType: string, event: unknown, d = db, extra: Record<string, unknown> = {}) {
+function hook(eventType: string, event: UnlockWebhookEvent | undefined, d = db, extra: Record<string, unknown> = {}) {
   const notifyImpl = vi.fn(async (_input: NotifyInput) => {});
   return {
     notifyImpl,

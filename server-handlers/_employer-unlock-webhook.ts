@@ -33,10 +33,19 @@ export type UnlockWebhookOutcome =
   | { handled: false }
   | { handled: true; status: number; body: Record<string, unknown>; retry?: boolean };
 
+/** The slice of the Razorpay webhook body this handler reads; the rest is ignored. */
+export interface UnlockWebhookEvent {
+  payload?: {
+    payment?: { entity?: Record<string, unknown> };
+    order?: { entity?: { id?: string } };
+    refund?: { entity?: { payment_id?: string; amount?: number } };
+    dispute?: { entity?: { payment_id?: string } };
+  };
+}
+
 export interface UnlockWebhookParams {
   eventType: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Razorpay webhook payload is dynamic external data
-  event: any;
+  event: UnlockWebhookEvent | undefined;
   supabaseUrl: string;
   headers: Record<string, string>;
   fetchImpl?: typeof fetch;
