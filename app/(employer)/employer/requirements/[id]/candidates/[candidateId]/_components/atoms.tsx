@@ -2,7 +2,6 @@ import React from "react";
 import Link from "next/link";
 import { tokens as t, fonts as f } from "@/auth/_tokens";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/employer/_atoms";
 
 /* Presentational atoms private to the candidate detail page. */
 
