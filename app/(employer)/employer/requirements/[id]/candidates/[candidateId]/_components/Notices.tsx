@@ -1,117 +1,78 @@
-import React from "react";
-import { tokens as t, fonts as f } from "@/auth/_tokens";
-import { EmployerIcon } from "@/employer/_atoms";
-import { UnlockLink } from "./atoms";
+import { Lock, TriangleAlert } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { cn } from "@/lib/utils";
+import { UnlockLink } from "./parts";
 import type { ActionNotice } from "./useCandidateDetail";
 
-/* Status notices. Colour is never the only signal: each carries an icon and
-   explicit text, and urgent ones use role="alert". */
+/* Every notice carries an icon and explicit text, so colour is never the only signal. */
 
-type NoticeTone = "error" | "warning" | "neutral";
-
-const TONES: Record<NoticeTone, { bg: string; line: string; fg: string }> = {
-  error: { bg: t.error100, line: t.errorLine, fg: t.errorInk },
-  warning: { bg: t.warning100, line: t.warningLine, fg: t.warningInk },
-  neutral: { bg: t.creamSoft, line: t.line, fg: t.neutralInk },
-};
-
-export function InlineNotice({
-  tone,
-  title,
-  children,
-  action,
-  role = "status",
-}: {
-  tone: NoticeTone;
-  title?: string;
-  children: React.ReactNode;
-  action?: React.ReactNode;
-  role?: "status" | "alert";
-}) {
-  const c = TONES[tone];
-  return (
-    <div
-      role={role}
-      style={{
-        display: "flex",
-        gap: 10,
-        alignItems: "flex-start",
-        flexWrap: "wrap",
-        padding: "12px 14px",
-        borderRadius: 10,
-        background: c.bg,
-        border: `1px solid ${c.line}`,
-        color: c.fg,
-        fontFamily: f.sans,
-        fontSize: 13,
-        lineHeight: 1.5,
-      }}
-    >
-      <span style={{ display: "flex", flexShrink: 0, paddingTop: 1 }}>{tone === "neutral" ? <EmployerIcon.Lock /> : <EmployerIcon.Alert />}</span>
-      <div style={{ flex: "1 1 220px", minWidth: 0 }}>
-        {title && <strong style={{ display: "block", marginBottom: 2 }}>{title}</strong>}
-        {children}
-      </div>
-      {action}
-    </div>
-  );
-}
+const WARNING = "border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200 *:data-[slot=alert-description]:text-amber-900/90 dark:*:data-[slot=alert-description]:text-amber-200/90";
 
 export function SuspendedBanner() {
   return (
-    <InlineNotice tone="warning" title="Your account is suspended">
-      This candidate view is read-only. You can review evidence but can't invite, reject or message candidates until support restores access.
-    </InlineNotice>
+    <Alert className={WARNING}>
+      <TriangleAlert />
+      <AlertTitle>Your account is suspended</AlertTitle>
+      <AlertDescription>
+        This candidate view is read-only. You can review evidence but can't invite, reject or message candidates until support restores access.
+      </AlertDescription>
+    </Alert>
   );
 }
 
 export function ActionNoticeAlert({ notice, shortlistHref }: { notice: ActionNotice; shortlistHref: string }) {
   if (notice.kind === "unlock_required") {
     return (
-      <InlineNotice tone="warning" role="alert" title="Unlock required" action={<UnlockLink href={shortlistHref}>Unlock from the shortlist</UnlockLink>}>
-        {notice.message}
-      </InlineNotice>
+      <Alert role="alert" className={cn(WARNING, "items-center sm:pr-52 has-data-[slot=alert-action]:pr-2.5")}>
+        <TriangleAlert />
+        <AlertTitle>Unlock required</AlertTitle>
+        <AlertDescription>{notice.message}</AlertDescription>
+        <div className="col-start-2 mt-2">
+          <UnlockLink href={shortlistHref} size="sm">Unlock from the shortlist</UnlockLink>
+        </div>
+      </Alert>
     );
   }
   if (notice.kind === "declined") {
     return (
-      <InlineNotice tone="error" role="alert" title="Candidate declined contact">
-        {notice.message}
-      </InlineNotice>
+      <Alert role="alert" variant="destructive">
+        <TriangleAlert />
+        <AlertTitle>Candidate declined contact</AlertTitle>
+        <AlertDescription>{notice.message}</AlertDescription>
+      </Alert>
     );
   }
   return (
-    <InlineNotice tone="warning" role="alert" title="Action not allowed">
-      {notice.message}
-    </InlineNotice>
+    <Alert role="alert" className={WARNING}>
+      <TriangleAlert />
+      <AlertTitle>Action not allowed</AlertTitle>
+      <AlertDescription>{notice.message}</AlertDescription>
+    </Alert>
   );
 }
 
-/** Placeholder where verbatim quotes would be, shown while they are withheld. */
+/** Contact row shown in the header while the candidate is still masked. */
+export function LockedContact({ shortlistHref }: { shortlistHref: string }) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-muted/50 px-3 py-2.5">
+      <p className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Lock aria-hidden="true" className="size-4 shrink-0" />
+        Name, phone, email and links unlock together.
+      </p>
+      <UnlockLink href={shortlistHref} size="sm">Unlock from the shortlist</UnlockLink>
+    </div>
+  );
+}
+
 export function LockedQuotes({ shortlistHref }: { shortlistHref: string }) {
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "flex-start",
-        gap: 10,
-        padding: 16,
-        borderRadius: 10,
-        border: `1px dashed ${t.lineStrong}`,
-        background: t.creamSoft,
-        fontFamily: f.sans,
-        fontSize: 13,
-        color: t.neutralInk,
-        lineHeight: 1.6,
-      }}
-    >
-      <span style={{ display: "inline-flex", alignItems: "center", gap: 8, fontWeight: 700, color: t.coal }}>
-        <EmployerIcon.Lock />
+    <div className="flex flex-col items-start gap-3 rounded-lg border border-dashed border-border bg-muted/40 p-4 text-sm text-muted-foreground">
+      <p className="flex items-center gap-2 font-medium text-foreground">
+        <Lock aria-hidden="true" className="size-4" />
         Verbatim quotes are locked
-      </span>
-      <span>What this candidate actually said in practice sessions is shown once you unlock them.</span>
-      <UnlockLink href={shortlistHref}>Unlock to read quotes</UnlockLink>
+      </p>
+      <p>What this candidate actually said in practice sessions is shown once you unlock them.</p>
+      <UnlockLink href={shortlistHref} size="sm">Unlock to read quotes</UnlockLink>
     </div>
   );
 }

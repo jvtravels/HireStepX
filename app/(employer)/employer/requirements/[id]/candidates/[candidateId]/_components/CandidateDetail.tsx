@@ -2,35 +2,39 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { tokens as t, fonts as f } from "@/auth/_tokens";
+import { SearchX, TriangleAlert } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useEmployerData } from "@/employer/EmployerDataContext";
 import { useEmployerBreadcrumb } from "@/employer/EmployerShell";
-import { Card, OutlineCta } from "@/employer/_atoms";
-import { useMaxWidth } from "@/hooks/useMaxWidth";
-import { CandidateBrief } from "./CandidateBrief";
+import { CandidateAside } from "./CandidateAside";
 import { CandidateDialogsHost } from "./CandidateDialogsHost";
 import { CandidateHeader } from "./CandidateHeader";
-import { CANDIDATE_TABS, CandidateTabs, panelId, tabId, type CandidateTabKey } from "./CandidateTabs";
-import { buildFitReasons, evidenceAverage, maskedName, matchedSkillCount } from "./helpers";
+import { buildFitReasons, maskedName, matchedSkillCount } from "./helpers";
 import { ActionNoticeAlert, SuspendedBanner } from "./Notices";
 import { OverviewTab } from "./OverviewTab";
 import { PracticeTab } from "./PracticeTab";
 import { ResumeTab } from "./ResumeTab";
-import { SideRail } from "./SideRail";
 import { useCandidateDetail } from "./useCandidateDetail";
 
-function StateCard({ children }: { children: React.ReactNode }) {
-  return <Card style={{ boxShadow: "none", textAlign: "center", padding: 48 }}>{children}</Card>;
+function LoadingSkeleton() {
+  return (
+    <div role="status" className="space-y-4">
+      <span className="sr-only">Loading candidate…</span>
+      <Skeleton className="h-44 w-full" />
+      <div className="grid gap-4 lg:grid-cols-3">
+        <Skeleton className="h-72 lg:col-span-2" />
+        <Skeleton className="h-72" />
+      </div>
+    </div>
+  );
 }
 
-const stateText = { fontFamily: f.sans, fontSize: 14, color: t.neutralInk, margin: "0 0 16px" } as const;
-
 export default function CandidateDetail({ requirementId, matchId }: { requirementId: string; matchId: string }) {
-  const phone = useMaxWidth(640);
-  const narrow = useMaxWidth(900);
   const { suspended } = useEmployerData();
   const d = useCandidateDetail(requirementId, matchId);
-  const [activeTab, setActiveTab] = useState<CandidateTabKey>("overview");
   const [dialog, setDialog] = useState<"invite" | "reject" | null>(null);
 
   const { requirement, candidate } = d;
@@ -43,71 +47,66 @@ export default function CandidateDetail({ requirementId, matchId }: { requiremen
   );
 
   const back = (
-    <Link href={shortlistHref} style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.indigoDeep }}>
-      ← Back to shortlist
-    </Link>
+    <Button asChild variant="link">
+      <Link href={shortlistHref}>Back to shortlist</Link>
+    </Button>
   );
 
-  if (d.loading) {
-    return (
-      <StateCard>
-        <p role="status" style={{ ...stateText, margin: 0 }}>Loading candidate…</p>
-      </StateCard>
-    );
-  }
+  if (d.loading) return <LoadingSkeleton />;
 
   if (d.loadFailed || !requirement) {
     return (
-      <StateCard>
-        <p role="alert" style={stateText}>We couldn't load this candidate. Check your connection and try again.</p>
-        <div style={{ display: "flex", gap: 16, justifyContent: "center", alignItems: "center", flexWrap: "wrap" }}>
-          <OutlineCta onClick={() => void d.reload()}>Try again</OutlineCta>
+      <Empty className="border">
+        <EmptyHeader>
+          <EmptyMedia variant="icon"><TriangleAlert /></EmptyMedia>
+          <EmptyTitle>We couldn't load this candidate</EmptyTitle>
+          <EmptyDescription>Check your connection and try again.</EmptyDescription>
+        </EmptyHeader>
+        <EmptyContent className="flex-row justify-center">
+          <Button onClick={() => void d.reload()}>Try again</Button>
           {back}
-        </div>
-      </StateCard>
+        </EmptyContent>
+      </Empty>
     );
   }
 
   if (!candidate || d.unavailable) {
     return (
-      <StateCard>
-        <p style={stateText}>
-          {d.unavailable ? "This candidate is no longer available." : "Candidate not found."}
-        </p>
-        {back}
-      </StateCard>
+      <Empty className="border">
+        <EmptyHeader>
+          <EmptyMedia variant="icon"><SearchX /></EmptyMedia>
+          <EmptyTitle>{d.unavailable ? "This candidate is no longer available" : "Candidate not found"}</EmptyTitle>
+          <EmptyDescription>They may have withdrawn or been removed from this shortlist.</EmptyDescription>
+        </EmptyHeader>
+        <EmptyContent>{back}</EmptyContent>
+      </Empty>
     );
   }
 
-  const declined = d.declinedLocally;
   const evidenceState = { evidence: d.evidence, loading: d.evidenceLoading, failed: d.evidenceFailed, onRetry: d.reloadEvidence };
-  const matchedSkills = matchedSkillCount(requirement.skills, candidate.skills);
-  const unmatchedSkills = requirement.skills.filter((s) => !matchedSkills.some((m) => m.toLowerCase() === s.toLowerCase()));
-  const fitReasons = buildFitReasons(candidate, requirement, matchedSkills);
-  const avg = evidenceAverage(d.evidence);
+  const matched = matchedSkillCount(requirement.skills, candidate.skills);
+  const unmatched = requirement.skills.filter((s) => !matched.some((m) => m.toLowerCase() === s.toLowerCase()));
+  const fitReasons = buildFitReasons(candidate, requirement, matched);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+    <div className="flex flex-col gap-4">
       {suspended && <SuspendedBanner />}
       {d.notice && !dialog && <ActionNoticeAlert notice={d.notice} shortlistHref={shortlistHref} />}
 
-      <Card style={{ boxShadow: "none" }}>
-        <CandidateHeader
-          candidate={candidate}
-          phone={phone}
-          suspended={suspended}
-          declined={declined}
-          shortlistHref={shortlistHref}
-          onInvite={() => {
-            d.clearNotice();
-            setDialog("invite");
-          }}
-          onReject={() => {
-            d.clearNotice();
-            setDialog("reject");
-          }}
-        />
-      </Card>
+      <CandidateHeader
+        candidate={candidate}
+        suspended={suspended}
+        declined={d.declinedLocally}
+        shortlistHref={shortlistHref}
+        onInvite={() => {
+          d.clearNotice();
+          setDialog("invite");
+        }}
+        onReject={() => {
+          d.clearNotice();
+          setDialog("reject");
+        }}
+      />
 
       <CandidateDialogsHost
         dialog={dialog}
@@ -119,40 +118,32 @@ export default function CandidateDetail({ requirementId, matchId }: { requiremen
         changeStatus={d.changeStatus}
       />
 
-      <CandidateBrief
-        sessions={candidate.sessionsCompleted}
-        evidence={d.evidence}
-        evidenceLoading={d.evidenceLoading}
-        evidenceFailed={d.evidenceFailed}
-        avg={avg}
-        matchedSkills={matchedSkills}
-        unmatchedSkills={unmatchedSkills}
-      />
-
-      <CandidateTabs active={activeTab} onChange={setActiveTab} phone={phone} />
-
-      <div style={{ display: "grid", gridTemplateColumns: narrow ? "minmax(0, 1fr)" : "minmax(0, 1.6fr) minmax(0, 1fr)", gap: 16, alignItems: "start", marginTop: -4 }}>
-        {CANDIDATE_TABS.map((tb) => (
-          <div
-            key={tb.key}
-            id={panelId(tb.key)}
-            role="tabpanel"
-            aria-labelledby={tabId(tb.key)}
-            hidden={activeTab !== tb.key}
-            tabIndex={0}
-            style={{ display: activeTab === tb.key ? "flex" : "none", flexDirection: "column", gap: 16, minWidth: 0 }}
-          >
-            {activeTab === tb.key && tb.key === "overview" && (
-              <OverviewTab candidate={candidate} fitReasons={fitReasons} requirementTitle={requirement.title} state={evidenceState} />
-            )}
-            {activeTab === tb.key && tb.key === "practice" && (
-              <PracticeTab evidence={d.evidence} unlocked={candidate.unlocked} shortlistHref={shortlistHref} state={evidenceState} />
-            )}
-            {activeTab === tb.key && tb.key === "resume" && <ResumeTab candidate={candidate} phone={phone} shortlistHref={shortlistHref} />}
-          </div>
-        ))}
-        <aside aria-label="Candidate details" style={{ display: "flex", flexDirection: "column", gap: 16, minWidth: 0 }}>
-          <SideRail candidate={candidate} shortlistHref={shortlistHref} />
+      <div className="grid items-start gap-4 lg:grid-cols-3">
+        <Tabs defaultValue="overview" className="min-w-0 gap-4 lg:col-span-2">
+          <TabsList variant="line" className="w-full justify-start">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="practice">Practice evidence</TabsTrigger>
+            <TabsTrigger value="resume">Resume</TabsTrigger>
+          </TabsList>
+          <TabsContent value="overview">
+            <OverviewTab
+              candidate={candidate}
+              fitReasons={fitReasons}
+              requirementTitle={requirement.title}
+              matched={matched}
+              unmatched={unmatched}
+              state={evidenceState}
+            />
+          </TabsContent>
+          <TabsContent value="practice">
+            <PracticeTab evidence={d.evidence} unlocked={candidate.unlocked} shortlistHref={shortlistHref} state={evidenceState} />
+          </TabsContent>
+          <TabsContent value="resume">
+            <ResumeTab candidate={candidate} shortlistHref={shortlistHref} />
+          </TabsContent>
+        </Tabs>
+        <aside aria-label="Candidate details" className="min-w-0 lg:sticky lg:top-4">
+          <CandidateAside candidate={candidate} shortlistHref={shortlistHref} />
         </aside>
       </div>
     </div>

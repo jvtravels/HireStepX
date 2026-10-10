@@ -1,6 +1,5 @@
 import type { Candidate, CandidateStatus } from "@/employer/mockData";
 import type { Requirement, CandidateEvidence } from "@/employer/EmployerDataContext";
-import type { KpiTone } from "./atoms";
 
 /* Pure helpers for the candidate detail page. Everything here derives from
    fields the API actually returns — no synthesized or seeded values. */
@@ -10,12 +9,6 @@ export const READINESS_LABEL: Record<"strongHire" | "hire" | "leanHire", string>
   hire: "Hire",
   leanHire: "Lean hire",
 };
-export const READINESS_TONE: Record<"strongHire" | "hire" | "leanHire", KpiTone> = {
-  strongHire: "success",
-  hire: "indigo",
-  leanHire: "neutral",
-};
-
 export const PROVENANCE = "Scored by HireStepX AI from graded practice sessions";
 
 export function maskedName(c: Candidate): string {
@@ -64,4 +57,20 @@ export const NEGATIVE_STATUSES: CandidateStatus[] = ["rejected", "not_a_fit", "n
 export function formatSessionDate(iso: string): string {
   const d = new Date(iso);
   return Number.isNaN(d.getTime()) ? "" : d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+}
+
+export const TONE_SUCCESS = "bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300";
+export const TONE_WARNING = "bg-amber-50 text-amber-800 dark:bg-amber-950 dark:text-amber-300";
+export const TONE_DANGER = "bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300";
+
+/** Text label always accompanies the colour, so the band is never colour-only. */
+export function scoreBand(score: number): { label: string; className: string } {
+  if (score >= 70) return { label: "Strong match", className: TONE_SUCCESS };
+  if (score >= 50) return { label: "Fair match", className: TONE_WARNING };
+  return { label: "Low match", className: TONE_DANGER };
+}
+
+export function formatDateTime(iso: string): string {
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? "" : d.toLocaleString("en-IN", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
 }
