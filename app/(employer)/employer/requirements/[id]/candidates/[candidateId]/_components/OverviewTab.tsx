@@ -49,7 +49,7 @@ function MatchCard({ candidate, requirementTitle, fitReasons }: { candidate: Can
           <div className="space-y-4">
             <Meter label="Role match" pct={b.roleMatch} />
             <Meter label="Skill match" pct={b.skillMatch} />
-            {candidate.city && <Meter label="Location match" pct={b.locationMatch} />}
+            {candidate.city && candidate.city !== "Not specified" && <Meter label="Location match" pct={b.locationMatch} />}
           </div>
         )}
         {fitReasons.length > 0 && (
