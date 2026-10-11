@@ -7,6 +7,8 @@ import React, { useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useAuth, storePendingReferralCode, storePendingNextTarget, storePendingEmployerProfile } from "../AuthContext";
+import { isPlausibleWebsite, WEBSITE_FORMAT_MESSAGE } from "../employer/_companyProfileHelpers";
+import { emailDomain, isFreeMailDomain } from "../../server-handlers/_employer-trust";
 import { tokens as t, fonts as f, shadows } from "./_tokens";
 import {
   Field,
@@ -65,6 +67,7 @@ export default function Signup() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [companyName, setCompanyName] = useState("");
+  const [website, setWebsite] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [termsAttempted, setTermsAttempted] = useState(false);
@@ -151,16 +154,25 @@ export default function Signup() {
   const emailV = validateEmail(email);
   const passwordV = validateSignupPassword(password);
   const companyNameValid = !isEmployerFlow || companyName.trim().length >= 2;
+  const websiteValid = !isEmployerFlow || !website.trim() || isPlausibleWebsite(website);
+  // Employers must register with a company-domain email; the sign-in email is
+  // what proves they belong to the company (server enforces it too).
+  const workEmailValid = !isEmployerFlow || !emailV.valid || !isFreeMailDomain(emailDomain(email));
   const canSubmit =
     (isEmployerFlow || nameV.valid) &&
     emailV.valid &&
     passwordV.valid &&
     companyNameValid &&
+    websiteValid &&
+    workEmailValid &&
     termsAccepted &&
     !loading;
 
   const nameError = nameTouched ? nameV.message : null;
-  const emailError = emailTouched ? emailV.message : null;
+  const emailError = emailTouched
+    ? emailV.message ||
+      (workEmailValid ? null : "Use your work email (e.g. you@yourcompany.com) — personal email addresses can't register a company.")
+    : null;
   const passwordError = passwordTouched
     ? passwordV.message ||
       (passwordHasEdgeWhitespace(password)
@@ -324,7 +336,7 @@ export default function Signup() {
 
       const cleanEmail = sanitizeEmail(email);
       if (isEmployerFlow) {
-        storePendingEmployerProfile(companyName);
+        storePendingEmployerProfile(companyName, website);
       }
       trackAuth({ type: "login_method_selected", method: "email" });
       trackAuth({ type: "login_submitted", method: "email" });
@@ -364,7 +376,7 @@ export default function Signup() {
         if (isMounted.current) setLoading(false);
       }
     },
-    [canSubmit, email, name, password, signup, honeypot, isMounted, isEmployerFlow, companyName],
+    [canSubmit, email, name, password, signup, honeypot, isMounted, isEmployerFlow, companyName, website],
   );
 
   const handlePasswordVisibility = () => {
@@ -847,8 +859,27 @@ export default function Signup() {
                   errorMessage={nameError}
                 />
               )}
+              {isEmployerFlow && (
+                <Field
+                  label="Company website (optional)"
+                  type="text"
+                  name="company-website"
+                  value={website}
+                  onChange={(v) => {
+                    setWebsite(v);
+                    if (error) setError(null);
+                  }}
+                  autoComplete="url"
+                  placeholder="acme.com"
+                  inputMode="url"
+                  enterKeyHint="next"
+                  maxLength={300}
+                  invalid={!websiteValid}
+                  errorMessage={websiteValid ? null : WEBSITE_FORMAT_MESSAGE}
+                />
+              )}
               <Field
-                label="Email Address"
+                label={isEmployerFlow ? "Work email" : "Email Address"}
                 type="email"
                 name="email"
                 value={email}
@@ -859,11 +890,11 @@ export default function Signup() {
                 onFocus={() => setEmailTouched(true)}
                 onAutofill={() => setEmailTouched(true)}
                 autoComplete="email"
-                placeholder="rahul@example.com"
+                placeholder={isEmployerFlow ? "you@yourcompany.com" : "rahul@example.com"}
                 inputMode="email"
                 enterKeyHint="next"
                 maxLength={EMAIL_MAX_LENGTH}
-                invalid={!!error || (emailTouched && !!emailV.message)}
+                invalid={!!error || (emailTouched && (!!emailV.message || !workEmailValid))}
                 errorMessage={emailError}
               />
 

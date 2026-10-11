@@ -26,7 +26,7 @@ export const config = { runtime: "edge" };
 import { withAuthAndRateLimit, corsHeaders, withRequestId, slog } from "./_shared";
 import { base64ToBytes } from "./_resume-upload-helpers";
 import { loadAuthIdentity } from "./_entitlements";
-import { deriveEmployerTier, isEmployerTier, TIER_LIMITS, tierAtLeast, type EmployerTier } from "./_employer-trust";
+import { deriveEmployerTier, emailDomain, isEmployerTier, isFreeMailDomain, TIER_LIMITS, tierAtLeast, type EmployerTier } from "./_employer-trust";
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
@@ -293,6 +293,14 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
     }
     const uploadedLogoPath = upload.kind === "ok" ? upload.path : null;
     const existing = await fetchEmployer(userId);
+    // New company accounts need a work email; existing employers are grandfathered.
+    if (!existing) {
+      const identity = await loadAuthIdentity(SUPABASE_URL, serviceHeaders(), userId);
+      const domain = emailDomain(identity.email);
+      if (!domain || isFreeMailDomain(domain)) {
+        return new Response(JSON.stringify({ error: "Use your work email (e.g. you@yourcompany.com) to register a company account.", code: "work_email_required" }), { status: 403, headers });
+      }
+    }
     if (!websiteProvided) website = existing?.website ?? "";
     const logoPath = uploadedLogoPath ?? existing?.logo_path ?? null;
     const now = new Date().toISOString();

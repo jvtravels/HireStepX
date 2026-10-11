@@ -187,20 +187,20 @@ function clearPendingReferralCode(): void {
    name entered right on the signup form (see src/auth/Signup.tsx) — there's
    no session yet to authenticate the /api/employer-profile call with, so the
    value is stashed here and applied once a real session exists, same
-   pattern as the referral code above. Website is collected later, in
-   Settings, if the employer wants it on record. */
+   pattern as the referral code above. Website is optional at signup and can
+   also be added later in Settings. */
 const PENDING_EMPLOYER_PROFILE_KEY = "hirestepx_pending_employer_profile";
 
-interface PendingEmployerProfile { companyName: string }
+interface PendingEmployerProfile { companyName: string; website?: string }
 
 /** Stash the company name from the employer signup form for later
  *  application. No-ops if blank. Exported for Signup.tsx to call right
  *  before submitting the signup form. */
-export function storePendingEmployerProfile(companyName: string): void {
+export function storePendingEmployerProfile(companyName: string, website = ""): void {
   const name = companyName.trim();
   if (!name) return;
   try {
-    localStorage.setItem(PENDING_EMPLOYER_PROFILE_KEY, JSON.stringify({ companyName: name }));
+    localStorage.setItem(PENDING_EMPLOYER_PROFILE_KEY, JSON.stringify({ companyName: name, website: website.trim() }));
   } catch { /* expected */ }
 }
 
@@ -308,7 +308,7 @@ async function applyPendingEmployerProfile(accessToken: string): Promise<void> {
     const res = await fetch("/api/employer-profile", {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
-      body: JSON.stringify({ companyName: pending.companyName }),
+      body: JSON.stringify(pending.website ? { companyName: pending.companyName, website: pending.website } : { companyName: pending.companyName }),
     });
     if (res.ok || (res.status >= 400 && res.status < 500)) clearPendingEmployerProfile();
   } catch {
