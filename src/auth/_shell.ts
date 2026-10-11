@@ -299,26 +299,25 @@ export function detectEmailProvider(email: string): EmailProvider | null {
   const at = email.lastIndexOf("@");
   if (at < 0) return null;
   const domain = email.slice(at + 1).toLowerCase();
-  if (domain.includes("gmail") || domain.includes("googlemail")) {
+  // Match the registrable name exactly — substring checks wrongly flagged
+  // company domains like acme.com ("me.com") or olive.com ("live").
+  const name = domain.split(".")[0];
+  if (name === "gmail" || name === "googlemail") {
     return { name: "Gmail", url: "https://mail.google.com" };
   }
-  if (
-    domain.includes("outlook") ||
-    domain.includes("hotmail") ||
-    domain.includes("live")
-  ) {
+  if (name === "outlook" || name === "hotmail" || name === "live") {
     return { name: "Outlook", url: "https://outlook.live.com" };
   }
-  if (domain.includes("yahoo")) {
+  if (name === "yahoo" || name === "ymail") {
     return { name: "Yahoo", url: "https://mail.yahoo.com" };
   }
-  if (domain.includes("proton")) {
+  if (name === "proton" || name === "protonmail") {
     return { name: "Proton", url: "https://mail.proton.me" };
   }
-  if (domain.includes("icloud") || domain.includes("me.com")) {
+  if (domain === "icloud.com" || domain === "me.com" || domain === "mac.com") {
     return { name: "iCloud", url: "https://www.icloud.com/mail" };
   }
-  if (domain.includes("rediffmail")) {
+  if (name === "rediffmail") {
     return { name: "Rediffmail", url: "https://mail.rediff.com" };
   }
   return null;
