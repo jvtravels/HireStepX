@@ -1592,7 +1592,7 @@ export default function AdminDashboard() {
                     disabled={qaBusy}
                     style={{
                       flex: 1, background: T.white, color: T.coal, border: "1px solid rgba(14,12,8,0.18)",
-                      borderRadius: 6, padding: "7px 10px", fontSize: 13, fontFamily: font.ui, outline: "none",
+                      borderRadius: 6, padding: "7px 10px", fontSize: 13, fontFamily: font.ui,
                     }}
                   >
                     <option value="free">Free</option>
@@ -1608,7 +1608,7 @@ export default function AdminDashboard() {
                     placeholder="days"
                     style={{
                       width: 70, background: T.white, color: T.coal, border: "1px solid rgba(14,12,8,0.18)",
-                      borderRadius: 6, padding: "7px 10px", fontSize: 13, fontFamily: font.mono, outline: "none",
+                      borderRadius: 6, padding: "7px 10px", fontSize: 13, fontFamily: font.mono,
                     }}
                   />
                 </div>
@@ -1681,7 +1681,7 @@ export default function AdminDashboard() {
                     placeholder="qty"
                     style={{
                       width: 70, background: T.white, color: T.coal, border: "1px solid rgba(14,12,8,0.18)",
-                      borderRadius: 6, padding: "7px 10px", fontSize: 13, fontFamily: font.mono, outline: "none",
+                      borderRadius: 6, padding: "7px 10px", fontSize: 13, fontFamily: font.mono,
                     }}
                   />
                   <input
@@ -1693,7 +1693,7 @@ export default function AdminDashboard() {
                     maxLength={200}
                     style={{
                       flex: 1, background: T.white, color: T.coal, border: "1px solid rgba(14,12,8,0.18)",
-                      borderRadius: 6, padding: "7px 10px", fontSize: 13, fontFamily: font.ui, outline: "none",
+                      borderRadius: 6, padding: "7px 10px", fontSize: 13, fontFamily: font.ui,
                     }}
                   />
                 </div>
@@ -1867,7 +1867,7 @@ export default function AdminDashboard() {
                   maxLength={200}
                   style={{
                     background: c.onyx, color: c.ivory, border: `1px solid ${c.border}`,
-                    borderRadius: 6, padding: "7px 10px", fontSize: 13, fontFamily: font.ui, outline: "none",
+                    borderRadius: 6, padding: "7px 10px", fontSize: 13, fontFamily: font.ui,
                   }}
                 />
                 <textarea
@@ -1880,7 +1880,7 @@ export default function AdminDashboard() {
                   style={{
                     background: c.onyx, color: c.ivory, border: `1px solid ${c.border}`,
                     borderRadius: 6, padding: "7px 10px", fontSize: 13, fontFamily: font.ui,
-                    resize: "vertical", outline: "none",
+                    resize: "vertical",
                   }}
                 />
               </div>
@@ -2752,7 +2752,7 @@ export default function AdminDashboard() {
               value={recMonth}
               onChange={(e) => setRecMonth(e.target.value)}
               disabled={recBusy}
-              style={{ background: T.white, color: T.coal, border: "1px solid rgba(14,12,8,0.18)", borderRadius: 6, padding: "7px 10px", fontSize: 13, fontFamily: font.ui, outline: "none" }}
+              style={{ background: T.white, color: T.coal, border: "1px solid rgba(14,12,8,0.18)", borderRadius: 6, padding: "7px 10px", fontSize: 13, fontFamily: font.ui }}
             />
             <input
               type="number"
@@ -2762,7 +2762,7 @@ export default function AdminDashboard() {
               onChange={(e) => setRecAmount(e.target.value)}
               disabled={recBusy}
               placeholder="actual invoice ₹"
-              style={{ width: 140, background: T.white, color: T.coal, border: "1px solid rgba(14,12,8,0.18)", borderRadius: 6, padding: "7px 10px", fontSize: 13, fontFamily: font.ui, outline: "none" }}
+              style={{ width: 140, background: T.white, color: T.coal, border: "1px solid rgba(14,12,8,0.18)", borderRadius: 6, padding: "7px 10px", fontSize: 13, fontFamily: font.ui }}
             />
             <input
               type="text"
@@ -2771,7 +2771,7 @@ export default function AdminDashboard() {
               disabled={recBusy}
               placeholder="note (optional)"
               maxLength={500}
-              style={{ flex: 1, minWidth: 140, background: T.white, color: T.coal, border: "1px solid rgba(14,12,8,0.18)", borderRadius: 6, padding: "7px 10px", fontSize: 13, fontFamily: font.ui, outline: "none" }}
+              style={{ flex: 1, minWidth: 140, background: T.white, color: T.coal, border: "1px solid rgba(14,12,8,0.18)", borderRadius: 6, padding: "7px 10px", fontSize: 13, fontFamily: font.ui }}
             />
             <Button
               variant="outline"
@@ -4377,7 +4377,7 @@ export default function AdminDashboard() {
                 style={{
                   width: "100%", padding: "11px 14px", background: c.onyx,
                   border: `1px solid ${c.border}`, borderRadius: radius.md,
-                  color: c.ivory, fontSize: 14, fontFamily: font.ui, outline: "none",
+                  color: c.ivory, fontSize: 14, fontFamily: font.ui,
                   boxSizing: "border-box",
                 }}
                 placeholder="Enter admin password"

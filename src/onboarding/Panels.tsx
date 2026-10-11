@@ -835,7 +835,6 @@ export function ProfileReadyState({
                       borderRadius: 999,
                       background: t.indigo100,
                       color: t.indigo,
-                      outline: "none",
                       minWidth: 180,
                     }}
                   />

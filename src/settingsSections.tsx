@@ -469,7 +469,7 @@ export const PortfolioLinksSection = memo(function PortfolioLinksSection(props: 
               style={{
                 fontFamily: font.ui, fontSize: "clamp(13px, calc(13px + (768px - 100vw) * 1000), 16px)", color: c.ink, background: c.cream,
                 border: `1px solid ${c.borderStrong}`, borderRadius: 9, padding: "10px 14px",
-                outline: "none", minHeight: 40, boxSizing: "border-box",
+                minHeight: 40, boxSizing: "border-box",
               }}
             />
             <input
@@ -482,7 +482,7 @@ export const PortfolioLinksSection = memo(function PortfolioLinksSection(props: 
               style={{
                 fontFamily: font.ui, fontSize: "clamp(13px, calc(13px + (768px - 100vw) * 1000), 16px)", color: c.ink, background: c.cream,
                 border: `1px solid ${c.borderStrong}`, borderRadius: 9, padding: "10px 14px",
-                outline: "none", minHeight: 40, boxSizing: "border-box",
+                minHeight: 40, boxSizing: "border-box",
               }}
             />
             {formError && (
@@ -1000,7 +1000,7 @@ export const DangerZoneSection = memo(function DangerZoneSection(props: DangerZo
               style={{
                 fontFamily: font.ui, fontSize: "clamp(13px, calc(13px + (768px - 100vw) * 1000), 16px)", color: c.ink, background: c.graphite,
                 border: `1px solid ${t.errorLine}`, borderRadius: 9, padding: "10px 14px",
-                outline: "none", minWidth: 0, width: "100%", minHeight: 40, boxSizing: "border-box",
+                minWidth: 0, width: "100%", minHeight: 40, boxSizing: "border-box",
               }} />
             {!isOAuthOnlyUser && (
               <input type="password" value={deletePasswordInput}
@@ -1011,7 +1011,7 @@ export const DangerZoneSection = memo(function DangerZoneSection(props: DangerZo
                 style={{
                   fontFamily: font.ui, fontSize: "clamp(13px, calc(13px + (768px - 100vw) * 1000), 16px)", color: c.ink, background: c.graphite,
                   border: `1px solid ${t.errorLine}`, borderRadius: 9, padding: "10px 14px",
-                  outline: "none", minWidth: 0, width: "100%", minHeight: 40, boxSizing: "border-box",
+                  minWidth: 0, width: "100%", minHeight: 40, boxSizing: "border-box",
                 }} />
             )}
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center", marginTop: 4 }}>

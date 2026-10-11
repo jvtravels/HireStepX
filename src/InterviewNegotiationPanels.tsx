@@ -119,7 +119,7 @@ export const NegotiationCoachingCard = memo(function NegotiationCoachingCard({ o
               flex: 1, fontFamily: ef.sans, fontSize: 13, padding: "8px 12px",
               borderRadius: 8, background: "rgba(20,17,10,0.04)",
               border: `1px solid ${targetInvalid ? e.error : "rgba(20,17,10,0.06)"}`,
-              color: e.coal, outline: "none",
+              color: e.coal,
             }}
           />
           <span style={{ fontFamily: ef.sans, fontSize: 13, color: e.inkSoft }}>LPA</span>

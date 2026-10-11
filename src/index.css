@@ -1426,7 +1426,9 @@ input[type="range"]::-moz-range-thumb {
 .iv-reconnecting button:focus-visible,
 .iv-coachmark button:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 4px oklch(0.359 0.135 278.697 / 0.20); /* indigoRing */
+  /* Two-tone ring: white gap + solid indigo stays >=3:1 on cream and dark
+     surfaces alike (the old 20%-alpha indigoRing halo was ~1.4:1). */
+  box-shadow: 0 0 0 2px oklch(1 0 0), 0 0 0 4px oklch(0.359 0.135 278.697);
 }
 
 /* ─── First-time coachmarks ──────────────────────────────────────────

@@ -590,7 +590,7 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
               placeholder="Promo code" aria-label="Promo code"
               /* eslint-disable-next-line jsx-a11y/no-autofocus -- input is revealed on demand; focusing it on appear is the expected affordance. */
               autoFocus
-              style={{ fontFamily: font.mono, fontSize: 12, color: c.ivory, background: "transparent", border: "none", borderBottom: `1px solid ${promoResult?.valid ? c.sage : c.borderHover}`, borderRadius: 0, padding: "6px 2px", flex: 1, outline: "none", letterSpacing: "0.04em" }}
+              style={{ fontFamily: font.mono, fontSize: 12, color: c.ivory, background: "transparent", border: "none", borderBottom: `1px solid ${promoResult?.valid ? c.sage : c.borderHover}`, borderRadius: 0, padding: "6px 2px", flex: 1, letterSpacing: "0.04em" }}
             />
             <Button variant="outline" size="sm" disabled={promoLoading || !promoCode.trim()} onClick={async () => {
               setPromoLoading(true); setPromoError("");

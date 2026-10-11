@@ -61,7 +61,6 @@ export default function AdminLoginPage() {
     padding: "0.6rem 0.8rem",
     color: "#f5f5f5",
     fontSize: "0.95rem",
-    outline: "none",
   };
 
   return (
