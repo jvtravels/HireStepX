@@ -145,7 +145,7 @@ export function SalaryLadder({
         })}
       </div>
       <div style={{
-        fontFamily: fonts.sans, fontSize: 10, color: t.inkFaintWeak,
+        fontFamily: fonts.sans, fontSize: 10, color: t.inkSoft,
         marginTop: 14, display: "flex", justifyContent: "space-between",
       }}>
         <span>₹0</span>
@@ -350,7 +350,7 @@ export function ComparisonTable({
       </table>
       {caption && (
         <div style={{
-          fontFamily: fonts.sans, fontSize: 10, color: t.inkFaintWeak,
+          fontFamily: fonts.sans, fontSize: 10, color: t.inkSoft,
           marginTop: 8, textAlign: "center",
         }}>{caption}</div>
       )}
@@ -419,7 +419,7 @@ export function SkillMatrix({ skills, caption }: { skills: SkillItem[]; caption?
       </div>
       {caption && (
         <div style={{
-          fontFamily: fonts.sans, fontSize: 10, color: t.inkFaintWeak,
+          fontFamily: fonts.sans, fontSize: 10, color: t.inkSoft,
           marginTop: 8, textAlign: "center",
         }}>{caption}</div>
       )}

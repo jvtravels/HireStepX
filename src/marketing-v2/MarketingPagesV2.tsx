@@ -1248,7 +1248,7 @@ export function ContactV2() {
           appearance: none;
           -webkit-appearance: none;
         }
-        .hsx-cf::placeholder { color: ${t.inkFaintWeak}; }
+        .hsx-cf::placeholder { color: ${t.inkSoft}; }
         .hsx-cf:focus { border-bottom-color: ${t.copper}; }
         .hsx-cf option { background: ${t.white}; color: ${t.coal}; }
         textarea.hsx-cf { resize: none; min-height: 120px; line-height: 1.55; padding-top: 6px; }

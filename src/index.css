@@ -64,12 +64,12 @@
   --card-foreground: oklch(0.148 0.004 228.8);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.148 0.004 228.8);
-  --primary: oklch(0.555 0.163 48.998);
+  --primary: oklch(0.53 0.163 48.998);
   --primary-foreground: oklch(0.987 0.022 95.277);
   --secondary: oklch(0.967 0.001 286.375);
   --secondary-foreground: oklch(0.21 0.006 285.885);
   --muted: oklch(0.963 0.002 197.1);
-  --muted-foreground: oklch(0.56 0.021 213.5);
+  --muted-foreground: oklch(0.52 0.021 213.5);
   --accent: oklch(0.963 0.002 197.1);
   --accent-foreground: oklch(0.218 0.008 223.9);
   --destructive: oklch(0.577 0.245 27.325);
@@ -89,7 +89,7 @@
   --btn-destructive: oklch(0.505 0.190 27.518);
   --btn-destructive-hover: oklch(0.405 0.152 27.518);
   --chart-1: oklch(0.872 0.007 219.6);
-  --chart-2: oklch(0.56 0.021 213.5);
+  --chart-2: oklch(0.52 0.021 213.5);
   --chart-3: oklch(0.45 0.017 213.2);
   --chart-4: oklch(0.378 0.015 216);
   --chart-5: oklch(0.275 0.011 216.9);
@@ -193,7 +193,7 @@ button:not(:disabled), [role="button"]:not([aria-disabled="true"]) {
 .hsx-btn-icon {
   background: transparent;
   border: 1px solid transparent;
-  color: oklch(0.56 0.021 213.5);
+  color: oklch(0.52 0.021 213.5);
   border-radius: 8px;
 }
 .hsx-btn-icon:not(:disabled):hover {
@@ -210,7 +210,7 @@ button:not(:disabled), [role="button"]:not([aria-disabled="true"]) {
 .hsx-btn-icon-outline {
   background: oklch(1 0 0);
   border: 1px solid oklch(0.943 0.006 265.3);
-  color: oklch(0.56 0.021 213.5);
+  color: oklch(0.52 0.021 213.5);
   border-radius: 8px;
 }
 .hsx-btn-icon-outline:not(:disabled):hover {
@@ -1377,7 +1377,7 @@ input[type="range"]::-moz-range-thumb {
 .hsx-viz-halo--ai-speaking  { background: radial-gradient(closest-side, oklch(0.155 0.009 85.192 / .14), transparent 70%); }
 .hsx-viz-halo--ai-thinking  { background: radial-gradient(closest-side, oklch(from var(--primary) l c h / .18), transparent 70%); }
 .hsx-viz-halo--user-speaking{ background: radial-gradient(closest-side, oklch(0.359 0.135 278.697 / .22), transparent 70%); }
-.hsx-viz-halo--warning      { background: radial-gradient(closest-side, oklch(0.554 0.121 66.442 / .20), transparent 70%); }
+.hsx-viz-halo--warning      { background: radial-gradient(closest-side, oklch(0.53 0.121 66.442 / .20), transparent 70%); }
 
 /* Voice rings — concentric pulses while user speaks */
 @keyframes hsx-ring-pulse { 0% { transform: scale(.92); opacity: .55; } 100% { transform: scale(1.45); opacity: 0; } }

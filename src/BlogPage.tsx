@@ -139,7 +139,7 @@ function CompactCard({ post, priority = false, heading: Heading = "h3" }: { post
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={t.inkFaintWeak} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/>
             </svg>
-            <span style={{ fontFamily: fonts.sans, fontSize: 11, color: t.inkFaintWeak, letterSpacing: "0.05em", textTransform: "uppercase" }}>{post.category}</span>
+            <span style={{ fontFamily: fonts.sans, fontSize: 11, color: t.inkSoft, letterSpacing: "0.05em", textTransform: "uppercase" }}>{post.category}</span>
           </div>
         )}
         {/* Category + date pills overlaid on image */}

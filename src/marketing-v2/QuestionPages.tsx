@@ -458,7 +458,7 @@ export function QuestionSetPage({
               <Link href={practiceHref} className="ed-cta" style={{ ...ctaPrimaryStyle("md"), display: "block", textAlign: "center" as const, textDecoration: "none" }}>
                 Start free: 2 sessions <span className="ed-cta-arrow" aria-hidden>→</span>
               </Link>
-              <p style={{ fontFamily: fonts.sans, fontSize: 12, color: t.inkFaint, margin: "10px 0 0", textAlign: "center" as const }}>
+              <p style={{ fontFamily: fonts.sans, fontSize: 12, color: t.creamMuted, margin: "10px 0 0", textAlign: "center" as const }}>
                 No credit card required
               </p>
             </div>
