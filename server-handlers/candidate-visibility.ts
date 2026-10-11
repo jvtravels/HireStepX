@@ -2,7 +2,10 @@
  *
  * GET  /api/candidate-visibility
  * POST /api/candidate-visibility  { visibility: "masked" | "off", source?: string }
- *   -> { visibility, updatedAt, policyVersion, history, stats, changed }
+ *   -> { visibility, updatedAt, policyVersion, history, noticePending, stats, changed }
+ *   { visibility: "masked" } while already masked with no 'granted' row = the
+ *   candidate affirming the on-by-default setting ("Keep on"): logs 'granted'.
+ * POST /api/candidate-visibility  { noticeSeen: true }  -> { ok: true }
  *
  * The single write path for profiles.employer_visibility. A DB trigger stops
  * client JWTs changing that column, so this handler (service role) is what
@@ -28,6 +31,7 @@ import {
   EMPLOYER_DISCOVERY_POLICY_VERSION,
   asVisibility,
   buildConsentLogRow,
+  isDiscoveryNoticePending,
   shapeConsentHistory,
   type ConsentHistoryEntry,
   type EmployerVisibility,
@@ -41,6 +45,8 @@ export interface VisibilityState {
   updatedAt: string | null;
   policyVersion: string;
   history: ConsentHistoryEntry[];
+  /** True until the candidate answers or dismisses the one-time dashboard notice. */
+  noticePending: boolean;
   stats: { employersViewedLast30d: number };
 }
 
@@ -52,15 +58,54 @@ function jsonHeaders(extra: Record<string, string> = {}): Record<string, string>
   return { ...supabaseServiceHeaders(), "Content-Type": "application/json", ...extra };
 }
 
-async function readProfile(base: string, userId: string, fetchImpl: typeof fetch): Promise<{ visibility: EmployerVisibility; updatedAt: string | null } | "missing" | "error"> {
+type ProfileRead = { visibility: EmployerVisibility; updatedAt: string | null; noticeSeenAt: string | null };
+type ProfileRow = { employer_visibility?: string | null; employer_visibility_updated_at?: string | null; employer_notice_seen_at?: string | null };
+
+async function readProfile(base: string, userId: string, fetchImpl: typeof fetch): Promise<ProfileRead | "missing" | "error"> {
+  const url = (cols: string) => `${base}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}&select=${cols}&limit=1`;
+  const base_cols = "employer_visibility,employer_visibility_updated_at";
+  let res = await fetchImpl(url(`${base_cols},employer_notice_seen_at`), { headers: supabaseServiceHeaders(), signal: AbortSignal.timeout(6000) });
+  // Migration 0035 (employer_notice_seen_at) may not be applied yet: PostgREST
+  // answers 400 for an unknown column, so retry without it.
+  if (res.status === 400) res = await fetchImpl(url(base_cols), { headers: supabaseServiceHeaders(), signal: AbortSignal.timeout(6000) });
+  if (!res.ok) return "error";
+  const rows = (await res.json().catch(() => [])) as ProfileRow[];
+  if (!rows[0]) return "missing";
+  return {
+    visibility: asVisibility(rows[0].employer_visibility) ?? "masked",
+    updatedAt: rows[0].employer_visibility_updated_at ?? null,
+    noticeSeenAt: rows[0].employer_notice_seen_at ?? null,
+  };
+}
+
+/** Best-effort: stamps the notice as seen. Never throws and never fails the
+ *  caller — the column is optional (migration 0035) and a missing one just
+ *  means the dashboard falls back to its per-device dismissal. */
+export async function markNoticeSeen(userId: string, fetchImpl: typeof fetch = fetch): Promise<boolean> {
+  try {
+    const res = await fetchImpl(
+      `${supabaseUrl()}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}&employer_notice_seen_at=is.null`,
+      {
+        method: "PATCH",
+        headers: jsonHeaders({ Prefer: "return=minimal" }),
+        body: JSON.stringify({ employer_notice_seen_at: new Date().toISOString() }),
+        signal: AbortSignal.timeout(6000),
+      },
+    );
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+async function hasGrantedConsent(base: string, userId: string, fetchImpl: typeof fetch): Promise<boolean | "error"> {
   const res = await fetchImpl(
-    `${base}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}&select=employer_visibility,employer_visibility_updated_at&limit=1`,
+    `${base}/rest/v1/candidate_consent_log?user_id=eq.${encodeURIComponent(userId)}&purpose=eq.employer_discovery&action=eq.granted&select=id&limit=1`,
     { headers: supabaseServiceHeaders(), signal: AbortSignal.timeout(6000) },
   );
   if (!res.ok) return "error";
-  const rows = (await res.json().catch(() => [])) as Array<{ employer_visibility?: string | null; employer_visibility_updated_at?: string | null }>;
-  if (!rows[0]) return "missing";
-  return { visibility: asVisibility(rows[0].employer_visibility) ?? "masked", updatedAt: rows[0].employer_visibility_updated_at ?? null };
+  const rows = (await res.json().catch(() => [])) as unknown[];
+  return Array.isArray(rows) && rows.length > 0;
 }
 
 /** Current state + last 20 consent-log rows + how many employers viewed the candidate in the last 30 days. */
@@ -94,6 +139,7 @@ export async function loadVisibilityState(userId: string, fetchImpl: typeof fetc
     updatedAt: profile.updatedAt,
     policyVersion: EMPLOYER_DISCOVERY_POLICY_VERSION,
     history,
+    noticePending: isDiscoveryNoticePending({ visibility: profile.visibility, history, noticeSeenAt: profile.noticeSeenAt }),
     stats: { employersViewedLast30d: viewed },
   };
 }
@@ -113,8 +159,33 @@ export async function applyVisibilityChange(opts: {
   if (profile === "error") return { ok: false, status: 502, error: "Could not read your settings" };
   if (profile === "missing") return { ok: false, status: 404, error: "Profile not found" };
 
-  const logRow = buildConsentLogRow({ userId: opts.userId, current: profile.visibility, next: opts.next, source: opts.source });
+  // Discovery is on by default, so "masked" can exist without any consent
+  // record. Re-affirming it ("Keep on") is a no-op on the column but must
+  // still leave a 'granted' receipt.
+  let hasGrant: boolean | undefined;
+  if (profile.visibility === "masked" && opts.next === "masked") {
+    const g = await hasGrantedConsent(base, opts.userId, f);
+    if (g === "error") return { ok: false, status: 502, error: "Could not read your settings" };
+    hasGrant = g;
+  }
+
+  const logRow = buildConsentLogRow({ userId: opts.userId, current: profile.visibility, next: opts.next, source: opts.source, hasGrant });
   if (!logRow) return { ok: true, changed: false };
+
+  if (profile.visibility === opts.next) {
+    const ackRes = await f(`${base}/rest/v1/candidate_consent_log`, {
+      method: "POST",
+      headers: jsonHeaders({ Prefer: "return=minimal" }),
+      body: JSON.stringify(logRow),
+      signal: AbortSignal.timeout(8000),
+    }).catch(() => null);
+    if (!ackRes || !ackRes.ok) {
+      slog.error("candidate-visibility: consent log insert failed", { status: ackRes?.status ?? 0 });
+      return { ok: false, status: 500, error: "Could not record your choice" };
+    }
+    if (!profile.noticeSeenAt) await markNoticeSeen(opts.userId, f);
+    return { ok: true, changed: true };
+  }
 
   // Compare-and-swap on the value we read so two concurrent toggles can't both
   // log a transition from the same stale state.
@@ -168,6 +239,7 @@ export async function applyVisibilityChange(opts: {
     }
   }
 
+  if (!profile.noticeSeenAt) await markNoticeSeen(opts.userId, f);
   return { ok: true, changed: true };
 }
 
@@ -192,11 +264,16 @@ export default async function handler(req: Request): Promise<Response> {
       if (await isRateLimited(`user:${auth.userId}`, "candidate-visibility-write", 6, 60_000)) {
         return rateLimitResponse(headers);
       }
-      let body: { visibility?: unknown; source?: unknown };
+      let body: { visibility?: unknown; source?: unknown; noticeSeen?: unknown };
       try {
         body = await req.json();
       } catch {
         return json({ error: "Invalid JSON body" }, 400, headers);
+      }
+      // Dismissing the dashboard notice without choosing: record that it was seen, change nothing else.
+      if (body?.noticeSeen === true && body.visibility === undefined) {
+        await markNoticeSeen(auth.userId);
+        return json({ ok: true }, 200, headers);
       }
       const next = asVisibility(body?.visibility);
       if (!next) return json({ error: "visibility must be 'masked' or 'off'" }, 400, headers);

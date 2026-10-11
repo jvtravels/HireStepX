@@ -1,7 +1,7 @@
 /* Candidate-side client for the employer-visibility consent setting
-   (GET/POST /api/candidate-visibility). `masked` = employers may see practice
-   evidence with name and contact hidden until they pay to unlock; `off` =
-   never shown to employers. The server owns the consent record; this file is
+   (GET/POST /api/candidate-visibility). `masked` (the default) = employers can
+   find a masked version of the practice profile and pay to unlock contact
+   details; `off` = never shown to employers. The server owns the consent record; this file is
    only transport + display helpers. */
 
 import { authHeaders } from "./supabase";
@@ -20,6 +20,8 @@ export interface VisibilityState {
   updatedAt: string | null;
   policyVersion: string;
   history: VisibilityHistoryEntry[];
+  /** True until the candidate answers or dismisses the one-time dashboard notice. */
+  noticePending?: boolean;
   stats: { employersViewedLast30d: number };
 }
 
@@ -42,10 +44,16 @@ export async function fetchVisibility(): Promise<VisibilityState | null> {
 
 export async function saveVisibility(
   visibility: EmployerVisibility,
+  source: "settings" | "dashboard" = "settings",
 ): Promise<{ ok: true; state: VisibilityState } | { ok: false; error: string }> {
-  const res = await apiFetch<unknown>("/api/candidate-visibility", { visibility });
+  const res = await apiFetch<unknown>("/api/candidate-visibility", { visibility, source });
   if (res.ok && isVisibilityState(res.data)) return { ok: true, state: res.data };
   return { ok: false, error: res.error || "Couldn't update your setting" };
+}
+
+/** Records that the notice was seen without changing the setting (server-side, best effort). */
+export async function markNoticeSeen(): Promise<void> {
+  await apiFetch<unknown>("/api/candidate-visibility", { noticeSeen: true }).catch(() => null);
 }
 
 const SOURCE_LABEL: Record<string, string> = {
@@ -87,3 +95,8 @@ export function isVisibilityNoticeDismissed(): boolean {
 export function dismissVisibilityNotice(): void {
   try { localStorage.setItem(VISIBILITY_NOTICE_DISMISS_KEY, "1"); } catch { /* expected: localStorage may be unavailable */ }
 }
+
+/* Plain-language disclosure shown in the dashboard notice and the Settings
+   card. Keep the signup consent text and the privacy policy in step with it. */
+export const DISCLOSURE_SUMMARY =
+  "Employers can find a masked version of your practice profile (skills and scores, with no name) and can pay to unlock your contact details. You can switch this off any time in Settings.";

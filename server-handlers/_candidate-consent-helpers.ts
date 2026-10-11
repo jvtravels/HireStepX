@@ -9,7 +9,7 @@
 
 import { shouldAutoSuspend } from "./_employer-trust";
 
-export const EMPLOYER_DISCOVERY_POLICY_VERSION = "employer-discovery-2026-10";
+export const EMPLOYER_DISCOVERY_POLICY_VERSION = "employer-discovery-2026-10-v2";
 
 export const CONSENT_PURPOSE = "employer_discovery";
 
@@ -86,14 +86,21 @@ export interface ConsentLogRow {
   source: ConsentSource;
 }
 
-/** Row to append for a visibility change, or null when nothing changed (no-op writes leave no log entry). */
+/** Row to append for a visibility change, or null when nothing changed (no-op writes leave no log entry).
+ *
+ *  Discovery is on by default, so a candidate can be "masked" with no consent
+ *  record at all. When they affirm that default ("Keep on" on the dashboard
+ *  notice) the value doesn't change, but the affirmation must still be logged:
+ *  pass `hasGrant: false` and a masked -> masked request yields a 'granted' row. */
 export function buildConsentLogRow(input: {
   userId: string;
   current: EmployerVisibility;
   next: EmployerVisibility;
   source?: unknown;
+  hasGrant?: boolean;
 }): ConsentLogRow | null {
-  if (input.current === input.next) return null;
+  const affirmsDefault = input.current === "masked" && input.next === "masked" && input.hasGrant === false;
+  if (input.current === input.next && !affirmsDefault) return null;
   return {
     user_id: input.userId,
     purpose: CONSENT_PURPOSE,
@@ -101,6 +108,17 @@ export function buildConsentLogRow(input: {
     policy_version: EMPLOYER_DISCOVERY_POLICY_VERSION,
     source: asConsentSource(input.source),
   };
+}
+
+/** The one-time dashboard notice is pending while discovery is on, the candidate
+ *  has never answered it (no consent-log row of either kind) and it hasn't been
+ *  marked seen (profiles.employer_notice_seen_at, when that column exists). */
+export function isDiscoveryNoticePending(input: {
+  visibility: EmployerVisibility;
+  history: Array<{ action: ConsentAction }>;
+  noticeSeenAt: string | null;
+}): boolean {
+  return input.visibility === "masked" && input.history.length === 0 && !input.noticeSeenAt;
 }
 
 export interface ConsentHistoryEntry {
