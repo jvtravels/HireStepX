@@ -1816,7 +1816,7 @@ export function PrivacyV2() {
         <li><strong>Vercel</strong>: hosting and edge functions; also Vercel Analytics and Speed Insights for aggregate usage and page-performance measurement</li>
         <li><strong>Groq</strong>: primary AI inference for interview scoring and question generation (your resume text and answers are sent for this)</li>
         <li><strong>Google (Gemini)</strong>: AI inference fallback (same data as Groq)</li>
-        <li><strong>Cerebras</strong>: additional AI inference fallback (same data as Groq)</li>
+        <li><strong>Cloudflare (Workers AI)</strong>: additional AI inference fallback (same data as Groq)</li>
         <li><strong>Deepgram</strong>: primary speech-to-text for voice answers</li>
         <li><strong>Sarvam AI</strong>: text-to-speech and speech-to-text fallback</li>
         <li><strong>Cartesia</strong>: secondary text-to-speech (receives the interviewer's question text, not your answers)</li>

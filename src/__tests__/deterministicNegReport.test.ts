@@ -1,6 +1,6 @@
 /* #PRI-51 — deterministic salary-negotiation report fallback.
  *
- * When every LLM tier (70b → gemini → cerebras → 8b) is down/quota'd,
+ * When every LLM tier (70b → gemini → cloudflare → 8b) is down/quota'd,
  * evaluate-session synthesizes the `parsed` slice from the transcript instead
  * of 503-ing a 25-minute interview. These tests pin the heuristic: real
  * negotiation signals must score higher than silence, every axis stays in a

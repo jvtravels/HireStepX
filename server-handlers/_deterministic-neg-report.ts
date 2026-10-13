@@ -5,7 +5,7 @@
  * evaluate-session's report assembly — coreMetrics, advancedDelivery, redFlags,
  * fairnessSignals, calibration, bands, the client-side Deal Summary — is built
  * deterministically from the transcript and analyzers. So when the entire LLM
- * provider chain is down/quota'd (70b → gemini → cerebras → 8b all throw), the
+ * provider chain is down/quota'd (70b → gemini → cloudflare → 8b all throw), the
  * robust answer is NOT another 503 dead-end on a 25-minute interview: it is to
  * synthesize JUST that `parsed` slice from transcript signals and fall through
  * to the existing, tested assembly. The candidate gets a real, honest report

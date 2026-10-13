@@ -1387,7 +1387,7 @@ Example bad question: "Tell me about your experience." (too vague, not role-spec
 
     // maxTokens tuned — typical question set (5 questions + metadata) lands around 900-1200 tokens.
     // Lowering from 2000 → 1400 saves ~$30/mo at 10k daily calls.
-    // totalBudgetMs caps the WHOLE provider chain (gemini → groq → cerebras,
+    // totalBudgetMs caps the WHOLE provider chain (gemini → groq → cloudflare,
     // including each provider's own one-shot transient-error retry) to fit
     // Vercel's Edge ~25s execution ceiling. Without it, the real worst case is
     // (timeoutMs + 800ms retry backoff) × 3 providers ≈ 26.4s — past the

@@ -6,13 +6,15 @@ import { recordSlo } from "./_slo";
 import { redisGet, redisIncrByWithExpiry } from "./_shared";
 import { isServerFlagEnabled } from "./_feature-flags";
 import { loadProviderHealth, orderByHealth, recordProviderOutcome, setSharedCooldown } from "./_llm-health";
-import { cerebrasModel, geminiLadder, geminiProviderName, isGeminiProviderName, geminiThinkingConfig, groqModel, isModelRetiredError, RETIRED_MODEL_COOLDOWN_MS } from "./_llm-models";
+import { cloudflareModel, geminiLadder, geminiProviderName, isGeminiProviderName, geminiThinkingConfig, groqModel, isModelRetiredError, RETIRED_MODEL_COOLDOWN_MS } from "./_llm-models";
 
 declare const process: { env: Record<string, string | undefined> };
 
 const GROQ_API_KEY = process.env.GROQ_API_KEY || "";
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
-const CEREBRAS_API_KEY = process.env.CEREBRAS_API_KEY || "";
+const CLOUDFLARE_API_TOKEN = process.env.CLOUDFLARE_API_TOKEN || "";
+const CLOUDFLARE_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID || "";
+const CLOUDFLARE_ENABLED = !!CLOUDFLARE_API_TOKEN && /^[a-f0-9]{32}$/i.test(CLOUDFLARE_ACCOUNT_ID);
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const USAGE_LOGGING_ENABLED = !!(SUPABASE_URL && SUPABASE_SERVICE_KEY);
@@ -34,10 +36,10 @@ if (!USAGE_LOGGING_ENABLED) {
  */
 /** Map a model id OR a bare provider name to the provider label. Success rows
  *  carry the real model id ("openai/gpt-oss-120b", "gemini-3.5-flash-lite",
- *  "cerebras-llama-3.3-70b"); error rows carry the provider name directly. */
+ *  "cloudflare-@cf/openai/gpt-oss-120b"); error rows carry the provider name directly. */
 function providerFromModel(model: string): string {
   const m = model.toLowerCase();
-  if (m.includes("cerebras")) return "cerebras";
+  if (m.includes("cloudflare") || m.includes("@cf/")) return "cloudflare";
   if (m.includes("gemini")) return "gemini";
   if (m.includes("groq") || m.includes("llama") || m.includes("gpt-oss")) return "groq";
   return m;
@@ -129,7 +131,7 @@ async function logUsage(entry: {
  * quota-exhausted 429s sat in the retry path on every static-fallback request.
  * Treat quota exhaustion as permanent so the chain fails over immediately. */
 export function isQuotaExhausted(msg: string): boolean {
-  return /current quota|plan and billing|billing details|resource_exhausted|quota.?exceeded|exceeded.*quota|\[daily quota\]/i.test(msg);
+  return /current quota|plan and billing|billing details|resource_exhausted|quota.?exceeded|exceeded.*quota|\[daily quota\]|daily free allocation/i.test(msg);
 }
 
 /* A per-DAY request cap (Gemini free tier: 20 requests/day/model,
@@ -257,7 +259,7 @@ interface LLMOptions {
   prompt: string;
   temperature?: number;
   maxTokens?: number;
-  // Output budget for the FALLBACK providers (Gemini/Cerebras) only. Groq is
+  // Output budget for the FALLBACK providers (Gemini/Cloudflare) only. Groq is
   // primary and bounded by a tight free-tier TPM ceiling that counts
   // (prompt + max_tokens), so its budget must stay small. The fallbacks have
   // ~10× higher TPM, and at least one (the Gemini model) is materially more
@@ -405,34 +407,35 @@ async function callGemini(opts: LLMOptions, signal: AbortSignal | undefined, mod
   return { text: data.candidates?.[0]?.content?.parts?.[0]?.text || "", model, fallback: false, tokensUsed, latencyMs };
 }
 
-async function callCerebras(opts: LLMOptions, signal?: AbortSignal): Promise<LLMResult> {
-  // Third fallback so a Groq+Gemini outage doesn't kill the interview. Its free
-  // tier takes the full-size report prompt that Groq's 8K TPM cap rejects.
-  const model = cerebrasModel();
+async function callCloudflare(opts: LLMOptions, signal?: AbortSignal): Promise<LLMResult> {
+  // Overflow rung so a Groq+Gemini outage doesn't kill the interview. Its 128K
+  // context takes the full-size report prompt that Groq's 8K TPM cap rejects.
+  // response_format is deliberately omitted: Workers AI doesn't document JSON
+  // mode for gpt-oss, and callers already extract JSON from free text.
+  const model = cloudflareModel();
   const start = Date.now();
-  const res = await fetch("https://api.cerebras.ai/v1/chat/completions", {
+  const res = await fetch(`https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/ai/v1/chat/completions`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${CEREBRAS_API_KEY}` },
+    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${CLOUDFLARE_API_TOKEN}` },
     signal,
     body: JSON.stringify({
       model,
       messages: [{ role: "user", content: opts.prompt }],
       temperature: opts.temperature ?? 0.3,
       max_tokens: opts.fallbackMaxTokens ?? opts.maxTokens ?? 2000,
-      reasoning_effort: "low",
-      ...(opts.jsonMode ? { response_format: { type: "json_object" } } : {}),
     }),
   });
   const latencyMs = Date.now() - start;
   if (!res.ok) {
     const errText = await res.text().catch(() => "");
-    console.error(`[LLM] Cerebras ${model} — HTTP ${res.status} after ${latencyMs}ms: ${errText.slice(0, 100)}`);
-    throw new Error(`Cerebras error ${res.status}: ${errText.slice(0, 200)}`);
+    console.error(`[LLM] Cloudflare ${model} — HTTP ${res.status} after ${latencyMs}ms: ${errText.slice(0, 100)}`);
+    throw new Error(`Cloudflare error ${res.status}: ${errText.slice(0, 200)}`);
   }
   const data = await res.json();
-  const usage = data.usage;
+  const body = data.choices ? data : data.result;
+  const usage = body?.usage;
   const tokensUsed = usage ? { prompt: usage.prompt_tokens, completion: usage.completion_tokens, total: usage.total_tokens } : undefined;
-  return { text: data.choices?.[0]?.message?.content || "", model: `cerebras-${model}`, fallback: false, tokensUsed, latencyMs };
+  return { text: body?.choices?.[0]?.message?.content || "", model: `cloudflare-${model}`, fallback: false, tokensUsed, latencyMs };
 }
 
 export async function callLLM(opts: LLMOptions, timeoutMs = 15000, meta?: { userId?: string; endpoint?: string; groqTimeoutMs?: number; sessionId?: string; totalBudgetMs?: number; hedgeAfterMs?: number; excludeGemini?: boolean }): Promise<LLMResult> {
@@ -447,7 +450,7 @@ export async function callLLM(opts: LLMOptions, timeoutMs = 15000, meta?: { user
   // Slow/big-model calls try the Gemini ladder first. Free-tier Gemini is only
   // 20 requests/day PER MODEL, so each rung is an independent bucket and a rung
   // that reports its daily cap is benched until reset (see isDailyQuotaExhausted).
-  // Groq (8K TPM) can only carry small prompts; Cerebras is the real overflow.
+  // Groq (8K TPM) can only carry small prompts; Cloudflare Workers AI is the overflow.
   if (opts.fast) {
     if (GROQ_API_KEY) providers.push({ name: "groq", model: groqModel(!!opts.fast), call: (s) => callGroq(opts, s) });
     providers.push(...geminiEntries());
@@ -455,7 +458,7 @@ export async function callLLM(opts: LLMOptions, timeoutMs = 15000, meta?: { user
     providers.push(...geminiEntries());
     if (GROQ_API_KEY) providers.push({ name: "groq", model: groqModel(!!opts.fast), call: (s) => callGroq(opts, s) });
   }
-  if (CEREBRAS_API_KEY) providers.push({ name: "cerebras", model: cerebrasModel(), call: (s) => callCerebras(opts, s) });
+  if (CLOUDFLARE_ENABLED) providers.push({ name: "cloudflare", model: cloudflareModel(), call: (s) => callCloudflare(opts, s) });
 
   // A last-resort tier that exists to reach a DIFFERENT provider must not
   // re-hit the Gemini rungs the previous tier just failed on.
@@ -463,7 +466,7 @@ export async function callLLM(opts: LLMOptions, timeoutMs = 15000, meta?: { user
     for (let i = providers.length - 1; i >= 0; i--) if (isGeminiProviderName(providers[i].name, ladder)) providers.splice(i, 1);
   }
 
-  if (providers.length === 0) throw new Error("No LLM configured — set GROQ_API_KEY, GEMINI_API_KEY, or CEREBRAS_API_KEY");
+  if (providers.length === 0) throw new Error("No LLM configured — set GROQ_API_KEY, GEMINI_API_KEY, or CLOUDFLARE_API_TOKEN + CLOUDFLARE_ACCOUNT_ID");
 
   // Drop providers in quota cooldown, but never empty the chain: if every
   // provider is cooling down, try them all rather than fail without a call.
@@ -510,7 +513,7 @@ export async function callLLM(opts: LLMOptions, timeoutMs = 15000, meta?: { user
   // transient (non-timeout) error before failing over, so the REAL worst
   // case is closer to (timeoutMs + 800ms retry backoff) × providers. For
   // analyze-resume specifically that chain is 3 deep (gemini → groq →
-  // cerebras) and blew past both the client's fetch timeout and the Vercel
+  // cloudflare) and blew past both the client's fetch timeout and the Vercel
   // edge function's own execution ceiling — the isolate got killed before
   // the handler's own catch block could return a graceful "timed out"
   // response. totalBudgetMs lets a caller cap the chain's real wall-clock
@@ -603,7 +606,7 @@ export async function callLLM(opts: LLMOptions, timeoutMs = 15000, meta?: { user
     }
   };
 
-  // Walk providers in order (fast: groq→gemini→gemini-2.5, slow: gemini→gemini-2.5→groq→cerebras). First success wins.
+  // Walk providers in order (fast: groq→gemini→gemini-2.5, slow: gemini→gemini-2.5→groq→cloudflare). First success wins.
   console.warn(`[LLM] Provider chain: ${providers.map(p => p.name).join(" → ")}${reordered ? ` (reordered, degraded: ${degradedNames.join(",")})` : ""} (timeout: ${timeoutMs}ms${meta?.totalBudgetMs != null ? `, totalBudget: ${meta.totalBudgetMs}ms` : ""})`);
   let lastErr: unknown;
   const providerErrors: string[] = [];

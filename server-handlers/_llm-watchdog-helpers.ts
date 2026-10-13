@@ -6,14 +6,12 @@ export const KNOWN_RETIRING: Record<string, string> = {
   "gemini-3.5-flash": "deprecated, routes to gemini-3.6-flash",
   "llama-3.1-8b-instant": "shut down 2026-08-16",
   "llama-3.3-70b-versatile": "shut down 2026-08-16",
-  "llama-3.3-70b": "removed from Cerebras shared inference",
-  "llama3.1-8b": "removed from Cerebras shared inference",
 };
 
 export type ModelStatus = "ok" | "busy" | "missing" | "retiring" | "error";
 
 export interface ModelReport {
-  provider: "gemini" | "groq" | "cerebras";
+  provider: "gemini" | "groq" | "cloudflare";
   model: string;
   status: ModelStatus;
   detail?: string;

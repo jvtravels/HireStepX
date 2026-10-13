@@ -19,11 +19,10 @@ declare const process: { env: Record<string, string | undefined> };
 export const DEFAULT_GEMINI_MODELS = ["gemini-3.5-flash-lite", "gemini-2.5-flash-lite", "gemini-2.5-flash"] as const;
 export const DEFAULT_GROQ_FAST_MODEL = "openai/gpt-oss-20b";
 export const DEFAULT_GROQ_MODEL = "openai/gpt-oss-120b";
-// Cerebras dropped llama-3.3-70b and llama3.1-8b from its shared catalog; its
-// free tier (30K uncached tokens/min, 1M/day) now serves gpt-oss-120b, which
-// is large enough for the ~10K-token session-report prompt Groq's 8K TPM cap
-// can never take.
-export const DEFAULT_CEREBRAS_MODEL = "gpt-oss-120b";
+// Cloudflare Workers AI is the overflow rung: 128K context takes the ~10K-token
+// session-report prompt Groq's 8K TPM cap can never take, and gpt-oss-120b is
+// the same model family we already run on Groq. Free tier is 10,000 neurons/day.
+export const DEFAULT_CLOUDFLARE_MODEL = "@cf/openai/gpt-oss-120b";
 
 const MAX_GEMINI_MODELS = 3;
 const MODEL_ID = /^[a-z0-9][a-z0-9._-]{2,63}$/i;
@@ -50,9 +49,11 @@ export function isGeminiProviderName(name: string | undefined, ladder: string[] 
 export const groqModel = (fast: boolean): string =>
   (fast ? process.env.GROQ_FAST_MODEL : process.env.GROQ_MODEL)?.trim() || (fast ? DEFAULT_GROQ_FAST_MODEL : DEFAULT_GROQ_MODEL);
 
-export const cerebrasModel = (raw: string | undefined = process.env.CEREBRAS_MODEL): string => {
+const CF_MODEL_ID = /^@cf\/[a-z0-9._-]+\/[a-z0-9._-]+$/i;
+
+export const cloudflareModel = (raw: string | undefined = process.env.CLOUDFLARE_AI_MODEL): string => {
   const id = raw?.trim() ?? "";
-  return MODEL_ID.test(id) ? id : DEFAULT_CEREBRAS_MODEL;
+  return CF_MODEL_ID.test(id) ? id : DEFAULT_CLOUDFLARE_MODEL;
 };
 
 /** Gemini 3.x is thinking-only and rejects thinkingBudget (400); 2.x takes a

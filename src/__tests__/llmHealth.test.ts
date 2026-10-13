@@ -117,7 +117,7 @@ describe("callLLM routing from shared health", () => {
   beforeEach(() => {
     process.env.GROQ_API_KEY = "g";
     process.env.GEMINI_API_KEY = "k";
-    delete process.env.CEREBRAS_API_KEY;
+    delete process.env.CLOUDFLARE_API_TOKEN;
     delete process.env.SUPABASE_URL;
     delete process.env.SUPABASE_SERVICE_ROLE_KEY;
   });

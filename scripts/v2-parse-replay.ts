@@ -53,7 +53,7 @@ if (!fixturePath) {
 
 /* Build a GenerateAiTextFn that joins system + user into a single
  * prompt (callLLM's interface), then returns the raw text. callLLM
- * owns model selection (Groq → Gemini → Cerebras fallback chain). */
+ * owns model selection (Groq → Gemini → Cloudflare fallback chain). */
 const generateAiText: GenerateAiTextFn = async (system, user, opts) => {
   const prompt = `${system}\n\n${user}`;
   const result = await callLLM(

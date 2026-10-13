@@ -52,8 +52,8 @@ service degraded.
   avoid arc-mismatch. Users see a real error and need to retry.
 
 **Fix permanently:**
-- Add `CEREBRAS_API_KEY` to Vercel env (third LLM fallback already
-  wired in `_llm.ts:181`)
+- Add `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID` to Vercel env
+  (Workers AI overflow rung, already wired in `_llm.ts`)
 - Upgrade Groq to paid Dev tier (~$50/month, lifts TPM 25×)
 
 ### 2. Supabase Auth incident

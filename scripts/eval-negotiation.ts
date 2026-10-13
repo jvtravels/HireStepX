@@ -100,7 +100,7 @@ async function main() {
   const hasAnyApiKey = !!(
     process.env.GROQ_API_KEY ||
     process.env.GEMINI_API_KEY ||
-    process.env.CEREBRAS_API_KEY
+    (process.env.CLOUDFLARE_API_TOKEN && process.env.CLOUDFLARE_ACCOUNT_ID)
   );
   if (needsLlm) {
     console.error(

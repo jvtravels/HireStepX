@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
-/* Tests for callLLM's provider failover chain: Groq → Gemini → Cerebras.
+/* Tests for callLLM's provider failover chain: Groq → Gemini → Cloudflare.
  *
  * The 62% live error rate (2026-07-16) was caused by all three providers
  * hitting free-tier limits simultaneously. These tests pin the routing
@@ -54,7 +54,8 @@ beforeEach(async () => {
   // Set env vars BEFORE importing so the module captures them at init time.
   process.env.GROQ_API_KEY = "test-groq-key";
   process.env.GEMINI_API_KEY = "test-gemini-key";
-  delete process.env.CEREBRAS_API_KEY;
+  delete process.env.CLOUDFLARE_API_TOKEN;
+  delete process.env.CLOUDFLARE_ACCOUNT_ID;
   // No Supabase → USAGE_LOGGING_ENABLED = false → no Supabase fetch calls.
   delete process.env.SUPABASE_URL;
   delete process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -441,7 +442,7 @@ describe("Groq TPM-cap-aware sizing", () => {
 
 /* ── totalBudgetMs — whole-chain wall-clock ceiling ──────────────────
  *
- * analyze-resume's real worst case (gemini → groq → cerebras, each with
+ * analyze-resume's real worst case (gemini → groq → cloudflare, each with
  * a possible retry) could exceed both the client's fetch timeout and
  * Vercel's edge execution ceiling, killing the isolate before the
  * handler's own catch block could return a graceful timeout response.
@@ -702,5 +703,47 @@ describe("model registry", () => {
     await vi.runAllTimersAsync();
     await p2;
     expect(geminiModels()[0]).toBe("gemini-3.6-flash");
+  });
+});
+
+/* ── Cloudflare Workers AI overflow rung ───────────────────────────── */
+
+describe("cloudflare overflow rung", () => {
+  const ACCOUNT = "0123456789abcdef0123456789abcdef";
+  const cfOk = (t: string) => new Response(JSON.stringify({ choices: [{ message: { content: t } }], usage: { prompt_tokens: 3, completion_tokens: 2, total_tokens: 5 } }), { status: 200 });
+
+  async function load(env: Record<string, string>) {
+    vi.resetModules();
+    Object.assign(process.env, env);
+    return (await import("../../server-handlers/_llm")).callLLM;
+  }
+
+  it("answers from Cloudflare when Gemini and Groq both fail, using the account URL and bearer token", async () => {
+    const call = await load({ CLOUDFLARE_API_TOKEN: "cf-token", CLOUDFLARE_ACCOUNT_ID: ACCOUNT });
+    fetchSpy.mockImplementation(async (url: string) => {
+      if (String(url).includes("api.cloudflare.com")) return cfOk('{"ok":true}');
+      if (String(url).includes("api.groq.com")) return new Response("bad request", { status: 400 });
+      if (String(url).includes("generativelanguage")) return geminiErr(400, "bad request");
+      return new Response("{}", { status: 200 });
+    });
+    const result = await call({ prompt: "Evaluate.", jsonMode: true });
+    expect(result.text).toBe('{"ok":true}');
+    expect(result.model).toBe("cloudflare-@cf/openai/gpt-oss-120b");
+    const cfCall = fetchSpy.mock.calls.find((a: unknown[]) => String(a[0]).includes("api.cloudflare.com"));
+    expect(String(cfCall?.[0])).toBe(`https://api.cloudflare.com/client/v4/accounts/${ACCOUNT}/ai/v1/chat/completions`);
+    const init = cfCall?.[1] as { headers: Record<string, string>; body: string };
+    expect(init.headers.Authorization).toBe("Bearer cf-token");
+    expect(JSON.parse(init.body)).not.toHaveProperty("response_format");
+  });
+
+  it("is left out of the chain when the account id is missing or malformed", async () => {
+    const call = await load({ CLOUDFLARE_API_TOKEN: "cf-token", CLOUDFLARE_ACCOUNT_ID: "../evil" });
+    fetchSpy.mockImplementation(async (url: string) => {
+      if (String(url).includes("api.groq.com")) return new Response("bad request", { status: 400 });
+      if (String(url).includes("generativelanguage")) return geminiErr(400, "bad request");
+      return new Response("{}", { status: 200 });
+    });
+    await expect(call({ prompt: "Evaluate." })).rejects.toThrow();
+    expect(fetchSpy.mock.calls.some((a: unknown[]) => String(a[0]).includes("api.cloudflare.com"))).toBe(false);
   });
 });

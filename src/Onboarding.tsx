@@ -568,7 +568,7 @@ export default function Onboarding() {
             fileHash: fileHash ?? undefined,
           }),
           // 25s budget — the server now hard-caps its whole gemini→groq→
-          // cerebras chain (incl. retries/failover) at an 18s totalBudgetMs
+          // cloudflare chain (incl. retries/failover) at an 18s totalBudgetMs
           // (see analyze-resume.ts), plus ~1-2s of auth/cache pre-checks,
           // so its real worst case is ~19-20s. 25s leaves 5s+ of margin for
           // network jitter on the response path. Previously this raced

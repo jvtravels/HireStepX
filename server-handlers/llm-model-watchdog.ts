@@ -6,7 +6,7 @@
  * a one-token probe, and alerts while there is still time to repoint
  * GEMINI_MODELS / GROQ_MODEL (env change + redeploy, no code change). */
 
-import { cerebrasModel, geminiLadder, geminiThinkingConfig, groqModel } from "./_llm-models";
+import { cloudflareModel, geminiLadder, geminiThinkingConfig, groqModel } from "./_llm-models";
 import { buildReport, ladderIsThin, needsAction, type ModelReport } from "./_llm-watchdog-helpers";
 
 export const config = { runtime: "nodejs" };
@@ -59,12 +59,12 @@ async function listGroq(key: string, fetchImpl: Fetch): Promise<Set<string> | nu
   }
 }
 
-async function listCerebras(key: string, fetchImpl: Fetch): Promise<Set<string> | null> {
+async function listCloudflare(token: string, accountId: string, fetchImpl: Fetch): Promise<Set<string> | null> {
   try {
-    const res = await fetchImpl("https://api.cerebras.ai/v1/models", { headers: { Authorization: `Bearer ${key}` }, signal: AbortSignal.timeout(8000) });
+    const res = await fetchImpl(`https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/models/search?search=gpt-oss&per_page=50`, { headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(8000) });
     if (!res.ok) return null;
-    const data = (await res.json()) as { data?: Array<{ id?: string }> };
-    const ids = new Set((data.data ?? []).flatMap((m) => (m.id ? [m.id] : [])));
+    const data = (await res.json()) as { result?: Array<{ name?: string }> };
+    const ids = new Set((data.result ?? []).flatMap((m) => (m.name ? [m.name] : [])));
     return ids.size > 0 ? ids : null;
   } catch {
     return null;
@@ -86,10 +86,11 @@ export async function runWatchdog(fetchImpl: Fetch = fetch): Promise<ModelReport
     const listed = await listGroq(groqKey, fetchImpl);
     for (const model of new Set([groqModel(true), groqModel(false)])) reports.push(buildReport("groq", model, listed, undefined));
   }
-  const cerebrasKey = process.env.CEREBRAS_API_KEY;
-  if (cerebrasKey) {
-    const listed = await listCerebras(cerebrasKey, fetchImpl);
-    reports.push(buildReport("cerebras", cerebrasModel(), listed, undefined));
+  const cfToken = process.env.CLOUDFLARE_API_TOKEN;
+  const cfAccount = process.env.CLOUDFLARE_ACCOUNT_ID;
+  if (cfToken && cfAccount && /^[a-f0-9]{32}$/i.test(cfAccount)) {
+    const listed = await listCloudflare(cfToken, cfAccount, fetchImpl);
+    reports.push(buildReport("cloudflare", cloudflareModel(), listed, undefined));
   }
   return reports;
 }
@@ -127,7 +128,7 @@ export default async function handler(req: Request): Promise<Response> {
       ...actionable.map((r) => `- ${r.provider} ${r.model}: ${r.status}${r.detail ? ` (${r.detail})` : ""}`),
       ...(thin ? ["- Fewer than 2 Gemini models are answering — the chain has no Gemini failover."] : []),
     ];
-    const text = `${lines.join("\n")}\n\nRepoint with the GEMINI_MODELS (comma-separated, ordered) or GROQ_MODEL / GROQ_FAST_MODEL / CEREBRAS_MODEL env vars in Vercel, then redeploy. No code change needed.`;
+    const text = `${lines.join("\n")}\n\nRepoint with the GEMINI_MODELS (comma-separated, ordered) or GROQ_MODEL / GROQ_FAST_MODEL / CLOUDFLARE_AI_MODEL env vars in Vercel, then redeploy. No code change needed.`;
     console.error(`[LLM-WATCHDOG] action needed:\n${text}`);
     await alert("LLM model watchdog: action needed", text);
   } else {

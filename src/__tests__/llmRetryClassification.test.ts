@@ -117,6 +117,12 @@ describe("daily quota detection", () => {
     expect(isDailyQuotaExhausted("exceeded your current quota ... GenerateRequestsPerDayPerProjectPerModel-FreeTier")).toBe(true);
   });
 
+  it("treats Cloudflare's daily neuron allocation as a daily cap", () => {
+    const msg = "Cloudflare error 429: you have used up your daily free allocation of 10,000 neurons";
+    expect(isQuotaExhausted(msg)).toBe(true);
+    expect(isDailyQuotaExhausted(msg)).toBe(true);
+  });
+
   it("does not treat a per-minute quota as a daily cap", () => {
     expect(isDailyQuotaExhausted("Gemini error 429: exceeded your current quota, retry in 12s")).toBe(false);
     expect(isDailyQuotaExhausted("Groq error 429: rate limit reached")).toBe(false);

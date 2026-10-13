@@ -20,7 +20,7 @@ Stack:
   (thin shims)
 - **DB**: Supabase (Postgres + Auth + Storage) with RLS on every user-scoped
   table (see `supabase-schema.sql`)
-- **LLM**: Groq (primary) + Gemini (fallback) + Cerebras (third provider,
+- **LLM**: Groq (primary) + Gemini (fallback) + Cloudflare Workers AI (third provider,
   recognized by `providerFromModel()`) via `server-handlers/_llm.ts`
 - **Voice**: Sarvam Bulbul (primary TTS) + Cartesia WebSocket (2nd) +
   Azure TTS (3rd) + Web Speech API (last resort); Deepgram (primary) +
@@ -208,7 +208,7 @@ batch lifts the measured numbers.
   providers move to the back of the chain, never out of it). In-memory
   breakers alone just make each cold instance relearn the outage on a real
   user's request. Slow-path chain is gemini → gemini-2.5-flash-lite → groq →
-  cerebras; `hedgeAfterMs` races the two Gemini models. Keep new health
+  cloudflare; `hedgeAfterMs` races the two Gemini models. Keep new health
   reads bounded (`redisPipeline` has a hard timeout) and fail-open.
 - **LLM model ids live in `_llm-models.ts`, not in call sites** — Gemini
   ladder via `GEMINI_MODELS` (ordered, comma-separated, max 3; first rung

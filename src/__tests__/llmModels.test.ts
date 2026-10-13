@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import {
-  geminiLadder, geminiProviderName, isGeminiProviderName, geminiThinkingConfig, groqModel, isModelRetiredError, DEFAULT_GEMINI_MODELS, cerebrasModel, DEFAULT_CEREBRAS_MODEL,
+  geminiLadder, geminiProviderName, isGeminiProviderName, geminiThinkingConfig, groqModel, isModelRetiredError, DEFAULT_GEMINI_MODELS, cloudflareModel, DEFAULT_CLOUDFLARE_MODEL,
 } from "../../server-handlers/_llm-models";
 import { buildReport, classifyProbe, isListed, ladderIsThin, needsAction, KNOWN_RETIRING } from "../../server-handlers/_llm-watchdog-helpers";
 
@@ -150,18 +150,18 @@ describe("llm-model-watchdog handler", () => {
   });
 });
 
-describe("cerebrasModel", () => {
-  it("defaults to a model Cerebras still serves and honours a valid override", () => {
-    expect(cerebrasModel("")).toBe(DEFAULT_CEREBRAS_MODEL);
-    expect(cerebrasModel(undefined)).toBe("gpt-oss-120b");
-    expect(cerebrasModel(" qwen-3.8-27b ")).toBe("qwen-3.8-27b");
+describe("cloudflareModel", () => {
+  it("defaults to gpt-oss-120b and honours a valid override", () => {
+    expect(cloudflareModel("")).toBe(DEFAULT_CLOUDFLARE_MODEL);
+    expect(cloudflareModel(undefined)).toBe("@cf/openai/gpt-oss-120b");
+    expect(cloudflareModel(" @cf/meta/llama-3.3-70b-instruct-fp8-fast ")).toBe("@cf/meta/llama-3.3-70b-instruct-fp8-fast");
   });
   it("ignores an invalid id instead of sending it to the API", () => {
-    expect(cerebrasModel("../x y")).toBe(DEFAULT_CEREBRAS_MODEL);
+    expect(cloudflareModel("../x y")).toBe(DEFAULT_CLOUDFLARE_MODEL);
+    expect(cloudflareModel("gpt-oss-120b")).toBe(DEFAULT_CLOUDFLARE_MODEL);
   });
-  it("flags the removed Cerebras llama ids as retiring", () => {
-    expect(buildReport("cerebras", "llama-3.3-70b", null, undefined).status).toBe("retiring");
-    expect(buildReport("cerebras", "llama3.1-8b", null, undefined).status).toBe("retiring");
-    expect(buildReport("cerebras", "gpt-oss-120b", new Set(["gpt-oss-120b"]), undefined).status).toBe("ok");
+  it("reports a model present in the vendor list as ok and a missing one as missing", () => {
+    expect(buildReport("cloudflare", "@cf/openai/gpt-oss-120b", new Set(["@cf/openai/gpt-oss-120b"]), undefined).status).toBe("ok");
+    expect(buildReport("cloudflare", "@cf/openai/gpt-oss-120b", new Set(["@cf/openai/gpt-oss-20b"]), undefined).status).toBe("missing");
   });
 });

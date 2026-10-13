@@ -22,7 +22,7 @@ declare const process: { env: Record<string, string | undefined> };
 export const SLOS = {
   llm_availability: {
     objective: 0.995,
-    description: "LLM calls answered by any provider (Groq → Gemini → Cerebras)",
+    description: "LLM calls answered by any provider (Groq → Gemini → Cloudflare)",
     minEvents: 20,
   },
   llm_primary: {
