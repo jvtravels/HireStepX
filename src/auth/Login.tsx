@@ -6,7 +6,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { storePendingReferralCode, useAuth } from "../AuthContext";
+import { storePendingReferralCode, storePendingConsent, clearPendingConsent, useAuth } from "../AuthContext";
 import { tokens as t, fonts as f, shadows } from "./_tokens";
 import {
   Field,
@@ -210,9 +210,13 @@ export default function Login() {
 
     const start = Date.now();
     try {
+      // The footer text ("you confirm you are 18 or older and agree...") is the
+      // affirmation for a first-time Google account created from this page.
+      storePendingConsent();
       const result = await loginWithGoogle(computeRedirect());
       if (!isMounted.current) return;
       if (!result.success) {
+        clearPendingConsent();
         setError(mapAuthError(result.error));
         trackAuth({
           type: "login_failed",
@@ -754,8 +758,8 @@ export default function Login() {
             margin: "0 auto",
           }}
         >
-          By clicking "Log in with Google" or "Continue with email" you agree to
-          our{" "}
+          By clicking "Log in with Google" or "Continue with email" you confirm you
+          are 18 or older and agree to our{" "}
           <a
             href="/terms"
             target="_blank"

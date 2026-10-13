@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Script from "next/script";
+import ConsentGatedAdSense from "../../ConsentGatedAdSense";
 import { SalaryReport2026 } from "@/marketing-v2/SalaryReport2026";
 import { NavV2, MobileStickyCTA } from "@/marketing-v2/HomepageV2";
 import { FooterDome } from "@/marketing-v2/FooterDome";
@@ -65,12 +65,7 @@ export default async function SalaryReport2026Page() {
       {buildSalaryReport2026JsonLd().map((html, i) => (
         <script key={i} type="application/ld+json" dangerouslySetInnerHTML={html} />
       ))}
-      <Script
-        async
-        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7810403590527236"
-        crossOrigin="anonymous"
-        strategy="lazyOnload"
-      />
+      <ConsentGatedAdSense />
       <NavV2 />
       <SalaryReport2026 rows={rows} stats={stats} updatedLabel={updatedLabel} />
       <FooterDome />

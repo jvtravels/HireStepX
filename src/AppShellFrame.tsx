@@ -39,6 +39,7 @@ import { tokens as T, fonts as F } from "./auth/_tokens";
 import { dur, ease } from "./_motion";
 import NotificationBell from "./NotificationBell";
 import MessagesBell, { type ConversationSummary } from "./MessagesBell";
+import { openCookieSettings } from "./consent";
 
 /* ─── Shared app shell ───────────────────────────────────────────────────
  * The sidebar + header + scrolling body used by BOTH the candidate
@@ -264,6 +265,9 @@ export default function AppShellFrame({
                   <DropdownMenuSeparator />
                 </>
               )}
+              <DropdownMenuItem onClick={openCookieSettings}>
+                Cookie settings
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={onLogout}>
                 <LogOutIcon size={14} aria-hidden="true" />
                 Log out

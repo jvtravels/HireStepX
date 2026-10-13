@@ -3,46 +3,51 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { captureClientEvent } from "../src/posthogClient";
+import {
+  OPEN_SETTINGS_EVENT,
+  getCookieConsent,
+  setCookieConsent,
+  type ConsentChoice,
+} from "../src/consent";
 
-const CONSENT_KEY = "hirestepx_cookie_consent";
+// Re-exported so existing importers keep working; the store lives in src/consent.ts.
+export { getCookieConsent };
 
-/** Emits a custom event so analytics code can lazy-load after consent. */
-function broadcast(accepted: boolean) {
-  try {
-    window.dispatchEvent(new CustomEvent("hirestepx:cookie-consent", { detail: { accepted } }));
-  } catch { /* noop */ }
-}
-
-export function getCookieConsent(): "accepted" | "rejected" | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const v = localStorage.getItem(CONSENT_KEY);
-    if (v === "accepted" || v === "rejected") return v;
-  } catch { /* noop */ }
-  return null;
-}
+const choiceButtonStyle = {
+  fontFamily: "inherit", fontSize: 13, fontWeight: 600,
+  color: "#FDFAF6",
+  background: "#1A1814",
+  border: "1px solid #1A1814",
+  padding: "8px 14px",
+} as const;
 
 export default function CookieConsent() {
   const [visible, setVisible] = useState(false);
+  const [current, setCurrent] = useState<ConsentChoice | null>(null);
 
   useEffect(() => {
-    const existing = getCookieConsent();
-    if (existing) return;
-    // Delay slightly so first paint isn't blocked by the banner
-    const t = setTimeout(() => {
-      setVisible(true);
-      // Top of the consent-rate funnel — captured on the cookieless
-      // (memory-mode) instance so acceptance rate is measurable even for
-      // visitors who ultimately decline.
-      captureClientEvent("cookie_consent_shown");
-    }, 400);
-    return () => clearTimeout(t);
+    // First visit, or the banner version changed (parseStoredConsent returns
+    // null for a stale version) -> ask. Delay slightly so first paint isn't
+    // blocked by the banner. No analytics event here: nothing may be sent
+    // before the visitor opts in.
+    let t: ReturnType<typeof setTimeout> | undefined;
+    if (!getCookieConsent()) t = setTimeout(() => setVisible(true), 400);
+    // Footer / account-menu "Cookie settings" link: reopen so a previous
+    // choice can be changed as easily as it was given.
+    const reopen = () => { setCurrent(getCookieConsent()); setVisible(true); };
+    window.addEventListener(OPEN_SETTINGS_EVENT, reopen);
+    return () => {
+      if (t) clearTimeout(t);
+      window.removeEventListener(OPEN_SETTINGS_EVENT, reopen);
+    };
   }, []);
 
-  const setConsent = (accepted: boolean) => {
-    try { localStorage.setItem(CONSENT_KEY, accepted ? "accepted" : "rejected"); } catch { /* noop */ }
-    captureClientEvent(accepted ? "cookie_consent_accepted" : "cookie_consent_rejected");
-    broadcast(accepted);
+  const choose = (accepted: boolean) => {
+    setCookieConsent(accepted ? "accepted" : "rejected");
+    // Only a consented visitor's PostHog is running; for a rejection (or a
+    // withdrawal) this is dropped by the client, so nothing is sent.
+    if (accepted) captureClientEvent("cookie_consent_accepted");
+    setCurrent(accepted ? "accepted" : "rejected");
     setVisible(false);
   };
 
@@ -90,45 +95,37 @@ export default function CookieConsent() {
         gap: 16,
         alignItems: "center",
         flexWrap: "wrap",
+        maxHeight: "85vh",
+        overflowY: "auto",
       }}
     >
       <div id="cookie-consent-desc" style={{ flex: "1 1 260px", fontSize: 13, lineHeight: 1.55, color: "#4A4540" }}>
-        We use essential cookies to run HireStepX. With your permission we'll also use analytics cookies to improve the experience.
-        {showAdsNote && " On public blog, questions, and salary pages, Google AdSense may set advertising cookies to serve relevant ads."}{" "}
+        <strong style={{ color: "#0E0C08" }}>Your cookie choices.</strong>{" "}
+        {current && <>You currently have <strong>{current === "accepted" ? "Accept all" : "Essential only"}</strong> selected. </>}
+        Nothing below loads unless you choose &ldquo;Accept all&rdquo;.
+        <ul style={{ margin: "8px 0 8px", paddingLeft: 18 }}>
+          <li><strong>Essential (always on):</strong> sign-in, security, and remembering this choice.</li>
+          <li>
+            <strong>Analytics (optional):</strong> Google Analytics 4 (pages visited and usage, sets cookies);
+            PostHog (product events such as sessions started, linked to your account ID, never your email; no
+            session recording); Vercel Web Analytics and Speed Insights (page views and load speed).
+          </li>
+          {showAdsNote && (
+            <li><strong>Advertising (optional):</strong> Google AdSense on public blog, questions and salary pages may set advertising cookies to show ads.</li>
+          )}
+        </ul>
+        You can change this any time from &ldquo;Cookie settings&rdquo; in the footer or account menu.{" "}
         <a href="/privacy" style={{ color: "#8A5F22", textDecoration: "underline", display: "inline-block", padding: "12px 4px", margin: "-12px -4px" }}>
           Privacy policy
         </a>
         .
       </div>
       <div className="hsx-cookie-actions" style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => setConsent(false)}
-          style={{
-            fontFamily: "inherit", fontSize: 13, fontWeight: 500,
-            color: "#4A4540",
-            background: "transparent",
-            border: "1px solid #C8C0B4",
-            padding: "8px 14px",
-          }}
-        >
+        {/* Equal prominence: identical size, weight and fill for both choices. */}
+        <Button type="button" variant="default" size="sm" onClick={() => choose(false)} style={choiceButtonStyle}>
           Essential only
         </Button>
-        <Button
-          type="button"
-          variant="default"
-          size="sm"
-          onClick={() => setConsent(true)}
-          style={{
-            fontFamily: "inherit", fontSize: 13, fontWeight: 600,
-            color: "#FDFAF6",
-            background: "#1A1814",
-            border: "1px solid #1A1814",
-            padding: "8px 14px",
-          }}
-        >
+        <Button type="button" variant="default" size="sm" onClick={() => choose(true)} style={choiceButtonStyle}>
           Accept all
         </Button>
       </div>

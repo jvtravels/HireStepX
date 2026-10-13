@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Script from "next/script";
+import ConsentGatedAdSense from "../../../ConsentGatedAdSense";
 import { notFound } from "next/navigation";
 import { getSeoPageBySlug, getAllSeoSlugs } from "../../../../data/seo-pages";
 import { QuestionSetPage } from "@/marketing-v2/QuestionPages";
@@ -168,12 +168,7 @@ export default async function QuestionsSlugPage({
           after it was pulled from search results. Gate ad loading on the
           same tier check so thin pages stop serving ads outright. */}
       {!isThinDuplicateQuestionsPage(slug) && (
-        <Script
-          async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7810403590527236"
-          crossOrigin="anonymous"
-          strategy="lazyOnload"
-        />
+        <ConsentGatedAdSense />
       )}
       <NavV2 />
       {/* Page body */}

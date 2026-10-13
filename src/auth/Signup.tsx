@@ -6,7 +6,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { useAuth, storePendingReferralCode, storePendingNextTarget, storePendingEmployerProfile } from "../AuthContext";
+import { useAuth, storePendingReferralCode, storePendingNextTarget, storePendingEmployerProfile, storePendingConsent, clearPendingConsent } from "../AuthContext";
 import { isPlausibleWebsite, WEBSITE_FORMAT_MESSAGE } from "../employer/_companyProfileHelpers";
 import { emailDomain, isFreeMailDomain } from "../../server-handlers/_employer-trust";
 import { tokens as t, fonts as f, shadows } from "./_tokens";
@@ -57,6 +57,9 @@ const NAME_MAX_LENGTH = 40;
 const EMAIL_MAX_LENGTH = 254;
 const PASSWORD_MAX_LENGTH = 128;
 const COMPANY_NAME_MAX_LENGTH = 200;
+// Shown next to the affirmation; covered by the same consent version (data/legal-versions.ts).
+const EMPLOYER_DISCOVERY_NOTICE =
+  "Employers can find a masked version of your practice profile (skills and scores, with no name) and can pay to unlock your contact details. You can switch this off any time in Settings.";
 
 export default function Signup() {
   const router = useRouter();
@@ -247,9 +250,13 @@ export default function Signup() {
 
     const start = Date.now();
     try {
+      // Continuing with Google on this page is the signup affirmation (see the
+      // footer text); the ledger row is written on the first session.
+      storePendingConsent();
       const result = await loginWithGoogle(computeRedirect());
       if (!isMounted.current) return;
       if (!result.success) {
+        clearPendingConsent();
         setError(mapAuthError(result.error));
         trackAuth({
           type: "login_failed",
@@ -1023,9 +1030,14 @@ export default function Signup() {
                     setTermsAccepted(v);
                     if (v && termsAttempted) setTermsAttempted(false);
                   }}
-                  label="I agree to the Terms of Use and Privacy Policy"
+                  label="I am 18 or older and agree to the Terms of Use and Privacy Policy"
                   description="Required. You can review them in the footer."
                 />
+                {!isEmployerFlow && (
+                  <p style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, margin: "6px 26px 0", lineHeight: 1.45 }}>
+                    {EMPLOYER_DISCOVERY_NOTICE}
+                  </p>
+                )}
                 {termsAttempted && !termsAccepted && (
                   <p
                     role="alert"
@@ -1142,7 +1154,7 @@ export default function Signup() {
             margin: "0 auto",
           }}
         >
-          By creating an account you agree to our{" "}
+          By creating an account you confirm you are 18 or older and agree to our{" "}
           <a
             href="/terms"
             target="_blank"

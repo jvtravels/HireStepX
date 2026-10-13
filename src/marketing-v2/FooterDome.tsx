@@ -15,6 +15,7 @@
 
 import { useEffect, useRef } from "react";
 import { tokens as t, fonts } from "../auth/_tokens";
+import { openCookieSettings } from "../consent";
 
 /* ── Nav link data ── */
 const PRODUCT_LINKS: Array<[string, string]> = [
@@ -47,6 +48,24 @@ function InIcon() {
     <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
       <path d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5ZM3 9h4v12H3V9Zm6 0h3.8v1.64h.05c.53-1 1.83-2.06 3.77-2.06 4.03 0 4.78 2.65 4.78 6.1V21h-4v-5.4c0-1.29-.02-2.95-1.8-2.95-1.8 0-2.08 1.4-2.08 2.85V21H9V9Z" />
     </svg>
+  );
+}
+
+/* Reopens the cookie banner so consent can be withdrawn as easily as given. */
+function CookieSettingsButton({ fontSize }: { fontSize: number }) {
+  return (
+    <button type="button" onClick={openCookieSettings} style={{
+      fontFamily: fonts.sans,
+      fontSize,
+      color: t.inkFaint,
+      background: "none",
+      border: "none",
+      padding: 0,
+      cursor: "pointer",
+      minHeight: 44,
+      display: "flex",
+      alignItems: "center",
+    }}>Cookie settings</button>
   );
 }
 
@@ -149,16 +168,24 @@ function FooterDomeDesktop() {
         </div>
       </div>
 
-      {/* © 2026 bottom-left */}
+      {/* Legal links + © 2026 bottom-left */}
       <div style={{
         position: "absolute",
         left: 96,
-        bottom: 36,
+        bottom: 24,
         fontFamily: fonts.sans,
         fontSize: 12,
         color: t.inkFaint,
         letterSpacing: "0.01em",
-      }}>© 2026 HireStepX</div>
+      }}>
+        <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 2 }}>
+          {LEGAL_LINKS.map(([label, href]) => (
+            <a key={label} href={href} style={{ color: t.inkFaint, textDecoration: "none", minHeight: 32, display: "flex", alignItems: "center" }}>{label}</a>
+          ))}
+          <CookieSettingsButton fontSize={12} />
+        </div>
+        © 2026 HireStepX
+      </div>
 
       {/* Center block — full-width flex, children centered */}
       <div style={{
@@ -350,6 +377,7 @@ function FooterDomeMobile() {
               alignItems: "center",
             }}>{label}</a>
           ))}
+          <CookieSettingsButton fontSize={12} />
         </div>
       </div>
     </div>
