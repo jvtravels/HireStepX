@@ -97,6 +97,8 @@ export const USER_TABLE_DELETES: TableStep[] = [
   { table: "notification_preferences", column: "user_id", scope: "user" },
   { table: "google_calendar_sync", column: "user_id", scope: "user" },
   { table: "candidate_consent_log", column: "user_id", scope: "user" },
+  { table: "user_consents", column: "user_id", scope: "user" },
+  { table: "email_preferences", column: "user_id", scope: "user" },
   { table: "employer_blocks", column: "candidate_user_id", scope: "user" },
   { table: "employer_reports", column: "reporter_user_id", scope: "user" },
   { table: "match_status_events", column: "candidate_user_id", scope: "user" },
@@ -114,7 +116,7 @@ export const USER_TABLE_DELETES: TableStep[] = [
 
 /** Tables created by later migrations: a 404 (table missing) just means nothing to erase. */
 export const OPTIONAL_TABLES = new Set([
-  "candidate_consent_log", "employer_blocks", "employer_reports", "match_status_events", "message_flags",
+  "candidate_consent_log", "user_consents", "email_preferences", "employer_blocks", "employer_reports", "match_status_events", "message_flags",
   "conversation_messages", "conversations", "requirement_matches", "product_ratings", "interview_turns",
   "notifications", "notification_preferences", "employer_unlock_orders", "employer_requirement_activity",
   "employer_requirements", "account_erasure_log", "used_verification_tokens", "payment_dedup",

@@ -9,7 +9,7 @@ describe("design tokens", () => {
     expect(c.obsidian).toBe("oklch(1 0 0)");
     expect(c.graphite).toBe("oklch(0.967 0.001 286.375)");
     expect(c.ivory).toBe("oklch(0.148 0.004 228.8)");
-    expect(c.gilt).toBe("oklch(0.555 0.163 48.998)");
+    expect(c.gilt).toBe("oklch(0.53 0.163 48.998)");
     expect(c.sage).toBe("oklch(0.527 0.137 150.069)");
     expect(c.ember).toBe("oklch(0.505 0.190 27.518)");
   });
