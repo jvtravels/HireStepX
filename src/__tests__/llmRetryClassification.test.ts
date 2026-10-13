@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { isQuotaExhausted, isTransientLLMError, markProviderQuotaExhausted, isProviderCoolingDown, resetProviderCooldowns, isDeterministicLLMFailure, isNonRetryableChainFailure, LLMChainError, recordProviderFailure, recordProviderSuccess, isTokenGated } from "../../server-handlers/_llm";
+import { isQuotaExhausted, isDailyQuotaExhausted, msUntilDailyQuotaReset, isDailyQuotaExhausted, msUntilDailyQuotaReset, isTransientLLMError, markProviderQuotaExhausted, isProviderCoolingDown, resetProviderCooldowns, isDeterministicLLMFailure, isNonRetryableChainFailure, LLMChainError, recordProviderFailure, recordProviderSuccess, isTokenGated } from "../../server-handlers/_llm";
 
 /* The retry path on each LLM provider does one short-backoff retry for
    transient errors before failing over. A 429 from a per-second rate limit is
@@ -108,5 +108,24 @@ describe("token gate scope", () => {
     expect(isTokenGated("follow-up-dedup-retry")).toBe(false);
     expect(isTokenGated("evaluate-session-fast")).toBe(false);
     expect(isTokenGated(undefined)).toBe(false);
+  });
+});
+
+describe("daily quota detection", () => {
+  it("flags per-day Gemini caps and the tagged form", () => {
+    expect(isDailyQuotaExhausted("Gemini error 429 [daily quota]: You exceeded your current quota")).toBe(true);
+    expect(isDailyQuotaExhausted("exceeded your current quota ... GenerateRequestsPerDayPerProjectPerModel-FreeTier")).toBe(true);
+  });
+
+  it("does not treat a per-minute quota as a daily cap", () => {
+    expect(isDailyQuotaExhausted("Gemini error 429: exceeded your current quota, retry in 12s")).toBe(false);
+    expect(isDailyQuotaExhausted("Groq error 429: rate limit reached")).toBe(false);
+  });
+
+  it("benches until the next 08:00 UTC, capped at 12h", () => {
+    const at = (iso: string) => Date.parse(iso);
+    expect(msUntilDailyQuotaReset(at("2026-10-13T03:00:00Z"))).toBe(5 * 3_600_000);
+    expect(msUntilDailyQuotaReset(at("2026-10-13T09:00:00Z"))).toBe(12 * 3_600_000);
+    expect(msUntilDailyQuotaReset(at("2026-10-13T20:00:00Z"))).toBe(12 * 3_600_000);
   });
 });

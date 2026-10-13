@@ -344,8 +344,8 @@ export async function buildServiceDetails(
         errorsToday: geminiToday.filter(u => u.status === "error" || u.status === "timeout").length,
         avgLatencyMs: geminiAvgLatency,
       },
-      limits: { requestsPerDay: 250, requestsPerMinute: 10, tokensPerMinute: 250_000 },
-      notes: "Migrated off gemini-2.5-flash (2026-10-03): Google restricted the 2.5 series to limited access ahead of its 2026-10-16 retirement and was already returning 429s. 3.5-flash-lite is same-priced and is Google's own recommended replacement — verify free-tier RPM/RPD/TPM caps at aistudio.google.com, as they may differ from the 2.5-flash figures below.",
+      limits: { requestsPerDay: 20, requestsPerMinute: 10, tokensPerMinute: 250_000 },
+      notes: "FREE TIER CAP: 20 requests/day PER MODEL (observed live 2026-10: GenerateRequestsPerDayPerProjectPerModel-FreeTier), shared across the 3-rung ladder = ~60 calls/day total. Each report costs 1+ calls, so only a handful of sessions/day fit — enable billing on the Gemini project (or set CEREBRAS_API_KEY) for real capacity. Daily-capped rungs are benched until reset. Migrated off gemini-2.5-flash (2026-10-03): Google restricted the 2.5 series to limited access ahead of its 2026-10-16 retirement and was already returning 429s. 3.5-flash-lite is same-priced and is Google's own recommended replacement — verify free-tier RPM/RPD/TPM caps at aistudio.google.com, as they may differ from the 2.5-flash figures below.",
     },
     {
       name: "Azure TTS",

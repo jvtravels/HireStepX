@@ -129,7 +129,23 @@ async function logUsage(entry: {
  * quota-exhausted 429s sat in the retry path on every static-fallback request.
  * Treat quota exhaustion as permanent so the chain fails over immediately. */
 export function isQuotaExhausted(msg: string): boolean {
-  return /current quota|plan and billing|billing details|resource_exhausted|quota.?exceeded|exceeded.*quota/i.test(msg);
+  return /current quota|plan and billing|billing details|resource_exhausted|quota.?exceeded|exceeded.*quota|\[daily quota\]/i.test(msg);
+}
+
+/* A per-DAY request cap (Gemini free tier: 20 requests/day/model,
+ * quotaId "...PerDay...") won't recover in 5 minutes; re-probing it on that
+ * cadence just burns the few requests that reset would have given back. Bench
+ * the model until the quota window rolls over (midnight Pacific ≈ 07:00-08:00
+ * UTC; 08:00 is used so we never under-bench), capped at 12h. */
+export function isDailyQuotaExhausted(msg: string): boolean {
+  return isQuotaExhausted(msg) && /per.?day|daily|requests_per_day/i.test(msg);
+}
+
+export function msUntilDailyQuotaReset(now = Date.now()): number {
+  const d = new Date(now);
+  const reset = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 8, 0, 0);
+  const next = reset > now ? reset : reset + 86_400_000;
+  return Math.min(next - now, 12 * 3_600_000);
 }
 
 /* Per-user daily token ceiling: an abuse/runaway backstop on top of the
@@ -379,7 +395,9 @@ async function callGemini(opts: LLMOptions, signal: AbortSignal | undefined, mod
   if (!res.ok) {
     const errText = await res.text().catch(() => "");
     console.error(`[LLM] Gemini ${model} — HTTP ${res.status} after ${latencyMs}ms: ${errText.slice(0, 100)}`);
-    throw new Error(`Gemini error ${res.status}: ${errText.slice(0, 200)}`);
+    // The per-day quotaId sits past the 200-char slice, so tag it up front.
+    const dailyTag = res.status === 429 && /PerDay/i.test(errText) ? " [daily quota]" : "";
+    throw new Error(`Gemini error ${res.status}${dailyTag}: ${errText.slice(0, 200)}`);
   }
   const data = await res.json();
   const usage = data.usageMetadata;
@@ -426,9 +444,10 @@ export async function callLLM(opts: LLMOptions, timeoutMs = 15000, meta?: { user
   // Fast calls use Groq GPT-OSS 20B, the recommended replacement for
   // llama-3.1-8b-instant. Slow calls use Gemini first; Groq GPT-OSS 120B is
   // the large-model fallback after llama-3.3-70b-specdec was retired.
-  // Slow/big-model calls use Gemini 2.5 Flash first: free tier (250 req/day = ~125 sessions),
-  // negligible cost if exceeded (~₹29/month at 270 sessions). Groq is the
-  // second-tier fallback; Cerebras remains third.
+  // Slow/big-model calls try the Gemini ladder first. Free-tier Gemini is only
+  // 20 requests/day PER MODEL, so each rung is an independent bucket and a rung
+  // that reports its daily cap is benched until reset (see isDailyQuotaExhausted).
+  // Groq (8K TPM) can only carry small prompts; Cerebras is the real overflow.
   if (opts.fast) {
     if (GROQ_API_KEY) providers.push({ name: "groq", model: groqModel(!!opts.fast), call: (s) => callGroq(opts, s) });
     providers.push(...geminiEntries());
@@ -569,8 +588,9 @@ export async function callLLM(opts: LLMOptions, timeoutMs = 15000, meta?: { user
           sharedHealthWrite = setSharedCooldown(rk, RETIRED_MODEL_COOLDOWN_MS);
           console.error(`[LLM] MODEL RETIRED? ${provider.name} returned a not-found/deprecated error — benched for 24h. Update GEMINI_MODELS / GROQ_MODEL: ${msg.slice(0, 150)}`);
         } else if (isQuotaExhausted(msg)) {
-          markProviderQuotaExhausted(provider.name);
-          sharedHealthWrite = setSharedCooldown(provider.name, QUOTA_COOLDOWN_MS);
+          const cooldownMs = isDailyQuotaExhausted(msg) ? msUntilDailyQuotaReset() : QUOTA_COOLDOWN_MS;
+          markProviderQuotaExhausted(provider.name, Date.now(), cooldownMs);
+          sharedHealthWrite = setSharedCooldown(provider.name, cooldownMs);
         } else {
           recordProviderFailure(provider.name, msg, isTimeout);
           if (isTimeout || (transient && !isDeterministicLLMFailure(msg))) sharedHealthWrite = recordProviderOutcome(provider.name, false);
