@@ -6,27 +6,24 @@
  *   1. Redis hit  → return cached count (TTL 1 h, set on last DB read)
  *   2. Redis miss → HEAD /rest/v1/sessions with Prefer: count=exact
  *                   (service-role key, reads content-range response header)
- *   3. Any failure → return { sessionCount: null } so the UI falls back
- *      to its hardcoded "500+" string — never shows a broken widget.
+ *   3. Any failure, or a count below MIN_PUBLIC_SESSION_COUNT → return
+ *      { sessionCount: null }; the UI then renders no social-proof line.
+ *      Only sessions with >= COMPLETED_SESSION_MIN_QUESTIONS answers count.
  *
  * No auth required — this is a public aggregate stat. ────────────────────── */
 
 export const config = { runtime: "edge" };
 
 import { redisGet, redisSetEx, handleCorsPreflightOrMethod } from "./_shared";
+import { COMPLETED_SESSION_MIN_QUESTIONS, displaySessionCount } from "./_platform-stats-helpers";
 
 declare const process: { env: Record<string, string | undefined> };
 
 const SUPABASE_URL        = process.env.SUPABASE_URL              ?? "";
 const SERVICE_ROLE_KEY    = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
-const REDIS_KEY           = "stats:session_count";
+const REDIS_KEY           = "stats:completed_session_count";
 const REDIS_TTL_SEC       = 3_600; // 1 hour
 const DB_TIMEOUT_MS       = 5_000;
-
-/** Floor to nearest 10. Never returns < 10 (avoids "0+", "3+" embarrassment). */
-function floorDisplay(n: number): number {
-  return Math.max(10, Math.floor(n / 10) * 10);
-}
 
 export default async function handler(req: Request): Promise<Response> {
   const preflight = handleCorsPreflightOrMethod(req, { allowGet: true });
@@ -44,7 +41,7 @@ export default async function handler(req: Request): Promise<Response> {
     const count = parseInt(cached, 10);
     if (!isNaN(count)) {
       return new Response(
-        JSON.stringify({ sessionCount: floorDisplay(count), _cached: true }),
+        JSON.stringify({ sessionCount: displaySessionCount(count), _cached: true }),
         { status: 200, headers: respHeaders },
       );
     }
@@ -57,7 +54,7 @@ export default async function handler(req: Request): Promise<Response> {
   }
 
   try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/sessions?select=id`, {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/sessions?select=id&questions=gte.${COMPLETED_SESSION_MIN_QUESTIONS}`, {
       method: "HEAD",
       headers: {
         apikey: SERVICE_ROLE_KEY,
@@ -76,7 +73,7 @@ export default async function handler(req: Request): Promise<Response> {
       // Persist raw count to cache; display rounding happens at read time
       await redisSetEx(REDIS_KEY, REDIS_TTL_SEC, String(count));
       return new Response(
-        JSON.stringify({ sessionCount: floorDisplay(count) }),
+        JSON.stringify({ sessionCount: displaySessionCount(count) }),
         { status: 200, headers: respHeaders },
       );
     }

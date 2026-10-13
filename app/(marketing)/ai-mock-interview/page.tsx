@@ -333,7 +333,7 @@ export default async function AiMockInterviewPage() {
               </table>
             </div>
             <p style={{ ...s, fontSize: 13, color: t.inkSoft, marginTop: 16 }}>
-              Human coach: ₹3,000–10,000/session. HireStepX: ₹9/session or ₹39/month for 5 sessions. 2 sessions free.
+              HireStepX: ₹9 per session, or ₹39 for 5 sessions (valid 30 days, one-time, no auto-renew). 2 sessions free.
             </p>
           </div>
         </section>

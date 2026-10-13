@@ -669,7 +669,7 @@ export const WhatsNext = memo(function WhatsNext({ session, skillEntries, isFree
       </div>
       {isFreeUser && (
         <div style={{ marginTop: 16, padding: "14px 18px", borderRadius: 10, background: "oklch(0.359 0.135 278.697 / 0.04)", border: `1px solid oklch(0.359 0.135 278.697 / 0.1)`, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
-          <span style={{ fontSize: 12, color: c.stone }}>Unlock unlimited sessions & detailed analytics</span>
+          <span style={{ fontSize: 12, color: c.stone }}>Need more practice? Sessions start at ₹9, no subscription</span>
           <Button variant="outline" size="sm" onClick={() => { window.location.href = "/#pricing"; }}
             style={{ fontFamily: font.ui, fontWeight: 600, borderColor: "oklch(0.359 0.135 278.697 / 0.2)", color: c.slate, whiteSpace: "nowrap" }}>
             Upgrade

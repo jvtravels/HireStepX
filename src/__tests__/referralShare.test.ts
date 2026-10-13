@@ -1,10 +1,18 @@
 import { describe, it, expect } from "vitest";
 import {
+  REFERRAL_NEW_ACCOUNT_WINDOW_MS,
+  REFERRAL_PAYOUT_MIN_QUESTIONS,
+  REFERRAL_REWARD_DAILY_CAP,
+  REFERRAL_REWARD_LIFETIME_CAP,
+} from "../../server-handlers/_referral-reward-helpers";
+import {
   buildShareMessage,
   freeSessionsEarned,
   inviteStatusLabel,
   linkedInShareUrl,
   mailtoShareUrl,
+  REFERRAL_TERMS,
+  referralTermsText,
   whatsAppShareUrl,
 } from "../referralShare";
 
@@ -32,5 +40,14 @@ describe("referralShare", () => {
   it("counts free sessions from rewarded referrals only", () => {
     expect(freeSessionsEarned({ total: 5, redeemed: 3, rewarded: 2 })).toBe(2);
     expect(freeSessionsEarned({ total: 0, redeemed: 0, rewarded: 0 })).toBe(0);
+  });
+
+  it("public referral terms match the server constants", () => {
+    expect(REFERRAL_TERMS.newAccountWindowDays * 24 * 60 * 60 * 1000).toBe(REFERRAL_NEW_ACCOUNT_WINDOW_MS);
+    expect(REFERRAL_TERMS.minAnswersForPayout).toBe(REFERRAL_PAYOUT_MIN_QUESTIONS);
+    expect(REFERRAL_TERMS.dailyCap).toBe(REFERRAL_REWARD_DAILY_CAP);
+    expect(REFERRAL_TERMS.lifetimeCap).toBe(REFERRAL_REWARD_LIFETIME_CAP);
+    expect(referralTermsText()).toContain("20 referrals per day");
+    expect(referralTermsText()).toContain("50 per person");
   });
 });
