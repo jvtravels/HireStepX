@@ -618,12 +618,13 @@ export const UserAnswerArea = memo(function UserAnswerArea({ currentTranscript, 
               value={currentTranscript}
               onChange={(e) => setCurrentTranscript(e.target.value)}
               placeholder="Type your answer here..."
+              aria-label="Type your answer"
               maxLength={3000}
               // eslint-disable-next-line jsx-a11y/no-autofocus -- user-initiated: text input mode activated by user
               autoFocus
               style={{
                 width: "100%", minHeight: 70, fontFamily: ef.sans, fontSize: 13, color: e.coal,
-                lineHeight: 1.7, background: "transparent", border: "none", outline: "none",
+                lineHeight: 1.7, background: "transparent", border: "none",
                 resize: "none", padding: 0, margin: 0,
               }}
               onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleNextQuestion(); } }}
@@ -647,11 +648,12 @@ export const UserAnswerArea = memo(function UserAnswerArea({ currentTranscript, 
                   <textarea
                     value={currentTranscript}
                     onChange={(e) => setCurrentTranscript(e.target.value)}
+                    aria-label="Edit your transcribed answer"
                     // eslint-disable-next-line jsx-a11y/no-autofocus -- user-initiated: edit mode activated by user
                     autoFocus
                     style={{
                       width: "100%", minHeight: 70, fontFamily: ef.sans, fontSize: 13, color: e.coal,
-                      lineHeight: 1.7, background: "transparent", border: "none", outline: "none",
+                      lineHeight: 1.7, background: "transparent", border: "none",
                       resize: "none", padding: 0, margin: 0,
                     }}
                   />

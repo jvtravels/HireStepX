@@ -612,7 +612,7 @@ export const FeedbackSection = memo(function FeedbackSection({ feedbackRating, f
           <input type="text" value={feedbackComment} onChange={(e) => onCommentChange(e.target.value)}
             aria-label="Feedback details (optional)"
             placeholder="Any details? (optional)" maxLength={500}
-            style={{ flex: 1, fontFamily: font.ui, fontSize: 12, color: c.chalk, background: c.obsidian, border: `1px solid ${c.border}`, borderRadius: 8, padding: "8px 12px", outline: "none" }}
+            style={{ flex: 1, fontFamily: font.ui, fontSize: 12, color: c.chalk, background: c.obsidian, border: `1px solid ${c.border}`, borderRadius: 8, padding: "8px 12px" }}
             onFocus={(e) => { e.currentTarget.style.borderColor = "oklch(0.359 0.135 278.697 / 0.3)"; }}
             onBlur={(e) => { e.currentTarget.style.borderColor = c.border; }}
             onKeyDown={(e) => { if (e.key === "Enter") onSubmitComment(); }}

@@ -510,7 +510,7 @@ export function DarkBand({
         }}
       />
       <div className="ed-container" style={{ position: "relative", textAlign: "center" as const }}>
-        {eyebrow && <p style={{ ...edEyebrow, color: t.copper, marginBottom: 20 }}>{eyebrow}</p>}
+        {eyebrow && <p style={{ ...edEyebrow, color: t.copperOnDark, marginBottom: 20 }}>{eyebrow}</p>}
         <h2
           style={{
             fontFamily: fonts.serif,

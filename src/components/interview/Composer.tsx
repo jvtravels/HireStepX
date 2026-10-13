@@ -462,7 +462,7 @@ export function Composer({
               // candidate's voice from the AI's serif question.
               fontFamily: ef.sans, fontSize: 16, lineHeight: 1.55, color: e.coal,
               background: e.white, border: `1px solid ${e.line}`, borderRadius: 14,
-              resize: "vertical", outline: "none",
+              resize: "vertical",
               boxShadow: "0 1px 0 rgba(20,17,10,.03), 0 1px 2px rgba(20,17,10,.04)",
             }}
           />

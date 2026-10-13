@@ -1210,7 +1210,7 @@ function CompactStepMock({ step }: { step: number }) {
         }}
       >
         <span style={{ fontFamily: fonts.sans, fontSize: 12, color: t.cream }}>
-          Score: <span style={{ color: t.copper, fontWeight: 600 }}>8.4 / 10</span>
+          Score: <span style={{ color: t.copperOnDark, fontWeight: 600 }}>8.4 / 10</span>
         </span>
         <span style={{ fontFamily: fonts.mono, fontSize: 10, color: t.success, padding: "2px 7px", background: t.successMist, borderRadius: 5, fontWeight: 600 }}>
           STAR · 4/4
@@ -1603,7 +1603,7 @@ function ThoughtBubbleVisual() {
       <div style={{ display: "flex", flexDirection: "column", gap: 8, minWidth: 148 }}>
         {["Q1", "Q2", "Q3", "Q4"].map((q, i) => (
           <div key={q} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ fontFamily: fonts.mono, fontSize: 10, color: t.inkFaintWeak, width: 18, flexShrink: 0 }}>{q}</span>
+            <span style={{ fontFamily: fonts.mono, fontSize: 10, color: t.inkSoft, width: 18, flexShrink: 0 }}>{q}</span>
             <div style={{ flex: 1, height: 10, background: t.line, borderRadius: 4, overflow: "hidden" }}>
               <div style={{
                 width: `${bars[i]}%`, height: "100%", background: BAR_COLORS[i], borderRadius: 4,
@@ -3043,7 +3043,7 @@ function RPT_InterviewCard({ lifted, revealed, baseDelay = 0 }: { lifted?: boole
                 style={{ transition: `stroke-dashoffset 0.9s cubic-bezier(0.16,1,0.3,1) ${baseDelay + 200}ms` }} />
             </svg>
             <div style={{ position: "absolute", bottom: 3, left: 0, right: 0, textAlign: "center", fontSize: 22, fontWeight: 800, color: t.coal, lineHeight: 1 }}>82</div>
-            <div style={{ position: "absolute", bottom: -4, left: 0, right: 0, textAlign: "center", fontSize: 7.5, color: t.inkFaintWeak }}>/ 100</div>
+            <div style={{ position: "absolute", bottom: -4, left: 0, right: 0, textAlign: "center", fontSize: 7.5, color: t.inkSoft }}>/ 100</div>
           </div>
           <span style={{ fontSize: 7.5, background: t.success100, color: t.success, padding: "2px 7px", borderRadius: 3, fontWeight: 600 }}>Hire ✓</span>
           <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 4 }}>
@@ -3120,7 +3120,7 @@ function RPT_ReportCard({ lifted, revealed, baseDelay = 0 }: { lifted?: boolean;
                 style={{ transition: `stroke-dashoffset 0.9s cubic-bezier(0.16,1,0.3,1) ${baseDelay + 200}ms` }} />
             </svg>
             <div style={{ position: "absolute", bottom: 3, left: 0, right: 0, textAlign: "center", fontSize: 25, fontWeight: 800, color: t.coal, lineHeight: 1 }}>84</div>
-            <div style={{ position: "absolute", bottom: -5, left: 0, right: 0, textAlign: "center", fontSize: 8, color: t.inkFaintWeak }}>/ 100</div>
+            <div style={{ position: "absolute", bottom: -5, left: 0, right: 0, textAlign: "center", fontSize: 8, color: t.inkSoft }}>/ 100</div>
           </div>
           <div style={{ display: "flex", gap: 4, marginTop: 4, flexWrap: "wrap" }}>
             <span style={{ fontSize: 8, background: t.success100, color: t.success, padding: "3px 7px", borderRadius: 3, fontWeight: 600 }}>Strong Hire ✓</span>
@@ -3302,9 +3302,9 @@ export function PersonalizedReportsV2() {
         {/* Left card — outer: position + reveal; inner: hover */}
         <div className="mv2-rpt-side" style={{ position: "absolute", left: 220, bottom: 60, zIndex: lActive ? 12 : anyHov ? 2 : 3, transform: revealed ? "translateY(0px)" : "translateY(80px)", opacity: revealed ? 1 : 0, transition: RV, transitionDelay: delay(0) }}>
           <div style={{ transformOrigin: "bottom center", transform: lActive ? "rotate(0deg) translateY(-30px) scale(1.08)" : anyHov ? "rotate(-10deg) translateY(6px) scale(0.86)" : "rotate(-8deg)", opacity: anyHov && !lActive ? 0.65 : 1, filter: anyHov && !lActive ? "brightness(0.92) saturate(0.2)" : "none", transition: TR }} onMouseEnter={() => setHov("left")} onMouseLeave={() => setHov(null)}>
-            <div style={{ position: "absolute", top: -68, left: "50%", transform: "translateX(-50%)", textAlign: "center", whiteSpace: "nowrap", pointerEvents: "none", fontFamily: "'Geist Sans', system-ui, sans-serif", fontWeight: 400, fontSize: 12, color: t.inkFaintWeak, lineHeight: 1.4, opacity: hov !== null ? 0 : 1, transition: "opacity 0.30s ease" }}>
+            <div style={{ position: "absolute", top: -68, left: "50%", transform: "translateX(-50%)", textAlign: "center", whiteSpace: "nowrap", pointerEvents: "none", fontFamily: "'Geist Sans', system-ui, sans-serif", fontWeight: 400, fontSize: 12, color: t.inkSoft, lineHeight: 1.4, opacity: hov !== null ? 0 : 1, transition: "opacity 0.30s ease" }}>
               Behavioral · 82/100<br />Razorpay Senior PD
-              <div style={{ fontSize: 13, opacity: 0.7, marginTop: 3, color: t.inkFaintWeak }}>↓</div>
+              <div style={{ fontSize: 13, opacity: 0.7, marginTop: 3, color: t.inkSoft }}>↓</div>
             </div>
             <RPT_InterviewCard lifted={lActive} revealed={revealed} baseDelay={0} />
           </div>
@@ -3313,9 +3313,9 @@ export function PersonalizedReportsV2() {
         {/* Center card */}
         <div style={{ position: "absolute", left: "50%", bottom: 60, zIndex: cActive ? 12 : anyHov ? 4 : 5, transform: revealed ? "translateX(-50%) translateY(0px)" : "translateX(-50%) translateY(80px)", opacity: revealed ? 1 : 0, transition: RV, transitionDelay: delay(1) }}>
           <div style={{ transform: cActive ? "translateY(-30px) scale(1.08)" : anyHov ? "translateY(6px) scale(0.86)" : "none", opacity: anyHov && !cActive ? 0.65 : 1, filter: anyHov && !cActive ? "brightness(0.92) saturate(0.2)" : "none", transition: TR }} onMouseEnter={() => setHov("center")} onMouseLeave={() => setHov(null)}>
-            <div style={{ position: "absolute", top: -68, left: "50%", transform: "translateX(-50%)", textAlign: "center", whiteSpace: "nowrap", pointerEvents: "none", fontFamily: "'Geist Sans', system-ui, sans-serif", fontWeight: 400, fontSize: 12, color: t.inkFaintWeak, lineHeight: 1.4, opacity: hov !== null ? 0 : 1, transition: "opacity 0.30s ease" }}>
+            <div style={{ position: "absolute", top: -68, left: "50%", transform: "translateX(-50%)", textAlign: "center", whiteSpace: "nowrap", pointerEvents: "none", fontFamily: "'Geist Sans', system-ui, sans-serif", fontWeight: 400, fontSize: 12, color: t.inkSoft, lineHeight: 1.4, opacity: hov !== null ? 0 : 1, transition: "opacity 0.30s ease" }}>
               Salary Neg · ₹48L landed<br />PhonePe Senior EM
-              <div style={{ fontSize: 13, opacity: 0.7, marginTop: 3, color: t.inkFaintWeak }}>↓</div>
+              <div style={{ fontSize: 13, opacity: 0.7, marginTop: 3, color: t.inkSoft }}>↓</div>
             </div>
             <RPT_ReportCard lifted={cActive} revealed={revealed} baseDelay={120} />
           </div>
@@ -3324,9 +3324,9 @@ export function PersonalizedReportsV2() {
         {/* Right card */}
         <div className="mv2-rpt-side" style={{ position: "absolute", right: 220, bottom: 60, zIndex: rActive ? 12 : anyHov ? 2 : 3, transform: revealed ? "translateY(0px)" : "translateY(80px)", opacity: revealed ? 1 : 0, transition: RV, transitionDelay: delay(2) }}>
           <div style={{ transformOrigin: "bottom center", transform: rActive ? "rotate(0deg) translateY(-30px) scale(1.08)" : anyHov ? "rotate(10deg) translateY(6px) scale(0.86)" : "rotate(8deg)", opacity: anyHov && !rActive ? 0.65 : 1, filter: anyHov && !rActive ? "brightness(0.92) saturate(0.2)" : "none", transition: TR }} onMouseEnter={() => setHov("right")} onMouseLeave={() => setHov(null)}>
-            <div style={{ position: "absolute", top: -68, left: "50%", transform: "translateX(-50%)", textAlign: "center", whiteSpace: "nowrap", pointerEvents: "none", fontFamily: "'Geist Sans', system-ui, sans-serif", fontWeight: 400, fontSize: 12, color: t.inkFaintWeak, lineHeight: 1.4, opacity: hov !== null ? 0 : 1, transition: "opacity 0.30s ease" }}>
+            <div style={{ position: "absolute", top: -68, left: "50%", transform: "translateX(-50%)", textAlign: "center", whiteSpace: "nowrap", pointerEvents: "none", fontFamily: "'Geist Sans', system-ui, sans-serif", fontWeight: 400, fontSize: 12, color: t.inkSoft, lineHeight: 1.4, opacity: hov !== null ? 0 : 1, transition: "opacity 0.30s ease" }}>
               Campus · 58/100<br />Infosys SWE Fresher
-              <div style={{ fontSize: 13, opacity: 0.7, marginTop: 3, color: t.inkFaintWeak }}>↓</div>
+              <div style={{ fontSize: 13, opacity: 0.7, marginTop: 3, color: t.inkSoft }}>↓</div>
             </div>
             <RPT_ProgressCard lifted={rActive} revealed={revealed} baseDelay={240} />
           </div>

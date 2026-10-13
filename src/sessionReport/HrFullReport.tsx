@@ -909,7 +909,7 @@ function DrillCtaPanel({
               <div style={{ fontFamily: SANS, fontSize: 13, color: t.white, lineHeight: 1.4 }}>
                 {s.name}
               </div>
-              <div style={{ fontFamily: MONO, fontSize: 11, color: "#9CA3AF", marginTop: 4 }}>
+              <div style={{ fontFamily: MONO, fontSize: 11, color: "#C7CAD6", marginTop: 4 }}>
                 {s.score}/100
               </div>
             </div>

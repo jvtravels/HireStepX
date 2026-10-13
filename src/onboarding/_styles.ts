@@ -137,7 +137,7 @@ export const ONBOARDING_STYLES = `
   }
   .hsx-onb-cta-primary:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 3px rgba(180, 83, 9, 0.32);
+    box-shadow: 0 0 0 2px #fff, 0 0 0 4px oklch(0.359 0.135 278.697);
   }
   /* Disabled primary CTA — explicit contrast pair instead of opacity
      fade. Opacity-based dimming on cream backgrounds drops readable

@@ -291,7 +291,6 @@ export function ScheduleNextSection({
                 border: `1px solid ${t.lineStrong}`,
                 borderRadius: radius.lg,
                 padding: "8px 12px",
-                outline: "none",
                 flex: "1 1 200px",
                 minWidth: 0,
               }}

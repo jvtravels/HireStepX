@@ -199,7 +199,10 @@ function AutocompleteInput({
           width: "100%", padding: "12px 16px", borderRadius: 10,
           background: T.white, border: `1.5px solid ${error ? T.error : focused ? T.indigo : T.line}`,
           color: T.coal, fontFamily: F.sans, fontSize: 16,
-          outline: "none", transition: "border-color 0.2s", boxSizing: "border-box",
+          outline: "none", transition: "border-color 0.2s, box-shadow 0.2s", boxSizing: "border-box",
+          // Border colour alone does not change when the field is in error,
+          // so focus always gets a solid two-tone ring as well.
+          boxShadow: focused ? `0 0 0 2px ${T.white}, 0 0 0 4px ${error ? T.error : T.indigo}` : "none",
         }}
       />
       {error && <p id={`${id}-error`} role="alert" style={{ fontFamily: F.sans, fontSize: 11, color: T.error, marginTop: 4 }}>{error}</p>}
@@ -1624,8 +1627,10 @@ export default function SessionSetup() {
         .hsx-setup-cta:focus-visible,
         .hsx-permission-card button:focus-visible,
         .hsx-link-indigo:focus-visible {
+          /* Two-tone ring (white gap + solid indigo): >=3:1 on any surface,
+             unlike the 20%-alpha indigoRing halo (~1.4:1) it replaces. */
           outline: none;
-          box-shadow: 0 0 0 3px ${T.indigoRing}, 0 1px 2px rgba(20,17,10,.04);
+          box-shadow: 0 0 0 2px ${T.white}, 0 0 0 4px ${T.indigo};
         }
 
         /* ─── Hover feedback ─────────────────────────────────────────────

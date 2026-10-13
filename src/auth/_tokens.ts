@@ -20,7 +20,10 @@ export const tokens = {
   // Ink
   coal: "oklch(0.148 0.004 228.8)",
   indigoGray: "oklch(0.379 0.087 284.954)",
-  inkSoft: "oklch(0.56 0.021 213.5)",
+  // Darkened from L 0.56 (4.42:1 on pageBg, 4.19 on creamSoft, 4.14 on muted)
+  // to 0.52 so body text clears AA 4.5:1 on every light surface incl. the
+  // copper100 chip (4.57). Not for dark surfaces: use creamMuted there.
+  inkSoft: "oklch(0.52 0.021 213.5)",
   // Was #A39C8B — failed WCAG AA at ~2.4:1 on cream #FAF7F0. Darkened
   // to #736B5D so body-text usages (spam-folder hint, password-meter
   // labels, footer legal, marketing eyebrow labels) clear AA 4.5:1 on
@@ -30,7 +33,11 @@ export const tokens = {
   // lighter than inkSoft (#6E6759) so the text hierarchy is preserved.
   // Decorative-only uses can drop back to inkFaintWeak.
   inkFaint: "oklch(0.45 0.017 213.2)",
-  inkFaintWeak: "oklch(0.72 0.019 213.9)",
+  // DECORATIVE ONLY (icons, dots, dividers) - never text or placeholders.
+  // Raised from L 0.72 (2.46:1) to 0.62 so meaningful non-text marks clear
+  // the 3:1 UI-component bar on white (3.63) and creamSoft (3.30). Text that
+  // used this shade now uses inkSoft.
+  inkFaintWeak: "oklch(0.62 0.019 213.9)",
 
   // Brand — interactive. Use for anything actionable or "in progress":
   // buttons/CTAs, links, active/selected nav & tab states, focus rings,
@@ -50,7 +57,11 @@ export const tokens = {
   // "upcoming/soon" status tint in DashboardHomePanels.tsx's calendar
   // strip, alongside violet/info for other status hues — both are
   // deliberate, not drift.)
-  copper: "oklch(0.555 0.163 48.998)",
+  // L 0.555 -> 0.53: 12px copper text on copper100 chips was 4.21:1; now 4.68.
+  copper: "oklch(0.53 0.163 48.998)",
+  // Copper for text/eyebrows on coal/indigo-dark surfaces (copper on coal is
+  // 3.9:1; this is ~9.5:1). Pair with a dark background only.
+  copperOnDark: "oklch(0.78 0.12 55)",
   copperDark: "oklch(0.468 0.146 48.998)",
   copperSoft: "oklch(0.555 0.163 48.998 / 0.12)",
   copper100: "oklch(0.94 0.03 58.318)",
@@ -80,7 +91,7 @@ export const tokens = {
   // were introduced to fix elsewhere, just never applied to error.
   errorInk: "oklch(0.405 0.152 27.518)",
   errorLine: "oklch(0.405 0.152 27.518 / 0.20)",
-  warning: "oklch(0.554 0.121 66.442)",
+  warning: "oklch(0.53 0.121 66.442)", // was 0.554: 4.42:1 on warning100, now 4.87
   warning100: "oklch(0.962 0.058 95.617)",
   // Promoted from a dashboard-local literal during the 2026-06 audit.
   // warningInk is the AA-passing text shade on warning100 (~6.7:1).
@@ -137,7 +148,7 @@ export const tokens = {
 
   // Blog-infographic level badge colors (beginner / intermediate / advanced)
   levelBeginner:    "oklch(0.484 0.096 153.009)",
-  levelIntermediate: "oklch(0.683 0.131 73.442)",
+  levelIntermediate: "oklch(0.55 0.131 73.442)", // was 0.683 (2.91:1 on white); now 4.95
   levelAdvanced:    "oklch(0.565 0.143 45.402)",
 } as const;
 

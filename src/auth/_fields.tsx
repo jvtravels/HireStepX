@@ -191,7 +191,9 @@ export function Field({
           }`,
           borderRadius: 10,
           boxShadow: focused
-            ? `0 0 0 ${ringWidth}px ${invalid ? "rgba(185, 28, 28, 0.18)" : t.indigoRing}`
+            ? invalid
+              ? `0 0 0 2px ${t.white}, 0 0 0 4px ${t.error}` // border is already red, so focus needs its own >=3:1 ring
+              : `0 0 0 ${ringWidth}px ${t.indigoRing}`
             : "none",
           transition:
             "border-color 150ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 150ms cubic-bezier(0.16, 1, 0.3, 1)",

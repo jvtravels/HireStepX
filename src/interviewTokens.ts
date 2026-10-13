@@ -23,7 +23,7 @@ export const e = {
   coal:         T.coal,
   indigoGray:   T.indigoGray,
   inkSoft:      T.inkSoft,
-  inkFaint:     T.inkFaintWeak,  // legacy decorative shade — body uses inkSoft
+  inkFaint:     T.inkSoft,       // was inkFaintWeak (2.46:1) — used as text; AA now
 
   /* Brand — interactive */
   indigo:       T.indigo,

@@ -31,7 +31,7 @@ const thStyle = { textAlign: "left", padding: "10px 12px", fontSize: 11, fontWei
 const tdStyle = { padding: "10px 12px", color: c.chalk, borderBottom: `1px solid ${c.borderSubtle}` } as const;
 const inputStyle = {
   fontFamily: font.ui, fontSize: 13, color: c.ivory, background: c.obsidian,
-  border: `1px solid ${c.border}`, borderRadius: 8, padding: "9px 12px", outline: "none",
+  border: `1px solid ${c.border}`, borderRadius: 8, padding: "9px 12px",
 } as const;
 const primaryBtn = {
   fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: "#fff", background: T.indigo,

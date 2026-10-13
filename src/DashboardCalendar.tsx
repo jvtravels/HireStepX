@@ -11,7 +11,8 @@
  * interview auto-schedules an adaptive countdown of mock sessions (server
  * derived); the rail renders those sessions grouped under their interview.
  */
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
+import { useFocusTrap } from "./useFocusTrap";
 import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
 import { c, font, shadow, sp, radius, ease } from "./tokens";
@@ -500,6 +501,9 @@ export default function CalendarPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const formModalRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(formModalRef, showForm);
+
   // Close the add/edit sheet on Escape, and lock body scroll while it's open
   // so the page behind the scrim stays put.
   useEffect(() => {
@@ -857,7 +861,7 @@ export default function CalendarPage() {
           style={{ position: "fixed", inset: 0, zIndex: 120, background: T.coalOverlay, backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", padding: sp.xl }}>
           {/* Panel stops backdrop-close propagation only; the dialog itself is labelled and focus-managed. */}
           {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions */}
-          <div className="cpr-modal" role="dialog" aria-modal="true" aria-labelledby="cal-modal-title" onClick={(e) => e.stopPropagation()}
+          <div ref={formModalRef} className="cpr-modal" role="dialog" aria-modal="true" aria-labelledby="cal-modal-title" onClick={(e) => e.stopPropagation()}
             style={{ width: "min(520px, 100%)", maxHeight: "92vh", background: c.carbon, border: `1px solid ${c.border}`, borderRadius: 20, boxShadow: eShadow.modal, overflow: "hidden", display: "flex", flexDirection: "column" }}>
 
             {/* header */}
