@@ -50,6 +50,10 @@
       "schedule": "30 2 * * *"
     },
     {
+      "path": "/api/cron/llm-model-watchdog",
+      "schedule": "15 5 * * *"
+    },
+    {
       "path": "/api/prune-llm-usage",
       "schedule": "45 3 * * *"
     },

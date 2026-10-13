@@ -566,3 +566,70 @@ describe("oversized prompt with a single viable provider", () => {
     expect(backupBody?.generationConfig.thinkingConfig).toEqual({ thinkingBudget: 0 });
   });
 });
+
+/* ── Model durability: env-driven ladder + retirement handling ───────── */
+
+describe("model registry", () => {
+  afterEach(() => { delete process.env.GEMINI_MODELS; });
+
+  const reload = async () => {
+    vi.resetModules();
+    callLLM = (await import("../../server-handlers/_llm")).callLLM;
+  };
+  const geminiModels = () =>
+    fetchSpy.mock.calls
+      .map((a: unknown[]) => String(a[0]).match(/models\/([^:]+):generateContent/)?.[1])
+      .filter(Boolean);
+
+  it("uses GEMINI_MODELS so a retirement is an env change, not a code change", async () => {
+    process.env.GEMINI_MODELS = "gemini-3.6-flash,gemini-2.5-flash-lite";
+    await reload();
+    fetchSpy.mockImplementation(async (url: string) =>
+      String(url).includes("generativelanguage") ? geminiOk("ok") : new Response("{}", { status: 200 }));
+    await callLLM({ prompt: "Evaluate." });
+    expect(geminiModels()).toEqual(["gemini-3.6-flash"]);
+  });
+
+  it("benches a retired model (404 not found) and answers from the next rung", async () => {
+    fetchSpy.mockImplementation(async (url: string) => {
+      const u = String(url);
+      if (u.includes("gemini-3.5-flash-lite")) return geminiErr(404, "models/gemini-3.5-flash-lite is not found for API version v1beta");
+      if (u.includes("generativelanguage")) return geminiOk("from backup");
+      return new Response("{}", { status: 200 });
+    });
+    const errSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    let p = callLLM({ prompt: "Evaluate." });
+    await vi.runAllTimersAsync();
+    expect((await p).text).toBe("from backup");
+
+    fetchSpy.mockClear();
+    p = callLLM({ prompt: "Evaluate again." });
+    await vi.runAllTimersAsync();
+    expect((await p).text).toBe("from backup");
+    expect(geminiModels()).toEqual(["gemini-2.5-flash-lite"]);
+    expect(errSpy.mock.calls.some((c) => String(c[0]).includes("MODEL RETIRED"))).toBe(true);
+    errSpy.mockRestore();
+  });
+
+  it("repointing GEMINI_MODELS clears the bench: the replacement id is not inherited-retired", async () => {
+    fetchSpy.mockImplementation(async (url: string) => {
+      const u = String(url);
+      if (u.includes("gemini-3.5-flash-lite")) return geminiErr(404, "models/gemini-3.5-flash-lite is not found");
+      return u.includes("generativelanguage") ? geminiOk("ok") : new Response("{}", { status: 200 });
+    });
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const p = callLLM({ prompt: "Evaluate." });
+    await vi.runAllTimersAsync();
+    await p;
+
+    process.env.GEMINI_MODELS = "gemini-3.6-flash,gemini-2.5-flash-lite";
+    vi.resetModules();
+    // Same isolate memory would be fresh after a redeploy; the replacement id differs from the benched one.
+    callLLM = (await import("../../server-handlers/_llm")).callLLM;
+    fetchSpy.mockClear();
+    const p2 = callLLM({ prompt: "Evaluate." });
+    await vi.runAllTimersAsync();
+    await p2;
+    expect(geminiModels()[0]).toBe("gemini-3.6-flash");
+  });
+});

@@ -6,6 +6,7 @@ import { recordSlo } from "./_slo";
 import { redisGet, redisIncrByWithExpiry } from "./_shared";
 import { isServerFlagEnabled } from "./_feature-flags";
 import { loadProviderHealth, orderByHealth, recordProviderOutcome, setSharedCooldown } from "./_llm-health";
+import { geminiLadder, geminiProviderName, isGeminiProviderName, geminiThinkingConfig, groqModel, isModelRetiredError, RETIRED_MODEL_COOLDOWN_MS } from "./_llm-models";
 
 declare const process: { env: Record<string, string | undefined> };
 
@@ -291,7 +292,7 @@ class LLMPreflightSkip extends Error {}
 async function callGroq(opts: LLMOptions, signal?: AbortSignal): Promise<LLMResult> {
   // Groq shut down llama-3.1-8b-instant (Aug 16, 2026) and
   // llama-3.3-70b-specdec (Apr 14, 2025). Use their supported successors.
-  const model = opts.fast ? "openai/gpt-oss-20b" : "openai/gpt-oss-120b";
+  const model = groqModel(!!opts.fast);
   const requestedMaxTokens = opts.maxTokens ?? 2000;
   const promptTokens = countTokens(opts.prompt);
   // The estimator undercounts dense text (Indic scripts, punctuation-heavy
@@ -341,9 +342,7 @@ async function callGroq(opts: LLMOptions, signal?: AbortSignal): Promise<LLMResu
 
 // Second Gemini model used as a failover when the primary is overloaded. It has
 // its own quota bucket and (unlike Gemini 3) disables thinking via thinkingBudget.
-const GEMINI_BACKUP_MODEL = "gemini-2.5-flash-lite";
-
-async function callGemini(opts: LLMOptions, signal?: AbortSignal, model = "gemini-3.5-flash-lite"): Promise<LLMResult> {
+async function callGemini(opts: LLMOptions, signal: AbortSignal | undefined, model: string): Promise<LLMResult> {
   if (!GEMINI_API_KEY) throw new Error("Gemini not configured");
   // gemini-2.5-flash is Google's limited-access/legacy tier as of Oct 2026
   // (retiring 2026-10-16) — Google was already throttling it with 429s
@@ -372,7 +371,7 @@ async function callGemini(opts: LLMOptions, signal?: AbortSignal, model = "gemin
         temperature: opts.temperature ?? 0.3,
         maxOutputTokens: opts.fallbackMaxTokens ?? opts.maxTokens ?? 2000,
         ...(opts.jsonMode ? { responseMimeType: "application/json" } : {}),
-        thinkingConfig: model.startsWith("gemini-3") ? { thinkingLevel: "minimal" } : { thinkingBudget: 0 },
+        thinkingConfig: geminiThinkingConfig(model),
       },
     }),
   });
@@ -418,8 +417,11 @@ async function callCerebras(opts: LLMOptions, signal?: AbortSignal): Promise<LLM
 }
 
 export async function callLLM(opts: LLMOptions, timeoutMs = 15000, meta?: { userId?: string; endpoint?: string; groqTimeoutMs?: number; sessionId?: string; totalBudgetMs?: number; hedgeAfterMs?: number }): Promise<LLMResult> {
-  type ProviderEntry = { name: string; call: (s: AbortSignal) => Promise<LLMResult> };
+  type ProviderEntry = { name: string; model?: string; call: (s: AbortSignal) => Promise<LLMResult> };
   const providers: ProviderEntry[] = [];
+  const ladder = geminiLadder();
+  const geminiEntries = (): ProviderEntry[] =>
+    GEMINI_API_KEY ? ladder.map((model, i) => ({ name: geminiProviderName(i, model), model, call: (s) => callGemini(opts, s, model) })) : [];
   // Fast calls use Groq GPT-OSS 20B, the recommended replacement for
   // llama-3.1-8b-instant. Slow calls use Gemini first; Groq GPT-OSS 120B is
   // the large-model fallback after llama-3.3-70b-specdec was retired.
@@ -427,13 +429,11 @@ export async function callLLM(opts: LLMOptions, timeoutMs = 15000, meta?: { user
   // negligible cost if exceeded (~₹29/month at 270 sessions). Groq is the
   // second-tier fallback; Cerebras remains third.
   if (opts.fast) {
-    if (GROQ_API_KEY) providers.push({ name: "groq", call: (s) => callGroq(opts, s) });
-    if (GEMINI_API_KEY) providers.push({ name: "gemini", call: (s) => callGemini(opts, s) });
-    if (GEMINI_API_KEY) providers.push({ name: GEMINI_BACKUP_MODEL, call: (s) => callGemini(opts, s, GEMINI_BACKUP_MODEL) });
+    if (GROQ_API_KEY) providers.push({ name: "groq", model: groqModel(!!opts.fast), call: (s) => callGroq(opts, s) });
+    providers.push(...geminiEntries());
   } else {
-    if (GEMINI_API_KEY) providers.push({ name: "gemini", call: (s) => callGemini(opts, s) });
-    if (GEMINI_API_KEY) providers.push({ name: GEMINI_BACKUP_MODEL, call: (s) => callGemini(opts, s, GEMINI_BACKUP_MODEL) });
-    if (GROQ_API_KEY) providers.push({ name: "groq", call: (s) => callGroq(opts, s) });
+    providers.push(...geminiEntries());
+    if (GROQ_API_KEY) providers.push({ name: "groq", model: groqModel(!!opts.fast), call: (s) => callGroq(opts, s) });
   }
   if (CEREBRAS_API_KEY) providers.push({ name: "cerebras", call: (s) => callCerebras(opts, s) });
 
@@ -444,8 +444,16 @@ export async function callLLM(opts: LLMOptions, timeoutMs = 15000, meta?: { user
   // Health is shared across instances via Redis: a provider another instance
   // already found cooling down is skipped, and one with a high recent failure
   // rate goes to the back of the chain rather than costing this user a timeout.
-  const health = await loadProviderHealth(providers.map((p) => p.name));
-  const available = providers.filter((p) => !isProviderCoolingDown(p.name) && !health.get(p.name)?.cooling);
+  // Retirement is keyed by model id (not chain name) so repointing
+  // GEMINI_MODELS / GROQ_MODEL at a replacement takes effect immediately
+  // instead of inheriting a 24h bench from the old id.
+  const retiredKey = (p: ProviderEntry) => (p.model ? `retired:${p.model}` : "");
+  const health = await loadProviderHealth(providers.flatMap((p) => (p.model ? [p.name, retiredKey(p)] : [p.name])));
+  const benched = (p: ProviderEntry) => {
+    const rk = retiredKey(p);
+    return isProviderCoolingDown(p.name) || !!health.get(p.name)?.cooling || (!!rk && (isProviderCoolingDown(rk) || !!health.get(rk)?.cooling));
+  };
+  const available = providers.filter((p) => !benched(p));
   if (available.length > 0 && available.length < providers.length) {
     providers.splice(0, providers.length, ...available);
   }
@@ -544,7 +552,12 @@ export async function callLLM(opts: LLMOptions, timeoutMs = 15000, meta?: { user
           continue;
         }
         let sharedHealthWrite: Promise<void> = Promise.resolve();
-        if (isQuotaExhausted(msg)) {
+        if (isModelRetiredError(msg)) {
+          const rk = provider.model ? `retired:${provider.model}` : provider.name;
+          markProviderQuotaExhausted(rk, Date.now(), RETIRED_MODEL_COOLDOWN_MS);
+          sharedHealthWrite = setSharedCooldown(rk, RETIRED_MODEL_COOLDOWN_MS);
+          console.error(`[LLM] MODEL RETIRED? ${provider.name} returned a not-found/deprecated error — benched for 24h. Update GEMINI_MODELS / GROQ_MODEL: ${msg.slice(0, 150)}`);
+        } else if (isQuotaExhausted(msg)) {
           markProviderQuotaExhausted(provider.name);
           sharedHealthWrite = setSharedCooldown(provider.name, QUOTA_COOLDOWN_MS);
         } else {
@@ -598,8 +611,7 @@ export async function callLLM(opts: LLMOptions, timeoutMs = 15000, meta?: { user
       break;
     }
     const next = providers[i + 1];
-    const isGemini = (n?: string) => n === "gemini" || n === GEMINI_BACKUP_MODEL;
-    const hedged = meta?.hedgeAfterMs != null && isGemini(provider.name) && isGemini(next?.name);
+    const hedged = meta?.hedgeAfterMs != null && isGeminiProviderName(provider.name, ladder) && isGeminiProviderName(next?.name, ladder);
     try {
       if (hedged) {
         const { result, primaryWon } = await raceHedged(provider, next, meta!.hedgeAfterMs!);

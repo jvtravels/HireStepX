@@ -210,6 +210,16 @@ batch lifts the measured numbers.
   user's request. Slow-path chain is gemini → gemini-2.5-flash-lite → groq →
   cerebras; `hedgeAfterMs` races the two Gemini models. Keep new health
   reads bounded (`redisPipeline` has a hard timeout) and fail-open.
+- **LLM model ids live in `_llm-models.ts`, not in call sites** — Gemini
+  ladder via `GEMINI_MODELS` (ordered, comma-separated, max 3; first rung
+  keeps the chain name `gemini`), Groq via `GROQ_MODEL` / `GROQ_FAST_MODEL`.
+  When a vendor announces a retirement, change the env var and redeploy — no
+  code change. A 404/"not found"/"deprecated" from a model benches that model
+  id for 24h (shared via Redis). The daily `/api/cron/llm-model-watchdog`
+  checks every configured model against the vendor model list plus a probe and
+  alerts on missing/retiring ones; add newly announced retirements to
+  `KNOWN_RETIRING` in `_llm-watchdog-helpers.ts`. Don't use `-latest` aliases
+  (the accepted thinking param depends on what they resolve to).
 - **`generate-questions` response cache** — same request body within
   300s returns from Upstash Redis (`gq:<hash>` keys) marked
   `_cached: true`. Static fallback fires from
