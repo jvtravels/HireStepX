@@ -6,6 +6,9 @@ import { NavV2, MobileStickyCTA } from "./HomepageV2";
 import { FooterDome as FinalCTAFooterV2 } from "./FooterDome";
 import { captureClientEvent } from "../posthogClient";
 import { CopyEmailLink } from "../_CopyEmailLink";
+import { referralTermsText } from "../referralShare";
+import { legalEntityLines } from "../../data/legal-entity";
+import { UNLOCK_BATCH_PRICE_PAISE, UNLOCK_BUNDLE_SIZE, UNLOCK_SINGLE_PRICE_PAISE } from "../../server-handlers/_unlock-pricing";
 import { Button } from "@/components/ui/button";
 
 /* ════════════════════════════════════════════════════════════════════
@@ -1320,6 +1323,17 @@ export function ContactV2() {
                   </p>
                 </div>
 
+                {legalEntityLines().length > 0 && (
+                  <div>
+                    <p style={{ ...eyebrow, marginBottom: 12 }}>Business details</p>
+                    {legalEntityLines().map((l) => (
+                      <p key={l.label} style={{ fontFamily: fonts.sans, fontSize: 14, lineHeight: 1.6, color: t.inkSoft, margin: "0 0 4px" }}>
+                        <strong>{l.label}:</strong> {l.value}
+                      </p>
+                    ))}
+                  </div>
+                )}
+
               </div>
 
               {/* ── RIGHT — form ── */}
@@ -1737,7 +1751,7 @@ function LegalPage({
         eyebrow="Legal"
         title={title}
         accent={accent}
-        lead={`Last updated: ${updated}. Written in plain English. If anything's unclear, email hello@hirestepx.com.`}
+        lead={`Last updated: ${updated}. Written in plain English. If anything's unclear, email hello@hirestepx.com. Privacy or data complaints: grievance@hirestepx.com.`}
         narrow
       />
       <section className="mv2p-section" aria-label="Document body" style={{ ...sectionBase, paddingTop: 40 }}>
@@ -1749,67 +1763,108 @@ function LegalPage({
   );
 }
 
+const GST_STATEMENT =
+  "GST is added or included according to HireStepX's GST registration status at the time of purchase. Until we are registered we do not charge GST and receipts are not GST tax invoices; once registered, the price and tax shown at checkout will say so.";
+
+function rupeesFromPaise(paise: number): string {
+  return `₹${(paise / 100).toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
+}
+
+function unlockFeeSentence(): string {
+  return `Candidates are unlocked in batches of ${UNLOCK_BUNDLE_SIZE} for ${rupeesFromPaise(UNLOCK_BATCH_PRICE_PAISE)} (a smaller remainder is charged in proportion), or one at a time for ${rupeesFromPaise(UNLOCK_SINGLE_PRICE_PAISE)}.`;
+}
+
+const POLICY_UPDATED = "11 October 2026";
+
+function LegalEntityList() {
+  const lines = legalEntityLines();
+  if (lines.length === 0) return null;
+  return (
+    <ul>
+      {lines.map((l) => (
+        <li key={l.label}><strong>{l.label}:</strong> {l.value}</li>
+      ))}
+    </ul>
+  );
+}
+
+function PolicyChanges({ history }: { history: string }) {
+  return (
+    <>
+      <h2>Changes to this policy</h2>
+      <p>We post updates on this page and change the &ldquo;last updated&rdquo; date above. For material changes we also email account holders at least 14 days before they take effect. Version history: {history}</p>
+    </>
+  );
+}
+
 export function PrivacyV2() {
   return (
-    <LegalPage title="Privacy" accent="explained simply." updated="10 October 2026">
+    <LegalPage title="Privacy" accent="explained simply." updated={POLICY_UPDATED}>
       <h2>What we collect</h2>
-      <p>Account email, your resume (uploaded by you), transcripts of your mock sessions, and basic usage telemetry (page views, session counts, plan type). We do not store audio or video recordings of your sessions: if you answer by voice, your speech is streamed to our speech-to-text provider for live transcription and is not retained. No location, no contacts, no microphone access outside of an active interview round.</p>
+      <p>Account email and name, your resume (uploaded by you), your answers and the transcripts of your mock sessions, scores and reports, payment records (order and plan details; card or UPI details are handled by Razorpay and never reach us), and basic usage data (page views, session counts, plan type). We do not store audio or video recordings of your sessions: if you answer by voice, your speech is streamed to our speech-to-text provider for live transcription and is not retained by us. We do not collect location or contacts, and we use the microphone only during an active interview round. If you choose to connect Google Calendar, we read and write the calendar events needed for interview scheduling.</p>
 
       <h2>Why we collect it</h2>
-      <p>To run the product. The resume tunes the AI's questions to your background. The transcripts power scoring and the report you read after each session. Email is for login, receipts, and support replies.</p>
+      <p>To run the product. The resume tunes the AI's questions to your background. Your answers and transcripts power scoring and the report you read after each session. Email is for login, receipts, and support replies. Usage data helps us fix bugs and improve the product; analytics and advertising technologies run only if you opt in (see Cookies below).</p>
 
       <h2>How long we keep it</h2>
-      <p>Transcripts auto-delete after 90 days unless you explicitly save a session. Account data persists until you delete your account, after which it's purged within 30 days.</p>
+      <p>Your resume, transcripts, scores, and reports are kept until you delete your account. We do not run an automatic transcript-deletion job. When you delete your account, it is deactivated immediately and you can restore it by signing in within 7 days. After 7 days your profile, sessions, transcripts, resume text, and uploaded resume files are permanently deleted. Payment records are kept in anonymised form for as long as tax law requires. Copies in backups are overwritten within 30 days. To get a copy of your data first, email <CopyEmailLink email="grievance@hirestepx.com" />.</p>
 
       <h2>Who we share with</h2>
-      <p>We do not sell your data, and we do not share your transcripts, scores, or resume with colleges, advertisers, or other third parties. The one exception is employers on HireStepX, covered in the next section. We use the following third-party sub-processors, each under a data-processing agreement that prevents retention or use beyond what we authorise:</p>
+      <p>We do not sell your data, and we do not share your transcripts, scores, or resume with colleges or advertisers. The one exception is employers on HireStepX, covered in the next section. To run the product we use the providers below. Each processes data on our behalf under its own data processing terms, only for the purpose listed:</p>
       <ul>
-        <li><strong>Supabase</strong>: database, authentication, and file storage (Ireland / US-East)</li>
-        <li><strong>Vercel</strong>: serverless hosting and edge functions (global CDN)</li>
-        <li><strong>Groq</strong>: primary AI inference for interview scoring and question generation (US)</li>
-        <li><strong>Google (Gemini)</strong>: secondary AI inference fallback (US)</li>
-        <li><strong>Deepgram</strong>: primary speech-to-text transcription of voice answers (US)</li>
-        <li><strong>Sarvam AI</strong>: Indian-English text-to-speech and speech-to-text fallback (India)</li>
-        <li><strong>Cartesia</strong>: secondary text-to-speech (US)</li>
-        <li><strong>Microsoft Azure</strong>: tertiary text-to-speech fallback (global)</li>
-        <li><strong>Resend</strong>: transactional email delivery (US)</li>
-        <li><strong>Razorpay</strong>: payment processing and subscription billing (India)</li>
-        <li><strong>PostHog</strong>: product analytics (US); only loaded after explicit cookie consent</li>
-        <li><strong>Upstash</strong>: Redis-based rate limiting and caching (US)</li>
-        <li><strong>Google AdSense</strong>: advertising on public blog, interview questions, and salary pages (US); may use cookies to serve relevant ads. You can opt out via <a href="https://www.google.com/settings/ads" target="_blank" rel="noopener noreferrer">Google Ad Settings</a>.</li>
+        <li><strong>Supabase</strong>: database, authentication, and file storage</li>
+        <li><strong>Vercel</strong>: hosting and edge functions; also Vercel Analytics and Speed Insights for aggregate usage and page-performance measurement</li>
+        <li><strong>Groq</strong>: primary AI inference for interview scoring and question generation (your resume text and answers are sent for this)</li>
+        <li><strong>Google (Gemini)</strong>: AI inference fallback (same data as Groq)</li>
+        <li><strong>Cerebras</strong>: additional AI inference fallback (same data as Groq)</li>
+        <li><strong>Deepgram</strong>: primary speech-to-text for voice answers</li>
+        <li><strong>Sarvam AI</strong>: text-to-speech and speech-to-text fallback</li>
+        <li><strong>Cartesia</strong>: secondary text-to-speech (receives the interviewer's question text, not your answers)</li>
+        <li><strong>Microsoft Azure</strong>: tertiary text-to-speech fallback (question text only)</li>
+        <li><strong>Resend</strong>: transactional email delivery</li>
+        <li><strong>Razorpay</strong>: payment processing</li>
+        <li><strong>Upstash</strong>: Redis-based rate limiting and short-lived caching</li>
+        <li><strong>Google Calendar</strong>: optional two-way calendar sync, only if you connect it</li>
+        <li><strong>PostHog</strong>: product analytics, hosted in the United States (us.posthog.com); loaded only after you opt in. We do not send your email address or name to PostHog.</li>
+        <li><strong>Google Analytics 4</strong>: website analytics; storage and measurement are enabled only after you opt in</li>
+        <li><strong>Google AdSense</strong>: advertising on public blog, interview-question, and salary pages; may set advertising cookies only after you opt in. You can manage ad personalisation in <a href="https://www.google.com/settings/ads" target="_blank" rel="noopener noreferrer">Google Ad Settings</a>.</li>
       </ul>
-      <p>Voice audio is streamed live to Deepgram or Sarvam for real-time transcription and is not stored by either provider beyond the duration of the API call. We do not send your resume or session transcripts to Razorpay, Resend, PostHog, or Upstash. Google AdSense is only active on public content pages and is never loaded inside authenticated product surfaces (dashboard, interview sessions, reports).</p>
+      <p>We do not send your resume or session transcripts to Razorpay, Resend, PostHog, Google Analytics, Upstash, or AdSense, and we never send your email address or name to PostHog. Voice audio goes only to Deepgram or Sarvam for live transcription. Advertising is never loaded inside signed-in product surfaces (dashboard, interview sessions, reports).</p>
 
-      <h2>Employer discovery</h2>
-      <p><strong>Purpose.</strong> HireStepX also lets employers find candidates for open roles. If employer discovery is on for your account, employers can find you by role and skills using the evidence from your practice sessions. This is separate from practising: you can use HireStepX fully with it switched off.</p>
-      <p><strong>What employers see before they unlock you.</strong> Your skill strengths and verified capabilities, readiness and answer-structure (STAR) indicators, a resume summary with your name, past employers, schools, phone and LinkedIn removed, your city, and when you last practised. They see you only as &ldquo;Candidate #&hellip;&rdquo;. Your scores come from your own practice sessions on HireStepX; they are not independently verified assessments.</p>
-      <p><strong>What an employer gets by unlocking.</strong> An employer pays to unlock a candidate. Unlocking releases your name, contact details, full resume detail, and short word-for-word excerpts from your practice answers to that employer. Employers sign up on their own and have different verification levels; we do not vet every employer, so treat outreach with the same care you would give any job approach.</p>
-      <p><strong>Your control and withdrawal.</strong> You can turn employer discovery off at any time in Settings &rarr; Employer visibility. You will stop appearing in employer searches and in matches no employer has unlocked yet. Withdrawing does not retroactively remove what an employer has already unlocked, but they cannot see anything new. We keep a record of when you gave and withdrew consent, which you can see in Settings. You can also block or report a specific employer from your Jobs or Messages screens; blocked employers can no longer see or contact you.</p>
-      <p><strong>Retention.</strong> Employer discovery uses the same practice data described above, so it follows the same retention periods. Deleting your account removes you from employer discovery, and your data is purged within 30 days.</p>
+      <h2>Employer discovery (on by default)</h2>
+      <p><strong>Employer discovery is switched on by default for candidate accounts.</strong> It is not opt-in. Employers can find a masked version of your practice profile (skills and scores, with no name) and can pay to unlock your contact details. You can switch this off any time in Settings &rarr; Employer visibility, and you can still use HireStepX fully with it off.</p>
+      <p><strong>What employers see before they unlock you.</strong> A masked profile: an anonymous label (&ldquo;Candidate #&hellip;&rdquo;, not your name), your skill strengths and verified capabilities, readiness and answer-structure (STAR) scores, a resume summary with your name, past employers, schools, phone and LinkedIn removed, your city, and when you last practised. Your scores come from your own practice sessions on HireStepX; they are not independently verified assessments.</p>
+      <p><strong>What an employer gets by unlocking.</strong> An employer can pay to unlock a candidate. Unlocking releases your name, email, phone, LinkedIn, your resume, and short word-for-word excerpts from your practice answers to that employer. Employers sign up on their own and have different verification levels; we do not vet every employer, so treat outreach with the same care you would give any job approach. Employers agree to use candidate data only to evaluate and contact you about the role, and not to resell it or send unrelated bulk messages (see the <a href="/terms#employers">employer terms</a>).</p>
+      <p><strong>Switching it off.</strong> When you switch discovery off, you are removed from employer search and from new matches immediately. An unlock an employer has already paid for stays valid and they keep the details they received, but they see nothing new from you and cannot contact you again after you switch it off. We keep a record of when you turned discovery on or off, which you can see in Settings. You can also block or report a specific employer from your Jobs or Messages screens; blocked employers can no longer see or contact you.</p>
+      <p><strong>Retention.</strong> Employer discovery uses the same practice data described above, so it follows the same retention. Deleting your account removes you from employer discovery.</p>
       <p><strong>Questions or complaints.</strong> Contact our <a href="/grievance">Grievance Officer</a>.</p>
 
-      <h2>Your rights under DPDP Act 2023</h2>
-      <p>India's Digital Personal Data Protection Act, 2023 gives you the right to access, correct, and erase the data we hold on you, to nominate another person to exercise these rights on your behalf, and to a grievance redressal process. Lawful basis for processing is performance of contract (delivering the service you signed up for) for everything except optional analytics, which run on explicit consent only.</p>
-      <p>Cross-border transfers: we process data within India and the United States, governed by standard contractual clauses with each sub-processor. If a grievance isn't resolved to your satisfaction, you may escalate to the Data Protection Board of India.</p>
-      <p>We respond to any request within 7 working days. For data requests, complaints, or privacy questions, contact our <a href="/grievance">Grievance Officer</a> at <CopyEmailLink email="grievance@hirestepx.com" />.</p>
+      <h2>Your rights under the DPDP Act 2023</h2>
+      <p>India's Digital Personal Data Protection Act, 2023 gives you the right to access, correct, and erase the data we hold on you, to nominate another person to exercise these rights on your behalf, and to a grievance redressal process. We process your data to deliver the service you signed up for and, for optional analytics and advertising, only on your consent, which you can withdraw at any time as easily as you gave it.</p>
+      <p>Cross-border transfers: our providers process data in India, the United States, and other regions where they operate (for example Supabase in Ireland). If your grievance is not resolved to your satisfaction, you may escalate to the Data Protection Board of India once it is constituted.</p>
+      <p><strong>Timelines.</strong> For data requests, complaints, or privacy questions, write to our Grievance Officer at <CopyEmailLink email="grievance@hirestepx.com" />. We acknowledge within 24 hours and resolve within 15 days.</p>
 
-      <h2>Cookies</h2>
-      <p>Strictly-necessary cookies by default (session token, CSRF). Analytics cookies (PostHog) load only after explicit consent via the banner on first visit. On public content pages (blog, interview questions, salary guides), Google AdSense may set advertising cookies to serve relevant ads; these are not present on any authenticated page. You can opt out of personalised ads at any time via <a href="https://www.google.com/settings/ads" target="_blank" rel="noopener noreferrer">Google Ad Settings</a> or by enabling "Do Not Track" in your browser.</p>
+      <h2>Cookies and similar technologies</h2>
+      <p><strong>Essential (always on).</strong> Your sign-in session and device token (stored in your browser's local storage), security and rate-limiting tokens, and a record of your cookie choice. The product cannot work without these.</p>
+      <p><strong>Analytics (only after you opt in).</strong> PostHog, Google Analytics 4, and Vercel Analytics set identifiers to count visits and see which features are used. Vercel Speed Insights reports anonymised page-speed metrics without cookies.</p>
+      <p><strong>Advertising (only after you opt in).</strong> Google AdSense may set advertising cookies on public content pages (blog, interview questions, salary guides) to show relevant ads. None are used on signed-in pages.</p>
+      <p><strong>Your choice.</strong> Use the &ldquo;Cookie settings&rdquo; link in the site footer to change or withdraw consent at any time; withdrawing stops analytics and advertising from loading on your next page view. You can also clear site data in your browser and manage ads at <a href="https://www.google.com/settings/ads" target="_blank" rel="noopener noreferrer">Google Ad Settings</a>.</p>
 
       <h2>Children</h2>
-      <p>HireStepX is not directed at users under 16. If you believe a minor has created an account, email us and we'll remove it.</p>
+      <p>HireStepX is not directed at anyone under 18, the age of a child under the DPDP Act. We do not knowingly process the personal data of children. If you believe a minor has created an account, email <CopyEmailLink email="grievance@hirestepx.com" /> and we will remove it.</p>
 
-      <h2>Changes</h2>
-      <p>We post updates here and, for material changes, email all account holders 14 days before they take effect. The diff between versions is published on this page.</p>
+      <PolicyChanges history="11 October 2026 (this version: corrected processors, retention, deletion, cookie and age wording); 10 October 2026." />
     </LegalPage>
   );
 }
 
 export function TermsV2() {
   return (
-    <LegalPage title="Terms of Service" accent="the rules." updated="10 October 2026">
+    <LegalPage title="Terms of Service" accent="the rules." updated={POLICY_UPDATED}>
+      <LegalEntityList />
+
       <h2>Who can use HireStepX</h2>
-      <p>Anyone 16 or older with a valid email address. By signing up, you confirm you are 16+ and the information you provide is accurate.</p>
+      <p>Anyone 18 or older with a valid email address. By signing up, you confirm you are 18+ and the information you provide is accurate. Employers must also have authority to act for the company they register.</p>
 
       <h2>What you get</h2>
       <p>Access to the platform's mock interview features, scoring, reports, and content libraries based on the plan you select. Plans are described on <a href="/pricing">/pricing</a>.</p>
@@ -1818,7 +1873,7 @@ export function TermsV2() {
       <p>One account per person. Don't share login credentials. Don't scrape, reverse-engineer, or attempt to extract our scoring rubrics, question banks, or model outputs at scale. Don't use the platform to impersonate real candidates or train third-party AI systems.</p>
 
       <h2>Payment</h2>
-      <p>Billed in INR via Razorpay. Per-session credits (₹9) are charged immediately and never expire. Sprint Pack (₹39 for 5 sessions) is a one-time purchase valid for 30 days — it does not auto-renew, and we never store your card for recurring billing. Buy another pack any time you want more sessions. No plan currently sold on HireStepX auto-renews.</p>
+      <p>Billed in INR via Razorpay. Per-session credits (₹9) are charged immediately and never expire. Sprint Pack (₹39 for 5 sessions) is a one-time purchase valid for 30 days: it does not auto-renew, and we never store your card for recurring billing. Buy another pack any time you want more sessions. No plan currently sold on HireStepX auto-renews.</p>
 
       <h2>Refunds</h2>
       <p>See our <a href="/refund">refund policy</a>. Short version: per-session credits and Sprint Pack purchases are both refundable within 7 days of purchase if unused.</p>
@@ -1826,8 +1881,21 @@ export function TermsV2() {
       <h2>Acceptable use</h2>
       <p>Don't upload illegal content. Don't use the platform to harass, defame, or harm others. Don't attempt to break our security controls. We may suspend or terminate accounts for serious or repeated violations.</p>
 
-      <h2>Employer discovery</h2>
-      <p>Employers on HireStepX can find candidates using practice evidence from sessions. Employers register themselves and are placed in verification tiers; we do not guarantee that any employer is vetted or that any job is genuine. Your name and contact details are released to an employer only after they unlock your profile, and you can turn discovery off, block, or report an employer from Settings, Jobs, or Messages. See the <a href="/privacy">Privacy Policy</a> for details. Practice scores reflect your performance in HireStepX sessions and are not a certified assessment.</p>
+      <h2>Employer discovery (for candidates; on by default)</h2>
+      <p>Employer discovery is on by default for candidate accounts. Employers can find a masked version of your practice profile (skills and scores, with no name) and can pay to unlock your contact details, resume, and short word-for-word excerpts from your practice answers. You can switch this off any time in Settings; doing so removes you from employer search immediately. An unlock already paid for stays valid, but the employer sees nothing new and cannot contact you again after switch-off. You can also block or report an employer from Settings, Jobs, or Messages. Employers register themselves and are placed in verification tiers; we do not guarantee that any employer is vetted or that any job is genuine. See the <a href="/privacy">Privacy Policy</a> for details. Practice scores reflect your performance in HireStepX sessions and are not a certified assessment.</p>
+
+      <h2 id="employers">For employers</h2>
+      <p>These terms apply to anyone who registers an employer account or pays to unlock a candidate.</p>
+      <ul>
+        <li><strong>What an unlock buys.</strong> Access to one candidate's name, contact details, resume detail, and practice-answer excerpts, and the ability to message them through HireStepX. It is not a hire, a placement, or a guarantee that the candidate will respond.</li>
+        <li><strong>Fees.</strong> {unlockFeeSentence()} The price shown at checkout is the amount charged.</li>
+        <li><strong>GST.</strong> {GST_STATEMENT}</li>
+        <li><strong>Refunds.</strong> See the <a href="/refund#employers">employer section of the refund policy</a>. In short: if a candidate becomes unavailable after you pay, that portion is refunded; once a candidate's contact details have been delivered to you, the fee is not refundable except where the law requires.</li>
+        <li><strong>No guarantee.</strong> We do not guarantee any number of candidates, responses, interviews, or hires, or the accuracy of what candidates say about themselves. Practice scores are not certified assessments.</li>
+        <li><strong>Use of candidate data.</strong> Use candidate details only to evaluate and contact that candidate about the role you registered. Do not resell, share, publish, or add them to marketing lists; do not send unrelated, bulk, or spam messages; do not discriminate unlawfully; keep the data secure and delete it when you no longer need it.</li>
+        <li><strong>Candidate withdrawal and opt-out.</strong> Candidates can turn discovery off, block, or report you at any time. If they do, you will not see anything new from them and, if they withdraw before your payment is fulfilled, that candidate is not unlocked and is refunded. You must stop contacting a candidate who asks you to.</li>
+        <li><strong>Suspension.</strong> We may suspend or remove an employer account for misuse of candidate data, misleading postings, or harassment, without refund of fees for already-delivered contacts.</li>
+      </ul>
 
       <h2>Disclaimers</h2>
       <p>HireStepX provides interview practice. We do not guarantee any specific employment outcome. AI-generated feedback is a tool for self-improvement, not a substitute for professional career counseling.</p>
@@ -1835,15 +1903,17 @@ export function TermsV2() {
       <h2>Liability</h2>
       <p>To the maximum extent permitted by law, our total liability for any claim arising from your use of HireStepX is limited to the amount you paid us in the 12 months preceding the claim.</p>
 
-      <h2>Governing law</h2>
-      <p>These terms are governed by the laws of India. Disputes go to the courts of Bengaluru, Karnataka.</p>
+      <h2>Complaints and governing law</h2>
+      <p>Write to our <a href="/grievance">Grievance Officer</a> at <CopyEmailLink email="grievance@hirestepx.com" />. We acknowledge within 24 hours and resolve within 15 days. These terms are governed by the laws of India. Disputes go to the courts of Bengaluru, Karnataka.</p>
+
+      <PolicyChanges history="11 October 2026 (minimum age 18, employer terms added, complaint timelines unified); 10 October 2026." />
     </LegalPage>
   );
 }
 
 export function RefundPolicyV2() {
   return (
-    <LegalPage title="Refund" accent="policy." updated="30 May 2026">
+    <LegalPage title="Refund" accent="policy." updated={POLICY_UPDATED}>
       <h2>Free plan</h2>
       <p>Nothing to refund; you didn't pay anything.</p>
 
@@ -1851,20 +1921,32 @@ export function RefundPolicyV2() {
       <p>Refundable up to 7 days after purchase, as long as the session hasn't started. Once you begin a session, the AI has done the work; the credit is consumed.</p>
 
       <h2>Sprint Pack (₹39 / 5 sessions)</h2>
-      <p>A one-time purchase, valid for 30 days — it does not auto-renew, so there's no recurring charge to cancel. Full refund within 7 days of purchase if zero sessions have been used. After that, no refund for that pack; your remaining sessions stay active until the 30-day window ends. Want more sessions after that? Buy another pack any time.</p>
+      <p>A one-time purchase, valid for 30 days: it does not auto-renew, so there's no recurring charge to cancel. Full refund within 7 days of purchase if zero sessions have been used. After that, no refund for that pack; your remaining sessions stay active until the 30-day window ends. Want more sessions after that? Buy another pack any time.</p>
+
+      <h2 id="employers">For employers: candidate unlocks</h2>
+      <ul>
+        <li><strong>Fees.</strong> {unlockFeeSentence()}</li>
+        <li><strong>Candidate unavailable after payment.</strong> If a candidate blocked you, turned employer visibility off, or was removed between your payment and the unlock, that candidate is not unlocked and you are refunded that candidate's share of the order (the order amount divided across the candidates in it). A full-batch order that unlocks none is refunded in full.</li>
+        <li><strong>After delivery.</strong> Once a candidate's contact details have been delivered to you, that unlock is not refundable, except where the law requires or if we made an error (for example a duplicate charge).</li>
+        <li><strong>Duplicate or failed payments.</strong> If you were charged twice or charged without an unlock, tell us the order ID and we will refund it.</li>
+        <li><strong>No outcome guarantee.</strong> A candidate not replying, declining, or not being hired is not a ground for refund.</li>
+        <li><strong>GST.</strong> {GST_STATEMENT}</li>
+      </ul>
 
       <h2>How to request a refund</h2>
       <p>Email <CopyEmailLink email="hello@hirestepx.com" /> with your account email and order ID. We process refunds within 5 working days to the original payment method. Razorpay typically takes another 3–7 working days to reflect the credit on your bank statement.</p>
 
       <h2>Disputes</h2>
-      <p>If you believe a session was scored unfairly and want a refund of just that session's credit, hit the "Dispute score" link inside the session report. We review every dispute within 24 hours.</p>
+      <p>If you believe a session was scored unfairly and want a refund of just that session's credit, hit the "Dispute score" link inside the session report. We review every dispute within 24 hours. For any other complaint, write to the <a href="/grievance">Grievance Officer</a>: we acknowledge within 24 hours and resolve within 15 days.</p>
+
+      <PolicyChanges history="11 October 2026 (employer unlock refunds added); 30 May 2026." />
     </LegalPage>
   );
 }
 
 export function GrievanceOfficerV2() {
   return (
-    <LegalPage title="Grievance" accent="Officer." updated="20 July 2026">
+    <LegalPage title="Grievance" accent="Officer." updated="11 October 2026">
       <h2>Who is the Grievance Officer?</h2>
       <p>
         In compliance with the Information Technology (Intermediary Guidelines and Digital Media Ethics Code) Rules, 2021
@@ -1882,9 +1964,14 @@ export function GrievanceOfficerV2() {
           {" "}(also reachable at{" "}
           <CopyEmailLink email="hello@hirestepx.com" />)
         </li>
-        <li>
-          <strong>Registered address:</strong> HireStepX (Hirloop), India
-        </li>
+        {legalEntityLines().length === 0 && (
+          <li>
+            <strong>Registered address:</strong> HireStepX (Hirloop), India
+          </li>
+        )}
+        {legalEntityLines().map((l) => (
+          <li key={l.label}><strong>{l.label}:</strong> {l.value}</li>
+        ))}
       </ul>
 
       <h2>How to file a grievance</h2>
@@ -1902,8 +1989,8 @@ export function GrievanceOfficerV2() {
       <h2>Response timelines</h2>
       <ul>
         <li><strong>Acknowledgement:</strong> Within 24 hours of receiving your complaint</li>
-        <li><strong>Resolution:</strong> Within 15 days of acknowledgement, as required under the IT Rules 2021</li>
-        <li><strong>Data requests</strong> (access / correction / erasure under DPDP 2023): Within 7 working days</li>
+        <li><strong>Resolution:</strong> Within 15 days, as required under the IT Rules 2021</li>
+        <li><strong>Data requests</strong> (access / correction / erasure under DPDP 2023): acknowledged within 24 hours and resolved within 15 days</li>
       </ul>
 
       <h2>Your rights under DPDP Act 2023</h2>
@@ -1918,7 +2005,7 @@ export function GrievanceOfficerV2() {
         <li>Grievance redressal through this Officer</li>
       </ul>
       <p>
-        If your grievance is not resolved to your satisfaction within 30 days, you may escalate to the{" "}
+        If your grievance is not resolved to your satisfaction within the 15-day period above, you may escalate to the{" "}
         <strong>Data Protection Board of India</strong> once constituted under the DPDP Act 2023.
       </p>
 
@@ -2110,7 +2197,7 @@ const HOW_IT_WORKS = [
   {
     step: "03",
     heading: "Both of you benefit",
-    body: "Your friend gets a free session credit added to their account immediately. You earn one free session credit when they finish their first interview.",
+    body: "Your friend gets a free session credit added to their account immediately. You earn one free session credit after their first practice session with at least 3 answers.",
   },
 ];
 
@@ -2168,7 +2255,7 @@ export function ReferralPageV2() {
         >
           Refer a friend preparing for interviews. They get a free session credit
           the moment they sign up with your link. You earn one free session
-          credit once they practise. No codes to track: your link does it automatically.
+          credit after their first practice session. No codes to track: your link does it automatically.
         </p>
         <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
           <a
@@ -2309,9 +2396,7 @@ export function ReferralPageV2() {
             margin: "0 auto",
           }}
         >
-          Your credit is applied automatically once your referred friend
-          completes their first interview. Referral codes work for new accounts
-          only, and you can earn up to 50 free sessions through referrals.
+          {referralTermsText()}
         </p>
       </section>
     </PageShell>

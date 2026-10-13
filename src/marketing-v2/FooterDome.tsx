@@ -15,6 +15,7 @@
 
 import { useEffect, useRef } from "react";
 import { tokens as t, fonts } from "../auth/_tokens";
+import { copyrightHolder } from "../../data/legal-entity";
 
 /* ── Nav link data ── */
 const PRODUCT_LINKS: Array<[string, string]> = [
@@ -158,7 +159,7 @@ function FooterDomeDesktop() {
         fontSize: 12,
         color: t.inkFaint,
         letterSpacing: "0.01em",
-      }}>© 2026 HireStepX</div>
+      }}>© 2026 {copyrightHolder()}</div>
 
       {/* Center block — full-width flex, children centered */}
       <div style={{
@@ -336,7 +337,7 @@ function FooterDomeMobile() {
         gap: 12,
       }}>
         <span style={{ fontFamily: fonts.sans, fontSize: 12, color: t.inkFaint }}>
-          © 2026 HireStepX
+          © 2026 {copyrightHolder()}
         </span>
         <div style={{ display: "flex", gap: 16 }}>
           {LEGAL_LINKS.map(([label, href]) => (
