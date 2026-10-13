@@ -417,7 +417,7 @@ async function callCerebras(opts: LLMOptions, signal?: AbortSignal): Promise<LLM
   return { text: data.choices?.[0]?.message?.content || "", model: `cerebras-${model}`, fallback: false, tokensUsed, latencyMs };
 }
 
-export async function callLLM(opts: LLMOptions, timeoutMs = 15000, meta?: { userId?: string; endpoint?: string; groqTimeoutMs?: number; sessionId?: string; totalBudgetMs?: number; hedgeAfterMs?: number }): Promise<LLMResult> {
+export async function callLLM(opts: LLMOptions, timeoutMs = 15000, meta?: { userId?: string; endpoint?: string; groqTimeoutMs?: number; sessionId?: string; totalBudgetMs?: number; hedgeAfterMs?: number; excludeGemini?: boolean }): Promise<LLMResult> {
   type ProviderEntry = { name: string; model?: string; call: (s: AbortSignal) => Promise<LLMResult> };
   const providers: ProviderEntry[] = [];
   const ladder = geminiLadder();
@@ -437,6 +437,12 @@ export async function callLLM(opts: LLMOptions, timeoutMs = 15000, meta?: { user
     if (GROQ_API_KEY) providers.push({ name: "groq", model: groqModel(!!opts.fast), call: (s) => callGroq(opts, s) });
   }
   if (CEREBRAS_API_KEY) providers.push({ name: "cerebras", model: cerebrasModel(), call: (s) => callCerebras(opts, s) });
+
+  // A last-resort tier that exists to reach a DIFFERENT provider must not
+  // re-hit the Gemini rungs the previous tier just failed on.
+  if (meta?.excludeGemini) {
+    for (let i = providers.length - 1; i >= 0; i--) if (isGeminiProviderName(providers[i].name, ladder)) providers.splice(i, 1);
+  }
 
   if (providers.length === 0) throw new Error("No LLM configured — set GROQ_API_KEY, GEMINI_API_KEY, or CEREBRAS_API_KEY");
 
@@ -547,7 +553,11 @@ export async function callLLM(opts: LLMOptions, timeoutMs = 15000, meta?: { user
         const isTimeout = errName === "AbortError" || msg.includes("aborted") || msg.includes("abort");
         const transient = isTransient(msg);
         if (err instanceof LLMPreflightSkip) throw err;
-        if (attempt < 2 && transient && !isTimeout && remainingBudget() > 800) {
+        // A 503 "high demand" on one rung rarely clears in 800ms; when another
+        // provider is queued, move on instead of re-hitting the same model.
+        const overloaded = /\b503\b|high demand|overload/i.test(msg);
+        const hasNext = providers.indexOf(provider) < providers.length - 1;
+        if (attempt < 2 && transient && !isTimeout && !(overloaded && hasNext) && remainingBudget() > 800) {
           console.warn(`[LLM] ${provider.name} transient error (${msg.slice(0, 80)}) — retrying after 800ms`);
           await new Promise((r) => setTimeout(r, 800));
           continue;

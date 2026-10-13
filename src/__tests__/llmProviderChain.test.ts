@@ -200,7 +200,30 @@ describe("transient rate limiting", () => {
     expect(groqCallCount).toBe(1);
   });
 
-  it("retries on 503 overload errors", async () => {
+  it("does not re-hit an overloaded model on 503 when another rung follows", async () => {
+    const models: string[] = [];
+    fetchSpy.mockImplementation(async (url: string) => {
+      if (String(url).includes("generativelanguage")) {
+        const model = String(url).match(/models\/([^:]+):/)?.[1] ?? "";
+        models.push(model);
+        return model === "gemini-3.5-flash-lite" ? geminiErr(503, "model overloaded, retry later") : geminiOk("next rung");
+      }
+      return new Response("{}", { status: 200 });
+    });
+
+    const promise = callLLM({ prompt: "Test." });
+    await vi.runAllTimersAsync();
+    const result = await promise;
+
+    expect(models).toEqual(["gemini-3.5-flash-lite", "gemini-2.5-flash-lite"]);
+    expect(result.text).toBe("next rung");
+  });
+
+  it("still retries a 503 once when it is the only provider left", async () => {
+    process.env.GEMINI_MODELS = "gemini-3.5-flash-lite";
+    delete process.env.GROQ_API_KEY;
+    vi.resetModules();
+    const mod = await import("../../server-handlers/_llm");
     let geminiCallCount = 0;
     fetchSpy.mockImplementation(async (url: string) => {
       if (String(url).includes("generativelanguage")) {
@@ -211,12 +234,21 @@ describe("transient rate limiting", () => {
       return new Response("{}", { status: 200 });
     });
 
-    const promise = callLLM({ prompt: "Test." });
+    const promise = mod.callLLM({ prompt: "Test." });
     await vi.runAllTimersAsync();
     const result = await promise;
+    delete process.env.GEMINI_MODELS;
 
     expect(result.model).toBe("gemini-3.5-flash-lite");
     expect(geminiCallCount).toBe(2);
+  });
+
+  it("excludeGemini keeps a last-resort tier off the Gemini rungs", async () => {
+    delete process.env.GROQ_API_KEY;
+    vi.resetModules();
+    const mod = await import("../../server-handlers/_llm");
+    await expect(mod.callLLM({ prompt: "Test." }, 5000, { excludeGemini: true })).rejects.toThrow(/No LLM configured/);
+    expect(fetchSpy.mock.calls.some((c) => String(c[0]).includes("generativelanguage"))).toBe(false);
   });
 });
 
