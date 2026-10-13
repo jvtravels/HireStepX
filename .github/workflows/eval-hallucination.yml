@@ -1,0 +1,61 @@
+name: Hallucination eval
+
+on:
+  workflow_dispatch:
+    inputs:
+      sample:
+        description: "Cells to run (rotates through the matrix weekly)"
+        required: false
+        default: "8"
+      threshold:
+        description: "Max acceptable hallucination rate (0-1)"
+        required: false
+        default: "0.05"
+  schedule:
+    - cron: "0 8 * * 3"
+
+permissions:
+  contents: read
+
+jobs:
+  hallucination:
+    name: Fact-grounding audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Run hallucination eval
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          SAMPLE: ${{ github.event.inputs.sample || '8' }}
+          THRESHOLD: ${{ github.event.inputs.threshold || '0.05' }}
+        run: |
+          set +e
+          npx tsx scripts/eval-hallucination.ts --sample "$SAMPLE" --threshold "$THRESHOLD" --output eval-hallucination.json 2> eval-hallucination.log
+          code=$?
+          {
+            echo "## Hallucination eval"
+            echo ""
+            echo '```'
+            tail -40 eval-hallucination.log
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit "$code"
+      - name: Upload result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-hallucination
+          path: |
+            eval-hallucination.json
+            eval-hallucination.log
+          if-no-files-found: ignore
+          retention-days: 30

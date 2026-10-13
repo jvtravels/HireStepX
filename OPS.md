@@ -160,6 +160,18 @@ curl -X POST https://hirestepx.com/api/cron/<name> -H "Authorization: Bearer $CR
 - **Quality drift** (`/api/cron/llm-quality-drift`, daily 05:40 UTC): reads `model` and `overallScore` from recent `sessions.report_json` and alerts (email/Slack) on a mean-score shift of 8+ points vs the previous 18 days, a 12+ point gap between providers, or a fallback provider grading 60%+ of recent reports. It needs 15+ samples per side, so it stays quiet at low volume.
 - **Unverified**: Gemini's `responseJsonSchema` request shape could not be tested (free quota exhausted); a 400 retries without the schema, so the worst case is the old behaviour. Check `schema_enforced` vs `json_valid` in PostHog after deploy.
 
+## Evals
+
+| Eval | What it gates | Where it runs | Local |
+|---|---|---|---|
+| Negotiation structural (`scripts/eval-negotiation.ts`) | Negotiation kernel and scenario structure. Free and deterministic, blocks merges. | `negotiation-eval` job in `ci.yml`, every PR. Subjective LLM-judged layer: `eval-negotiation-subjective.yml`, Mondays 08:00 UTC and manual. | `npm run eval:negotiation` |
+| Report scoring (`scripts/eval-report-scoring.ts`) | Session-report scoring in `evaluate-session`: score bands, strong > mid > weak ordering, prompt-injection and empty-answer handling, schema completeness. Golden set in `data/report-scoring-golden.ts`, checker in `server-handlers/_report-eval-helpers.ts` (unit-tested, no LLM). Non-blocking on rollout. | `eval-report-scoring.yml`, on PRs touching evaluate-session, `_llm*` or the golden set; Tuesdays 08:00 UTC; manual. | `GROQ_API_KEY=... npm run eval:report` (`--cases a,b`, `--threshold 0.8`, `--json`) |
+| Hallucination (`scripts/eval-hallucination.ts`) | Fact grounding of generated questions against `data/company-known-facts.ts`. Alert-only: fails the weekly run above 5%, nothing blocks. | `eval-hallucination.yml`, Wednesdays 08:00 UTC; manual. Rotates through the cell matrix, JSON uploaded as an artifact. | `GROQ_API_KEY=... npm run eval:hallucination -- --sample 4` |
+
+The two LLM evals need `GROQ_API_KEY` or `GEMINI_API_KEY` (Cloudflare alone is not enough, the handlers refuse to run) and exit 0 with a "skipped" message when neither is set, so forks stay green. They call the real handlers with auth, quota and Redis bypassed, so they spend free-tier provider quota: run them sparingly and never in a loop. A case that hits a provider error is reported as inconclusive and excluded from the pass rate.
+
+---
+
 ## Useful queries
 
 ### How many sessions used the static fallback today?
