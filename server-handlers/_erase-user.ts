@@ -335,7 +335,7 @@ export async function eraseUserData(deps: EraseDeps, userId: string): Promise<Er
   // service_usage.user_id is `on delete set null` in the schema but the live constraint
   // predates that and blocks the profile delete, so null it explicitly first.
   await anonymise("service_usage", `/rest/v1/service_usage?user_id=eq.${enc}`, { user_id: null });
-  // Requires migration 0035 (payments.user_id nullable). Until applied this fails closed:
+  // Requires migration 0038 (payments.user_id nullable). Until applied this fails closed:
   // the account stays soft-deleted and is retried, rather than destroying tax records.
   await anonymise("payments", `/rest/v1/payments?user_id=eq.${enc}`, { user_id: null, receipt_url: "" });
   await anonymise("payment_dedup", `/rest/v1/payment_dedup?user_id=eq.${enc}`, { user_id: null });
@@ -419,7 +419,7 @@ export async function eraseUserData(deps: EraseDeps, userId: string): Promise<Er
 
   const final = result({ ok: true, retainedFinancialRecords: retainEmployer, processors, auth });
 
-  // Audit trail: pseudonymous hash + counts, no PII. Tolerates the table being absent (migration 0035).
+  // Audit trail: pseudonymous hash + counts, no PII. Tolerates the table being absent (migration 0038).
   try {
     await sb("/rest/v1/account_erasure_log", {
       method: "POST",

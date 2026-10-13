@@ -287,7 +287,7 @@ describe("delete-account — hard delete", () => {
       const u = String(url);
       if (u.includes("grant_type=password")) return { ok: true } as Response;
       if (u.includes("select=email,name")) return { ok: true, json: async () => [] } as unknown as Response;
-      if (u.includes("/rest/v1/payments") && init?.method === "PATCH") return { ok: false, status: 400 } as unknown as Response; // migration 0035 not applied
+      if (u.includes("/rest/v1/payments") && init?.method === "PATCH") return { ok: false, status: 400 } as unknown as Response; // migration 0038 not applied
       return { ok: true, status: 200, json: async () => [] } as unknown as Response;
     });
     global.fetch = fetchMock as unknown as typeof fetch;

@@ -26,7 +26,7 @@ function fakeDb(opts: {
   visibility?: "masked" | "off"; profileMissing?: boolean; logFails?: boolean; deleteFails?: boolean;
   /** consent-log rows already on file (GET returns these); default one legacy 'granted'. */
   existingLog?: Array<{ action: "granted" | "withdrawn"; created_at: string; source: string }>;
-  /** simulate migration 0035 not applied: selecting/patching employer_notice_seen_at 400s. */
+  /** simulate migration 0037 not applied: selecting/patching employer_notice_seen_at 400s. */
   noNoticeColumn?: boolean;
   noticeSeenAt?: string | null;
 } = {}) {
@@ -212,7 +212,7 @@ describe("discovery stays on by default; the dashboard notice records an affirma
     expect(db.visibility).toBe("masked");
   });
 
-  it("keeps working when migration 0035 is not applied (no employer_notice_seen_at column)", async () => {
+  it("keeps working when migration 0037 is not applied (no employer_notice_seen_at column)", async () => {
     const db = fakeDb({ visibility: "masked", existingLog: [], noNoticeColumn: true });
     const get = await handler(req("GET"));
     expect(get.status).toBe(200);

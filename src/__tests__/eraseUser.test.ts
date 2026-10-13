@@ -262,7 +262,7 @@ describe("eraseUserData — idempotent and resumable", () => {
     expect(fake.calls.some((c) => c.method === "DELETE")).toBe(false);
   });
 
-  it("fails closed (account stays soft-deleted) when payments cannot be anonymised, e.g. migration 0035 unapplied", async () => {
+  it("fails closed (account stays soft-deleted) when payments cannot be anonymised, e.g. migration 0038 unapplied", async () => {
     const fake = makeFake({ override: (c) => (c.method === "PATCH" && c.url.includes("/rest/v1/payments?") ? new Response("not-null violation", { status: 400 }) : undefined) });
     const r = await eraseUserData(deps(fake), UID);
     expect(r.ok).toBe(false);

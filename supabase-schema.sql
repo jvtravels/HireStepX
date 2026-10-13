@@ -237,7 +237,7 @@ create unique index if not exists ux_credibility_disputes_per_flag on credibilit
 -- 5. Payments
 create table if not exists payments (
   id uuid primary key default gen_random_uuid(),
-  -- Nullable + SET NULL (migration 0035): erasure anonymises the row, never deletes the tax record.
+  -- Nullable + SET NULL (migration 0038): erasure anonymises the row, never deletes the tax record.
   user_id uuid references profiles(id) on delete set null,
   razorpay_payment_id text unique not null,
   razorpay_order_id text default '',
@@ -258,7 +258,7 @@ alter table payments
   add constraint payments_user_id_fkey
   foreign key (user_id) references profiles(id) on delete set null;
 
--- Erasure audit trail (migration 0035): no PII, service-role only.
+-- Erasure audit trail (migration 0038): no PII, service-role only.
 create table if not exists account_erasure_log (
   id uuid primary key default gen_random_uuid(),
   user_hash text not null,
@@ -2233,7 +2233,7 @@ update public.employers set verification_tier = 'email_verified', verified_at = 
 alter table public.profiles add column if not exists employer_visibility text not null default 'masked'
   check (employer_visibility in ('masked', 'off'));
 alter table public.profiles add column if not exists employer_visibility_updated_at timestamptz;
--- When the candidate first saw/answered the one-time dashboard notice (migration 0035; optional).
+-- When the candidate first saw/answered the one-time dashboard notice (migration 0037; optional).
 alter table public.profiles add column if not exists employer_notice_seen_at timestamptz;
 
 create table if not exists public.candidate_consent_log (
@@ -2362,7 +2362,7 @@ create index if not exists idx_requirement_matches_status on public.requirement_
 create index if not exists idx_sessions_user_graded on public.sessions(user_id, report_generated_at desc)
   where report_generated_at is not null;
 
--- ── Email opt-outs (2026-10-11, migration 0035) ─────────────────────────
+-- ── Email opt-outs (2026-10-11, migration 0036) ─────────────────────────
 -- Separate table, not columns on profiles: employers have no profiles row, and a
 -- narrow service-written table keeps opt-out state out of the wide profiles RLS surface.
 create table if not exists public.email_preferences (

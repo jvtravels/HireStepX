@@ -65,7 +65,7 @@ async function readProfile(base: string, userId: string, fetchImpl: typeof fetch
   const url = (cols: string) => `${base}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}&select=${cols}&limit=1`;
   const base_cols = "employer_visibility,employer_visibility_updated_at";
   let res = await fetchImpl(url(`${base_cols},employer_notice_seen_at`), { headers: supabaseServiceHeaders(), signal: AbortSignal.timeout(6000) });
-  // Migration 0035 (employer_notice_seen_at) may not be applied yet: PostgREST
+  // Migration 0037 (employer_notice_seen_at) may not be applied yet: PostgREST
   // answers 400 for an unknown column, so retry without it.
   if (res.status === 400) res = await fetchImpl(url(base_cols), { headers: supabaseServiceHeaders(), signal: AbortSignal.timeout(6000) });
   if (!res.ok) return "error";
@@ -79,7 +79,7 @@ async function readProfile(base: string, userId: string, fetchImpl: typeof fetch
 }
 
 /** Best-effort: stamps the notice as seen. Never throws and never fails the
- *  caller — the column is optional (migration 0035) and a missing one just
+ *  caller — the column is optional (migration 0037) and a missing one just
  *  means the dashboard falls back to its per-device dismissal. */
 export async function markNoticeSeen(userId: string, fetchImpl: typeof fetch = fetch): Promise<boolean> {
   try {

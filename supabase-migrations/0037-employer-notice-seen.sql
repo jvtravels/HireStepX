@@ -1,4 +1,4 @@
--- 0035: remember that a candidate has seen the one-time "employers can find
+-- 0037: remember that a candidate has seen the one-time "employers can find
 -- your masked profile" dashboard notice (employer discovery stays on by
 -- default; the notice + the consent log are how that default is made
 -- transparent and withdrawable).
