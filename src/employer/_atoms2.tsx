@@ -10,7 +10,7 @@ export type VerificationTierValue = "basic" | "email_verified" | "verified";
 const TIER_COPY: Record<VerificationTierValue, { label: string; tone: "neutral" | "indigo" | "success"; hint: string }> = {
   basic: { label: "Basic", tone: "neutral", hint: "Company profile saved. Verify your email to raise your daily limits." },
   email_verified: { label: "Email verified", tone: "indigo", hint: "Work email confirmed. Higher daily limits than Basic." },
-  verified: { label: "Verified employer", tone: "success", hint: "Company verified by HireStepX. Highest limits." },
+  verified: { label: "Verified employer", tone: "success", hint: "Email domain matches your company website, or checked by HireStepX. Highest limits." },
 };
 
 /** Employer verification tier. The tier is always spelled out in text and

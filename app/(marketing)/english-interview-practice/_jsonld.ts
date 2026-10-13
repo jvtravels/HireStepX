@@ -31,7 +31,7 @@ export function buildEnglishInterviewPracticeJsonLd(): { __html: string }[] {
         name: "Can I practice interview English without a fluent English-speaking friend?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "Yes, a voice-based AI mock interview gives you a live listener that asks real interview questions, listens to your spoken answer, and responds with follow-ups, without needing to schedule a person. HireStepX's voice model is built for Indian English and regional accents specifically, so it recognizes speech patterns a generic accent model would misread.",
+          text: "Yes, a voice-based AI mock interview gives you a live listener that asks real interview questions, listens to your spoken answer, and responds with follow-ups, without needing to schedule a person. HireStepX's speech recognition is tuned for Indian English accents.",
         },
       },
       {
@@ -50,7 +50,7 @@ export function buildEnglishInterviewPracticeJsonLd(): { __html: string }[] {
     "@type": "Article",
     headline: "English Speaking Practice for Job Interviews",
     description:
-      "Why spoken English is the real gap for interview prep, and how voice-based AI practice trained on Indian English closes it.",
+      "Why spoken English is the real gap for interview prep, and how voice-based AI practice tuned for Indian English helps close it.",
     image: "https://hirestepx.com/opengraph-image",
     url: "https://hirestepx.com/english-interview-practice",
     publisher: { "@type": "Organization", name: "HireStepX", url: "https://hirestepx.com" },

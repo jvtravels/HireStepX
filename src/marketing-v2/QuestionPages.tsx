@@ -609,6 +609,9 @@ export function QuestionSetPage({
           </Link>
         </DarkBand>
 
+        <p style={{ fontFamily: fonts.sans, fontSize: 12, color: t.inkFaint, lineHeight: 1.5, textAlign: "center", margin: "0 auto", padding: "16px 24px 24px", maxWidth: 720 }}>
+          Company names and logos belong to their owners; HireStepX is not affiliated with or endorsed by them.
+        </p>
       </main>
     </>
   );
@@ -948,6 +951,9 @@ export function QuestionsIndexPage({ pages, activeFilter, page = 1 }: QuestionsI
             Start free practice <span className="ed-cta-arrow" aria-hidden>→</span>
           </Link>
         </DarkBand>
+        <p style={{ fontFamily: fonts.sans, fontSize: 12, color: t.inkFaint, lineHeight: 1.5, textAlign: "center", margin: "0 auto", padding: "16px 24px 24px", maxWidth: 720 }}>
+          Company names and logos belong to their owners; HireStepX is not affiliated with or endorsed by them.
+        </p>
       </main>
     </>
   );

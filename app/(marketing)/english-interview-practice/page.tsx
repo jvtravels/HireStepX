@@ -11,7 +11,7 @@ import { buildEnglishInterviewPracticeJsonLd } from "./_jsonld";
  * by YouTube channels and static Hindi-vocabulary guides (Talkpal, Awal,
  * hindi.learnex.in) — none of them are a voice AI product built for the
  * actual code-switched English Indian interviewers use. HireStepX's voice
- * model is trained on Indian English and regional accents, which is a real
+ * practice is tuned for Indian English accents, which is a real
  * product fit for this query space, not just a keyword swap.
  *
  * Target queries:
@@ -26,7 +26,7 @@ export const revalidate = 86400;
 export const metadata: Metadata = {
   title: "English Speaking Practice for Job Interviews | HireStepX",
   description:
-    "Practice interviews out loud with an AI voice interviewer trained on Indian English and regional accents. Get comfortable speaking under pressure, free.",
+    "Practice interviews out loud with an AI voice interviewer tuned for Indian English accents. Get comfortable speaking under pressure, free.",
   keywords: [
     "english speaking practice for job interview",
     "interview preparation in hindi",
@@ -40,7 +40,7 @@ export const metadata: Metadata = {
     type: "article",
     title: "English Speaking Practice for Job Interviews | HireStepX",
     description:
-      "Practice interviews out loud with a voice AI trained on Indian English and regional accents: build real speaking confidence before the interview that counts.",
+      "Practice interviews out loud with a voice AI tuned for Indian English accents: build real speaking confidence before the interview that counts.",
     url: "https://hirestepx.com/english-interview-practice",
     siteName: "HireStepX",
     locale: "en_IN",
@@ -49,7 +49,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "English Speaking Practice for Job Interviews | HireStepX",
-    description: "Voice AI interview practice trained on Indian English and regional accents.",
+    description: "Voice AI interview practice tuned for Indian English accents.",
     images: ["https://hirestepx.com/opengraph-image"],
   },
 };
@@ -73,9 +73,9 @@ const CHALLENGES = [
 ];
 
 const HOW_IT_HELPS = [
-  { label: "Indian-English voice model", desc: "Trained on Indian speech patterns and regional accents, not a generic US/UK accent that doesn't match how the interview will actually sound." },
+  { label: "Built for Indian English", desc: "Speech recognition tuned for Indian English accents, so you practise with an interviewer that is set up for how you actually speak." },
   { label: "Speak, don't type", desc: "Every answer is spoken out loud to the AI interviewer, the same skill the real interview tests, unlike text-based tools." },
-  { label: "Unlimited repetition", desc: "Practice the same answer, or a fresh set of questions, as many times as it takes to get fluent, no listener fatigue, no scheduling." },
+  { label: "Repeat as often as you like", desc: "Practice the same answer, or a fresh set of questions, again and again until you are fluent: no listener fatigue, no scheduling. Your first 2 sessions are free; after that it is ₹9 a session." },
   { label: "Feedback on delivery, not just content", desc: "The scored report flags filler-word frequency, pacing, and clarity alongside STAR structure: the specific things that make spoken English feel less confident." },
 ];
 
@@ -150,7 +150,7 @@ export default async function EnglishInterviewPracticePage() {
             <span style={{ fontStyle: "italic", color: t.copper }}>for Interviews.</span>
           </h1>
           <p style={{ ...s, fontSize: 17, lineHeight: 1.65, color: t.inkSoft, maxWidth: 580, margin: "0 auto 36px" }}>
-            Understanding English isn't the same as speaking it fluently under pressure. Practice out loud with a voice AI trained on Indian English and regional accents, free.
+            Understanding English isn't the same as speaking it fluently under pressure. Practice out loud with a voice AI tuned for Indian English accents, free.
           </p>
           <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
             <Link

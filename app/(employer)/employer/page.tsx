@@ -267,7 +267,7 @@ function EmployerDashboard() {
                   ? "Unverified account."
                   : verificationTier === "email_verified"
                     ? "Work email confirmed."
-                    : "Fully verified company."}
+                    : "Verified: your email domain matches your company website, or HireStepX checked your company."}
             </p>
           </CardContent>
         </Card>
