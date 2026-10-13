@@ -219,6 +219,25 @@ describe("transient rate limiting", () => {
     expect(result.text).toBe("next rung");
   });
 
+  it("reaches the third Gemini model when the first two are hung/out of quota", async () => {
+    const models: string[] = [];
+    fetchSpy.mockImplementation(async (url: string) => {
+      if (String(url).includes("generativelanguage")) {
+        const model = String(url).match(/models\/([^:]+):/)?.[1] ?? "";
+        models.push(model);
+        if (model === "gemini-3.5-flash-lite") return geminiErr(503, "high demand");
+        if (model === "gemini-2.5-flash-lite") return geminiErr(429, "You exceeded your current quota, please check your plan and billing details.");
+        return geminiOk("third rung");
+      }
+      return new Response("{}", { status: 200 });
+    });
+    const promise = callLLM({ prompt: "Test." });
+    await vi.runAllTimersAsync();
+    const result = await promise;
+    expect(models).toEqual(["gemini-3.5-flash-lite", "gemini-2.5-flash-lite", "gemini-2.5-flash"]);
+    expect(result.text).toBe("third rung");
+  });
+
   it("still retries a 503 once when it is the only provider left", async () => {
     process.env.GEMINI_MODELS = "gemini-3.5-flash-lite";
     delete process.env.GROQ_API_KEY;
@@ -531,6 +550,26 @@ describe("oversized prompt with a single viable provider", () => {
     const promise = callLLM({ prompt: tokenPaddedPrompt(8400) }, 7000, { totalBudgetMs: 20000 });
     await vi.runAllTimersAsync();
     expect((await promise).text).toBe("backup answer");
+  });
+
+  it("staggered hedge: a hung first rung plus a 429 on the second still reaches the third rung before the budget is gone", async () => {
+    const t0 = Date.now();
+    const started: Record<string, number> = {};
+    fetchSpy.mockImplementation(async (url: string, init?: RequestInit) => {
+      const model = String(url).match(/models\/([^:]+):/)?.[1] ?? "";
+      if (model) started[model] = Date.now() - t0;
+      if (model === "gemini-3.5-flash-lite") return hang(init);
+      if (model === "gemini-2.5-flash-lite") return geminiErr(429, "You exceeded your current quota, please check your plan and billing details.");
+      if (model === "gemini-2.5-flash") return geminiOk("third rung answer");
+      return new Response("{}", { status: 200 });
+    });
+    const promise = callLLM({ prompt: tokenPaddedPrompt(8400) }, 50000, { totalBudgetMs: 52000, hedgeAfterMs: 22000 });
+    await vi.advanceTimersByTimeAsync(22000);
+    const result = await promise;
+    expect(result.text).toBe("third rung answer");
+    expect(started["gemini-2.5-flash-lite"]).toBeGreaterThanOrEqual(22000);
+    expect(started["gemini-2.5-flash"]).toBeLessThan(23000);
+    await vi.runAllTimersAsync();
   });
 
   it("hedges: starts the backup model after hedgeAfterMs and does not wait for a hung primary", async () => {

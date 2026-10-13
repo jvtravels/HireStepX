@@ -589,30 +589,36 @@ export async function callLLM(opts: LLMOptions, timeoutMs = 15000, meta?: { user
   const providerErrors: string[] = [];
 
   // A hung Gemini otherwise costs the whole per-provider timeout before the
-  // backup model even starts. Hedging launches the backup once the primary has
-  // been silent for hedgeAfterMs (or failed outright) and takes whichever
-  // succeeds first; the slower request is simply ignored.
-  const raceHedged = (primary: ProviderEntry, backup: ProviderEntry, hedgeAfterMs: number) =>
-    new Promise<{ result: LLMResult; primaryWon: boolean }>((resolve, reject) => {
+  // next model even starts, leaving the rungs behind it with no budget. A
+  // staggered race starts the next rung whenever the in-flight ones have been
+  // silent for hedgeAfterMs OR one of them fails, keeps earlier rungs running,
+  // and takes whichever succeeds first; the slower requests are ignored.
+  const raceHedged = (group: ProviderEntry[], hedgeAfterMs: number) =>
+    new Promise<{ result: LLMResult; winner: number }>((resolve, reject) => {
       let settled = false;
+      let started = 0;
       let failures = 0;
-      let backupStarted = false;
-      const errors: unknown[] = [];
-      const onFail = (err: unknown) => {
-        errors.push(err);
-        providerErrors.push(err instanceof Error ? err.message : String(err));
-        if (++failures === 2 && !settled) { settled = true; reject(errors[errors.length - 1]); return; }
-        startBackup();
+      let lastError: unknown;
+      let hedgeTimer: ReturnType<typeof setTimeout> | undefined;
+      const startNext = () => {
+        if (settled || started >= group.length) return;
+        const index = started++;
+        if (index > 0) console.warn(`[LLM] ${group[index - 1].name} slow or failed — hedging with ${group[index].name}`);
+        if (started < group.length) {
+          clearTimeout(hedgeTimer);
+          hedgeTimer = setTimeout(startNext, hedgeAfterMs);
+        }
+        tryProvider(group[index], index > 0).then(
+          (result) => { if (!settled) { settled = true; clearTimeout(hedgeTimer); resolve({ result, winner: index }); } },
+          (err) => {
+            lastError = err;
+            providerErrors.push(err instanceof Error ? err.message : String(err));
+            if (++failures === group.length && !settled) { settled = true; clearTimeout(hedgeTimer); reject(lastError); return; }
+            startNext();
+          },
+        );
       };
-      const startBackup = () => {
-        if (backupStarted || settled) return;
-        backupStarted = true;
-        clearTimeout(hedgeTimer);
-        console.warn(`[LLM] ${primary.name} slow or failed — hedging with ${backup.name}`);
-        tryProvider(backup, true).then((result) => { if (!settled) { settled = true; resolve({ result, primaryWon: false }); } }, onFail);
-      };
-      const hedgeTimer = setTimeout(startBackup, hedgeAfterMs);
-      tryProvider(primary, false).then((result) => { if (!settled) { settled = true; clearTimeout(hedgeTimer); resolve({ result, primaryWon: true }); } }, onFail);
+      startNext();
     });
 
   for (let i = 0; i < providers.length; i++) {
@@ -621,12 +627,16 @@ export async function callLLM(opts: LLMOptions, timeoutMs = 15000, meta?: { user
       lastErr = new Error("total LLM budget exhausted before all providers were tried");
       break;
     }
-    const next = providers[i + 1];
-    const hedged = meta?.hedgeAfterMs != null && isGeminiProviderName(provider.name, ladder) && isGeminiProviderName(next?.name, ladder);
+    let group: ProviderEntry[] = [];
+    if (meta?.hedgeAfterMs != null && isGeminiProviderName(provider.name, ladder)) {
+      for (let j = i; j < providers.length && isGeminiProviderName(providers[j].name, ladder); j++) group.push(providers[j]);
+      if (group.length < 2) group = [];
+    }
+    const hedged = group.length > 0;
     try {
       if (hedged) {
-        const { result, primaryWon } = await raceHedged(provider, next, meta!.hedgeAfterMs!);
-        await Promise.all([recordSlo("llm_availability", true), recordSlo("llm_primary", primaryWon && i === 0)]);
+        const { result, winner } = await raceHedged(group, meta!.hedgeAfterMs!);
+        await Promise.all([recordSlo("llm_availability", true), recordSlo("llm_primary", winner === 0 && i === 0)]);
         return result;
       }
       const result = await tryProvider(provider, i > 0);
@@ -635,9 +645,9 @@ export async function callLLM(opts: LLMOptions, timeoutMs = 15000, meta?: { user
     } catch (err) {
       lastErr = err;
       if (!hedged) providerErrors.push(err instanceof Error ? err.message : String(err));
-      else i++;
+      else i += group.length - 1;
       const following = providers[i + 1];
-      if (following) console.warn(`[LLM] ${hedged ? `${provider.name}+${next.name}` : provider.name} failed, falling back to ${following.name}`);
+      if (following) console.warn(`[LLM] ${hedged ? group.map((p) => p.name).join("+") : provider.name} failed, falling back to ${following.name}`);
     }
   }
   await Promise.all([recordSlo("llm_availability", false), recordSlo("llm_primary", false)]);

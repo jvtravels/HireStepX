@@ -149,7 +149,10 @@ export async function consumeSessionCredit(
   const res = await fetchImpl(`${baseUrl}/rest/v1/rpc/consume_session_credit`, {
     method: "POST",
     headers: authHeaders(serviceKey, { "Content-Type": "application/json" }),
-    body: JSON.stringify({ p_user_id: userId }),
+    // Both (uuid) and (uuid, text) overloads exist in prod; sending only
+    // p_user_id makes PostgREST answer 300 (ambiguous), which silently routed
+    // every session start through the CAS fallback and skipped the ledger row.
+    body: JSON.stringify({ p_user_id: userId, p_session_id: null }),
   });
 
   if (res.ok) {

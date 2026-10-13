@@ -13,7 +13,10 @@
 
 declare const process: { env: Record<string, string | undefined> };
 
-export const DEFAULT_GEMINI_MODELS = ["gemini-3.5-flash-lite", "gemini-2.5-flash-lite"] as const;
+// Each Gemini model has its own free-tier quota bucket and its own capacity
+// pool, so a third rung is real headroom: on 2026-10-13 3.5-flash-lite hung,
+// 2.5-flash-lite was out of daily quota, and 2.5-flash still answered in ~2s.
+export const DEFAULT_GEMINI_MODELS = ["gemini-3.5-flash-lite", "gemini-2.5-flash-lite", "gemini-2.5-flash"] as const;
 export const DEFAULT_GROQ_FAST_MODEL = "openai/gpt-oss-20b";
 export const DEFAULT_GROQ_MODEL = "openai/gpt-oss-120b";
 // Cerebras dropped llama-3.3-70b and llama3.1-8b from its shared catalog; its

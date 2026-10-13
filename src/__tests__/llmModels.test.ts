@@ -125,14 +125,14 @@ describe("llm-model-watchdog handler", () => {
   });
 
   it("reports ok when every configured model is listed and answering", async () => {
-    stub({ geminiListed: ["models/gemini-3.5-flash-lite", "models/gemini-2.5-flash-lite"], probe: () => 200, groqListed: ["openai/gpt-oss-20b", "openai/gpt-oss-120b"] });
+    stub({ geminiListed: ["models/gemini-3.5-flash-lite", "models/gemini-2.5-flash-lite", "models/gemini-2.5-flash"], probe: () => 200, groqListed: ["openai/gpt-oss-20b", "openai/gpt-oss-120b"] });
     const body = await (await call("s3cret")).json();
     expect(body.ok).toBe(true);
     expect(body.reports.every((r: { status: string }) => r.status === "ok")).toBe(true);
   });
 
   it("alerts when a configured model disappears from the vendor list", async () => {
-    stub({ geminiListed: ["models/gemini-2.5-flash-lite"], probe: () => 200, groqListed: ["openai/gpt-oss-20b", "openai/gpt-oss-120b"] });
+    stub({ geminiListed: ["models/gemini-2.5-flash-lite", "models/gemini-2.5-flash"], probe: () => 200, groqListed: ["openai/gpt-oss-20b", "openai/gpt-oss-120b"] });
     const errSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     const body = await (await call("s3cret")).json();
     expect(body.ok).toBe(false);
@@ -142,7 +142,7 @@ describe("llm-model-watchdog handler", () => {
   });
 
   it("does not page on Gemini capacity errors alone", async () => {
-    stub({ geminiListed: ["models/gemini-3.5-flash-lite", "models/gemini-2.5-flash-lite"], probe: (u) => (u.includes("3.5") ? 503 : 200), groqListed: ["openai/gpt-oss-20b", "openai/gpt-oss-120b"] });
+    stub({ geminiListed: ["models/gemini-3.5-flash-lite", "models/gemini-2.5-flash-lite", "models/gemini-2.5-flash"], probe: (u) => (u.includes("3.5") ? 503 : 200), groqListed: ["openai/gpt-oss-20b", "openai/gpt-oss-120b"] });
     const errSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     const body = await (await call("s3cret")).json();
     expect(body.reports.find((r: { model: string }) => r.model === "gemini-3.5-flash-lite").status).toBe("busy");

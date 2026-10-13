@@ -180,6 +180,7 @@ describe("_session-credits", () => {
     expect(rpc).toBeTruthy();
     expect(rpc!.url).toContain("/rpc/consume_session_credit");
     expect((rpc!.body as { p_user_id: string }).p_user_id).toBe(USER);
+    expect(rpc!.body).toHaveProperty("p_session_id", null);
   });
 
   it("reports no consume when the RPC returns false (zero balance)", async () => {
