@@ -29,7 +29,9 @@
     "audit:drift": "tsx scripts/audit-imported-vs-curator.mts",
     "scrape:salaries": "tsx scripts/scrape-ambitionbox.mts",
     "replay:negotiation": "tsx scripts/replay-negotiation.mts",
-    "eval:negotiation": "tsx scripts/eval-negotiation.ts"
+    "eval:negotiation": "tsx scripts/eval-negotiation.ts",
+    "eval:report": "tsx scripts/eval-report-scoring.ts",
+    "eval:hallucination": "tsx scripts/eval-hallucination.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",
