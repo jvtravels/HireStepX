@@ -260,6 +260,10 @@ interface LLMOptions {
   // when a caller knows its real completions run larger (e.g. a multi-field
   // JSON report needs ~1000+ tokens and a 300-token budget is never enough).
   groqMinCompletionTokens?: number;
+  // Retry the same provider once after a timeout when enough of totalBudgetMs
+  // remains. For callers whose prompt only fits one provider, so a single slow
+  // response otherwise has nowhere to fail over to.
+  retryOnTimeout?: boolean;
 }
 
 interface LLMResult {
@@ -282,6 +286,11 @@ const GROQ_TPM_CAP = 8000;
 const GROQ_TPM_SAFETY_MARGIN = 400; // estimator slack + response-format overhead
 const GROQ_DEFAULT_MIN_COMPLETION_TOKENS = 256;
 
+// A provider declined before any network call (prompt can never fit). Not a
+// provider failure, so it is neither logged to llm_usage nor counted against
+// the provider's health.
+class LLMPreflightSkip extends Error {}
+
 async function callGroq(opts: LLMOptions, signal?: AbortSignal): Promise<LLMResult> {
   // Groq shut down llama-3.1-8b-instant (Aug 16, 2026) and
   // llama-3.3-70b-specdec (Apr 14, 2025). Use their supported successors.
@@ -295,7 +304,7 @@ async function callGroq(opts: LLMOptions, signal?: AbortSignal): Promise<LLMResu
   const availableCompletionBudget = GROQ_TPM_CAP - GROQ_TPM_SAFETY_MARGIN - Math.ceil(promptTokens * 0.1) - promptTokens;
   const minCompletionTokens = opts.groqMinCompletionTokens ?? GROQ_DEFAULT_MIN_COMPLETION_TOKENS;
   if (availableCompletionBudget < minCompletionTokens) {
-    throw new Error(
+    throw new LLMPreflightSkip(
       `Groq skipped — prompt (~${promptTokens} tokens) leaves ~${Math.max(0, availableCompletionBudget)} tokens under the ${GROQ_TPM_CAP} TPM free-tier cap, below the ${minCompletionTokens}-token floor for a usable response`,
     );
   }
@@ -514,6 +523,11 @@ export async function callLLM(opts: LLMOptions, timeoutMs = 15000, meta?: { user
         const errName = err instanceof Error ? err.name : "";
         const isTimeout = errName === "AbortError" || msg.includes("aborted") || msg.includes("abort");
         const transient = isTransient(msg);
+        if (err instanceof LLMPreflightSkip) throw err;
+        if (attempt < 2 && opts.retryOnTimeout && isTimeout && remainingBudget() > 4000) {
+          console.warn(`[LLM] ${provider.name} timed out — retrying once (${Math.round(remainingBudget())}ms of budget left)`);
+          continue;
+        }
         if (attempt < 2 && transient && !isTimeout && remainingBudget() > 800) {
           console.warn(`[LLM] ${provider.name} transient error (${msg.slice(0, 80)}) — retrying after 800ms`);
           await new Promise((r) => setTimeout(r, 800));

@@ -1394,7 +1394,7 @@ Example bad question: "Tell me about your experience." (too vague, not role-spec
     // ceiling during a Groq incident, which is exactly when a provider is
     // most likely to throw transient errors. 20s leaves ~5s headroom for
     // prompt assembly / JSON parsing before the isolate gets killed.
-    const result = await callLLM({ prompt, temperature: 0.85, maxTokens: 1400, jsonMode: true }, 8000, { userId: auth.userId, endpoint: "generate", totalBudgetMs: 20000 });
+    const result = await callLLM({ prompt, temperature: 0.85, maxTokens: 1400, jsonMode: true, retryOnTimeout: true }, 8000, { userId: auth.userId, endpoint: "generate", totalBudgetMs: 20000 });
     const parsed = extractJSON<Record<string, unknown>>(result.text);
     // Throw (not return 500) so unusable model output takes the same static /
     // salary-kernel fallback as a provider outage instead of a dead-end error.

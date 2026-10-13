@@ -446,3 +446,60 @@ describe("totalBudgetMs", () => {
     expect(groqCalls).toHaveLength(0); // budget was gone after Gemini's capped timeout fired
   });
 });
+
+/* ── Oversized prompt + single-provider timeout (generate-questions) ──
+ *
+ * generate-questions prompts run ~9k tokens, always above Groq's 8000 TPM
+ * cap, so Groq can never serve them. The skip must not surface as an
+ * "error" row, and one slow Gemini response must get a second try inside
+ * the total budget instead of dropping the visitor straight to the static
+ * fallback. */
+
+describe("oversized prompt with a single viable provider", () => {
+  const hang = (init?: RequestInit) =>
+    new Promise<Response>((_, reject) => {
+      init?.signal?.addEventListener("abort", () => reject(Object.assign(new Error("This operation was aborted"), { name: "AbortError" })));
+    });
+
+  it("does not report the Groq pre-flight skip as a provider failure", async () => {
+    const errSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    fetchSpy.mockImplementation(async (url: string) => {
+      if (String(url).includes("generativelanguage")) return geminiOk("ok");
+      return new Response("{}", { status: 200 });
+    });
+    const promise = callLLM({ prompt: tokenPaddedPrompt(8400), fast: true }, 8000, { totalBudgetMs: 20000 });
+    await vi.runAllTimersAsync();
+    expect((await promise).model).toBe("gemini-3.5-flash-lite");
+    expect(errSpy.mock.calls.some((c) => String(c[0]).includes("groq failed"))).toBe(false);
+    errSpy.mockRestore();
+  });
+
+  it("retries Gemini once after a timeout when retryOnTimeout is set and budget remains", async () => {
+    let geminiCalls = 0;
+    fetchSpy.mockImplementation(async (url: string, init?: RequestInit) => {
+      if (String(url).includes("generativelanguage")) {
+        geminiCalls++;
+        return geminiCalls === 1 ? hang(init) : geminiOk("second try");
+      }
+      return new Response("{}", { status: 200 });
+    });
+    const promise = callLLM({ prompt: tokenPaddedPrompt(8400), retryOnTimeout: true }, 8000, { totalBudgetMs: 20000 });
+    await vi.runAllTimersAsync();
+    const result = await promise;
+    expect(geminiCalls).toBe(2);
+    expect(result.text).toBe("second try");
+  });
+
+  it("does not retry a timeout unless the caller opts in", async () => {
+    let geminiCalls = 0;
+    fetchSpy.mockImplementation(async (url: string, init?: RequestInit) => {
+      if (String(url).includes("generativelanguage")) { geminiCalls++; return hang(init); }
+      return new Response("{}", { status: 200 });
+    });
+    const promise = callLLM({ prompt: tokenPaddedPrompt(8400) }, 8000, { totalBudgetMs: 20000 });
+    const assertion = expect(promise).rejects.toThrow();
+    await vi.runAllTimersAsync();
+    await assertion;
+    expect(geminiCalls).toBe(1);
+  });
+});
