@@ -1688,3 +1688,133 @@ a[href]:not([data-slot]):not([data-sidebar]):not([role]):not([data-no-underline]
   .mx-live::after { animation: none; opacity: 0; }
   .mx-press:active, :is(a, button):hover .mx-nudge { transform: none; }
 }
+
+/* ── Cookie consent banner (app/CookieConsent.tsx) ──
+   Token-only: surface/border/text come from the shadcn vars so it follows the
+   rest of the product (and dark mode); actions use --btn-primary indigo. */
+.hsx-cookie {
+  position: fixed;
+  z-index: 9999;
+  left: 16px;
+  right: 16px;
+  bottom: 16px;
+  margin-inline: auto;
+  max-width: 560px;
+  max-height: min(85dvh, 640px);
+  display: flex;
+  flex-direction: column;
+  background: var(--card);
+  color: var(--foreground);
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) * 1.4);
+  box-shadow: 0 12px 40px oklch(0.148 0.004 228.8 / 0.14), 0 2px 8px oklch(0.148 0.004 228.8 / 0.06);
+  font-family: var(--font-ui);
+  animation: hsx-cookie-in 0.22s ease-out;
+}
+@keyframes hsx-cookie-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hsx-cookie { animation: none; }
+}
+.hsx-cookie__scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 18px 20px 4px;
+}
+.hsx-cookie__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+.hsx-cookie__title {
+  margin: 0;
+  font-size: var(--text-lg);
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--foreground);
+  outline: none;
+}
+.hsx-cookie__text {
+  margin: 6px 0 0;
+  font-size: var(--text-base);
+  line-height: 1.55;
+  color: var(--muted-foreground);
+}
+.hsx-cookie__text--small { margin-top: 12px; font-size: var(--text-sm); }
+.hsx-cookie__link {
+  color: var(--btn-primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  border-radius: 4px;
+}
+.hsx-cookie__link:hover { color: var(--btn-primary-hover); }
+.hsx-cookie__link:focus-visible,
+.hsx-cookie [role="switch"]:focus-visible {
+  outline: 2px solid var(--btn-primary);
+  outline-offset: 2px;
+}
+/* The whole row is the touch target, so the switch keeps its drawn size
+   instead of inheriting the global 44px coarse-pointer minimum. */
+.hsx-cookie [role="switch"] { min-width: 0; min-height: 0; }
+.hsx-cookie__rows {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.hsx-cookie__rows > li + li { border-top: 1px solid var(--border); }
+.hsx-cookie__row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 14px;
+}
+.hsx-cookie__row--toggle { cursor: pointer; }
+.hsx-cookie__row--toggle:hover { background: var(--muted); border-radius: inherit; }
+.hsx-cookie__row-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.hsx-cookie__row-title { font-size: var(--text-md); font-weight: 600; color: var(--foreground); }
+.hsx-cookie__row-desc { font-size: var(--text-sm); line-height: 1.5; color: var(--muted-foreground); }
+.hsx-cookie__badge {
+  flex: none;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--muted);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--muted-foreground);
+}
+.hsx-cookie__actions {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 14px 20px 18px;
+}
+.hsx-cookie__actions > button { min-width: 112px; }
+.hsx-cookie__customize { margin-right: auto; }
+@media (max-width: 640px) {
+  .hsx-cookie {
+    left: 0;
+    right: 0;
+    bottom: 0;
+    max-width: none;
+    border-width: 1px 0 0;
+    border-radius: 14px 14px 0 0;
+  }
+  .hsx-cookie__scroll { padding: 16px 16px 2px; }
+  .hsx-cookie__actions {
+    padding: 12px 16px max(12px, env(safe-area-inset-bottom, 0px));
+    gap: 8px;
+  }
+  .hsx-cookie__actions > button { flex: 1 1 0; min-width: 0; }
+  .hsx-cookie__actions > .hsx-cookie__customize { flex: 1 1 100%; order: 3; margin-right: 0; }
+  .hsx-cookie__actions > .hsx-cookie__save { flex: 1 1 100%; order: -1; }
+}

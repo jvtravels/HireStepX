@@ -88,9 +88,11 @@ export type GtagConsentSignals = {
   ad_personalization: "granted" | "denied";
 };
 
-export function gtagConsentSignals(granted: boolean): GtagConsentSignals {
-  const v = granted ? "granted" : "denied";
-  return { ad_storage: v, analytics_storage: v, ad_user_data: v, ad_personalization: v };
+/** analytics_storage follows the analytics choice; the three ad_* signals follow the advertising choice. */
+export function gtagConsentSignals(analytics: boolean, advertising: boolean = analytics): GtagConsentSignals {
+  const a = analytics ? "granted" : "denied";
+  const ad = analytics && advertising ? "granted" : "denied";
+  return { ad_storage: ad, analytics_storage: a, ad_user_data: ad, ad_personalization: ad };
 }
 
 export function sendGtagEvent(name: string, params?: Record<string, unknown>): void {
@@ -99,9 +101,9 @@ export function sendGtagEvent(name: string, params?: Record<string, unknown>): v
   w.gtag?.("event", name, params);
 }
 
-export function updateGtagConsent(granted: boolean, gaId?: string): void {
+export function updateGtagConsent(granted: boolean, gaId?: string, advertising: boolean = granted): void {
   if (typeof window === "undefined") return;
   const w = window as Window & { gtag?: GtagFn };
   if (gaId) Reflect.set(window, `ga-disable-${gaId}`, !granted);
-  w.gtag?.("consent", "update", gtagConsentSignals(granted));
+  w.gtag?.("consent", "update", gtagConsentSignals(granted, advertising));
 }

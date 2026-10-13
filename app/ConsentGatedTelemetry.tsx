@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import dynamic from "next/dynamic";
 import Script from "next/script";
-import { useCookieConsent } from "../src/useCookieConsent";
+import { useConsentCategory } from "../src/useCookieConsent";
 import { initPostHog, shutdownPostHog } from "../src/posthogClient";
 import { updateGtagConsent } from "../src/_browser-api-guards";
 import { buildGa4InitScript } from "./_ga4-script";
@@ -15,16 +15,18 @@ const Analytics = dynamic(() => import("@vercel/analytics/next").then(m => m.Ana
 const SpeedInsights = dynamic(() => import("@vercel/speed-insights/next").then(m => m.SpeedInsights), { ssr: false });
 
 /* Single consent gate for every non-essential measurement tool: GA4 (gtag.js),
-   PostHog, Vercel Web Analytics and Vercel Speed Insights. Nothing is loaded,
-   initialised or stored until the visitor accepts; on withdrawal GA4 is put
+   PostHog, Vercel Web Analytics and Vercel Speed Insights. All of them need the
+   "analytics" choice; the advertising choice only drives GA4's ad_* signals
+   (AdSense itself is gated in ConsentGatedAdSense). Nothing is loaded,
+   initialised or stored until the visitor allows analytics; on withdrawal GA4 is put
    back to denied/disabled and PostHog is opted out immediately, and none of
    the scripts render on the next navigation.
 
    nonce: app/auth/admin routes pass the per-request CSP nonce; marketing
    routes are static/ISR and pass none (proxy.ts allows their inline script). */
 export default function ConsentGatedTelemetry({ nonce, ga4 = true }: { nonce?: string; ga4?: boolean }) {
-  const consent = useCookieConsent();
-  const accepted = consent === "accepted";
+  const accepted = useConsentCategory("analytics");
+  const advertising = useConsentCategory("advertising");
 
   useEffect(() => {
     if (!accepted) {
@@ -40,12 +42,12 @@ export default function ConsentGatedTelemetry({ nonce, ga4 = true }: { nonce?: s
     const handle = idleApi.requestIdleCallback
       ? idleApi.requestIdleCallback(start, { timeout: 3000 })
       : window.setTimeout(start, 1500);
-    updateGtagConsent(true, GA_ID);
+    updateGtagConsent(true, GA_ID, advertising);
     return () => {
       if (idleApi.requestIdleCallback && idleApi.cancelIdleCallback) idleApi.cancelIdleCallback(handle);
       else window.clearTimeout(handle);
     };
-  }, [accepted]);
+  }, [accepted, advertising]);
 
   if (!accepted) return null;
 

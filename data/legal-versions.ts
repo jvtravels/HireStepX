@@ -12,8 +12,8 @@ export const PRIVACY_VERSION = "2026-10-11";
 export const TERMS_PRIVACY_CONSENT_VERSION =
   TERMS_VERSION === PRIVACY_VERSION ? TERMS_VERSION : `${TERMS_VERSION}+${PRIVACY_VERSION}`;
 
-/** Version of the cookie categories/wording shown in the banner. */
-export const COOKIE_CONSENT_VERSION = "2026-10-11";
+/** Version of the cookie categories/wording shown in the banner. 2026-10-13: analytics and advertising became separate choices. */
+export const COOKIE_CONSENT_VERSION = "2026-10-13";
 
 /** user_consents.purpose for the signup "18+ and agree to Terms/Privacy" affirmation. */
 export const TERMS_PRIVACY_PURPOSE = "terms_privacy";

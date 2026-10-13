@@ -1848,12 +1848,12 @@ export function PrivacyV2() {
       <p><strong>Essential (always on).</strong> Your sign-in session and device token (stored in your browser's local storage), security and rate-limiting tokens, and a record of your cookie choice. The product cannot work without these.</p>
       <p><strong>Analytics (only after you opt in).</strong> PostHog, Google Analytics 4, and Vercel Analytics set identifiers to count visits and see which features are used. Vercel Speed Insights reports anonymised page-speed metrics without cookies.</p>
       <p><strong>Advertising (only after you opt in).</strong> Google AdSense may set advertising cookies on public content pages (blog, interview questions, salary guides) to show relevant ads. None are used on signed-in pages.</p>
-      <p><strong>Your choice.</strong> Use the &ldquo;Cookie settings&rdquo; link in the site footer to change or withdraw consent at any time; withdrawing stops analytics and advertising from loading on your next page view. You can also clear site data in your browser and manage ads at <a href="https://www.google.com/settings/ads" target="_blank" rel="noopener noreferrer">Google Ad Settings</a>.</p>
+      <p><strong>Your choice.</strong> The banner lets you accept all optional cookies, reject all of them, or choose analytics and advertising separately; rejecting is as easy as accepting, and nothing optional is switched on by default. Use the &ldquo;Cookie settings&rdquo; link in the site footer (or the account menu when signed in) to change or withdraw consent at any time; withdrawing stops analytics and advertising from loading on your next page view. You can also clear site data in your browser and manage ads at <a href="https://www.google.com/settings/ads" target="_blank" rel="noopener noreferrer">Google Ad Settings</a>.</p>
 
       <h2>Children</h2>
       <p>HireStepX is not directed at anyone under 18, the age of a child under the DPDP Act. We do not knowingly process the personal data of children. If you believe a minor has created an account, email <CopyEmailLink email="grievance@hirestepx.com" /> and we will remove it.</p>
 
-      <PolicyChanges history="11 October 2026 (this version: corrected processors, retention, deletion, cookie and age wording); 10 October 2026." />
+      <PolicyChanges history="13 October 2026 (cookie banner now lets you choose analytics and advertising separately); 11 October 2026 (corrected processors, retention, deletion, cookie and age wording); 10 October 2026." />
     </LegalPage>
   );
 }

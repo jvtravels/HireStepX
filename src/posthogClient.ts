@@ -1,7 +1,7 @@
 /* Client-side PostHog wrapper — consent-gated.
  *
  * Nothing is initialised, captured, identified or stored until the visitor
- * accepts the cookie banner (getCookieConsent() === "accepted"):
+ * allows analytics in the cookie banner (hasConsentFor("analytics")):
  *   - initPostHog() refuses to run without consent, so there is no cookieless
  *     "anonymous pageview" mode any more;
  *   - captureClientEvent() drops events when there is no consent (it only
@@ -17,7 +17,7 @@
  */
 
 import type { PostHog } from "posthog-js";
-import { getCookieConsent } from "./consent";
+import { hasConsentFor } from "./consent";
 
 /** Active (consented) instance; null before consent, while loading, or after withdrawal. */
 let _instance: PostHog | null = null;
@@ -37,7 +37,7 @@ let _pageviewCaptured = false;
 let _queuedIdentity: { id: string; properties: Props } | null = null;
 
 function hasConsent(): boolean {
-  return getCookieConsent() === "accepted";
+  return hasConsentFor("analytics");
 }
 
 /** person properties we never forward, even if a caller passes them. */
