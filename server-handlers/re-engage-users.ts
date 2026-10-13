@@ -7,7 +7,8 @@
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { escapeHtml } from "./_shared";
-import { emailShell, title, para, b, button, dataCard } from "./_email-theme";
+import { emailShell, title, para, b, button, dataCard, type EmailFooterOptions } from "./_email-theme";
+import { filterSuppressed, getSuppressedUserIds, marketingEmailParts, preferenceDepsFromEnv } from "./_unsubscribe";
 
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
@@ -86,6 +87,7 @@ function buildEmail(
   tier: EmailTier,
   lastSession: SessionRow | null,
   employerInterest?: { count: number; roleTitle: string | null },
+  footer?: EmailFooterOptions,
 ): { subject: string; html: string } {
   const name = escapeHtml(user.name?.split(" ")[0] || "there");
   const role = escapeHtml(user.target_role || "your target role");
@@ -104,6 +106,7 @@ function buildEmail(
         : `Hi ${name}, ${employerInterest.count} employers have shortlisted you, including one for ${interestedRole}. Your profile is thin on evidence though, just ${b(`${user.practice_timestamps?.length ?? 0} session${(user.practice_timestamps?.length ?? 0) === 1 ? "" : "s"}`)} so far. A few more mock interviews sharpen the skill scores and sample answers employers see on your profile.`;
     const footerLine = "More sessions, stronger evidence, better odds of an interview invite.";
     const html = emailShell({
+      footer,
       preview: footerLine,
       body:
         title("Employers are", { accentWord: "looking." }) +
@@ -221,6 +224,7 @@ function buildEmail(
       day7: "This is our last reminder. Your account and free sessions will always be here when you're ready.",
     };
     const html = emailShell({
+      footer,
       preview: firstSessionFooter[tier],
       body:
         title(titles[tier], { accentWord: accents[tier] }) +
@@ -232,6 +236,7 @@ function buildEmail(
   }
 
   const html = emailShell({
+    footer,
     preview: footerText[genericTier],
     body:
       title(titles[genericTier], { accentWord: accents[genericTier] }) +
@@ -289,7 +294,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // from signup (created_at) instead of last-practice date, since there
     // is no practice_timestamps entry to measure from. Paid users are
     // never in this bucket (you can't subscribe without starting first).
-    const candidates = profiles.filter(p => {
+    const prefDeps = preferenceDepsFromEnv();
+    const candidatesBeforeOptOut = profiles.filter(p => {
       if (!p.email) return false;
       const neverStarted = !p.practice_timestamps || p.practice_timestamps.length === 0;
       if (neverStarted) {
@@ -306,6 +312,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
       return daysSince >= 1 && daysSince < 14;
     });
+    // Honour opt-outs at send time. Fails closed (everyone skipped) if the lookup errors.
+    const candidates = await filterSuppressed(prefDeps, candidatesBeforeOptOut, "marketing");
 
     let sent = 0;
     let skipped = 0;
@@ -348,7 +356,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Step 1 — compute tier for each candidate up-front; drop those that get no email
     type Eligible = { user: UserRow; tier: EmailTier; employerInterest?: { count: number; roleTitle: string | null } };
-    const eligible: Eligible[] = [];
+    const eligibleBeforeOptOut: Eligible[] = [];
     for (const user of candidates) {
       const neverStarted = !user.practice_timestamps || user.practice_timestamps.length === 0;
       const daysSince = neverStarted
@@ -362,14 +370,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         ? Math.floor((Date.now() - new Date(user.re_engage_sent).getTime()) / 86400000)
         : Infinity;
       if (interest && sessionsUsed < LOW_SESSION_THRESHOLD && lastSentDays >= 2) {
-        eligible.push({ user, tier: "employer_interest", employerInterest: interest });
+        eligibleBeforeOptOut.push({ user, tier: "employer_interest", employerInterest: interest });
         continue;
       }
 
       const tier = getEmailTier(daysSince, user.re_engage_sent, isPaid);
       if (!tier) { skipped++; continue; }
-      eligible.push({ user, tier });
+      eligibleBeforeOptOut.push({ user, tier });
     }
+    // The employer-interest nudge is also an employer-activity notification, so it honours that opt-out too.
+    const employerOptedOut = await getSuppressedUserIds(
+      prefDeps,
+      eligibleBeforeOptOut.filter(e => e.tier === "employer_interest").map(e => e.user.id),
+      "employer_notifications",
+    );
+    const eligible = eligibleBeforeOptOut.filter(e => !employerOptedOut.has(e.user.id.toLowerCase()));
 
     // Step 2 — batch-fetch the latest session per eligible user in ONE query.
     // This replaces an N+1 loop (N Supabase REST calls) with a single query using
@@ -405,12 +420,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const now = new Date().toISOString();
     async function sendOne({ user, tier, employerInterest }: Eligible): Promise<"sent" | "failed"> {
       const lastSession = sessionByUser.get(user.id) || null;
-      const { subject, html } = buildEmail(user, tier, lastSession, employerInterest);
+      const parts = await marketingEmailParts(user.id, "marketing");
+      const { subject, html } = buildEmail(user, tier, lastSession, employerInterest, parts.footer);
       try {
         const emailRes = await fetch("https://api.resend.com/emails", {
           method: "POST",
           headers: { Authorization: `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
-          body: JSON.stringify({ from: FROM_EMAIL, to: [user.email], subject, html }),
+          body: JSON.stringify({ from: FROM_EMAIL, to: [user.email], subject, html, ...parts.resend }),
         });
         if (!emailRes.ok) {
           console.error(`Re-engage email failed for ${user.id.slice(0, 8)}...:`, emailRes.status);

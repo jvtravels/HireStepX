@@ -10,7 +10,7 @@
  * so a future edit can't re-break them. */
 
 /** Marketing/legal pages reachable while gated. */
-export const GATE_ALLOWLIST_PATHS = new Set(["/", "/blog", "/terms", "/privacy", "/refund"]);
+export const GATE_ALLOWLIST_PATHS = new Set(["/", "/blog", "/terms", "/privacy", "/refund", "/unsubscribe"]);
 
 /** Path prefixes reachable while gated (APIs, Next internals, shared views). */
 export const GATE_ALLOWLIST_PREFIXES = ["/blog/", "/api/", "/_next/", "/page/", "/profile/", "/report/share/"];

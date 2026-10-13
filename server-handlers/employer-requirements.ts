@@ -33,6 +33,7 @@ import { extractResumeDetail } from "./_resume-detail-helpers";
 import { llmRerankCandidates, blendScore } from "./_requirement-match-llm";
 import { notify } from "./_notify";
 import { emailShell, title as emailTitle, para, button, dataCard, escapeHtml } from "./_email-theme";
+import { isSuppressed, marketingEmailParts, preferenceDepsFromEnv } from "./_unsubscribe";
 import { pickRequirementsToRematch, type OpenRequirementForRematch } from "./_incremental-rematch-helpers";
 import { isSuspended } from "./_employer-trust";
 import {
@@ -121,11 +122,17 @@ async function sendStrongMatchEmail(opts: {
     const user = (await userRes.json()) as { email?: string };
     const email = user.email;
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return;
+    // Honour the employer's alert opt-out (fails closed on a lookup error).
+    if (await isSuppressed(preferenceDepsFromEnv(), opts.ownerUserId, "employer_notifications")) return;
+    const parts = await marketingEmailParts(opts.ownerUserId, "employer_notifications");
+    // Employers have no /settings page; their preferences live under /employer/settings.
+    const footer = { ...parts.footer, manageUrl: `${APP_URL}/employer/settings` };
 
     const reqTitle = opts.requirementTitle || "your requirement";
     const headline = strongMatchAlertBody(opts.matchCount, opts.topScore, reqTitle);
     const link = `${APP_URL}/employer/requirements/${opts.requirementId}`;
     const html = emailShell({
+      footer,
       preview: headline,
       body:
         emailTitle("New strong match", { accentWord: "found" }) +
@@ -144,7 +151,7 @@ async function sendStrongMatchEmail(opts: {
       const res = await fetch("https://api.resend.com/emails", {
         method: "POST",
         headers: { Authorization: `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ from: FROM_EMAIL, to: [email], subject: "New strong match found — HireStepX", html }),
+        body: JSON.stringify({ from: FROM_EMAIL, to: [email], subject: "New strong match found — HireStepX", html, ...parts.resend }),
         signal: controller.signal,
       });
       if (!res.ok) {

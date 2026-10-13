@@ -25,6 +25,7 @@ import { resolveActiveResumeVersionId } from "./_resume-versioning";
 import { captureServerEvent, distinctIdFrom } from "./_posthog";
 import { kickoffEagerGrade, resolveBaseUrl } from "./_eager-grade";
 import { emailShell, title, para, button, escapeHtml } from "./_email-theme";
+import { isSuppressed, marketingEmailParts, preferenceDepsFromEnv } from "./_unsubscribe";
 import { groundNoCounterSkillScores, groundGapClosureSkillScores } from "../src/sessionReport/progressTracking";
 import { computeStreakReward } from "./_streak-reward";
 import { grantSessionCredits } from "./_session-credits";
@@ -361,9 +362,13 @@ async function sendFirstSessionCompletedEmail(
   userEmail: string,
   userName: string,
   sessionId: string,
+  userId: string,
 ): Promise<void> {
   if (!RESEND_API_KEY || !userEmail) return;
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(userEmail)) return;
+  // Conversion nudge, not a transactional receipt: honour the marketing opt-out.
+  if (await isSuppressed(preferenceDepsFromEnv(), userId, "marketing")) return;
+  const parts = await marketingEmailParts(userId, "marketing");
 
   const greeting = escapeHtml(userName || "there");
   const reportUrl = `${APP_URL}/session/${sessionId}`;
@@ -384,7 +389,9 @@ async function sendFirstSessionCompletedEmail(
         from: FROM_EMAIL,
         to: [userEmail],
         subject: `${userName ? userName.split(" ")[0] + ", you" : "You"}'ve completed your first HireStepX session`,
+        ...parts.resend,
         html: emailShell({
+          footer: parts.footer,
           preview: "First session done. One more free session left — make it count.",
           body:
             title("First session", { accentWord: "done." }) +
@@ -411,9 +418,13 @@ async function sendFreeLimitReachedEmail(
   userEmail: string,
   userName: string,
   sessionId: string,
+  userId: string,
 ): Promise<void> {
   if (!RESEND_API_KEY || !userEmail) return;
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(userEmail)) return;
+  // Conversion nudge, not a transactional receipt: honour the marketing opt-out.
+  if (await isSuppressed(preferenceDepsFromEnv(), userId, "marketing")) return;
+  const parts = await marketingEmailParts(userId, "marketing");
 
   const greeting = escapeHtml(userName || "there");
   const reportUrl = `${APP_URL}/session/${sessionId}`;
@@ -434,7 +445,9 @@ async function sendFreeLimitReachedEmail(
         from: FROM_EMAIL,
         to: [userEmail],
         subject: "You've finished your 2 free sessions — keep the momentum going",
+        ...parts.resend,
         html: emailShell({
+          footer: parts.footer,
           preview: "Both free sessions used. Upgrade to keep practicing before your interview.",
           body:
             title("Both free sessions", { accentWord: "done." }) +
@@ -854,9 +867,9 @@ export default async function handler(req: Request): Promise<Response> {
         // Free-tier milestone emails — fire sequentially so they don't race
         // each other. completedCountAfter is -1 for ghost/replay sessions.
         if (completedCountAfter === 1) {
-          await sendFirstSessionCompletedEmail(userEmail, userName, sessionRow.id);
+          await sendFirstSessionCompletedEmail(userEmail, userName, sessionRow.id, auth.userId!);
         } else if (completedCountAfter === 2) {
-          await sendFreeLimitReachedEmail(userEmail, userName, sessionRow.id);
+          await sendFreeLimitReachedEmail(userEmail, userName, sessionRow.id, auth.userId!);
         }
       } else {
         console.warn(`[save-session] auth user fetch failed HTTP ${userRes.status} — skipping report email`);

@@ -7,6 +7,7 @@ import { tokens as t, fonts, shadows } from "./auth/_tokens";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { useUiSoundsEnabled, setUiSoundsEnabled } from "./uiSounds";
+import { apiFetch } from "./apiClient";
 import {
   Table,
   TableBody,
@@ -239,6 +240,83 @@ function TinyChip({ children, tone }: { children: React.ReactNode; tone?: "succe
       fontFamily: font.mono, fontSize: 12, letterSpacing: "0.08em", textTransform: "uppercase",
       padding: "4px 8px", borderRadius: 4, background: palette.bg, color: palette.fg, fontWeight: 700,
     }}>{children}</span>
+  );
+}
+
+type EmailPrefKey = "marketing_opt_out" | "employer_notifications_opt_out";
+type EmailPrefs = Record<EmailPrefKey, boolean>;
+
+/** Email opt-outs. Switch on = receive. Stored inverted (`*_opt_out`) so the
+ *  default for a user with no row is "receive", matching the server. */
+export function EmailPreferencesSection({ audience }: { audience: "candidate" | "employer" }) {
+  const [prefs, setPrefs] = useState<EmailPrefs | null>(null);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let live = true;
+    apiFetch<{ prefs: EmailPrefs }>("/api/email-preferences", {}).then((res) => {
+      if (!live) return;
+      if (res.ok && res.data) setPrefs(res.data.prefs);
+      else setError("Couldn't load your email preferences.");
+    });
+    return () => { live = false; };
+  }, []);
+
+  async function toggle(key: EmailPrefKey, receive: boolean) {
+    if (!prefs) return;
+    const previous = prefs;
+    setPrefs({ ...prefs, [key]: !receive });
+    setError("");
+    const res = await apiFetch<{ prefs: EmailPrefs }>("/api/email-preferences", { [key]: !receive });
+    if (res.ok && res.data) setPrefs(res.data.prefs);
+    else {
+      setPrefs(previous);
+      setError("Couldn't save that change. Try again in a moment.");
+    }
+  }
+
+  const mailIcon = <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>;
+  const rows: Array<{ key: EmailPrefKey; title: string; desc: string }> = [];
+  if (audience === "candidate") {
+    rows.push({
+      key: "marketing_opt_out",
+      title: "Tips, reminders and offers",
+      desc: "Weekly summary, practice reminders and product updates. Account, payment and security emails always come through.",
+    });
+  }
+  rows.push({
+    key: "employer_notifications_opt_out",
+    title: audience === "employer" ? "New match alerts" : "Employer activity",
+    desc: audience === "employer"
+      ? "An email when a requirement gets a new strong match."
+      : "An email when an employer views your practice evidence.",
+  });
+
+  return (
+    <div>
+      <div style={{ border: `1px solid ${c.border}`, borderRadius: 12, padding: "0 20px" }}>
+        {rows.map((row, i) => (
+          <ActionRow
+            key={row.key}
+            last={i === rows.length - 1}
+            icon={mailIcon}
+            title={row.title}
+            desc={row.desc}
+            action={
+              <Switch
+                checked={prefs ? !prefs[row.key] : true}
+                disabled={!prefs}
+                onCheckedChange={(on) => { void toggle(row.key, on); }}
+                aria-label={row.title}
+              />
+            }
+          />
+        ))}
+      </div>
+      {error && (
+        <p role="alert" style={{ margin: "8px 0 0", fontFamily: font.ui, fontSize: 13, color: c.ember }}>{error}</p>
+      )}
+    </div>
   );
 }
 

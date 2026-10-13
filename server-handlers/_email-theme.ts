@@ -19,7 +19,8 @@ export const C = {
   coal: "#0E0C08",
   indigoGray: "#3E3A6E",
   inkSoft: "#6E6759",
-  inkFaint: "#A39C8B",
+  // Was #A39C8B (~2.4:1 on white). #736B5D is the design-system inkFaint: 5.26:1 on white.
+  inkFaint: "#736B5D",
   indigo: "#312E81",
   indigoDeep: "#1E1B4B",
   indigo100: "#E5E2F2",
@@ -176,17 +177,40 @@ export function orderedList(items: string[]): string {
   return `<ol style="margin:0 0 26px;padding-left:20px;">${lis}</ol>`;
 }
 
-/** Standard footer — compliance + unsubscribe. Defaults to hirestepx.com/settings
-    for manage and /settings#notifications for unsubscribe (CAN-SPAM requires
-    a functional one-click mechanism on all commercial emails). */
-function footer(opts: { manageUrl?: string; unsubUrl?: string } = {}): string {
-  const manage = link("Manage notifications", opts.manageUrl ?? "https://hirestepx.com/settings");
-  const unsub = link("Unsubscribe", opts.unsubUrl ?? "https://hirestepx.com/settings#notifications");
+/** Footer options. `marketing: true` marks a promotional/notification email
+    that must carry a working unsubscribe link (CAN-SPAM, Gmail/Yahoo bulk
+    rules); without it the footer is the transactional one and never offers
+    an unsubscribe, because account/payment/security mail can't be opted out of. */
+export interface EmailFooterOptions {
+  marketing?: boolean;
+  manageUrl?: string;
+  /** Per-recipient signed one-click link (see _unsubscribe.ts). When a
+      marketing email has none (no signing secret configured) the footer
+      degrades to the login-gated settings page rather than a dead link. */
+  unsubUrl?: string;
+}
+
+function postalAddress(): string {
+  return (process.env.LEGAL_POSTAL_ADDRESS || process.env.NEXT_PUBLIC_LEGAL_POSTAL_ADDRESS || "").trim();
+}
+
+/** Standard footer. Every email names the sender; the postal address renders
+    only when LEGAL_POSTAL_ADDRESS is configured (never invented). */
+function footer(opts: EmailFooterOptions = {}): string {
+  const manageUrl = opts.manageUrl ?? "https://hirestepx.com/settings";
+  const links = opts.marketing
+    ? `${link("Unsubscribe", opts.unsubUrl ?? manageUrl)} &middot; ${link("Email preferences", manageUrl)}`
+    : link("Manage notifications", manageUrl);
+  const reason = opts.marketing
+    ? "You're receiving this because you have an account at hirestepx.com."
+    : "You're receiving this because you have an account at hirestepx.com. This is a service email about your account or activity.";
+  const address = postalAddress();
+  const sender = `Sent by HireStepX (hirestepx.com)${address ? `<br>${escapeHtml(address)}` : ""}`;
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:44px;border-top:1px solid ${C.line};">
     <tr><td style="padding-top:22px;font-family:${SANS};font-size:12px;line-height:1.7;color:${C.inkSoft};">
-      You're receiving this because you have an account at hirestepx.com.<br>
-      ${manage} &middot; ${unsub}
-      <div style="margin-top:12px;font-size:11px;color:${C.inkFaint};">HireStepX</div>
+      ${reason}<br>
+      ${links}
+      <div style="margin-top:12px;font-size:11px;color:${C.inkFaint};">${sender}</div>
     </td></tr>
   </table>`;
 }
@@ -204,7 +228,7 @@ export function emailShell(opts: {
   /** Overrides for the compliance footer. The shell is the footer's only
       owner (the builder is module-private), so a body can never render a
       second copy. */
-  footer?: { manageUrl?: string; unsubUrl?: string };
+  footer?: EmailFooterOptions;
 }): string {
   return `<!DOCTYPE html>
 <html lang="en">

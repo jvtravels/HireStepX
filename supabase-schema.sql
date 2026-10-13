@@ -2340,3 +2340,19 @@ create index if not exists idx_message_flags_message on public.message_flags(mes
 create index if not exists idx_requirement_matches_status on public.requirement_matches(candidate_user_id, candidate_status);
 create index if not exists idx_sessions_user_graded on public.sessions(user_id, report_generated_at desc)
   where report_generated_at is not null;
+
+-- ── Email opt-outs (2026-10-11, migration 0035) ─────────────────────────
+-- Separate table, not columns on profiles: employers have no profiles row, and a
+-- narrow service-written table keeps opt-out state out of the wide profiles RLS surface.
+create table if not exists public.email_preferences (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  marketing_opt_out boolean not null default false,
+  employer_notifications_opt_out boolean not null default false,
+  updated_at timestamptz not null default now()
+);
+alter table public.email_preferences enable row level security;
+-- Owner may read their own row; every write goes through service-role handlers
+-- (/api/unsubscribe, /api/email-preferences), same as notification_preferences.
+drop policy if exists "Users view own email prefs" on public.email_preferences;
+create policy "Users view own email prefs" on public.email_preferences
+  for select using ((select auth.uid()) = user_id);

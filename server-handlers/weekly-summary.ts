@@ -17,7 +17,8 @@
 
 export const config = { runtime: "edge" };
 
-import { emailShell, title, para, b, button, dataCard, escapeHtml } from "./_email-theme";
+import { emailShell, title, para, b, button, dataCard, escapeHtml, type EmailFooterOptions } from "./_email-theme";
+import { filterSuppressed, marketingEmailParts } from "./_unsubscribe";
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
@@ -27,6 +28,8 @@ const CRON_SECRET = process.env.CRON_SECRET || "";
 const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <noreply@hirestepx.com>";
 const APP_URL = (process.env.APP_URL || "https://hirestepx.com").replace(/\/$/, "");
 const MAX_EMAILS_PER_RUN = 50;
+// Opted-out users are filtered after the query; over-fetch so they can't crowd out the 50 sendable slots.
+const CANDIDATE_OVERFETCH = 4;
 const MIN_HOURS_BETWEEN_EMAILS = 6 * 24;
 
 interface SessionRow {
@@ -59,7 +62,7 @@ async function supa(path: string, opts?: RequestInit): Promise<Response> {
 async function candidateUsers(): Promise<ProfileRow[]> {
   // Users with ≥1 session in the last 14d who haven't been emailed in the last 6d.
   const sinceIso = new Date(Date.now() - MIN_HOURS_BETWEEN_EMAILS * 3600_000).toISOString();
-  const path = `profiles?select=id,email,name,last_summary_email_at&or=(last_summary_email_at.is.null,last_summary_email_at.lt.${encodeURIComponent(sinceIso)})&limit=${MAX_EMAILS_PER_RUN}`;
+  const path = `profiles?select=id,email,name,last_summary_email_at&or=(last_summary_email_at.is.null,last_summary_email_at.lt.${encodeURIComponent(sinceIso)})&limit=${MAX_EMAILS_PER_RUN * CANDIDATE_OVERFETCH}`;
   const res = await supa(path);
   if (!res.ok) return [];
   return (await res.json()) as ProfileRow[];
@@ -88,6 +91,7 @@ function buildDigest(
   profile: ProfileRow,
   sessions: SessionRow[],
   totalSessions: number,
+  footer?: EmailFooterOptions,
 ): { subject: string; html: string } | null {
   if (sessions.length === 0) return null;
   const latest = sessions[0];
@@ -108,6 +112,7 @@ function buildDigest(
 
   const subject = `Your HireStepX week: ${sessionCount}, score ${score}`;
   const html = emailShell({
+    footer,
     preview: `${sessionCount} this week, latest score ${score}.`,
     body:
       title("Your week,", { accentWord: "in review." }) +
@@ -130,7 +135,12 @@ function buildDigest(
   return { subject, html };
 }
 
-async function sendEmail(to: string, subject: string, html: string): Promise<boolean> {
+async function sendEmail(
+  to: string,
+  subject: string,
+  html: string,
+  extra: { reply_to: string; headers: Record<string, string> },
+): Promise<boolean> {
   if (!RESEND_API_KEY) return false;
   try {
     const res = await fetch("https://api.resend.com/emails", {
@@ -144,6 +154,7 @@ async function sendEmail(to: string, subject: string, html: string): Promise<boo
         to: [to],
         subject,
         html,
+        ...extra,
       }),
     });
     return res.ok;
@@ -167,9 +178,10 @@ const USER_CONCURRENCY = 8;
 
 async function processUser(user: ProfileRow): Promise<"sent" | "skipped"> {
   const [sessions, total] = await Promise.all([recentSessions(user.id), totalSessionCount(user.id)]);
-  const digest = buildDigest(user, sessions, total);
+  const parts = await marketingEmailParts(user.id, "marketing");
+  const digest = buildDigest(user, sessions, total, parts.footer);
   if (!digest) return "skipped";
-  const ok = await sendEmail(user.email, digest.subject, digest.html);
+  const ok = await sendEmail(user.email, digest.subject, digest.html, parts.resend);
   if (!ok) return "skipped";
   await markSent(user.id);
   return "sent";
@@ -199,11 +211,13 @@ export default async function handler(req: Request): Promise<Response> {
     return new Response(JSON.stringify({ error: "supabase not configured" }), { status: 503 });
   }
 
-  const users = await candidateUsers();
+  const candidates = await candidateUsers();
+  const sendable = await filterSuppressed({ supabaseUrl: SUPABASE_URL, serviceKey: SUPABASE_SERVICE_KEY }, candidates, "marketing");
+  const users = sendable.slice(0, MAX_EMAILS_PER_RUN);
   const { sent, skipped } = await processInBatches(users);
 
   return new Response(
-    JSON.stringify({ sent, skipped, total: users.length, emailEnabled: !!RESEND_API_KEY }),
+    JSON.stringify({ sent, skipped, suppressed: candidates.length - sendable.length, total: users.length, emailEnabled: !!RESEND_API_KEY }),
     { status: 200, headers: { "Content-Type": "application/json" } },
   );
 }

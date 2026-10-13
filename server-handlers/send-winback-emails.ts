@@ -11,7 +11,8 @@
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { escapeHtml } from "./_shared";
-import { emailShell, title, para, b, button, dataCard } from "./_email-theme";
+import { emailShell, title, para, b, button, dataCard, type EmailFooterOptions } from "./_email-theme";
+import { filterSuppressed, marketingEmailParts, preferenceDepsFromEnv } from "./_unsubscribe";
 
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
@@ -65,6 +66,7 @@ function buildWinbackEmail(
   user: ProfileRow,
   bestScore: number | null,
   sessionCount: number,
+  footer?: EmailFooterOptions,
 ): { subject: string; html: string } {
   const safeName = escapeHtml(user.name?.split(" ")[0] || "there");
   const safeRole = escapeHtml(user.target_role || "your target role");
@@ -81,6 +83,7 @@ function buildWinbackEmail(
   return {
     subject: `${safeName}, your HireStepX progress is still here`,
     html: emailShell({
+      footer,
       preview: "Your resume, sessions, and score history are exactly as you left them.",
       body:
         title("Still here,", { accentWord: "waiting for you." }) +
@@ -137,8 +140,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(500).json({ error: "Failed to query profiles" });
   }
 
-  const profiles: ProfileRow[] = await profilesRes.json();
-  if (!Array.isArray(profiles) || profiles.length === 0) {
+  const allProfiles: ProfileRow[] = await profilesRes.json();
+  const profiles = Array.isArray(allProfiles)
+    ? await filterSuppressed(preferenceDepsFromEnv(), allProfiles, "marketing")
+    : [];
+  if (profiles.length === 0) {
     return res.status(200).json({ sent: 0, skipped: 0, message: "No candidates" });
   }
 
@@ -180,7 +186,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Only send to users who actually practiced (had at least 1 session)
     if (!stats || stats.count === 0) { skipped++; continue; }
 
-    const { subject, html } = buildWinbackEmail(user, stats.bestScore, stats.count);
+    const parts = await marketingEmailParts(user.id, "marketing");
+    const { subject, html } = buildWinbackEmail(user, stats.bestScore, stats.count, parts.footer);
 
     try {
       const emailRes = await fetch("https://api.resend.com/emails", {
@@ -190,7 +197,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           "Content-Type": "application/json",
           "Idempotency-Key": `winback-${user.id}`,
         },
-        body: JSON.stringify({ from: FROM_EMAIL, to: [user.email], subject, html }),
+        body: JSON.stringify({ from: FROM_EMAIL, to: [user.email], subject, html, ...parts.resend }),
         signal: AbortSignal.timeout(10_000),
       });
 

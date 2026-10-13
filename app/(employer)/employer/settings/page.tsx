@@ -4,7 +4,7 @@ import { useEmployerData } from "@/employer/EmployerDataContext";
 import { tokens as t, fonts as f } from "@/auth/_tokens";
 import { PageSkeleton, ErrorPanel } from "@/employer/_consoleParts";
 import CompanyProfileForm from "@/employer/CompanyProfileForm";
-import { PageHeader, FlatSection, SoundsSection } from "@/settingsSections";
+import { PageHeader, FlatSection, SoundsSection, EmailPreferencesSection } from "@/settingsSections";
 
 /* /employer/settings — edit the company profile submitted during
    onboarding. Saving re-runs the same POST /api/employer-profile upsert
@@ -51,6 +51,10 @@ export default function EmployerSettingsPage() {
               busyLabel="Saving…"
             />
           </div>
+        </FlatSection>
+
+        <FlatSection title="Email preferences">
+          <EmailPreferencesSection audience="employer" />
         </FlatSection>
 
         <FlatSection title="Sounds" last>
