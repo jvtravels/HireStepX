@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildReportCacheVersion } from "../../server-handlers/evaluate-session";
+import { buildReportCacheVersion } from "../../server-handlers/_evaluate-report-cache";
 
 /* OA-B20 regression: the report cache identity must fold in the
    calibration-affecting inputs (company / role / difficulty) so editing any of
