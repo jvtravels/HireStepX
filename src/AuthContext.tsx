@@ -1696,7 +1696,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     //    This replaces the previous direct supabase-js call so third-party
     //    fetch wrappers can't silently drop the write.
     const { apiFetch } = await import("./apiClient");
-    const result = await apiFetch<{ profile: unknown; details?: string; missingColumn?: string }>("/api/profile/update", payload);
+    // The write is an idempotent upsert, so a dropped connection (status 0) or
+    // a 5xx is safe to resend. Three back-to-back ERR_TIMED_OUTs during
+    // onboarding once left a freshly analysed resume unpersisted, and the next
+    // page's profile fetch then wiped it from the UI.
+    let result = await apiFetch<{ profile: unknown; details?: string; missingColumn?: string }>("/api/profile/update", payload);
+    for (const delayMs of [1000, 3000]) {
+      if (result.ok || !(result.status === 0 || result.status >= 500)) break;
+      await new Promise((r) => setTimeout(r, delayMs));
+      result = await apiFetch<{ profile: unknown; details?: string; missingColumn?: string }>("/api/profile/update", payload);
+    }
     if (!result.ok) {
       const details = result.data?.details || "";
       const missing = result.data?.missingColumn;

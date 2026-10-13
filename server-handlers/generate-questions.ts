@@ -1388,13 +1388,12 @@ Example bad question: "Tell me about your experience." (too vague, not role-spec
     // maxTokens tuned — typical question set (5 questions + metadata) lands around 900-1200 tokens.
     // Lowering from 2000 → 1400 saves ~$30/mo at 10k daily calls.
     // totalBudgetMs caps the WHOLE provider chain (gemini → groq → cloudflare,
-    // including each provider's own one-shot transient-error retry) to fit
-    // Vercel's Edge ~25s execution ceiling. Without it, the real worst case is
-    // (timeoutMs + 800ms retry backoff) × 3 providers ≈ 26.4s — past the
-    // ceiling during a Groq incident, which is exactly when a provider is
-    // most likely to throw transient errors. 20s leaves ~5s headroom for
-    // prompt assembly / JSON parsing before the isolate gets killed.
-    const result = await callLLM({ prompt, temperature: 0.85, maxTokens: 1400, jsonMode: true }, 7000, { userId: auth.userId, endpoint: "generate", totalBudgetMs: 20000, hedgeAfterMs: 3500 });
+    // including each provider's own one-shot transient-error retry) just under
+    // the client's 30s question-fetch deadline. The old 7s per-provider cap
+    // aborted every Gemini 3.5 / Cloudflare call (7-12s typical) and served the
+    // generic static script; reserveMs keeps the tail of the budget for the
+    // non-Gemini providers so a hung Gemini rung can't starve them.
+    const result = await callLLM({ prompt, temperature: 0.85, maxTokens: 1400, jsonMode: true }, 15000, { userId: auth.userId, endpoint: "generate", totalBudgetMs: 26000, hedgeAfterMs: 4000, reserveMs: 10000 });
     const parsed = extractJSON<Record<string, unknown>>(result.text);
     // Throw (not return 500) so unusable model output takes the same static /
     // salary-kernel fallback as a provider outage instead of a dead-end error.
