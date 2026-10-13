@@ -28,7 +28,7 @@ import {
   validateContentType,
   sanitizeForLLM,
 } from "./_shared";
-import { callLLM } from "./_llm";
+import { callLLM } from "./_llm-pii";
 import {
   validateFollowupRequest,
   buildCoachPrompt,

@@ -8,7 +8,7 @@ import { detectSalaryPhase as detectSalaryPhaseHelper, pickServerCounter, pickNe
 import { isWalkAway } from "./_walkaway-detection";
 import { deriveConvState, phaseForState, type ConvState } from "./_negotiation-state";
 import { detectAllFailures } from "./_negotiation-failures";
-import { callLLM, extractJSON } from "./_llm";
+import { callLLM, extractJSON } from "./_llm-pii";
 import { detectCandidateIntent, extractCandidateSalaryNumber, extractMirrorTokens, sanitizeBehaviouralRegister } from "./_follow-up-helpers";
 import { classifyCompanyTier, tierPromptSuffix } from "./_company-tier";
 import { buildFollowUpDisciplineFence } from "./_generate-questions-helpers";

@@ -5,7 +5,7 @@ export const config = { runtime: "edge" };
 import { withAuthAndRateLimit, sanitizeForLLM, corsHeaders, withRequestId, logServiceUsage, redisIncrByWithExpiry, getSubscriptionTier, slog } from "./_shared";
 import { capsForTier } from "./_usage-this-month-helpers";
 import { captureServerEvent, captureServerException, distinctIdFrom } from "./_posthog";
-import { callLLM, extractJSON } from "./_llm";
+import { callLLM, extractJSON } from "./_llm-pii";
 import {
   computeResumeTextHash,
   findCachedResumeVersion,

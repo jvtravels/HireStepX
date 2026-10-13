@@ -27,7 +27,7 @@ export const config = { runtime: "edge" };
 
 import { withAuthAndRateLimit, corsHeaders, withRequestId, validateContentType, hashStable, redisGet, redisSetEx, checkSessionLimit, countPriorNegotiationSessions, readPriorNegotiationCompanies } from "./_shared";
 import { computeScenarioSeed, reconstructSeenPersonas, tierBucketForCompanyTier } from "./_scenario-seed";
-import { callLLM } from "./_llm";
+import { callLLM } from "./_llm-pii";
 import { isServerFlagEnabled } from "./_feature-flags";
 import { captureServerEvent, captureServerException, distinctIdFrom } from "./_posthog";
 import { deriveKernelEvents, type KernelEvent } from "./_kernel-audit";

@@ -63,7 +63,7 @@ Requirements:
 
 import { withAuthAndRateLimit, checkSessionLimit, sanitizeForLLM, redisGet, redisSetEx, hashStable } from "./_shared";
 import { captureServerEvent, captureServerException, distinctIdFrom } from "./_posthog";
-import { callLLM, extractJSON } from "./_llm";
+import { callLLM, extractJSON } from "./_llm-pii";
 import { buildSalaryNegotiationGuidance, buildExperienceSalaryContext, generateNegotiationBand, getNegotiationStyleContext, INDUSTRY_PACKAGE_CONTEXT, type NegotiationStyle } from "../data/salary-lookup";
 import { formatCsvFocusContext, getCsvPrimaryInterviewFocus } from "../data/csv-band-prompt";
 import { formatRecipe } from "../data/focus-question-recipes";

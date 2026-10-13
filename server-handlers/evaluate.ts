@@ -3,7 +3,7 @@
 export const config = { runtime: "edge" };
 
 import { withAuthAndRateLimit, corsHeaders, withRequestId, checkSessionLimit, sanitizeForLLM, validateContentType } from "./_shared";
-import { callLLM, extractJSON } from "./_llm";
+import { callLLM, extractJSON } from "./_llm-pii";
 import { VOICE_DICTION_DIRECTIVE } from "./_evaluate-session-prompts";
 import { sanitizeVoiceValue } from "./_voice-sanitizer";
 
