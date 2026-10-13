@@ -61,6 +61,7 @@ export default function CookieConsent() {
   return (
     <>
       <style>{`
+        .hsx-cookie-toggle { font: inherit; color: #8A5F22; text-decoration: underline; background: none; border: 0; padding: 0 4px; cursor: pointer; }
         @media (max-width: 640px) {
           .hsx-cookie-banner {
             bottom: 0 !important;
@@ -74,7 +75,7 @@ export default function CookieConsent() {
           .hsx-cookie-banner > div:first-child { flex: 1 1 100% !important; font-size: 12.5px !important; line-height: 1.5 !important; }
           .hsx-cookie-actions { width: 100% !important; flex-wrap: nowrap !important; }
           .hsx-cookie-actions > button { flex: 1 1 0 !important; }
-          .hsx-cookie-toggle { min-height: 44px; padding: 0 8px !important; }
+          .hsx-cookie-toggle { min-height: 44px; padding: 0 8px; }
         }
       `}</style>
     <div
@@ -114,7 +115,6 @@ export default function CookieConsent() {
           aria-expanded={expanded}
           aria-controls="cookie-consent-details"
           onClick={() => setExpanded((v) => !v)}
-          style={{ font: "inherit", color: "#8A5F22", textDecoration: "underline", background: "none", border: 0, padding: "0 4px", cursor: "pointer" }}
         >
           {expanded ? "Hide details" : "Details"}
         </button>
