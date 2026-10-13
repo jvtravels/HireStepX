@@ -237,7 +237,8 @@ create unique index if not exists ux_credibility_disputes_per_flag on credibilit
 -- 5. Payments
 create table if not exists payments (
   id uuid primary key default gen_random_uuid(),
-  user_id uuid references profiles(id) on delete cascade not null,
+  -- Nullable + SET NULL (migration 0035): erasure anonymises the row, never deletes the tax record.
+  user_id uuid references profiles(id) on delete set null,
   razorpay_payment_id text unique not null,
   razorpay_order_id text default '',
   plan text not null,
@@ -251,6 +252,24 @@ create table if not exists payments (
   created_at timestamptz default now()
 );
 alter table payments add column if not exists receipt_url text default '';
+alter table payments alter column user_id drop not null;
+alter table payments drop constraint if exists payments_user_id_fkey;
+alter table payments
+  add constraint payments_user_id_fkey
+  foreign key (user_id) references profiles(id) on delete set null;
+
+-- Erasure audit trail (migration 0035): no PII, service-role only.
+create table if not exists account_erasure_log (
+  id uuid primary key default gen_random_uuid(),
+  user_hash text not null,
+  trigger text not null check (trigger in ('user_hard', 'scheduled')),
+  retained_financial boolean not null default false,
+  counts jsonb not null default '{}'::jsonb,
+  processors jsonb not null default '{}'::jsonb,
+  completed_at timestamptz not null default now()
+);
+create index if not exists idx_account_erasure_log_hash on account_erasure_log(user_hash);
+alter table account_erasure_log enable row level security;
 
 -- 5b. Payment dedup
 -- Atomic guard against duplicate verify-payment activations. A single

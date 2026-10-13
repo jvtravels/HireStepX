@@ -1,13 +1,23 @@
-/* Vercel Cron — Hard-delete accounts soft-deleted 7+ days ago.
+/* Vercel Cron — Erase accounts soft-deleted 7+ days ago.
  * Runs daily. Invoked by Vercel Cron (authenticated via CRON_SECRET header).
+ * The erasure itself is the shared eraseUserData routine (same one delete-account
+ * uses for immediate deletes); accounts whose erasure fails keep their deleted_at
+ * and are retried by the next run.
  */
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { supabaseUrl } from "./_shared";
-import { mustRetainEmployerFinancials } from "./_delete-account-helpers";
+import { supabaseUrl, slog } from "./_shared";
+import { eraseUserData, posthogConfigFromEnv } from "./_erase-user";
+import { sendErasureEmail } from "./_erase-user-email";
 
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const CRON_SECRET = process.env.CRON_SECRET || "";
+const RESEND_API_KEY = (process.env.RESEND_API_KEY || "").trim();
+const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <noreply@hirestepx.com>";
+const APP_URL = (process.env.APP_URL || "https://hirestepx.vercel.app").replace(/\/$/, "");
+
+const BATCH_SIZE = 25;
+const TIME_BUDGET_MS = 45_000;
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Only allow from Vercel Cron (x-vercel-cron or Authorization: Bearer CRON_SECRET)
@@ -34,9 +44,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const encodedCutoff = encodeURIComponent(cutoff);
 
   try {
-    // Find accounts to hard-delete
     const findRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/profiles?deleted_at=not.is.null&deleted_at=lt.${encodedCutoff}&select=id`,
+      `${SUPABASE_URL}/rest/v1/profiles?deleted_at=not.is.null&deleted_at=lt.${encodedCutoff}&select=id&order=deleted_at.asc&limit=${BATCH_SIZE}`,
       { headers, signal: AbortSignal.timeout(10_000) },
     );
     if (!findRes.ok) {
@@ -46,60 +55,44 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const rows = (await findRes.json()) as { id: string }[];
     if (rows.length === 0) return res.status(200).json({ deleted: 0 });
 
-    const deleted: string[] = [];
-    const failed: string[] = [];
+    let deleted = 0;
+    let retained = 0;
+    let failed = 0;
+    const started = Date.now();
 
     for (const { id } of rows) {
-      const encodedId = encodeURIComponent(id);
+      if (Date.now() - started > TIME_BUDGET_MS) break; // remaining accounts are picked up tomorrow
       try {
-        // Employer payment/order rows are the tax ledger and cascade from the
-        // auth user, so an employer that ever paid is never hard-deleted.
-        const countFor = async (table: string): Promise<number> => {
-          const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?employer_id=eq.${encodedId}&select=employer_id&limit=1`, { headers });
-          if (!r.ok) throw new Error(`${table} lookup failed (${r.status})`);
-          return ((await r.json()) as unknown[]).length;
-        };
-        const [payments, orders] = await Promise.all([countFor("employer_unlock_payments"), countFor("employer_unlock_orders")]);
-        if (mustRetainEmployerFinancials({ payments, orders })) continue;
-        // service_usage.user_id is declared `on delete set null` in
-        // supabase-schema.sql, but the live constraint predates that and
-        // still blocks deletion (23503 on profiles via
-        // service_usage_user_id_fkey). Null it out first, sequentially —
-        // racing it alongside the profiles delete below would still hit the
-        // same violation if profiles wins the race.
-        await fetch(`${SUPABASE_URL}/rest/v1/service_usage?user_id=eq.${encodedId}`, {
-          method: "PATCH",
-          headers,
-          body: JSON.stringify({ user_id: null }),
-        });
-        // Delete all user data in parallel
-        await Promise.allSettled([
-          fetch(`${SUPABASE_URL}/rest/v1/sessions?user_id=eq.${encodedId}`, { method: "DELETE", headers }),
-          fetch(`${SUPABASE_URL}/rest/v1/calendar_events?user_id=eq.${encodedId}`, { method: "DELETE", headers }),
-          fetch(`${SUPABASE_URL}/rest/v1/payments?user_id=eq.${encodedId}`, { method: "DELETE", headers }),
-          fetch(`${SUPABASE_URL}/rest/v1/feedback?user_id=eq.${encodedId}`, { method: "DELETE", headers }),
-          fetch(`${SUPABASE_URL}/rest/v1/interview_turns?user_id=eq.${encodedId}`, { method: "DELETE", headers }),
-          fetch(`${SUPABASE_URL}/rest/v1/product_ratings?user_id=eq.${encodedId}`, { method: "DELETE", headers }),
-        ]);
-        const profileDelRes = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodedId}`, { method: "DELETE", headers });
-        if (!profileDelRes.ok) {
-          const txt = await profileDelRes.text().catch(() => "");
-          console.error(`[cleanup-deleted-accounts] profiles delete failed for ${id.slice(0, 8)}: HTTP ${profileDelRes.status}: ${txt.slice(0, 200)}`);
-          failed.push(id);
-          continue;
+        const result = await eraseUserData(
+          {
+            fetchImpl: fetch,
+            supabaseUrl: SUPABASE_URL,
+            serviceKey: SUPABASE_SERVICE_ROLE_KEY,
+            trigger: "scheduled",
+            posthog: posthogConfigFromEnv(process.env),
+            notify: (contact) => sendErasureEmail(fetch, { resendApiKey: RESEND_API_KEY, fromEmail: FROM_EMAIL, appUrl: APP_URL }, contact),
+            // Counts only; never an id or email.
+            log: (msg, fields) => slog.info(msg, fields),
+          },
+          id,
+        );
+        if (result.ok) {
+          deleted++;
+          if (result.retainedFinancialRecords) retained++;
+        } else {
+          failed++;
+          console.error(`[cleanup-deleted-accounts] erasure incomplete, will retry: ${result.failedSteps.join(", ")}`);
         }
-        await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${encodedId}`, { method: "DELETE", headers });
-        deleted.push(id);
-      } catch (err) {
-        console.error(`[cleanup-deleted-accounts] Failed for ${id.slice(0, 8)}:`, err);
-        failed.push(id);
+      } catch {
+        failed++;
+        console.error("[cleanup-deleted-accounts] erasure threw, will retry");
       }
     }
 
-    console.log(`[cleanup-deleted-accounts] Deleted ${deleted.length}, failed ${failed.length}`);
-    return res.status(200).json({ deleted: deleted.length, failed: failed.length });
+    slog.info("cleanup-deleted-accounts: run complete", { erased: deleted, retainedFinancial: retained, failed });
+    return res.status(200).json({ deleted, retained, failed });
   } catch (err) {
-    console.error("[cleanup-deleted-accounts] Error:", err);
+    console.error("[cleanup-deleted-accounts] Error:", err instanceof Error ? err.message : "unknown");
     return res.status(500).json({ error: "Cleanup failed" });
   }
 }
