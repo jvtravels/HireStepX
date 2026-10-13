@@ -120,7 +120,7 @@ describe("quota exhaustion 429", () => {
     let geminiCallCount = 0;
     fetchSpy.mockImplementation(async (url: string) => {
       if (String(url).includes("generativelanguage")) {
-        geminiCallCount++;
+        if (String(url).includes("gemini-3.5-flash-lite")) geminiCallCount++; // count the primary model only
         return geminiErr(429, "RESOURCE_EXHAUSTED: You exceeded your quota, check your plan and billing details.");
       }
       if (String(url).includes("api.groq.com")) return groqOk('{"score":72}');
@@ -139,7 +139,7 @@ describe("quota exhaustion 429", () => {
     let geminiCallCount = 0;
     fetchSpy.mockImplementation(async (url: string) => {
       if (String(url).includes("generativelanguage")) {
-        geminiCallCount++;
+        if (String(url).includes("gemini-3.5-flash-lite")) geminiCallCount++; // count the primary model only
         return geminiErr(429, "RESOURCE_EXHAUSTED: daily quota exceeded");
       }
       if (String(url).includes("api.groq.com")) return groqOk("ok");
@@ -181,7 +181,7 @@ describe("transient rate limiting", () => {
     let groqCallCount = 0;
     fetchSpy.mockImplementation(async (url: string) => {
       if (String(url).includes("generativelanguage")) {
-        geminiCallCount++;
+        if (String(url).includes("gemini-3.5-flash-lite")) geminiCallCount++; // count the primary model only
         return geminiErr(429, "rate limit reached");
       }
       if (String(url).includes("api.groq.com")) {
@@ -451,9 +451,8 @@ describe("totalBudgetMs", () => {
  *
  * generate-questions prompts run ~9k tokens, always above Groq's 8000 TPM
  * cap, so Groq can never serve them. The skip must not surface as an
- * "error" row, and one slow Gemini response must get a second try inside
- * the total budget instead of dropping the visitor straight to the static
- * fallback. */
+ * "error" row, and a slow or overloaded primary Gemini must fail over to the
+ * backup Gemini model instead of dropping the visitor to the static fallback. */
 
 describe("oversized prompt with a single viable provider", () => {
   const hang = (init?: RequestInit) =>
@@ -474,32 +473,96 @@ describe("oversized prompt with a single viable provider", () => {
     errSpy.mockRestore();
   });
 
-  it("retries Gemini once after a timeout when retryOnTimeout is set and budget remains", async () => {
-    let geminiCalls = 0;
+  it("fails over to the backup Gemini model when the primary hangs", async () => {
+    const models: string[] = [];
     fetchSpy.mockImplementation(async (url: string, init?: RequestInit) => {
       if (String(url).includes("generativelanguage")) {
-        geminiCalls++;
-        return geminiCalls === 1 ? hang(init) : geminiOk("second try");
+        const model = String(url).match(/models\/([^:]+):/)?.[1] ?? "";
+        models.push(model);
+        return model === "gemini-3.5-flash-lite" ? hang(init) : geminiOk("backup answer");
       }
       return new Response("{}", { status: 200 });
     });
-    const promise = callLLM({ prompt: tokenPaddedPrompt(8400), retryOnTimeout: true }, 8000, { totalBudgetMs: 20000 });
+    const promise = callLLM({ prompt: tokenPaddedPrompt(8400) }, 7000, { totalBudgetMs: 20000 });
     await vi.runAllTimersAsync();
     const result = await promise;
-    expect(geminiCalls).toBe(2);
-    expect(result.text).toBe("second try");
+    expect(models).toEqual(["gemini-3.5-flash-lite", "gemini-2.5-flash-lite"]);
+    expect(result.text).toBe("backup answer");
   });
 
-  it("does not retry a timeout unless the caller opts in", async () => {
-    let geminiCalls = 0;
-    fetchSpy.mockImplementation(async (url: string, init?: RequestInit) => {
-      if (String(url).includes("generativelanguage")) { geminiCalls++; return hang(init); }
+  it("fails over to the backup Gemini model on a 503 from the primary", async () => {
+    fetchSpy.mockImplementation(async (url: string) => {
+      if (String(url).includes("gemini-3.5-flash-lite")) return new Response("overloaded", { status: 503 });
+      if (String(url).includes("generativelanguage")) return geminiOk("backup answer");
       return new Response("{}", { status: 200 });
     });
-    const promise = callLLM({ prompt: tokenPaddedPrompt(8400) }, 8000, { totalBudgetMs: 20000 });
-    const assertion = expect(promise).rejects.toThrow();
+    const promise = callLLM({ prompt: tokenPaddedPrompt(8400) }, 7000, { totalBudgetMs: 20000 });
     await vi.runAllTimersAsync();
-    await assertion;
-    expect(geminiCalls).toBe(1);
+    expect((await promise).text).toBe("backup answer");
+  });
+
+  it("hedges: starts the backup model after hedgeAfterMs and does not wait for a hung primary", async () => {
+    const started: Record<string, number> = {};
+    const t0 = Date.now();
+    fetchSpy.mockImplementation(async (url: string, init?: RequestInit) => {
+      if (String(url).includes("gemini-3.5-flash-lite")) { started.primary = Date.now() - t0; return hang(init); }
+      if (String(url).includes("gemini-2.5-flash-lite")) { started.backup = Date.now() - t0; return geminiOk("hedged answer"); }
+      return new Response("{}", { status: 200 });
+    });
+    const promise = callLLM({ prompt: tokenPaddedPrompt(8400) }, 7000, { totalBudgetMs: 20000, hedgeAfterMs: 3500 });
+    await vi.advanceTimersByTimeAsync(3500);
+    const result = await promise;
+    expect(result.text).toBe("hedged answer");
+    expect(started.backup).toBeGreaterThanOrEqual(3500);
+    expect(started.backup).toBeLessThan(7000);
+    await vi.runAllTimersAsync();
+  });
+
+  it("hedge: a primary that answers before hedgeAfterMs never starts the backup", async () => {
+    let backupCalls = 0;
+    fetchSpy.mockImplementation(async (url: string) => {
+      if (String(url).includes("gemini-2.5-flash-lite")) { backupCalls++; return geminiOk("backup"); }
+      if (String(url).includes("generativelanguage")) return geminiOk("primary");
+      return new Response("{}", { status: 200 });
+    });
+    const promise = callLLM({ prompt: tokenPaddedPrompt(8400) }, 7000, { totalBudgetMs: 20000, hedgeAfterMs: 3500 });
+    await vi.runAllTimersAsync();
+    expect((await promise).text).toBe("primary");
+    expect(backupCalls).toBe(0);
+  });
+
+  it("hedge: a primary failure starts the backup immediately instead of waiting out the hedge delay", async () => {
+    fetchSpy.mockImplementation(async (url: string) => {
+      if (String(url).includes("gemini-3.5-flash-lite")) return new Response("bad request", { status: 400 });
+      if (String(url).includes("generativelanguage")) return geminiOk("backup");
+      return new Response("{}", { status: 200 });
+    });
+    const promise = callLLM({ prompt: tokenPaddedPrompt(8400) }, 7000, { totalBudgetMs: 20000, hedgeAfterMs: 3500 });
+    await vi.advanceTimersByTimeAsync(10);
+    expect((await promise).text).toBe("backup");
+  });
+
+  it("hedge: falls through to Groq when both Gemini models fail", async () => {
+    fetchSpy.mockImplementation(async (url: string) => {
+      if (String(url).includes("generativelanguage")) return new Response("overloaded", { status: 400 });
+      if (String(url).includes("api.groq.com")) return groqOk("groq answer");
+      return new Response("{}", { status: 200 });
+    });
+    const promise = callLLM({ prompt: "Short prompt that fits Groq." }, 7000, { totalBudgetMs: 20000, hedgeAfterMs: 3500 });
+    await vi.runAllTimersAsync();
+    expect((await promise).text).toBe("groq answer");
+  });
+
+  it("disables thinking on the backup model with thinkingBudget, not thinkingLevel", async () => {
+    let backupBody: { generationConfig: { thinkingConfig: Record<string, unknown> } } | undefined;
+    fetchSpy.mockImplementation(async (url: string, init?: RequestInit) => {
+      if (String(url).includes("gemini-3.5-flash-lite")) return new Response("overloaded", { status: 400 });
+      if (String(url).includes("gemini-2.5-flash-lite")) { backupBody = JSON.parse(String(init?.body)); return geminiOk("ok"); }
+      return new Response("{}", { status: 200 });
+    });
+    const promise = callLLM({ prompt: tokenPaddedPrompt(8400) }, 7000, { totalBudgetMs: 20000 });
+    await vi.runAllTimersAsync();
+    await promise;
+    expect(backupBody?.generationConfig.thinkingConfig).toEqual({ thinkingBudget: 0 });
   });
 });

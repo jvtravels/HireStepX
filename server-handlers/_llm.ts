@@ -260,10 +260,6 @@ interface LLMOptions {
   // when a caller knows its real completions run larger (e.g. a multi-field
   // JSON report needs ~1000+ tokens and a 300-token budget is never enough).
   groqMinCompletionTokens?: number;
-  // Retry the same provider once after a timeout when enough of totalBudgetMs
-  // remains. For callers whose prompt only fits one provider, so a single slow
-  // response otherwise has nowhere to fail over to.
-  retryOnTimeout?: boolean;
 }
 
 interface LLMResult {
@@ -342,7 +338,11 @@ async function callGroq(opts: LLMOptions, signal?: AbortSignal): Promise<LLMResu
   return { text: data.choices?.[0]?.message?.content || "", model, fallback: false, tokensUsed, latencyMs };
 }
 
-async function callGemini(opts: LLMOptions, signal?: AbortSignal): Promise<LLMResult> {
+// Second Gemini model used as a failover when the primary is overloaded. It has
+// its own quota bucket and (unlike Gemini 3) disables thinking via thinkingBudget.
+const GEMINI_BACKUP_MODEL = "gemini-2.5-flash-lite";
+
+async function callGemini(opts: LLMOptions, signal?: AbortSignal, model = "gemini-3.5-flash-lite"): Promise<LLMResult> {
   if (!GEMINI_API_KEY) throw new Error("Gemini not configured");
   // gemini-2.5-flash is Google's limited-access/legacy tier as of Oct 2026
   // (retiring 2026-10-16) — Google was already throttling it with 429s
@@ -360,7 +360,6 @@ async function callGemini(opts: LLMOptions, signal?: AbortSignal): Promise<LLMRe
   // `thinkingLevel` and `thinkingBudget` are also mutually exclusive —
   // sending both is itself a 400, so don't add thinkingBudget back
   // "for safety".
-  const model = "gemini-3.5-flash-lite";
   const start = Date.now();
   const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
     method: "POST",
@@ -372,7 +371,7 @@ async function callGemini(opts: LLMOptions, signal?: AbortSignal): Promise<LLMRe
         temperature: opts.temperature ?? 0.3,
         maxOutputTokens: opts.fallbackMaxTokens ?? opts.maxTokens ?? 2000,
         ...(opts.jsonMode ? { responseMimeType: "application/json" } : {}),
-        thinkingConfig: { thinkingLevel: "minimal" },
+        thinkingConfig: model.startsWith("gemini-3") ? { thinkingLevel: "minimal" } : { thinkingBudget: 0 },
       },
     }),
   });
@@ -417,8 +416,9 @@ async function callCerebras(opts: LLMOptions, signal?: AbortSignal): Promise<LLM
   return { text: data.choices?.[0]?.message?.content || "", model: `cerebras-${model}`, fallback: false, tokensUsed, latencyMs };
 }
 
-export async function callLLM(opts: LLMOptions, timeoutMs = 15000, meta?: { userId?: string; endpoint?: string; groqTimeoutMs?: number; sessionId?: string; totalBudgetMs?: number }): Promise<LLMResult> {
-  const providers: { name: string; call: (s: AbortSignal) => Promise<LLMResult> }[] = [];
+export async function callLLM(opts: LLMOptions, timeoutMs = 15000, meta?: { userId?: string; endpoint?: string; groqTimeoutMs?: number; sessionId?: string; totalBudgetMs?: number; hedgeAfterMs?: number }): Promise<LLMResult> {
+  type ProviderEntry = { name: string; call: (s: AbortSignal) => Promise<LLMResult> };
+  const providers: ProviderEntry[] = [];
   // Fast calls use Groq GPT-OSS 20B, the recommended replacement for
   // llama-3.1-8b-instant. Slow calls use Gemini first; Groq GPT-OSS 120B is
   // the large-model fallback after llama-3.3-70b-specdec was retired.
@@ -428,8 +428,10 @@ export async function callLLM(opts: LLMOptions, timeoutMs = 15000, meta?: { user
   if (opts.fast) {
     if (GROQ_API_KEY) providers.push({ name: "groq", call: (s) => callGroq(opts, s) });
     if (GEMINI_API_KEY) providers.push({ name: "gemini", call: (s) => callGemini(opts, s) });
+    if (GEMINI_API_KEY) providers.push({ name: GEMINI_BACKUP_MODEL, call: (s) => callGemini(opts, s, GEMINI_BACKUP_MODEL) });
   } else {
     if (GEMINI_API_KEY) providers.push({ name: "gemini", call: (s) => callGemini(opts, s) });
+    if (GEMINI_API_KEY) providers.push({ name: GEMINI_BACKUP_MODEL, call: (s) => callGemini(opts, s, GEMINI_BACKUP_MODEL) });
     if (GROQ_API_KEY) providers.push({ name: "groq", call: (s) => callGroq(opts, s) });
   }
   if (CEREBRAS_API_KEY) providers.push({ name: "cerebras", call: (s) => callCerebras(opts, s) });
@@ -489,7 +491,7 @@ export async function callLLM(opts: LLMOptions, timeoutMs = 15000, meta?: { user
   // and other hard errors → fail over to the next provider immediately.
   const isTransient = isTransientLLMError;
 
-  const callOnce = async (provider: { name: string; call: (s: AbortSignal) => Promise<LLMResult> }): Promise<LLMResult> => {
+  const callOnce = async (provider: ProviderEntry): Promise<LLMResult> => {
     const budget = providerTimeout(provider.name);
     if (budget <= 0) throw new Error(`${provider.name} skipped — total LLM budget exhausted`);
     const ac = new AbortController();
@@ -503,7 +505,7 @@ export async function callLLM(opts: LLMOptions, timeoutMs = 15000, meta?: { user
     }
   };
 
-  const tryProvider = async (provider: { name: string; call: (s: AbortSignal) => Promise<LLMResult> }, isFallback: boolean): Promise<LLMResult> => {
+  const tryProvider = async (provider: ProviderEntry, isFallback: boolean): Promise<LLMResult> => {
     let attempt = 0;
     // up to 2 attempts per provider (1 initial + 1 retry on transient),
     // but never retry into a budget too small to be worth it.
@@ -524,10 +526,6 @@ export async function callLLM(opts: LLMOptions, timeoutMs = 15000, meta?: { user
         const isTimeout = errName === "AbortError" || msg.includes("aborted") || msg.includes("abort");
         const transient = isTransient(msg);
         if (err instanceof LLMPreflightSkip) throw err;
-        if (attempt < 2 && opts.retryOnTimeout && isTimeout && remainingBudget() > 4000) {
-          console.warn(`[LLM] ${provider.name} timed out — retrying once (${Math.round(remainingBudget())}ms of budget left)`);
-          continue;
-        }
         if (attempt < 2 && transient && !isTimeout && remainingBudget() > 800) {
           console.warn(`[LLM] ${provider.name} transient error (${msg.slice(0, 80)}) — retrying after 800ms`);
           await new Promise((r) => setTimeout(r, 800));
@@ -542,25 +540,61 @@ export async function callLLM(opts: LLMOptions, timeoutMs = 15000, meta?: { user
     }
   };
 
-  // Walk providers in order (fast: groq→gemini, slow: gemini→groq→cerebras). First success wins.
+  // Walk providers in order (fast: groq→gemini→gemini-2.5, slow: gemini→gemini-2.5→groq→cerebras). First success wins.
   console.warn(`[LLM] Provider chain: ${providers.map(p => p.name).join(" → ")} (timeout: ${timeoutMs}ms${meta?.totalBudgetMs != null ? `, totalBudget: ${meta.totalBudgetMs}ms` : ""})`);
   let lastErr: unknown;
   const providerErrors: string[] = [];
+
+  // A hung Gemini otherwise costs the whole per-provider timeout before the
+  // backup model even starts. Hedging launches the backup once the primary has
+  // been silent for hedgeAfterMs (or failed outright) and takes whichever
+  // succeeds first; the slower request is simply ignored.
+  const raceHedged = (primary: ProviderEntry, backup: ProviderEntry, hedgeAfterMs: number) =>
+    new Promise<{ result: LLMResult; primaryWon: boolean }>((resolve, reject) => {
+      let settled = false;
+      let failures = 0;
+      let backupStarted = false;
+      const errors: unknown[] = [];
+      const onFail = (err: unknown) => {
+        errors.push(err);
+        providerErrors.push(err instanceof Error ? err.message : String(err));
+        if (++failures === 2 && !settled) { settled = true; reject(errors[errors.length - 1]); return; }
+        startBackup();
+      };
+      const startBackup = () => {
+        if (backupStarted || settled) return;
+        backupStarted = true;
+        clearTimeout(hedgeTimer);
+        console.warn(`[LLM] ${primary.name} slow or failed — hedging with ${backup.name}`);
+        tryProvider(backup, true).then((result) => { if (!settled) { settled = true; resolve({ result, primaryWon: false }); } }, onFail);
+      };
+      const hedgeTimer = setTimeout(startBackup, hedgeAfterMs);
+      tryProvider(primary, false).then((result) => { if (!settled) { settled = true; clearTimeout(hedgeTimer); resolve({ result, primaryWon: true }); } }, onFail);
+    });
+
   for (let i = 0; i < providers.length; i++) {
     const provider = providers[i];
     if (remainingBudget() <= 0) {
       lastErr = new Error("total LLM budget exhausted before all providers were tried");
       break;
     }
+    const next = providers[i + 1];
+    const hedged = meta?.hedgeAfterMs != null && provider.name === "gemini" && next?.name === GEMINI_BACKUP_MODEL;
     try {
+      if (hedged) {
+        const { result, primaryWon } = await raceHedged(provider, next, meta!.hedgeAfterMs!);
+        await Promise.all([recordSlo("llm_availability", true), recordSlo("llm_primary", primaryWon && i === 0)]);
+        return result;
+      }
       const result = await tryProvider(provider, i > 0);
       await Promise.all([recordSlo("llm_availability", true), recordSlo("llm_primary", i === 0)]);
       return result;
     } catch (err) {
       lastErr = err;
-      providerErrors.push(err instanceof Error ? err.message : String(err));
-      const next = providers[i + 1];
-      if (next) console.warn(`[LLM] ${provider.name} failed, falling back to ${next.name}`);
+      if (!hedged) providerErrors.push(err instanceof Error ? err.message : String(err));
+      else i++;
+      const following = providers[i + 1];
+      if (following) console.warn(`[LLM] ${hedged ? `${provider.name}+${next.name}` : provider.name} failed, falling back to ${following.name}`);
     }
   }
   await Promise.all([recordSlo("llm_availability", false), recordSlo("llm_primary", false)]);
