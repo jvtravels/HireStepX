@@ -357,9 +357,8 @@ export default function ResumeV2Screen() {
                 Basic parse — not AI-reviewed
               </p>
               <p style={{ fontFamily: font.ui, fontSize: S.sm, color: T.warningInk, margin: 0, lineHeight: 1.5 }}>
-                Our AI couldn't read this resume (often a scanned PDF or unusual formatting), so the
-                summary below comes from a simpler keyword scan. Scores and skill coverage may be
-                less accurate than an AI-parsed resume.
+                {errorMsg ? "The summary below comes from a simpler keyword scan" : "Our AI couldn't read this resume (often a scanned PDF or unusual formatting), so the summary below comes from a simpler keyword scan"}.
+                {" "}Scores and skill coverage may be less accurate than an AI-parsed resume.
               </p>
               <Button
                 type="button"
