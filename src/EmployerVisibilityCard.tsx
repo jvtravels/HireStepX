@@ -1,9 +1,10 @@
 "use client";
 
-/* Settings → "Employer visibility". The candidate's consent control for
-   employer discovery (DPDP Act 2023: free, specific, informed, revocable).
-   States the purpose, what employers can and can't see, retention and how to
-   withdraw, right next to the switch that gives or withdraws consent. */
+/* Settings → "Employer visibility". The candidate's control for employer
+   discovery (DPDP Act 2023: informed, specific, revocable as easily as given).
+   Discovery is ON by default; this card states that plainly, what employers
+   see before and after an unlock, who can see it, and how to turn it off,
+   right next to the switch. Every change is written to the consent log. */
 
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { Switch } from "@/components/ui/switch";
@@ -14,7 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { tokens as t, fonts as f } from "./auth/_tokens";
 import {
-  describeHistoryEntry, fetchVisibility, saveVisibility, viewedLabel,
+  DISCLOSURE_SUMMARY, describeHistoryEntry, fetchVisibility, saveVisibility, viewedLabel,
   type VisibilityState,
 } from "./employerVisibility";
 
@@ -53,7 +54,7 @@ export default function EmployerVisibilityCard({ showToast }: { showToast: (msg:
     if (result.ok) {
       setState(result.state);
       showToast(next === "masked"
-        ? "Employers can now discover your practice evidence. Your name and contact stay hidden."
+        ? "Employers can find your masked profile again."
         : "You're hidden from employers.");
     } else {
       setState(previous);
@@ -77,11 +78,11 @@ export default function EmployerVisibilityCard({ showToast }: { showToast: (msg:
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16 }}>
         <div style={{ minWidth: 0 }}>
           <label htmlFor={switchId} style={{ fontFamily: f.sans, fontSize: 14, fontWeight: 600, color: t.coal, cursor: "pointer" }}>
-            Let employers discover my practice evidence
+            Let employers find my masked profile
           </label>
           <p id={descId} style={{ ...bodyText, marginTop: 4 }}>
-            Hiring teams on HireStepX can find you by role and skills, using what you&apos;ve shown in your practice
-            interviews. Your name and contact details stay hidden until an employer pays to unlock them.
+            {DISCLOSURE_SUMMARY} This is on by default for everyone; only employers with a HireStepX employer
+            account can see it.
           </p>
         </div>
         {loadState === "ready" ? (
@@ -107,33 +108,34 @@ export default function EmployerVisibilityCard({ showToast }: { showToast: (msg:
 
       {/* Polite live region so screen-reader users hear the saved state, not just a toast. */}
       <p aria-live="polite" style={{ ...bodyText, fontWeight: 600, color: t.coal }}>
-        {loadState === "ready" && (saving ? "Saving…" : visible ? "Status: visible to employers (name and contact hidden)" : "Status: hidden from employers")}
+        {loadState === "ready" && (saving ? "Saving…" : visible ? "Status: on — employers can find your masked profile" : "Status: hidden from employers")}
       </p>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 16 }}>
         <div>
-          <h3 style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.coal, margin: "0 0 6px" }}>What employers can see</h3>
+          <h3 style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.coal, margin: "0 0 6px" }}>What employers see while you&apos;re masked</h3>
           <ul style={listStyle}>
             <li>Skill strengths and verified capabilities from your practice sessions</li>
-            <li>Readiness and answer-structure (STAR) indicators</li>
+            <li>Your practice scores and readiness and answer-structure (STAR) indicators</li>
             <li>A summary of your resume with your name, past employers and schools removed, and your city</li>
             <li>When you last practised</li>
           </ul>
         </div>
         <div>
-          <h3 style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.coal, margin: "0 0 6px" }}>What stays hidden until they unlock</h3>
+          <h3 style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.coal, margin: "0 0 6px" }}>What an employer gets if they pay to unlock you</h3>
           <ul style={listStyle}>
             <li>Your name, email, phone number and LinkedIn</li>
-            <li>The names of your past employers and schools</li>
+            <li>Your resume, including past employers and schools</li>
             <li>Word-for-word excerpts of your answers</li>
-            <li>Before unlock, employers see only &ldquo;Candidate #&hellip;&rdquo;</li>
+            <li>Until then, they see only &ldquo;Candidate #&hellip;&rdquo;</li>
           </ul>
         </div>
       </div>
 
       <p style={bodyText}>
-        Turn this off any time. You&apos;ll be removed from employer searches and new matches straight away. An employer who
-        has already unlocked your details keeps what they paid for, but can&apos;t see anything new. You can also{" "}
+        Turn this off any time with the switch above. You&apos;re removed from employer searches and shortlists straight away.
+        An employer who has already paid to unlock your details keeps what they paid for, but can&apos;t see anything new
+        or contact you again. You can also{" "}
         <strong style={{ fontWeight: 600 }}>block or report</strong> a specific employer from Jobs or Messages. Questions or complaints:{" "}
         <a href="/grievance" className="underline underline-offset-4" style={{ color: t.indigo }}>Grievance Officer</a>.
         See the <a href="/privacy" className="underline underline-offset-4" style={{ color: t.indigo }}>Privacy Policy</a>.

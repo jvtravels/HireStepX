@@ -10,6 +10,7 @@ import {
   consentActionFor,
   countDistinctReporters,
   decideAutoSuspension,
+  isDiscoveryNoticePending,
   isReportReason,
   isUuid,
   respondNotificationText,
@@ -86,6 +87,23 @@ describe("buildConsentLogRow", () => {
     const row = buildConsentLogRow({ userId: "u1", current: "off", next: "masked", source: "weird" });
     expect(row).toMatchObject({ action: "granted", source: "settings" });
     expect(consentActionFor("masked")).toBe("granted");
+  });
+});
+
+describe("affirming the on-by-default setting", () => {
+  it("logs 'granted' for masked -> masked only when no grant is on file", () => {
+    expect(buildConsentLogRow({ userId: "u1", current: "masked", next: "masked", source: "dashboard", hasGrant: false })).toMatchObject({
+      action: "granted", source: "dashboard", policy_version: EMPLOYER_DISCOVERY_POLICY_VERSION,
+    });
+    expect(buildConsentLogRow({ userId: "u1", current: "masked", next: "masked", hasGrant: true })).toBeNull();
+    expect(buildConsentLogRow({ userId: "u1", current: "masked", next: "masked" })).toBeNull();
+    expect(buildConsentLogRow({ userId: "u1", current: "off", next: "off", hasGrant: false })).toBeNull();
+  });
+  it("notice is pending only while on, unanswered and unseen", () => {
+    expect(isDiscoveryNoticePending({ visibility: "masked", history: [], noticeSeenAt: null })).toBe(true);
+    expect(isDiscoveryNoticePending({ visibility: "masked", history: [], noticeSeenAt: "2026-10-01T00:00:00Z" })).toBe(false);
+    expect(isDiscoveryNoticePending({ visibility: "masked", history: [{ action: "granted" }], noticeSeenAt: null })).toBe(false);
+    expect(isDiscoveryNoticePending({ visibility: "off", history: [], noticeSeenAt: null })).toBe(false);
   });
 });
 

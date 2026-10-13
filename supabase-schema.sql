@@ -2214,6 +2214,8 @@ update public.employers set verification_tier = 'email_verified', verified_at = 
 alter table public.profiles add column if not exists employer_visibility text not null default 'masked'
   check (employer_visibility in ('masked', 'off'));
 alter table public.profiles add column if not exists employer_visibility_updated_at timestamptz;
+-- When the candidate first saw/answered the one-time dashboard notice (migration 0035; optional).
+alter table public.profiles add column if not exists employer_notice_seen_at timestamptz;
 
 create table if not exists public.candidate_consent_log (
   id uuid primary key default gen_random_uuid(),
