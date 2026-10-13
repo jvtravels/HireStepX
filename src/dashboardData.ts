@@ -1143,8 +1143,9 @@ export async function analyzeResumeWithAI(
     );
     if (res.status === 401) throw new Error("Session expired — please refresh and sign in again.");
     if (res.status === 429) {
-      const retryAfter = (res.data as { retryAfter?: number } | null)?.retryAfter;
-      throw new Error(retryAfter ? `Too many requests. Please wait ${retryAfter} seconds.` : "Too many requests. Please wait a moment.");
+      const body = res.data as { retryAfter?: number; error?: string } | null;
+      const retryAfter = body?.retryAfter;
+      throw new Error(body?.error?.startsWith("Monthly") ? body.error : retryAfter ? `Too many requests. Please wait ${retryAfter} seconds.` : "Too many requests. Please wait a moment.");
     }
     if (!res.ok) {
       const msg = res.error || `HTTP ${res.status}`;
