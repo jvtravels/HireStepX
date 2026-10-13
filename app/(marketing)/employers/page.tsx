@@ -58,7 +58,7 @@ export default function EmployersLandingPage() {
           Get started
         </Link>
         <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkFaint, marginTop: 12 }}>
-          Free to post and free to browse your shortlist. Pay only when you unlock a candidate's contact details.
+          Free to post and free to browse your shortlist. Pay only when you unlock a candidate's contact details. See the <Link href="/terms#employers" style={{ color: "inherit", textDecoration: "underline" }}>employer terms</Link> and <Link href="/refund#employers" style={{ color: "inherit", textDecoration: "underline" }}>refund policy</Link>.
         </p>
       </section>
 
@@ -77,7 +77,7 @@ export default function EmployersLandingPage() {
 
       <DarkBand eyebrow="Hiring, not hoping" title="Skip the resume pile," accent="hire on proof." videoSrc="/cta.mp4">
         <p style={{ fontFamily: f.sans, fontSize: 16, color: t.creamMuted, lineHeight: 1.65, maxWidth: "38ch", margin: 0 }}>
-          Every candidate on the roster has already practiced and been scored on real interview performance. Post a role and see your shortlist in minutes.
+          Candidates on the roster have practiced on HireStepX and been scored on their own practice sessions (not independent assessments). Post a role and see who matches.
         </p>
         <Link href="/login?next=/employer" className="ed-cta" style={ctaPrimaryStyle("lg")}>
           Post a role, free <span className="ed-cta-arrow" aria-hidden>→</span>

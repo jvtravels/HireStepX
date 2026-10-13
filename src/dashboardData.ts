@@ -436,7 +436,7 @@ export function generateNotifications(user: UserContext, streak: number, weekAct
 
   if (sessionsCount === 1) notifs.push({ id: 10, type: "milestone", text: "You completed your first session! The hardest part is starting.", dismissible: true });
   if (sessionsCount === 5) notifs.push({ id: 11, type: "milestone", text: "5 sessions complete! You're building real interview muscle memory.", dismissible: true, action: "View Report" });
-  if (sessionsCount >= 10) notifs.push({ id: 12, type: "milestone", text: `${sessionsCount} sessions completed! You're in the top 10% of users.`, dismissible: true, action: "View Report" });
+  if (sessionsCount >= 10) notifs.push({ id: 12, type: "milestone", text: `You've completed ${sessionsCount} practice sessions. Keep the momentum going.`, dismissible: true, action: "View Report" });
 
   const latestScore = sessions[0]?.score;
   if (latestScore >= 90) notifs.push({ id: 20, type: "milestone", text: `You hit ${latestScore}! Your highest score yet. You're interview-ready.`, dismissible: true });
@@ -447,15 +447,14 @@ export function generateNotifications(user: UserContext, streak: number, weekAct
     else if (days > 0 && days <= 7) notifs.push({ id: 31, type: "streak", text: `${days} days until your interview — aim for daily practice this week.`, dismissible: true });
   }
 
-  // Subscription expiry warning
+  // Sprint Pack is a one-time 30-day purchase (no auto-renew), so these are
+  // informational and always dismissible — never a "renew" demand.
   if (user?.subscriptionEnd) {
     const daysLeft = Math.ceil((new Date(user.subscriptionEnd).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
-    if (daysLeft > 0 && daysLeft <= 3) {
-      notifs.push({ id: 40, type: "streak", text: `Your subscription expires in ${daysLeft} day${daysLeft > 1 ? "s" : ""}. Renew to keep unlimited access.`, dismissible: false, action: "Renew" });
-    } else if (daysLeft > 0 && daysLeft <= 7) {
-      notifs.push({ id: 41, type: "streak", text: `Subscription renews in ${daysLeft} days. You're on the ${user.subscriptionTier || "free"} plan.`, dismissible: true });
+    if (daysLeft > 0 && daysLeft <= 7) {
+      notifs.push({ id: 40, type: "streak", text: `Your Sprint Pack ends in ${daysLeft} day${daysLeft > 1 ? "s" : ""} — buy another any time.`, dismissible: true, action: "Buy another" });
     } else if (daysLeft <= 0) {
-      notifs.push({ id: 42, type: "streak", text: "Your subscription has expired. You're now on the free plan.", dismissible: false, action: "Renew" });
+      notifs.push({ id: 42, type: "streak", text: "Your Sprint Pack has ended. You're on the free plan — buy another any time.", dismissible: true, action: "Buy another" });
     }
   }
 

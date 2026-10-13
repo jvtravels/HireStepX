@@ -767,7 +767,7 @@ export const PlanUsageSection = memo(function PlanUsageSection(props: PlanUsageS
   const sessionsUsed = usage?.mock.count ?? 0;
   const sessionsPct = sessionsCap && sessionsCap > 0 ? Math.min(100, Math.round((sessionsUsed / sessionsCap) * 100)) : 0;
   const capLine = sessionsCap == null
-    ? "Unlimited interview sessions"
+    ? "Interview sessions"
     : `${sessionsCap} Interview Session${sessionsCap === 1 ? "" : "s"}${authUser?.hasRecurringSubscription ? " / Month" : ""}`;
   const sessionsUsedLabel = sessionsCap == null ? `${sessionsUsed} sessions used` : `${Math.min(sessionsUsed, sessionsCap)} of ${sessionsCap} sessions used`;
 
@@ -793,7 +793,7 @@ export const PlanUsageSection = memo(function PlanUsageSection(props: PlanUsageS
         : !authUser?.hasRecurringSubscription
           ? `${daysLeft} ${daysLeft === 1 ? "day" : "days"} left in this pack`
           : `${daysLeft} ${daysLeft === 1 ? "day" : "days"} left in this cycle`)
-    : "Resets at the start of each month";
+    : "Free sessions are a one-time allowance and do not reset";
 
   async function handleReactivate() {
     setCancelLoading(true); setCancelMsg("");
@@ -900,7 +900,7 @@ export const PlanUsageSection = memo(function PlanUsageSection(props: PlanUsageS
               </Button>
             ) : !authUser?.hasRecurringSubscription ? (
               <Button type="button" variant="default" size="sm" onClick={() => setShowUpgradeModal(true)} style={indigoPrimaryBtn}>
-                Renew Plan
+                Buy another Sprint Pack
               </Button>
             ) : authUser?.cancelAtPeriodEnd ? (
               <Button type="button" variant="outline" size="sm" disabled={cancelLoading} onClick={handleReactivate}

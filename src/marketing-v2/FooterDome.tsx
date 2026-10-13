@@ -16,6 +16,7 @@
 import { useEffect, useRef } from "react";
 import { tokens as t, fonts } from "../auth/_tokens";
 import { openCookieSettings } from "../consent";
+import { copyrightHolder } from "../../data/legal-entity";
 
 /* ── Nav link data ── */
 const PRODUCT_LINKS: Array<[string, string]> = [
@@ -184,7 +185,7 @@ function FooterDomeDesktop() {
           ))}
           <CookieSettingsButton fontSize={12} />
         </div>
-        © 2026 HireStepX
+        © 2026 {copyrightHolder()}
       </div>
 
       {/* Center block — full-width flex, children centered */}
@@ -363,7 +364,7 @@ function FooterDomeMobile() {
         gap: 12,
       }}>
         <span style={{ fontFamily: fonts.sans, fontSize: 12, color: t.inkFaint }}>
-          © 2026 HireStepX
+          © 2026 {copyrightHolder()}
         </span>
         <div style={{ display: "flex", gap: 16 }}>
           {LEGAL_LINKS.map(([label, href]) => (

@@ -40,7 +40,7 @@ describe("UpgradeModal", () => {
 
   it("shows title in header", () => {
     render(<UpgradeModal {...defaultProps} />);
-    expect(screen.getByText("More reps. More offers.")).toBeInTheDocument();
+    expect(screen.getByText("More practice, better answers.")).toBeInTheDocument();
   });
 
   it("has role=dialog and aria-modal for accessibility", () => {
@@ -64,7 +64,7 @@ describe("UpgradeModal", () => {
 
   it("does not close when clicking modal content", () => {
     render(<UpgradeModal {...defaultProps} />);
-    fireEvent.click(screen.getByText("More reps. More offers."));
+    fireEvent.click(screen.getByText("More practice, better answers."));
     expect(defaultProps.onClose).not.toHaveBeenCalled();
   });
 

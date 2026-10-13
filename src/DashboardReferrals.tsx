@@ -31,6 +31,8 @@ import {
   SESSIONS_PER_REFERRAL,
   buildShareMessage,
   freeSessionsEarned,
+  referralTermsText,
+  REFERRAL_TERMS,
   inviteStatusLabel,
   linkedInShareUrl,
   mailtoShareUrl,
@@ -82,7 +84,7 @@ function StatusChip({ status }: { status: InviteStatus }) {
 const STEPS = [
   { title: "Share your link", body: "Send it to a friend who is preparing for interviews." },
   { title: "They sign up", body: `They create a new account with your link and get ${SESSIONS_PER_REFERRAL} free practice session right away.` },
-  { title: "You earn yours", body: `When they finish their first interview, ${SESSIONS_PER_REFERRAL} free practice session is added to your account.` },
+  { title: "You earn yours", body: `After their first practice session with at least ${REFERRAL_TERMS.minAnswersForPayout} answers, ${SESSIONS_PER_REFERRAL} free practice session is added to your account.` },
 ];
 
 export default function DashboardReferrals() {
@@ -161,7 +163,7 @@ export default function DashboardReferrals() {
       <div style={{ padding: "16px 20px", borderBottom: `1px solid ${t.line}` }}>
         <h1 id="referral-title" style={{ fontFamily: f.sans, fontSize: 26, fontWeight: 700, color: t.coal, margin: 0, letterSpacing: "-0.01em", lineHeight: "32px" }}>Referrals</h1>
         <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkFaint, margin: "2px 0 0" }}>
-          Invite friends to HireStepX. They get a free practice session when they join, and you get one when they finish their first interview.
+          Invite friends to HireStepX. They get a free practice session when they join, and you get one after their first practice session (at least 3 answers).
         </p>
       </div>
 
@@ -219,7 +221,7 @@ export default function DashboardReferrals() {
               <h2 id="referral-invites-heading" style={SECTION_HEADING_STYLE}>Your invites</h2>
               {invites.length === 0 ? (
                 <p style={{ fontFamily: f.sans, fontSize: 13.5, color: t.inkSoft, margin: "8px 0 0", lineHeight: 1.55 }}>
-                  No one has joined with your link yet. Share it above and they will show up here. Your free session unlocks when they finish their first interview.
+                  No one has joined with your link yet. Share it above and they will show up here. Your free session unlocks after their first practice session with at least 3 answers.
                 </p>
               ) : (
                 <ul style={{ listStyle: "none", margin: "12px 0 0", padding: 0, display: "flex", flexDirection: "column" }}>
@@ -263,6 +265,7 @@ export default function DashboardReferrals() {
                   </li>
                 ))}
               </ol>
+              <p style={{ fontFamily: f.sans, fontSize: 12, color: t.inkFaint, margin: "14px 0 0", lineHeight: 1.55 }}>{referralTermsText()}</p>
             </section>
           </div>
         </div>

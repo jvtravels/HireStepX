@@ -1230,7 +1230,7 @@ export function ProductStoryV2() {
     {
       kicker: "02",
       title: "Pick the company & round",
-      desc: "200+ Indian roles (Razorpay PM, TCS Digital, ISRO scientist). We know the format.",
+      desc: "Role and company-specific question banks for Indian employers (Razorpay PM, TCS Digital, ISRO scientist).",
     },
     {
       kicker: "03",
@@ -2119,7 +2119,7 @@ export function BuiltForIndiaV2() {
                 fontWeight: 400,
               }}
             >
-              200+
+              India-first
             </span>
             <span
               style={{
@@ -2130,7 +2130,7 @@ export function BuiltForIndiaV2() {
                 lineHeight: 1.4,
               }}
             >
-              Indian roles in the question bank. IT services, unicorns, PSUs, MNCs.
+              question banks for Indian roles and companies. IT services, unicorns, PSUs, MNCs.
             </span>
           </div>
 
@@ -2780,7 +2780,7 @@ export function FAQV2() {
     },
     {
       q: "Will the AI understand my Indian English accent?",
-      a: "Yes, built specifically for Indian English. Our voice model is trained on Indian speech patterns, including regional accents. If you can speak to a real interviewer, you can speak to HireStepX.",
+      a: "Our speech recognition is tuned for Indian English accents, and you can speak naturally. If you can speak to a real interviewer, you can speak to HireStepX.",
     },
     {
       q: "Is ₹9 per session really it? What's the catch?",
@@ -2936,7 +2936,7 @@ function StructuredData() {
      in sync so the structured data matches the visible accordion exactly. */
   const faqs = [
     ["What exactly is free? Do I need a card to start?", "2 sessions completely free: no card required, just a free account (email or Google, 30 seconds). You get the full voice interview and the full scored report both times. After that, ₹9 per session with no expiry, or ₹39 for a Sprint Pack of 5 sessions valid for 30 days. Both are one-time purchases — buy another pack whenever you need more, nothing auto-renews."],
-    ["Will the AI understand my Indian English accent?", "Yes, built specifically for Indian English. Our voice model is trained on Indian speech patterns, including regional accents. If you can speak to a real interviewer, you can speak to HireStepX."],
+    ["Will the AI understand my Indian English accent?", "Our speech recognition is tuned for Indian English accents, and you can speak naturally. If you can speak to a real interviewer, you can speak to HireStepX."],
     ["Is ₹9 per session really it? What's the catch?", "That's the real price. ₹9 per session with no expiry: buy one, use it whenever. Or get the Sprint Pack: 5 sessions for ₹39, valid for 30 days, a one-time purchase with no auto-renewal. Built on Indian infrastructure at Indian costs. No hidden charges either way."],
     ["Will my current company know I'm practicing?", "No. We don't connect to LinkedIn, your current employer, or your target company, and we never tell them you practise here. If employer discovery is on, employers on HireStepX can find your practice evidence, but your name and contact stay hidden until an employer unlocks your profile. You can turn this off any time in Settings."],
     ["How long does a session take?", "18 minutes on average: one focused interview topic, real-time scoring, full report ready immediately after. You don't need an afternoon. You need 20 minutes and headphones."],
@@ -3028,6 +3028,7 @@ function RPT_InterviewCard({ lifted, revealed, baseDelay = 0 }: { lifted?: boole
   return (
     <div style={{ width: 460, background: "#FEFDF8", borderRadius: 16, border: "1px solid rgba(180,83,9,0.08)", boxShadow: lifted ? "0 32px 96px rgba(14,12,8,0.28), 0 8px 24px rgba(14,12,8,0.12)" : "0 8px 48px rgba(14,12,8,0.12), 0 2px 8px rgba(14,12,8,0.06)", overflow: "hidden", fontFamily: rptF.sans, transition: "box-shadow 0.50s ease" }}>
       <div style={{ background: t.cream, padding: "9px 16px", borderBottom: "1px solid #EAE3D0", display: "flex", alignItems: "center", gap: 8 }}>
+        <span style={{ fontSize: 8, fontWeight: 700, letterSpacing: 0.5, color: t.copper, background: "#FED7AA", padding: "2px 6px", borderRadius: 3 }}>SAMPLE REPORT</span>
         <span style={{ fontSize: 8.5, fontWeight: 700, letterSpacing: 0.6, color: t.inkSoft }}>READINESS</span>
         <span style={{ fontSize: 13, fontWeight: 800, color: t.success }}>68%</span>
         <span style={{ fontSize: 8, color: t.inkSoft }}>Razorpay Senior PD · ~3 sessions to close gap</span>
@@ -3105,6 +3106,7 @@ function RPT_ReportCard({ lifted, revealed, baseDelay = 0 }: { lifted?: boolean;
   return (
     <div className="mv2-rpt-center-card" style={{ width: 520, background: "#FEFDF8", borderRadius: 18, border: "1.5px solid rgba(180,83,9,0.08)", boxShadow: lifted ? "0 56px 160px rgba(14,12,8,0.34), 0 16px 48px rgba(14,12,8,0.16)" : "0 48px 140px rgba(14,12,8,0.26), 0 12px 40px rgba(14,12,8,0.12)", overflow: "hidden", fontFamily: rptF.sans, transition: "box-shadow 0.50s ease" }}>
       <div style={{ background: t.cream, padding: "10px 18px", borderBottom: "1px solid #EAE3D0", display: "flex", alignItems: "center", gap: 8 }}>
+        <span style={{ fontSize: 8, fontWeight: 700, letterSpacing: 0.5, color: t.copper, background: "#FED7AA", padding: "2px 6px", borderRadius: 3 }}>SAMPLE REPORT</span>
         <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 0.6, color: t.inkSoft }}>READINESS</span>
         <span style={{ fontSize: 14, fontWeight: 800, color: t.success }}>84%</span>
         <span style={{ fontSize: 8.5, color: t.inkSoft }}>PhonePe Senior EM · Top quartile, ready to negotiate.</span>
@@ -3194,6 +3196,7 @@ function RPT_ProgressCard({ lifted, revealed, baseDelay = 0 }: { lifted?: boolea
   return (
     <div style={{ width: 460, background: t.cream, borderRadius: 16, border: `1px solid ${t.line}`, boxShadow: lifted ? "0 32px 96px rgba(14,12,8,0.28), 0 8px 24px rgba(14,12,8,0.12)" : "0 8px 48px rgba(14,12,8,0.12), 0 2px 8px rgba(14,12,8,0.06)", overflow: "hidden", fontFamily: fonts.sans, transition: "box-shadow 0.50s ease" }}>
       <div style={{ background: t.creamSoft, padding: "9px 16px", borderBottom: `1px solid ${t.line}`, display: "flex", alignItems: "center", gap: 8 }}>
+        <span style={{ fontSize: 8, fontWeight: 700, letterSpacing: 0.5, color: t.copper, background: "#FED7AA", padding: "2px 6px", borderRadius: 3 }}>SAMPLE REPORT</span>
         <span style={{ fontSize: 8.5, fontWeight: 700, letterSpacing: 0.6, color: t.inkSoft }}>READINESS</span>
         <span style={{ fontSize: 13, fontWeight: 800, color: t.copper }}>42%</span>
         <span style={{ fontSize: 8, color: t.inkSoft }}>Infosys SWE Fresher · ~5 sessions to close gap</span>
@@ -3501,7 +3504,7 @@ function RosterPreviewCard() {
         <span style={{ fontFamily: fonts.sans, fontSize: 12, fontWeight: 700, letterSpacing: "0.03em", color: t.coal, textTransform: "uppercase" as const }}>
           Roster preview
         </span>
-        <span style={{ fontFamily: fonts.sans, fontSize: 11.5, color: t.indigoGray }}>Bengaluru</span>
+        <span style={{ fontFamily: fonts.sans, fontSize: 11.5, color: t.indigoGray }}>Illustrative example, not real candidates</span>
       </div>
       <div style={{ fontFamily: fonts.sans, fontSize: 11.5, color: t.indigoGray, marginBottom: 14 }}>
         Interview-readiness score, out of 100
@@ -3591,10 +3594,10 @@ export function HiredDirectlyV2() {
             </span>
           </div>
           <h2 style={{ fontFamily: fonts.serif, fontSize: "clamp(28px, 3.4vw, 38px)", fontWeight: 400, lineHeight: 1.1, letterSpacing: "-0.02em", color: t.coal, margin: "0 0 10px" }}>
-            Companies hire directly from HireStepX
+            Employers will soon be able to find practiced candidates
           </h2>
           <p style={{ fontFamily: fonts.sans, fontSize: 15.5, lineHeight: 1.6, color: t.coal, margin: "0 0 24px", maxWidth: "48ch" }}>
-            Hiring teams will soon be able to browse a roster of practiced candidates and reach out for real roles, no extra applications. Opt in anytime, off by default, showing only what you choose.
+            Hiring teams will soon be able to browse a roster of practiced candidates and reach out for real roles, no extra applications. Employers see a masked profile (skills and scores, no name) and can pay to unlock contact details. It is on by default and you can switch it off any time in Settings.
           </p>
         </MotionReveal>
         <MotionReveal delay={90} style={{ display: "flex", justifyContent: "center" }}>

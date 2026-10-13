@@ -155,8 +155,8 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
 
   /* Sprint Pack has no weekly reset — removed. */
   /* Live session-count social proof — fetched once on modal open from the
-   * cached /api/platform-stats endpoint (Redis 1 h TTL). Falls back to null
-   * so the display string shows the safe hardcoded "500+" instead. */
+   * cached /api/platform-stats endpoint (Redis 1 h TTL). Stays null (no line
+   * rendered) when the real count is unavailable or too small to show. */
   const [liveSessionCount, setLiveSessionCount] = useState<number | null>(null);
   useEffect(() => {
     fetch("/api/platform-stats")
@@ -504,7 +504,7 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
         </Button>
 
         <div style={{ textAlign: "center", marginBottom: 24 }}>
-          <h2 id="upgrade-modal-title" style={{ fontFamily: font.ui, fontSize: 28, fontWeight: 400, color: c.ivory, marginBottom: 6, letterSpacing: "-0.02em" }}>More reps. More offers.</h2>
+          <h2 id="upgrade-modal-title" style={{ fontFamily: font.ui, fontSize: 28, fontWeight: 400, color: c.ivory, marginBottom: 6, letterSpacing: "-0.02em" }}>More practice, better answers.</h2>
           <p style={{ fontFamily: font.ui, fontSize: 13, color: c.stone, lineHeight: 1.5 }}>
             {currentTier === "team"
               ? "Add sessions — your Team plan stays active."
@@ -780,27 +780,13 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
 
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16, marginTop: 20, padding: "14px 0", borderTop: `1px solid ${c.border}` }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <div style={{ display: "flex" }}>
-              {[T.indigo, c.sage, c.ember].map((col, i) => (
-                <div key={i} style={{ width: 22, height: 22, borderRadius: "50%", background: col, border: `2px solid ${c.carbon}`, marginLeft: i > 0 ? -6 : 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill={c.graphite} stroke="none"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                </div>
-              ))}
-            </div>
+        {liveSessionCount !== null && (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", marginTop: 20, padding: "14px 0", borderTop: `1px solid ${c.border}` }}>
             <span style={{ fontFamily: font.ui, fontSize: 11, color: c.chalk }}>
-              {liveSessionCount !== null ? `${liveSessionCount}+` : "500+"} interviews practiced
+              {liveSessionCount}+ interviews practiced
             </span>
           </div>
-          <div style={{ width: 1, height: 16, background: c.border }} />
-          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-            {[1, 2, 3, 4, 5].map(i => (
-              <svg key={i} width="12" height="12" viewBox="0 0 24 24" fill={T.indigo} stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-            ))}
-            <span style={{ fontFamily: font.ui, fontSize: 11, color: c.chalk, marginLeft: 2 }}>4.8 avg rating</span>
-          </div>
-        </div>
+        )}
 
         <p style={{ fontFamily: font.ui, fontSize: 11, color: c.stone, textAlign: "center", marginTop: 8, opacity: 0.7 }}>
           Secure checkout powered by Razorpay · UPI, Cards, Netbanking ·{" "}

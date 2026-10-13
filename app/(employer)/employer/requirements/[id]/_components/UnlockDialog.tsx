@@ -68,6 +68,12 @@ export default function UnlockDialog({
             <IdentityHiddenBadge compact />
             <span>until payment is confirmed.</span>
           </div>
+          <p style={{ margin: 0, fontSize: textSize.sm, lineHeight: 1.5 }}>
+            {priceText} is the amount charged; GST applies as set out in the{" "}
+            <a href="/terms#employers" target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "underline" }}>employer terms</a>.
+            Unlocks are non-refundable once contact details are delivered, except where a candidate becomes unavailable or the law requires. See the{" "}
+            <a href="/refund#employers" target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "underline" }}>refund policy</a>.
+          </p>
           {error && <InlineNotice tone="error">{error}</InlineNotice>}
         </div>
         <DialogFooter>
