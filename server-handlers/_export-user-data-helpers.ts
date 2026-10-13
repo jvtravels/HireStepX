@@ -22,6 +22,11 @@ export interface ExportEnvelopeInputs {
   feedback: unknown[];
   interview_turns: unknown[];
   llm_usage: unknown[];
+  /** Additional user-scoped tables (resumes, referrals, ...), merged at the top level. */
+  extra_tables?: Record<string, unknown[]>;
+  /** Tables whose fetch failed / hit the row cap; makes an incomplete export visible. */
+  errors?: string[];
+  truncated?: string[];
   /** Employer-feature data (all optional so older callers/tests keep working). */
   employer_discovery?: EmployerDiscoveryExport;
   employer_account?: EmployerAccountExport | null;
@@ -34,6 +39,10 @@ export interface ExportEnvelope {
     userId: string;
     userEmail: string;
     notice: string;
+    /** false when any table failed to load or was truncated: the file is NOT a full export. */
+    complete: boolean;
+    errors: string[];
+    truncated: string[];
   };
   profile: unknown;
   sessions: unknown[];
@@ -44,6 +53,7 @@ export interface ExportEnvelope {
   llm_usage: unknown[];
   employer_discovery: EmployerDiscoveryExport;
   employer_account: EmployerAccountExport | null;
+  [extraTable: string]: unknown;
 }
 
 /* ── Employer-feature data (DPDP right of access) ──
@@ -174,14 +184,21 @@ export function pickProfileRow(rows: unknown): unknown {
  * download. exportedAt is injectable so tests can pin the timestamp.
  */
 export function buildExportEnvelope(inputs: ExportEnvelopeInputs): ExportEnvelope {
-  return {
+  const errors = inputs.errors ?? [];
+  const truncated = inputs.truncated ?? [];
+  const envelope: ExportEnvelope = {
     _meta: {
       format: "HireStepX User Data Export v1",
       exportedAt: inputs.exportedAt ?? new Date().toISOString(),
       userId: inputs.userId,
       userEmail: inputs.userEmail,
       notice:
-        "This file contains all personal data stored for your account. Retain securely.",
+        errors.length === 0 && truncated.length === 0
+          ? "This file contains all personal data stored for your account. Retain securely."
+          : "This file is INCOMPLETE: see _meta.errors and _meta.truncated. Download again or contact support@hirestepx.com. Retain securely.",
+      complete: errors.length === 0 && truncated.length === 0,
+      errors,
+      truncated,
     },
     profile: pickProfileRow(inputs.profile),
     sessions: inputs.sessions,
@@ -203,6 +220,11 @@ export function buildExportEnvelope(inputs: ExportEnvelopeInputs): ExportEnvelop
     },
     employer_account: inputs.employer_account ?? null,
   };
+  // Extras go last (keeps _meta first) and can never overwrite a fixed section.
+  for (const [key, rows] of Object.entries(inputs.extra_tables ?? {})) {
+    if (!(key in envelope)) envelope[key] = rows;
+  }
+  return envelope;
 }
 
 /**
@@ -216,4 +238,132 @@ export function buildExportFilename(userId: string, now: Date = new Date()): str
   const idPrefix = (userId || "").replace(/[^a-zA-Z0-9-]/g, "").slice(0, 8) || "user";
   const datePart = now.toISOString().slice(0, 10);
   return `hirestepx-export-${idPrefix}-${datePart}.json`;
+}
+
+/* ── Completeness: table list + pagination ──
+ * safeFetch used to swallow every error into [], silently shipping a "full" export
+ * that was missing tables. Every table is now fetched page by page, and any failure
+ * or cap is surfaced in _meta. */
+
+export const EXPORT_PAGE_SIZE = 1000;
+/** Per-table ceiling (rows). Beyond it the table is returned truncated and flagged. */
+export const EXPORT_MAX_ROWS_PER_TABLE = 50_000;
+
+export interface ExportSpec {
+  /** Key in the export payload. */
+  key: string;
+  path: string;
+  /** Stable ordering for offset pagination. */
+  order: string;
+  /** A 404 (table from a not-yet-applied migration) means "no rows", not an error. */
+  optional?: boolean;
+}
+
+export interface PagedResult {
+  rows: unknown[];
+  truncated: boolean;
+  error: boolean;
+}
+
+export async function fetchPaged(
+  fetchImpl: typeof fetch,
+  baseUrl: string,
+  headers: Record<string, string>,
+  spec: ExportSpec,
+  opts: { pageSize?: number; maxRows?: number } = {},
+): Promise<PagedResult> {
+  const pageSize = opts.pageSize ?? EXPORT_PAGE_SIZE;
+  const maxRows = opts.maxRows ?? EXPORT_MAX_ROWS_PER_TABLE;
+  const rows: unknown[] = [];
+  const sep = spec.path.includes("?") ? "&" : "?";
+  try {
+    while (rows.length < maxRows) {
+      const limit = Math.min(pageSize, maxRows - rows.length);
+      const r = await fetchImpl(`${baseUrl}${spec.path}${sep}order=${spec.order}&limit=${limit}&offset=${rows.length}`, {
+        headers,
+        signal: AbortSignal.timeout(15_000),
+      });
+      if (!r.ok) {
+        if (r.status === 404 && spec.optional) return { rows, truncated: false, error: false };
+        return { rows, truncated: false, error: true };
+      }
+      const page: unknown = await r.json();
+      if (!Array.isArray(page)) return { rows, truncated: false, error: true };
+      rows.push(...page);
+      if (page.length < limit) return { rows, truncated: false, error: false };
+    }
+    // Hit the cap on a full page: truncated unless the table ends exactly here.
+    const probe = await fetchImpl(`${baseUrl}${spec.path}${sep}order=${spec.order}&limit=1&offset=${rows.length}`, {
+      headers,
+      signal: AbortSignal.timeout(15_000),
+    });
+    const more: unknown = probe.ok ? await probe.json() : [];
+    return { rows, truncated: Array.isArray(more) && more.length > 0, error: !probe.ok };
+  } catch {
+    return { rows, truncated: false, error: true };
+  }
+}
+
+const NEWEST = "created_at.desc,id.asc";
+
+/** Every user-scoped table (supabase-schema.sql). Secrets are excluded by column list:
+ *  google_calendar_sync tokens/sync cursors, report_shares bearer tokens, and third
+ *  parties' emails in referrals. */
+export function buildCandidateExportSpecs(id: string): ExportSpec[] {
+  const u = `user_id=eq.${id}`;
+  const t = (key: string, query: string, order: string, optional = false): ExportSpec => ({ key, path: `/rest/v1/${key}?${query}`, order, optional });
+  return [
+    t("profiles", `id=eq.${id}`, "id.asc"),
+    t("sessions", u, NEWEST),
+    t("calendar_events", u, NEWEST),
+    t("calendar_reminder_log", u, "sent_at.desc,id.asc"),
+    t("google_calendar_sync", `${u}&select=user_id,calendar_id,token_expiry,channel_expiry,created_at,updated_at`, "user_id.asc"),
+    t("feedback", u, NEWEST),
+    t("question_feedback", u, NEWEST),
+    t("credibility_disputes", u, NEWEST),
+    t("payments", u, NEWEST),
+    t("payment_dedup", `${u}&select=razorpay_payment_id,created_at`, "razorpay_payment_id.asc", true),
+    t("referrals", `referrer_id=eq.${id}&select=id,referral_code,status,reward_granted,reward_granted_at,created_at`, NEWEST),
+    { key: "referrals_received", path: `/rest/v1/referrals?referred_id=eq.${id}&select=id,referral_code,status,created_at`, order: NEWEST },
+    t("llm_usage", u, NEWEST),
+    t("report_shares", `${u}&select=session_id,expires_at,revoked_at,view_count,last_viewed_at,include_transcript,include_per_question,created_at`, "created_at.desc,session_id.asc"),
+    t("user_outcomes", u, "user_id.asc"),
+    t("resumes", u, NEWEST),
+    // Inner join on resumes scopes versions to this user (same pattern as resume-upload-file.ts).
+    { key: "resume_versions", path: `/rest/v1/resume_versions?select=*,resumes!inner(user_id)&resumes.user_id=eq.${id}`, order: NEWEST },
+    t("session_credits", u, "user_id.asc"),
+    t("credit_ledger", u, NEWEST),
+    t("promo_redemptions", u, "redeemed_at.desc,id.asc"),
+    t("session_insights", u, "analyzed_at.desc,session_id.asc"),
+    t("salary_offers", u, "reported_at.desc,id.asc"),
+    t("support_messages", u, NEWEST),
+    t("notifications", u, NEWEST, true),
+    t("notification_preferences", u, "user_id.asc", true),
+    t("product_ratings", u, NEWEST, true),
+    t("interview_turns", u, NEWEST, true),
+  ];
+}
+
+/** Drop the join helper column added for scoping and return plain version rows. */
+export function stripResumeJoin(rows: unknown[]): unknown[] {
+  return rows.map((r) => {
+    if (!r || typeof r !== "object") return r;
+    const { resumes: _joined, ...rest } = r as Record<string, unknown>;
+    void _joined;
+    return rest;
+  });
+}
+
+export interface ResumeFileRef { version_id: unknown; file_name: unknown; file_path: string }
+
+export function resumeFileRefs(versions: unknown[], max = 50): ResumeFileRef[] {
+  const out: ResumeFileRef[] = [];
+  for (const v of versions) {
+    const r = v as { id?: unknown; file_name?: unknown; file_path?: unknown };
+    if (typeof r?.file_path === "string" && r.file_path && !r.file_path.includes("..")) {
+      out.push({ version_id: r.id ?? null, file_name: r.file_name ?? null, file_path: r.file_path });
+      if (out.length >= max) break;
+    }
+  }
+  return out;
 }

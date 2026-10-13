@@ -44,6 +44,8 @@ vi.mock("../../server-handlers/_posthog", () => ({
 const { default: handler } = await import("../../server-handlers/delete-account");
 
 const USER_ID = "user-123";
+// The post-erasure analytics event must never carry the real id (it would re-create the erased PostHog person).
+const PSEUDONYM = expect.stringMatching(/^deleted_[0-9a-f]{16}$/);
 
 function mockReq(body: Record<string, unknown>): VercelRequest {
   return { method: "POST", headers: {}, body } as unknown as VercelRequest;
@@ -216,7 +218,7 @@ describe("delete-account — soft delete (default)", () => {
     await handler(mockReq({ password: "correct" }), res);
     expect(res.statusCode).toBe(200);
     expect(res.body).toEqual({ success: true });
-    expect(captureServerEvent).toHaveBeenCalledWith("account_deleted", USER_ID, { mode: "hard" });
+    expect(captureServerEvent).toHaveBeenCalledWith("account_deleted", PSEUDONYM, { mode: "hard", $process_person_profile: false });
   });
 });
 
@@ -228,7 +230,7 @@ describe("delete-account — hard delete", () => {
     await handler(mockReq({ password: "correct", hard: true }), res);
     expect(res.statusCode).toBe(200);
     expect(res.body).toEqual({ success: true });
-    expect(captureServerEvent).toHaveBeenCalledWith("account_deleted", USER_ID, { mode: "hard" });
+    expect(captureServerEvent).toHaveBeenCalledWith("account_deleted", PSEUDONYM, { mode: "hard", $process_person_profile: false });
   });
 
   it("stops before the per-table batch if clearing service_usage fails", async () => {
@@ -259,7 +261,7 @@ describe("delete-account — hard delete", () => {
       if (u.includes("/rest/v1/sessions") && init?.method === "DELETE") {
         return { ok: false, status: 500 } as unknown as Response; // fulfilled but not ok
       }
-      if (u.includes("/rest/v1/payments") && init?.method === "DELETE") {
+      if (u.includes("/rest/v1/feedback") && init?.method === "DELETE") {
         throw new Error("network blip"); // rejected
       }
       if (u.includes("/auth/v1/admin/users/")) return { ok: true } as unknown as Response;
@@ -271,11 +273,30 @@ describe("delete-account — hard delete", () => {
     expect(res.statusCode).toBe(500);
     const err = (res.body as { error: string }).error;
     expect(err).toContain("sessions");
-    expect(err).toContain("payments");
+    expect(err).toContain("feedback");
     expect(err).not.toContain("calendar_events");
-    expect(err).not.toContain("feedback");
+    expect(err).not.toContain("llm_usage");
     // Auth-user delete must never be attempted once any table failed.
     expect(fetchMock.mock.calls.some(([u]) => String(u).includes("/auth/v1/admin/users/"))).toBe(false);
+    // The account is handed to the cron: deleted_at is set so the next run resumes the erasure.
+    expect(fetchMock.mock.calls.some(([u, i]) => String(u).includes("/rest/v1/profiles?id=eq.") && String(u).includes("deleted_at=is.null") && (i as RequestInit)?.method === "PATCH")).toBe(true);
+  });
+
+  it("fails the erasure (account left soft-deleted, auth untouched) when anonymising payments fails", async () => {
+    const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
+      const u = String(url);
+      if (u.includes("grant_type=password")) return { ok: true } as Response;
+      if (u.includes("select=email,name")) return { ok: true, json: async () => [] } as unknown as Response;
+      if (u.includes("/rest/v1/payments") && init?.method === "PATCH") return { ok: false, status: 400 } as unknown as Response; // migration 0035 not applied
+      return { ok: true, status: 200, json: async () => [] } as unknown as Response;
+    });
+    global.fetch = fetchMock as unknown as typeof fetch;
+    const res = mockRes();
+    await handler(mockReq({ password: "correct", hard: true }), res);
+    expect(res.statusCode).toBe(500);
+    expect((res.body as { error: string }).error).toContain("payments");
+    expect(fetchMock.mock.calls.some(([u]) => String(u).includes("/auth/v1/admin/users/"))).toBe(false);
+    expect(fetchMock.mock.calls.some(([u, i]) => String(u).includes("/rest/v1/sessions") && (i as RequestInit)?.method === "DELETE")).toBe(false);
   });
 
   it("reports success:true with partial:true when data is deleted but the auth-user delete itself fails", async () => {
@@ -369,7 +390,7 @@ describe("delete-account — candidate-agency + employer data", () => {
     expect(JSON.parse(calls[storageIdx].body!)).toEqual({ prefixes: ["c1/a.pdf"] });
   });
 
-  it("does not fail the erasure when storage cleanup throws", async () => {
+  it("fails the erasure (retried by the cron) when storage cleanup throws, rather than orphaning files", async () => {
     scenario((c) => {
       if (c.url.includes("conversation_messages?or=")) return json([{ attachment_path: "c1/a.pdf" }]);
       if (c.url.includes("/storage/v1/")) throw new Error("storage down");
@@ -377,7 +398,10 @@ describe("delete-account — candidate-agency + employer data", () => {
     });
     const res = mockRes();
     await handler(mockReq({ password: "correct", hard: true }), res);
-    expect(res.statusCode).toBe(200);
+    expect(res.statusCode).toBe(500);
+    const err = (res.body as { error: string }).error;
+    expect(err).toContain("resume-files");
+    expect(err).toContain("chat-attachments");
   });
 
   it("retains an employer with payment rows: anonymises, deactivates the auth user (PUT) and never DELETEs it", async () => {
@@ -395,11 +419,12 @@ describe("delete-account — candidate-agency + employer data", () => {
     const patch = calls.find((c) => c.method === "PATCH" && c.url.includes("/rest/v1/employers?id="));
     expect(JSON.parse(patch!.body!)).toMatchObject({ company_name: "", website: "", logo_path: null, suspended_reason: "account deleted by user" });
     expect(calls.some((c) => c.method === "DELETE" && c.url.includes("/rest/v1/employer_requirements?employer_id"))).toBe(true);
-    expect(calls.some((c) => c.method === "DELETE" && c.url.includes("/storage/v1/object/employer-logos/u/logo.png"))).toBe(true);
+    const logoDelete = calls.find((c) => c.method === "DELETE" && c.url.endsWith("/storage/v1/object/employer-logos"));
+    expect(JSON.parse(logoDelete!.body!)).toEqual({ prefixes: ["u/logo.png"] });
     const put = calls.find((c) => c.method === "PUT" && c.url.includes("/auth/v1/admin/users/"));
     expect(JSON.parse(put!.body!)).toMatchObject({ ban_duration: "876000h", email: `deleted-${USER_ID}@deleted.invalid` });
     expect(calls.some((c) => c.method === "DELETE" && c.url.includes("/auth/v1/admin/users/"))).toBe(false);
-    expect(captureServerEvent).toHaveBeenCalledWith("account_deleted", USER_ID, { mode: "hard", retainedFinancialRecords: true });
+    expect(captureServerEvent).toHaveBeenCalledWith("account_deleted", PSEUDONYM, { mode: "hard", retainedFinancialRecords: true, $process_person_profile: false });
   });
 
   it("hard-deletes the auth user for an employer with no financial rows", async () => {
