@@ -340,6 +340,8 @@ export function buildCandidateExportSpecs(id: string): ExportSpec[] {
     t("notifications", u, NEWEST, true),
     t("notification_preferences", u, "user_id.asc", true),
     t("product_ratings", u, NEWEST, true),
+    t("user_consents", `${u}&select=purpose,version,accepted_at`, "accepted_at.desc,id.asc", true),
+    t("email_preferences", u, "user_id.asc", true),
     t("interview_turns", u, NEWEST, true),
   ];
 }
