@@ -734,6 +734,7 @@ describe("cloudflare overflow rung", () => {
     const init = cfCall?.[1] as { headers: Record<string, string>; body: string };
     expect(init.headers.Authorization).toBe("Bearer cf-token");
     expect(JSON.parse(init.body)).not.toHaveProperty("response_format");
+    expect(JSON.parse(init.body).reasoning_effort).toBe("low");
   });
 
   it("is left out of the chain when the account id is missing or malformed", async () => {

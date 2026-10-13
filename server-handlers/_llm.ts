@@ -412,6 +412,8 @@ async function callCloudflare(opts: LLMOptions, signal?: AbortSignal): Promise<L
   // context takes the full-size report prompt that Groq's 8K TPM cap rejects.
   // response_format is deliberately omitted: Workers AI doesn't document JSON
   // mode for gpt-oss, and callers already extract JSON from free text.
+  // reasoning_effort "low" is accepted and cut tokens/latency ~25% in live tests
+  // (hidden reasoning counts toward completion_tokens and neurons).
   const model = cloudflareModel();
   const start = Date.now();
   const res = await fetch(`https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/ai/v1/chat/completions`, {
@@ -423,6 +425,7 @@ async function callCloudflare(opts: LLMOptions, signal?: AbortSignal): Promise<L
       messages: [{ role: "user", content: opts.prompt }],
       temperature: opts.temperature ?? 0.3,
       max_tokens: opts.fallbackMaxTokens ?? opts.maxTokens ?? 2000,
+      reasoning_effort: "low",
     }),
   });
   const latencyMs = Date.now() - start;
