@@ -31,7 +31,7 @@ import { pickAnalyzer, registeredFocuses } from "./analyzers/_dispatch";
 import type { SessionRowForAnalysis } from "./analyzers/_types";
 import { llmRescore, isRescoreEnabled } from "./analyzers/_llm-rescore";
 import { computeSeverity } from "./_digest-helpers";
-import { callLLM } from "./_llm";
+import { callLLM } from "./_llm-pii";
 import { computeOutcome, countFlagInWindow, primaryFlagFor } from "./_fix-outcome-helpers";
 import { captureServerEvent } from "./_posthog";
 import { buildFixPlanPrompt, parseFixPlan, buildDedupKey, type FixPlanInput } from "./_fix-plan-helpers";

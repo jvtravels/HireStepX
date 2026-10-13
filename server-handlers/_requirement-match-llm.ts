@@ -10,7 +10,7 @@
    an empty map and the caller keeps the deterministic scores untouched —
    this must never block a requirement from reaching "ready"/"partial". */
 
-import { callLLM, extractJSON } from "./_llm";
+import { callLLM, extractJSON } from "./_llm-pii";
 import { redisGet, redisSetEx, hashStable } from "./_shared";
 import { extractSkills, type CandidatePoolRow, type RequirementInput } from "./_requirement-match-helpers";
 

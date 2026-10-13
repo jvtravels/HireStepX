@@ -7,7 +7,8 @@ export const config = { runtime: "nodejs", maxDuration: 100 };
 
 import { withAuthAndRateLimit, sanitizeForLLM, corsHeaders, withRequestId } from "./_shared";
 import { captureServerEvent, captureServerException, distinctIdFrom } from "./_posthog";
-import { callLLM, extractJSON, isNonRetryableChainFailure } from "./_llm";
+import { callLLM } from "./_llm-pii";
+import { extractJSON, isNonRetryableChainFailure } from "./_llm";
 import { loadCachedReport, saveCachedReport } from "./_evaluate-report-cache";
 import { acquireEvalLock, releaseEvalLock, waitForResult } from "./_eval-lock";
 import { classifyCompanyTier, tierPromptSuffix } from "./_company-tier";

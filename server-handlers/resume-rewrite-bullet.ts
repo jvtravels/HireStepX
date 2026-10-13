@@ -15,7 +15,7 @@
 export const config = { runtime: "edge" };
 
 import { withAuthAndRateLimit, sanitizeForLLM, corsHeaders, withRequestId } from "./_shared";
-import { callLLM, extractJSON } from "./_llm";
+import { callLLM, extractJSON } from "./_llm-pii";
 
 declare const process: { env: Record<string, string | undefined> };
 const GROQ_KEY = process.env.GROQ_API_KEY || "";

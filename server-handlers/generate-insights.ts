@@ -2,7 +2,7 @@
 
 export const config = { runtime: "edge" };
 
-import { callLLM, extractJSON } from "./_llm";
+import { callLLM, extractJSON } from "./_llm-pii";
 import {
   handleCorsPreflightOrMethod, corsHeaders, verifyAuth,
   unauthorizedResponse, isRateLimited, getClientIp, rateLimitResponse,

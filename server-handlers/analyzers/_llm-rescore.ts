@@ -17,7 +17,7 @@
  * matched, max 3 flags per session, ~500-token prompt each.
  */
 
-import { callLLM, extractJSON } from "../_llm";
+import { callLLM, extractJSON } from "../_llm-pii";
 import type { SessionRowForAnalysis, TranscriptTurn } from "./_types";
 
 declare const process: { env: Record<string, string | undefined> };

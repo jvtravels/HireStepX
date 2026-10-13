@@ -210,6 +210,59 @@ curl -sS -D - -X POST https://api.groq.com/openai/v1/chat/completions \
 
 ---
 
+## Data sent to AI processors
+
+Every LLM call goes through `callLLM` in `server-handlers/_llm-pii.ts`, which
+runs `scrubPii()` (`server-handlers/_pii-scrub.ts`) over the prompt, then
+`restorePii()` over the reply. `src/__tests__/piiLlmWiring.test.ts` fails if a
+handler imports `callLLM` straight from `_llm.ts`. The scrub is regex and
+checksum based, so it is best-effort data minimisation, not a guarantee.
+
+**Replaced with placeholders before leaving our infrastructure** (`[EMAIL_1]`,
+`[PHONE_1]`, ...): email addresses, Indian and international phone numbers,
+Aadhaar (grouped, Verhoeff-valid, or labelled), PAN, IFSC, labelled bank
+account and passport numbers, Luhn-valid card numbers, UPI IDs, labelled dates
+of birth, linkedin.com/in/... and github.com/<user> URLs, address lines
+(labelled "Address:" or flat/street keywords plus a PIN code) and labelled PIN
+codes. `analyze-resume` also redacts anything the model echoes back
+(`_pii-redact.ts`).
+
+**Still sent** (the models need it to score and coach): candidate and
+interviewer names, employer / college / project names, cities, job titles, the
+full text of interview answers, salary and CTC figures, and any personal detail
+the patterns above do not recognise (free-text addresses without a PIN, unlabelled
+passport or account numbers, names inside answers).
+
+**Processors**: Groq, Google Gemini, Cloudflare Workers AI. Which one serves a
+call depends on the fallback chain in `_llm.ts`, so assume any of them can see
+any prompt.
+
+**Training use**: we do not opt anyone in to training. Each provider's own
+terms and settings decide what happens to API data; the owner must confirm the
+current position for the exact plan and API key in use (see below). Nothing here
+is a legal commitment on behalf of those providers.
+
+### Owner TODO (needs a human with account access)
+
+- [ ] Sign or verify a Data Processing Agreement / data-processing terms with
+  Groq, Google (Gemini API; check whether the free tier we run on is covered by the
+  same terms as the paid tier) and Cloudflare.
+- [ ] Confirm each provider's data retention setting for our API keys and
+  record the answer here. Cloudflare Workers AI retention is undocumented as
+  of 2026-10; get it in writing or treat it as unknown.
+- [ ] Confirm each provider's training opt-out position for our plan and record it.
+- [ ] Keep the sub-processor list in the privacy policy
+  (`src/marketing-v2/MarketingPagesV2.tsx`, "Groq / Google (Gemini) /
+  Cloudflare (Workers AI)" list) in sync with this section and with
+  `server-handlers/_llm.ts` whenever a provider is added or removed, including
+  Cerebras if it is ever enabled.
+- [ ] Have counsel review whether the privacy policy and consent copy should say
+  that identifiers are masked before AI processing.
+- [ ] When adding a new handler that calls an LLM, import `callLLM` from
+  `./_llm-pii` and add any new personal-data field to the scrubber tests.
+
+---
+
 ## Deploy / rollback
 
 - **Deploy**: `git push origin main` — Vercel auto-deploys
