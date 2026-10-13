@@ -36,6 +36,7 @@ import {
 } from "./_employer-candidate-evidence-helpers";
 import { notify } from "./_notify";
 import { emailShell, title as emailTitle, para, button, escapeHtml } from "./_email-theme";
+import { isSuppressed, marketingEmailParts, preferenceDepsFromEnv } from "./_unsubscribe";
 import { loadEmployerMatchAccess, loadAuthIdentity, DENIED_STATUS } from "./_entitlements";
 
 declare const process: { env: Record<string, string | undefined> };
@@ -66,11 +67,15 @@ async function sendProfileViewedEmail(opts: { candidateUserId: string }): Promis
     const rows = (await profileRes.json().catch(() => [])) as Array<{ name: string | null; email: string | null }>;
     const email = rows[0]?.email;
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return;
+    // Honour the candidate's employer-activity opt-out (fails closed on a lookup error).
+    if (await isSuppressed(preferenceDepsFromEnv(), opts.candidateUserId, "employer_notifications")) return;
+    const parts = await marketingEmailParts(opts.candidateUserId, "employer_notifications");
 
     const firstName = escapeHtml((rows[0]?.name || "there").split(" ")[0]);
     const headline = "An employer looked at your practice evidence.";
     const link = `${APP_URL}/jobs`;
     const html = emailShell({
+      footer: parts.footer,
       preview: headline,
       body:
         emailTitle("An employer viewed", { accentWord: "your profile" }) +
@@ -84,7 +89,7 @@ async function sendProfileViewedEmail(opts: { candidateUserId: string }): Promis
       const res = await fetch("https://api.resend.com/emails", {
         method: "POST",
         headers: { Authorization: `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ from: FROM_EMAIL, to: [email], subject: "An employer viewed your profile — HireStepX", html }),
+        body: JSON.stringify({ from: FROM_EMAIL, to: [email], subject: "An employer viewed your profile — HireStepX", html, ...parts.resend }),
         signal: controller.signal,
       });
       if (!res.ok) {

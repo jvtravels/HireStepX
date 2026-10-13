@@ -15,7 +15,8 @@
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { escapeHtml } from "./_shared";
-import { emailShell, title, para, b, button, dataCard } from "./_email-theme";
+import { emailShell, title, para, b, button, dataCard, type EmailFooterOptions } from "./_email-theme";
+import { filterSuppressed, marketingEmailParts, preferenceDepsFromEnv } from "./_unsubscribe";
 
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
@@ -71,6 +72,7 @@ function getDripStep(daysSinceStart: number): DripStep | null {
 function buildDay2Email(
   name: string,
   role: string | null,
+  footer?: EmailFooterOptions,
 ): { subject: string; html: string } {
   const safeName = escapeHtml(name.split(" ")[0] || "there");
   const safeRole = escapeHtml(role || "your target role");
@@ -79,6 +81,7 @@ function buildDay2Email(
   return {
     subject: `What's unlocked on your Sprint Pack`,
     html: emailShell({
+      footer,
       preview: `Your Sprint Pack is active. Here's the fastest way to get value from it.`,
       body:
         title("You're in.", { accentWord: "Here's what that means." }) +
@@ -99,6 +102,7 @@ function buildDay2Email(
 function buildDay5Email(
   name: string,
   role: string | null,
+  footer?: EmailFooterOptions,
 ): { subject: string; html: string } {
   const safeName = escapeHtml(name.split(" ")[0] || "there");
   const safeRole = escapeHtml(role || "your target role");
@@ -108,6 +112,7 @@ function buildDay5Email(
   return {
     subject: `${safeName}, a quick check-in on your ${safeRole} prep`,
     html: emailShell({
+      footer,
       preview: "Three things worth knowing after your first week on the plan.",
       body:
         title("Five days", { accentWord: "in." }) +
@@ -126,7 +131,13 @@ function buildDay5Email(
   };
 }
 
-async function sendEmail(to: string, subject: string, html: string, idempotencyKey: string): Promise<boolean> {
+async function sendEmail(
+  to: string,
+  subject: string,
+  html: string,
+  idempotencyKey: string,
+  extra: { reply_to: string; headers: Record<string, string> },
+): Promise<boolean> {
   try {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -135,7 +146,7 @@ async function sendEmail(to: string, subject: string, html: string, idempotencyK
         "Content-Type": "application/json",
         "Idempotency-Key": idempotencyKey,
       },
-      body: JSON.stringify({ from: FROM_EMAIL, to: [to], subject, html }),
+      body: JSON.stringify({ from: FROM_EMAIL, to: [to], subject, html, ...extra }),
       signal: AbortSignal.timeout(10_000),
     });
     return res.ok;
@@ -176,8 +187,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(500).json({ error: "Failed to query profiles" });
   }
 
-  const profiles: ProfileRow[] = await profilesRes.json();
-  if (!Array.isArray(profiles) || profiles.length === 0) {
+  const allProfiles: ProfileRow[] = await profilesRes.json();
+  const profiles = Array.isArray(allProfiles)
+    ? await filterSuppressed(preferenceDepsFromEnv(), allProfiles, "marketing")
+    : [];
+  if (profiles.length === 0) {
     return res.status(200).json({ sent: 0, skipped: 0, message: "No candidates" });
   }
 
@@ -195,13 +209,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const alreadySent = await redisGet(redisKey);
     if (alreadySent) { skipped++; continue; }
 
+    const parts = await marketingEmailParts(user.id, "marketing");
     const { subject, html } =
       step === "day2"
-        ? buildDay2Email(user.name || "", user.target_role)
-        : buildDay5Email(user.name || "", user.target_role);
+        ? buildDay2Email(user.name || "", user.target_role, parts.footer)
+        : buildDay5Email(user.name || "", user.target_role, parts.footer);
 
     const idempotencyKey = `onboarding-${step}-${user.id}`;
-    const ok = await sendEmail(user.email, subject, html, idempotencyKey);
+    const ok = await sendEmail(user.email, subject, html, idempotencyKey, parts.resend);
 
     if (ok) {
       await redisSet(redisKey, new Date().toISOString());

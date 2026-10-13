@@ -11,6 +11,7 @@ import {
   AccountSection,
   PlanUsageSection,
   SoundsSection,
+  EmailPreferencesSection,
   DangerZoneSection,
 } from "./settingsSections";
 
@@ -107,6 +108,10 @@ export default function SettingsPage() {
 
         <FlatSection title="Employer visibility">
           <EmployerVisibilityCard showToast={showToast} />
+        </FlatSection>
+
+        <FlatSection title="Email preferences">
+          <EmailPreferencesSection audience="candidate" />
         </FlatSection>
 
         <FlatSection title="Sounds">

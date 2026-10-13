@@ -7,7 +7,8 @@
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { escapeHtml } from "./_shared";
-import { emailShell, title, para, b, button, dataCard, mono } from "./_email-theme";
+import { emailShell, title, para, b, button, dataCard, mono, type EmailFooterOptions } from "./_email-theme";
+import { isSuppressed, marketingEmailParts, preferenceDepsFromEnv } from "./_unsubscribe";
 
 const UPSTASH_URL = (process.env.UPSTASH_REDIS_REST_URL || "").trim();
 const UPSTASH_TOKEN = (process.env.UPSTASH_REDIS_REST_TOKEN || "").trim();
@@ -57,13 +58,14 @@ async function redisDel(key: string): Promise<void> {
   } catch { /* best effort */ }
 }
 
-function buildEmail(intent: PaymentIntent): { subject: string; html: string } {
+function buildEmail(intent: PaymentIntent, footer?: EmailFooterOptions): { subject: string; html: string } {
   const safePlan = escapeHtml(intent.planName);
   const amount = (intent.amount / 100).toLocaleString("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 });
   const pricingUrl = `${APP_URL}/pricing`;
   return {
     subject: "You're one step away from Pro",
     html: emailShell({
+      footer,
       preview: "Your checkout is still open. Finish whenever you're ready.",
       body:
         title("One step", { accentWord: "away." }) +
@@ -80,12 +82,13 @@ function buildEmail(intent: PaymentIntent): { subject: string; html: string } {
 
 async function sendEmail(intent: PaymentIntent): Promise<boolean> {
   if (!RESEND_API_KEY) return false;
-  const { subject, html } = buildEmail(intent);
+  const parts = await marketingEmailParts(intent.userId, "marketing");
+  const { subject, html } = buildEmail(intent, parts.footer);
   try {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { Authorization: `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from: FROM_EMAIL, to: [intent.email], subject, html }),
+      body: JSON.stringify({ from: FROM_EMAIL, to: [intent.email], subject, html, ...parts.resend }),
     });
     return res.ok;
   } catch { return false; }
@@ -128,6 +131,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (age < MIN_AGE_MS) { skipped++; continue; } // too fresh
         if (age > MAX_AGE_MS) { await redisDel(key); skipped++; continue; } // stale — forget
         if (!intent.email) { await redisDel(key); continue; }
+        // Left in place (not deleted) when suppressed: a transient lookup failure must not lose the intent.
+        if (await isSuppressed(preferenceDepsFromEnv(), intent.userId, "marketing")) { skipped++; continue; }
         const ok = await sendEmail(intent);
         if (ok) { sent++; await redisDel(key); }
       }

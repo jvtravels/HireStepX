@@ -10,7 +10,8 @@
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { escapeHtml } from "./_shared";
-import { emailShell, title, para, button } from "./_email-theme";
+import { emailShell, title, para, button, type EmailFooterOptions } from "./_email-theme";
+import { filterSuppressed, marketingEmailParts, preferenceDepsFromEnv } from "./_unsubscribe";
 
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
@@ -54,7 +55,7 @@ async function redisSet(key: string, value: string): Promise<void> {
   } catch { /* best effort */ }
 }
 
-function buildActivationEmail(user: ProfileRow): { subject: string; html: string } {
+function buildActivationEmail(user: ProfileRow, footer?: EmailFooterOptions): { subject: string; html: string } {
   const safeName = escapeHtml(user.name?.split(" ")[0] || "there");
   const safeRole = escapeHtml(user.target_role || "your target role");
   const sessionUrl = `${APP_URL}/session/new`;
@@ -68,7 +69,7 @@ function buildActivationEmail(user: ProfileRow): { subject: string; html: string
     button("Start your free session", sessionUrl) +
     para(`No pressure. But the longer you wait, the harder it gets to start.`);
 
-  const html = emailShell({ preview: subject, body });
+  const html = emailShell({ preview: subject, body, footer });
 
   return { subject, html };
 }
@@ -119,11 +120,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const allProfiles = (await profileRes.json().catch(() => [])) as ProfileRow[];
 
   // Filter to users with zero completed sessions
-  const profiles = allProfiles.filter(p => {
+  const neverPracticed = allProfiles.filter(p => {
     if (!p.email) return false;
     const ts = p.practice_timestamps;
     return !ts || ts.length === 0;
   });
+  const profiles = await filterSuppressed(preferenceDepsFromEnv(), neverPracticed, "marketing");
 
   let sent = 0;
   let skipped = 0;
@@ -133,7 +135,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const alreadySent = await redisGet(redisKey);
     if (alreadySent) { skipped++; continue; }
 
-    const { subject, html } = buildActivationEmail(user);
+    const parts = await marketingEmailParts(user.id, "marketing");
+    const { subject, html } = buildActivationEmail(user, parts.footer);
 
     try {
       const emailRes = await fetch("https://api.resend.com/emails", {
@@ -143,7 +146,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           "Content-Type": "application/json",
           "Idempotency-Key": `activation-d1-${user.id}`,
         },
-        body: JSON.stringify({ from: FROM_EMAIL, to: [user.email], subject, html }),
+        body: JSON.stringify({ from: FROM_EMAIL, to: [user.email], subject, html, ...parts.resend }),
         signal: AbortSignal.timeout(10_000),
       });
 
