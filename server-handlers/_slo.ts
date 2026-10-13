@@ -7,8 +7,10 @@
  *   warning:  6h burn ≥ 6    AND 30m burn ≥ 6    (5% of budget in 6 hours)
  * The short window confirms the burn is still happening, so an alert stops
  * firing soon after recovery. Alerts are deduped per SLO+severity for an
- * hour via SET NX and fan out to slog.error (→ Sentry), email (Resend), and
- * an optional Slack webhook.
+ * window via SET NX (critical 6h, warning 24h; a critical alert also holds
+ * back the warning) and fan out to slog.error (→ Sentry) and an optional
+ * Slack webhook. Email (Resend free tier) is critical-only and capped at
+ * MAX_ALERT_EMAILS_PER_DAY across all SLOs so a long outage can't drain it.
  *
  * Detection runs on the failing request itself, so alerting is near-real-
  * time without a sub-daily cron. Total outages with zero traffic are
@@ -47,7 +49,8 @@ export type AlertSeverity = "critical" | "warning";
 
 const BUCKET_MS = 5 * 60_000;
 const BUCKET_TTL_SEC = 7 * 3600;
-const ALERT_DEDUPE_SEC = 3600;
+const ALERT_DEDUPE_SEC: Record<AlertSeverity, number> = { critical: 6 * 3600, warning: 24 * 3600 };
+export const MAX_ALERT_EMAILS_PER_DAY = 3;
 
 const WINDOWS: ReadonlyArray<{ severity: AlertSeverity; longBuckets: number; shortBuckets: number; threshold: number }> = [
   { severity: "critical", longBuckets: 12, shortBuckets: 1, threshold: 14.4 },
@@ -90,7 +93,7 @@ export function evaluateBurn(
 type RedisCmd = Array<string | number>;
 export interface SloDeps {
   redis: (cmds: RedisCmd[]) => Promise<Array<{ result?: unknown }> | null>;
-  alert: (subject: string, text: string) => Promise<void>;
+  alert: (subject: string, text: string, opts?: { email: boolean }) => Promise<void>;
   now: () => number;
 }
 
@@ -111,10 +114,10 @@ async function upstashPipeline(cmds: RedisCmd[]): Promise<Array<{ result?: unkno
   }
 }
 
-async function sendAlert(subject: string, text: string): Promise<void> {
+async function sendAlert(subject: string, text: string, opts: { email: boolean } = { email: true }): Promise<void> {
   const tasks: Promise<unknown>[] = [];
   const resendKey = process.env.RESEND_API_KEY;
-  if (resendKey) {
+  if (resendKey && opts.email) {
     tasks.push(fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { Authorization: `Bearer ${resendKey}`, "Content-Type": "application/json" },
@@ -167,8 +170,22 @@ export async function recordSlo(name: SloName, good: boolean, deps: SloDeps = de
     const verdict = evaluateBurn(name, buckets);
     if (!verdict) return;
 
-    const claim = await deps.redis([["SET", `slo-alert:${name}:${verdict.severity}`, "1", "NX", "EX", ALERT_DEDUPE_SEC]]);
+    const dedupeSec = ALERT_DEDUPE_SEC[verdict.severity];
+    const claimCmds: RedisCmd[] = [["SET", `slo-alert:${name}:${verdict.severity}`, "1", "NX", "EX", dedupeSec]];
+    // A critical alert already says the SLO is burning; hold the warning back too.
+    if (verdict.severity === "critical") claimCmds.push(["SET", `slo-alert:${name}:warning`, "1", "EX", ALERT_DEDUPE_SEC.warning]);
+    else claimCmds.push(["EXISTS", `slo-alert:${name}:critical`]);
+    const claim = await deps.redis(claimCmds);
     if (claim?.[0]?.result !== "OK") return;
+    if (verdict.severity === "warning" && toCount(claim?.[1]?.result) > 0) return;
+
+    let email = false;
+    if (verdict.severity === "critical") {
+      const day = new Date(deps.now()).toISOString().slice(0, 10);
+      const dayKey = `slo-alert-email:${day}`;
+      const count = await deps.redis([["INCR", dayKey], ["EXPIRE", dayKey, 86400, "NX"]]);
+      email = toCount(count?.[0]?.result) <= MAX_ALERT_EMAILS_PER_DAY;
+    }
 
     const slo = SLOS[name];
     const total = verdict.long.good + verdict.long.bad;
@@ -178,7 +195,7 @@ export async function recordSlo(name: SloName, good: boolean, deps: SloDeps = de
       `${slo.description}`,
       `Objective ${(slo.objective * 100).toFixed(1)}%. Error rate ${errorPct}% (${verdict.long.bad}/${total} events) in the alert window.`,
       `Burn rate ${verdict.longBurn.toFixed(1)}× long window, ${verdict.shortBurn.toFixed(1)}× short window.`,
-      `Deduped for 1h. Check Sentry and provider status pages.`,
+      `Repeat alerts for this SLO are held back for ${dedupeSec / 3600}h. Check Sentry and provider status pages.`,
     ].join("\n");
     slog.error(`slo: ${name} burning error budget`, {
       slo: name,
@@ -188,7 +205,7 @@ export async function recordSlo(name: SloName, good: boolean, deps: SloDeps = de
       bad: verdict.long.bad,
       total,
     });
-    await deps.alert(subject, text);
+    await deps.alert(subject, text, { email });
   } catch {
     /* SLO bookkeeping must never break a request */
   }

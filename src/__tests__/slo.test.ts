@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { burnRate, evaluateBurn, recordSlo, type BucketCounts, type SloDeps } from "../../server-handlers/_slo";
+import { burnRate, evaluateBurn, recordSlo, MAX_ALERT_EMAILS_PER_DAY, type BucketCounts, type SloDeps } from "../../server-handlers/_slo";
 
 const empty = (n: number): BucketCounts[] => Array.from({ length: n }, () => ({ good: 0, bad: 0 }));
 
@@ -84,5 +84,51 @@ describe("recordSlo", () => {
     await expect(recordSlo("llm_availability", false, { redis: async () => null, alert, now: Date.now })).resolves.toBeUndefined();
     await expect(recordSlo("llm_availability", false, { redis: async () => { throw new Error("down"); }, alert, now: Date.now })).resolves.toBeUndefined();
     expect(alert).not.toHaveBeenCalled();
+  });
+
+  describe("email budget", () => {
+    const statefulDeps = (mget: Array<string | null>, now: () => number) => {
+      const store = new Map<string, number | string>();
+      const redis = vi.fn(async (cmds: Array<Array<string | number>>) =>
+        cmds.map((c) => {
+          const [op, key, , nx] = c as [string, string, unknown, unknown];
+          if (op === "MGET") return { result: mget };
+          if (op === "INCR") { const n = (Number(store.get(key)) || 0) + 1; store.set(key, n); return { result: n }; }
+          if (op === "EXPIRE") return { result: 1 };
+          if (op === "EXISTS") return { result: store.has(key) ? 1 : 0 };
+          if (op === "SET") {
+            if (c.includes("NX") && store.has(key)) return { result: null };
+            void nx;
+            store.set(key, "1");
+            return { result: "OK" };
+          }
+          return { result: null };
+        }));
+      const alert = vi.fn<SloDeps["alert"]>(async () => {});
+      return { deps: { redis, alert, now } as SloDeps, alert, store };
+    };
+    const burn = (): Array<string | null> => {
+      const v: Array<string | null> = new Array(144).fill(null);
+      v[0] = "2"; v[1] = "30";
+      return v;
+    };
+
+    it("caps alert emails per day across SLOs", async () => {
+      const { deps, alert } = statefulDeps(burn(), () => 1_000_000_000);
+      const slos = ["llm_availability", "session_evaluation", "payment_verification", "llm_primary"] as const;
+      for (const name of slos) await recordSlo(name, false, deps);
+      const emailed = alert.mock.calls.filter((c) => c[2]?.email).length;
+      expect(alert).toHaveBeenCalledTimes(slos.length);
+      expect(emailed).toBe(MAX_ALERT_EMAILS_PER_DAY);
+    });
+
+    it("holds an SLO's repeat alerts back for hours, not minutes", async () => {
+      let t = 1_000_000_000;
+      const { deps, alert } = statefulDeps(burn(), () => t);
+      await recordSlo("llm_availability", false, deps);
+      t += 2 * 3600_000;
+      await recordSlo("llm_availability", false, deps);
+      expect(alert).toHaveBeenCalledTimes(1);
+    });
   });
 });
