@@ -1,6 +1,6 @@
 import { isSyntheticHeavySalaryPage } from "@/salaryQuality";
 import type { Metadata } from "next";
-import Script from "next/script";
+import ConsentGatedAdSense from "../../../ConsentGatedAdSense";
 import { notFound } from "next/navigation";
 import {
   getSalaryPage,
@@ -329,12 +329,7 @@ export default async function SalaryCompanySlugPage({
         </section>
       )}
       {!isSyntheticHeavySalaryPage(company) && (
-        <Script
-          async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7810403590527236"
-          crossOrigin="anonymous"
-          strategy="lazyOnload"
-        />
+        <ConsentGatedAdSense />
       )}
       <FooterDome />
       <MobileStickyCTA />

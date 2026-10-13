@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Script from "next/script";
+import ConsentGatedAdSense from "../../ConsentGatedAdSense";
 import Link from "next/link";
 import { NavV2, MobileStickyCTA } from "@/marketing-v2/HomepageV2";
 import { FooterDome } from "@/marketing-v2/FooterDome";
@@ -159,12 +159,7 @@ export default async function ForStudentsPage() {
         <script key={i} type="application/ld+json" dangerouslySetInnerHTML={html} />
       ))}
 
-      <Script
-        async
-        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7810403590527236"
-        crossOrigin="anonymous"
-        strategy="lazyOnload"
-      />
+      <ConsentGatedAdSense />
       <NavV2 />
       <main style={{ background: cream, color: coal, minHeight: "100dvh", padding: "48px 24px 80px", ...s }}>
         <div style={{ maxWidth: 860, margin: "0 auto" }}>

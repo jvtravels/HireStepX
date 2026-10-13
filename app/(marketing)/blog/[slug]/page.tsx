@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import Script from "next/script";
+import ConsentGatedAdSense from "../../../ConsentGatedAdSense";
 import BlogPage from "@/BlogPage";
 import { getBlogMetaBySlug, getBlogMetasBySlugs } from "@/blog-meta";
 import { getBlogPostBySlug } from "../../../../data/blog-posts";
@@ -126,12 +126,7 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
   return (
     <>
       {!isThinBlogPost(slug) && (
-        <Script
-          async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7810403590527236"
-          crossOrigin="anonymous"
-          strategy="lazyOnload"
-        />
+        <ConsentGatedAdSense />
       )}
       {jsonLdScripts.map((html, i) => (
         <script key={i} type="application/ld+json" dangerouslySetInnerHTML={html} />

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Script from "next/script";
+import ConsentGatedAdSense from "../../ConsentGatedAdSense";
 import { HowItWorksV2 } from "@/marketing-v2/MarketingPagesV2";
 import { buildHowItWorksJsonLd } from "./_jsonld";
 
@@ -40,12 +40,7 @@ export default async function Page() {
       {buildHowItWorksJsonLd().map((html, i) => (
         <script key={i} type="application/ld+json" dangerouslySetInnerHTML={html} />
       ))}
-      <Script
-        async
-        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7810403590527236"
-        crossOrigin="anonymous"
-        strategy="lazyOnload"
-      />
+      <ConsentGatedAdSense />
       <HowItWorksV2 />
     </>
   );

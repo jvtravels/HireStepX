@@ -70,15 +70,28 @@ export function yieldToMainThread(): Promise<void> {
   return new Promise((r) => setTimeout(r, 0));
 }
 
-/* ─── gtag — GA4, loaded for every visitor via Consent Mode v2
+/* ─── gtag — GA4, Consent Mode v2
  *
- * ConsentGatedAnalytics/MarketingAnalytics always mount the gtag.js
- * <Script>; the inline init script sets Consent Mode's default storage
- * state from localStorage directly (see _ga4-script.ts), so window.gtag
- * exists immediately regardless of consent. sendGtagEvent still no-ops
- * safely via optional chaining if it somehow hasn't loaded yet. */
+ * gtag.js is NOT loaded until the visitor accepts (see
+ * app/ConsentGatedTelemetry.tsx); window.gtag therefore doesn't exist
+ * pre-consent and sendGtagEvent safely no-ops via optional chaining. On
+ * withdrawal updateGtagConsent(false) flips all four Consent Mode v2 signals
+ * back to denied and sets Google's documented `ga-disable-<ID>` kill switch,
+ * because denied-mode gtag still sends cookieless pings unless disabled. */
 
 type GtagFn = (...args: unknown[]) => void;
+
+export type GtagConsentSignals = {
+  ad_storage: "granted" | "denied";
+  analytics_storage: "granted" | "denied";
+  ad_user_data: "granted" | "denied";
+  ad_personalization: "granted" | "denied";
+};
+
+export function gtagConsentSignals(granted: boolean): GtagConsentSignals {
+  const v = granted ? "granted" : "denied";
+  return { ad_storage: v, analytics_storage: v, ad_user_data: v, ad_personalization: v };
+}
 
 export function sendGtagEvent(name: string, params?: Record<string, unknown>): void {
   if (typeof window === "undefined") return;
@@ -86,8 +99,9 @@ export function sendGtagEvent(name: string, params?: Record<string, unknown>): v
   w.gtag?.("event", name, params);
 }
 
-export function updateGtagConsent(granted: boolean): void {
+export function updateGtagConsent(granted: boolean, gaId?: string): void {
   if (typeof window === "undefined") return;
   const w = window as Window & { gtag?: GtagFn };
-  w.gtag?.("consent", "update", { analytics_storage: granted ? "granted" : "denied" });
+  if (gaId) Reflect.set(window, `ga-disable-${gaId}`, !granted);
+  w.gtag?.("consent", "update", gtagConsentSignals(granted));
 }

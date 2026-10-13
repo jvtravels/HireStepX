@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Script from "next/script";
+import ConsentGatedAdSense from "../../ConsentGatedAdSense";
 import Link from "next/link";
 import { NavV2, MobileStickyCTA } from "@/marketing-v2/HomepageV2";
 import { FooterDome } from "@/marketing-v2/FooterDome";
@@ -106,12 +106,7 @@ const TOP_COMPANIES = [
 export default async function AiMockInterviewPage() {
   return (
     <>
-      <Script
-        async
-        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7810403590527236"
-        crossOrigin="anonymous"
-        strategy="lazyOnload"
-      />
+      <ConsentGatedAdSense />
       <style>{editorialCSS}</style>
       <NavV2 />
 

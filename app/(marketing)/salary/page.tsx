@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Script from "next/script";
+import ConsentGatedAdSense from "../../ConsentGatedAdSense";
 import { SALARY_SEO_PAGES, salaryCompanyLabel } from "../../../data/salary-seo";
 import { COMPANY_SALARY_OVERRIDES } from "../../../data/company-salary-overrides";
 import { SalaryHubPage, type SalaryHubEntry } from "@/marketing-v2/SalaryPage";
@@ -170,12 +170,7 @@ export default async function SalaryIndexPage({
           noindex meta tag above — only loading ads on the canonical page 1
           keeps thin, noindexed pagination pages out of ad-serving scope. */}
       {pageNum === 1 && (
-        <Script
-          async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7810403590527236"
-          crossOrigin="anonymous"
-          strategy="lazyOnload"
-        />
+        <ConsentGatedAdSense />
       )}
       <NavV2 />
       <div style={{ background: t.copperWash, borderBottom: `1px solid ${t.copperBorder}` }}>

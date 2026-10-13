@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Script from "next/script";
+import ConsentGatedAdSense from "../../ConsentGatedAdSense";
 import Link from "next/link";
 import { SEO_PAGES } from "../../../data/seo-pages";
 import { COMPANY_LABEL as ALL_LABELS } from "../../../data/company-labels";
@@ -264,12 +264,7 @@ export default async function InterviewPrepPage({
           noindex meta tag above — only loading ads on the canonical page 1
           keeps thin, noindexed pagination pages out of ad-serving scope. */}
       {safePage === 1 && (
-        <Script
-          async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7810403590527236"
-          crossOrigin="anonymous"
-          strategy="lazyOnload"
-        />
+        <ConsentGatedAdSense />
       )}
       <NavV2 />
       <main style={{ background: cream, color: coal, minHeight: "100dvh", padding: "48px 24px 80px", ...s }}>

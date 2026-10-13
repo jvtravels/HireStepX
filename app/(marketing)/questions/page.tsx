@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Script from "next/script";
+import ConsentGatedAdSense from "../../ConsentGatedAdSense";
 import { SEO_PAGES } from "../../../data/seo-pages";
 import { QuestionsIndexPage } from "@/marketing-v2/QuestionPages";
 import { breadcrumb, ldJson } from "@/marketing-v2/_schema";
@@ -207,12 +207,7 @@ export default async function QuestionsIndexRoute({
           the canonical (page 1, no filter) variant keeps thin, noindexed
           pagination/filter pages out of ad-serving scope. */}
       {pageNum === 1 && !focus && (
-        <Script
-          async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7810403590527236"
-          crossOrigin="anonymous"
-          strategy="lazyOnload"
-        />
+        <ConsentGatedAdSense />
       )}
       <FooterDome />
       <MobileStickyCTA />

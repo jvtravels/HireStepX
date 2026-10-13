@@ -10,6 +10,13 @@ import {
   isSessionExpiredByPreference,
 } from "./auth/_shell";
 import { captureClientEvent, identifyClient, resetClient } from "./posthogClient";
+import {
+  PENDING_CONSENT_KEY,
+  CONSENT_METADATA_KEY,
+  consentDoneKey,
+  currentSignupConsent,
+  resolveConsentToRecord,
+} from "./_consent-record";
 import { preloadRouteChunk } from "./routeChunkPreload";
 import { isSlowConnection, sendGtagEvent } from "./_browser-api-guards";
 
@@ -221,6 +228,49 @@ function readPendingEmployerProfile(): PendingEmployerProfile | null {
 
 function clearPendingEmployerProfile(): void {
   try { localStorage.removeItem(PENDING_EMPLOYER_PROFILE_KEY); } catch { /* expected */ }
+}
+
+/* ─── Signup consent ledger (DPDP) ───
+   The signup form's "I am 18 or older and agree to the Terms of Use and
+   Privacy Policy" affirmation is recorded server-side (user_consents) once,
+   on the first authenticated session — same pending-localStorage pattern as
+   the employer profile above. Google sign-in sets the flag from the signup /
+   login page right before the OAuth redirect. */
+export function storePendingConsent(): void {
+  try { localStorage.setItem(PENDING_CONSENT_KEY, JSON.stringify(currentSignupConsent())); } catch { /* expected */ }
+}
+
+export function clearPendingConsent(): void {
+  try { localStorage.removeItem(PENDING_CONSENT_KEY); } catch { /* expected */ }
+}
+
+/** Fire-and-forget. Keeps the pending flag on 5xx/202-retry/network errors
+ *  (e.g. the user_consents migration isn't applied yet) and clears it on a
+ *  definitive outcome. Server is idempotent per (user, purpose, version). */
+async function applyPendingConsent(session: Session): Promise<void> {
+  try {
+    const userId = session.user?.id;
+    if (!userId || !session.access_token) return;
+    let rawPending: string | null = null;
+    try { rawPending = localStorage.getItem(PENDING_CONSENT_KEY); } catch { /* expected */ }
+    const consent = resolveConsentToRecord(rawPending, session.user.user_metadata);
+    if (!consent) return;
+    const doneKey = consentDoneKey(userId, consent);
+    try { if (localStorage.getItem(doneKey)) { clearPendingConsent(); return; } } catch { /* expected */ }
+    const res = await fetch("/api/record-consent", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+      body: JSON.stringify(consent),
+    });
+    const body: unknown = await res.json().catch(() => null);
+    const recorded = typeof body === "object" && body !== null && (body as { recorded?: unknown }).recorded === true;
+    if (recorded || (res.status >= 400 && res.status < 500 && res.status !== 429)) {
+      clearPendingConsent();
+      try { localStorage.setItem(doneKey, "1"); } catch { /* expected */ }
+    }
+  } catch {
+    /* transient — keep the pending flag for the next session */
+  }
 }
 
 /* ─── Deferred-onboarding redirect (SEO signups only) ───
@@ -961,6 +1011,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // reads companyStatus on mount.
           if (session.access_token) {
             void applyPendingReferral(session.access_token);
+            void applyPendingConsent(session);
             await applyPendingEmployerProfile(session.access_token);
           }
           // ── Fast render for returning users ──────────────────────────────────
@@ -1161,6 +1212,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // Fire-and-forget; the server is idempotent for re-applies.
           if (session.access_token) {
             void applyPendingReferral(session.access_token);
+            void applyPendingConsent(session);
             // Awaited (unlike the referral above) — the employer lands on
             // /employer right after this handler resolves, and that route
             // reads companyStatus on mount. Racing it would show the
@@ -1184,7 +1236,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               // Identify Google OAuth users in PostHog — email/password users are
               // identified in login() and signup(); OAuth users only land here.
               if (isGoogleProvider) {
-                identifyClient(session.user.id, { email: session.user.email, signup_method: "google" });
+                identifyClient(session.user.id, { signup_method: "google" });
               }
             } else {
               await ensureProfile(session);
@@ -1283,7 +1335,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch { /* rate limit check failed, proceed */ }
 
     const client = await getSupabase();
-    const metadata: Record<string, string> = { name };
+    const metadata: Record<string, string> = { name, [CONSENT_METADATA_KEY]: currentSignupConsent().version };
 
     // Suppress auth listener during signup to prevent premature redirect
     signingUpRef.current = true;
@@ -1449,7 +1501,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       track("signup_completed", { method: "email" });
       if (userId) {
-        identifyClient(userId, { email, name, signup_method: "email" });
+        identifyClient(userId, { signup_method: "email" });
         captureClientEvent("user_signed_up", { method: "email" });
         sendGtagEvent("sign_up", { method: "email" });
       }
@@ -1637,7 +1689,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     logAuditEvent("login_success", { email, method: "email" });
     track("login_success");
     if (data?.user?.id) {
-      identifyClient(data.user.id, { email });
+      identifyClient(data.user.id);
       captureClientEvent("user_logged_in", { method: "email" });
     }
     return { success: true };
