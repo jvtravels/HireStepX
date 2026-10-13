@@ -1368,9 +1368,9 @@ export default function SessionSetup() {
   // LLM grounds the offer band, equity policy, and negotiation style on
   // company tier. An unspecified target makes the negotiation generic
   // and the offer numbers calibration-less. So company is *required*
-  // for that focus only; for other focuses it stays optional.
+  // for that focus (and HR rounds); other focuses stay optional.
   const isNegotiationFocus = interviewFocus[0] === "Salary Negotiation";
-  const companyRequired = isNegotiationFocus;
+  const companyRequired = isNegotiationFocus || interviewFocus[0] === "HR Round";
   const companyMissing = companyRequired && !targetCompany.trim();
 
   /* Role × company sector-fit check (salary-neg only). Hard mismatches

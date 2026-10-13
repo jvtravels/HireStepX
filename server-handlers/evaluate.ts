@@ -68,8 +68,8 @@ export default async function handler(req: Request): Promise<Response> {
       return new Response(JSON.stringify({ error: "Transcript total size too large" }), { status: 400, headers });
     }
 
-    // Cap each entry to 800 chars; salary negotiations get 30 turns (more back-and-forth), others 20
-    const maxTurns = type === "salary-negotiation" ? 30 : 20;
+    // Cap each entry to 800 chars; 40 turns covers a full 7-question round plus follow-ups, so later answers (CTC, notice, BGV) are never silently dropped
+    const maxTurns = 40;
     const trimmedTranscript = transcript.slice(0, maxTurns);
     const formattedTranscript = trimmedTranscript
       .map((t: { speaker: string; text: string }) => `${t.speaker === "ai" ? "Q" : "A"}: ${sanitizeForLLM(t.text, 800)}`)
@@ -253,6 +253,7 @@ Respond JSON only:
 {"skillScores":{"communication":{"score":<0-100>,"reason":"<cite specific answer text>"},"structure":{"score":<0-100>,"reason":"<cite>"},"technicalDepth":{"score":<0-100>,"reason":"<cite>"},"leadership":{"score":<0-100>,"reason":"<cite>"},"problemSolving":{"score":<0-100>,"reason":"<cite>"},"confidence":{"score":<0-100>,"reason":"<cite>"},"specificity":{"score":<0-100>,"reason":"<cite metrics/numbers used or absent>"},"adaptability":{"score":<0-100>,"reason":"<cite>"},"answerCompleteness":{"score":<0-100>,"reason":"<cite>"},"businessImpact":{"score":<0-100>,"reason":"<cite revenue/growth/efficiency connection or lack thereof>"}},"speechMetrics":{"vocabularyRichness":<0-100>,"clarityScore":<0-100>},"starAnalysis":{"overall":<0-100>,"breakdown":{"situation":<0-100>,"task":<0-100>,"action":<0-100>,"result":<0-100>},"tip":"<one sentence: which STAR component needs most improvement>"},"strengths":["str1 — citing which answer","str2","str3"],"improvements":["imp1 — what to do differently","imp2","imp3"],"feedback":"<2-3 paragraphs, constructive, cite specific quotes from their answers>","idealAnswers":[{"question":"<the original question>","ideal":"<4-5 sentence model answer restructured in STAR format: Situation, Task, Action with specific metrics, Result with quantified impact>","candidateSummary":"<what the candidate actually said, 2 sentences>","rating":"<strong|good|partial|weak>","starBreakdown":{"situation":"<present|partial|missing>","task":"<present|partial|missing>","action":"<present|partial|missing>","result":"<present|partial|missing>"},"workedWell":"<1 sentence: what the candidate did well in this answer>","toImprove":"<1 sentence: what was missing or could be better>"}],"nextSteps":["<specific actionable tip for next practice>","<second tip>","<third tip>"]}`}
 
 Be honest, specific, and cite the candidate's actual words when justifying scores.
+FACT DISCIPLINE: every fact, number, place, team size or outcome you mention MUST appear in the transcript above. Never invent or embellish details. Cover answers from the WHOLE transcript, including the later ones; do not build the feedback from the first few answers only.
 If previous session scores are provided, reference specific improvements or regressions in your feedback and strengths/improvements arrays (e.g. "Your communication improved significantly" or "Your specificity score dropped — try adding concrete metrics next time"). This helps the candidate track their growth.
 
 ${VOICE_DICTION_DIRECTIVE}

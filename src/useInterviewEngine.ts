@@ -594,7 +594,7 @@ export function useInterviewEngine() {
     });
     Promise.race([llmPromise, timeoutPromise]).then(result => {
       if (llmFetchCancelRef.current) return;
-      const questions = result?.questions ?? null;
+      const questions = result?._fallback === "static" && interviewType === "hr-round" ? null : (result?.questions ?? null);
       // Store negotiation band for follow-up API calls (validate shape to prevent malformed data)
       if (result?.negotiationBand && typeof result.negotiationBand.initialOffer === "number" && typeof result.negotiationBand.maxStretch === "number") {
         negotiationBandRef.current = result.negotiationBand;
@@ -2771,7 +2771,7 @@ export function useInterviewEngine() {
         interviewType, currentStep, scriptStepTypes: stepTypes,
       });
 
-      if (depth <= 2) {
+      if (depth <= (interviewType === "hr-round" ? 0 : 2)) {
         followUpDepthRef.current = depth;
         const followUpAiProfile = (user?.resumeData as Record<string, unknown> | undefined)?.aiProfile as {
           topSkills?: string[];

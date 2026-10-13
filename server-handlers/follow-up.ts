@@ -12,6 +12,7 @@ import { callLLM, extractJSON } from "./_llm";
 import { detectCandidateIntent, extractCandidateSalaryNumber, extractMirrorTokens, sanitizeBehaviouralRegister } from "./_follow-up-helpers";
 import { classifyCompanyTier, tierPromptSuffix } from "./_company-tier";
 import { buildFollowUpDisciplineFence } from "./_generate-questions-helpers";
+import { hrFollowUpContext } from "./_hr-follow-up";
 import { lookupSalaryContext, getNegotiationStyleContext, INDUSTRY_PACKAGE_CONTEXT, generateNegotiationBand, type NegotiationStyle } from "../data/salary-lookup";
 import { classifyBehavioralQuestion, frameworkDirective as frameworkDirectiveFor } from "../src/_question-category";
 import { detectCulturalRegister, hasAnyIndianRegister } from "../src/_cultural-register";
@@ -1363,7 +1364,7 @@ ${safeStarGap === "action"
       : "";
 
     // Salary context for salary-negotiation follow-ups (prevents losing city-adjusted rates)
-    const salaryFollowUpCtx = (type === "salary-negotiation" || type === "hr-round")
+    const salaryFollowUpCtx = type === "salary-negotiation"
       ? `\n${lookupSalaryContext({ role, company, currentCity, jobCity })}\nUse ₹ and LPA. Follow-up offers/counters MUST stay within these ranges.
 CRITICAL: You are the HIRING MANAGER making a salary offer. Stay in character — do NOT switch to behavioral interview questions. Your follow-ups must be about compensation, benefits, joining timeline, notice buyout, or counter-offers.
 
@@ -1378,12 +1379,11 @@ NUMBER DISCIPLINE — non-negotiable rules for every salary follow-up:
   8. ABOVE-MARKET ASKS: When the candidate asks for a number above your maxStretch, you MUST explicitly tell them it's above your authorized range BEFORE making any counter. Use phrases like "₹{ask} is above what's approved for this role at our level — the band caps at ₹{maxStretch}". Do NOT skip this acknowledgement and just match their number — that's silent capitulation, the worst negotiator behavior. Only after the acknowledgement may you offer your real maxStretch as a counter.`
       : "";
 
-    /* Craft fence — shared with the question generator via
-     * buildFollowUpDisciplineFence so the initial-question fence and the
-     * follow-up fence can never drift apart. Suppressed for salary turns,
-     * which run the hiring-manager persona (its own fence lives in
-     * salaryFollowUpCtx). */
-    const followUpDisciplineFence = type === "salary-negotiation"
+    const hrFollowUpCtx = hrFollowUpContext(type, question, () => lookupSalaryContext({ role, company, currentCity, jobCity }));
+
+    /* Craft fence — shared with the question generator via buildFollowUpDisciplineFence.
+     * Suppressed for salary and HR turns, which carry their own rules. */
+    const followUpDisciplineFence = (type === "salary-negotiation" || type === "hr-round")
       ? ""
       : buildFollowUpDisciplineFence(sanitizeForLLM(role, 100) || "");
 
@@ -1408,7 +1408,7 @@ ${FOLLOW_UP_STATIC_RULES}
 ${panelContext}${behavioralModeGuard}${culturalRegisterHint}${reverseInterviewDirective}
 
 Interview type: ${sanitizeForLLM(type, 50) || "behavioral"}
-Role: ${sanitizeForLLM(role, 100) || "senior role"}${company ? `\nCompany: ${sanitizeForLLM(company, 100)}` : ""}${salaryFollowUpCtx}${jdContext ? `\n${jdContext}` : ""}
+Role: ${sanitizeForLLM(role, 100) || "senior role"}${company ? `\nCompany: ${sanitizeForLLM(company, 100)}` : ""}${salaryFollowUpCtx}${hrFollowUpCtx}${jdContext ? `\n${jdContext}` : ""}
 
 ${followUpDisciplineFence}${focusTilt}
 NEVER ask a follow-up that would only make sense for a different role. If you're tempted to ask about "user metrics" or "scale" for a writing role, stop and reframe.
