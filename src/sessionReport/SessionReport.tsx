@@ -43,6 +43,9 @@ import { getInterviewerName } from "../InterviewComponents";
 import { t, f } from "./tokens";
 import { Button } from "@/components/ui/button";
 import LoadingScreen from "../_LoadingScreen";
+import ReportProgress from "./ReportProgress";
+import { useEvalStage } from "../useEvalStage";
+import { evalStageMessage } from "../_eval-progress";
 
 /* ─── Helpers — small pure functions for transcript shaping + role-
    family inference + duration parsing. Kept local so the entry stays
@@ -99,7 +102,7 @@ function parseDurationSec(s: string | undefined): number {
 
 /* ─── Loading + error UIs — cream surface to match the report ──────── */
 
-export function LoadingShell({ onBack, backLabel }: { onBack: () => void; backLabel: string }) {
+export function LoadingShell({ onBack, backLabel, sessionId }: { onBack: () => void; backLabel: string; sessionId?: string }) {
   // Phase-walking copy mirrors the legacy ProgressiveLoadingState — gives
   // the user something to read while the LLM crunches. Plain rotation;
   // we don't need state-machine choreography here.
@@ -110,6 +113,7 @@ export function LoadingShell({ onBack, backLabel }: { onBack: () => void; backLa
     "Drafting coach notes…",
   ];
   const [idx, setIdx] = useState(0);
+  const stage = useEvalStage(sessionId);
   useEffect(() => {
     const id = window.setInterval(() => setIdx((i) => (i + 1) % phases.length), 2400);
     return () => window.clearInterval(id);
@@ -140,7 +144,8 @@ export function LoadingShell({ onBack, backLabel }: { onBack: () => void; backLa
       >
         ← {backLabel}
       </Button>
-      <LoadingScreen fullScreen={false} title="Coaching your report" message={phases[idx]} footer="Usually 20–40 seconds. Can take up to 90 when our AI provider is busy." />
+      <LoadingScreen fullScreen={false} title="Coaching your report" message={stage ? evalStageMessage(stage) : phases[idx]} footer="Usually 20–40 seconds. Can take up to 90 when our AI provider is busy." />
+      {stage && <ReportProgress stage={stage} />}
     </div>
   );
 }
@@ -1139,7 +1144,7 @@ export const SessionReport = memo(function SessionReport({
 
 
   /* ── Render gates ── */
-  if (loading) return <LoadingShell onBack={onBack} backLabel={backLabel} />;
+  if (loading) return <LoadingShell onBack={onBack} backLabel={backLabel} sessionId={session.id} />;
   if (errorMsg && !report) {
     // Dead session: no answers were recorded — mic/STT never captured anything.
     // Show a focused "check your mic" prompt instead of the generic error UI.
