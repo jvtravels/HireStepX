@@ -5,6 +5,7 @@ import { countTokens } from "./_tokenizer";
 import { recordSlo } from "./_slo";
 import { redisGet, redisIncrByWithExpiry } from "./_shared";
 import { isServerFlagEnabled } from "./_feature-flags";
+import { loadProviderHealth, orderByHealth, recordProviderOutcome, setSharedCooldown } from "./_llm-health";
 
 declare const process: { env: Record<string, string | undefined> };
 
@@ -440,10 +441,18 @@ export async function callLLM(opts: LLMOptions, timeoutMs = 15000, meta?: { user
 
   // Drop providers in quota cooldown, but never empty the chain: if every
   // provider is cooling down, try them all rather than fail without a call.
-  const available = providers.filter((p) => !isProviderCoolingDown(p.name));
+  // Health is shared across instances via Redis: a provider another instance
+  // already found cooling down is skipped, and one with a high recent failure
+  // rate goes to the back of the chain rather than costing this user a timeout.
+  const health = await loadProviderHealth(providers.map((p) => p.name));
+  const available = providers.filter((p) => !isProviderCoolingDown(p.name) && !health.get(p.name)?.cooling);
   if (available.length > 0 && available.length < providers.length) {
     providers.splice(0, providers.length, ...available);
   }
+  const ordered = orderByHealth(providers, health);
+  const reordered = ordered.some((p, i) => p !== providers[i]);
+  const degradedNames = providers.filter((p) => health.get(p.name)?.degraded).map((p) => p.name);
+  providers.splice(0, providers.length, ...ordered);
 
   // Per-provider timeout: cap Groq at 10s so a real incident fails over
   // fast, but don't kneecap normal large-output calls (a 1400-token JSON
@@ -518,7 +527,10 @@ export async function callLLM(opts: LLMOptions, timeoutMs = 15000, meta?: { user
         if (meta?.userId && result.tokensUsed?.total) {
           await redisIncrByWithExpiry(tokenKey(meta.userId), result.tokensUsed.total, 90_000);
         }
-        await logUsage({ userId: meta?.userId, endpoint: meta?.endpoint, model: result.model, isFallback, promptTokens: result.tokensUsed?.prompt ?? 0, completionTokens: result.tokensUsed?.completion ?? 0, totalTokens: result.tokensUsed?.total ?? 0, latencyMs: result.latencyMs ?? 0, status: "success", sessionId: meta?.sessionId, cachedTokens: result.tokensUsed?.cached });
+        await Promise.all([
+          logUsage({ userId: meta?.userId, endpoint: meta?.endpoint, model: result.model, isFallback, promptTokens: result.tokensUsed?.prompt ?? 0, completionTokens: result.tokensUsed?.completion ?? 0, totalTokens: result.tokensUsed?.total ?? 0, latencyMs: result.latencyMs ?? 0, status: "success", sessionId: meta?.sessionId, cachedTokens: result.tokensUsed?.cached }),
+          recordProviderOutcome(provider.name, true),
+        ]);
         return result;
       } catch (err) {
         const msg = err instanceof Error ? err.message : "";
@@ -531,9 +543,16 @@ export async function callLLM(opts: LLMOptions, timeoutMs = 15000, meta?: { user
           await new Promise((r) => setTimeout(r, 800));
           continue;
         }
-        if (isQuotaExhausted(msg)) markProviderQuotaExhausted(provider.name);
-        else recordProviderFailure(provider.name, msg, isTimeout);
+        let sharedHealthWrite: Promise<void> = Promise.resolve();
+        if (isQuotaExhausted(msg)) {
+          markProviderQuotaExhausted(provider.name);
+          sharedHealthWrite = setSharedCooldown(provider.name, QUOTA_COOLDOWN_MS);
+        } else {
+          recordProviderFailure(provider.name, msg, isTimeout);
+          if (isTimeout || (transient && !isDeterministicLLMFailure(msg))) sharedHealthWrite = recordProviderOutcome(provider.name, false);
+        }
         console.error(`[LLM] ${provider.name} failed (${isTimeout ? "timeout" : "error"}): ${msg.slice(0, 150)}`);
+        await sharedHealthWrite;
         await logUsage({ userId: meta?.userId, endpoint: meta?.endpoint, model: provider.name, isFallback, promptTokens: 0, completionTokens: 0, totalTokens: 0, latencyMs: 0, status: isTimeout ? "timeout" : "error", errorMessage: msg.slice(0, 200), sessionId: meta?.sessionId });
         throw err;
       }
@@ -541,7 +560,7 @@ export async function callLLM(opts: LLMOptions, timeoutMs = 15000, meta?: { user
   };
 
   // Walk providers in order (fast: groq→gemini→gemini-2.5, slow: gemini→gemini-2.5→groq→cerebras). First success wins.
-  console.warn(`[LLM] Provider chain: ${providers.map(p => p.name).join(" → ")} (timeout: ${timeoutMs}ms${meta?.totalBudgetMs != null ? `, totalBudget: ${meta.totalBudgetMs}ms` : ""})`);
+  console.warn(`[LLM] Provider chain: ${providers.map(p => p.name).join(" → ")}${reordered ? ` (reordered, degraded: ${degradedNames.join(",")})` : ""} (timeout: ${timeoutMs}ms${meta?.totalBudgetMs != null ? `, totalBudget: ${meta.totalBudgetMs}ms` : ""})`);
   let lastErr: unknown;
   const providerErrors: string[] = [];
 
@@ -579,7 +598,8 @@ export async function callLLM(opts: LLMOptions, timeoutMs = 15000, meta?: { user
       break;
     }
     const next = providers[i + 1];
-    const hedged = meta?.hedgeAfterMs != null && provider.name === "gemini" && next?.name === GEMINI_BACKUP_MODEL;
+    const isGemini = (n?: string) => n === "gemini" || n === GEMINI_BACKUP_MODEL;
+    const hedged = meta?.hedgeAfterMs != null && isGemini(provider.name) && isGemini(next?.name);
     try {
       if (hedged) {
         const { result, primaryWon } = await raceHedged(provider, next, meta!.hedgeAfterMs!);

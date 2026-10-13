@@ -202,6 +202,14 @@ batch lifts the measured numbers.
   `evaluate-session.ts` or similar, keep static rules/schema *before*
   per-call dynamic content (transcript, tier, role) — reordering
   defeats the cache and triples per-call cost.
+- **LLM provider health is shared, not per-instance** — `_llm-health.ts`
+  keeps rolling success/failure counts and quota cooldowns in Upstash so
+  every serverless instance routes around a failing provider (degraded
+  providers move to the back of the chain, never out of it). In-memory
+  breakers alone just make each cold instance relearn the outage on a real
+  user's request. Slow-path chain is gemini → gemini-2.5-flash-lite → groq →
+  cerebras; `hedgeAfterMs` races the two Gemini models. Keep new health
+  reads bounded (`redisPipeline` has a hard timeout) and fail-open.
 - **`generate-questions` response cache** — same request body within
   300s returns from Upstash Redis (`gq:<hash>` keys) marked
   `_cached: true`. Static fallback fires from

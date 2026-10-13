@@ -719,6 +719,24 @@ export async function redisIncrByWithExpiry(key: string, by: number, ttlSec: num
   } catch { return null; }
 }
 
+/** Run raw Redis commands in one Upstash round trip under a hard timeout.
+ * Returns each command's result, or null when Redis is unavailable or slow —
+ * callers on a latency-critical path must treat null as "no information". */
+export async function redisPipeline(commands: Array<Array<string | number>>, timeoutMs = 400): Promise<unknown[] | null> {
+  if (!useRedis || commands.length === 0) return null;
+  try {
+    const res = await fetch(`${UPSTASH_URL}/pipeline`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${UPSTASH_TOKEN}`, "Content-Type": "application/json" },
+      body: JSON.stringify(commands),
+      signal: AbortSignal.timeout(timeoutMs),
+    });
+    if (!res.ok) return null;
+    const data = await res.json() as Array<{ result?: unknown }>;
+    return Array.isArray(data) ? data.map((d) => d?.result) : null;
+  } catch { return null; }
+}
+
 /** SHA-256 hex digest. Edge-runtime safe (Web Crypto). For cache keys, not security. */
 export async function hashStable(input: string): Promise<string> {
   const buf = new TextEncoder().encode(input);
