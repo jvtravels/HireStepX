@@ -8,7 +8,7 @@ import { detectSalaryPhase as detectSalaryPhaseHelper, pickServerCounter, pickNe
 import { isWalkAway } from "./_walkaway-detection";
 import { deriveConvState, phaseForState, type ConvState } from "./_negotiation-state";
 import { detectAllFailures } from "./_negotiation-failures";
-import { callLLM, extractJSON } from "./_llm";
+import { callLLM, extractJSON } from "./_llm"; import { FOLLOW_UP_SCHEMA } from "./_llm-schemas";
 import { detectCandidateIntent, extractCandidateSalaryNumber, extractMirrorTokens, sanitizeBehaviouralRegister } from "./_follow-up-helpers";
 import { classifyCompanyTier, tierPromptSuffix } from "./_company-tier";
 import { buildFollowUpDisciplineFence } from "./_generate-questions-helpers";
@@ -1527,7 +1527,7 @@ Respond JSON only:
     // 25.6s on its own, before a second dedup-retry call even starts.
     const FOLLOW_UP_LLM_BUDGET_MS = 10000;
     try {
-      result = await callLLM({ prompt, temperature: llmTemp, maxTokens: 500, jsonMode: true, fast: true }, 12000, { userId: auth.userId, endpoint: "follow-up", totalBudgetMs: FOLLOW_UP_LLM_BUDGET_MS });
+      result = await callLLM({ prompt, temperature: llmTemp, maxTokens: 500, jsonMode: true, jsonSchema: FOLLOW_UP_SCHEMA, fast: true }, 12000, { userId: auth.userId, endpoint: "follow-up", totalBudgetMs: FOLLOW_UP_LLM_BUDGET_MS });
 
       // Seed-question dedup: the LLM sometimes paraphrases the very
       // question the candidate just answered ("balance design and
@@ -1554,7 +1554,7 @@ ${question.slice(0, 400)}
 </original_question>
 
 Do NOT paraphrase that question. Your follow-up MUST probe a different dimension — a specific metric, a counterfactual, the candidate's individual role vs the team's, an obstacle they overcame, or a trade-off they didn't yet articulate. Repeating the same probe in different words is FORBIDDEN.`;
-          result = await callLLM({ prompt: seedRetryPrompt, temperature: Math.max(llmTemp + 0.15, 0.4), maxTokens: 500, jsonMode: true, fast: true }, 12000, { userId: auth.userId, endpoint: "follow-up-seed-dedup-retry", totalBudgetMs: FOLLOW_UP_LLM_BUDGET_MS });
+          result = await callLLM({ prompt: seedRetryPrompt, temperature: Math.max(llmTemp + 0.15, 0.4), maxTokens: 500, jsonMode: true, jsonSchema: FOLLOW_UP_SCHEMA, fast: true }, 12000, { userId: auth.userId, endpoint: "follow-up-seed-dedup-retry", totalBudgetMs: FOLLOW_UP_LLM_BUDGET_MS });
         }
       }
       // Verbatim-duplicate dedup retry: if the LLM's output normalizes to
@@ -1602,7 +1602,7 @@ The candidate has now responded. Repeating the SAME reply is forbidden — it ma
 - ADVANCES the conversation — a concrete ₹ counter, a specific lever you can move (joining bonus / notice flexibility / equity), or an honest "I'm at the ceiling for this role" close
 - Acknowledges what the candidate just said in their most recent answer specifically
 Repeat-text is FORBIDDEN.`;
-            result = await callLLM({ prompt: verbatimRetryPrompt, temperature: Math.max(llmTemp + 0.2, 0.4), maxTokens: 500, jsonMode: true, fast: true }, 12000, { userId: auth.userId, endpoint: "follow-up-verbatim-dedup-retry", totalBudgetMs: FOLLOW_UP_LLM_BUDGET_MS });
+            result = await callLLM({ prompt: verbatimRetryPrompt, temperature: Math.max(llmTemp + 0.2, 0.4), maxTokens: 500, jsonMode: true, jsonSchema: FOLLOW_UP_SCHEMA, fast: true }, 12000, { userId: auth.userId, endpoint: "follow-up-verbatim-dedup-retry", totalBudgetMs: FOLLOW_UP_LLM_BUDGET_MS });
           }
         }
       }
@@ -1632,7 +1632,7 @@ The candidate has now answered. Generate a COMPLETELY DIFFERENT response that:
 - ADVANCES the conversation (a new question, a concrete number, or an explicit recap of what's been said)
 - ${isSalaryNeg ? "If the candidate just shared their target, your reply MUST contain a specific ₹ counter number — not another question." : "Do not ask the same probe twice."}
 Repeat-text in followUpText is FORBIDDEN.`;
-          result = await callLLM({ prompt: antiRepeatPrompt, temperature: Math.max(llmTemp + 0.15, 0.35), maxTokens: 500, jsonMode: true, fast: true }, 12000, { userId: auth.userId, endpoint: "follow-up-dedup-retry", totalBudgetMs: FOLLOW_UP_LLM_BUDGET_MS });
+          result = await callLLM({ prompt: antiRepeatPrompt, temperature: Math.max(llmTemp + 0.15, 0.35), maxTokens: 500, jsonMode: true, jsonSchema: FOLLOW_UP_SCHEMA, fast: true }, 12000, { userId: auth.userId, endpoint: "follow-up-dedup-retry", totalBudgetMs: FOLLOW_UP_LLM_BUDGET_MS });
         }
       }
     } catch (llmErr) {

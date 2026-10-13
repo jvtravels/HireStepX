@@ -7,6 +7,7 @@
  * GEMINI_MODELS / GROQ_MODEL (env change + redeploy, no code change). */
 
 import { cloudflareModel, geminiLadder, geminiThinkingConfig, groqModel } from "./_llm-models";
+import { sendOpsAlert } from "./_ops-alert";
 import { buildReport, ladderIsThin, needsAction, type ModelReport } from "./_llm-watchdog-helpers";
 
 export const config = { runtime: "nodejs" };
@@ -95,24 +96,6 @@ export async function runWatchdog(fetchImpl: Fetch = fetch): Promise<ModelReport
   return reports;
 }
 
-async function alert(subject: string, text: string): Promise<void> {
-  const tasks: Promise<unknown>[] = [];
-  const resendKey = process.env.RESEND_API_KEY;
-  if (resendKey) {
-    tasks.push(fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${resendKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from: "HireStepX Alerts <alerts@hirestepx.com>", to: [process.env.ALERT_EMAIL || "support@hirestepx.com"], subject, text }),
-      signal: AbortSignal.timeout(3000),
-    }));
-  }
-  const slack = process.env.SLACK_ALERT_WEBHOOK_URL;
-  if (slack) {
-    tasks.push(fetch(slack, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: `*${subject}*\n${text}` }), signal: AbortSignal.timeout(3000) }));
-  }
-  await Promise.allSettled(tasks);
-}
-
 export default async function handler(req: Request): Promise<Response> {
   const cronSecret = process.env.CRON_SECRET;
   if (!cronSecret || (req.headers.get("authorization") || "") !== `Bearer ${cronSecret}`) {
@@ -130,7 +113,7 @@ export default async function handler(req: Request): Promise<Response> {
     ];
     const text = `${lines.join("\n")}\n\nRepoint with the GEMINI_MODELS (comma-separated, ordered) or GROQ_MODEL / GROQ_FAST_MODEL / CLOUDFLARE_AI_MODEL env vars in Vercel, then redeploy. No code change needed.`;
     console.error(`[LLM-WATCHDOG] action needed:\n${text}`);
-    await alert("LLM model watchdog: action needed", text);
+    await sendOpsAlert("LLM model watchdog: action needed", text);
   } else {
     console.warn(`[LLM-WATCHDOG] all models healthy: ${reports.map((r) => `${r.model}=${r.status}`).join(", ")}`);
   }

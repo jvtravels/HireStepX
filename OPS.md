@@ -153,6 +153,13 @@ curl -X POST https://hirestepx.com/api/cron/<name> -H "Authorization: Bearer $CR
 
 ---
 
+### LLM limits, prompt versions and drift
+
+- **Pre-emptive provider limits** (`_llm-limits.ts`): usage is counted in Redis (`llm_lim:*`) and a provider already spent is skipped instead of waiting for a 429. Gemini defaults to 20 calls/day per model (resets 08:00 UTC), Cloudflare to 10,000 neurons/day, Groq to 8,000 tokens/minute. Override with `GEMINI_DAILY_CALL_LIMIT` and `CLOUDFLARE_DAILY_NEURON_LIMIT`; set either to `0` to disable the check (do this once billing is enabled and the real limits are higher). Reads fail open, and the chain is never emptied.
+- **Prompt versions** (`_prompt-versions.ts`): every `$ai_generation` PostHog event carries `prompt_version`, `json_valid` and `schema_enforced`. Bump the registry entry whenever a prompt, rubric or output schema changes. A test fails if a new `callLLM` endpoint is not registered.
+- **Quality drift** (`/api/cron/llm-quality-drift`, daily 05:40 UTC): reads `model` and `overallScore` from recent `sessions.report_json` and alerts (email/Slack) on a mean-score shift of 8+ points vs the previous 18 days, a 12+ point gap between providers, or a fallback provider grading 60%+ of recent reports. It needs 15+ samples per side, so it stays quiet at low volume.
+- **Unverified**: Gemini's `responseJsonSchema` request shape could not be tested (free quota exhausted); a 400 retries without the schema, so the worst case is the old behaviour. Check `schema_enforced` vs `json_valid` in PostHog after deploy.
+
 ## Useful queries
 
 ### How many sessions used the static fallback today?

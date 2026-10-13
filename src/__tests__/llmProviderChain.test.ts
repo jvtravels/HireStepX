@@ -748,3 +748,153 @@ describe("cloudflare overflow rung", () => {
     expect(fetchSpy.mock.calls.some((a: unknown[]) => String(a[0]).includes("api.cloudflare.com"))).toBe(false);
   });
 });
+
+/* ── Schema-enforced output ────────────────────────────────────────── */
+
+describe("jsonSchema", () => {
+  const schema = { name: "demo", schema: { type: "object", properties: { a: { type: "number" } }, required: ["a"] } };
+
+  it("sends a json_schema response_format to Groq", async () => {
+    fetchSpy.mockImplementation(async (url: string) => {
+      if (String(url).includes("api.groq.com")) return groqOk('{"a":1}');
+      return new Response("{}", { status: 200 });
+    });
+    await callLLM({ prompt: "Return JSON.", jsonMode: true, fast: true, jsonSchema: schema });
+    const call = fetchSpy.mock.calls.find((a: unknown[]) => String(a[0]).includes("api.groq.com"));
+    const body = JSON.parse(call?.[1]?.body as string);
+    expect(body.response_format.type).toBe("json_schema");
+    expect(body.response_format.json_schema.name).toBe("demo");
+    expect(body.response_format.json_schema.schema).toEqual(schema.schema);
+  });
+
+  it("retries Groq as json_object when the schema is rejected with a 400", async () => {
+    const bodies: Array<{ response_format?: { type: string } }> = [];
+    fetchSpy.mockImplementation(async (url: string, init?: { body?: string }) => {
+      if (String(url).includes("api.groq.com")) {
+        bodies.push(JSON.parse(init?.body as string));
+        return bodies.length === 1 ? groqErr(400, "schema unsupported") : groqOk('{"a":2}');
+      }
+      return new Response("{}", { status: 200 });
+    });
+    const result = await callLLM({ prompt: "Return JSON.", jsonMode: true, fast: true, jsonSchema: schema });
+    expect(result.text).toBe('{"a":2}');
+    expect(bodies.map((b) => b.response_format?.type)).toEqual(["json_schema", "json_object"]);
+  });
+
+  it("sends the schema to Gemini and retries without it on a 400", async () => {
+    const bodies: Array<{ generationConfig: Record<string, unknown> }> = [];
+    fetchSpy.mockImplementation(async (url: string, init?: { body?: string }) => {
+      if (String(url).includes("generativelanguage")) {
+        bodies.push(JSON.parse(init?.body as string));
+        return bodies.length === 1 ? geminiErr(400, "bad schema") : geminiOk('{"a":3}');
+      }
+      return new Response("{}", { status: 200 });
+    });
+    const result = await callLLM({ prompt: "Return JSON.", jsonMode: true, jsonSchema: schema });
+    expect(result.text).toBe('{"a":3}');
+    expect(bodies[0].generationConfig.responseJsonSchema).toEqual(schema.schema);
+    expect(bodies[1].generationConfig.responseJsonSchema).toBeUndefined();
+  });
+
+  it("does not send a schema when jsonMode is off", async () => {
+    fetchSpy.mockImplementation(async (url: string) => {
+      if (String(url).includes("api.groq.com")) return groqOk("hi");
+      return new Response("{}", { status: 200 });
+    });
+    await callLLM({ prompt: "Hi.", fast: true, jsonSchema: schema });
+    const call = fetchSpy.mock.calls.find((a: unknown[]) => String(a[0]).includes("api.groq.com"));
+    expect(JSON.parse(call?.[1]?.body as string)).not.toHaveProperty("response_format");
+  });
+});
+
+/* ── Pre-emptive quota skipping ────────────────────────────────────── */
+
+describe("spent-provider skipping", () => {
+  async function loadWithRedis() {
+    vi.resetModules();
+    process.env.UPSTASH_REDIS_REST_URL = "https://redis.test";
+    process.env.UPSTASH_REDIS_REST_TOKEN = "tok";
+    delete process.env.GEMINI_DAILY_CALL_LIMIT;
+    return (await import("../../server-handlers/_llm")).callLLM;
+  }
+
+  afterEach(() => {
+    delete process.env.UPSTASH_REDIS_REST_URL;
+    delete process.env.UPSTASH_REDIS_REST_TOKEN;
+    delete process.env.GEMINI_DAILY_CALL_LIMIT;
+  });
+
+  it("skips Gemini rungs whose daily counter is at the limit and goes straight to Groq", async () => {
+    const call = await loadWithRedis();
+    fetchSpy.mockImplementation(async (url: string, init?: { body?: string }) => {
+      if (String(url).includes("redis.test")) {
+        const cmds = JSON.parse(init?.body as string) as string[][];
+        return new Response(JSON.stringify(cmds.map((c) => ({ result: c[1].startsWith("llm_lim:g:") ? "500" : null }))), { status: 200 });
+      }
+      if (String(url).includes("api.groq.com")) return groqOk('{"ok":1}');
+      if (String(url).includes("generativelanguage")) throw new Error("Gemini should have been skipped");
+      return new Response("{}", { status: 200 });
+    });
+    const result = await call({ prompt: "Evaluate." });
+    expect(result.text).toBe('{"ok":1}');
+    expect(fetchSpy.mock.calls.some((a: unknown[]) => String(a[0]).includes("generativelanguage"))).toBe(false);
+  });
+
+  it("does not skip a 500/day Flash-Lite rung at 20 calls, only the 20/day rungs", async () => {
+    const call = await loadWithRedis();
+    const hit: string[] = [];
+    fetchSpy.mockImplementation(async (url: string, init?: { body?: string }) => {
+      if (String(url).includes("redis.test")) {
+        const cmds = JSON.parse(init?.body as string) as string[][];
+        return new Response(JSON.stringify(cmds.map((c) => ({ result: c[1].startsWith("llm_lim:g:") ? "20" : null }))), { status: 200 });
+      }
+      if (String(url).includes("generativelanguage")) { hit.push(String(url)); return geminiOk('{"ok":5}'); }
+      return new Response("{}", { status: 200 });
+    });
+    await call({ prompt: "Evaluate." });
+    expect(hit).toHaveLength(1);
+    expect(hit[0]).toContain("gemini-3.5-flash-lite");
+  });
+
+  it("never empties the chain: if every provider reads as spent, it still tries them", async () => {
+    const call = await loadWithRedis();
+    fetchSpy.mockImplementation(async (url: string, init?: { body?: string }) => {
+      if (String(url).includes("redis.test")) {
+        const cmds = JSON.parse(init?.body as string) as string[][];
+        return new Response(JSON.stringify(cmds.map((c) => ({ result: c[1].startsWith("llm_lim:") ? "999999" : null }))), { status: 200 });
+      }
+      if (String(url).includes("generativelanguage")) return geminiOk('{"ok":2}');
+      if (String(url).includes("api.groq.com")) return groqOk('{"ok":2}');
+      return new Response("{}", { status: 200 });
+    });
+    const result = await call({ prompt: "Evaluate." });
+    expect(result.text).toBe('{"ok":2}');
+  });
+
+  it("fails open when Redis errors", async () => {
+    const call = await loadWithRedis();
+    fetchSpy.mockImplementation(async (url: string) => {
+      if (String(url).includes("redis.test")) return new Response("boom", { status: 500 });
+      if (String(url).includes("generativelanguage")) return geminiOk('{"ok":3}');
+      return new Response("{}", { status: 200 });
+    });
+    expect((await call({ prompt: "Evaluate." })).text).toBe('{"ok":3}');
+  });
+
+  it("GEMINI_DAILY_CALL_LIMIT=0 disables the Gemini skip", async () => {
+    const call = await loadWithRedis();
+    process.env.GEMINI_DAILY_CALL_LIMIT = "0";
+    vi.resetModules();
+    const callAgain = (await import("../../server-handlers/_llm")).callLLM;
+    fetchSpy.mockImplementation(async (url: string, init?: { body?: string }) => {
+      if (String(url).includes("redis.test")) {
+        const cmds = JSON.parse(init?.body as string) as string[][];
+        return new Response(JSON.stringify(cmds.map((c) => ({ result: c[1].startsWith("llm_lim:") ? "50" : null }))), { status: 200 });
+      }
+      if (String(url).includes("generativelanguage")) return geminiOk('{"ok":4}');
+      return new Response("{}", { status: 200 });
+    });
+    void call;
+    expect((await callAgain({ prompt: "Evaluate." })).text).toBe('{"ok":4}');
+  });
+});

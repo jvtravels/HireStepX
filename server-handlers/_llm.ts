@@ -3,9 +3,11 @@
 import { captureServerEvent } from "./_posthog";
 import { countTokens } from "./_tokenizer";
 import { recordSlo } from "./_slo";
-import { redisGet, redisIncrByWithExpiry } from "./_shared";
+import { redisGet, redisIncrByWithExpiry, redisPipeline } from "./_shared";
 import { isServerFlagEnabled } from "./_feature-flags";
 import { loadProviderHealth, orderByHealth, recordProviderOutcome, setSharedCooldown } from "./_llm-health";
+import { cloudflareDayKey, cloudflareDailyLimit, cloudflareNeuronsFor, cloudflareSpent, geminiDailyLimit, geminiDayKey, geminiSpent, groqAvailableCompletion, groqMinuteKey, groqMinuteWouldExceed, groqReservation, GROQ_TPM_CAP, LIMIT_KEY_TTL_SEC } from "./_llm-limits";
+import { promptVersionFor } from "./_prompt-versions";
 import { cloudflareModel, geminiLadder, geminiProviderName, isGeminiProviderName, geminiThinkingConfig, groqModel, isModelRetiredError, RETIRED_MODEL_COOLDOWN_MS } from "./_llm-models";
 
 declare const process: { env: Record<string, string | undefined> };
@@ -57,7 +59,7 @@ async function emitAiGeneration(entry: {
   userId?: string; endpoint?: string; model: string; isFallback: boolean;
   promptTokens: number; completionTokens: number; totalTokens: number;
   latencyMs: number; status: "success" | "error" | "timeout"; errorMessage?: string;
-  sessionId?: string; cachedTokens?: number;
+  sessionId?: string; cachedTokens?: number; jsonValid?: boolean; schemaEnforced?: boolean;
 }): Promise<void> {
   const distinctId = entry.userId || "anonymous";
   await captureServerEvent("$ai_generation", distinctId, {
@@ -72,6 +74,9 @@ async function emitAiGeneration(entry: {
     $ai_is_error: entry.status !== "success",
     $ai_span_name: entry.endpoint || "unknown",
     is_fallback: entry.isFallback,
+    prompt_version: promptVersionFor(entry.endpoint),
+    json_valid: entry.jsonValid ?? null,
+    schema_enforced: entry.schemaEnforced ?? false,
     status: entry.status,
     error_message: entry.errorMessage?.slice(0, 200) || null,
   });
@@ -81,7 +86,7 @@ async function logUsage(entry: {
   userId?: string; endpoint?: string; model: string; isFallback: boolean;
   promptTokens: number; completionTokens: number; totalTokens: number;
   latencyMs: number; status: "success" | "error" | "timeout"; errorMessage?: string;
-  sessionId?: string; cachedTokens?: number;
+  sessionId?: string; cachedTokens?: number; jsonValid?: boolean; schemaEnforced?: boolean;
 }): Promise<void> {
   await emitAiGeneration(entry);
   if (!USAGE_LOGGING_ENABLED) return;
@@ -269,6 +274,10 @@ interface LLMOptions {
   // complete report. Defaults to maxTokens when unset.
   fallbackMaxTokens?: number;
   jsonMode?: boolean;
+  // Provider-enforced output shape (Groq json_schema, Gemini responseJsonSchema).
+  // Cloudflare has no JSON mode, so callers must still validate. A provider
+  // that rejects the schema with a 400 is retried once without it.
+  jsonSchema?: { name: string; schema: Record<string, unknown> };
   fast?: boolean;
   // Groq-only: the smallest completion a caller considers usable, in tokens.
   // callGroq() skips the API call outright (no network round trip) when the
@@ -286,7 +295,7 @@ interface LLMResult {
   text: string;
   model: string;
   fallback: boolean;
-  tokensUsed?: { prompt: number; completion: number; total: number; cached?: number };
+  tokensUsed?: { prompt: number; completion: number; total: number; cached?: number; neurons?: number };
   latencyMs?: number;
 }
 
@@ -298,8 +307,6 @@ interface LLMResult {
 // ~(cap - margin - max_tokens); sizing max_tokens off the ACTUAL prompt size
 // keeps every call under the cap, and skipping outright when even the floor
 // doesn't fit saves a doomed round trip instead of waiting out its 413.
-const GROQ_TPM_CAP = 8000;
-const GROQ_TPM_SAFETY_MARGIN = 400; // estimator slack + response-format overhead
 const GROQ_DEFAULT_MIN_COMPLETION_TOKENS = 256;
 
 // A provider declined before any network call (prompt can never fit). Not a
@@ -313,20 +320,17 @@ async function callGroq(opts: LLMOptions, signal?: AbortSignal): Promise<LLMResu
   const model = groqModel(!!opts.fast);
   const requestedMaxTokens = opts.maxTokens ?? 2000;
   const promptTokens = countTokens(opts.prompt);
-  // The estimator undercounts dense text (Indic scripts, punctuation-heavy
-  // transcripts), and Groq's 413 counts the real tokens. Scale the margin
-  // with prompt size so a near-cap prompt skips Groq up front instead of
-  // paying a doomed round trip.
-  const availableCompletionBudget = GROQ_TPM_CAP - GROQ_TPM_SAFETY_MARGIN - Math.ceil(promptTokens * 0.1) - promptTokens;
   const minCompletionTokens = opts.groqMinCompletionTokens ?? GROQ_DEFAULT_MIN_COMPLETION_TOKENS;
-  if (availableCompletionBudget < minCompletionTokens) {
+  const reservation = groqReservation(promptTokens, requestedMaxTokens, minCompletionTokens);
+  if (!reservation) {
     throw new LLMPreflightSkip(
-      `Groq skipped — prompt (~${promptTokens} tokens) leaves ~${Math.max(0, availableCompletionBudget)} tokens under the ${GROQ_TPM_CAP} TPM free-tier cap, below the ${minCompletionTokens}-token floor for a usable response`,
+      `Groq skipped — prompt (~${promptTokens} tokens) leaves ~${Math.max(0, groqAvailableCompletion(promptTokens))} tokens under the ${GROQ_TPM_CAP} TPM free-tier cap, below the ${minCompletionTokens}-token floor for a usable response`,
     );
   }
-  const maxTokens = Math.min(requestedMaxTokens, availableCompletionBudget);
+  const maxTokens = reservation.maxTokens;
+  await redisIncrByWithExpiry(groqMinuteKey(model), reservation.reserved, LIMIT_KEY_TTL_SEC.groq);
   const start = Date.now();
-  const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+  const post = (withSchema: boolean) => fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
     headers: { "Content-Type": "application/json", "Authorization": `Bearer ${GROQ_API_KEY}` },
     signal,
@@ -343,9 +347,16 @@ async function callGroq(opts: LLMOptions, signal?: AbortSignal): Promise<LLMResu
       // "Failed to validate JSON" (400). Capping reasoning effort to "low"
       // keeps the overhead small enough to fit the existing budgets.
       reasoning_effort: "low",
-      ...(opts.jsonMode ? { response_format: { type: "json_object" } } : {}),
+      ...(opts.jsonMode ? { response_format: withSchema && opts.jsonSchema
+        ? { type: "json_schema", json_schema: { name: opts.jsonSchema.name, strict: false, schema: opts.jsonSchema.schema } }
+        : { type: "json_object" } } : {}),
     }),
   });
+  let res = await post(true);
+  if (res.status === 400 && opts.jsonMode && opts.jsonSchema) {
+    console.warn(`[LLM] Groq ${model} rejected the response schema (400) — retrying with json_object`);
+    res = await post(false);
+  }
   const latencyMs = Date.now() - start;
   if (!res.ok) {
     const errText = await res.text().catch(() => "");
@@ -355,6 +366,9 @@ async function callGroq(opts: LLMOptions, signal?: AbortSignal): Promise<LLMResu
   const data = await res.json();
   const usage = data.usage;
   const tokensUsed = usage ? { prompt: usage.prompt_tokens, completion: usage.completion_tokens, total: usage.total_tokens, cached: usage.prompt_tokens_details?.cached_tokens } : undefined;
+  if (typeof usage?.total_tokens === "number") {
+    await redisIncrByWithExpiry(groqMinuteKey(model), usage.total_tokens - reservation.reserved, LIMIT_KEY_TTL_SEC.groq);
+  }
   return { text: data.choices?.[0]?.message?.content || "", model, fallback: false, tokensUsed, latencyMs };
 }
 
@@ -379,7 +393,7 @@ async function callGemini(opts: LLMOptions, signal: AbortSignal | undefined, mod
   // sending both is itself a 400, so don't add thinkingBudget back
   // "for safety".
   const start = Date.now();
-  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+  const post = (withSchema: boolean) => fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
     method: "POST",
     headers: { "Content-Type": "application/json", "x-goog-api-key": GEMINI_API_KEY },
     signal,
@@ -389,10 +403,16 @@ async function callGemini(opts: LLMOptions, signal: AbortSignal | undefined, mod
         temperature: opts.temperature ?? 0.3,
         maxOutputTokens: opts.fallbackMaxTokens ?? opts.maxTokens ?? 2000,
         ...(opts.jsonMode ? { responseMimeType: "application/json" } : {}),
+        ...(opts.jsonMode && withSchema && opts.jsonSchema ? { responseJsonSchema: opts.jsonSchema.schema } : {}),
         thinkingConfig: geminiThinkingConfig(model),
       },
     }),
   });
+  let res = await post(true);
+  if (res.status === 400 && opts.jsonMode && opts.jsonSchema) {
+    console.warn(`[LLM] Gemini ${model} rejected the response schema (400) — retrying with plain JSON mode`);
+    res = await post(false);
+  }
   const latencyMs = Date.now() - start;
   if (!res.ok) {
     const errText = await res.text().catch(() => "");
@@ -437,8 +457,46 @@ async function callCloudflare(opts: LLMOptions, signal?: AbortSignal): Promise<L
   const data = await res.json();
   const body = data.choices ? data : data.result;
   const usage = body?.usage;
-  const tokensUsed = usage ? { prompt: usage.prompt_tokens, completion: usage.completion_tokens, total: usage.total_tokens } : undefined;
+  const neurons = cloudflareNeuronsFor(usage);
+  await redisIncrByWithExpiry(cloudflareDayKey(), neurons, LIMIT_KEY_TTL_SEC.cloudflare);
+  const tokensUsed = usage ? { prompt: usage.prompt_tokens, completion: usage.completion_tokens, total: usage.total_tokens, neurons } : undefined;
   return { text: body?.choices?.[0]?.message?.content || "", model: `cloudflare-${model}`, fallback: false, tokensUsed, latencyMs };
+}
+
+/* Providers whose known free-tier budget is already spent (or would be blown
+   by this very request), read in one Redis round trip. Skipping them up front
+   saves the failed call; the chain is never emptied by this (see benched). */
+async function loadSpentProviders(
+  providers: ReadonlyArray<{ name: string; model?: string }>,
+  ladder: string[],
+  opts: LLMOptions,
+): Promise<Set<string>> {
+  const spent = new Set<string>();
+  const commands: Array<Array<string | number>> = [];
+  const verdicts: Array<(used: number) => void> = [];
+  const cloudflareLimit = cloudflareDailyLimit();
+  for (const p of providers) {
+    if (p.model && isGeminiProviderName(p.name, ladder)) {
+      const geminiLimit = geminiDailyLimit(p.model);
+      if (geminiLimit <= 0) continue;
+      commands.push(["GET", geminiDayKey(p.model)]);
+      verdicts.push((used) => { if (geminiSpent(used, geminiLimit)) spent.add(p.name); });
+    } else if (p.name === "groq" && p.model) {
+      const reservation = groqReservation(countTokens(opts.prompt), opts.maxTokens ?? 2000, opts.groqMinCompletionTokens ?? GROQ_DEFAULT_MIN_COMPLETION_TOKENS);
+      if (!reservation) continue;
+      commands.push(["GET", groqMinuteKey(p.model)]);
+      verdicts.push((used) => { if (groqMinuteWouldExceed(used, reservation.reserved)) spent.add(p.name); });
+    } else if (p.name === "cloudflare") {
+      if (cloudflareLimit <= 0) continue;
+      commands.push(["GET", cloudflareDayKey()]);
+      verdicts.push((used) => { if (cloudflareSpent(used, cloudflareLimit)) spent.add(p.name); });
+    }
+  }
+  if (commands.length === 0) return spent;
+  const results = await redisPipeline(commands, 300);
+  if (!results) return spent;
+  results.forEach((raw, i) => verdicts[i](Number(raw) || 0));
+  return spent;
 }
 
 export async function callLLM(opts: LLMOptions, timeoutMs = 15000, meta?: { userId?: string; endpoint?: string; groqTimeoutMs?: number; sessionId?: string; totalBudgetMs?: number; hedgeAfterMs?: number; excludeGemini?: boolean }): Promise<LLMResult> {
@@ -481,9 +539,10 @@ export async function callLLM(opts: LLMOptions, timeoutMs = 15000, meta?: { user
   // instead of inheriting a 24h bench from the old id.
   const retiredKey = (p: ProviderEntry) => (p.model ? `retired:${p.model}` : "");
   const health = await loadProviderHealth(providers.flatMap((p) => (p.model ? [p.name, retiredKey(p)] : [p.name])));
+  const spentProviders = await loadSpentProviders(providers, ladder, opts);
   const benched = (p: ProviderEntry) => {
     const rk = retiredKey(p);
-    return isProviderCoolingDown(p.name) || !!health.get(p.name)?.cooling || (!!rk && (isProviderCoolingDown(rk) || !!health.get(rk)?.cooling));
+    return spentProviders.has(p.name) || isProviderCoolingDown(p.name) || !!health.get(p.name)?.cooling || (!!rk && (isProviderCoolingDown(rk) || !!health.get(rk)?.cooling));
   };
   const available = providers.filter((p) => !benched(p));
   if (available.length > 0 && available.length < providers.length) {
@@ -567,9 +626,14 @@ export async function callLLM(opts: LLMOptions, timeoutMs = 15000, meta?: { user
         if (meta?.userId && result.tokensUsed?.total) {
           await redisIncrByWithExpiry(tokenKey(meta.userId), result.tokensUsed.total, 90_000);
         }
+        const jsonValid = opts.jsonMode ? extractJSON(result.text) !== null : undefined;
+        if (jsonValid === false) console.warn(`[LLM] ${provider.name} returned unparseable JSON for ${meta?.endpoint ?? "unknown"} (${result.text.length} chars)`);
         await Promise.all([
-          logUsage({ userId: meta?.userId, endpoint: meta?.endpoint, model: result.model, isFallback, promptTokens: result.tokensUsed?.prompt ?? 0, completionTokens: result.tokensUsed?.completion ?? 0, totalTokens: result.tokensUsed?.total ?? 0, latencyMs: result.latencyMs ?? 0, status: "success", sessionId: meta?.sessionId, cachedTokens: result.tokensUsed?.cached }),
+          logUsage({ userId: meta?.userId, endpoint: meta?.endpoint, model: result.model, isFallback, promptTokens: result.tokensUsed?.prompt ?? 0, completionTokens: result.tokensUsed?.completion ?? 0, totalTokens: result.tokensUsed?.total ?? 0, latencyMs: result.latencyMs ?? 0, status: "success", sessionId: meta?.sessionId, cachedTokens: result.tokensUsed?.cached, jsonValid, schemaEnforced: !!opts.jsonSchema }),
           recordProviderOutcome(provider.name, true),
+          provider.model && isGeminiProviderName(provider.name, ladder)
+            ? redisIncrByWithExpiry(geminiDayKey(provider.model), 1, LIMIT_KEY_TTL_SEC.gemini)
+            : Promise.resolve(null),
         ]);
         return result;
       } catch (err) {
