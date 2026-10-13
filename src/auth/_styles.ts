@@ -233,7 +233,7 @@ export const AUTH_STYLES = `
     /* Hero → form gap on mobile — generous enough that hero reads as
        its own block, tight enough that they still feel related. */
     .hsx-login-hero   { margin-bottom: 36px !important; }
-    .hsx-login-footer { padding: 24px 20px 32px !important; font-size: 11px !important; }
+    .hsx-login-footer { padding: 24px 20px 32px !important; font-size: 12px !important; }
     .hsx-login-signup-prompt { font-size: 13px !important; }
     .hsx-login-subtitle { font-size: 14px !important; margin-top: 12px !important; margin-bottom: 0 !important; line-height: 1.45 !important; }
     .hsx-login-form-fields { gap: 14px !important; }

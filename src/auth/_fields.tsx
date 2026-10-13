@@ -224,7 +224,7 @@ export function Field({
           style={{
             width: "100%",
             fontFamily: f.sans,
-            fontSize: 15,
+            fontSize: 16,
             color: t.coal,
             background: "transparent",
             border: "none",
@@ -454,7 +454,7 @@ export function PasswordStrengthMeter({
           aria-hidden="true"
           style={{
             fontFamily: f.mono,
-            fontSize: 10,
+            fontSize: 12,
             textTransform: "uppercase",
             letterSpacing: "0.08em",
             color: filled <= 1 ? t.error : filled <= 2 ? t.inkSoft : t.success,

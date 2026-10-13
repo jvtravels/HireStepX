@@ -12,7 +12,7 @@ const TONE: Record<StatusTone, string> = {
 
 export default function StatusPill({ label, tone, className }: { label: string; tone: StatusTone; className?: string }) {
   return (
-    <span className={cn("inline-flex h-5 shrink-0 items-center rounded-full px-2 text-[11px] font-medium whitespace-nowrap", TONE[tone], className)}>
+    <span className={cn("inline-flex h-5 shrink-0 items-center rounded-full px-2 text-xs font-medium whitespace-nowrap", TONE[tone], className)}>
       {label}
     </span>
   );

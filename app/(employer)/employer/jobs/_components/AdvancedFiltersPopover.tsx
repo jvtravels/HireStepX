@@ -30,7 +30,7 @@ function CheckboxGroup({ legend, options, value, onChange }: { legend: string; o
               key={o}
               htmlFor={id}
               className="pointer-coarse:min-h-11"
-              style={{ display: "flex", alignItems: "center", gap: 8, minHeight: 28, fontFamily: f.sans, fontSize: 14, color: t.coal, cursor: "pointer" }}
+              style={{ display: "flex", alignItems: "center", gap: 8, minHeight: "max(28px, var(--coarse-min, 0px))", fontFamily: f.sans, fontSize: 14, color: t.coal, cursor: "pointer" }}
             >
               <Checkbox
                 id={id}

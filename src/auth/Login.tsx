@@ -378,6 +378,9 @@ export default function Login() {
               className="hsx-link-indigo"
               onClick={() => trackAuth({ type: "login_signup_clicked" })}
               style={{
+                display: "inline-flex",
+                alignItems: "center",
+                minHeight: "max(24px, var(--coarse-min, 0px))",
                 color: t.indigo,
                 fontWeight: 600,
                 textDecoration: "none",
@@ -665,7 +668,7 @@ export default function Login() {
                   style={{
                     display: "inline-flex",
                     alignItems: "center",
-                    height: 20,
+                    minHeight: "max(24px, var(--coarse-min, 0px))",
                     fontFamily: f.sans,
                     fontSize: 13,
                     fontWeight: 500,
@@ -769,6 +772,9 @@ export default function Login() {
               color: t.inkSoft,
               textDecoration: "underline",
               fontWeight: 500,
+              display: "inline-block",
+              padding: "12px 4px",
+              margin: "-12px -4px",
             }}
           >
             Terms of Use
@@ -783,6 +789,9 @@ export default function Login() {
               color: t.inkSoft,
               textDecoration: "underline",
               fontWeight: 500,
+              display: "inline-block",
+              padding: "12px 4px",
+              margin: "-12px -4px",
             }}
           >
             Privacy Policy

@@ -136,7 +136,7 @@ export default function ConversationList({
                           {c.name}
                         </span>
                         {c.lastMessageAt && (
-                          <time dateTime={c.lastMessageAt} className={cn("shrink-0 text-[11px]", c.unread ? "font-medium text-primary" : "text-muted-foreground")}>
+                          <time dateTime={c.lastMessageAt} className={cn("shrink-0 text-xs", c.unread ? "font-medium text-primary" : "text-muted-foreground")}>
                             <span className="sr-only">Last message </span>
                             {listTime(c.lastMessageAt)}
                           </time>
@@ -145,7 +145,7 @@ export default function ConversationList({
                       <span className="truncate text-[13px] text-muted-foreground">{c.roleTitle}</span>
                       <span className="mt-0.5 flex items-center gap-2">
                         <StatusPill label={c.statusLabel} tone={c.statusTone} />
-                        {!c.lastMessageAt && <span className="text-[11px] text-muted-foreground">No messages yet</span>}
+                        {!c.lastMessageAt && <span className="text-xs text-muted-foreground">No messages yet</span>}
                       </span>
                     </span>
                   </button>

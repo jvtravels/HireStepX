@@ -301,13 +301,13 @@ export default function AppShellFrame({
               </BreadcrumbItem>
               <BreadcrumbSeparator className="max-[480px]:hidden" />
               {extraCrumbs && extraCrumbs.length > 0 ? (
-                <BreadcrumbItem>
-                  <BreadcrumbLink onClick={() => onNavigate(pageLabelPath ?? breadcrumbRoot.path)} style={{ color: c.inkSoft, cursor: "pointer", display: "flex", alignItems: "center" }}>
+                <BreadcrumbItem className="min-w-0 shrink-[3]">
+                  <BreadcrumbLink onClick={() => onNavigate(pageLabelPath ?? breadcrumbRoot.path)} style={{ color: c.inkSoft, cursor: "pointer", display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     {pageLabel}
                   </BreadcrumbLink>
                 </BreadcrumbItem>
               ) : (
-                <BreadcrumbItem>
+                <BreadcrumbItem className="min-w-0">
                   <BreadcrumbPage style={{ fontSize: 13, fontWeight: 600, color: c.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>
                     {pageLabel}
                   </BreadcrumbPage>
@@ -318,13 +318,13 @@ export default function AppShellFrame({
                 return (
                   <Fragment key={`${crumb.label}-${i}`}>
                     <BreadcrumbSeparator />
-                    <BreadcrumbItem>
+                    <BreadcrumbItem className={isLast || !crumb.path ? "min-w-0" : "min-w-0 shrink-[3]"}>
                       {isLast || !crumb.path ? (
                         <BreadcrumbPage style={{ fontSize: 13, fontWeight: 600, color: c.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>
                           {crumb.label}
                         </BreadcrumbPage>
                       ) : (
-                        <BreadcrumbLink onClick={() => onNavigate(crumb.path!)} style={{ color: c.inkSoft, cursor: "pointer", display: "flex", alignItems: "center" }}>
+                        <BreadcrumbLink onClick={() => onNavigate(crumb.path!)} style={{ color: c.inkSoft, cursor: "pointer", display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                           {crumb.label}
                         </BreadcrumbLink>
                       )}

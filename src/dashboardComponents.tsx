@@ -571,7 +571,7 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
               {verifyRetries > 0 && (
                 <Button size="sm" onClick={retryVerification}>Retry Verification</Button>
               )}
-              <Button variant="outline" size="sm" onClick={() => { setError(""); setVerifyRetries(0); }} style={{ color: T.indigo, minHeight: 36 }}>Dismiss</Button>
+              <Button variant="outline" size="sm" onClick={() => { setError(""); setVerifyRetries(0); }} style={{ color: T.indigo, minHeight: "max(36px, var(--coarse-min, 0px))" }}>Dismiss</Button>
             </div>
           </div>
         )}

@@ -593,7 +593,7 @@ export default function Signup() {
                 <p
                   style={{
                     fontFamily: f.mono,
-                    fontSize: 11,
+                    fontSize: 12,
                     textTransform: "uppercase",
                     letterSpacing: "0.12em",
                     color: t.inkFaint,
@@ -653,6 +653,9 @@ export default function Signup() {
               href={buildAuthLink("/login", searchParams)}
               className="hsx-link-indigo"
               style={{
+                display: "inline-flex",
+                alignItems: "center",
+                minHeight: "max(24px, var(--coarse-min, 0px))",
                 color: t.indigo,
                 fontWeight: 600,
                 textDecoration: "none",
@@ -1164,6 +1167,9 @@ export default function Signup() {
               color: t.inkSoft,
               textDecoration: "underline",
               fontWeight: 500,
+              display: "inline-block",
+              padding: "12px 4px",
+              margin: "-12px -4px",
             }}
           >
             Terms of Use
@@ -1178,6 +1184,9 @@ export default function Signup() {
               color: t.inkSoft,
               textDecoration: "underline",
               fontWeight: 500,
+              display: "inline-block",
+              padding: "12px 4px",
+              margin: "-12px -4px",
             }}
           >
             Privacy Policy

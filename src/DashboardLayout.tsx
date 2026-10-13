@@ -304,7 +304,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                 aria-label={user.cancelAtPeriodEnd
                   ? `Plan ends ${new Date(user.subscriptionEnd).toLocaleDateString("en-IN", { day: "numeric", month: "short" })} — access until then`
                   : `Sprint Pack valid till ${new Date(user.subscriptionEnd).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}`}
-                style={{ marginLeft: "auto", fontFamily: font.ui, fontSize: 10, whiteSpace: "nowrap",
+                style={{ marginLeft: "auto", fontFamily: font.ui, fontSize: 12, whiteSpace: "nowrap",
                   color: user.cancelAtPeriodEnd ? c.ember : c.inkSoft,
                   opacity: user.cancelAtPeriodEnd ? 0.9 : 0.65 }}
               >
@@ -347,14 +347,14 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 2 }}>
                   <p
                     aria-live="polite"
-                    style={{ fontFamily: font.ui, fontSize: 11, lineHeight: 1.4, margin: 0,
+                    style={{ fontFamily: font.ui, fontSize: 12, lineHeight: 1.4, margin: 0,
                       color: isLow ? c.ember : c.inkSoft,
                       fontWeight: isLow ? 600 : 400,
                       opacity: showExhaustedAlarm ? 0.65 : 1 }}
                   >
                     Sessions used
                   </p>
-                  <span style={{ fontFamily: font.mono, fontSize: 11,
+                  <span style={{ fontFamily: font.mono, fontSize: 12,
                     color: showExhaustedAlarm ? c.ember : isLow ? c.ember : c.inkSoft,
                     opacity: showExhaustedAlarm ? 0.75 : 1, fontWeight: showExhaustedAlarm ? 600 : 400 }}>
                     {planUsed} of {planTotal}
@@ -382,7 +382,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                       background: hasCredits ? T.success100 : T.copperWash,
                       border: hasCredits ? `1px solid ${T.successLine}` : `1px solid ${T.copperMid}`,
                       borderRadius: 8 }}>
-                      <span style={{ fontFamily: font.ui, fontSize: 11, display: "flex", alignItems: "center", gap: 5,
+                      <span style={{ fontFamily: font.ui, fontSize: 12, display: "flex", alignItems: "center", gap: 5,
                         color: hasCredits ? T.successInk : T.copper }}>
                         {hasCredits ? (
                           <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={T.successInk} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
@@ -408,7 +408,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                     (exhaustion is already stated by the red usage row + buy
                     CTA), so only render when the footnote is non-empty. */}
                 {isStarter && starterPackFootnote(starterRemaining) && (
-                  <p style={{ fontFamily: font.ui, fontSize: 10, color: c.inkSoft,
+                  <p style={{ fontFamily: font.ui, fontSize: 12, color: c.inkSoft,
                     marginBottom: 10, marginTop: -6 }}>
                     {starterPackFootnote(starterRemaining)}
                   </p>

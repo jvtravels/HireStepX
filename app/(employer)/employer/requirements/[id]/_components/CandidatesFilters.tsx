@@ -22,7 +22,7 @@ const optionStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   gap: 8,
-  minHeight: 32,
+  minHeight: "max(32px, var(--coarse-min, 0px))",
   fontFamily: f.sans,
   fontSize: textSize.base,
   color: t.coal,

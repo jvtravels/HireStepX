@@ -65,7 +65,7 @@ export default function ContextRail({ facts, interviewAt, messages, onOpenAttach
                   <FileTextIcon aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-[13px] font-medium text-foreground">{m.attachmentName || "Attachment"}</span>
-                    <span className="block text-[11px] text-muted-foreground">{dayLabel(m.createdAt)}</span>
+                    <span className="block text-xs text-muted-foreground">{dayLabel(m.createdAt)}</span>
                   </span>
                 </button>
               </li>

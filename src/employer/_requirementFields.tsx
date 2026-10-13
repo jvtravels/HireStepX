@@ -82,7 +82,7 @@ export function NumberField({
 }
 
 const chipStyle = (pressed: boolean): CSSProperties => ({
-  minHeight: 34,
+  minHeight: "max(34px, var(--coarse-min, 0px))",
   padding: "6px 14px",
   borderRadius: 999,
   border: `1px solid ${pressed ? t.indigo : t.line}`,

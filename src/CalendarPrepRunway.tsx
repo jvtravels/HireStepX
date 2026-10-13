@@ -366,7 +366,7 @@ export function PrepRunwayRail({ scenario = SCENARIOS[0] }: { scenario?: Scenari
                       alignItems: "center",
                       justifyContent: "center",
                       gap: 5,
-                      minHeight: 36,
+                      minHeight: "max(36px, var(--coarse-min, 0px))",
                       background: c.slate,
                       color: c.carbon,
                       border: "none",

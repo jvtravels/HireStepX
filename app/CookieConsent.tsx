@@ -24,6 +24,7 @@ const choiceButtonStyle = {
 export default function CookieConsent() {
   const [visible, setVisible] = useState(false);
   const [current, setCurrent] = useState<ConsentChoice | null>(null);
+  const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
     // First visit, or the banner version changed (parseStoredConsent returns
@@ -34,7 +35,7 @@ export default function CookieConsent() {
     if (!getCookieConsent()) t = setTimeout(() => setVisible(true), 400);
     // Footer / account-menu "Cookie settings" link: reopen so a previous
     // choice can be changed as easily as it was given.
-    const reopen = () => { setCurrent(getCookieConsent()); setVisible(true); };
+    const reopen = () => { setCurrent(getCookieConsent()); setExpanded(true); setVisible(true); };
     window.addEventListener(OPEN_SETTINGS_EVENT, reopen);
     return () => {
       if (t) clearTimeout(t);
@@ -49,6 +50,7 @@ export default function CookieConsent() {
     if (accepted) captureClientEvent("cookie_consent_accepted");
     setCurrent(accepted ? "accepted" : "rejected");
     setVisible(false);
+    setExpanded(false);
   };
 
   if (!visible) return null;
@@ -72,6 +74,7 @@ export default function CookieConsent() {
           .hsx-cookie-banner > div:first-child { flex: 1 1 100% !important; font-size: 12.5px !important; line-height: 1.5 !important; }
           .hsx-cookie-actions { width: 100% !important; flex-wrap: nowrap !important; }
           .hsx-cookie-actions > button { flex: 1 1 0 !important; }
+          .hsx-cookie-toggle { min-height: 44px; padding: 0 8px !important; }
         }
       `}</style>
     <div
@@ -95,14 +98,27 @@ export default function CookieConsent() {
         gap: 16,
         alignItems: "center",
         flexWrap: "wrap",
-        maxHeight: "85vh",
+        maxHeight: "85dvh",
         overflowY: "auto",
       }}
     >
       <div id="cookie-consent-desc" style={{ flex: "1 1 260px", fontSize: 13, lineHeight: 1.55, color: "#4A4540" }}>
         <strong style={{ color: "#0E0C08" }}>Your cookie choices.</strong>{" "}
         {current && <>You currently have <strong>{current === "accepted" ? "Accept all" : "Essential only"}</strong> selected. </>}
-        Nothing below loads unless you choose &ldquo;Accept all&rdquo;.
+        {expanded
+          ? <>Nothing below loads unless you choose &ldquo;Accept all&rdquo;.</>
+          : <>Essential cookies keep you signed in. Analytics{showAdsNote ? " and advertising" : ""} cookies only load if you choose &ldquo;Accept all&rdquo;.</>}{" "}
+        <button
+          type="button"
+          className="hsx-cookie-toggle"
+          aria-expanded={expanded}
+          aria-controls="cookie-consent-details"
+          onClick={() => setExpanded((v) => !v)}
+          style={{ font: "inherit", color: "#8A5F22", textDecoration: "underline", background: "none", border: 0, padding: "0 4px", cursor: "pointer" }}
+        >
+          {expanded ? "Hide details" : "Details"}
+        </button>
+        {expanded && <div id="cookie-consent-details">
         <ul style={{ margin: "8px 0 8px", paddingLeft: 18 }}>
           <li><strong>Essential (always on):</strong> sign-in, security, and remembering this choice.</li>
           <li>
@@ -119,6 +135,7 @@ export default function CookieConsent() {
           Privacy policy
         </a>
         .
+        </div>}
       </div>
       <div className="hsx-cookie-actions" style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
         {/* Equal prominence: identical size, weight and fill for both choices. */}

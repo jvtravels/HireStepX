@@ -93,43 +93,43 @@ export interface AccountSectionProps {
 export const accSubtleBtn: React.CSSProperties = {
   fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ink,
   background: c.graphite, border: `1px solid ${c.borderStrong}`, borderRadius: 8,
-  padding: "10px 14px", cursor: "pointer", minHeight: 40,
+  padding: "10px 14px", cursor: "pointer", minHeight: "max(40px, var(--coarse-min, 0px))",
 };
 
 export const accSubtleBtnGhost: React.CSSProperties = {
   fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.inkSoft,
   background: "transparent", border: "none", borderRadius: 8,
-  padding: "10px 14px", cursor: "pointer", minHeight: 40,
+  padding: "10px 14px", cursor: "pointer", minHeight: "max(40px, var(--coarse-min, 0px))",
 };
 
 export const dangerSubtleBtn: React.CSSProperties = {
   fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ember,
   background: "transparent", border: `1px solid ${t.errorLine}`,
-  borderRadius: 8, padding: "10px 14px", cursor: "pointer", minHeight: 40,
+  borderRadius: 8, padding: "10px 14px", cursor: "pointer", minHeight: "max(40px, var(--coarse-min, 0px))",
 };
 
 export const dangerSolidBtn: React.CSSProperties = {
   fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.cream,
   background: c.ember, border: "none",
-  borderRadius: 8, padding: "10px 14px", cursor: "pointer", minHeight: 40,
+  borderRadius: 8, padding: "10px 14px", cursor: "pointer", minHeight: "max(40px, var(--coarse-min, 0px))",
 };
 
 export const successSubtleBtn: React.CSSProperties = {
   fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.cream,
   background: c.sage, border: `1px solid ${c.sage}`,
-  borderRadius: 8, padding: "10px 14px", cursor: "pointer", minHeight: 40,
+  borderRadius: 8, padding: "10px 14px", cursor: "pointer", minHeight: "max(40px, var(--coarse-min, 0px))",
 };
 
 export const indigoPrimaryBtn: React.CSSProperties = {
   fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.cream,
   background: c.indigo, border: `1px solid ${c.indigo}`,
-  borderRadius: 8, padding: "10px 16px", cursor: "pointer", minHeight: 40,
+  borderRadius: 8, padding: "10px 16px", cursor: "pointer", minHeight: "max(40px, var(--coarse-min, 0px))",
 };
 
 export const indigoGhostBtn: React.CSSProperties = {
   fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ink,
   background: c.graphite, border: `1px solid ${c.borderStrong}`,
-  borderRadius: 8, padding: "10px 16px", cursor: "pointer", minHeight: 40,
+  borderRadius: 8, padding: "10px 16px", cursor: "pointer", minHeight: "max(40px, var(--coarse-min, 0px))",
 };
 
 export function SectionHead({ kicker: k, title, desc, tone }: { kicker?: string; title: string; desc?: string; tone?: "danger" }) {
@@ -215,7 +215,7 @@ export function ActionRow({ icon, tone, title, desc, action, last }: {
 export const flatRowBtn: React.CSSProperties = {
   fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ink,
   background: c.creamSoft, border: `1px solid ${c.border}`, borderRadius: 8,
-  padding: "9px 14px", cursor: "pointer", minHeight: 36,
+  padding: "9px 14px", cursor: "pointer", minHeight: "max(36px, var(--coarse-min, 0px))",
 };
 
 export function KeyValue({ label, value, right }: { label: string; value: string; right?: React.ReactNode }) {
@@ -547,7 +547,7 @@ export const PortfolioLinksSection = memo(function PortfolioLinksSection(props: 
               style={{
                 fontFamily: font.ui, fontSize: "clamp(13px, calc(13px + (768px - 100vw) * 1000), 16px)", color: c.ink, background: c.cream,
                 border: `1px solid ${c.borderStrong}`, borderRadius: 9, padding: "10px 14px",
-                minHeight: 40, boxSizing: "border-box",
+                minHeight: "max(40px, var(--coarse-min, 0px))", boxSizing: "border-box",
               }}
             />
             <input
@@ -560,7 +560,7 @@ export const PortfolioLinksSection = memo(function PortfolioLinksSection(props: 
               style={{
                 fontFamily: font.ui, fontSize: "clamp(13px, calc(13px + (768px - 100vw) * 1000), 16px)", color: c.ink, background: c.cream,
                 border: `1px solid ${c.borderStrong}`, borderRadius: 9, padding: "10px 14px",
-                minHeight: 40, boxSizing: "border-box",
+                minHeight: "max(40px, var(--coarse-min, 0px))", boxSizing: "border-box",
               }}
             />
             {formError && (
@@ -1078,7 +1078,7 @@ export const DangerZoneSection = memo(function DangerZoneSection(props: DangerZo
               style={{
                 fontFamily: font.ui, fontSize: "clamp(13px, calc(13px + (768px - 100vw) * 1000), 16px)", color: c.ink, background: c.graphite,
                 border: `1px solid ${t.errorLine}`, borderRadius: 9, padding: "10px 14px",
-                minWidth: 0, width: "100%", minHeight: 40, boxSizing: "border-box",
+                minWidth: 0, width: "100%", minHeight: "max(40px, var(--coarse-min, 0px))", boxSizing: "border-box",
               }} />
             {!isOAuthOnlyUser && (
               <input type="password" value={deletePasswordInput}
@@ -1089,7 +1089,7 @@ export const DangerZoneSection = memo(function DangerZoneSection(props: DangerZo
                 style={{
                   fontFamily: font.ui, fontSize: "clamp(13px, calc(13px + (768px - 100vw) * 1000), 16px)", color: c.ink, background: c.graphite,
                   border: `1px solid ${t.errorLine}`, borderRadius: 9, padding: "10px 14px",
-                  minWidth: 0, width: "100%", minHeight: 40, boxSizing: "border-box",
+                  minWidth: 0, width: "100%", minHeight: "max(40px, var(--coarse-min, 0px))", boxSizing: "border-box",
                 }} />
             )}
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center", marginTop: 4 }}>

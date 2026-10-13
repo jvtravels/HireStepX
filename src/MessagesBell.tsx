@@ -126,7 +126,7 @@ export default function MessagesBell({
             groups.map((group) => (
               <div key={group.counterpartName}>
                 <p aria-hidden="true" style={{
-                  margin: 0, padding: "8px 12px 2px", fontFamily: F.sans, fontSize: 10.5, fontWeight: 700,
+                  margin: 0, padding: "8px 12px 2px", fontFamily: F.sans, fontSize: 12, fontWeight: 700,
                   color: T.inkSoft, textTransform: "uppercase", letterSpacing: "0.04em",
                 }}>
                   {group.counterpartName}
@@ -150,7 +150,7 @@ export default function MessagesBell({
                           {c.roleTitle}
                         </p>
                         {c.lastMessageAt && (
-                          <p style={{ margin: "3px 0 0", fontFamily: F.sans, fontSize: 11, color: T.inkSoft }}>
+                          <p style={{ margin: "3px 0 0", fontFamily: F.sans, fontSize: 12, color: T.inkSoft }}>
                             {timeAgo(c.lastMessageAt)}
                           </p>
                         )}

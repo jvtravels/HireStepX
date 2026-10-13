@@ -44,7 +44,7 @@
    *   --text-3xl  : page headings
    *   --text-4xl+ : hero / display (handled inline with clamp())
    * ───────────────────────────────────────────────────────────────────── */
-  --text-xs:   11px;
+  --text-xs:   12px;
   --text-sm:   12px;
   --text-base: 13px;
   --text-md:   14px;
@@ -346,6 +346,7 @@ body {
 
 /* ─── Mobile Touch Targets ─── */
 @media (pointer: coarse) {
+  :root { --coarse-min: 44px; }
   input, select, textarea { min-height: 44px; }
   button { min-height: 44px; }
 }

@@ -1000,7 +1000,7 @@ export function SegmentedControl<T extends string>({
             className="pointer-coarse:min-h-11"
             style={{
               padding: "8px 16px",
-              minHeight: 36,
+              minHeight: "max(36px, var(--coarse-min, 0px))",
               borderRadius: 8,
               border: "none",
               background: selected ? t.white : "transparent",

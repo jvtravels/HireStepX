@@ -150,7 +150,7 @@ export default function Composer({
               </ul>
             </PopoverContent>
           </Popover>
-          <span id={hintId} className="ml-auto hidden px-2 text-[11px] text-muted-foreground md:inline">
+          <span id={hintId} className="ml-auto hidden px-2 text-xs text-muted-foreground md:inline">
             <kbd className="font-sans font-semibold">Enter</kbd> to send · <kbd className="font-sans font-semibold">Shift+Enter</kbd> new line
           </span>
           <Button

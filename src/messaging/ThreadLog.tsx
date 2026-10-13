@@ -135,7 +135,7 @@ export default function ThreadLog({
                     </AvatarFallback>
                   </Avatar>
                 ) : (
-                  <time dateTime={m.createdAt} aria-hidden="true" className="block pt-1 text-center text-[10px] text-muted-foreground opacity-0 group-hover/msg:opacity-100">
+                  <time dateTime={m.createdAt} aria-hidden="true" className="block pt-1 text-center text-xs text-muted-foreground opacity-0 group-hover/msg:opacity-100">
                     {clockTime(m.createdAt)}
                   </time>
                 )}
@@ -145,20 +145,20 @@ export default function ThreadLog({
                   <div className="flex items-baseline gap-2">
                     <span className="text-sm font-semibold text-foreground">{own ? "You" : sender}</span>
                     <time dateTime={m.createdAt} className="text-xs text-muted-foreground">{clockTime(m.createdAt)}</time>
-                    {m.flagged && <span className="rounded-full bg-red-100 px-1.5 text-[11px] font-medium text-red-700 dark:bg-red-500/20 dark:text-red-300">Flagged</span>}
+                    {m.flagged && <span className="rounded-full bg-red-100 px-1.5 text-xs font-medium text-red-700 dark:bg-red-500/20 dark:text-red-300">Flagged</span>}
                   </div>
                 )}
                 <span className="sr-only">{row.showHeader ? "" : `${own ? "You" : sender}: `}</span>
                 {m.body && <p className="m-0 text-sm leading-relaxed [overflow-wrap:anywhere] whitespace-pre-wrap text-foreground">{m.body}</p>}
                 {m.attachmentPath && <AttachmentCard message={m} onOpen={onOpenAttachment} />}
-                {own && m.id === lastOwnId && <p className="m-0 mt-0.5 text-[11px] text-muted-foreground">Delivered</p>}
+                {own && m.id === lastOwnId && <p className="m-0 mt-0.5 text-xs text-muted-foreground">Delivered</p>}
               </div>
               {!own && onReport && (
                 <button
                   type="button"
                   onClick={() => onReport(m.id)}
                   aria-label={`Report message from ${otherName} sent ${new Date(m.createdAt).toLocaleString()}`}
-                  className="absolute top-1 right-3 flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-[11px] text-muted-foreground opacity-0 transition-opacity group-hover/msg:opacity-100 hover:text-foreground focus-visible:opacity-100 pointer-coarse:min-h-11 pointer-coarse:opacity-100"
+                  className="absolute top-1 right-3 flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-xs text-muted-foreground opacity-0 transition-opacity group-hover/msg:opacity-100 hover:text-foreground focus-visible:opacity-100 pointer-coarse:min-h-11 pointer-coarse:opacity-100"
                 >
                   <FlagIcon aria-hidden="true" className="size-3" /> Report
                 </button>
