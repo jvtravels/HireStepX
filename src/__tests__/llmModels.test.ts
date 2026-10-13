@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import {
-  geminiLadder, geminiProviderName, isGeminiProviderName, geminiThinkingConfig, groqModel, isModelRetiredError, DEFAULT_GEMINI_MODELS,
+  geminiLadder, geminiProviderName, isGeminiProviderName, geminiThinkingConfig, groqModel, isModelRetiredError, DEFAULT_GEMINI_MODELS, cerebrasModel, DEFAULT_CEREBRAS_MODEL,
 } from "../../server-handlers/_llm-models";
 import { buildReport, classifyProbe, isListed, ladderIsThin, needsAction, KNOWN_RETIRING } from "../../server-handlers/_llm-watchdog-helpers";
 
@@ -147,5 +147,21 @@ describe("llm-model-watchdog handler", () => {
     const body = await (await call("s3cret")).json();
     expect(body.reports.find((r: { model: string }) => r.model === "gemini-3.5-flash-lite").status).toBe("busy");
     errSpy.mockRestore();
+  });
+});
+
+describe("cerebrasModel", () => {
+  it("defaults to a model Cerebras still serves and honours a valid override", () => {
+    expect(cerebrasModel("")).toBe(DEFAULT_CEREBRAS_MODEL);
+    expect(cerebrasModel(undefined)).toBe("gpt-oss-120b");
+    expect(cerebrasModel(" qwen-3.8-27b ")).toBe("qwen-3.8-27b");
+  });
+  it("ignores an invalid id instead of sending it to the API", () => {
+    expect(cerebrasModel("../x y")).toBe(DEFAULT_CEREBRAS_MODEL);
+  });
+  it("flags the removed Cerebras llama ids as retiring", () => {
+    expect(buildReport("cerebras", "llama-3.3-70b", null, undefined).status).toBe("retiring");
+    expect(buildReport("cerebras", "llama3.1-8b", null, undefined).status).toBe("retiring");
+    expect(buildReport("cerebras", "gpt-oss-120b", new Set(["gpt-oss-120b"]), undefined).status).toBe("ok");
   });
 });

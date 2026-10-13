@@ -140,7 +140,7 @@ export function LoadingShell({ onBack, backLabel }: { onBack: () => void; backLa
       >
         ← {backLabel}
       </Button>
-      <LoadingScreen fullScreen={false} title="Coaching your report" message={phases[idx]} footer="Usually takes 15–30 seconds." />
+      <LoadingScreen fullScreen={false} title="Coaching your report" message={phases[idx]} footer="Usually 20–40 seconds. Can take up to 90 when our AI provider is busy." />
     </div>
   );
 }

@@ -6,7 +6,7 @@ import { recordSlo } from "./_slo";
 import { redisGet, redisIncrByWithExpiry } from "./_shared";
 import { isServerFlagEnabled } from "./_feature-flags";
 import { loadProviderHealth, orderByHealth, recordProviderOutcome, setSharedCooldown } from "./_llm-health";
-import { geminiLadder, geminiProviderName, isGeminiProviderName, geminiThinkingConfig, groqModel, isModelRetiredError, RETIRED_MODEL_COOLDOWN_MS } from "./_llm-models";
+import { cerebrasModel, geminiLadder, geminiProviderName, isGeminiProviderName, geminiThinkingConfig, groqModel, isModelRetiredError, RETIRED_MODEL_COOLDOWN_MS } from "./_llm-models";
 
 declare const process: { env: Record<string, string | undefined> };
 
@@ -388,9 +388,9 @@ async function callGemini(opts: LLMOptions, signal: AbortSignal | undefined, mod
 }
 
 async function callCerebras(opts: LLMOptions, signal?: AbortSignal): Promise<LLMResult> {
-  // Cerebras' free tier serves llama-3.3-70b at ~2200 tok/s — drop-in OpenAI-compatible.
-  // Used as a third fallback so a Groq+Gemini outage doesn't kill the interview.
-  const model = opts.fast ? "llama3.1-8b" : "llama-3.3-70b";
+  // Third fallback so a Groq+Gemini outage doesn't kill the interview. Its free
+  // tier takes the full-size report prompt that Groq's 8K TPM cap rejects.
+  const model = cerebrasModel();
   const start = Date.now();
   const res = await fetch("https://api.cerebras.ai/v1/chat/completions", {
     method: "POST",
@@ -401,6 +401,7 @@ async function callCerebras(opts: LLMOptions, signal?: AbortSignal): Promise<LLM
       messages: [{ role: "user", content: opts.prompt }],
       temperature: opts.temperature ?? 0.3,
       max_tokens: opts.fallbackMaxTokens ?? opts.maxTokens ?? 2000,
+      reasoning_effort: "low",
       ...(opts.jsonMode ? { response_format: { type: "json_object" } } : {}),
     }),
   });
@@ -435,7 +436,7 @@ export async function callLLM(opts: LLMOptions, timeoutMs = 15000, meta?: { user
     providers.push(...geminiEntries());
     if (GROQ_API_KEY) providers.push({ name: "groq", model: groqModel(!!opts.fast), call: (s) => callGroq(opts, s) });
   }
-  if (CEREBRAS_API_KEY) providers.push({ name: "cerebras", call: (s) => callCerebras(opts, s) });
+  if (CEREBRAS_API_KEY) providers.push({ name: "cerebras", model: cerebrasModel(), call: (s) => callCerebras(opts, s) });
 
   if (providers.length === 0) throw new Error("No LLM configured — set GROQ_API_KEY, GEMINI_API_KEY, or CEREBRAS_API_KEY");
 
