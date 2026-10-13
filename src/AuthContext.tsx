@@ -12,7 +12,6 @@ import {
 import { captureClientEvent, identifyClient, resetClient } from "./posthogClient";
 import {
   PENDING_CONSENT_KEY,
-  CONSENT_METADATA_KEY,
   consentDoneKey,
   currentSignupConsent,
   resolveConsentToRecord,
@@ -1291,7 +1290,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => { unsubscribe?.(); };
   }, []);
 
-  const signup = useCallback(async (email: string, name: string, password: string, redirectPath?: string): Promise<{ success: boolean; error?: string; userId?: string }> => {
+  const signup = useCallback(async (email: string, name: string, password: string, _redirectPath?: string): Promise<{ success: boolean; error?: string; userId?: string }> => {
     track("signup_started");
     if (!supabaseConfigured) {
       // localStorage fallback
@@ -1322,190 +1321,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!/[^A-Za-z0-9]/.test(password)) return { success: false, error: "Password must include a special character." };
     if (!name.trim() || name.trim().length > 48) return { success: false, error: "Name is required (max 48 characters)." };
 
-    // Server-side signup rate limiting (prevents spam signups from same IP)
-    try {
-      const rlCheck = await fetch("/api/send-welcome", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "check", email: email.toLowerCase().trim(), intent: "signup" }),
-      });
-      if (rlCheck.status === 429) {
-        return { success: false, error: "Too many signup attempts. Please try again in a few minutes." };
-      }
-    } catch { /* rate limit check failed, proceed */ }
-
-    const client = await getSupabase();
-    const metadata: Record<string, string> = { name, [CONSENT_METADATA_KEY]: currentSignupConsent().version };
-
-    // Suppress auth listener during signup to prevent premature redirect
+    // Account creation, rate limiting and the single Resend verification mail
+    // all happen server-side (admin createUser with email_confirm:false), so
+    // Supabase never sends its own confirmation mail. The server answers
+    // { ok: true } for new and existing emails alike (enumeration defense).
     signingUpRef.current = true;
-
     try {
-      const { data, error } = await client.auth.signUp({
-        email,
-        password,
-        options: { data: metadata, emailRedirectTo: `${window.location.origin}${redirectPath ?? "/dashboard"}` },
-      });
-
-      if (error) {
-        // OWASP-aligned UX even when Supabase returns an explicit
-        // "already registered" error (instead of the fake-success
-        // path we handle below). Fire the "you already have an
-        // account" email and return success — UI then shows the
-        // same "Check your email" state regardless of whether the
-        // account is new, existing-verified, or existing-pending-
-        // verification. User never reads "couldn't complete signup".
-        const lower = (error.message || "").toLowerCase();
-        const isAlreadyRegistered =
-          lower.includes("already registered") ||
-          lower.includes("already exists") ||
-          lower.includes("user already");
-        if (isAlreadyRegistered) {
-          fetch("/api/send-welcome", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              action: "signup-attempted-existing",
-              email: email.toLowerCase().trim(),
-              name,
-            }),
-          }).catch(() => {});
-          track("signup_attempted_existing");
-          return { success: true };
-        }
-        return { success: false, error: error.message };
-      }
-
-      // Detect existing-email signups across Supabase's response shapes:
-      //
-      //   1. OWASP enumeration protection ON (default): data.user is
-      //      returned with `identities: []` — empty array. We fall
-      //      through to the existing-account email.
-      //   2. Newer Supabase configs / "Confirm email" enabled but
-      //      enumeration protection lax: data.user is returned with the
-      //      REAL user record (populated identities). For an already-
-      //      VERIFIED email, email_confirmed_at is a non-null timestamp.
-      //      For an existing-but-UNVERIFIED email, identities are
-      //      populated AND email_confirmed_at is null — indistinguishable
-      //      from a fresh signup based on those fields alone. The tell
-      //      is data.user.created_at: a fresh signup has it within a few
-      //      seconds of "now"; an existing user's is older.
-      //   3. Enumeration protection OFF entirely: Supabase returns an
-      //      explicit "already registered" error — handled in the
-      //      `if (error)` block above.
-      //
-      // Hitting any path funnels into the same "Check your email" UX so
-      // legit users never read "couldn't complete signup", and we never
-      // double-fire a verification email at someone whose account already
-      // exists (verified or not).
-      const userObj = data?.user as
-        | (typeof data.user & {
-            email_confirmed_at?: string | null;
-            created_at?: string | null;
-          })
-        | undefined;
-      const createdAtMs = userObj?.created_at
-        ? new Date(userObj.created_at).getTime()
-        : NaN;
-      const looksOlderThanFreshSignup =
-        Number.isFinite(createdAtMs) && Date.now() - createdAtMs > 5_000;
-
-      // Confirm-email startup probe (#33 from the audit).
-      //
-      // If Supabase's "Confirm email" project setting is OFF, every
-      // new signup comes back with email_confirmed_at IMMEDIATELY
-      // set — bypassing our verification flow entirely. Without this
-      // detection we'd misclassify the new user as "existing" (they
-      // hit the email_confirmed_at branch below) and silently route
-      // them through the "you already have an account" mail.
-      //
-      // The reliable distinguisher: created_at is fresh (<5s) AND
-      // identities is populated AND email_confirmed_at is set. That
-      // can only happen if Supabase auto-confirmed.
-      //
-      // When detected:
-      //   • Log CRITICAL so monitoring catches the misconfig
-      //   • Treat the user as a successfully-signed-up new user (the
-      //     verification email is moot — they're already confirmed)
-      //   • Do NOT route through the existing-account email path
-      const isFreshSignup =
-        Number.isFinite(createdAtMs) && Date.now() - createdAtMs <= 5_000;
-      const looksAutoConfirmed =
-        isFreshSignup &&
-        !!userObj?.email_confirmed_at &&
-        !!userObj?.identities &&
-        userObj.identities.length > 0;
-      if (looksAutoConfirmed) {
-        console.error(
-          "[CRITICAL] Supabase auto-confirm appears enabled — new signup " +
-          "arrived with email_confirmed_at already set. Verification flow " +
-          "is bypassed. Toggle 'Confirm email' ON in Supabase Auth settings.",
-        );
-        track("supabase_autoconfirm_detected");
-      }
-
-      const isExistingEmail =
-        !!userObj &&
-        !looksAutoConfirmed &&
-        (!userObj.identities ||
-          userObj.identities.length === 0 ||
-          !!userObj.email_confirmed_at ||
-          looksOlderThanFreshSignup);
-      if (isExistingEmail) {
-        // Fire-and-forget — non-blocking. Server routes to the
-        // "existing-account" template via the action flag.
-        fetch("/api/send-welcome", {
+      let res: Response;
+      try {
+        res = await fetch("/api/send-welcome", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            action: "signup-attempted-existing",
-            email: email.toLowerCase().trim(),
+            action: "create-account",
+            email: email.trim(),
             name,
+            password,
+            ref: readPendingReferralCode() || undefined,
           }),
-        }).catch(() => {});
-        track("signup_attempted_existing");
-        // Return success to client — the UI shows the same "Check your
-        // email" screen, the user gets either a verification email (new
-        // account) or a "you already have an account, sign in here"
-        // email (existing account). Either way, attacker can't tell.
-        return { success: true };
-      }
-
-      // Record signup attempt server-side (fire-and-forget)
-      fetch("/api/send-welcome", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "signup", email: email.toLowerCase().trim() }),
-      }).catch(err => console.warn("[auth] signup rate-limit tracking failed (non-blocking):", err?.message));
-
-      // Send verification email via Resend API (don't block signup on failure)
-      const userId = data?.user?.id;
-      try {
-        // Carry the pending referral code (if any) through the verification
-        // link itself. The email is typically opened in a different browser
-        // context than the one that stored it (mail app webview, a different
-        // device), so localStorage alone never survives the round trip — see
-        // verify-email.ts, which forwards it onto the /login redirect so this
-        // browser's Login page can re-store it before the user signs in.
-        const pendingRef = readPendingReferralCode();
-        await fetch("/api/send-welcome", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, name, userId, ref: pendingRef || undefined }),
         });
-      } catch { /* verification email is best-effort */ }
-
-      // Sign out so user must verify email before using the app
-      await client.auth.signOut();
-      setUser(null);
+      } catch {
+        return { success: false, error: "Couldn't reach the server. Check your connection and try again." };
+      }
+      if (!res.ok) {
+        const body: { error?: string } | null = await res.json().catch(() => null);
+        if (res.status === 429) return { success: false, error: body?.error || "Too many signup attempts. Please try again in a few minutes." };
+        return { success: false, error: body?.error || "Couldn't complete signup. Please try again." };
+      }
 
       track("signup_completed", { method: "email" });
-      if (userId) {
-        identifyClient(userId, { signup_method: "email" });
-        captureClientEvent("user_signed_up", { method: "email" });
-        sendGtagEvent("sign_up", { method: "email" });
-      }
-      return { success: true, userId };
+      captureClientEvent("user_signed_up", { method: "email" });
+      sendGtagEvent("sign_up", { method: "email" });
+      return { success: true };
     } finally {
       signingUpRef.current = false;
     }
