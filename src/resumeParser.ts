@@ -512,6 +512,22 @@ function parseSkills(text: string): string[] {
   });
 }
 
+/* Resume company lines read "PayLedger Technologies (Fintech), Bengaluru": keep
+ * only the employer so the setup form's Company prefill isn't a whole line.
+ * A comma suffix survives when it is a legal-entity tail ("Acme, Inc."). */
+export function cleanCompanyName(raw: string): string {
+  const noParens = raw.replace(/\s*\([^)]*\)/g, "").trim();
+  const [head, ...tail] = noParens.split(",").map((p) => p.trim()).filter(Boolean);
+  if (!head) return noParens;
+  const legal = /^(inc|ltd|llc|llp|pvt|limited|corp|co)\b/i;
+  const kept = [head];
+  for (const part of tail) {
+    if (legal.test(part)) kept.push(part);
+    else break;
+  }
+  return kept.join(", ");
+}
+
 function parseExperience(text: string): ResumeExperience[] {
   const entries: ResumeExperience[] = [];
   const lines = text.split("\n").map(l => l.trim()).filter(Boolean);
@@ -540,7 +556,7 @@ function parseExperience(text: string): ResumeExperience[] {
       const splitMatch = rest.match(/^(.+?)\s*(?:at|@|\||,|–|—)\s*(.+)$/i);
       current = {
         title: splitMatch ? splitMatch[1].trim() : rest,
-        company: splitMatch ? splitMatch[2].trim() : "",
+        company: splitMatch ? cleanCompanyName(splitMatch[2]) : "",
         period,
         bullets: [],
       };
@@ -548,7 +564,7 @@ function parseExperience(text: string): ResumeExperience[] {
       current.bullets.push(line.replace(bulletPattern, "").trim());
     } else if (current && !isBullet && line.length < 80 && !current.company) {
       // Might be company on a separate line
-      current.company = line;
+      current.company = cleanCompanyName(line);
     } else if (current && line.length > 20) {
       // Long non-bullet line — treat as a bullet
       current.bullets.push(line);

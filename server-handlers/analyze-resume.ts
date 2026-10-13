@@ -429,7 +429,7 @@ CRITICAL RULES:
     // skillsDetailed[] (8 entries × ~30 tokens). Without the bump,
     // resumes with 4+ roles truncate the JSON mid-experience and the
     // parser fails. 3500 keeps a comfortable margin.
-    const result = await callLLM({ prompt, temperature: 0, maxTokens: 3500, jsonMode: true }, 10000, { userId: auth.userId, endpoint: "analyze-resume", totalBudgetMs: 18000 });
+    const result = await callLLM({ prompt, temperature: 0, maxTokens: 3500, jsonMode: true }, 10000, { userId: auth.userId, endpoint: "analyze-resume", totalBudgetMs: 21000, hedgeAfterMs: 6000, reserveMs: 8000 });
     const tLLM = Date.now() - tLLM0;
 
     const rawProfile = extractJSON<Record<string, unknown>>(result.text);

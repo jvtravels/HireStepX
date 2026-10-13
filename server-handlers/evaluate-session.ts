@@ -754,6 +754,7 @@ This keeps the report's coverage signal deterministic across sessions and makes 
 - lengthVerdict.wordCount must be the actual word count of answerText. Target range depends on question type: behavioral 120-240, system design 180-360, opener 60-120, deep-dive probe 150-300.
 - storyReuseFindings only fires when the SAME underlying project/situation is used for DIFFERENT competencies (e.g. once for leadership, again for trade-offs). Two behavioral answers from different projects is fine; same project across two is a flag.
 - scoreConfidence should reflect transcript quality and answer clarity. Short interviews (<3 turns), garbled transcripts, or highly ambiguous answers warrant <0.7.
+- When the CONTEXT line "Company:" is "none", the candidate has not named a target company: never invent one, never write bracketed placeholders like [company], and write "this role" or "this team" wherever a company name would go.
 - Return ONLY valid JSON — no markdown wrapping, no prose.
 
 CONTEXT:

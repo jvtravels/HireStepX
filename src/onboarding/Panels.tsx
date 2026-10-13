@@ -784,9 +784,12 @@ export function ProfileReadyState({
             ) : (
               <div
                 role="status"
-                style={{ alignSelf: "flex-start", display: "inline-flex", alignItems: "center", gap: 6, padding: "5px 11px", borderRadius: 999, background: t.warning100, border: `1px solid ${t.warningLine}`, fontFamily: f.mono, fontSize: 11, letterSpacing: "0.10em", textTransform: "uppercase", color: t.warningInk, fontWeight: 500, marginBottom: 14 }}
+                style={{ alignSelf: "flex-start", display: "inline-flex", alignItems: "center", flexWrap: "wrap", gap: 8, padding: "5px 11px", borderRadius: 999, background: t.warning100, border: `1px solid ${t.warningLine}`, fontFamily: f.mono, fontSize: 11, letterSpacing: "0.10em", textTransform: "uppercase", color: t.warningInk, fontWeight: 500, marginBottom: 14 }}
               >
-                Quick profile — AI analysis unavailable
+                Quick profile — AI analysis didn't finish
+                <Button type="button" variant="link" onClick={onReanalyze} className="hsx-link-indigo">
+                  Try again
+                </Button>
               </div>
             )}
 

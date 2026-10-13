@@ -191,3 +191,15 @@ B.Tech Computer Science`;
     });
   });
 });
+
+describe("cleanCompanyName", () => {
+  it("drops the industry parenthetical and the trailing city", async () => {
+    const { cleanCompanyName } = await import("../resumeParser");
+    expect(cleanCompanyName("PayLedger Technologies (Fintech), Bengaluru")).toBe("PayLedger Technologies");
+  });
+  it("keeps legal-entity suffixes", async () => {
+    const { cleanCompanyName } = await import("../resumeParser");
+    expect(cleanCompanyName("Acme Widgets, Inc.")).toBe("Acme Widgets, Inc.");
+    expect(cleanCompanyName("Flipkart")).toBe("Flipkart");
+  });
+});

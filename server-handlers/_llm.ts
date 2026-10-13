@@ -499,7 +499,7 @@ async function loadSpentProviders(
   return spent;
 }
 
-export async function callLLM(opts: LLMOptions, timeoutMs = 15000, meta?: { userId?: string; endpoint?: string; groqTimeoutMs?: number; sessionId?: string; totalBudgetMs?: number; hedgeAfterMs?: number; excludeGemini?: boolean }): Promise<LLMResult> {
+export async function callLLM(opts: LLMOptions, timeoutMs = 15000, meta?: { userId?: string; endpoint?: string; groqTimeoutMs?: number; sessionId?: string; totalBudgetMs?: number; hedgeAfterMs?: number; reserveMs?: number; excludeGemini?: boolean }): Promise<LLMResult> {
   type ProviderEntry = { name: string; model?: string; call: (s: AbortSignal) => Promise<LLMResult> };
   const providers: ProviderEntry[] = [];
   const ladder = geminiLadder();
@@ -589,9 +589,14 @@ export async function callLLM(opts: LLMOptions, timeoutMs = 15000, meta?: { user
     ? Math.max(0, meta.totalBudgetMs - (Date.now() - startedAt))
     : Infinity;
 
+  // reserveMs keeps the tail of the budget for the non-Gemini providers: a
+  // Gemini rung may only spend what is left beyond it, so a hung ladder can no
+  // longer run the clock out before Groq or Cloudflare get a single attempt.
+  const geminiReserve = meta?.reserveMs != null && providers.some((p) => !isGeminiProviderName(p.name, ladder)) ? meta.reserveMs : 0;
   const providerTimeout = (name: string) => {
+    const isGemini = isGeminiProviderName(name, ladder);
     const base = name === "groq" ? groqCap : timeoutMs;
-    return Math.min(base, remainingBudget());
+    return Math.min(base, remainingBudget() - (isGemini ? geminiReserve : 0));
   };
 
   // Retry classification lives in module-scope isTransientLLMError (above):

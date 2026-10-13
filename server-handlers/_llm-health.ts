@@ -19,6 +19,13 @@ const MEMO_MS = 10_000;
 
 export const DEGRADED_MIN_FAILURES = 4;
 export const DEGRADED_FAILURE_RATE = 0.5;
+/* The rate window above needs volume to trip, and at tens of calls an hour a
+ * rung that times out almost every call never accumulates 4 failures in 2
+ * minutes. A streak of consecutive failures (Envoy-style outlier ejection) has
+ * no volume floor; any success clears it and the TTL doubles as the half-open
+ * probe: once it lapses the rung is tried again first. */
+export const STREAK_DEMOTE_AT = 2;
+export const STREAK_TTL_SEC = 600;
 
 export interface ProviderHealth {
   degraded: boolean;
@@ -35,6 +42,7 @@ export function resetHealthMemo(): void {
 const bucketOf = (now: number) => Math.floor(now / WINDOW_MS);
 const key = (kind: "f" | "s", name: string, bucket: number) => `llmh:${kind}:${name}:${bucket}`;
 const coolKey = (name: string) => `llmh:cool:${name}`;
+const streakKey = (name: string) => `llmh:streak:${name}`;
 
 export function isDegraded(failures: number, successes: number): boolean {
   if (failures < DEGRADED_MIN_FAILURES) return false;
@@ -44,7 +52,10 @@ export function isDegraded(failures: number, successes: number): boolean {
 export async function recordProviderOutcome(name: string, ok: boolean, now = Date.now()): Promise<void> {
   const k = key(ok ? "s" : "f", name, bucketOf(now));
   memo.delete(name);
-  await redisPipeline([["INCR", k], ["EXPIRE", k, BUCKET_TTL_SEC, "NX"]]);
+  await redisPipeline([
+    ["INCR", k], ["EXPIRE", k, BUCKET_TTL_SEC, "NX"],
+    ...(ok ? [["DEL", streakKey(name)]] : [["INCR", streakKey(name)], ["EXPIRE", streakKey(name), STREAK_TTL_SEC]]),
+  ]);
 }
 
 export async function setSharedCooldown(name: string, durationMs: number): Promise<void> {
@@ -68,15 +79,15 @@ export async function loadProviderHealth(names: string[], now = Date.now()): Pro
   const commands = stale.flatMap((n) => [
     ["GET", key("f", n, cur)], ["GET", key("f", n, cur - 1)],
     ["GET", key("s", n, cur)], ["GET", key("s", n, cur - 1)],
-    ["GET", coolKey(n)],
+    ["GET", coolKey(n)], ["GET", streakKey(n)],
   ]);
   const results = await redisPipeline(commands);
   stale.forEach((n, i) => {
     let value = HEALTHY;
     if (results) {
-      const r = results.slice(i * 5, i * 5 + 5);
+      const r = results.slice(i * 6, i * 6 + 6);
       value = {
-        degraded: isDegraded(num(r[0]) + num(r[1]), num(r[2]) + num(r[3])),
+        degraded: isDegraded(num(r[0]) + num(r[1]), num(r[2]) + num(r[3])) || num(r[5]) >= STREAK_DEMOTE_AT,
         cooling: r[4] != null,
       };
       memo.set(n, { at: now, value });

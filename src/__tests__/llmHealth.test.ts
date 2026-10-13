@@ -19,6 +19,7 @@ vi.mock("../../server-handlers/_shared", async (orig) => {
         if (op === "GET") return store.get(k) ?? null;
         if (op === "INCR") { const n = Number(store.get(k) ?? 0) + 1; store.set(k, String(n)); return n; }
         if (op === "SET") { store.set(k, rest[0]); return "OK"; }
+        if (op === "DEL") { store.delete(k); return 1; }
         return 1;
       });
     }),
@@ -65,6 +66,7 @@ describe("loadProviderHealth", () => {
 
   it("recovers once the failures age out of the window", async () => {
     for (let i = 0; i < 4; i++) await health.recordProviderOutcome("gemini", false, now);
+    store.delete("llmh:streak:gemini"); // the fake has no TTLs; the streak key outlives the rate window by design
     health.resetHealthMemo();
     const h = await health.loadProviderHealth(["gemini"], now + 3 * 60_000);
     expect(h.get("gemini")?.degraded).toBe(false);
@@ -152,5 +154,33 @@ describe("callLLM routing from shared health", () => {
     await callLLM({ prompt: "Evaluate." }, 7000);
     expect(store.has("llmh:cool:gemini")).toBe(true);
     vi.unstubAllGlobals();
+  });
+});
+
+describe("consecutive-failure streak (low-traffic breaker)", () => {
+  const now = 1_700_000_000_000;
+
+  it("demotes a rung after 2 failures in a row without the volume the rate window needs", async () => {
+    await health.recordProviderOutcome("gemini", false, now);
+    health.resetHealthMemo();
+    expect((await health.loadProviderHealth(["gemini"], now)).get("gemini")?.degraded).toBe(false);
+    await health.recordProviderOutcome("gemini", false, now + 30 * 60_000);
+    health.resetHealthMemo();
+    const h = await health.loadProviderHealth(["gemini", "groq"], now + 30 * 60_000);
+    expect(h.get("gemini")?.degraded).toBe(true);
+    expect(h.get("groq")?.degraded).toBe(false);
+  });
+
+  it("a single success clears the streak", async () => {
+    await health.recordProviderOutcome("gemini", false, now);
+    await health.recordProviderOutcome("gemini", false, now);
+    await health.recordProviderOutcome("gemini", true, now);
+    health.resetHealthMemo();
+    expect((await health.loadProviderHealth(["gemini"], now)).get("gemini")?.degraded).toBe(false);
+  });
+
+  it("fails open when Redis is down", async () => {
+    redisDown = true;
+    expect((await health.loadProviderHealth(["gemini"], now)).get("gemini")?.degraded).toBe(false);
   });
 });

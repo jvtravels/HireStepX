@@ -625,6 +625,37 @@ describe("oversized prompt with a single viable provider", () => {
     expect((await promise).text).toBe("groq answer");
   });
 
+  it("production incident: hung rung 0 + quota-429 rung 1 + hung rung 2 still reaches Groq (reserveMs)", async () => {
+    let groqCalls = 0;
+    fetchSpy.mockImplementation(async (url: string, init?: RequestInit) => {
+      const model = String(url).match(/models\/([^:]+):/)?.[1] ?? "";
+      if (model === "gemini-2.5-flash-lite") return geminiErr(429, "Quota exceeded for metric generate_content_free_tier_requests, limit: 20, PerDay");
+      if (model) return hang(init);
+      if (String(url).includes("api.groq.com")) { groqCalls++; return groqOk("groq rescued it"); }
+      return new Response("{}", { status: 200 });
+    });
+    const promise = callLLM({ prompt: "Short resume prompt." }, 10000, { totalBudgetMs: 21000, hedgeAfterMs: 6000, reserveMs: 8000 });
+    await vi.advanceTimersByTimeAsync(21000);
+    const result = await promise;
+    expect(result.text).toBe("groq rescued it");
+    expect(groqCalls).toBe(1);
+    await vi.runAllTimersAsync();
+  });
+
+  it("without reserveMs the same incident exhausts the budget before Groq (regression guard for the fix)", async () => {
+    fetchSpy.mockImplementation(async (url: string, init?: RequestInit) => {
+      const model = String(url).match(/models\/([^:]+):/)?.[1] ?? "";
+      if (model === "gemini-2.5-flash-lite") return geminiErr(429, "Quota exceeded for metric generate_content_free_tier_requests, limit: 20, PerDay");
+      if (model) return hang(init);
+      if (String(url).includes("api.groq.com")) return groqOk("never reached");
+      return new Response("{}", { status: 200 });
+    });
+    const promise = callLLM({ prompt: "Short resume prompt." }, 10000, { totalBudgetMs: 18000 });
+    const assertion = expect(promise).rejects.toThrow();
+    await vi.advanceTimersByTimeAsync(20000);
+    await assertion;
+  });
+
   it("disables thinking on the backup model with thinkingBudget, not thinkingLevel", async () => {
     let backupBody: { generationConfig: { thinkingConfig: Record<string, unknown> } } | undefined;
     fetchSpy.mockImplementation(async (url: string, init?: RequestInit) => {

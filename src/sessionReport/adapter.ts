@@ -349,7 +349,7 @@ export function sessionReportToInterviewResult(
 ): InterviewResultData {
   const { report, session } = ctx;
 
-  const company = ctx.targetCompany || session.company || "Your target";
+  const company = ctx.targetCompany || session.company || "your target company";
   const role = ctx.targetRole || session.role || "Candidate";
   // Seniority band for the "Level" pill. The previous derivation took the
   // last whitespace token of `companyLabel` ("Flipkart", "Big Tech

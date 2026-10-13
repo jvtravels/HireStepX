@@ -66,7 +66,7 @@ import { captureServerEvent, captureServerException, distinctIdFrom } from "./_p
 import { callLLM, extractJSON } from "./_llm-pii";
 import { buildSalaryNegotiationGuidance, buildExperienceSalaryContext, generateNegotiationBand, getNegotiationStyleContext, INDUSTRY_PACKAGE_CONTEXT, type NegotiationStyle } from "../data/salary-lookup";
 import { formatCsvFocusContext, getCsvPrimaryInterviewFocus } from "../data/csv-band-prompt";
-import { formatRecipe } from "../data/focus-question-recipes";
+import { formatRecipe } from "../data/focus-question-recipes"; import { sessionMinutesWord } from "../data/session-length";
 import { loadRoleCompetency, loadCompanyGuidance } from "./_role-content";
 import { matchRoleKey } from "../data/role-competencies";
 import { matchRoleKey as matchSalaryRoleKey } from "../data/salaries";
@@ -1271,7 +1271,7 @@ CROSS-PERSONA REFERENCE: at least one question (q3 or later) must reference what
     const warmupBeat = `\nINTRO WARMTH: The 'intro' step should open with one warm, low-stakes line BEFORE diving into format/structure — a real "settling in" beat, not corporate fluff. Examples: "Hope you're doing well today.", "Thanks for making time — let's keep this conversational.". Then proceed to context. Two extra seconds of warmth here measurably improves candidate performance.
 
 INTRO FRAMING (mandatory, after the warmth line): The intro should ground the candidate in what's coming WITHOUT enumerating like a script. Real interviewers DO NOT say "I have 5 questions for you" — that reads as canned. Instead, weave in two soft signals across 1-2 natural sentences:
-  1. Approximate timing — phrase loosely: "We have about ${isMini ? "ten" : "twenty-five"} minutes together", "I've blocked ${isMini ? "ten" : "twenty-five"} minutes", or just "we'll keep this to ${isMini ? "around ten" : "about twenty-five"}". Avoid digits when written out reads more naturally.
+  1. Approximate timing — phrase loosely: "We have about ${sessionMinutesWord(interviewFocus, isMini)} minutes together", "I've blocked ${sessionMinutesWord(interviewFocus, isMini)} minutes", or just "we'll keep this to about ${sessionMinutesWord(interviewFocus, isMini)}". Avoid digits when written out reads more naturally.
   2. Permission to navigate the conversation — phrase as invitation, not instruction: "Take your time", "feel free to ask me to repeat anything", "you can type if that's easier". Pick ONE; don't list all three.
 NEVER enumerate question counts. NEVER say "I'll ask N questions". NEVER include the literal session-length number in digits ("25 min", "10 minutes"). The candidate doesn't need a curriculum — they need to feel they're in a conversation. Two short sentences MAX after the warmth beat. If it sounds like a meeting agenda, rewrite it.`;
 

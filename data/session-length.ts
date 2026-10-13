@@ -29,3 +29,12 @@ export function sessionMinutesForFocus(focus: string): number {
 export function questionCountForFocus(focus: string): number {
   return focus === "HR Round" ? 7 : 5;
 }
+
+const MINUTE_WORDS: Record<number, string> = { 10: "ten", 12: "twelve", 15: "fifteen", 18: "eighteen", 20: "twenty", 25: "twenty-five" };
+
+/* Spoken-intro wording for a session length ("fifteen"); the interviewer
+ * must promise the real length, not a fixed 25 minutes. */
+export function sessionMinutesWord(focus: string, mini: boolean): string {
+  const minutes = mini ? 10 : sessionMinutesForFocus(focus);
+  return MINUTE_WORDS[minutes] ?? String(minutes);
+}
