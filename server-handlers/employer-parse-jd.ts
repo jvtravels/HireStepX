@@ -161,7 +161,7 @@ export default async function handler(req: Request): Promise<Response> {
 
   try {
     const merged = withDerivedDescription(mergeJdFields(regex.fields, llmFields), text);
-    const warnings = buildWarnings({ llm: llmOk, dropped, extra: regex.warnings, truncated });
+    const warnings = buildWarnings({ llm: llmOk, dropped: dropped.filter((k) => !(k in merged)), extra: regex.warnings, truncated });
     const res: JdParseResponse = {
       ok: true,
       fields: merged,

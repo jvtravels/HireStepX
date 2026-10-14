@@ -368,15 +368,18 @@ function workModeField(text: string): JdField<JdWorkMode> | undefined {
   const found = new Map<JdWorkMode, RegExpExecArray>();
   const hybrid = /\bhybrid\b/i.exec(text);
   if (hybrid) found.set("hybrid", hybrid);
-  const remote = /\bfully\s*remote\b|\b100%\s*remote\b|\bremote[- ]first\b|\bremote\s*(?:role|position|job|work|opportunity)\b|\bwork(?:ing)?\s*remotely\b|\bwork\s*from\s*home\b|\bwfh\b|(?:location|work\s*mode|mode)\s*[:\-–]\s*remote\b|\(remote\)/i.exec(text);
+  const remote = /\bfully\s*remote\b|\b100%\s*remote\b|\bremote[- ]first\b|\bremote\s*(?:role|position|job|work|opportunity)\b|\bwork\s*from\s*home\b|\bwfh\b|(?:location|work\s*mode|mode)\s*[:\-–]\s*remote\b|\(remote\)/i.exec(text);
+  // "Comfortable working remotely" hints at remote but is not a statement of the role's mode.
+  const softRemote = remote ? null : /\bwork(?:ing)?\s*remotely\b/i.exec(text);
   if (remote) found.set("remote", remote);
+  else if (softRemote) found.set("remote", softRemote);
   const onsite = /\bwork\s*from\s*office\b|\bwfo\b|\bon-?site\b|\bin[- ]office\b|\boffice[- ]based\b/i.exec(text);
   if (onsite) found.set("onsite", onsite);
   // "Hybrid, 3 days in office" is a hybrid job, not a conflict with on-site.
   if (hybrid && onsite && !remote) return mk("hybrid", "medium", snippetOf(text, hybrid), "regex");
   if (found.size !== 1) return undefined;
   const [mode, m] = [...found.entries()][0];
-  return mk(mode, "high", snippetOf(text, m), "regex");
+  return mk(mode, m === softRemote ? "medium" : "high", snippetOf(text, m), "regex");
 }
 
 function employmentTypeField(text: string): JdField<JdEmploymentType> | undefined {

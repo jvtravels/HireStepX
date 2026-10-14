@@ -109,11 +109,28 @@ describe("employer-parse-jd handler", () => {
     expect(body.fields.title.value).toBe("Senior Backend Engineer");
     expect(body.fields.salary.value).toEqual({ type: "per-annum", min: 25, max: 35 });
     expect(body.fields.description.source).toBe("derived");
-    expect(body.warnings.join(" ")).toMatch(/salary/i);
+    expect(body.warnings.join(" ")).not.toMatch(/left out.*salary/i);
     expect(callLLM).toHaveBeenCalledWith(
       expect.anything(), expect.any(Number), expect.objectContaining({ excludeGemini: true, endpoint: "employer-parse-jd" }),
     );
     expect(redisSetEx).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not warn about a field the pattern matcher still filled in", async () => {
+    callLLM.mockResolvedValue({
+      text: JSON.stringify({
+        title: { v: "Contract WordPress Developer", q: "Contract WordPress Developer" },
+        workMode: { v: "onsite", q: "Strictly onsite at our studio" },
+        employmentType: { v: "contract", q: "A twelve month fixed engagement" },
+      }),
+    });
+    const text = "Contract WordPress Developer\nWe build block themes for clients and need help on a fast moving project.\n- Comfortable working remotely across time zones.\n- Strong PHP and JavaScript skills are required.";
+    const body = await (await handler(req(text))).json();
+    expect(body.fields.workMode.value).toBe("remote");
+    expect(body.fields.employmentType).toBeUndefined();
+    const left = body.warnings.find((w: string) => w.startsWith("Left out"));
+    expect(left).toMatch(/employment type/i);
+    expect(left).not.toMatch(/work mode/i);
   });
 
   it("falls back to pattern-only results and refunds the employer when the model fails", async () => {

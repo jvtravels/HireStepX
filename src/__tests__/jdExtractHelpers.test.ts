@@ -24,6 +24,13 @@ describe("regex extraction on real-style JDs", () => {
     expect(regex(JD_BACKEND_BLR).workMode?.value).toBe("hybrid");
   });
 
+  it("rates a soft 'comfortable working remotely' hint as medium, not clear", () => {
+    const f = regex("Contract WordPress Developer\nWe build block themes for clients.\n- Comfortable working remotely across time zones.\n- Strong PHP and JavaScript skills are required for this role.");
+    expect(f.workMode?.value).toBe("remote");
+    expect(f.workMode?.confidence).toBe("medium");
+    expect(regex("Location: Pune. This is a fully remote position with flexible hours and a strong async culture.").workMode?.confidence).toBe("high");
+  });
+
   it("reads an internship stipend as per-month rupees with duration and hours", () => {
     const f = regex(JD_INTERN_REMOTE);
     expect(f.salary?.value).toEqual({ type: "per-month", min: 15000, max: 15000 });
