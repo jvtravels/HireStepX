@@ -9,7 +9,7 @@ import type { RequirementDraft } from "./_requirementPayload";
 import type { JdFieldKey, JdParseResponse } from "../../data/jd-extraction";
 import { JD_MAX_TEXT_CHARS, JD_MIN_TEXT_CHARS } from "../../data/jd-extraction";
 import {
-  JD_ACCEPT, draftSignature, planImport, readJdFile, requestJdParse, snapshotFor,
+  JD_ACCEPT, draftSignature, planImport, readJdFile, requestJdParse, resetPatch,
   type ImportPlan, type ReviewItem,
 } from "./_jdAutofillHelpers";
 
@@ -24,14 +24,12 @@ type Phase =
   | { kind: "idle" }
   | { kind: "loading"; message: string }
   | { kind: "error"; message: string; limitReached: boolean }
-  | { kind: "done" };
-
-interface UndoStep { label: string; prev: Partial<RequirementDraft>; keys: JdFieldKey[] }
+  | { kind: "done"; sourceLabel: string };
 
 const BASELINE = initialDraft(undefined);
 
 const card: CSSProperties = {
-  border: `1px solid ${t.line}`, background: t.info100, borderRadius: 12, padding: "16px 18px",
+  border: `1px dashed ${t.line}`, background: t.white, borderRadius: 12, padding: "16px 18px",
   display: "flex", flexDirection: "column", gap: 12,
 };
 const title: CSSProperties = { fontFamily: f.sans, fontSize: textSize.md, fontWeight: 600, color: t.coal, margin: 0 };
@@ -43,16 +41,15 @@ const textarea: CSSProperties = {
 };
 
 const statusText: CSSProperties = { ...body, color: t.coal };
-const warningList: CSSProperties = { ...body, margin: 0, paddingLeft: 18 };
 const itemList: CSSProperties = { listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 8 };
 const itemCard: CSSProperties = { background: t.white, border: `1px solid ${t.line}`, borderRadius: 10, padding: "10px 12px", display: "flex", flexDirection: "column", gap: 6 };
 const itemHead: CSSProperties = { ...row, justifyContent: "space-between" };
 const labelRow: CSSProperties = { ...row, gap: 8 };
 const labelText: CSSProperties = { fontFamily: f.sans, fontSize: textSize.sm, fontWeight: 600, color: t.coal };
-const filledText: CSSProperties = { ...labelText, color: t.successInk };
 const valueText: CSSProperties = { fontFamily: f.sans, fontSize: textSize.base, color: t.coal, overflowWrap: "anywhere" };
-const evidenceText: CSSProperties = { fontFamily: f.sans, fontSize: textSize.sm, color: t.inkFaint, overflowWrap: "anywhere" };
 const reasonStyle: CSSProperties = { fontFamily: f.sans, fontSize: textSize.sm, color: t.warningInk };
+const headRow: CSSProperties = { ...row, justifyContent: "space-between", flexWrap: "nowrap" };
+const PASTED_LABEL = "Pasted job description";
 const hidden: CSSProperties = { display: "none" };
 const pasteBox: CSSProperties = { display: "flex", flexDirection: "column", gap: 8 };
 const hintText: CSSProperties = { ...body, fontSize: textSize.sm };
@@ -80,9 +77,6 @@ export default function JdAutofill({ draft, applyPatch, importedRef }: Props) {
   const [pasteOpen, setPasteOpen] = useState(false);
   const [pasted, setPasted] = useState("");
   const [items, setItems] = useState<ReviewItem[]>([]);
-  const [warnings, setWarnings] = useState<string[]>([]);
-  const [cached, setCached] = useState(false);
-  const [history, setHistory] = useState<UndoStep[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const draftRef = useRef(draft);
@@ -94,7 +88,7 @@ export default function JdAutofill({ draft, applyPatch, importedRef }: Props) {
     for (const k of keys) importedRef.current[k] = draftSignature(k, draftAfter);
   }, [importedRef]);
 
-  const run = useCallback(async (getText: () => Promise<string>, source: "file" | "paste") => {
+  const run = useCallback(async (getText: () => Promise<string>, source: "file" | "paste", sourceLabel: string) => {
     abortRef.current?.abort();
     const ctrl = new AbortController();
     abortRef.current = ctrl;
@@ -112,72 +106,65 @@ export default function JdAutofill({ draft, applyPatch, importedRef }: Props) {
         return;
       }
       const data: JdParseResponse = out.data;
-      const current = draftRef.current;
+      const before = draftRef.current;
+      const reset = resetPatch(importedRef.current, before, BASELINE);
+      const current = { ...before, ...reset.patch };
       const plan: ImportPlan = planImport(data.fields, current, BASELINE);
       const applied = plan.items.filter((i) => i.status === "applied");
-      if (applied.length > 0) {
-        const after = { ...current, ...plan.applyNow };
-        setHistory((h) => [...h, { label: "import", prev: snapshotFor(current, plan.applyNow), keys: applied.map((i) => i.key) }]);
-        applyPatch(plan.applyNow);
-        remember(applied.map((i) => i.key), after);
-      }
+      for (const k of reset.keys) delete importedRef.current[k];
+      applyPatch({ ...reset.patch, ...plan.applyNow });
+      remember(applied.map((i) => i.key), { ...current, ...plan.applyNow });
       setItems(plan.items);
-      setWarnings(data.warnings);
-      setCached(data.cached);
       captureClientEvent("jd_import_result", {
         source, ok: true, llm: data.llm, cached: data.cached,
         applied: applied.length, suggested: plan.items.length - applied.length,
       });
-      setPhase({ kind: "done" });
+      setPhase({ kind: "done", sourceLabel });
     } catch (err) {
       if (ctrl.signal.aborted) return;
       const message = err instanceof Error && err.message ? err.message : "Could not read that. Try pasting the text instead.";
       captureClientEvent("jd_import_result", { source, ok: false, readError: true });
       setPhase({ kind: "error", message, limitReached: false });
     }
-  }, [applyPatch, remember]);
+  }, [applyPatch, remember, importedRef]);
 
   const onFile = (file: File | undefined) => {
     if (!file) return;
-    void run(() => readJdFile(file), "file");
+    void run(() => readJdFile(file), "file", file.name);
     if (fileRef.current) fileRef.current.value = "";
   };
 
   const onPaste = () => {
     const text = pasted;
-    void run(async () => text, "paste");
+    void run(async () => text, "paste", PASTED_LABEL);
   };
 
   const applySuggestion = (item: ReviewItem) => {
     const current = draftRef.current;
-    const prev = snapshotFor(current, item.patch);
     applyPatch(item.patch);
     remember([item.key], { ...current, ...item.patch });
-    setHistory((h) => [...h, { label: item.label, prev, keys: [item.key] }]);
     setItems((list) => list.map((i) => (i.key === item.key ? { ...i, status: "applied", reason: undefined } : i)));
     captureClientEvent("jd_import_field_applied", { field: item.key, confidence: item.confidence });
-  };
-
-  const undo = () => {
-    const last = history[history.length - 1];
-    if (!last) return;
-    applyPatch(last.prev);
-    for (const k of last.keys) delete importedRef.current[k];
-    setHistory((h) => h.slice(0, -1));
-    setItems((list) => list.map((i) => (last.keys.includes(i.key) ? { ...i, status: "suggested", reason: i.reason ?? "already-filled" } : i)));
-    captureClientEvent("jd_import_undo", { fields: last.keys.length });
   };
 
   const reset = () => {
     setPhase({ kind: "idle" });
     setItems([]);
-    setWarnings([]);
     setPasted("");
     setPasteOpen(false);
   };
 
   const appliedCount = items.filter((i) => i.status === "applied").length;
-  const suggestedCount = items.length - appliedCount;
+  const fileInput = (
+    <input
+      ref={fileRef}
+      type="file"
+      accept={JD_ACCEPT}
+      style={hidden}
+      aria-label="Upload a job description file"
+      onChange={(e) => onFile(e.target.files?.[0])}
+    />
+  );
   const canRead = pasted.trim().length >= JD_MIN_TEXT_CHARS;
 
   if (phase.kind === "loading") {
@@ -189,49 +176,39 @@ export default function JdAutofill({ draft, applyPatch, importedRef }: Props) {
   }
 
   if (phase.kind === "done") {
+    const pending = items.filter((i) => i.status === "suggested");
+    const replaceFile = phase.sourceLabel !== PASTED_LABEL;
     return (
       <section aria-label="Import from a job description" style={card}>
-        <h2 style={title}>Imported from your job description</h2>
-        <p role="status" style={body}>
-          {appliedCount === 0 && suggestedCount === 0
-            ? "We could not find any details to fill in."
-            : `${appliedCount} filled in${suggestedCount > 0 ? `, ${suggestedCount} for you to check` : ""}. Nothing is saved until you post the job.`}
-          {cached ? " (Same text as a recent import.)" : ""}
-        </p>
-        {warnings.length > 0 && (
-          <ul style={warningList}>
-            {warnings.map((w) => <li key={w}>{w}</li>)}
-          </ul>
-        )}
-        {items.length > 0 && (
-          <ul style={itemList}>
-            {items.map((item) => (
-              <li key={item.key} style={itemCard}>
-                <div style={itemHead}>
-                  <div style={labelRow}>
-                    <span style={labelText}>{item.label}</span>
-                    <span style={badge(item.confidence)}>{CONFIDENCE_LABEL[item.confidence]}</span>
-                  </div>
-                  {item.status === "applied" ? (
-                    <span style={filledText}>Filled in</span>
-                  ) : (
-                    <OutlineCta size="sm" onClick={() => applySuggestion(item)} ariaLabel={`Use suggested ${item.label}`}>Use this</OutlineCta>
-                  )}
-                </div>
-                <div style={valueText}>{item.display}</div>
-                {item.evidence && item.key !== "description" && (
-                  <div style={evidenceText}>From your text: “{item.evidence}”</div>
-                )}
-                {item.status === "suggested" && <div style={reasonStyle}>{reasonText(item)}</div>}
-              </li>
-            ))}
-          </ul>
-        )}
-        <div style={row}>
-          <OutlineCta size="sm" onClick={undo} disabled={history.length === 0}>Undo last change</OutlineCta>
-          <OutlineCta size="sm" onClick={reset}>Import another</OutlineCta>
-          <OutlineCta size="sm" onClick={reset}>Close</OutlineCta>
+        {fileInput}
+        <div style={headRow}>
+          <p role="status" style={statusText}>
+            {appliedCount === 0 && pending.length === 0
+              ? `We could not find any details in ${phase.sourceLabel}.`
+              : `${phase.sourceLabel} ${replaceFile ? "uploaded" : "added"}. ${appliedCount} ${appliedCount === 1 ? "field" : "fields"} filled in below.`}
+          </p>
+          <OutlineCta size="sm" onClick={replaceFile ? () => fileRef.current?.click() : reset}>Replace</OutlineCta>
         </div>
+        {pending.length > 0 && (
+          <>
+            <p style={body}>These need your decision:</p>
+            <ul style={itemList}>
+              {pending.map((item) => (
+                <li key={item.key} style={itemCard}>
+                  <div style={itemHead}>
+                    <div style={labelRow}>
+                      <span style={labelText}>{item.label}</span>
+                      <span style={badge(item.confidence)}>{CONFIDENCE_LABEL[item.confidence]}</span>
+                    </div>
+                    <OutlineCta size="sm" onClick={() => applySuggestion(item)} ariaLabel={`Use suggested ${item.label}`}>Use this</OutlineCta>
+                  </div>
+                  <div style={valueText}>{item.display}</div>
+                  <div style={reasonStyle}>{reasonText(item)}</div>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
       </section>
     );
   }
@@ -243,14 +220,7 @@ export default function JdAutofill({ draft, applyPatch, importedRef }: Props) {
         Upload it or paste it and we will fill in what we can find. You review everything before posting, and you can undo.
       </p>
       <div style={row}>
-        <input
-          ref={fileRef}
-          type="file"
-          accept={JD_ACCEPT}
-          style={hidden}
-          aria-label="Upload a job description file"
-          onChange={(e) => onFile(e.target.files?.[0])}
-        />
+        {fileInput}
         <PrimaryCta size="sm" onClick={() => fileRef.current?.click()}>Upload PDF, DOCX or TXT</PrimaryCta>
         <OutlineCta size="sm" onClick={() => setPasteOpen((v) => !v)}>{pasteOpen ? "Hide paste box" : "Paste text instead"}</OutlineCta>
       </div>

@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import type { JdField, JdFields } from "../../data/jd-extraction";
 import { initialDraft } from "../employer/_requirementFormHelpers";
 import {
-  checkJdFile, displayValue, draftSignature, outcomeCounts, planImport, snapshotFor,
+  checkJdFile, displayValue, draftSignature, outcomeCounts, planImport, resetPatch,
 } from "../employer/_jdAutofillHelpers";
 
 const base = initialDraft(undefined);
@@ -70,9 +70,11 @@ describe("display, undo and outcome", () => {
     expect(displayValue("salary", field({ type: "per-month", min: 15000, max: 15000 }))).toBe("₹15,000 per month");
   });
 
-  it("snapshots only the keys a patch touches so undo restores them", () => {
-    const draft = { ...base, title: "Old" };
-    expect(snapshotFor(draft, { title: "New", department: "Eng" })).toEqual({ title: "Old", department: base.department });
+  it("resets only the imported fields the employer has not edited since", () => {
+    const imported = { title: draftSignature("title", { ...base, title: "A" }), department: draftSignature("department", { ...base, department: "Eng" }) };
+    const out = resetPatch(imported, { ...base, title: "A", department: "Sales" }, base);
+    expect(out.keys).toEqual(["title"]);
+    expect(out.patch).toEqual({ title: base.title });
   });
 
   it("counts imported fields kept versus edited after import", () => {

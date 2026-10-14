@@ -182,13 +182,18 @@ export function planImport(
   return { items, applyNow };
 }
 
-/** The draft values that a patch would overwrite, so an undo can put them back. */
-export function snapshotFor(draft: RequirementDraft, patch: Draftish): Draftish {
-  const prev: Draftish = {};
-  for (const k of Object.keys(patch) as Array<keyof RequirementDraft>) {
-    (prev as Record<string, unknown>)[k] = draft[k];
+/** Blank values for imported fields the employer has not touched since, so a
+ *  replacement import can fill them again. Fields they edited are left alone. */
+export function resetPatch(imported: Record<string, string>, draft: RequirementDraft, baseline: RequirementDraft): { patch: Draftish; keys: JdFieldKey[] } {
+  const patch: Draftish = {};
+  const keys: JdFieldKey[] = [];
+  for (const [key, sig] of Object.entries(imported)) {
+    const k = key as JdFieldKey;
+    if (draftSignature(k, draft) !== sig) continue;
+    keys.push(k);
+    for (const dk of DRAFT_KEYS[k]) (patch as Record<string, unknown>)[dk] = baseline[dk];
   }
-  return prev;
+  return { patch, keys };
 }
 
 /** After submit: how many of the imported fields survived unchanged. */
