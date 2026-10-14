@@ -8,8 +8,9 @@
    copies. Everything is driven by props; data wiring stays in the page. */
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useMemo, useState, type ReactNode } from "react";
-import { BriefcaseIcon, UsersIcon, CalendarDaysIcon, CircleCheckIcon, LightbulbIcon, ClockIcon, TrendingUpIcon, SearchXIcon, ArrowRightIcon, PlusIcon, SparklesIcon, UserIcon } from "lucide-react";
+import { BriefcaseIcon, UsersIcon, CalendarDaysIcon, CircleCheckIcon, LightbulbIcon, ClockIcon, TrendingUpIcon, ArrowDownIcon, ArrowUpIcon, ChevronsUpDownIcon, SearchXIcon, ArrowRightIcon, PlusIcon, SparklesIcon, UserIcon } from "lucide-react";
 import { hoursOrDaysAgo } from "@/hiringMatchFormat";
 import AnimatedNumber from "@/AnimatedNumber";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -23,8 +24,8 @@ import { Badge, Pill, ScoreChip, STAGE_LABEL, STAGE_TONE } from "./_atoms";
 import { PrimaryLink, OutlineLink } from "./_consoleParts";
 import type { RequirementSummary } from "./mockData";
 import {
-  RANGE_LABEL, trendDelta, interviewSlot, jobHealth, pipelineStage,
-  type DashboardRange, type DashboardTrend, type DashboardJobPipeline, type DashboardUpcomingInterview,
+  RANGE_LABEL, FUNNEL_SEGMENTS, buildFunnel, interviewSlot, jobHealth, pipelineStage, sortJobs,
+  type DashboardRange, type DashboardJobPipeline, type FunnelStep, type JobSortKey, type SortDir, type DashboardUpcomingInterview,
   type DashboardActivityItem, type DashboardInsight, type InsightTone, type RecommendedCard, type EmployerDashboardData, type NextAction,
 } from "./dashboardData";
 
@@ -162,56 +163,43 @@ export function NextActionCard({ action }: { action: NextAction }) {
   );
 }
 
-/* ─── Stat cards ─── */
+/* ─── Hiring funnel ─── */
 
-function Sparkline({ series }: { series: number[] }) {
-  const w = 84, h = 28;
-  const max = Math.max(...series, 1);
-  const pts = series.map((v, i) => `${((i / (series.length - 1)) * w).toFixed(1)},${(h - 3 - (v / max) * (h - 6)).toFixed(1)}`).join(" ");
-  return (
-    <svg aria-hidden="true" width={w} height={h} viewBox={`0 0 ${w} ${h}`} className="shrink-0">
-      <polyline points={pts} fill="none" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className="stroke-hx-indigo" />
-    </svg>
-  );
-}
+const STEP_ICON: Record<FunnelStep["key"], ReactNode> = {
+  recommended: <UsersIcon size={18} />,
+  interviewing: <CalendarDaysIcon size={18} />,
+  hired: <CircleCheckIcon size={18} />,
+};
 
-function StatCard({ icon, label, value, trend, trendNoun, range }: { icon: ReactNode; label: string; value: number | null; trend: DashboardTrend | null; trendNoun: string; range: DashboardRange }) {
-  const delta = trend ? trendDelta(trend) : null;
-  const deltaText = delta ? `${delta.label} ${trendNoun}, last ${range} days` : null;
+function FunnelStepItem({ step, range, last }: { step: FunnelStep; range: DashboardRange; last: boolean }) {
+  const added = step.added === null ? null : step.added > 0 ? `+${step.added} in last ${range} days` : `None new in last ${range} days`;
   return (
-    <li className={`${CARD} flex flex-col gap-2.5`}>
-      <p className="sr-only">{value === null ? "Not available" : value} {label}{deltaText ? `, ${deltaText}` : ""}</p>
-      <div aria-hidden="true" className="flex items-center gap-2.5">
-        <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg bg-hx-soft text-hx-indigo">{icon}</span>
-        <span className="min-w-0 text-[14px] text-hx-ink-soft">{label}</span>
+    <li className={`flex min-w-0 flex-col gap-2.5 p-[18px] ${last ? "" : "border-b border-hx-line min-[640px]:border-b-0 min-[640px]:border-r"}`}>
+      <p className="sr-only">{step.value} {step.label}{added ? `, ${added}` : ""}</p>
+      <div aria-hidden="true" className="flex items-center gap-2.5 text-hx-ink-soft">
+        <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg bg-hx-soft text-hx-indigo">{STEP_ICON[step.key]}</span>
+        <span className="min-w-0 text-[14px]">{step.label}</span>
       </div>
-      <div aria-hidden="true" className="flex items-end justify-between gap-3">
-        <span className="text-[28px] font-bold leading-[1.1] text-hx-coal">
-          {value === null ? "–" : <AnimatedNumber value={value} />}
-        </span>
-        {trend && <Sparkline series={trend.series} />}
+      <div aria-hidden="true" className="text-[28px] font-bold leading-[1.1] text-hx-coal"><AnimatedNumber value={step.value} /></div>
+      <div aria-hidden="true" className="flex gap-0.5">
+        {Array.from({ length: FUNNEL_SEGMENTS }, (_, i) => (
+          <span key={i} className={`h-1.5 flex-1 rounded-full ${i < step.filled ? "bg-hx-indigo" : "bg-hx-line"}`} />
+        ))}
       </div>
       <div aria-hidden="true" className="min-h-4 text-[12px] text-hx-ink-soft">
-        {delta && (
-          <>
-            <strong className={`font-bold ${delta.diff > 0 ? "text-hx-success-ink" : "text-hx-ink-soft"}`}>{delta.label}</strong>{" "}
-            {trendNoun}, last {range} days
-          </>
-        )}
+        {added && <span className={step.added ? "font-semibold text-hx-success-ink" : ""}>{added}</span>}
       </div>
     </li>
   );
 }
 
-export function DashboardStatCards({ jobs, data, recommendedTotal, range }: { jobs: RequirementSummary[]; data: EmployerDashboardData | null; recommendedTotal: number; range: DashboardRange }) {
+export function DashboardFunnel({ data, recommendedTotal, range }: { data: EmployerDashboardData | null; recommendedTotal: number; range: DashboardRange }) {
+  const steps = buildFunnel(data, recommendedTotal);
   return (
-    <section aria-label="Hiring summary">
-      <ul className={`${LIST} grid grid-cols-1 gap-3.5 min-[560px]:grid-cols-2 min-[1100px]:grid-cols-4`}>
-        <StatCard icon={<BriefcaseIcon size={18} />} label="Active Jobs" value={jobs.length} trend={data?.trends.jobs ?? null} trendNoun="new" range={range} />
-        <StatCard icon={<UsersIcon size={18} />} label="Recommended Candidates" value={recommendedTotal} trend={data?.trends.recommended ?? null} trendNoun="new" range={range} />
-        <StatCard icon={<CalendarDaysIcon size={18} />} label="Interviews Scheduled" value={data ? data.totals.interviewsScheduled : null} trend={data?.trends.interviews ?? null} trendNoun="invited" range={range} />
-        <StatCard icon={<CircleCheckIcon size={18} />} label="Hired" value={data ? data.totals.hired : null} trend={data?.trends.hired ?? null} trendNoun="hired" range={range} />
-      </ul>
+    <section aria-label="Hiring funnel" className="min-w-0 overflow-hidden rounded-xl border border-hx-line bg-white">
+      <ol className={`${LIST} grid grid-cols-1 min-[640px]:grid-cols-3`}>
+        {steps.map((step, i) => <FunnelStepItem key={step.key} step={step} range={range} last={i === steps.length - 1} />)}
+      </ol>
     </section>
   );
 }
@@ -246,8 +234,23 @@ export function ActiveJobsCard({
   now: number;
   rowActions: (job: RequirementSummary) => ReactNode;
 }) {
+  const router = useRouter();
+  const [sort, setSort] = useState<{ key: JobSortKey; dir: SortDir } | null>(null);
   const byId = new Map((pipeline ?? []).map((p) => [p.requirementId, p]));
-  const shown = jobs.slice(0, 5);
+  const shown = sortJobs(jobs, pipeline, sort?.key ?? null, sort?.dir ?? "desc").slice(0, 5);
+  const toggleSort = (key: JobSortKey) => setSort((cur) => (cur?.key === key ? { key, dir: cur.dir === "desc" ? "asc" : "desc" } : { key, dir: key === "title" ? "asc" : "desc" }));
+  const sortHead = (key: JobSortKey, label: string, center: boolean) => {
+    const active = sort?.key === key;
+    const Icon = !active ? ChevronsUpDownIcon : sort.dir === "asc" ? ArrowUpIcon : ArrowDownIcon;
+    return (
+      <TableHead className={`${TH} ${center ? "text-center" : ""}`} aria-sort={active ? (sort.dir === "asc" ? "ascending" : "descending") : "none"}>
+        <button type="button" onClick={() => toggleSort(key)} className={`inline-flex items-center gap-1 rounded font-semibold hover:text-hx-coal ${active ? "text-hx-coal" : ""}`}>
+          {label}
+          <Icon size={12} aria-hidden="true" className={active ? "" : "opacity-50"} />
+        </button>
+      </TableHead>
+    );
+  };
   return (
     <section aria-labelledby="active-jobs-heading" className={`${CARD} @container`}>
       <CardHeader
@@ -273,12 +276,12 @@ export function ActiveJobsCard({
             <Table className="text-[13px]">
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
-                  <TableHead className={TH}>Job Title</TableHead>
+                  {sortHead("title", "Job Title", false)}
                   <TableHead className={TH}>Status</TableHead>
                   <TableHead className={`${TH} text-center`}>Evaluated</TableHead>
-                  <TableHead className={`${TH} text-center`}>Recommended</TableHead>
-                  <TableHead className={`${TH} text-center`}>Interviewing</TableHead>
-                  <TableHead className={`${TH} text-center`}>Hired</TableHead>
+                  {sortHead("recommended", "Recommended", true)}
+                  {sortHead("interviewing", "Interviewing", true)}
+                  {sortHead("hired", "Hired", true)}
                   <TableHead className={`${TH} w-12`}><span className="sr-only">Actions</span></TableHead>
                 </TableRow>
               </TableHeader>
@@ -287,13 +290,21 @@ export function ActiveJobsCard({
                   const p = byId.get(j.id);
                   const health = jobHealth(j, p, now);
                   return (
-                    <TableRow key={j.id}>
+                    <TableRow
+                      key={j.id}
+                      className="cursor-pointer"
+                      onClick={(e) => { if (!(e.target as HTMLElement).closest("a, button, [role='menuitem']")) router.push(`/employer/requirements/${j.id}`); }}
+                    >
                       <TableCell className={`${TD} whitespace-normal`}>
                         <Link href={`/employer/requirements/${j.id}`} className="inline-block py-0.5 font-semibold text-hx-coal no-underline hover:underline">{j.title}</Link>
                         <JobMeta job={j} updatedAt={p?.lastUpdatedAt ?? null} />
-                        {health && <div className="mt-1.5"><Pill tone={health.tone}>{health.label}</Pill></div>}
                       </TableCell>
-                      <TableCell className={TD}><JobStatusBadge job={j} pipeline={p} /></TableCell>
+                      <TableCell className={TD}>
+                        <div className="flex flex-col items-start gap-1.5">
+                          <JobStatusBadge job={j} pipeline={p} />
+                          {health && <Pill tone={health.tone}>{health.label}</Pill>}
+                        </div>
+                      </TableCell>
                       <TableCell className={`${TD} text-center`}>{j.aiScreening.evaluated}</TableCell>
                       <TableCell className={`${TD} text-center`}>{j.aiScreening.topMatches}</TableCell>
                       <TableCell className={`${TD} text-center`}>{p ? p.interviewing : "–"}</TableCell>
@@ -447,6 +458,9 @@ export function RecommendedCandidatesCard({ cards, total }: { cards: Recommended
                     <div className="min-w-0">
                       <div className="text-[15px] font-semibold leading-5 text-hx-coal [overflow-wrap:anywhere]">{c.name}</div>
                       <div className="mt-1 text-[13px] leading-[1.45] text-hx-ink-soft [overflow-wrap:anywhere]">for {c.roleTitle}</div>
+                      {c.traits.length > 0 && (
+                        <div className="mt-1 text-[13px] leading-[1.45] text-hx-coal [overflow-wrap:anywhere]">{c.traits.join(" · ")}</div>
+                      )}
                       <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1.5">
                         {c.createdAt && <span className="text-[12px] text-hx-ink-soft">Matched {hoursOrDaysAgo(c.createdAt)}</span>}
                         {waiting && <Pill tone="warning">{waiting}</Pill>}
@@ -525,7 +539,6 @@ const INSIGHT_TILE: Record<InsightTone, string> = {
 
 const INSIGHT_ICON: Record<string, ReactNode> = {
   "best-pipeline": <TrendingUpIcon size={16} />,
-  "awaiting-review": <UsersIcon size={16} />,
   "no-strong": <SearchXIcon size={16} />,
   stale: <ClockIcon size={16} />,
 };
@@ -589,9 +602,7 @@ export function DashboardSkeleton() {
   return (
     <div role="status" aria-live="polite" aria-busy="true" className="flex flex-col gap-5">
       <span className="sr-only">Loading your overview…</span>
-      <div className="grid grid-cols-1 gap-3.5 min-[560px]:grid-cols-2 min-[1100px]:grid-cols-4">
-        {[0, 1, 2, 3].map((n) => <Skeleton key={n} className="h-[132px] rounded-xl" />)}
-      </div>
+      <Skeleton className="h-[132px] rounded-xl" />
       <div className="grid grid-cols-1 gap-5 min-[1100px]:grid-cols-[minmax(0,1fr)_minmax(300px,380px)]">
         <div className="flex flex-col gap-5">
           <Skeleton className="h-[320px] rounded-xl" />

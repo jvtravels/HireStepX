@@ -8,7 +8,7 @@ import { PrimaryLink, PageSkeleton, ErrorPanel, InlineAlert } from "@/employer/_
 import CompanyProfileForm from "@/employer/CompanyProfileForm";
 import { Card, CardContent } from "@/components/ui/card";
 import {
-  DashboardHeader, DashboardStatCards, ActiveJobsCard, RecommendedCandidatesCard,
+  DashboardHeader, DashboardFunnel, ActiveJobsCard, RecommendedCandidatesCard,
   UpcomingInterviewsCard, KeyInsightsCard, RecentActivityCard, NextActionCard, DashboardSkeleton,
 } from "@/employer/DashboardSections";
 import { buildInsights, buildNextAction, buildRecommendedCards, type DashboardRange, type EmployerDashboardData } from "@/employer/dashboardData";
@@ -165,7 +165,7 @@ function EmployerDashboard() {
     [openRequirements, dashboard, now],
   );
   const insights = useMemo(
-    () => buildInsights(openRequirements, dashboard?.jobs ?? [], dashboard?.totals.awaitingReview ?? 0, now),
+    () => buildInsights(openRequirements, dashboard?.jobs ?? [], now),
     [openRequirements, dashboard, now],
   );
   const canCreate = !suspended && !atJobLimit;
@@ -224,7 +224,7 @@ function EmployerDashboard() {
             <InlineAlert message="Interview, hiring and activity figures didn't load." onRetry={() => setDashboardNonce((n) => n + 1)} />
           )}
           {nextAction && <NextActionCard action={nextAction} />}
-          <DashboardStatCards jobs={openRequirements} data={dashboard} recommendedTotal={recommendedTotal} range={range} />
+          <DashboardFunnel data={dashboard} recommendedTotal={recommendedTotal} range={range} />
           <div className="grid grid-cols-1 gap-5 min-[1100px]:grid-cols-[minmax(0,1fr)_minmax(300px,380px)]">
             <div style={{ display: "flex", flexDirection: "column", gap: 20, minWidth: 0 }}>
               <ActiveJobsCard jobs={openRequirements} pipeline={dashboard?.jobs ?? null} canCreate={canCreate} now={now} rowActions={rowActions} />

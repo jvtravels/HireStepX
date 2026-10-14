@@ -83,6 +83,7 @@ import {
   countMatchesByRequirement,
   computeMatchStats,
   buildAiScreeningByRequirement,
+  candidateTraits,
   type RequirementRow,
   type AiScreeningSummary,
 } from "./_employer-requirements-helpers";
@@ -280,10 +281,11 @@ async function handleGet(userId: string, headers: Record<string, string>): Promi
           const profileRows = (await profilesRes.json().catch(() => [])) as Array<{ id: string; name: string; resume_data: unknown }>;
           for (const row of profileRows) profileById.set(row.id, row);
         }
-        const detailsById = new Map<string, { name: string; yearsExperience: number | null; skills: string[] }>(
+        const detailsById = new Map<string, { name: string; yearsExperience: number | null; skills: string[]; traits: string[] }>(
           topCandidateIds.map((id) => {
             const profile = profileById.get(id);
-            return [id, { name: profile?.name ?? "", yearsExperience: extractResumeDetail(profile?.resume_data).yearsExperience, skills: extractSkills(profile?.resume_data) }];
+            const detail = extractResumeDetail(profile?.resume_data);
+            return [id, { name: profile?.name ?? "", yearsExperience: detail.yearsExperience, skills: extractSkills(profile?.resume_data), traits: candidateTraits(detail, profile?.name ?? "") }];
           }),
         );
         aiScreeningByRequirement = buildAiScreeningByRequirement(matchStats, detailsById);

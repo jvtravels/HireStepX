@@ -15,6 +15,7 @@ import {
   computeMatchStats,
   nameInitials,
   buildAiScreeningByRequirement,
+  candidateTraits,
   EMPTY_AI_SCREENING,
   averageScoresByUser,
   daysSinceLastActive,
@@ -539,5 +540,25 @@ describe("STAGE_TRANSITIONS / canManuallyTransitionStage", () => {
     for (const stage of REQUIREMENT_STAGES) {
       expect(STAGE_TRANSITIONS[stage]).not.toContain(stage);
     }
+  });
+});
+
+describe("candidateTraits", () => {
+  const base = { seniorityLevel: "Senior", industries: ["Fintech", "SaaS"], noticePeriod: "30 days" };
+  it("returns seniority, top industry and a notice period", () => {
+    expect(candidateTraits(base, "Priya Sharma")).toEqual(["Senior", "Fintech", "30 days notice"]);
+  });
+  it("words immediate availability plainly", () => {
+    expect(candidateTraits({ ...base, noticePeriod: "Immediate" }, "A B")[2]).toBe("Can join immediately");
+    expect(candidateTraits({ ...base, noticePeriod: "2 months notice" }, "A B")[2]).toBe("2 months notice");
+  });
+  it("drops free-text notice that is not a plain duration", () => {
+    expect(candidateTraits({ ...base, noticePeriod: "Serving notice at Acme, 30 days" }, "A B")).toEqual(["Senior", "Fintech"]);
+  });
+  it("drops any trait that contains part of the candidate's name", () => {
+    expect(candidateTraits({ ...base, seniorityLevel: "Sharma Lead", industries: ["Priya Labs"] }, "Priya Sharma")).toEqual(["30 days notice"]);
+  });
+  it("drops overlong values and handles empty profiles", () => {
+    expect(candidateTraits({ seniorityLevel: "x".repeat(40), industries: [], noticePeriod: null }, "A B")).toEqual([]);
   });
 });

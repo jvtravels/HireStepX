@@ -64,16 +64,6 @@ export function isDashboardData(v: unknown): v is EmployerDashboardData {
 
 export const RANGE_LABEL: Record<DashboardRange, string> = { 7: "Last 7 days", 30: "Last 30 days", 90: "Last 90 days" };
 
-/** The "vs previous window" delta shown on a stat card. A percentage when the
- *  previous window had data to compare against, otherwise the raw difference. */
-export function trendDelta(trend: DashboardTrend): { diff: number; label: string } {
-  const diff = trend.current - trend.previous;
-  if (diff === 0) return { diff, label: "No change" };
-  const sign = diff > 0 ? "+" : "";
-  const label = trend.previous > 0 ? `${sign}${Math.round((diff / trend.previous) * 100)}%` : `${sign}${diff}`;
-  return { diff, label };
-}
-
 const STALE_DAYS = 14;
 
 /** A one-line health flag for a job row, only when something needs attention. */
@@ -103,13 +93,12 @@ export interface DashboardInsight {
   href: string;
 }
 
-/** Up to four plain-language observations computed from real job and pipeline
+/** Up to three plain-language observations computed from real job and pipeline
  *  data. Each is only emitted when it is actually true, so a quiet account
  *  shows fewer insights rather than invented ones. */
 export function buildInsights(
   jobs: RequirementSummary[],
   pipeline: DashboardJobPipeline[],
-  awaitingReview: number,
   now: number,
 ): DashboardInsight[] {
   const out: DashboardInsight[] = [];
@@ -125,17 +114,6 @@ export function buildInsights(
       body: `${best.title} has ${best.aiScreening.topMatches} strong ${best.aiScreening.topMatches === 1 ? "match" : "matches"}${avg !== null ? `, averaging ${Math.round(avg)}% fit` : ""}.`,
       cta: "View job",
       href: `/employer/requirements/${best.id}`,
-    });
-  }
-
-  if (awaitingReview > 0) {
-    out.push({
-      id: "awaiting-review",
-      tone: "action",
-      title: "Candidates waiting on you",
-      body: `${awaitingReview} recommended ${awaitingReview === 1 ? "candidate is" : "candidates are"} waiting for your decision.`,
-      cta: "Review candidates",
-      href: "/employer/jobs",
     });
   }
 
@@ -166,7 +144,7 @@ export function buildInsights(
     });
   }
 
-  return out.slice(0, 4);
+  return out;
 }
 
 export type ExperienceFit = "within" | "below" | "above";
@@ -183,6 +161,9 @@ export interface RecommendedCard {
   missingSkills: string[];
   requiredCount: number;
   yearsExperience: number | null;
+  /** Seniority, industry and notice period: the non-identifying facts that tell
+   *  masked candidates apart. Empty when the profile has none. */
+  traits: string[];
   experienceFit: ExperienceFit | null;
   /** "4 to 8 yrs" style label of what the job asks for, null when unspecified. */
   experienceAsk: string | null;
@@ -238,6 +219,7 @@ export function buildRecommendedCards(
       missingSkills: job.skills.filter((s) => !have.has(s.toLowerCase())),
       requiredCount: job.skills.length,
       yearsExperience: c.yearsExperience,
+      traits: c.traits ?? [],
       experienceFit: experienceFit(c.yearsExperience, job.experienceMin, job.experienceMax),
       experienceAsk: experienceAsk(job.experienceMin, job.experienceMax),
       matchScore: score,
@@ -314,4 +296,61 @@ export function buildNextAction(
     return { title: "Post your first job", body: "Matched candidates show up here as soon as screening finishes.", cta: "Post a job", href: "/employer/requirements/new" };
   }
   return null;
+}
+
+export interface FunnelStep {
+  key: "recommended" | "interviewing" | "hired";
+  label: string;
+  value: number;
+  /** Events inside the selected window; null when the dashboard feed is unavailable. */
+  added: number | null;
+  /** Filled segments out of FUNNEL_SEGMENTS, sized against the first step. */
+  filled: number;
+}
+
+export const FUNNEL_SEGMENTS = 10;
+
+/** Recommended, interviewing and hired as one flow. Absolute counts plus what
+ *  arrived in the window; no percentage deltas, which mislead on small numbers. */
+export function buildFunnel(data: EmployerDashboardData | null, recommendedTotal: number): FunnelStep[] {
+  const raw: Array<Omit<FunnelStep, "filled">> = [
+    { key: "recommended", label: "Recommended", value: recommendedTotal, added: data ? data.trends.recommended.current : null },
+    { key: "interviewing", label: "Interviewing", value: data ? data.totals.interviewsScheduled : 0, added: data ? data.trends.interviews.current : null },
+    { key: "hired", label: "Hired", value: data ? data.totals.hired : 0, added: data ? data.trends.hired.current : null },
+  ];
+  const top = Math.max(raw[0].value, 1);
+  return raw.map((r) => ({
+    ...r,
+    filled: r.value <= 0 ? 0 : Math.min(FUNNEL_SEGMENTS, Math.max(1, Math.round((r.value / top) * FUNNEL_SEGMENTS))),
+  }));
+}
+
+export type JobSortKey = "title" | "recommended" | "interviewing" | "hired";
+export type SortDir = "asc" | "desc";
+
+/** Sorts a copy of the jobs; ties keep the server's order. */
+export function sortJobs(
+  jobs: RequirementSummary[],
+  pipeline: DashboardJobPipeline[] | null,
+  key: JobSortKey | null,
+  dir: SortDir,
+): RequirementSummary[] {
+  if (!key) return jobs;
+  const byId = new Map((pipeline ?? []).map((p) => [p.requirementId, p]));
+  const value = (j: RequirementSummary): number | string => {
+    switch (key) {
+      case "title": return j.title.toLowerCase();
+      case "recommended": return j.aiScreening.topMatches;
+      case "interviewing": return byId.get(j.id)?.interviewing ?? 0;
+      case "hired": return byId.get(j.id)?.hired ?? 0;
+    }
+  };
+  const sign = dir === "asc" ? 1 : -1;
+  return jobs
+    .map((j, i) => ({ j, i, v: value(j) }))
+    .sort((a, b) => {
+      const c = typeof a.v === "string" ? a.v.localeCompare(b.v as string) : (a.v as number) - (b.v as number);
+      return c * sign || a.i - b.i;
+    })
+    .map((x) => x.j);
 }

@@ -87,6 +87,7 @@ export interface StrongMatchCandidate {
   initials: string;
   yearsExperience: number | null;
   skills: string[];
+  traits?: string[];
 }
 
 /** Jobs-table "AI Screening" summary — mirrors AiScreeningSummary in

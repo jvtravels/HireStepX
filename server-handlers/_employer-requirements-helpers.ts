@@ -249,6 +249,39 @@ export interface StrongMatchCandidate {
   initials: string;
   yearsExperience: number | null;
   skills: string[];
+  /** Non-identifying descriptors (seniority, industry, notice) that let an
+   *  employer tell masked candidates apart. Same fields the detail page shows
+   *  before unlock. */
+  traits?: string[];
+}
+
+const NOTICE_RE = /^(\d{1,3}\s*-?\s*(day|week|month)s?|immediate(ly)?)(\s+notice)?$/i;
+
+function keepTrait(text: string | null | undefined, nameParts: string[], max: number): string | null {
+  const t = (text ?? "").trim();
+  if (!t || t.length > max) return null;
+  const lower = t.toLowerCase();
+  return nameParts.some((p) => lower.includes(p)) ? null : t;
+}
+
+/** Seniority, top industry and notice period for a candidate card. Notice is
+ *  self-reported free text, so only a plain duration or "immediate" passes;
+ *  anything else (it can name a current employer) is dropped. */
+export function candidateTraits(
+  detail: { seniorityLevel: string | null; industries: string[]; noticePeriod: string | null },
+  realName: string,
+): string[] {
+  const nameParts = realName.toLowerCase().split(/\s+/).filter((p) => p.length > 1);
+  const out: string[] = [];
+  const seniority = keepTrait(detail.seniorityLevel, nameParts, 24);
+  if (seniority) out.push(seniority);
+  const industry = keepTrait(detail.industries[0], nameParts, 28);
+  if (industry) out.push(industry);
+  const notice = detail.noticePeriod?.trim() ?? "";
+  if (NOTICE_RE.test(notice)) {
+    out.push(/^immediate/i.test(notice) ? "Can join immediately" : `${notice.replace(/\s+notice$/i, "")} notice`);
+  }
+  return out;
 }
 
 export interface AiScreeningSummary {

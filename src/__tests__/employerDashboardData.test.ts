@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildInsights, buildRecommendedCards, experienceFit, experienceAsk, pipelineStage, isDashboardData, trendDelta, jobHealth, buildNextAction, type DashboardJobPipeline } from "../employer/dashboardData";
+import { buildFunnel, sortJobs, buildInsights, buildRecommendedCards, experienceFit, experienceAsk, pipelineStage, isDashboardData, jobHealth, buildNextAction, type DashboardJobPipeline, type EmployerDashboardData } from "../employer/dashboardData";
 import type { RequirementSummary } from "../employer/mockData";
 
 const NOW = Date.parse("2026-10-15T12:00:00Z");
@@ -15,16 +15,49 @@ function job(id: string, over: Partial<RequirementSummary> = {}, strong: Require
 
 const cand = (id: string, skills: string[]) => ({ id, name: `Candidate #${id}`, initials: id.slice(0, 2).toUpperCase(), yearsExperience: 3, skills });
 
-describe("trendDelta", () => {
-  it("shows a percentage when the previous window had data", () => {
-    expect(trendDelta({ series: [], current: 5, previous: 4 })).toEqual({ diff: 1, label: "+25%" });
-    expect(trendDelta({ series: [], current: 1, previous: 4 }).label).toBe("-75%");
+describe("buildFunnel", () => {
+  const data = {
+    range: 30, jobs: [], upcomingInterviews: [], recommended: [], activity: [],
+    totals: { interviewsScheduled: 2, hired: 1, awaitingReview: 4 },
+    trends: {
+      jobs: { series: [], current: 0, previous: 0 }, recommended: { series: [], current: 6, previous: 1 },
+      interviews: { series: [], current: 0, previous: 0 }, hired: { series: [], current: 1, previous: 0 },
+    },
+  } as unknown as EmployerDashboardData;
+  it("sizes each step against the first and carries the in-window counts", () => {
+    const steps = buildFunnel(data, 10);
+    expect(steps.map((x) => [x.key, x.value, x.added, x.filled])).toEqual([
+      ["recommended", 10, 6, 10], ["interviewing", 2, 0, 2], ["hired", 1, 1, 1],
+    ]);
   });
-  it("falls back to the raw difference with no previous data", () => {
-    expect(trendDelta({ series: [], current: 3, previous: 0 })).toEqual({ diff: 3, label: "+3" });
+  it("keeps a non-zero step visible and an empty one empty", () => {
+    expect(buildFunnel(data, 100)[2].filled).toBe(1);
+    expect(buildFunnel(null, 0).map((x) => x.filled)).toEqual([0, 0, 0]);
+    expect(buildFunnel(null, 5)[1].added).toBeNull();
   });
-  it("reports no change", () => {
-    expect(trendDelta({ series: [], current: 2, previous: 2 }).label).toBe("No change");
+});
+
+describe("sortJobs", () => {
+  const jobs = [job("a", { title: "Beta" }, [cand("aaaaaa", [])]), job("b", { title: "alpha" }), job("c", { title: "Gamma" }, [cand("bbbbbb", []), cand("cccccc", [])])];
+  const pipe: DashboardJobPipeline[] = [
+    { requirementId: "a", interviewing: 3, hired: 0, lastUpdatedAt: null },
+    { requirementId: "b", interviewing: 1, hired: 2, lastUpdatedAt: null },
+  ];
+  it("returns the original order with no key", () => {
+    expect(sortJobs(jobs, pipe, null, "desc")).toBe(jobs);
+  });
+  it("sorts titles case-insensitively", () => {
+    expect(sortJobs(jobs, pipe, "title", "asc").map((j) => j.id)).toEqual(["b", "a", "c"]);
+  });
+  it("sorts by recommended, interviewing and hired, treating missing pipeline as zero", () => {
+    expect(sortJobs(jobs, pipe, "recommended", "desc").map((j) => j.id)).toEqual(["c", "a", "b"]);
+    expect(sortJobs(jobs, pipe, "interviewing", "desc").map((j) => j.id)).toEqual(["a", "b", "c"]);
+    expect(sortJobs(jobs, pipe, "hired", "asc").map((j) => j.id)).toEqual(["a", "c", "b"]);
+  });
+  it("does not mutate the input", () => {
+    const before = jobs.map((j) => j.id);
+    sortJobs(jobs, pipe, "title", "desc");
+    expect(jobs.map((j) => j.id)).toEqual(before);
   });
 });
 
@@ -112,6 +145,11 @@ describe("buildRecommendedCards", () => {
     expect(c.matchedSkills).toEqual(["react", "css"]);
     expect(c.requiredCount).toBe(0);
   });
+  it("carries traits through, defaulting to none", () => {
+    const withTraits = job("r1", {}, [{ ...cand("aaaaaa", []), traits: ["Senior", "Fintech"] }, cand("bbbbbb", [])]);
+    const cards = buildRecommendedCards([withTraits], null, NOW);
+    expect(cards.map((c) => c.traits)).toEqual([["Senior", "Fintech"], []]);
+  });
   it("falls back to the jobs list when the server list is missing", () => {
     expect(buildRecommendedCards(jobs, null, NOW)).toHaveLength(2);
     expect(buildRecommendedCards(jobs, null, NOW, 1)).toHaveLength(1);
@@ -156,13 +194,13 @@ describe("buildInsights", () => {
     { requirementId: "r2", interviewing: 0, hired: 0, lastUpdatedAt: new Date(NOW - 30 * DAY).toISOString() },
   ];
   it("emits only observations that are true", () => {
-    const out = buildInsights([job("r1", {}, [cand("aaaaaa", [])]), job("r2")], pipeline, 2, NOW);
-    expect(out.map((i) => i.id)).toEqual(["best-pipeline", "awaiting-review", "no-strong", "stale"]);
+    const out = buildInsights([job("r1", {}, [cand("aaaaaa", [])]), job("r2")], pipeline, NOW);
+    expect(out.map((i) => i.id)).toEqual(["best-pipeline", "no-strong", "stale"]);
     expect(out[0].body).toContain("averaging 71% fit");
-    expect(out.map((i) => i.tone)).toEqual(["positive", "action", "attention", "neutral"]);
+    expect(out.map((i) => i.tone)).toEqual(["positive", "attention", "neutral"]);
     expect(out.every((i) => i.cta.length > 0)).toBe(true);
   });
   it("is empty for an account with nothing to say", () => {
-    expect(buildInsights([], [], 0, NOW)).toEqual([]);
+    expect(buildInsights([], [], NOW)).toEqual([]);
   });
 });
