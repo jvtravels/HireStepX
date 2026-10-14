@@ -38,6 +38,12 @@ describe("nextUnlockBatchQuote", () => {
     expect(q.amountPaise).toBe(9 * 2990);
   });
 
+  it("reports locked rows across the whole shortlist, not just the window", () => {
+    const q = nextUnlockBatchQuote(rows)!;
+    expect(q.count).toBe(9);
+    expect(q.lockedRemaining).toBe(12);
+  });
+
   it("charges the flat batch price for a full window", () => {
     const q = nextUnlockBatchQuote(Array.from({ length: 10 }, (_, i) => ({ id: `x${i}`, unlocked: false })))!;
     expect(q.amountPaise).toBe(29_900);

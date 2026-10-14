@@ -340,7 +340,7 @@ export default async function handler(req: Request): Promise<Response> {
         limit: paged.limit,
         total: paged.total,
         nextUnlockBatch: nextUnlockBatch
-          ? { start: nextUnlockBatch.start, end: nextUnlockBatch.end, count: nextUnlockBatch.count, amountPaise: nextUnlockBatch.amountPaise }
+          ? { start: nextUnlockBatch.start, end: nextUnlockBatch.end, count: nextUnlockBatch.count, amountPaise: nextUnlockBatch.amountPaise, lockedRemaining: nextUnlockBatch.lockedRemaining }
           : null,
         nextPage: paged.nextPage,
         pagination: { page: paged.page, limit: paged.limit, total: paged.total, nextPage: paged.nextPage },

@@ -183,7 +183,7 @@ export interface Requirement {
   lastMatchedAt: string | null;
   candidates: Candidate[];
   /** Server-computed next unlock batch (rank window, locked count, exact price). */
-  nextUnlockBatch?: { start: number; end: number; count: number; amountPaise: number } | null;
+  nextUnlockBatch?: { start: number; end: number; count: number; amountPaise: number; lockedRemaining: number } | null;
   /** True size of the matched-candidate pool before the 20-candidate cap —
    *  equal to candidates.length unless the real pool exceeded the cap. */
   totalMatched: number;

@@ -11,7 +11,7 @@ import type { EmployerTier } from "../../../../../../server-handlers/_employer-t
 
 export type UnlockTarget =
   | { mode: "single"; matchId: string }
-  | { mode: "batch"; requirementId: string; count: number; amountPaise: number; start: number; end: number };
+  | { mode: "batch"; requirementId: string; count: number; amountPaise: number; start: number; end: number; remaining: number };
 
 /** Dynamically loads the Razorpay checkout script with the CSP nonce. A script
     tag without the nonce is silently blocked under strict-dynamic. */

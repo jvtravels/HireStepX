@@ -33,7 +33,7 @@ export default function UnlockDialog({
   const priceText = formatPaise(amountPaise);
   const title =
     target?.mode === "batch"
-      ? `Unlock candidates ${target.start}–${target.end} for ${priceText}?`
+      ? `Unlock ${target.count} candidate${target.count === 1 ? "" : "s"} for ${priceText}?`
       : `Unlock this candidate for ${priceText}?`;
 
   const confirm = async () => {
@@ -55,7 +55,7 @@ export default function UnlockDialog({
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription id="unlock-dialog-desc">
             {target?.mode === "batch"
-              ? `One payment reveals the name and email of ${target.count} candidate${target.count === 1 ? "" : "s"} and lets you message them and move them through interviews.`
+              ? `One payment reveals the name and email of the ${target.count} locked candidate${target.count === 1 ? "" : "s"} ranked ${target.start}–${target.end} and lets you message them and move them through interviews.${target.remaining > 0 ? ` ${target.remaining} more stay locked further down.` : ""}`
               : "One payment reveals this candidate's name and email, and lets you message them and move them to interview."}
           </DialogDescription>
         </DialogHeader>

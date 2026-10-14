@@ -710,6 +710,8 @@ export interface UnlockBatchQuote {
   matchIds: string[];
   count: number;
   amountPaise: number;
+  /** Locked visible candidates across the whole shortlist, not just this window. */
+  lockedRemaining: number;
 }
 
 /** The first rank window of UNLOCK_BUNDLE_SIZE that still has a locked row,
@@ -725,6 +727,7 @@ export function nextUnlockBatchQuote(ranked: Array<{ id: string; unlocked: boole
         matchIds: locked.map((r) => r.id),
         count: locked.length,
         amountPaise: batchUnlockPrice(locked.length).amountPaise,
+        lockedRemaining: ranked.filter((r) => !r.unlocked).length,
       };
     }
   }

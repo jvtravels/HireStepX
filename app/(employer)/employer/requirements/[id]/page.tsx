@@ -304,7 +304,7 @@ export default function RequirementDetailPage() {
                           size="sm"
                           icon={<LockIcon size={13} aria-hidden="true" />}
                           disabled={suspended}
-                          ariaLabel={`Unlock top ${nextLockedBatch.start} to ${nextLockedBatch.end} for ${formatPaise(nextLockedBatch.amountPaise)}`}
+                          ariaLabel={`Unlock ${nextLockedBatch.count} candidate${nextLockedBatch.count === 1 ? "" : "s"} for ${formatPaise(nextLockedBatch.amountPaise)}`}
                           onClick={() =>
                             setUnlockTarget({
                               mode: "batch",
@@ -313,17 +313,22 @@ export default function RequirementDetailPage() {
                               amountPaise: nextLockedBatch.amountPaise,
                               start: nextLockedBatch.start,
                               end: nextLockedBatch.end,
+                              remaining: Math.max(0, nextLockedBatch.lockedRemaining - nextLockedBatch.count),
                             })
                           }
                         >
-                          Unlock {nextLockedBatch.start}–{nextLockedBatch.end} · {formatPaise(nextLockedBatch.amountPaise)}
+                          Unlock {nextLockedBatch.count} candidate{nextLockedBatch.count === 1 ? "" : "s"} · {formatPaise(nextLockedBatch.amountPaise)}
                         </PrimaryCta>
                       </span>
                     </TooltipTrigger>
                     <TooltipContent side="bottom" className="max-w-64">
                       {suspended
                         ? "Unlocking is turned off while your account is suspended."
-                        : `Unlock the ${nextLockedBatch.count} locked candidates ranked ${nextLockedBatch.start}–${nextLockedBatch.end} for a flat rate instead of one at a time. Names and contact details stay hidden until you pay.`}
+                        : `Unlocks the ${nextLockedBatch.count} locked candidate${nextLockedBatch.count === 1 ? "" : "s"} ranked ${nextLockedBatch.start}–${nextLockedBatch.end} at a batch rate.${
+                            nextLockedBatch.lockedRemaining > nextLockedBatch.count
+                              ? ` ${nextLockedBatch.lockedRemaining - nextLockedBatch.count} more stay locked further down; unlock those from their rows.`
+                              : ""
+                          } Names and contact details stay hidden until you pay.`}
                     </TooltipContent>
                   </Tooltip>
                 )}
