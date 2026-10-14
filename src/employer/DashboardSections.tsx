@@ -352,7 +352,7 @@ function waitingLabel(days: number | null): string | null {
   return days !== null && days >= 3 ? `Waiting ${days} days` : null;
 }
 
-const REVIEW_COLS = "@min-[640px]:grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)_auto] @min-[960px]:grid-cols-[minmax(0,1.15fr)_minmax(0,1.7fr)_minmax(0,0.9fr)_176px]";
+const REVIEW_COLS = "@min-[640px]:grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)_auto] @min-[960px]:grid-cols-[minmax(0,1.1fr)_minmax(0,1.3fr)_minmax(0,0.9fr)_216px]";
 const COL_LABEL = "text-[12px] font-medium text-hx-ink-soft @min-[960px]:sr-only";
 
 const FIT_TEXT: Record<NonNullable<RecommendedCard["experienceFit"]>, { cls: string; word: string }> = {
@@ -431,7 +431,7 @@ export function RecommendedCandidatesCard({ cards, total }: { cards: Recommended
         <EmptyState className={EMPTY} title="No candidates to review" description="Strong matches appear here as soon as a job finishes screening." />
       ) : (
         <>
-          <div aria-hidden="true" className={`mt-5 hidden gap-x-6 border-b border-hx-line px-1 pb-2.5 text-[12px] font-medium text-hx-ink-soft @min-[960px]:grid ${REVIEW_COLS}`}>
+          <div aria-hidden="true" className={`mt-5 hidden gap-x-8 border-b border-hx-line px-1 pb-2.5 text-[12px] font-medium text-hx-ink-soft @min-[960px]:grid ${REVIEW_COLS}`}>
             <span>Candidate</span>
             <span>Skills</span>
             <span>Experience</span>
@@ -441,7 +441,7 @@ export function RecommendedCandidatesCard({ cards, total }: { cards: Recommended
             {cards.map((c) => {
               const waiting = waitingLabel(c.waitingDays);
               return (
-                <li key={c.matchId} className={`grid grid-cols-1 gap-x-6 gap-y-5 px-1 py-5 @min-[960px]:items-start ${REVIEW_COLS}`}>
+                <li key={c.matchId} className={`grid grid-cols-1 gap-x-8 gap-y-5 px-1 py-6 @min-[960px]:items-center ${REVIEW_COLS}`}>
                   <div className="flex min-w-0 items-start gap-3.5">
                     <PersonAvatar name={c.name} initials={c.initials} />
                     <div className="min-w-0">
@@ -457,16 +457,18 @@ export function RecommendedCandidatesCard({ cards, total }: { cards: Recommended
                     <SkillsCell c={c} />
                     <ExperienceCell c={c} />
                   </div>
-                  <div className="flex items-center justify-between gap-4 @min-[640px]:flex-col @min-[640px]:items-end @min-[640px]:justify-start @min-[960px]:flex-row @min-[960px]:items-center">
+                  <div className="flex items-center justify-between gap-4 @min-[640px]:flex-col @min-[640px]:items-end @min-[640px]:justify-start @min-[960px]:flex-row @min-[960px]:justify-between">
                     {c.matchScore !== null && (
                       <div className="flex items-center gap-2.5 @min-[640px]:flex-row-reverse">
                         <ScoreChip score={Math.round(c.matchScore)} />
                         <span className="text-[12px] text-hx-ink-soft @min-[960px]:sr-only">Match</span>
                       </div>
                     )}
-                    <OutlineLink small href={`/employer/requirements/${c.requirementId}/candidates/${c.matchId}`}>
-                      Review<span className="sr-only"> {c.name}</span>
-                    </OutlineLink>
+                    <div className="@min-[960px]:min-w-0 @min-[960px]:flex-1 @min-[960px]:[&_a]:w-full">
+                      <OutlineLink small href={`/employer/requirements/${c.requirementId}/candidates/${c.matchId}`}>
+                        Review<span className="sr-only"> {c.name}</span>
+                      </OutlineLink>
+                    </div>
                   </div>
                 </li>
               );
