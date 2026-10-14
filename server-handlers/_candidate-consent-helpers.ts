@@ -161,9 +161,34 @@ export function decideAutoSuspension(distinctReporters: number, alreadySuspended
 
 /* ── Respond notification ── */
 
-export function respondNotificationText(response: CandidateResponse, maskedName: string, roleTitle: string | null): { title: string; body: string } {
+const LOCKED_HINT = "Locked: unlock to see their profile and contact details.";
+const UNLOCKED_HINT = "Unlocked: open their profile.";
+
+export function respondNotificationText(
+  response: CandidateResponse,
+  maskedName: string,
+  roleTitle: string | null,
+  unlocked = false,
+): { title: string; body: string } {
   const role = roleTitle ? ` for ${roleTitle}` : "";
   return response === "interested"
-    ? { title: "A candidate is interested", body: `${maskedName} responded as interested${role}.` }
+    ? { title: "A candidate is interested", body: `${maskedName} responded as interested${role}. ${unlocked ? UNLOCKED_HINT : LOCKED_HINT}` }
     : { title: "A candidate declined", body: `${maskedName} declined contact${role}.` };
+}
+
+export function candidateDetailLink(requirementId: string, matchId: string): string {
+  return `/employer/requirements/${requirementId}/candidates/${matchId}`;
+}
+
+const CANDIDATE_LINK_RE = /^\/employer\/requirements\/[^/]+\/candidates\/([0-9a-f-]{36})$/i;
+
+export function matchIdFromCandidateLink(link: string | null | undefined): string | null {
+  return link ? (CANDIDATE_LINK_RE.exec(link)?.[1] ?? null) : null;
+}
+
+/** The unlock state can change after the notification was written, so the list re-resolves the hint. */
+export function withUnlockHint(body: string, unlocked: boolean): string {
+  if (!body.endsWith(LOCKED_HINT) && !body.endsWith(UNLOCKED_HINT)) return body;
+  const base = body.slice(0, body.lastIndexOf(". ") + 1);
+  return `${base} ${unlocked ? UNLOCKED_HINT : LOCKED_HINT}`;
 }

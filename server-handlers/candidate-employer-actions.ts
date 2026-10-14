@@ -24,6 +24,7 @@ import {
   isReportReason,
   isUuid,
   respondNotificationText,
+  candidateDetailLink,
   sanitizeNote,
   type CandidateResponse,
   type ReportReason,
@@ -35,6 +36,7 @@ interface MatchRow {
   candidate_user_id: string;
   candidate_status: string | null;
   candidate_response: string | null;
+  unlocked: boolean | null;
   employer_requirements: {
     employer_id: string;
     title: string | null;
@@ -45,7 +47,7 @@ interface MatchRow {
 type Failure = { ok: false; status: number; error: string };
 type Done<T = Record<string, unknown>> = { ok: true } & T;
 
-const MATCH_SELECT = "id,requirement_id,candidate_user_id,candidate_status,candidate_response,employer_requirements(employer_id,title,employers(suspended_at))";
+const MATCH_SELECT = "id,requirement_id,candidate_user_id,candidate_status,candidate_response,unlocked,employer_requirements(employer_id,title,employers(suspended_at))";
 
 function json(body: unknown, status: number, headers: Record<string, string>): Response {
   return new Response(JSON.stringify(body), { status, headers });
@@ -193,13 +195,13 @@ export async function doRespond(
   }
 
   // Name stays masked: the candidate's real identity is only ever revealed by the unlock flow.
-  const text = respondNotificationText(response, maskedCandidateName(match.id), match.employer_requirements?.title ?? null);
+  const text = respondNotificationText(response, maskedCandidateName(match.id), match.employer_requirements?.title ?? null, !!match.unlocked);
   await notify({
     userId: employerId,
     type: "candidate_responded",
     title: text.title,
     body: text.body,
-    link: `/employer/requirements/${match.requirement_id}`,
+    link: candidateDetailLink(match.requirement_id, match.id),
   });
 
   return { ok: true, response, respondedAt, changed: true };

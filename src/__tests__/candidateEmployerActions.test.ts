@@ -26,7 +26,7 @@ type Call = { url: string; method: string; body?: string };
 
 function fakeDb(o: {
   owner?: string; response?: string; employerSuspended?: boolean; reporters?: string[];
-  duplicateReport?: boolean; matchMissing?: boolean; blockFails?: boolean;
+  duplicateReport?: boolean; matchMissing?: boolean; blockFails?: boolean; unlocked?: boolean;
 } = {}) {
   const calls: Call[] = [];
   const res = (body: unknown, status = 200) => ({ ok: status < 400, status, json: async () => body }) as unknown as Response;
@@ -37,7 +37,7 @@ function fakeDb(o: {
     if (u.includes("/rest/v1/requirement_matches") && method === "GET") {
       if (o.matchMissing) return res([]);
       return res([{
-        id: MATCH, requirement_id: REQ, candidate_user_id: o.owner ?? UID, candidate_status: "shortlisted", candidate_response: o.response ?? "none",
+        id: MATCH, requirement_id: REQ, candidate_user_id: o.owner ?? UID, candidate_status: "shortlisted", candidate_response: o.response ?? "none", unlocked: o.unlocked ?? false,
         employer_requirements: { employer_id: EMP, title: "SRE", employers: { suspended_at: o.employerSuspended ? "2026-10-01" : null } },
       }]);
     }
@@ -163,8 +163,17 @@ describe("respond", () => {
     expect(ev).toMatchObject({ match_id: MATCH, employer_id: EMP, candidate_user_id: UID, from_status: null, to_status: "candidate_interested", actor: "candidate" });
     expect(notify).toHaveBeenCalledTimes(1);
     const n = (notify.mock.calls[0] as unknown as [Record<string, string>])[0];
-    expect(n).toMatchObject({ userId: EMP, type: "candidate_responded", link: `/employer/requirements/${REQ}` });
+    expect(n).toMatchObject({ userId: EMP, type: "candidate_responded", link: `/employer/requirements/${REQ}/candidates/${MATCH}` });
     expect(n.body).toContain("Candidate #111111");
+    expect(n.body).toContain("Locked");
+  });
+
+  it("tells the employer when the interested candidate is already unlocked", async () => {
+    fakeDb({ unlocked: true });
+    await handler(post({ action: "respond", matchId: MATCH, response: "interested" }));
+    const n = (notify.mock.calls[0] as unknown as [Record<string, string>])[0];
+    expect(n.body).toContain("Unlocked");
+    expect(n.body).not.toContain("Locked");
   });
 
   it("records the previous response as from_status when changing it", async () => {

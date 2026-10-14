@@ -14,6 +14,9 @@ import {
   isReportReason,
   isUuid,
   respondNotificationText,
+  candidateDetailLink,
+  matchIdFromCandidateLink,
+  withUnlockHint,
   sanitizeNote,
   shapeConsentHistory,
 } from "../../server-handlers/_candidate-consent-helpers";
@@ -144,9 +147,35 @@ describe("respondNotificationText", () => {
   it("uses the masked name and role", () => {
     const t = respondNotificationText("interested", "Candidate #abc123", "SRE");
     expect(t.title).toMatch(/interested/i);
-    expect(t.body).toBe("Candidate #abc123 responded as interested for SRE.");
+    expect(t.body).toBe("Candidate #abc123 responded as interested for SRE. Locked: unlock to see their profile and contact details.");
+  });
+  it("says so when the candidate is already unlocked", () => {
+    expect(respondNotificationText("interested", "Candidate #abc123", "SRE", true).body).toBe(
+      "Candidate #abc123 responded as interested for SRE. Unlocked: open their profile.",
+    );
   });
   it("handles declined without a role", () => {
     expect(respondNotificationText("declined", "Candidate #abc123", null).body).toBe("Candidate #abc123 declined contact.");
+  });
+});
+
+describe("candidate notification link and unlock hint", () => {
+  const M = "11111111-1111-4111-8111-111111111111";
+  it("links to the candidate detail screen and round-trips the match id", () => {
+    const link = candidateDetailLink("req-1", M);
+    expect(link).toBe(`/employer/requirements/req-1/candidates/${M}`);
+    expect(matchIdFromCandidateLink(link)).toBe(M);
+  });
+  it("ignores legacy requirement-only links and junk", () => {
+    expect(matchIdFromCandidateLink("/employer/requirements/req-1")).toBeNull();
+    expect(matchIdFromCandidateLink("/employer/requirements/req-1/candidates/x,1=1")).toBeNull();
+    expect(matchIdFromCandidateLink(null)).toBeNull();
+  });
+  it("swaps the hint to the current unlock state and leaves other bodies alone", () => {
+    const locked = respondNotificationText("interested", "Candidate #abc123", "Sr. SRE", false).body;
+    expect(withUnlockHint(locked, true)).toBe("Candidate #abc123 responded as interested for Sr. SRE. Unlocked: open their profile.");
+    expect(withUnlockHint(withUnlockHint(locked, true), false)).toBe(locked);
+    const declined = respondNotificationText("declined", "Candidate #abc123", null).body;
+    expect(withUnlockHint(declined, true)).toBe(declined);
   });
 });

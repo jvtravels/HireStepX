@@ -11,10 +11,31 @@ import {
   parseCursor,
   parseFilter,
 } from "./_notifications-helpers";
+import { matchIdFromCandidateLink, withUnlockHint } from "./_candidate-consent-helpers";
 
 interface NotificationRow {
   id: string;
   created_at: string;
+  type?: string;
+  body?: string;
+  link?: string | null;
+}
+
+async function refreshUnlockHints(base: string, rows: NotificationRow[]): Promise<void> {
+  const targets = rows.filter((n) => n.type === "candidate_responded" && matchIdFromCandidateLink(n.link));
+  if (targets.length === 0) return;
+  const ids = [...new Set(targets.map((n) => matchIdFromCandidateLink(n.link)!))];
+  const res = await fetch(`${base}/rest/v1/requirement_matches?id=in.(${ids.join(",")})&select=id,unlocked`, {
+    headers: supabaseServiceHeaders(),
+    signal: AbortSignal.timeout(3000),
+  }).catch(() => null);
+  if (!res || !res.ok) return;
+  const found = (await res.json().catch(() => [])) as Array<{ id: string; unlocked: boolean | null }>;
+  const unlocked = new Map(found.map((m) => [m.id, !!m.unlocked]));
+  for (const n of targets) {
+    const state = unlocked.get(matchIdFromCandidateLink(n.link)!);
+    if (state !== undefined && n.body) n.body = withUnlockHint(n.body, state);
+  }
 }
 
 export default async function handler(req: Request): Promise<Response> {
@@ -58,6 +79,7 @@ export default async function handler(req: Request): Promise<Response> {
   const all = Array.isArray(rows) ? rows : [];
   const hasMore = all.length > PAGE_SIZE;
   const notifications = hasMore ? all.slice(0, PAGE_SIZE) : all;
+  await refreshUnlockHints(base, notifications);
   const nextCursor = hasMore ? notifications[notifications.length - 1].created_at : null;
   const unreadCount = countRes.ok ? parseContentRange(countRes.headers.get("content-range")) : 0;
 
