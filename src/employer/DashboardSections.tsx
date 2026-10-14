@@ -352,62 +352,62 @@ function waitingLabel(days: number | null): string | null {
   return days !== null && days >= 3 ? `Waiting ${days} days` : null;
 }
 
-function FitRow({ label, children }: { label: string; children: ReactNode }) {
+const REVIEW_COLS = "@min-[640px]:grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)_auto] @min-[960px]:grid-cols-[minmax(0,1.15fr)_minmax(0,1.7fr)_minmax(0,0.9fr)_176px]";
+const COL_LABEL = "text-[12px] font-medium text-hx-ink-soft @min-[960px]:sr-only";
+
+const FIT_TEXT: Record<NonNullable<RecommendedCard["experienceFit"]>, { cls: string; word: string }> = {
+  within: { cls: "text-hx-success-ink", word: "Within" },
+  below: { cls: "text-hx-warning-ink", word: "Below" },
+  above: { cls: "text-hx-ink-soft", word: "Above" },
+};
+
+function SkillsCell({ c }: { c: RecommendedCard }) {
+  const shown = c.matchedSkills.slice(0, 3);
+  const more = c.matchedSkills.length - shown.length;
+  const missing = c.missingSkills.slice(0, 2);
+  const moreMissing = c.missingSkills.length - missing.length;
+  const segments = Math.min(c.requiredCount, 8);
+  const filled = c.requiredCount > 0 ? Math.round((c.matchedSkills.length / c.requiredCount) * segments) : 0;
   return (
-    <div className="flex flex-col gap-1.5 @min-[560px]:flex-row @min-[560px]:items-start @min-[560px]:gap-4">
-      <div className="text-[12px] font-semibold text-hx-ink-soft @min-[560px]:w-[84px] @min-[560px]:shrink-0 @min-[560px]:pt-1">{label}</div>
-      <div className="min-w-0 flex-1">{children}</div>
+    <div className="min-w-0">
+      <div className={COL_LABEL}>Skills</div>
+      {c.requiredCount > 0 && (
+        <div className="mt-1 flex items-center gap-2.5 @min-[960px]:mt-0">
+          <span className="text-[13px] text-hx-ink-soft"><span className="font-semibold text-hx-coal">{c.matchedSkills.length}</span> of {c.requiredCount} required</span>
+          <div className="flex gap-0.5" aria-hidden="true">
+            {Array.from({ length: segments }, (_, k) => (
+              <span key={k} className={`h-1 w-3 rounded-full ${k < filled ? "bg-hx-success" : "bg-hx-line"}`} />
+            ))}
+          </div>
+        </div>
+      )}
+      {shown.length > 0 && (
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {shown.map((sk) => <Pill key={sk} tone="success">{sk}</Pill>)}
+          {more > 0 && <Pill tone="neutral">+{more}</Pill>}
+        </div>
+      )}
+      {missing.length > 0 && (
+        <p className="m-0 mt-2 text-[12px] leading-[1.5] text-hx-ink-soft">
+          Missing {missing.join(", ")}{moreMissing > 0 ? ` +${moreMissing} more` : ""}
+        </p>
+      )}
     </div>
   );
 }
 
-function SkillFit({ c }: { c: RecommendedCard }) {
-  const matched = c.matchedSkills;
-  const shownMatched = matched.slice(0, 5);
-  const moreMatched = matched.length - shownMatched.length;
-  const shownMissing = c.missingSkills.slice(0, 3);
-  const moreMissing = c.missingSkills.length - shownMissing.length;
-  const hasRequired = c.requiredCount > 0;
-  const segments = Math.min(c.requiredCount, 8);
-  const filled = hasRequired ? Math.round((matched.length / c.requiredCount) * segments) : 0;
+function ExperienceCell({ c }: { c: RecommendedCard }) {
+  const fit = c.experienceFit && c.experienceAsk ? FIT_TEXT[c.experienceFit] : null;
   return (
-    <div className="min-w-0 space-y-3">
-      {(hasRequired || shownMatched.length > 0) && (
-        <FitRow label="Skills">
-          {hasRequired && (
-            <div className="mb-2 flex items-center gap-3">
-              <span className="text-[13px] font-semibold text-hx-coal">{matched.length} of {c.requiredCount} required</span>
-              <div className="flex gap-0.5" aria-hidden="true">
-                {Array.from({ length: segments }, (_, k) => (
-                  <span key={k} className={`h-1.5 w-4 rounded-full ${k < filled ? "bg-hx-success" : "bg-hx-line"}`} />
-                ))}
-              </div>
-            </div>
-          )}
-          {shownMatched.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {shownMatched.map((s) => <Pill key={s} tone="success">{s}</Pill>)}
-              {moreMatched > 0 && <Pill tone="neutral">+{moreMatched}</Pill>}
-            </div>
-          )}
-        </FitRow>
-      )}
-      {shownMissing.length > 0 && (
-        <FitRow label="Missing">
-          <p className="m-0 text-[13px] text-hx-ink-soft">{shownMissing.join(", ")}{moreMissing > 0 ? ` +${moreMissing} more` : ""}</p>
-        </FitRow>
-      )}
-      {c.yearsExperience !== null && (
-        <FitRow label="Experience">
-          <p className="m-0 flex flex-wrap items-center gap-2 text-[13px] text-hx-coal">
-            {c.yearsExperience} {c.yearsExperience === 1 ? "year" : "years"}
-            {c.experienceFit && c.experienceAsk && (
-              <Pill tone={c.experienceFit === "within" ? "success" : c.experienceFit === "below" ? "warning" : "neutral"}>
-                {c.experienceFit === "within" ? "Within" : c.experienceFit === "below" ? "Below" : "Above"} the {c.experienceAsk} asked
-              </Pill>
-            )}
-          </p>
-        </FitRow>
+    <div className="min-w-0">
+      <div className={COL_LABEL}>Experience</div>
+      {c.yearsExperience === null ? (
+        <p className="m-0 mt-1 text-[13px] text-hx-ink-soft @min-[960px]:mt-0">Not listed</p>
+      ) : (
+        <p className="m-0 mt-1 text-[13px] leading-[1.5] text-hx-ink-soft @min-[960px]:mt-0">
+          <span className="font-semibold text-hx-coal">{c.yearsExperience} {c.yearsExperience === 1 ? "year" : "years"}</span>
+          {fit && <span className={fit.cls}>{" \u00b7 "}{fit.word} {c.experienceAsk}</span>}
+        </p>
       )}
     </div>
   );
@@ -423,47 +423,56 @@ export function RecommendedCandidatesCard({ cards, total }: { cards: Recommended
         action={<TextLink href="/employer/jobs">View all</TextLink>}
       />
       {cards.length > 0 && (
-        <p className="m-0 mb-2 text-[13px] text-hx-ink-soft">
+        <p className="m-0 text-[13px] text-hx-ink-soft">
           {total > cards.length ? `Top ${cards.length} of ${total}` : `${total} ${total === 1 ? "candidate" : "candidates"}`} waiting for your review, best match first.
         </p>
       )}
       {cards.length === 0 ? (
         <EmptyState className={EMPTY} title="No candidates to review" description="Strong matches appear here as soon as a job finishes screening." />
       ) : (
-        <ul className={LIST}>
-          {cards.map((c, i) => {
-            const waiting = waitingLabel(c.waitingDays);
-            return (
-              <li key={c.matchId} className={`grid grid-cols-1 gap-x-8 gap-y-4 py-6 @min-[640px]:grid-cols-[210px_minmax(0,1fr)] @min-[960px]:grid-cols-[230px_minmax(0,1fr)_auto] ${i > 0 ? "border-t border-hx-line" : ""}`}>
-                <div className="flex min-w-0 items-start gap-3.5">
-                  <PersonAvatar name={c.name} initials={c.initials} />
-                  <div className="min-w-0">
-                    <div className="text-[15px] font-semibold text-hx-coal [overflow-wrap:anywhere]">{c.name}</div>
-                    <div className="mt-0.5 text-[13px] text-hx-ink-soft [overflow-wrap:anywhere]">for {c.roleTitle}</div>
-                    <div className="mt-3 flex flex-wrap items-center gap-2">
-                      {c.createdAt && <span className="text-[12px] text-hx-ink-soft">Matched {hoursOrDaysAgo(c.createdAt)}</span>}
-                      {waiting && <Pill tone="warning">{waiting}</Pill>}
+        <>
+          <div aria-hidden="true" className={`mt-5 hidden gap-x-6 border-b border-hx-line px-1 pb-2.5 text-[12px] font-medium text-hx-ink-soft @min-[960px]:grid ${REVIEW_COLS}`}>
+            <span>Candidate</span>
+            <span>Skills</span>
+            <span>Experience</span>
+            <span>Match</span>
+          </div>
+          <ul className={`${LIST} divide-y divide-hx-line`}>
+            {cards.map((c) => {
+              const waiting = waitingLabel(c.waitingDays);
+              return (
+                <li key={c.matchId} className={`grid grid-cols-1 gap-x-6 gap-y-5 px-1 py-5 @min-[960px]:items-start ${REVIEW_COLS}`}>
+                  <div className="flex min-w-0 items-start gap-3.5">
+                    <PersonAvatar name={c.name} initials={c.initials} />
+                    <div className="min-w-0">
+                      <div className="text-[15px] font-semibold leading-5 text-hx-coal [overflow-wrap:anywhere]">{c.name}</div>
+                      <div className="mt-1 text-[13px] leading-[1.45] text-hx-ink-soft [overflow-wrap:anywhere]">for {c.roleTitle}</div>
+                      <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1.5">
+                        {c.createdAt && <span className="text-[12px] text-hx-ink-soft">Matched {hoursOrDaysAgo(c.createdAt)}</span>}
+                        {waiting && <Pill tone="warning">{waiting}</Pill>}
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div className="@min-[640px]:col-start-2 @min-[640px]:row-span-2 @min-[640px]:row-start-1 @min-[960px]:row-span-1">
-                  <SkillFit c={c} />
-                </div>
-                <div className="flex items-start gap-5 @min-[640px]:col-start-1 @min-[640px]:row-start-2 @min-[960px]:col-start-3 @min-[960px]:row-start-1 @min-[960px]:justify-end">
-                  {c.matchScore !== null && (
-                    <div className="flex w-[72px] flex-col items-center gap-1.5">
-                      <ScoreChip score={Math.round(c.matchScore)} />
-                      <span className="text-[11px] text-hx-ink-soft">Match score</span>
-                    </div>
-                  )}
-                  <OutlineLink small href={`/employer/requirements/${c.requirementId}/candidates/${c.matchId}`}>
-                    Review profile<span className="sr-only">: {c.name}</span>
-                  </OutlineLink>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
+                  <div className="min-w-0 space-y-4 @min-[960px]:contents">
+                    <SkillsCell c={c} />
+                    <ExperienceCell c={c} />
+                  </div>
+                  <div className="flex items-center justify-between gap-4 @min-[640px]:flex-col @min-[640px]:items-end @min-[640px]:justify-start @min-[960px]:flex-row @min-[960px]:items-center">
+                    {c.matchScore !== null && (
+                      <div className="flex items-center gap-2.5 @min-[640px]:flex-row-reverse">
+                        <ScoreChip score={Math.round(c.matchScore)} />
+                        <span className="text-[12px] text-hx-ink-soft @min-[960px]:sr-only">Match</span>
+                      </div>
+                    )}
+                    <OutlineLink small href={`/employer/requirements/${c.requirementId}/candidates/${c.matchId}`}>
+                      Review<span className="sr-only"> {c.name}</span>
+                    </OutlineLink>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </>
       )}
     </section>
   );
