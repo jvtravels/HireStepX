@@ -127,6 +127,17 @@ export function displayValue(key: JdFieldKey, field: JdField<unknown>): string {
   }
 }
 
+/** The form's current value for a field, formatted like an extracted one; "" when blank. */
+export function draftDisplay(key: JdFieldKey, draft: RequirementDraft): string {
+  const num = (v: string): number | null => (v.trim() === "" || Number.isNaN(Number(v)) ? null : Number(v));
+  let value: unknown;
+  if (key === "experience") value = { min: num(draft.experienceMin), max: num(draft.experienceMax) };
+  else if (key === "salary") value = { type: draft.salaryType, min: num(draft.budgetMin), max: num(draft.budgetMax) };
+  else value = draft[DRAFT_KEYS[key][0]];
+  if (value === "" || (Array.isArray(value) && value.length === 0)) return "";
+  return displayValue(key, { value, confidence: "high", evidence: "", source: "regex" });
+}
+
 function slice(draft: RequirementDraft, keys: ReadonlyArray<keyof RequirementDraft>): string {
   return JSON.stringify(keys.map((k) => draft[k]));
 }

@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import type { JdField, JdFields } from "../../data/jd-extraction";
 import { initialDraft } from "../employer/_requirementFormHelpers";
 import {
-  checkJdFile, displayValue, draftSignature, outcomeCounts, planImport, resetPatch,
+  checkJdFile, displayValue, draftDisplay, draftSignature, outcomeCounts, planImport, resetPatch,
 } from "../employer/_jdAutofillHelpers";
 
 const base = initialDraft(undefined);
@@ -80,6 +80,19 @@ describe("display, undo and outcome", () => {
   it("counts imported fields kept versus edited after import", () => {
     const imported = { title: draftSignature("title", { ...base, title: "A" }), department: draftSignature("department", { ...base, department: "Eng" }) };
     expect(outcomeCounts(imported, { ...base, title: "A", department: "Sales" })).toEqual({ kept: 1, edited: 1 });
+  });
+});
+
+describe("draftDisplay", () => {
+  it("formats what the form currently holds and returns blank for empty fields", () => {
+    const d = { ...initialDraft(undefined), title: "Edited by me", experienceMin: "2", experienceMax: "4", budgetMin: "10", budgetMax: "15", skills: ["Go", "SQL"] };
+    expect(draftDisplay("title", d)).toBe("Edited by me");
+    expect(draftDisplay("experience", d)).toBe("2 to 4 years");
+    expect(draftDisplay("salary", d)).toMatch(/10 to 15 LPA/);
+    expect(draftDisplay("skills", d)).toBe("Go, SQL");
+    expect(draftDisplay("department", d)).toBe("");
+    expect(draftDisplay("locations", d)).toBe("");
+    expect(draftDisplay("experience", initialDraft(undefined))).toBe("");
   });
 });
 

@@ -48,7 +48,7 @@ describe("JdAutofill panel", () => {
   it("collapses to a one-line summary, fills blank fields and keeps a low-confidence one as a suggestion", async () => {
     render(<Harness />);
     await paste();
-    await waitFor(() => expect(screen.getByText(/Pasted job description added\. 2 fields filled in below\./)).toBeTruthy());
+    await waitFor(() => expect(screen.getByText(/2 fields filled in below/)).toBeTruthy());
     expect(latest.title).toBe("Senior Backend Engineer");
     expect(latest.experienceMin).toBe("4");
     expect(latest.skills).toEqual([]);
@@ -64,7 +64,8 @@ describe("JdAutofill panel", () => {
     const { container } = render(<Harness />);
     const input = container.querySelector("input[type=file]") as HTMLInputElement;
     fireEvent.change(input, { target: { files: [new File([JD], "jd.txt", { type: "text/plain" })] } });
-    await waitFor(() => expect(screen.getByText(/jd\.txt uploaded\. 2 fields filled in below\./)).toBeTruthy());
+    await waitFor(() => expect(screen.getByText("jd.txt")).toBeTruthy());
+    expect(screen.getByText(/2 fields filled in below/)).toBeTruthy();
     expect(latest.title).toBe("Senior Backend Engineer");
 
     apiFetch.mockResolvedValue({
@@ -73,7 +74,7 @@ describe("JdAutofill panel", () => {
     });
     fireEvent.click(screen.getByText("Replace"));
     fireEvent.change(container.querySelector("input[type=file]") as HTMLInputElement, { target: { files: [new File([JD], "jd2.txt", { type: "text/plain" })] } });
-    await waitFor(() => expect(screen.getByText(/jd2\.txt uploaded\. 1 field filled in below\./)).toBeTruthy());
+    await waitFor(() => expect(screen.getByText("jd2.txt")).toBeTruthy());
     expect(latest.title).toBe("Staff Engineer");
     expect(latest.experienceMin).toBe("");
   });
@@ -83,6 +84,21 @@ describe("JdAutofill panel", () => {
     await paste();
     await waitFor(() => expect(screen.getByLabelText("Use suggested Job title")).toBeTruthy());
     expect(latest.title).toBe("My title");
+    expect(screen.getByText("In your form")).toBeTruthy();
+    expect(screen.getByText("My title")).toBeTruthy();
+    expect(screen.getByText("Senior Backend Engineer")).toBeTruthy();
+  });
+
+  it("shows the Check this badge only for low confidence and applies everything with Use all", async () => {
+    render(<Harness start={{ title: "My title" }} />);
+    await paste();
+    await waitFor(() => expect(screen.getByText("Use all")).toBeTruthy());
+    expect(screen.getAllByText("Check this")).toHaveLength(1);
+    expect(screen.queryByText("Clear")).toBeNull();
+    fireEvent.click(screen.getByText("Use all"));
+    expect(latest.title).toBe("Senior Backend Engineer");
+    expect(latest.skills).toEqual(["Java", "Kafka"]);
+    expect(screen.queryByText("Needs your review")).toBeNull();
   });
 
   it("shows the server's message when the daily limit is reached", async () => {
