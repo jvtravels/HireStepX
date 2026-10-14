@@ -7,6 +7,9 @@ import { useRouter } from "next/navigation";
 import { WorkMode, EmploymentType, Requirement, RequirementFormValues } from "./mockData";
 import { buildRequirementPayload, type RequirementDraft } from "./_requirementPayload";
 import DateField from "./DateField";
+import JdAutofill from "./JdAutofill";
+import { outcomeCounts } from "./_jdAutofillHelpers";
+import { captureClientEvent } from "../posthogClient";
 import { tokens as t, fonts as f, textSize } from "@/auth/_tokens";
 import {
   AutocompleteInput,
@@ -147,9 +150,15 @@ export function RequirementForm({
   const [savedAt, setSavedAt] = useState<number | null>(null);
 
   const submittedRef = useRef(false);
+  const importedRef = useRef<Record<string, string>>({});
   const pendingFocus = useRef<string | null>(null);
   const stepHeadingRef = useRef<HTMLHeadingElement>(null);
   const firstStepRender = useRef(true);
+
+  const applyImport = useCallback((patch: Partial<RequirementDraft>) => {
+    setDraft((d) => ({ ...d, ...patch }));
+    setDirty(true);
+  }, []);
 
   const set = useCallback(<K extends keyof RequirementDraft>(key: K, value: RequirementDraft[K]) => {
     setDraft((d) => ({ ...d, [key]: value }));
@@ -307,6 +316,7 @@ export function RequirementForm({
     if (ok) {
       submittedRef.current = true;
       clearStoredDraft();
+      if (Object.keys(importedRef.current).length > 0) captureClientEvent("jd_import_outcome", outcomeCounts(importedRef.current, draft));
     } else {
       setSubmitting(false);
       // onSubmit already called setSubmitError with the server's specific
@@ -637,6 +647,7 @@ export function RequirementForm({
           <ErrorSummary errors={attempted ? errors : {}} scope={step} onJump={focusField} />
           {step === 1 ? (
             <div style={stackedSections}>
+              {isCreate && <JdAutofill draft={draft} applyPatch={applyImport} importedRef={importedRef} />}
               {section("Role basics", roleBasics)}
               {section("Requirements and pay", requirementsAndPay)}
             </div>

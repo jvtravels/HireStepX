@@ -12,6 +12,7 @@ export const PROMPT_VERSIONS: Readonly<Record<string, string>> = {
   "jd-match": "v1",
   "coach-followup": "v1",
   "evaluate": "v1",
+  "employer-parse-jd": "v1",
   "evaluate-session": REPORT_VERSION,
   "follow-up": "v1",
   "generate": "v1",
