@@ -71,10 +71,7 @@ interface ChecklistStep {
   cta: string;
 }
 
-/** Replaces the Overview stat strip while a new employer hasn't yet
- *  completed the activation path (post → see a match → unlock a
- *  candidate) — the moment they've done all three, this stops rendering
- *  for good and EmployerDashboard falls back to the plain stat cells. */
+/** Shown in place of the dashboard until the employer posts a first job. */
 function OnboardingChecklist({ steps }: { steps: ChecklistStep[] }) {
   const doneCount = steps.filter((s) => s.done).length;
   const nextStepIndex = steps.findIndex((s) => !s.done);
@@ -134,9 +131,8 @@ function OnboardingChecklist({ steps }: { steps: ChecklistStep[] }) {
 function EmployerDashboard() {
   const {
     requirements, requirementsLoading, requirementsError, refreshRequirements,
-    companyName, fetchUnlockHistory, fetchDashboard, limits, suspended,
+    companyName, fetchDashboard, limits, suspended,
   } = useEmployerData();
-  const [unlockCount, setUnlockCount] = useState<number | null>(null);
   const [range, setRange] = useState<DashboardRange>(30);
   const [dashboard, setDashboard] = useState<EmployerDashboardData | null>(null);
   const [dashboardState, setDashboardState] = useState<"loading" | "ready" | "failed">("loading");
@@ -145,18 +141,6 @@ function EmployerDashboard() {
   // within 48h" stay current without a ticking clock re-rendering the page.
   const [now, setNow] = useState(() => Date.now());
   const { rowActions, dialogs } = useJobRowActions();
-
-  useEffect(() => {
-    let cancelled = false;
-    // On failure the count stays null: we can't claim "no unlocks yet", so the
-    // checklist is withheld rather than shown with a wrong step 3.
-    fetchUnlockHistory().then((purchases) => {
-      if (!cancelled && purchases) setUnlockCount(purchases.filter((p) => !p.refundedAt && p.amount > 0).length);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [fetchUnlockHistory]);
 
   useEffect(() => {
     let cancelled = false;
@@ -173,7 +157,6 @@ function EmployerDashboard() {
   }, [fetchDashboard, range, dashboardNonce]);
 
   const openRequirements = useMemo(() => requirements.filter((r) => r.status !== "closed"), [requirements]);
-  const totalCandidates = requirements.reduce((sum, r) => sum + r.candidateCount, 0);
   const atJobLimit = openRequirements.length >= limits.openRequirements;
   const statsReady = !requirementsLoading && !requirementsError;
   const recommendedTotal = openRequirements.reduce((sum, r) => sum + r.aiScreening.topMatches, 0);
@@ -202,22 +185,22 @@ function EmployerDashboard() {
     {
       label: "Review your first AI match",
       body: "Once candidates are scored against your requirement, their shortlist shows up on the job's page.",
-      done: totalCandidates > 0,
+      done: false,
       href: "/employer/jobs",
       cta: "View your jobs",
     },
     {
       label: "Unlock your first candidate",
       body: "Unlock a candidate's contact details to reach out and move them into your pipeline.",
-      done: (unlockCount ?? 0) > 0,
+      done: false,
       href: "/employer/jobs",
       cta: "Review candidates",
     },
   ];
-  // Hold off until both the requirements and the unlock count have loaded, so
-  // a brand-new employer doesn't see the dashboard flash before the checklist
-  // swaps in, and an existing one doesn't see a wrong "step 1".
-  const showOnboardingChecklist = !suspended && statsReady && unlockCount !== null && onboardingSteps.some((s) => !s.done);
+  // The checklist stands in for the dashboard only while there is nothing to
+  // show. Once a job exists the real dashboard renders, even if the employer
+  // hasn't unlocked a candidate yet.
+  const showOnboardingChecklist = !suspended && statsReady && requirements.length === 0;
 
   return (
     <div className="mx-stagger" style={{ display: "flex", flexDirection: "column", gap: 20, width: "100%", minWidth: 0 }}>
