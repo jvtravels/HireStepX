@@ -154,6 +154,12 @@ export function selectRecentRecommended(matches: DashboardMatchRow[], threshold:
     }));
 }
 
+/** Order for the "Candidates to review" list: best match first, and among equal
+ *  scores the one that has been waiting longest, so nobody sits unseen. */
+export function rankForReview(refs: RecommendedRef[]): RecommendedRef[] {
+  return [...refs].sort((a, b) => b.matchScore - a.matchScore || Date.parse(a.createdAt) - Date.parse(b.createdAt));
+}
+
 const STATUS_LABEL: Record<string, string> = {
   shortlisted: "Shortlisted",
   interview_invited: "Interview invited",

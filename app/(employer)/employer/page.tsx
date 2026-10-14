@@ -178,8 +178,8 @@ function EmployerDashboard() {
   const statsReady = !requirementsLoading && !requirementsError;
   const recommendedTotal = openRequirements.reduce((sum, r) => sum + r.aiScreening.topMatches, 0);
   const recommendedCards = useMemo(
-    () => buildRecommendedCards(openRequirements, dashboard?.recommended ?? null),
-    [openRequirements, dashboard],
+    () => buildRecommendedCards(openRequirements, dashboard?.recommended ?? null, now),
+    [openRequirements, dashboard, now],
   );
   const insights = useMemo(
     () => buildInsights(openRequirements, dashboard?.jobs ?? [], dashboard?.totals.awaitingReview ?? 0, now),
@@ -245,7 +245,7 @@ function EmployerDashboard() {
           <div className="grid grid-cols-1 gap-5 min-[1100px]:grid-cols-[minmax(0,1fr)_minmax(300px,380px)]">
             <div style={{ display: "flex", flexDirection: "column", gap: 20, minWidth: 0 }}>
               <ActiveJobsCard jobs={openRequirements} pipeline={dashboard?.jobs ?? null} canCreate={canCreate} now={now} rowActions={rowActions} />
-              <RecommendedCandidatesCard cards={recommendedCards} />
+              <RecommendedCandidatesCard cards={recommendedCards} total={dashboard?.totals.awaitingReview ?? recommendedCards.length} />
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 20, minWidth: 0 }}>
               <UpcomingInterviewsCard items={dashboard?.upcomingInterviews ?? []} />

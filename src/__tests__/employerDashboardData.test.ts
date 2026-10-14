@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildInsights, buildRecommendedCards, isDashboardData, trendDelta, jobHealth, buildNextAction, type DashboardJobPipeline } from "../employer/dashboardData";
+import { buildInsights, buildRecommendedCards, experienceFit, experienceAsk, pipelineStage, isDashboardData, trendDelta, jobHealth, buildNextAction, type DashboardJobPipeline } from "../employer/dashboardData";
 import type { RequirementSummary } from "../employer/mockData";
 
 const NOW = Date.parse("2026-10-15T12:00:00Z");
@@ -86,20 +86,67 @@ describe("isDashboardData", () => {
 });
 
 describe("buildRecommendedCards", () => {
-  const jobs = [job("r1", {}, [cand("aaaaaa", ["react", "css"]), cand("bbbbbb", ["Node"])])];
-  it("orders by the server's recency list and derives strengths and gaps", () => {
-    const cards = buildRecommendedCards(jobs, [
-      { matchId: "bbbbbb", requirementId: "r1", matchScore: 60, createdAt: "2026-10-14T00:00:00Z" },
-      { matchId: "aaaaaa", requirementId: "r1", matchScore: 60, createdAt: "2026-10-10T00:00:00Z" },
-      { matchId: "ghost", requirementId: "r1", matchScore: 60, createdAt: "2026-10-09T00:00:00Z" },
-    ]);
+  const jobs = [job("r1", { experienceMin: 4, experienceMax: 8 }, [cand("aaaaaa", ["react", "css"]), cand("bbbbbb", ["Node"])])];
+  const refs = [
+    { matchId: "bbbbbb", requirementId: "r1", matchScore: 90, createdAt: new Date(NOW - 5 * DAY).toISOString() },
+    { matchId: "aaaaaa", requirementId: "r1", matchScore: 60, createdAt: new Date(NOW - 2 * 3600_000).toISOString() },
+    { matchId: "ghost", requirementId: "r1", matchScore: 60, createdAt: new Date(NOW).toISOString() },
+  ];
+  it("keeps the server's ranking and explains the fit against the job's required skills", () => {
+    const cards = buildRecommendedCards(jobs, refs, NOW);
     expect(cards.map((c) => c.matchId)).toEqual(["bbbbbb", "aaaaaa"]);
-    expect(cards[1].strengths).toEqual(["react", "css"]);
-    expect(cards[1].needsValidation).toEqual(["Node", "SQL"]);
+    expect(cards[1].matchedSkills).toEqual(["React"]);
+    expect(cards[1].missingSkills).toEqual(["Node", "SQL"]);
+    expect(cards[1].requiredCount).toBe(3);
+    expect(cards[0].waitingDays).toBe(5);
+    expect(cards[1].waitingDays).toBe(0);
+  });
+  it("reports experience against the job's range", () => {
+    const [c] = buildRecommendedCards(jobs, refs, NOW);
+    expect(c.yearsExperience).toBe(3);
+    expect(c.experienceFit).toBe("below");
+    expect(c.experienceAsk).toBe("4 to 8 yrs");
+  });
+  it("shows the candidate's own skills when the job lists none", () => {
+    const [c] = buildRecommendedCards([job("r1", { skills: [] }, [cand("aaaaaa", ["react", "css"])])], null, NOW);
+    expect(c.matchedSkills).toEqual(["react", "css"]);
+    expect(c.requiredCount).toBe(0);
   });
   it("falls back to the jobs list when the server list is missing", () => {
-    expect(buildRecommendedCards(jobs, null)).toHaveLength(2);
-    expect(buildRecommendedCards(jobs, null, 1)).toHaveLength(1);
+    expect(buildRecommendedCards(jobs, null, NOW)).toHaveLength(2);
+    expect(buildRecommendedCards(jobs, null, NOW, 1)).toHaveLength(1);
+    expect(buildRecommendedCards(jobs, null, NOW)[0].waitingDays).toBeNull();
+  });
+});
+
+describe("experience helpers", () => {
+  it("classifies years against the range", () => {
+    expect(experienceFit(6, 4, 8)).toBe("within");
+    expect(experienceFit(2, 4, 8)).toBe("below");
+    expect(experienceFit(12, 4, 8)).toBe("above");
+    expect(experienceFit(5, 4, null)).toBe("within");
+    expect(experienceFit(null, 4, 8)).toBeNull();
+    expect(experienceFit(5, null, null)).toBeNull();
+  });
+  it("labels what the job asks for", () => {
+    expect(experienceAsk(4, 8)).toBe("4 to 8 yrs");
+    expect(experienceAsk(3, 3)).toBe("3 yrs");
+    expect(experienceAsk(2, null)).toBe("2+ yrs");
+    expect(experienceAsk(null, 5)).toBe("up to 5 yrs");
+    expect(experienceAsk(null, null)).toBeNull();
+  });
+});
+
+describe("pipelineStage", () => {
+  const p = (interviewing: number, hired: number): DashboardJobPipeline => ({ requirementId: "r1", interviewing, hired, lastUpdatedAt: null });
+  it("moves a job past the stored stage once candidates are interviewing or hired", () => {
+    expect(pipelineStage(job("r1", { stage: "ready_for_review" }), p(0, 0))).toBe("ready_for_review");
+    expect(pipelineStage(job("r1", { stage: "ready_for_review" }), p(2, 0))).toBe("interviewing");
+    expect(pipelineStage(job("r1", { stage: "ready_for_review", openPositions: 2 }), p(1, 1))).toBe("interviewing");
+    expect(pipelineStage(job("r1", { stage: "ready_for_review", openPositions: 1 }), p(0, 1))).toBe("hired");
+  });
+  it("leaves a job that is still matching alone", () => {
+    expect(pipelineStage(job("r1", { stage: "ai_matching" }), p(3, 1))).toBe("ai_matching");
   });
 });
 

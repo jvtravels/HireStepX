@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
-  asDashboardRange, buildTrend, summarizeJobs, selectUpcomingInterviews, selectRecentRecommended,
+  asDashboardRange, buildTrend, summarizeJobs, selectUpcomingInterviews, selectRecentRecommended, rankForReview,
   buildActivityFeed, activityText, candidateInitials, type DashboardMatchRow,
 } from "../../server-handlers/_employer-dashboard-helpers";
 
@@ -82,6 +82,19 @@ describe("selectRecentRecommended", () => {
       match({ id: "moved", candidate_status: "interviewing", match_score: 90 }),
     ], 40);
     expect(out.map((m) => m.matchId)).toEqual(["new", "old"]);
+  });
+});
+
+describe("rankForReview", () => {
+  it("puts the best score first and the longest-waiting first on ties", () => {
+    const ref = (matchId: string, matchScore: number, createdAt: string) => ({ matchId, requirementId: "r1", matchScore, createdAt });
+    const out = rankForReview([
+      ref("low", 50, "2026-10-01T00:00:00Z"),
+      ref("tie-new", 80, "2026-10-10T00:00:00Z"),
+      ref("tie-old", 80, "2026-10-02T00:00:00Z"),
+      ref("top", 91, "2026-10-12T00:00:00Z"),
+    ]);
+    expect(out.map((r) => r.matchId)).toEqual(["top", "tie-old", "tie-new", "low"]);
   });
 });
 

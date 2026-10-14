@@ -23,7 +23,7 @@ import { Badge, Pill, ScoreChip, STAGE_LABEL, STAGE_TONE } from "./_atoms";
 import { PrimaryLink, OutlineLink } from "./_consoleParts";
 import type { RequirementSummary } from "./mockData";
 import {
-  RANGE_LABEL, trendDelta, interviewSlot, jobHealth,
+  RANGE_LABEL, trendDelta, interviewSlot, jobHealth, pipelineStage,
   type DashboardRange, type DashboardTrend, type DashboardJobPipeline, type DashboardUpcomingInterview,
   type DashboardActivityItem, type DashboardInsight, type RecommendedCard, type EmployerDashboardData, type NextAction,
 } from "./dashboardData";
@@ -85,9 +85,9 @@ export function DashboardHeader({
         </h1>
         <p className="m-0 text-[14px] text-hx-ink-soft">Here&apos;s what you need to focus on today.</p>
       </div>
-      <div className="flex flex-wrap items-center gap-2.5">
+      <div className="flex w-full items-center gap-2.5 min-[900px]:w-auto">
         <DashboardSearch jobs={jobs} candidates={recommended} />
-        <label className="inline-flex items-center">
+        <label className="inline-flex shrink-0 items-center">
           <span className="sr-only">Date range</span>
           <NativeSelect value={range} onChange={(e) => onRangeChange(Number(e.target.value) as DashboardRange)} className="[&_select]:h-9 [&_select]:cursor-pointer">
             {RANGE_OPTIONS.map((r) => <option key={r} value={r}>{RANGE_LABEL[r]}</option>)}
@@ -107,13 +107,13 @@ function DashboardSearch({ jobs, candidates }: { jobs: RequirementSummary[]; can
       .filter((j) => j.title.toLowerCase().includes(term) || j.skills.some((s) => s.toLowerCase().includes(term)))
       .map((j) => ({ id: `j-${j.id}`, label: j.title, hint: "Job", href: `/employer/requirements/${j.id}` }));
     const candidateHits = candidates
-      .filter((c) => c.name.toLowerCase().includes(term) || c.strengths.some((s) => s.toLowerCase().includes(term)))
+      .filter((c) => c.name.toLowerCase().includes(term) || c.matchedSkills.some((s) => s.toLowerCase().includes(term)))
       .map((c) => ({ id: `c-${c.matchId}`, label: c.name, hint: c.roleTitle, href: `/employer/requirements/${c.requirementId}/candidates/${c.matchId}` }));
     return [...jobHits, ...candidateHits].slice(0, 6);
   }, [term, jobs, candidates]);
 
   return (
-    <div className="relative w-[min(260px,70vw)]">
+    <div className="relative min-w-0 flex-1 min-[900px]:w-[260px] min-[900px]:flex-none">
       <SearchInput id="employer-dashboard-search" label="Search jobs, candidates, or skills" value={q} onChange={setQ} onKeyDown={(e) => { if (e.key === "Escape") setQ(""); }} placeholder="Search jobs or skills" />
       <p role="status" className="sr-only">
         {term ? (results.length === 0 ? "No results" : `${results.length} ${results.length === 1 ? "result" : "results"}`) : ""}
@@ -213,12 +213,25 @@ export function DashboardStatCards({ jobs, data, recommendedTotal, range }: { jo
   );
 }
 
-/* ─── Active jobs table ─── */
+/* ─── Active jobs ─── */
 
-function jobMeta(j: RequirementSummary): string {
-  const where = j.workMode ? j.workMode[0].toUpperCase() + j.workMode.slice(1) : j.location;
-  const type = j.employmentType ? j.employmentType.replace("-", " ").replace(/^./, (c) => c.toUpperCase()) : "";
-  return [where, type].filter(Boolean).join(" · ");
+function JobMeta({ job, updatedAt }: { job: RequirementSummary; updatedAt: string | null }) {
+  const where = job.workMode ? job.workMode[0].toUpperCase() + job.workMode.slice(1) : job.location;
+  const type = job.employmentType ? job.employmentType.replace("-", " ").replace(/^./, (c) => c.toUpperCase()) : "";
+  const parts = [where, type, `Updated ${hoursOrDaysAgo(updatedAt ?? job.createdAt)}`].filter(Boolean);
+  return (
+    <div className="mt-0.5 flex flex-wrap gap-x-1.5 text-[12px] text-hx-ink-soft">
+      {parts.map((part, i) => (
+        <span key={part} className="whitespace-nowrap">{part}{i < parts.length - 1 && <span aria-hidden="true"> ·</span>}</span>
+      ))}
+    </div>
+  );
+}
+
+function JobStatusBadge({ job, pipeline }: { job: RequirementSummary; pipeline: DashboardJobPipeline | undefined }) {
+  if (job.status === "failed") return <Badge tone="error">Needs retry</Badge>;
+  const stage = pipelineStage(job, pipeline);
+  return <Badge tone={STAGE_TONE[stage]}>{STAGE_LABEL[stage]}</Badge>;
 }
 
 export function ActiveJobsCard({
@@ -233,7 +246,7 @@ export function ActiveJobsCard({
   const byId = new Map((pipeline ?? []).map((p) => [p.requirementId, p]));
   const shown = jobs.slice(0, 5);
   return (
-    <section aria-labelledby="active-jobs-heading" className={CARD}>
+    <section aria-labelledby="active-jobs-heading" className={`${CARD} @container`}>
       <CardHeader
         id="active-jobs-heading"
         icon={<BriefcaseIcon size={18} />}
@@ -252,103 +265,185 @@ export function ActiveJobsCard({
       {shown.length === 0 ? (
         <EmptyState className={EMPTY} title="No active jobs" description="Post a requirement and matched candidates will show up here." />
       ) : (
-        <div className="rounded-lg border border-hx-line">
-          <Table className="min-w-[760px] text-[13px]">
-            <TableHeader>
-              <TableRow className="hover:bg-transparent">
-                <TableHead className={TH}>Job Title</TableHead>
-                <TableHead className={TH}>Status</TableHead>
-                <TableHead className={`${TH} text-center`}>Evaluated</TableHead>
-                <TableHead className={`${TH} text-center`}>Recommended</TableHead>
-                <TableHead className={`${TH} text-center`}>Interviewing</TableHead>
-                <TableHead className={`${TH} text-center`}>Hired</TableHead>
-                <TableHead className={TH}>Last Updated</TableHead>
-                <TableHead className={`${TH} sticky right-0 w-12 bg-hx-soft`}><span className="sr-only">Actions</span></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {shown.map((j) => {
-                const p = byId.get(j.id);
-                const health = jobHealth(j, p, now);
-                return (
-                  <TableRow key={j.id}>
-                    <TableCell className={`${TD} min-w-[200px] whitespace-normal`}>
-                      <Link href={`/employer/requirements/${j.id}`} className="inline-block py-0.5 font-semibold text-hx-coal no-underline hover:underline">{j.title}</Link>
-                      <div className="mt-0.5 text-[12px] text-hx-ink-soft">{jobMeta(j)}</div>
-                      {health && <div className="mt-1.5"><Pill tone={health.tone}>{health.label}</Pill></div>}
-                    </TableCell>
-                    <TableCell className={TD}>
-                      {j.status === "failed"
-                        ? <Badge tone="error">Needs retry</Badge>
-                        : <Badge tone={STAGE_TONE[j.stage]}>{STAGE_LABEL[j.stage]}</Badge>}
-                    </TableCell>
-                    <TableCell className={`${TD} text-center`}>{j.aiScreening.evaluated}</TableCell>
-                    <TableCell className={`${TD} text-center`}>{j.aiScreening.topMatches}</TableCell>
-                    <TableCell className={`${TD} text-center`}>{p ? p.interviewing : "–"}</TableCell>
-                    <TableCell className={`${TD} text-center`}>{p ? p.hired : "–"}</TableCell>
-                    <TableCell className={`${TD} whitespace-nowrap text-hx-ink-soft`}>{p?.lastUpdatedAt ? hoursOrDaysAgo(p.lastUpdatedAt) : hoursOrDaysAgo(j.createdAt)}</TableCell>
-                    <TableCell className={`${TD} sticky right-0 bg-white px-1 text-right`}>{rowActions(j)}</TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </div>
+        <>
+          <div className="hidden rounded-lg border border-hx-line @min-[700px]:block">
+            <Table className="text-[13px]">
+              <TableHeader>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className={TH}>Job Title</TableHead>
+                  <TableHead className={TH}>Status</TableHead>
+                  <TableHead className={`${TH} text-center`}>Evaluated</TableHead>
+                  <TableHead className={`${TH} text-center`}>Recommended</TableHead>
+                  <TableHead className={`${TH} text-center`}>Interviewing</TableHead>
+                  <TableHead className={`${TH} text-center`}>Hired</TableHead>
+                  <TableHead className={`${TH} w-12`}><span className="sr-only">Actions</span></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {shown.map((j) => {
+                  const p = byId.get(j.id);
+                  const health = jobHealth(j, p, now);
+                  return (
+                    <TableRow key={j.id}>
+                      <TableCell className={`${TD} whitespace-normal`}>
+                        <Link href={`/employer/requirements/${j.id}`} className="inline-block py-0.5 font-semibold text-hx-coal no-underline hover:underline">{j.title}</Link>
+                        <JobMeta job={j} updatedAt={p?.lastUpdatedAt ?? null} />
+                        {health && <div className="mt-1.5"><Pill tone={health.tone}>{health.label}</Pill></div>}
+                      </TableCell>
+                      <TableCell className={TD}><JobStatusBadge job={j} pipeline={p} /></TableCell>
+                      <TableCell className={`${TD} text-center`}>{j.aiScreening.evaluated}</TableCell>
+                      <TableCell className={`${TD} text-center`}>{j.aiScreening.topMatches}</TableCell>
+                      <TableCell className={`${TD} text-center`}>{p ? p.interviewing : "–"}</TableCell>
+                      <TableCell className={`${TD} text-center`}>{p ? p.hired : "–"}</TableCell>
+                      <TableCell className={`${TD} px-1 text-right`}>{rowActions(j)}</TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+          <ul className={`${LIST} rounded-lg border border-hx-line @min-[700px]:hidden`}>
+            {shown.map((j, i) => {
+              const p = byId.get(j.id);
+              const health = jobHealth(j, p, now);
+              const stats: Array<[string, string | number]> = [
+                ["Evaluated", j.aiScreening.evaluated],
+                ["Recommended", j.aiScreening.topMatches],
+                ["Interviewing", p ? p.interviewing : "–"],
+                ["Hired", p ? p.hired : "–"],
+              ];
+              return (
+                <li key={j.id} className={`p-3 ${i > 0 ? "border-t border-hx-line" : ""}`}>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <Link href={`/employer/requirements/${j.id}`} className="inline-block py-0.5 text-[14px] font-semibold text-hx-coal no-underline [overflow-wrap:anywhere] hover:underline">{j.title}</Link>
+                      <JobMeta job={j} updatedAt={p?.lastUpdatedAt ?? null} />
+                    </div>
+                    <div className="shrink-0">{rowActions(j)}</div>
+                  </div>
+                  <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                    <JobStatusBadge job={j} pipeline={p} />
+                    {health && <Pill tone={health.tone}>{health.label}</Pill>}
+                  </div>
+                  <dl className="m-0 mt-3 flex flex-wrap justify-between gap-x-3 gap-y-2">
+                    {stats.map(([label, value]) => (
+                      <div key={label}>
+                        <dt className="text-[11px] text-hx-ink-soft">{label}</dt>
+                        <dd className="m-0 text-[15px] font-semibold text-hx-coal">{value}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                </li>
+              );
+            })}
+          </ul>
+        </>
       )}
     </section>
   );
 }
 
-/* ─── Recently recommended candidates ─── */
+/* ─── Candidates to review ─── */
 
-export function RecommendedCandidatesCard({ cards }: { cards: RecommendedCard[] }) {
+function waitingLabel(days: number | null): string | null {
+  return days !== null && days >= 3 ? `Waiting ${days} days` : null;
+}
+
+function SkillFit({ c }: { c: RecommendedCard }) {
+  const matched = c.matchedSkills;
+  const shownMatched = matched.slice(0, 4);
+  const moreMatched = matched.length - shownMatched.length;
+  const shownMissing = c.missingSkills.slice(0, 3);
+  const moreMissing = c.missingSkills.length - shownMissing.length;
+  const hasRequired = c.requiredCount > 0;
+  const segments = Math.min(c.requiredCount, 8);
+  const filled = hasRequired ? Math.round((matched.length / c.requiredCount) * segments) : 0;
   return (
-    <section aria-labelledby="recommended-heading" className={CARD}>
-      <CardHeader id="recommended-heading" icon={<UsersIcon size={18} />} title="Recently recommended candidates" action={<TextLink href="/employer/jobs">View all</TextLink>} />
+    <div className="min-w-0 space-y-2">
+      {hasRequired && (
+        <div className="flex items-center gap-2.5">
+          <span className="text-[12px] font-semibold text-hx-coal">{matched.length} of {c.requiredCount} required skills</span>
+          <div className="flex gap-0.5" aria-hidden="true">
+            {Array.from({ length: segments }, (_, k) => (
+              <span key={k} className={`h-1.5 w-3 rounded-full ${k < filled ? "bg-hx-success" : "bg-hx-line"}`} />
+            ))}
+          </div>
+        </div>
+      )}
+      {shownMatched.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {shownMatched.map((s) => <Pill key={s} tone="success">{s}</Pill>)}
+          {moreMatched > 0 && <Pill tone="neutral">+{moreMatched}</Pill>}
+        </div>
+      )}
+      {shownMissing.length > 0 && (
+        <p className="m-0 text-[12px] text-hx-ink-soft">
+          Missing: {shownMissing.join(", ")}{moreMissing > 0 ? ` +${moreMissing}` : ""}
+        </p>
+      )}
+      {c.yearsExperience !== null && (
+        <p className="m-0 flex flex-wrap items-center gap-1.5 text-[12px] text-hx-ink-soft">
+          {c.yearsExperience} {c.yearsExperience === 1 ? "yr" : "yrs"} experience
+          {c.experienceFit && c.experienceAsk && (
+            <Pill tone={c.experienceFit === "within" ? "success" : c.experienceFit === "below" ? "warning" : "neutral"}>
+              {c.experienceFit === "within" ? "Within" : c.experienceFit === "below" ? "Below" : "Above"} {c.experienceAsk}
+            </Pill>
+          )}
+        </p>
+      )}
+    </div>
+  );
+}
+
+export function RecommendedCandidatesCard({ cards, total }: { cards: RecommendedCard[]; total: number }) {
+  return (
+    <section aria-labelledby="recommended-heading" className={`${CARD} @container`}>
+      <CardHeader
+        id="recommended-heading"
+        icon={<UsersIcon size={18} />}
+        title="Candidates to review"
+        action={<TextLink href="/employer/jobs">View all</TextLink>}
+      />
+      {cards.length > 0 && (
+        <p className="m-0 mb-1 text-[13px] text-hx-ink-soft">
+          {total > cards.length ? `Top ${cards.length} of ${total}` : `${total} ${total === 1 ? "candidate" : "candidates"}`} waiting for your review, best match first.
+        </p>
+      )}
       {cards.length === 0 ? (
-        <EmptyState className={EMPTY} title="No recommended candidates yet" description="Strong matches appear here as soon as a job finishes screening." />
+        <EmptyState className={EMPTY} title="No candidates to review" description="Strong matches appear here as soon as a job finishes screening." />
       ) : (
         <ul className={LIST}>
-          {cards.map((c, i) => (
-            <li key={c.matchId} className={`grid grid-cols-1 items-center gap-x-4 gap-y-3 py-3 min-[900px]:grid-cols-[minmax(180px,1fr)_minmax(0,1.6fr)_auto] ${i > 0 ? "border-t border-hx-line" : ""}`}>
-              <div className="flex min-w-0 items-center gap-3">
-                <PersonAvatar initials={c.initials} />
-                <div className="min-w-0">
-                  <div className="text-[14px] font-semibold text-hx-coal [overflow-wrap:anywhere]">{c.name}</div>
-                  <div className="text-[12px] text-hx-ink-soft [overflow-wrap:anywhere]">{c.roleTitle}</div>
+          {cards.map((c, i) => {
+            const waiting = waitingLabel(c.waitingDays);
+            return (
+              <li key={c.matchId} className={`grid grid-cols-1 gap-x-5 gap-y-3 py-4 @min-[680px]:grid-cols-[minmax(170px,0.8fr)_minmax(0,1.6fr)_auto] ${i > 0 ? "border-t border-hx-line" : ""}`}>
+                <div className="flex min-w-0 items-start gap-3">
+                  <PersonAvatar initials={c.initials} />
+                  <div className="min-w-0">
+                    <div className="text-[14px] font-semibold text-hx-coal [overflow-wrap:anywhere]">{c.name}</div>
+                    <div className="text-[12px] text-hx-ink-soft [overflow-wrap:anywhere]">for {c.roleTitle}</div>
+                  </div>
                 </div>
-              </div>
-              <div className="flex min-w-0 flex-wrap gap-x-5 gap-y-2">
-                <ChipGroup label="Key strengths" items={c.strengths} tone="indigo" />
-                <ChipGroup label="Needs validation" items={c.needsValidation} tone="neutral" />
-              </div>
-              <div className="flex items-center gap-3 min-[900px]:justify-end">
-                {c.matchScore !== null && <ScoreChip score={Math.round(c.matchScore)} />}
-                {c.createdAt && <span className="min-w-14 text-[12px] text-hx-ink-soft">{hoursOrDaysAgo(c.createdAt)}</span>}
-                <OutlineLink small href={`/employer/requirements/${c.requirementId}/candidates/${c.matchId}`}>
-                  View profile<span className="sr-only">: {c.name}</span>
-                </OutlineLink>
-              </div>
-            </li>
-          ))}
+                <SkillFit c={c} />
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-2 @min-[680px]:flex-col @min-[680px]:items-end">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[12px] text-hx-ink-soft">Match score</span>
+                    {c.matchScore !== null && <ScoreChip score={Math.round(c.matchScore)} />}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-1.5 @min-[680px]:justify-end">
+                    {c.createdAt && <span className="text-[12px] text-hx-ink-soft">Matched {hoursOrDaysAgo(c.createdAt)}</span>}
+                    {waiting && <Pill tone="warning">{waiting}</Pill>}
+                  </div>
+                  <OutlineLink small href={`/employer/requirements/${c.requirementId}/candidates/${c.matchId}`}>
+                    Review profile<span className="sr-only">: {c.name}</span>
+                  </OutlineLink>
+                </div>
+              </li>
+            );
+          })}
         </ul>
       )}
     </section>
-  );
-}
-
-function ChipGroup({ label, items, tone }: { label: string; items: string[]; tone: "indigo" | "neutral" }) {
-  return (
-    <div className="min-w-0 flex-[1_1_140px]">
-      <div className="mb-1 text-[12px] font-semibold text-hx-coal">{label}</div>
-      {items.length === 0 ? (
-        <span className="text-[12px] text-hx-ink-soft">None flagged</span>
-      ) : (
-        <div className="flex flex-wrap gap-1.5">
-          {items.map((s) => <Pill key={s} tone={tone}>{s}</Pill>)}
-        </div>
-      )}
-    </div>
   );
 }
 

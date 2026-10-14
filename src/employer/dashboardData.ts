@@ -1,4 +1,4 @@
-import type { RequirementSummary } from "./mockData";
+import type { RequirementSummary, RequirementStage } from "./mockData";
 
 /* Client shape of GET /api/employer-dashboard plus the pure view logic the
    dashboard sections share (insights, job status, interview slot labels). */
@@ -156,25 +156,52 @@ export function buildInsights(
   return out.slice(0, 4);
 }
 
+export type ExperienceFit = "within" | "below" | "above";
+
 export interface RecommendedCard {
   matchId: string;
   requirementId: string;
   name: string;
   initials: string;
   roleTitle: string;
-  strengths: string[];
-  needsValidation: string[];
+  /** The job's required skills the candidate lists, in the job's order. When the
+   *  job lists none, the candidate's own top skills so the row isn't empty. */
+  matchedSkills: string[];
+  missingSkills: string[];
+  requiredCount: number;
+  yearsExperience: number | null;
+  experienceFit: ExperienceFit | null;
+  /** "4 to 8 yrs" style label of what the job asks for, null when unspecified. */
+  experienceAsk: string | null;
   matchScore: number | null;
   createdAt: string | null;
+  /** Whole days since the match was created, null when unknown. */
+  waitingDays: number | null;
 }
 
-/** Joins the server's recency-ordered strong-match refs with the jobs list's
- *  masked candidate detail (skills). "Needs validation" is the job's required
- *  skills the candidate's resume doesn't list. Falls back to the jobs list's
- *  own order when the server list is unavailable. */
+export function experienceAsk(min: number | null, max: number | null): string | null {
+  if (min !== null && max !== null) return min === max ? `${min} yrs` : `${min} to ${max} yrs`;
+  if (min !== null) return `${min}+ yrs`;
+  if (max !== null) return `up to ${max} yrs`;
+  return null;
+}
+
+export function experienceFit(years: number | null, min: number | null, max: number | null): ExperienceFit | null {
+  if (years === null || (min === null && max === null)) return null;
+  if (min !== null && years < min) return "below";
+  if (max !== null && years > max) return "above";
+  return "within";
+}
+
+/** Joins the server's ranked strong-match refs (best score first, longest
+ *  waiting on ties) with the jobs list's candidate detail, and works out why
+ *  each one fits: which required skills they cover, which they don't, and
+ *  whether their experience sits inside the range the job asks for. Falls back
+ *  to the jobs list's own order when the server list is unavailable. */
 export function buildRecommendedCards(
   jobs: RequirementSummary[],
   refs: DashboardRecommendedRef[] | null,
+  now: number,
   limit = 3,
 ): RecommendedCard[] {
   const detail = new Map<string, { job: RequirementSummary; c: RequirementSummary["aiScreening"]["strongMatches"][number] }>();
@@ -187,18 +214,33 @@ export function buildRecommendedCards(
   return ordered.slice(0, limit).map(({ id, createdAt, score }) => {
     const { job, c } = detail.get(id)!;
     const have = new Set(c.skills.map((s) => s.toLowerCase()));
+    const matched = job.skills.filter((s) => have.has(s.toLowerCase()));
     return {
       matchId: id,
       requirementId: job.id,
       name: c.name,
       initials: c.initials,
       roleTitle: job.title,
-      strengths: c.skills.slice(0, 3),
-      needsValidation: job.skills.filter((s) => !have.has(s.toLowerCase())).slice(0, 2),
+      matchedSkills: job.skills.length > 0 ? matched : c.skills.slice(0, 4),
+      missingSkills: job.skills.filter((s) => !have.has(s.toLowerCase())),
+      requiredCount: job.skills.length,
+      yearsExperience: c.yearsExperience,
+      experienceFit: experienceFit(c.yearsExperience, job.experienceMin, job.experienceMax),
+      experienceAsk: experienceAsk(job.experienceMin, job.experienceMax),
       matchScore: score,
       createdAt,
+      waitingDays: createdAt ? Math.max(0, Math.floor((now - Date.parse(createdAt)) / 86_400_000)) : null,
     };
   });
+}
+
+/** The stage a job is really in: candidates already interviewing or hired move
+ *  it past the stored "ready for review" stage. */
+export function pipelineStage(job: RequirementSummary, pipeline: DashboardJobPipeline | undefined): RequirementStage {
+  if (job.stage === "ai_matching") return job.stage;
+  if (pipeline && pipeline.hired > 0 && pipeline.hired >= (job.openPositions ?? 1)) return "hired";
+  if (pipeline && pipeline.interviewing + pipeline.hired > 0) return "interviewing";
+  return job.stage;
 }
 
 const slotDate = new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "short" });

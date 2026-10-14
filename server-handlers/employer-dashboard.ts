@@ -14,7 +14,7 @@ import { withAuthAndRateLimit, corsHeaders, withRequestId, slog } from "./_share
 import { chunk, inList, fetchKeyset } from "./_employer-matching-helpers";
 import { STRONG_MATCH_THRESHOLD } from "./_requirement-match-helpers";
 import {
-  asDashboardRange, buildTrend, summarizeJobs, selectUpcomingInterviews, selectRecentRecommended,
+  asDashboardRange, buildTrend, summarizeJobs, selectUpcomingInterviews, selectRecentRecommended, rankForReview,
   buildActivityFeed, type DashboardMatchRow, type StatusEventRow,
 } from "./_employer-dashboard-helpers";
 
@@ -114,7 +114,7 @@ export default async function handler(req: Request): Promise<Response> {
         hired: buildTrend(eventTimes(["hired"]), now, range),
       },
       upcomingInterviews: upcoming.slice(0, 4),
-      recommended: strongRefs.slice(0, 12),
+      recommended: rankForReview(strongRefs).slice(0, 12),
       activity: buildActivityFeed(events, matchById, 6),
     };
     return new Response(JSON.stringify(body), { status: 200, headers });
