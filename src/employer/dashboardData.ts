@@ -64,21 +64,31 @@ export function isDashboardData(v: unknown): v is EmployerDashboardData {
 
 export const RANGE_LABEL: Record<DashboardRange, string> = { 7: "Last 7 days", 30: "Last 30 days", 90: "Last 90 days" };
 
-/** The "vs previous window" delta shown on a stat card. */
+/** The "vs previous window" delta shown on a stat card. A percentage when the
+ *  previous window had data to compare against, otherwise the raw difference. */
 export function trendDelta(trend: DashboardTrend): { diff: number; label: string } {
   const diff = trend.current - trend.previous;
-  return { diff, label: diff === 0 ? "No change" : `${diff > 0 ? "+" : ""}${diff}` };
+  if (diff === 0) return { diff, label: "No change" };
+  const sign = diff > 0 ? "+" : "";
+  const label = trend.previous > 0 ? `${sign}${Math.round((diff / trend.previous) * 100)}%` : `${sign}${diff}`;
+  return { diff, label };
 }
 
-export type JobStatusLabel = "Active" | "Matching" | "Needs retry";
+const STALE_DAYS = 14;
 
-/** Maps the AI-matching lifecycle to what an employer cares about. Closed jobs
- *  are filtered out before this is called. There is no "Paused" state in the
- *  data model. */
-export function jobStatusLabel(status: RequirementSummary["status"]): JobStatusLabel {
-  if (status === "generating") return "Matching";
-  if (status === "failed") return "Needs retry";
-  return "Active";
+/** A one-line health flag for a job row, only when something needs attention. */
+export function jobHealth(
+  job: RequirementSummary,
+  pipeline: DashboardJobPipeline | undefined,
+  now: number,
+): { tone: "warning" | "error"; label: string } | null {
+  if (job.status === "failed") return { tone: "error", label: "Matching failed. Retry from Edit" };
+  if (job.status === "generating") return null;
+  const last = pipeline?.lastUpdatedAt ?? job.createdAt;
+  const idleDays = Math.floor((now - Date.parse(last)) / 86_400_000);
+  if (job.aiScreening.topMatches === 0) return { tone: "warning", label: "No strong matches yet" };
+  if (idleDays > STALE_DAYS) return { tone: "warning", label: `Quiet for ${idleDays} days` };
+  return null;
 }
 
 export interface DashboardInsight {
@@ -87,8 +97,6 @@ export interface DashboardInsight {
   body: string;
   href: string;
 }
-
-const STALE_DAYS = 14;
 
 /** Up to four plain-language observations computed from real job and pipeline
  *  data. Each is only emitted when it is actually true, so a quiet account
@@ -156,6 +164,7 @@ export interface RecommendedCard {
   roleTitle: string;
   strengths: string[];
   needsValidation: string[];
+  matchScore: number | null;
   createdAt: string | null;
 }
 
@@ -172,10 +181,10 @@ export function buildRecommendedCards(
   for (const job of jobs) for (const c of job.aiScreening.strongMatches) detail.set(c.id, { job, c });
 
   const ordered = refs && refs.length > 0
-    ? refs.filter((r) => detail.has(r.matchId)).map((r) => ({ id: r.matchId, createdAt: r.createdAt as string | null }))
-    : Array.from(detail.keys()).map((id) => ({ id, createdAt: null as string | null }));
+    ? refs.filter((r) => detail.has(r.matchId)).map((r) => ({ id: r.matchId, createdAt: r.createdAt as string | null, score: r.matchScore as number | null }))
+    : Array.from(detail.keys()).map((id) => ({ id, createdAt: null as string | null, score: null as number | null }));
 
-  return ordered.slice(0, limit).map(({ id, createdAt }) => {
+  return ordered.slice(0, limit).map(({ id, createdAt, score }) => {
     const { job, c } = detail.get(id)!;
     const have = new Set(c.skills.map((s) => s.toLowerCase()));
     return {
@@ -186,16 +195,68 @@ export function buildRecommendedCards(
       roleTitle: job.title,
       strengths: c.skills.slice(0, 3),
       needsValidation: job.skills.filter((s) => !have.has(s.toLowerCase())).slice(0, 2),
+      matchScore: score,
       createdAt,
     };
   });
 }
 
 const slotDate = new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "short" });
-const slotTime = new Intl.DateTimeFormat("en-IN", { hour: "numeric", minute: "2-digit", hour12: true });
+const slotTime = new Intl.DateTimeFormat("en-IN", { hour: "numeric", minute: "2-digit", hour12: true, timeZoneName: "short" });
 
 export function interviewSlot(iso: string): { day: string; month: string; time: string } {
   const d = new Date(iso);
   const [day, month] = slotDate.format(d).split(" ");
   return { day, month: month ?? "", time: slotTime.format(d).toUpperCase() };
+}
+
+export interface NextAction {
+  title: string;
+  body: string;
+  cta: string;
+  href: string;
+}
+
+const SOON_MS = 48 * 3_600_000;
+
+/** The single most useful thing to do next, picked from real data in priority
+ *  order: a near interview, candidates waiting, a failed job, a job with no
+ *  strong matches, then posting a role. Null when there is nothing to push. */
+export function buildNextAction(
+  jobs: RequirementSummary[],
+  upcoming: DashboardUpcomingInterview[],
+  awaitingReview: number,
+  now: number,
+  canCreate: boolean,
+): NextAction | null {
+  const soon = upcoming.find((i) => Date.parse(i.scheduledAt) - now <= SOON_MS);
+  if (soon) {
+    const slot = interviewSlot(soon.scheduledAt);
+    return {
+      title: `Prepare for your interview with ${soon.candidateName}`,
+      body: `${soon.roleTitle}, ${slot.day} ${slot.month} at ${slot.time}.`,
+      cta: "Open candidate",
+      href: `/employer/requirements/${soon.requirementId}/candidates/${soon.matchId}`,
+    };
+  }
+  if (awaitingReview > 0) {
+    return {
+      title: `${awaitingReview} ${awaitingReview === 1 ? "candidate is" : "candidates are"} waiting for your decision`,
+      body: "Recommended candidates move faster when you respond within a couple of days.",
+      cta: "Review candidates",
+      href: "/employer/jobs",
+    };
+  }
+  const failed = jobs.find((j) => j.status === "failed");
+  if (failed) {
+    return { title: `Matching failed for ${failed.title}`, body: "Edit and save the job to run matching again.", cta: "Edit job", href: `/employer/requirements/${failed.id}/edit` };
+  }
+  const empty = jobs.find((j) => j.status !== "generating" && j.aiScreening.topMatches === 0);
+  if (empty) {
+    return { title: `${empty.title} has no strong matches`, body: "Broadening skills or location usually surfaces more candidates.", cta: "Edit job", href: `/employer/requirements/${empty.id}/edit` };
+  }
+  if (jobs.length === 0 && canCreate) {
+    return { title: "Post your first job", body: "Matched candidates show up here as soon as screening finishes.", cta: "Post a job", href: "/employer/requirements/new" };
+  }
+  return null;
 }

@@ -3,15 +3,16 @@
 import { useState, useEffect, useMemo } from "react";
 import { useEmployerData } from "@/employer/EmployerDataContext";
 import { tokens as t, fonts as f } from "@/auth/_tokens";
-import { Card as AtomCard, Eyebrow, OutlineCta, EmployerIcon } from "@/employer/_atoms";
-import { PrimaryLink, PageSkeleton, ErrorPanel } from "@/employer/_consoleParts";
+import { Card as AtomCard, Eyebrow, EmployerIcon } from "@/employer/_atoms";
+import { PrimaryLink, PageSkeleton, ErrorPanel, InlineAlert } from "@/employer/_consoleParts";
 import CompanyProfileForm from "@/employer/CompanyProfileForm";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   DashboardHeader, DashboardStatCards, ActiveJobsCard, RecommendedCandidatesCard,
-  UpcomingInterviewsCard, KeyInsightsCard, RecentActivityCard,
+  UpcomingInterviewsCard, KeyInsightsCard, RecentActivityCard, NextActionCard, DashboardSkeleton,
 } from "@/employer/DashboardSections";
-import { buildInsights, buildRecommendedCards, type DashboardRange, type EmployerDashboardData } from "@/employer/dashboardData";
+import { buildInsights, buildNextAction, buildRecommendedCards, type DashboardRange, type EmployerDashboardData } from "@/employer/dashboardData";
+import { useJobRowActions } from "./jobs/_components/useJobRowActions";
 
 function CompanyOnboarding() {
   return (
@@ -140,6 +141,10 @@ function EmployerDashboard() {
   const [dashboard, setDashboard] = useState<EmployerDashboardData | null>(null);
   const [dashboardState, setDashboardState] = useState<"loading" | "ready" | "failed">("loading");
   const [dashboardNonce, setDashboardNonce] = useState(0);
+  // Refreshed on each dashboard load so "quiet for N days" and "interview
+  // within 48h" stay current without a ticking clock re-rendering the page.
+  const [now, setNow] = useState(() => Date.now());
+  const { rowActions, dialogs } = useJobRowActions();
 
   useEffect(() => {
     let cancelled = false;
@@ -159,6 +164,7 @@ function EmployerDashboard() {
     fetchDashboard(range).then((data) => {
       if (cancelled) return;
       setDashboard(data);
+      setNow(Date.now());
       setDashboardState(data ? "ready" : "failed");
     });
     return () => {
@@ -176,8 +182,13 @@ function EmployerDashboard() {
     [openRequirements, dashboard],
   );
   const insights = useMemo(
-    () => buildInsights(openRequirements, dashboard?.jobs ?? [], dashboard?.totals.awaitingReview ?? 0, Date.now()),
-    [openRequirements, dashboard],
+    () => buildInsights(openRequirements, dashboard?.jobs ?? [], dashboard?.totals.awaitingReview ?? 0, now),
+    [openRequirements, dashboard, now],
+  );
+  const canCreate = !suspended && !atJobLimit;
+  const nextAction = useMemo(
+    () => (dashboard ? buildNextAction(openRequirements, dashboard.upcomingInterviews, dashboard.totals.awaitingReview, now, canCreate) : null),
+    [openRequirements, dashboard, now, canCreate],
   );
 
   const onboardingSteps: ChecklistStep[] = [
@@ -219,26 +230,21 @@ function EmployerDashboard() {
       )}
 
       {requirementsLoading ? (
-        <PageSkeleton label="Loading your overview" />
+        <DashboardSkeleton />
       ) : requirementsError ? (
-        <div role="alert" style={{ padding: 16, border: `1px solid ${t.line}`, borderRadius: 12, background: t.cream, fontFamily: f.sans, fontSize: 14, color: t.errorInk, display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
-          <span style={{ flex: 1, minWidth: 200 }}>We couldn&apos;t load your jobs just now.</span>
-          <OutlineCta size="sm" onClick={() => { void refreshRequirements(); }}>Retry</OutlineCta>
-        </div>
+        <InlineAlert message="We couldn't load your jobs just now." onRetry={() => { void refreshRequirements(); }} />
       ) : showOnboardingChecklist ? (
         <OnboardingChecklist steps={onboardingSteps} />
       ) : (
         <>
           {dashboardState === "failed" && (
-            <div role="alert" style={{ padding: "10px 16px", border: `1px solid ${t.line}`, borderRadius: 12, background: t.cream, fontFamily: f.sans, fontSize: 14, color: t.errorInk, display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
-              <span style={{ flex: 1, minWidth: 200 }}>Interview, hiring and activity figures didn&apos;t load.</span>
-              <OutlineCta size="sm" onClick={() => setDashboardNonce((n) => n + 1)}>Retry</OutlineCta>
-            </div>
+            <InlineAlert message="Interview, hiring and activity figures didn't load." onRetry={() => setDashboardNonce((n) => n + 1)} />
           )}
+          {nextAction && <NextActionCard action={nextAction} />}
           <DashboardStatCards jobs={openRequirements} data={dashboard} recommendedTotal={recommendedTotal} range={range} />
           <div className="grid grid-cols-1 gap-5 min-[1100px]:grid-cols-[minmax(0,1fr)_minmax(300px,380px)]">
             <div style={{ display: "flex", flexDirection: "column", gap: 20, minWidth: 0 }}>
-              <ActiveJobsCard jobs={openRequirements} pipeline={dashboard?.jobs ?? null} canCreate={!suspended && !atJobLimit} />
+              <ActiveJobsCard jobs={openRequirements} pipeline={dashboard?.jobs ?? null} canCreate={canCreate} now={now} rowActions={rowActions} />
               <RecommendedCandidatesCard cards={recommendedCards} />
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 20, minWidth: 0 }}>
@@ -249,6 +255,7 @@ function EmployerDashboard() {
           </div>
         </>
       )}
+      {dialogs}
     </div>
   );
 }

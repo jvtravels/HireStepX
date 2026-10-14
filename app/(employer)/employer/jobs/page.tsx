@@ -23,8 +23,7 @@ import { TablePaginationFooter } from "@/components/TablePaginationFooter";
 import { useToast } from "@/Toast";
 import { useMaxWidth } from "@/hooks/useMaxWidth";
 import { useEmployerData } from "@/employer/EmployerDataContext";
-import type { RequirementActivity } from "@/employer/EmployerDataContext";
-import type { RequirementSummary, RequirementStage, ArchiveDisposition } from "@/employer/mockData";
+import type { RequirementStage } from "@/employer/mockData";
 import { STAGE_LABEL, STAGE_OPTIONS } from "@/employer/_atoms";
 import { PageSkeleton, ErrorPanel, PrimaryLink } from "@/employer/_consoleParts";
 import { tokens as t, fonts as f, textSize } from "@/auth/_tokens";
@@ -37,9 +36,7 @@ import { FilterChip } from "./_components/JobCells";
 import AdvancedFiltersPopover from "./_components/AdvancedFiltersPopover";
 import JobsTable from "./_components/JobsTable";
 import JobCard from "./_components/JobCard";
-import JobRowActions from "./_components/JobRowActions";
-import JobHistoryDialog from "./_components/JobHistoryDialog";
-import JobArchiveDialog from "./_components/JobArchiveDialog";
+import { useJobRowActions } from "./_components/useJobRowActions";
 
 const emptyNote: React.CSSProperties = { fontFamily: f.sans, fontSize: textSize.base, color: t.inkSoft, margin: "6px 0 0", lineHeight: 1.5, maxWidth: 380 };
 
@@ -48,8 +45,8 @@ export default function EmployerJobsPage() {
   const router = useRouter();
   const { toast } = useToast();
   const {
-    requirements, requirementsLoading, requirementsError, refreshRequirements, archiveRequirement, reopenRequirement,
-    updateRequirementStage, fetchRequirementActivity, limits, suspended,
+    requirements, requirementsLoading, requirementsError, refreshRequirements,
+    updateRequirementStage, limits, suspended,
   } = useEmployerData();
 
   const [search, setSearch] = useState("");
@@ -64,13 +61,7 @@ export default function EmployerJobsPage() {
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
-  const [archiveTarget, setArchiveTarget] = useState<RequirementSummary | null>(null);
-  const [archiveBusy, setArchiveBusy] = useState(false);
-  const [archiveReason, setArchiveReason] = useState("");
-  const [archiveDisposition, setArchiveDisposition] = useState<ArchiveDisposition>("keep_candidates");
-  const [historyTarget, setHistoryTarget] = useState<RequirementSummary | null>(null);
-  const [historyItems, setHistoryItems] = useState<RequirementActivity[] | null>(null);
-  const [historyLoading, setHistoryLoading] = useState(false);
+  const { rowActions, dialogs } = useJobRowActions();
 
   const stageOptions = useMemo(
     () => STAGE_OPTIONS.filter((s) => requirements.some((r) => r.stage === s)).map((s) => STAGE_LABEL[s]),
@@ -167,44 +158,10 @@ export default function EmployerJobsPage() {
     (experienceFilter.min || experienceFilter.max ? 1 : 0) +
     (salaryFilter.min || salaryFilter.max ? 1 : 0);
 
-  const openHistory = async (r: RequirementSummary) => {
-    setHistoryTarget(r);
-    setHistoryItems(null);
-    setHistoryLoading(true);
-    const activity = await fetchRequirementActivity(r.id);
-    setHistoryItems(activity ?? []);
-    setHistoryLoading(false);
-  };
-
-  const openArchive = (r: RequirementSummary) => {
-    setArchiveReason("");
-    setArchiveDisposition("keep_candidates");
-    setArchiveTarget(r);
-  };
-
-  const confirmArchive = async () => {
-    if (!archiveTarget) return;
-    setArchiveBusy(true);
-    const isClosed = archiveTarget.status === "closed";
-    const ok = isClosed
-      ? await reopenRequirement(archiveTarget.id)
-      : await archiveRequirement(archiveTarget.id, { archiveReason: archiveReason || undefined, archiveDisposition });
-    setArchiveBusy(false);
-    if (ok) {
-      setArchiveTarget(null);
-    } else {
-      toast(isClosed ? "Couldn't reopen this job. Please try again." : "Couldn't archive this job. Please try again.", "error");
-    }
-  };
-
   const changeStage = async (id: string, stage: RequirementStage) => {
     const ok = await updateRequirementStage(id, stage);
     if (!ok) toast("Couldn't update the stage. Please try again.", "error");
   };
-
-  const rowActions = (r: RequirementSummary) => (
-    <JobRowActions requirement={r} readOnly={suspended} onArchive={openArchive} onHistory={openHistory} />
-  );
 
   const postIcon = <PlusIcon size={16} strokeWidth={2.5} aria-hidden="true" />;
 
@@ -316,17 +273,7 @@ export default function EmployerJobsPage() {
 
   return shell(
     <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
-      <JobHistoryDialog target={historyTarget} items={historyItems} loading={historyLoading} onClose={() => setHistoryTarget(null)} />
-      <JobArchiveDialog
-        target={archiveTarget}
-        busy={archiveBusy}
-        reason={archiveReason}
-        onReasonChange={setArchiveReason}
-        disposition={archiveDisposition}
-        onDispositionChange={setArchiveDisposition}
-        onConfirm={confirmArchive}
-        onClose={() => setArchiveTarget(null)}
-      />
+      {dialogs}
 
       {/* Announces filter/search results without moving focus. */}
       <p role="status" className="sr-only">

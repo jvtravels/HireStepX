@@ -1549,6 +1549,8 @@ input[type="range"]::-moz-range-thumb {
   --color-hx-indigo-100: oklch(0.920 0.022 294.573);
   --color-hx-success: oklch(0.527 0.137 150.069);
   --color-hx-success-100: oklch(0.962 0.043 156.743);
+  --color-hx-success-ink: oklch(0.448 0.108 151.328);
+  --color-hx-error-ink: oklch(0.405 0.152 27.518);
   --font-sans: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);

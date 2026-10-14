@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildInsights, buildRecommendedCards, isDashboardData, jobStatusLabel, trendDelta, type DashboardJobPipeline } from "../employer/dashboardData";
+import { buildInsights, buildRecommendedCards, isDashboardData, trendDelta, jobHealth, buildNextAction, type DashboardJobPipeline } from "../employer/dashboardData";
 import type { RequirementSummary } from "../employer/mockData";
 
 const NOW = Date.parse("2026-10-15T12:00:00Z");
@@ -15,17 +15,62 @@ function job(id: string, over: Partial<RequirementSummary> = {}, strong: Require
 
 const cand = (id: string, skills: string[]) => ({ id, name: `Candidate #${id}`, initials: id.slice(0, 2).toUpperCase(), yearsExperience: 3, skills });
 
-describe("jobStatusLabel / trendDelta", () => {
-  it("maps lifecycle states", () => {
-    expect(jobStatusLabel("ready")).toBe("Active");
-    expect(jobStatusLabel("zero")).toBe("Active");
-    expect(jobStatusLabel("generating")).toBe("Matching");
-    expect(jobStatusLabel("failed")).toBe("Needs retry");
+describe("trendDelta", () => {
+  it("shows a percentage when the previous window had data", () => {
+    expect(trendDelta({ series: [], current: 5, previous: 4 })).toEqual({ diff: 1, label: "+25%" });
+    expect(trendDelta({ series: [], current: 1, previous: 4 }).label).toBe("-75%");
   });
-  it("formats the delta", () => {
-    expect(trendDelta({ series: [], current: 5, previous: 2 })).toEqual({ diff: 3, label: "+3" });
-    expect(trendDelta({ series: [], current: 1, previous: 4 }).label).toBe("-3");
+  it("falls back to the raw difference with no previous data", () => {
+    expect(trendDelta({ series: [], current: 3, previous: 0 })).toEqual({ diff: 3, label: "+3" });
+  });
+  it("reports no change", () => {
     expect(trendDelta({ series: [], current: 2, previous: 2 }).label).toBe("No change");
+  });
+});
+
+describe("jobHealth", () => {
+  const strong = [{ id: "a1", name: "A", initials: "A", yearsExperience: 3, skills: [] }];
+  it("flags a failed job", () => {
+    expect(jobHealth(job("1", { status: "failed" }), undefined, NOW)?.tone).toBe("error");
+  });
+  it("stays quiet while matching is running", () => {
+    expect(jobHealth(job("1", { status: "generating" }), undefined, NOW)).toBeNull();
+  });
+  it("flags a job with no strong matches", () => {
+    expect(jobHealth(job("1"), undefined, NOW)?.label).toBe("No strong matches yet");
+  });
+  it("flags a job idle for over 14 days", () => {
+    const p: DashboardJobPipeline = { requirementId: "1", interviewing: 0, hired: 0, lastUpdatedAt: new Date(NOW - 20 * DAY).toISOString() };
+    expect(jobHealth(job("1", {}, strong), p, NOW)?.label).toBe("Quiet for 20 days");
+  });
+  it("returns null for a healthy job", () => {
+    const p: DashboardJobPipeline = { requirementId: "1", interviewing: 0, hired: 0, lastUpdatedAt: new Date(NOW - DAY).toISOString() };
+    expect(jobHealth(job("1", {}, strong), p, NOW)).toBeNull();
+  });
+});
+
+describe("buildNextAction", () => {
+  const strong = [{ id: "a1", name: "A", initials: "A", yearsExperience: 3, skills: [] }];
+  const soon = { matchId: "m1", requirementId: "r1", roleTitle: "Dev", candidateName: "Priya", initials: "P", scheduledAt: new Date(NOW + 3_600_000).toISOString() };
+  it("puts a near interview first", () => {
+    expect(buildNextAction([job("1", {}, strong)], [soon], 4, NOW, true)?.title).toContain("Priya");
+  });
+  it("ignores interviews more than 48h away", () => {
+    const far = { ...soon, scheduledAt: new Date(NOW + 5 * DAY).toISOString() };
+    expect(buildNextAction([job("1", {}, strong)], [far], 2, NOW, true)?.title).toContain("2 candidates are waiting");
+  });
+  it("uses singular wording for one waiting candidate", () => {
+    expect(buildNextAction([job("1", {}, strong)], [], 1, NOW, true)?.title).toContain("1 candidate is waiting");
+  });
+  it("points a failed job at its edit page", () => {
+    expect(buildNextAction([job("9", { status: "failed" })], [], 0, NOW, true)?.href).toBe("/employer/requirements/9/edit");
+  });
+  it("suggests posting a job only when the account can create one", () => {
+    expect(buildNextAction([], [], 0, NOW, true)?.href).toBe("/employer/requirements/new");
+    expect(buildNextAction([], [], 0, NOW, false)).toBeNull();
+  });
+  it("returns null when nothing needs doing", () => {
+    expect(buildNextAction([job("1", {}, strong)], [], 0, NOW, true)).toBeNull();
   });
 });
 
