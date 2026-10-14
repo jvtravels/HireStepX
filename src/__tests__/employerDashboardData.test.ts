@@ -159,6 +159,8 @@ describe("buildInsights", () => {
     const out = buildInsights([job("r1", {}, [cand("aaaaaa", [])]), job("r2")], pipeline, 2, NOW);
     expect(out.map((i) => i.id)).toEqual(["best-pipeline", "awaiting-review", "no-strong", "stale"]);
     expect(out[0].body).toContain("averaging 71% fit");
+    expect(out.map((i) => i.tone)).toEqual(["positive", "action", "attention", "neutral"]);
+    expect(out.every((i) => i.cta.length > 0)).toBe(true);
   });
   it("is empty for an account with nothing to say", () => {
     expect(buildInsights([], [], 0, NOW)).toEqual([]);

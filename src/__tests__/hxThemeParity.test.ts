@@ -16,6 +16,8 @@ const HX_TO_TOKEN = {
   "hx-success-100": t.success100,
   "hx-success-ink": t.successInk,
   "hx-error-ink": t.errorInk,
+  "hx-warning-100": t.warning100,
+  "hx-warning-ink": t.warningInk,
 } as const;
 
 describe("hx-* Tailwind theme colors", () => {

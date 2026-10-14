@@ -9,7 +9,7 @@
 
 import Link from "next/link";
 import { useMemo, useState, type ReactNode } from "react";
-import { BriefcaseIcon, UsersIcon, CalendarDaysIcon, CircleCheckIcon, LightbulbIcon, ClockIcon, ArrowRightIcon, PlusIcon, SparklesIcon, UserIcon } from "lucide-react";
+import { BriefcaseIcon, UsersIcon, CalendarDaysIcon, CircleCheckIcon, LightbulbIcon, ClockIcon, TrendingUpIcon, SearchXIcon, ArrowRightIcon, PlusIcon, SparklesIcon, UserIcon } from "lucide-react";
 import { hoursOrDaysAgo } from "@/hiringMatchFormat";
 import AnimatedNumber from "@/AnimatedNumber";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -25,7 +25,7 @@ import type { RequirementSummary } from "./mockData";
 import {
   RANGE_LABEL, trendDelta, interviewSlot, jobHealth, pipelineStage,
   type DashboardRange, type DashboardTrend, type DashboardJobPipeline, type DashboardUpcomingInterview,
-  type DashboardActivityItem, type DashboardInsight, type RecommendedCard, type EmployerDashboardData, type NextAction,
+  type DashboardActivityItem, type DashboardInsight, type InsightTone, type RecommendedCard, type EmployerDashboardData, type NextAction,
 } from "./dashboardData";
 
 const RANGE_OPTIONS: readonly DashboardRange[] = [7, 30, 90];
@@ -505,6 +505,20 @@ export function UpcomingInterviewsCard({ items }: { items: DashboardUpcomingInte
   );
 }
 
+const INSIGHT_TILE: Record<InsightTone, string> = {
+  positive: "bg-hx-success-100 text-hx-success-ink",
+  action: "bg-hx-indigo-100 text-hx-indigo",
+  attention: "bg-hx-warning-100 text-hx-warning-ink",
+  neutral: "bg-hx-soft text-hx-ink-soft",
+};
+
+const INSIGHT_ICON: Record<string, ReactNode> = {
+  "best-pipeline": <TrendingUpIcon size={16} />,
+  "awaiting-review": <UsersIcon size={16} />,
+  "no-strong": <SearchXIcon size={16} />,
+  stale: <ClockIcon size={16} />,
+};
+
 export function KeyInsightsCard({ insights }: { insights: DashboardInsight[] }) {
   return (
     <section aria-labelledby="insights-heading" className={CARD}>
@@ -512,12 +526,21 @@ export function KeyInsightsCard({ insights }: { insights: DashboardInsight[] }) 
       {insights.length === 0 ? (
         <EmptyState className={EMPTY} title="No insights yet" description="Insights appear once your jobs have screened candidates." />
       ) : (
-        <ul className={`${LIST} flex flex-col gap-3`}>
+        <ul className={`${LIST} divide-y divide-hx-line`}>
           {insights.map((i) => (
             <li key={i.id}>
-              <Link href={i.href} className="block rounded-sm no-underline hover:underline">
-                <div className="text-[13px] font-semibold text-hx-coal">{i.title}</div>
-                <div className="mt-0.5 text-[12px] leading-[1.45] text-hx-ink-soft">{i.body}</div>
+              <Link href={i.href} className="group flex items-start gap-3.5 rounded-md py-4 no-underline first:pt-2 last:pb-1">
+                <span aria-hidden="true" className={`mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg ${INSIGHT_TILE[i.tone]}`}>
+                  {INSIGHT_ICON[i.id] ?? <LightbulbIcon size={16} />}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[14px] font-semibold leading-5 text-hx-coal">{i.title}</span>
+                  <span className="mt-1 block text-[13px] leading-[1.55] text-hx-ink-soft">{i.body}</span>
+                  <span className="mt-2 inline-flex items-center gap-1 text-[13px] font-semibold text-hx-indigo group-hover:underline">
+                    {i.cta}
+                    <ArrowRightIcon size={14} aria-hidden="true" className="transition-transform duration-200 ease-out group-hover:translate-x-0.5" />
+                  </span>
+                </span>
               </Link>
             </li>
           ))}

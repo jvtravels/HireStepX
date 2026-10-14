@@ -91,10 +91,15 @@ export function jobHealth(
   return null;
 }
 
+export type InsightTone = "positive" | "action" | "attention" | "neutral";
+
 export interface DashboardInsight {
   id: string;
+  tone: InsightTone;
   title: string;
   body: string;
+  /** Short verb phrase for where the insight leads, e.g. "Review candidates". */
+  cta: string;
   href: string;
 }
 
@@ -115,8 +120,10 @@ export function buildInsights(
     const avg = best.aiScreening.strongAvgScore;
     out.push({
       id: "best-pipeline",
+      tone: "positive",
       title: "Strongest pipeline",
       body: `${best.title} has ${best.aiScreening.topMatches} strong ${best.aiScreening.topMatches === 1 ? "match" : "matches"}${avg !== null ? `, averaging ${Math.round(avg)}% fit` : ""}.`,
+      cta: "View job",
       href: `/employer/requirements/${best.id}`,
     });
   }
@@ -124,8 +131,10 @@ export function buildInsights(
   if (awaitingReview > 0) {
     out.push({
       id: "awaiting-review",
+      tone: "action",
       title: "Candidates waiting on you",
-      body: `${awaitingReview} recommended ${awaitingReview === 1 ? "candidate is" : "candidates are"} still waiting for your decision.`,
+      body: `${awaitingReview} recommended ${awaitingReview === 1 ? "candidate is" : "candidates are"} waiting for your decision.`,
+      cta: "Review candidates",
       href: "/employer/jobs",
     });
   }
@@ -134,8 +143,10 @@ export function buildInsights(
   if (noMatches.length > 0) {
     out.push({
       id: "no-strong",
+      tone: "attention",
       title: "Roles with no strong match",
-      body: `${noMatches[0].title}${noMatches.length > 1 ? ` and ${noMatches.length - 1} more have` : " has"} no strong matches. Broadening skills or location can help.`,
+      body: `${noMatches[0].title}${noMatches.length > 1 ? ` and ${noMatches.length - 1} more have` : " has"} no strong matches. Try broadening skills or location.`,
+      cta: "Edit job",
       href: `/employer/requirements/${noMatches[0].id}/edit`,
     });
   }
@@ -147,7 +158,9 @@ export function buildInsights(
   if (stale.length > 0) {
     out.push({
       id: "stale",
+      tone: "neutral",
       title: "Quiet for a while",
+      cta: "Open job",
       body: `${stale[0].title}${stale.length > 1 ? ` and ${stale.length - 1} more haven't` : " hasn't"} changed in over ${STALE_DAYS} days.`,
       href: `/employer/requirements/${stale[0].id}`,
     });
