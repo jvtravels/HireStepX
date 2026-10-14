@@ -1,13 +1,17 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useAuth } from "@/AuthContext";
+import { useState, useEffect, useMemo } from "react";
 import { useEmployerData } from "@/employer/EmployerDataContext";
 import { tokens as t, fonts as f } from "@/auth/_tokens";
-import { Card as AtomCard, Eyebrow, OutlineCta, StatCell, EmployerIcon } from "@/employer/_atoms";
-import { OutlineLink, PrimaryLink, PageSkeleton, ErrorPanel } from "@/employer/_consoleParts";
+import { Card as AtomCard, Eyebrow, OutlineCta, EmployerIcon } from "@/employer/_atoms";
+import { PrimaryLink, PageSkeleton, ErrorPanel } from "@/employer/_consoleParts";
 import CompanyProfileForm from "@/employer/CompanyProfileForm";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  DashboardHeader, DashboardStatCards, ActiveJobsCard, RecommendedCandidatesCard,
+  UpcomingInterviewsCard, KeyInsightsCard, RecentActivityCard,
+} from "@/employer/DashboardSections";
+import { buildInsights, buildRecommendedCards, type DashboardRange, type EmployerDashboardData } from "@/employer/dashboardData";
 
 function CompanyOnboarding() {
   return (
@@ -121,39 +125,60 @@ function OnboardingChecklist({ steps }: { steps: ChecklistStep[] }) {
   );
 }
 
-/* Employer landing after approval — lightweight overview only. The full
-   requirements list lives on /employer/jobs; this screen is the "how's it
-   going" glance (greeting, next move, stat strip, company profile rail).
-   The shell already renders the <main> landmark, so this is plain content.
-   The rail stacks below 900px via Tailwind variants (no JS width hook, so
-   there's no layout flash on first paint). */
+/* Employer landing after approval. Job-level numbers come from the jobs
+   list (EmployerDataContext); pipeline counts, trends, interviews and the
+   activity feed come from /api/employer-dashboard. If that call fails the
+   sections that only need the jobs list still render, with "–" where a
+   pipeline figure would be. The shell already renders the <main> landmark. */
 function EmployerDashboard() {
-  const { user } = useAuth();
   const {
     requirements, requirementsLoading, requirementsError, refreshRequirements,
-    companyName, companyLogoUrl, fetchUnlockHistory, limits, suspended, verificationTier,
+    companyName, fetchUnlockHistory, fetchDashboard, limits, suspended,
   } = useEmployerData();
   const [unlockCount, setUnlockCount] = useState<number | null>(null);
-  const [unlockSettled, setUnlockSettled] = useState(false);
+  const [range, setRange] = useState<DashboardRange>(30);
+  const [dashboard, setDashboard] = useState<EmployerDashboardData | null>(null);
+  const [dashboardState, setDashboardState] = useState<"loading" | "ready" | "failed">("loading");
+  const [dashboardNonce, setDashboardNonce] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
     // On failure the count stays null: we can't claim "no unlocks yet", so the
     // checklist is withheld rather than shown with a wrong step 3.
     fetchUnlockHistory().then((purchases) => {
-      if (cancelled) return;
-      if (purchases) setUnlockCount(purchases.length);
-      setUnlockSettled(true);
+      if (!cancelled && purchases) setUnlockCount(purchases.length);
     });
     return () => {
       cancelled = true;
     };
   }, [fetchUnlockHistory]);
 
-  const openRequirements = requirements.filter((r) => r.status !== "closed");
+  useEffect(() => {
+    let cancelled = false;
+    setDashboardState("loading");
+    fetchDashboard(range).then((data) => {
+      if (cancelled) return;
+      setDashboard(data);
+      setDashboardState(data ? "ready" : "failed");
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [fetchDashboard, range, dashboardNonce]);
+
+  const openRequirements = useMemo(() => requirements.filter((r) => r.status !== "closed"), [requirements]);
   const totalCandidates = requirements.reduce((sum, r) => sum + r.candidateCount, 0);
   const atJobLimit = openRequirements.length >= limits.openRequirements;
   const statsReady = !requirementsLoading && !requirementsError;
+  const recommendedTotal = openRequirements.reduce((sum, r) => sum + r.aiScreening.topMatches, 0);
+  const recommendedCards = useMemo(
+    () => buildRecommendedCards(openRequirements, dashboard?.recommended ?? null),
+    [openRequirements, dashboard],
+  );
+  const insights = useMemo(
+    () => buildInsights(openRequirements, dashboard?.jobs ?? [], dashboard?.totals.unviewedRecommended ?? 0, Date.now()),
+    [openRequirements, dashboard],
+  );
 
   const onboardingSteps: ChecklistStep[] = [
     {
@@ -179,109 +204,51 @@ function EmployerDashboard() {
     },
   ];
   // Hold off until both the requirements and the unlock count have loaded, so
-  // a brand-new employer doesn't see the plain stat strip flash before the
-  // checklist swaps in, and an existing one doesn't see a wrong "step 1".
+  // a brand-new employer doesn't see the dashboard flash before the checklist
+  // swaps in, and an existing one doesn't see a wrong "step 1".
   const showOnboardingChecklist = !suspended && statsReady && unlockCount !== null && onboardingSteps.some((s) => !s.done);
 
   return (
-    <div className="grid w-full grid-cols-1 gap-6 rounded-xl border bg-white p-4 min-[640px]:p-6 min-[900px]:grid-cols-[minmax(0,1fr)_minmax(280px,360px)] min-[900px]:gap-8" style={{ borderColor: t.line, boxSizing: "border-box" }}>
-      {/* ─── Main stage ─── */}
-      <div className="mx-stagger" style={{ display: "flex", flexDirection: "column", gap: 28, minWidth: 0 }}>
-        <section>
-          <h1 style={{ fontFamily: f.sans, fontSize: "clamp(28px, 6vw, 44px)", fontWeight: 400, lineHeight: 1.1, letterSpacing: "-0.02em", color: t.coal, margin: "0 0 6px", overflowWrap: "anywhere" }}>
-            Welcome <em style={{ fontWeight: 600, color: t.indigo }}>back</em>, {user?.name || "there"}.
-          </h1>
-          <p style={{ fontFamily: f.sans, fontSize: 15, color: t.inkSoft, margin: 0, maxWidth: 560 }}>
-            {openRequirements.length > 0
-              ? "Here's where your open roles and shortlists stand."
-              : "Post your first requirement and we'll start matching candidates against it."}
-          </p>
-        </section>
+    <div className="mx-stagger" style={{ display: "flex", flexDirection: "column", gap: 20, width: "100%", minWidth: 0 }}>
+      <DashboardHeader companyName={companyName} range={range} onRangeChange={setRange} jobs={openRequirements} recommended={recommendedCards} />
 
-        {/* Suppressed while the checklist is up — its active step already
-            carries whichever CTA actually applies (post/review/unlock). */}
-        {!showOnboardingChecklist && !suspended && unlockSettled && (
-          <Card>
-            <CardContent>
-              <Eyebrow tone="indigo">Your next move</Eyebrow>
-              <h2 style={{ fontFamily: f.sans, fontSize: 28, fontWeight: 400, lineHeight: 1.2, letterSpacing: "-0.01em", color: t.coal, margin: "8px 0 10px" }}>
-                {atJobLimit ? "You've reached your open-jobs limit" : "Post a requirement"}
-              </h2>
-              <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft, margin: 0, maxWidth: 520, lineHeight: 1.55 }}>
-                {atJobLimit
-                  ? `Your account can have ${limits.openRequirements} open jobs at a time. Close a job you've filled to post a new one.`
-                  : "Tell us the role, location, and notice-period preference — we'll return a scored shortlist from candidates actively practicing on HireStepX."}
-              </p>
-              {!atJobLimit && (
-                <div style={{ marginTop: 18 }}>
-                  <PrimaryLink href="/employer/requirements/new" icon={<EmployerIcon.Plus />}>Post a requirement</PrimaryLink>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
+      {suspended && (
+        <div role="status" style={{ padding: "12px 16px", border: `1px solid ${t.line}`, borderRadius: 12, background: t.cream, fontFamily: f.sans, fontSize: 14, color: t.inkSoft }}>
+          Your account is suspended and read-only.
+        </div>
+      )}
 
-        {requirementsLoading ? (
-          <PageSkeleton label="Loading your overview" />
-        ) : requirementsError ? (
-          <section aria-labelledby="overview-heading">
-            <h2 id="overview-heading" style={{ margin: 0 }}><Eyebrow tone="ink">Overview</Eyebrow></h2>
-            <div role="alert" style={{ marginTop: 10, padding: 16, border: `1px solid ${t.line}`, borderRadius: 10, fontFamily: f.sans, fontSize: 14, color: t.errorInk, display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
-              <span style={{ flex: 1, minWidth: 200 }}>We couldn't load your jobs just now.</span>
-              <OutlineCta size="sm" onClick={() => { void refreshRequirements(); }}>Retry</OutlineCta>
+      {requirementsLoading ? (
+        <PageSkeleton label="Loading your overview" />
+      ) : requirementsError ? (
+        <div role="alert" style={{ padding: 16, border: `1px solid ${t.line}`, borderRadius: 12, background: t.cream, fontFamily: f.sans, fontSize: 14, color: t.errorInk, display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+          <span style={{ flex: 1, minWidth: 200 }}>We couldn&apos;t load your jobs just now.</span>
+          <OutlineCta size="sm" onClick={() => { void refreshRequirements(); }}>Retry</OutlineCta>
+        </div>
+      ) : showOnboardingChecklist ? (
+        <OnboardingChecklist steps={onboardingSteps} />
+      ) : (
+        <>
+          {dashboardState === "failed" && (
+            <div role="alert" style={{ padding: "10px 16px", border: `1px solid ${t.line}`, borderRadius: 12, background: t.cream, fontFamily: f.sans, fontSize: 14, color: t.errorInk, display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+              <span style={{ flex: 1, minWidth: 200 }}>Interview, hiring and activity figures didn&apos;t load.</span>
+              <OutlineCta size="sm" onClick={() => setDashboardNonce((n) => n + 1)}>Retry</OutlineCta>
             </div>
-          </section>
-        ) : showOnboardingChecklist ? (
-          <OnboardingChecklist steps={onboardingSteps} />
-        ) : (
-          <section aria-labelledby="overview-heading">
-            <h2 id="overview-heading" style={{ margin: 0 }}><Eyebrow tone="ink">Overview</Eyebrow></h2>
-            <dl style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 0, margin: "10px 0 0", borderTop: `1px solid ${t.line}`, borderBottom: `1px solid ${t.line}` }}>
-              <StatCell label="Open jobs" value={String(openRequirements.length)} unit={`of ${limits.openRequirements}`} />
-              <StatCell label="Candidates matched" value={String(totalCandidates)} unit="" />
-            </dl>
-          </section>
-        )}
-
-        <OutlineLink href="/employer/jobs" full>View all jobs</OutlineLink>
-      </div>
-
-      {/* ─── Rail ─── */}
-      <aside aria-label="Company and help" className="mx-stagger" style={{ display: "flex", flexDirection: "column", gap: 24, minWidth: 0 }}>
-        <Card>
-          <CardContent>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-              {companyLogoUrl ? (
-                <img src={companyLogoUrl} alt="" style={{ width: 22, height: 22, borderRadius: 6, objectFit: "cover" }} />
-              ) : (
-                <span aria-hidden="true" style={{ color: t.indigo }}><EmployerIcon.Building /></span>
-              )}
-              <h2 style={{ fontFamily: f.sans, fontSize: 14, fontWeight: 600, color: t.coal, margin: 0, overflowWrap: "anywhere" }}>
-                {companyName || "Company profile"}
-              </h2>
+          )}
+          <DashboardStatCards jobs={openRequirements} data={dashboard} recommendedTotal={recommendedTotal} range={range} />
+          <div className="grid grid-cols-1 gap-5 min-[1100px]:grid-cols-[minmax(0,1fr)_minmax(300px,380px)]">
+            <div style={{ display: "flex", flexDirection: "column", gap: 20, minWidth: 0 }}>
+              <ActiveJobsCard jobs={openRequirements} pipeline={dashboard?.jobs ?? null} canCreate={!suspended && !atJobLimit} />
+              <RecommendedCandidatesCard cards={recommendedCards} />
             </div>
-            <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.55, margin: "0 0 12px" }}>
-              {suspended
-                ? "Your account is suspended and read-only."
-                : verificationTier === "basic"
-                  ? "Unverified account."
-                  : verificationTier === "email_verified"
-                    ? "Work email confirmed."
-                    : "Verified: your email domain matches your company website, or HireStepX checked your company."}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent>
-            <h2 style={{ fontFamily: f.sans, fontSize: 14, fontWeight: 600, color: t.coal, margin: "0 0 8px" }}>How matching works</h2>
-            <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.6, margin: 0 }}>
-              Match score reflects fit against this requirement; roster score reflects lifetime interview
-              performance across a candidate's practice sessions.
-            </p>
-          </CardContent>
-        </Card>
-      </aside>
+            <div style={{ display: "flex", flexDirection: "column", gap: 20, minWidth: 0 }}>
+              <UpcomingInterviewsCard items={dashboard?.upcomingInterviews ?? []} />
+              <KeyInsightsCard insights={insights} />
+              <RecentActivityCard items={dashboard?.activity ?? []} />
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

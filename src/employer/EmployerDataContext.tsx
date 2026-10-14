@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, useCallback, useEffect, use
 import { authHeaders } from "@/supabase";
 import { apiFetch } from "@/apiClient";
 import { captureClientEvent } from "@/posthogClient";
+import { isDashboardData, type EmployerDashboardData, type DashboardRange } from "./dashboardData";
 import { RequirementSummary, Requirement, Candidate, RequirementStage, RequirementFormValues, CandidateStatus, ArchiveDisposition } from "./mockData";
 
 /* Real backend layer for the employer console — see server-handlers/
@@ -206,6 +207,7 @@ interface EmployerDataContextValue {
   fetchCandidateResumeUrl: (matchId: string) => Promise<{ url: string; fileName: string } | null>;
   fetchRequirementActivity: (id: string) => Promise<RequirementActivity[] | null>;
   fetchUnlockHistory: () => Promise<UnlockPurchase[] | null>;
+  fetchDashboard: (range: DashboardRange) => Promise<EmployerDashboardData | null>;
   refreshRequirements: () => Promise<void>;
   listConversations: () => Promise<ConversationSummary[] | null>;
   fetchMessages: (matchId: string) => Promise<{ messages: ConversationMessage[]; context: ConversationContext | null } | null>;
@@ -493,6 +495,12 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
     return res.data.purchases as UnlockPurchase[];
   }, []);
 
+  const fetchDashboard = useCallback(async (range: DashboardRange): Promise<EmployerDashboardData | null> => {
+    const res = await getWithRetry(`/api/employer-dashboard?range=${range}`);
+    if (!res || !res.ok || !isDashboardData(res.data)) return null;
+    return res.data;
+  }, []);
+
   const listConversations = useCallback(async (): Promise<ConversationSummary[] | null> => {
     const res = await getWithRetry("/api/messages");
     if (!res || !res.ok || !isRecord(res.data)) return null;
@@ -587,6 +595,7 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
     fetchCandidateResumeUrl,
     fetchRequirementActivity,
     fetchUnlockHistory,
+    fetchDashboard,
     refreshRequirements,
     listConversations,
     fetchMessages,
@@ -601,7 +610,7 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
     refreshCompanyStatus, submitCompanyProfile, submitCompanyProfileResult, addRequirement, updateRequirement,
     createUnlockOrder, createUnlockOrderResult, verifyUnlockPayment, fetchRequirementDetail, archiveRequirement,
     reopenRequirement, updateRequirementStage, updateCandidateStatus, updateCandidateStatusResult,
-    fetchCandidateEvidence, fetchCandidateResumeUrl, fetchRequirementActivity, fetchUnlockHistory, refreshRequirements, listConversations,
+    fetchCandidateEvidence, fetchCandidateResumeUrl, fetchRequirementActivity, fetchUnlockHistory, fetchDashboard, refreshRequirements, listConversations,
     fetchMessages, sendMessage, sendMessageResult, uploadMessageAttachment, flagMessage, fetchMessageAttachmentUrl,
   ]);
 

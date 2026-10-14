@@ -1539,6 +1539,16 @@ input[type="range"]::-moz-range-thumb {
 
 @theme inline {
   --font-heading: var(--font-sans);
+  /* Mirrors src/auth/_tokens.ts so Tailwind classes can use the design tokens
+     (employer dashboard). Keep values in sync with that file. */
+  --color-hx-coal: oklch(0.148 0.004 228.8);
+  --color-hx-ink-soft: oklch(0.52 0.021 213.5);
+  --color-hx-line: oklch(0.943 0.006 265.3);
+  --color-hx-soft: oklch(0.967 0.001 286.375);
+  --color-hx-indigo: oklch(0.359 0.135 278.697);
+  --color-hx-indigo-100: oklch(0.920 0.022 294.573);
+  --color-hx-success: oklch(0.527 0.137 150.069);
+  --color-hx-success-100: oklch(0.962 0.043 156.743);
   --font-sans: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
