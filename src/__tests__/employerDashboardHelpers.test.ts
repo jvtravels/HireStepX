@@ -13,7 +13,7 @@ function match(over: Partial<DashboardMatchRow> & { id: string }): DashboardMatc
   return {
     requirement_id: "r1", candidate_status: "shortlisted", interview_scheduled_at: null,
     candidate_status_updated_at: null, created_at: ago(1), unlocked: false, unlocked_candidate_name: null,
-    match_score: 60, profile_viewed_at: null, ...over,
+    match_score: 60, ...over,
   };
 }
 
@@ -74,16 +74,14 @@ describe("selectUpcomingInterviews", () => {
 });
 
 describe("selectRecentRecommended", () => {
-  it("keeps untouched shortlisted matches at or above the threshold, newest first", () => {
+  it("keeps shortlisted matches at or above the threshold, newest first", () => {
     const out = selectRecentRecommended([
       match({ id: "old", created_at: ago(9), match_score: 70 }),
-      match({ id: "new", created_at: ago(1), match_score: 45, profile_viewed_at: ago(0.5) }),
+      match({ id: "new", created_at: ago(1), match_score: 45 }),
       match({ id: "weak", match_score: 10 }),
       match({ id: "moved", candidate_status: "interviewing", match_score: 90 }),
     ], 40);
     expect(out.map((m) => m.matchId)).toEqual(["new", "old"]);
-    expect(out[0].viewed).toBe(true);
-    expect(out[1].viewed).toBe(false);
   });
 });
 

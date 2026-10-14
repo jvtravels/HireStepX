@@ -19,11 +19,28 @@ const DAY = 86_400_000;
 const iso = (offsetDays: number) => new Date(Date.now() + offsetDays * DAY).toISOString();
 const req = (qs = "") => new Request(`https://x.test/api/employer-dashboard${qs}`, { method: "GET" });
 
+// Columns confirmed to exist on the production database. PostgREST answers 400
+// for an unknown column in `select=`, which fails the whole endpoint, so the
+// mock below rejects any select that strays from this list (supabase-schema.sql
+// declares columns, e.g. profile_viewed_at, that production does not have).
+const PROD_COLUMNS: Record<string, string[]> = {
+  employer_requirements: ["id", "title", "created_at", "employer_id"],
+  match_status_events: ["match_id", "requirement_id", "employer_id", "to_status", "actor", "note", "created_at"],
+  employer_requirement_activity: ["requirement_id", "employer_id", "created_at"],
+  requirement_matches: [
+    "id", "requirement_id", "candidate_user_id", "match_score", "unlocked", "unlocked_at", "created_at",
+    "candidate_status", "candidate_status_updated_at", "interview_scheduled_at", "unlocked_candidate_name",
+  ],
+};
+
 function mockTables(tables: Record<string, unknown[]>, failTable?: string) {
   global.fetch = vi.fn(async (input: RequestInfo | URL) => {
     const url = String(input);
     const table = Object.keys(tables).find((t) => url.includes(`/rest/v1/${t}?`));
     if (!table || table === failTable) return { ok: false, status: 500, json: async () => [] } as Response;
+    const select = new URL(url).searchParams.get("select") ?? "";
+    const unknown = select.split(",").filter((c) => c && !PROD_COLUMNS[table].includes(c));
+    if (unknown.length > 0) return { ok: false, status: 400, json: async () => ({ message: `column ${unknown[0]} does not exist` }) } as Response;
     return { ok: true, status: 200, json: async () => tables[table] } as Response;
   }) as typeof fetch;
 }
@@ -50,9 +67,9 @@ describe("employer-dashboard handler", () => {
       ],
       employer_requirement_activity: [{ requirement_id: "r1", created_at: iso(-2) }],
       requirement_matches: [
-        { id: "m1aaaaaa", requirement_id: "r1", candidate_status: "interviewing", interview_scheduled_at: iso(2), candidate_status_updated_at: iso(-1), created_at: iso(-5), unlocked: false, unlocked_candidate_name: null, match_score: 80, profile_viewed_at: null },
-        { id: "m2bbbbbb", requirement_id: "r1", candidate_status: "shortlisted", interview_scheduled_at: null, candidate_status_updated_at: null, created_at: iso(-1), unlocked: false, unlocked_candidate_name: null, match_score: 75, profile_viewed_at: null },
-        { id: "m3cccccc", requirement_id: "r1", candidate_status: "hired", interview_scheduled_at: null, candidate_status_updated_at: iso(-4), created_at: iso(-9), unlocked: true, unlocked_candidate_name: "Riya Shah", match_score: 90, profile_viewed_at: iso(-8) },
+        { id: "m1aaaaaa", requirement_id: "r1", candidate_status: "interviewing", interview_scheduled_at: iso(2), candidate_status_updated_at: iso(-1), created_at: iso(-5), unlocked: false, unlocked_candidate_name: null, match_score: 80 },
+        { id: "m2bbbbbb", requirement_id: "r1", candidate_status: "shortlisted", interview_scheduled_at: null, candidate_status_updated_at: null, created_at: iso(-1), unlocked: false, unlocked_candidate_name: null, match_score: 75 },
+        { id: "m3cccccc", requirement_id: "r1", candidate_status: "hired", interview_scheduled_at: null, candidate_status_updated_at: iso(-4), created_at: iso(-9), unlocked: true, unlocked_candidate_name: "Riya Shah", match_score: 90 },
       ],
     });
 
@@ -62,7 +79,7 @@ describe("employer-dashboard handler", () => {
     expect(res.status).toBe(200);
     expect(body.range).toBe(30);
     expect(body.jobs).toEqual([{ requirementId: "r1", interviewing: 1, hired: 1, lastUpdatedAt: expect.any(String) }]);
-    expect(body.totals).toEqual({ interviewsScheduled: 1, hired: 1, unviewedRecommended: 1 });
+    expect(body.totals).toEqual({ interviewsScheduled: 1, hired: 1, awaitingReview: 1 });
     expect(body.trends.interviews.current).toBe(1);
     expect(body.trends.jobs.current).toBe(1);
     expect(body.upcomingInterviews[0]).toMatchObject({ matchId: "m1aaaaaa", candidateName: "Candidate #m1aaaa", roleTitle: "Backend Engineer" });

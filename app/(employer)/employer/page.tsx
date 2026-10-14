@@ -176,7 +176,7 @@ function EmployerDashboard() {
     [openRequirements, dashboard],
   );
   const insights = useMemo(
-    () => buildInsights(openRequirements, dashboard?.jobs ?? [], dashboard?.totals.unviewedRecommended ?? 0, Date.now()),
+    () => buildInsights(openRequirements, dashboard?.jobs ?? [], dashboard?.totals.awaitingReview ?? 0, Date.now()),
     [openRequirements, dashboard],
   );
 

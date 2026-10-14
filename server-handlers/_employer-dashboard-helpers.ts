@@ -53,7 +53,6 @@ export interface DashboardMatchRow {
   unlocked: boolean | null;
   unlocked_candidate_name: string | null;
   match_score: number;
-  profile_viewed_at: string | null;
 }
 
 export interface JobPipelineRow {
@@ -142,7 +141,6 @@ export interface RecommendedRef {
   requirementId: string;
   matchScore: number;
   createdAt: string;
-  viewed: boolean;
 }
 
 export function selectRecentRecommended(matches: DashboardMatchRow[], threshold: number, limit = 12): RecommendedRef[] {
@@ -152,7 +150,7 @@ export function selectRecentRecommended(matches: DashboardMatchRow[], threshold:
     .slice(0, limit)
     .map((m) => ({
       matchId: m.id, requirementId: m.requirement_id, matchScore: m.match_score,
-      createdAt: m.created_at as string, viewed: !!m.profile_viewed_at,
+      createdAt: m.created_at as string,
     }));
 }
 

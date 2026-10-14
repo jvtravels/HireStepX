@@ -82,7 +82,7 @@ export default async function handler(req: Request): Promise<Response> {
     const matches: DashboardMatchRow[] = [];
     for (const batch of chunk(ids, 20)) {
       const r = await fetchKeyset<DashboardMatchRow & Record<string, unknown>>({
-        baseUrl: `${SUPABASE_URL}/rest/v1/requirement_matches?requirement_id=in.(${inList(batch)})&select=id,requirement_id,candidate_status,interview_scheduled_at,candidate_status_updated_at,created_at,unlocked,unlocked_candidate_name,match_score,profile_viewed_at`,
+        baseUrl: `${SUPABASE_URL}/rest/v1/requirement_matches?requirement_id=in.(${inList(batch)})&select=id,requirement_id,candidate_status,interview_scheduled_at,candidate_status_updated_at,created_at,unlocked,unlocked_candidate_name,match_score`,
         headers: serviceHeaders(), keyField: "id", pageSize: 1000, maxRows: 5000,
       });
       if (r.failed) throw new Error("dashboard matches read failed");
@@ -105,7 +105,7 @@ export default async function handler(req: Request): Promise<Response> {
       totals: {
         interviewsScheduled: upcoming.length,
         hired: matches.filter((m) => m.candidate_status === "hired").length,
-        unviewedRecommended: strongRefs.filter((m) => !m.viewed).length,
+        awaitingReview: strongRefs.length,
       },
       trends: {
         jobs: buildTrend(requirements.map((r) => r.created_at), now, range),

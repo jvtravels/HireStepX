@@ -32,7 +32,6 @@ export interface DashboardRecommendedRef {
   requirementId: string;
   matchScore: number;
   createdAt: string;
-  viewed: boolean;
 }
 
 export interface DashboardActivityItem {
@@ -46,7 +45,7 @@ export interface DashboardActivityItem {
 export interface EmployerDashboardData {
   range: DashboardRange;
   jobs: DashboardJobPipeline[];
-  totals: { interviewsScheduled: number; hired: number; unviewedRecommended: number };
+  totals: { interviewsScheduled: number; hired: number; awaitingReview: number };
   trends: { jobs: DashboardTrend; recommended: DashboardTrend; interviews: DashboardTrend; hired: DashboardTrend };
   upcomingInterviews: DashboardUpcomingInterview[];
   recommended: DashboardRecommendedRef[];
@@ -97,7 +96,7 @@ const STALE_DAYS = 14;
 export function buildInsights(
   jobs: RequirementSummary[],
   pipeline: DashboardJobPipeline[],
-  unviewedRecommended: number,
+  awaitingReview: number,
   now: number,
 ): DashboardInsight[] {
   const out: DashboardInsight[] = [];
@@ -114,11 +113,11 @@ export function buildInsights(
     });
   }
 
-  if (unviewedRecommended > 0) {
+  if (awaitingReview > 0) {
     out.push({
-      id: "unviewed",
+      id: "awaiting-review",
       title: "Candidates waiting on you",
-      body: `${unviewedRecommended} recommended ${unviewedRecommended === 1 ? "candidate hasn't" : "candidates haven't"} been opened yet.`,
+      body: `${awaitingReview} recommended ${awaitingReview === 1 ? "candidate is" : "candidates are"} still waiting for your decision.`,
       href: "/employer/jobs",
     });
   }

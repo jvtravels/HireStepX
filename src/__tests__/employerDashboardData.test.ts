@@ -44,9 +44,9 @@ describe("buildRecommendedCards", () => {
   const jobs = [job("r1", {}, [cand("aaaaaa", ["react", "css"]), cand("bbbbbb", ["Node"])])];
   it("orders by the server's recency list and derives strengths and gaps", () => {
     const cards = buildRecommendedCards(jobs, [
-      { matchId: "bbbbbb", requirementId: "r1", matchScore: 60, createdAt: "2026-10-14T00:00:00Z", viewed: false },
-      { matchId: "aaaaaa", requirementId: "r1", matchScore: 60, createdAt: "2026-10-10T00:00:00Z", viewed: false },
-      { matchId: "ghost", requirementId: "r1", matchScore: 60, createdAt: "2026-10-09T00:00:00Z", viewed: false },
+      { matchId: "bbbbbb", requirementId: "r1", matchScore: 60, createdAt: "2026-10-14T00:00:00Z" },
+      { matchId: "aaaaaa", requirementId: "r1", matchScore: 60, createdAt: "2026-10-10T00:00:00Z" },
+      { matchId: "ghost", requirementId: "r1", matchScore: 60, createdAt: "2026-10-09T00:00:00Z" },
     ]);
     expect(cards.map((c) => c.matchId)).toEqual(["bbbbbb", "aaaaaa"]);
     expect(cards[1].strengths).toEqual(["react", "css"]);
@@ -65,7 +65,7 @@ describe("buildInsights", () => {
   ];
   it("emits only observations that are true", () => {
     const out = buildInsights([job("r1", {}, [cand("aaaaaa", [])]), job("r2")], pipeline, 2, NOW);
-    expect(out.map((i) => i.id)).toEqual(["best-pipeline", "unviewed", "no-strong", "stale"]);
+    expect(out.map((i) => i.id)).toEqual(["best-pipeline", "awaiting-review", "no-strong", "stale"]);
     expect(out[0].body).toContain("averaging 71% fit");
   });
   it("is empty for an account with nothing to say", () => {
