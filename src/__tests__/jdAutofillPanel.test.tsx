@@ -34,7 +34,7 @@ function Harness({ start }: { start?: Partial<RequirementDraft> }) {
 }
 
 async function paste() {
-  fireEvent.click(screen.getByText("Paste text instead"));
+  fireEvent.click(screen.getByRole("tab", { name: "Paste" }));
   fireEvent.change(screen.getByLabelText("Job description text"), { target: { value: JD } });
   fireEvent.click(screen.getByText("Read it"));
 }
@@ -84,9 +84,8 @@ describe("JdAutofill panel", () => {
     await paste();
     await waitFor(() => expect(screen.getByLabelText("Use suggested Job title")).toBeTruthy());
     expect(latest.title).toBe("My title");
-    expect(screen.getByText("In your form")).toBeTruthy();
-    expect(screen.getByText("My title")).toBeTruthy();
-    expect(screen.getByText("Senior Backend Engineer")).toBeTruthy();
+    expect(screen.getByText("My title").tagName).toBe("DEL");
+    expect(screen.getByText("Senior Backend Engineer").tagName).toBe("INS");
   });
 
   it("shows the Check this badge only for low confidence and applies everything with Use all", async () => {
