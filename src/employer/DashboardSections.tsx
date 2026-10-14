@@ -9,7 +9,7 @@
 
 import Link from "next/link";
 import { useMemo, useState, type ReactNode } from "react";
-import { BriefcaseIcon, UsersIcon, CalendarDaysIcon, CircleCheckIcon, LightbulbIcon, ClockIcon, ArrowRightIcon, PlusIcon, SparklesIcon } from "lucide-react";
+import { BriefcaseIcon, UsersIcon, CalendarDaysIcon, CircleCheckIcon, LightbulbIcon, ClockIcon, ArrowRightIcon, PlusIcon, SparklesIcon, UserIcon } from "lucide-react";
 import { hoursOrDaysAgo } from "@/hiringMatchFormat";
 import AnimatedNumber from "@/AnimatedNumber";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -37,10 +37,13 @@ const EMPTY = "border border-hx-line p-4";
 const TH = "h-10 whitespace-nowrap bg-hx-soft px-3 text-[12px] font-semibold text-hx-ink-soft";
 const TD = "px-3 py-3 text-[13px] text-hx-coal";
 
-function PersonAvatar({ initials }: { initials: string }) {
+function PersonAvatar({ name, initials }: { name: string; initials: string }) {
+  const masked = name.startsWith("Candidate #");
   return (
-    <Avatar size="lg" aria-hidden="true" className="size-9">
-      <AvatarFallback className="bg-hx-indigo-100 text-[12px] font-bold text-hx-indigo">{initials}</AvatarFallback>
+    <Avatar size="lg" aria-hidden="true" className="size-10">
+      <AvatarFallback className="bg-hx-indigo-100 text-[13px] font-bold text-hx-indigo">
+        {masked ? <UserIcon size={18} /> : initials}
+      </AvatarFallback>
     </Avatar>
   );
 }
@@ -349,9 +352,18 @@ function waitingLabel(days: number | null): string | null {
   return days !== null && days >= 3 ? `Waiting ${days} days` : null;
 }
 
+function FitRow({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="flex flex-col gap-1.5 @min-[560px]:flex-row @min-[560px]:items-start @min-[560px]:gap-4">
+      <div className="text-[12px] font-semibold text-hx-ink-soft @min-[560px]:w-[84px] @min-[560px]:shrink-0 @min-[560px]:pt-1">{label}</div>
+      <div className="min-w-0 flex-1">{children}</div>
+    </div>
+  );
+}
+
 function SkillFit({ c }: { c: RecommendedCard }) {
   const matched = c.matchedSkills;
-  const shownMatched = matched.slice(0, 4);
+  const shownMatched = matched.slice(0, 5);
   const moreMatched = matched.length - shownMatched.length;
   const shownMissing = c.missingSkills.slice(0, 3);
   const moreMissing = c.missingSkills.length - shownMissing.length;
@@ -359,37 +371,43 @@ function SkillFit({ c }: { c: RecommendedCard }) {
   const segments = Math.min(c.requiredCount, 8);
   const filled = hasRequired ? Math.round((matched.length / c.requiredCount) * segments) : 0;
   return (
-    <div className="min-w-0 space-y-2">
-      {hasRequired && (
-        <div className="flex items-center gap-2.5">
-          <span className="text-[12px] font-semibold text-hx-coal">{matched.length} of {c.requiredCount} required skills</span>
-          <div className="flex gap-0.5" aria-hidden="true">
-            {Array.from({ length: segments }, (_, k) => (
-              <span key={k} className={`h-1.5 w-3 rounded-full ${k < filled ? "bg-hx-success" : "bg-hx-line"}`} />
-            ))}
-          </div>
-        </div>
-      )}
-      {shownMatched.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
-          {shownMatched.map((s) => <Pill key={s} tone="success">{s}</Pill>)}
-          {moreMatched > 0 && <Pill tone="neutral">+{moreMatched}</Pill>}
-        </div>
+    <div className="min-w-0 space-y-3">
+      {(hasRequired || shownMatched.length > 0) && (
+        <FitRow label="Skills">
+          {hasRequired && (
+            <div className="mb-2 flex items-center gap-3">
+              <span className="text-[13px] font-semibold text-hx-coal">{matched.length} of {c.requiredCount} required</span>
+              <div className="flex gap-0.5" aria-hidden="true">
+                {Array.from({ length: segments }, (_, k) => (
+                  <span key={k} className={`h-1.5 w-4 rounded-full ${k < filled ? "bg-hx-success" : "bg-hx-line"}`} />
+                ))}
+              </div>
+            </div>
+          )}
+          {shownMatched.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {shownMatched.map((s) => <Pill key={s} tone="success">{s}</Pill>)}
+              {moreMatched > 0 && <Pill tone="neutral">+{moreMatched}</Pill>}
+            </div>
+          )}
+        </FitRow>
       )}
       {shownMissing.length > 0 && (
-        <p className="m-0 text-[12px] text-hx-ink-soft">
-          Missing: {shownMissing.join(", ")}{moreMissing > 0 ? ` +${moreMissing}` : ""}
-        </p>
+        <FitRow label="Missing">
+          <p className="m-0 text-[13px] text-hx-ink-soft">{shownMissing.join(", ")}{moreMissing > 0 ? ` +${moreMissing} more` : ""}</p>
+        </FitRow>
       )}
       {c.yearsExperience !== null && (
-        <p className="m-0 flex flex-wrap items-center gap-1.5 text-[12px] text-hx-ink-soft">
-          {c.yearsExperience} {c.yearsExperience === 1 ? "yr" : "yrs"} experience
-          {c.experienceFit && c.experienceAsk && (
-            <Pill tone={c.experienceFit === "within" ? "success" : c.experienceFit === "below" ? "warning" : "neutral"}>
-              {c.experienceFit === "within" ? "Within" : c.experienceFit === "below" ? "Below" : "Above"} {c.experienceAsk}
-            </Pill>
-          )}
-        </p>
+        <FitRow label="Experience">
+          <p className="m-0 flex flex-wrap items-center gap-2 text-[13px] text-hx-coal">
+            {c.yearsExperience} {c.yearsExperience === 1 ? "year" : "years"}
+            {c.experienceFit && c.experienceAsk && (
+              <Pill tone={c.experienceFit === "within" ? "success" : c.experienceFit === "below" ? "warning" : "neutral"}>
+                {c.experienceFit === "within" ? "Within" : c.experienceFit === "below" ? "Below" : "Above"} the {c.experienceAsk} asked
+              </Pill>
+            )}
+          </p>
+        </FitRow>
       )}
     </div>
   );
@@ -405,7 +423,7 @@ export function RecommendedCandidatesCard({ cards, total }: { cards: Recommended
         action={<TextLink href="/employer/jobs">View all</TextLink>}
       />
       {cards.length > 0 && (
-        <p className="m-0 mb-1 text-[13px] text-hx-ink-soft">
+        <p className="m-0 mb-2 text-[13px] text-hx-ink-soft">
           {total > cards.length ? `Top ${cards.length} of ${total}` : `${total} ${total === 1 ? "candidate" : "candidates"}`} waiting for your review, best match first.
         </p>
       )}
@@ -416,24 +434,28 @@ export function RecommendedCandidatesCard({ cards, total }: { cards: Recommended
           {cards.map((c, i) => {
             const waiting = waitingLabel(c.waitingDays);
             return (
-              <li key={c.matchId} className={`grid grid-cols-1 gap-x-5 gap-y-3 py-4 @min-[680px]:grid-cols-[minmax(170px,0.8fr)_minmax(0,1.6fr)_auto] ${i > 0 ? "border-t border-hx-line" : ""}`}>
-                <div className="flex min-w-0 items-start gap-3">
-                  <PersonAvatar initials={c.initials} />
+              <li key={c.matchId} className={`grid grid-cols-1 gap-x-8 gap-y-4 py-6 @min-[640px]:grid-cols-[210px_minmax(0,1fr)] @min-[960px]:grid-cols-[230px_minmax(0,1fr)_auto] ${i > 0 ? "border-t border-hx-line" : ""}`}>
+                <div className="flex min-w-0 items-start gap-3.5">
+                  <PersonAvatar name={c.name} initials={c.initials} />
                   <div className="min-w-0">
-                    <div className="text-[14px] font-semibold text-hx-coal [overflow-wrap:anywhere]">{c.name}</div>
-                    <div className="text-[12px] text-hx-ink-soft [overflow-wrap:anywhere]">for {c.roleTitle}</div>
+                    <div className="text-[15px] font-semibold text-hx-coal [overflow-wrap:anywhere]">{c.name}</div>
+                    <div className="mt-0.5 text-[13px] text-hx-ink-soft [overflow-wrap:anywhere]">for {c.roleTitle}</div>
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      {c.createdAt && <span className="text-[12px] text-hx-ink-soft">Matched {hoursOrDaysAgo(c.createdAt)}</span>}
+                      {waiting && <Pill tone="warning">{waiting}</Pill>}
+                    </div>
                   </div>
                 </div>
-                <SkillFit c={c} />
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-2 @min-[680px]:flex-col @min-[680px]:items-end">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[12px] text-hx-ink-soft">Match score</span>
-                    {c.matchScore !== null && <ScoreChip score={Math.round(c.matchScore)} />}
-                  </div>
-                  <div className="flex flex-wrap items-center gap-1.5 @min-[680px]:justify-end">
-                    {c.createdAt && <span className="text-[12px] text-hx-ink-soft">Matched {hoursOrDaysAgo(c.createdAt)}</span>}
-                    {waiting && <Pill tone="warning">{waiting}</Pill>}
-                  </div>
+                <div className="@min-[640px]:col-start-2 @min-[640px]:row-span-2 @min-[640px]:row-start-1 @min-[960px]:row-span-1">
+                  <SkillFit c={c} />
+                </div>
+                <div className="flex items-start gap-5 @min-[640px]:col-start-1 @min-[640px]:row-start-2 @min-[960px]:col-start-3 @min-[960px]:row-start-1 @min-[960px]:justify-end">
+                  {c.matchScore !== null && (
+                    <div className="flex w-[72px] flex-col items-center gap-1.5">
+                      <ScoreChip score={Math.round(c.matchScore)} />
+                      <span className="text-[11px] text-hx-ink-soft">Match score</span>
+                    </div>
+                  )}
                   <OutlineLink small href={`/employer/requirements/${c.requirementId}/candidates/${c.matchId}`}>
                     Review profile<span className="sr-only">: {c.name}</span>
                   </OutlineLink>
@@ -465,7 +487,7 @@ export function UpcomingInterviewsCard({ items }: { items: DashboardUpcomingInte
                   <div className="text-[16px] font-bold leading-[1.1] text-hx-coal">{slot.day}</div>
                   <div className="text-[11px] text-hx-ink-soft">{slot.month}</div>
                 </div>
-                <PersonAvatar initials={i.initials} />
+                <PersonAvatar name={i.candidateName} initials={i.initials} />
                 <div className="min-w-0 flex-1">
                   <div className="text-[12px] text-hx-ink-soft">{slot.time}</div>
                   <div className="text-[13px] font-semibold text-hx-coal [overflow-wrap:anywhere]">{i.candidateName}</div>
