@@ -261,3 +261,29 @@ export async function requestJdParse(text: string, signal?: AbortSignal): Promis
   if (res.status === 429 && !limitReached) return { ok: false, error: "Too many attempts. Wait a minute and try again.", limitReached: false };
   return { ok: false, error: res.error ?? "Could not read that job description. Try again.", limitReached };
 }
+
+/** DOM ids of the form controls each extracted field fills, for the post-import highlight. */
+const FIELD_DOM_IDS: Record<JdFieldKey, readonly string[]> = {
+  title: ["rf-title"], department: ["rf-department"], locations: ["rf-locations"], workMode: [], employmentType: [],
+  experience: ["rf-exp-min", "rf-exp-max"], salary: ["rf-budget-min", "rf-budget-max"], openPositions: ["rf-open"],
+  noticePeriodPref: ["rf-notice"], skills: ["rf-skills"], responsibilities: ["rf-resp"], niceToHave: ["rf-nice"],
+  preferredIndustry: ["rf-industry"], preferredColleges: ["rf-colleges"], targetCompanies: ["rf-targets"],
+  perksAndBenefits: ["rf-perks"], workSchedule: ["rf-schedule"], durationWeeks: ["rf-weeks"], hoursPerWeek: ["rf-hours"], description: ["rf-description"],
+};
+
+/** Briefly tints the controls that were just filled so "filled in below" points at something. */
+export function flashJdFields(keys: readonly JdFieldKey[]): void {
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    for (const key of keys) {
+      for (const id of FIELD_DOM_IDS[key]) {
+        const input = document.getElementById(id);
+        const el = input?.closest<HTMLElement>(".rf-chipfield") ?? input;
+        if (!el) continue;
+        el.classList.remove("jd-flash");
+        void el.offsetWidth;
+        el.classList.add("jd-flash");
+        el.addEventListener("animationend", () => el.classList.remove("jd-flash"), { once: true });
+      }
+    }
+  }));
+}
