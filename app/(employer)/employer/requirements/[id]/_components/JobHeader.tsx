@@ -7,11 +7,13 @@ import { cn } from "cn";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import type { Requirement } from "@/employer/EmployerDataContext";
+import { StageCell } from "@/employer/_atoms";
 import { jobStatusPill, type JobStatusTone } from "@/employer/_jobDetailHelpers";
 import { PanelButton } from "@/employer/_panelParts";
 import { InlineNotice } from "@/employer/_requirementAtoms";
 import { EMPLOYMENT_TYPE_LABEL, WORK_MODE_LABEL } from "@/hiringMatchFormat";
 import { ArchiveDialog, UnlockHistoryDialog } from "./JobDialogs";
+import { budgetLabel, experienceLabel, previewText, STAGE_HINT, timeAgoLabel } from "./requirementFormat";
 import type { JobMessage } from "./useJobActions";
 
 const DESCRIPTION_PREVIEW = 240;
@@ -29,7 +31,8 @@ export function metaParts(r: Requirement): string[] {
   const mode = r.workMode ? WORK_MODE_LABEL[r.workMode] || r.workMode : null;
   const type = r.employmentType ? EMPLOYMENT_TYPE_LABEL[r.employmentType] || r.employmentType : null;
   const where = place && mode ? `${mode} (${place})` : place || mode;
-  return [where, type, r.department].filter((p): p is string => !!p);
+  const experience = experienceLabel(r.experienceMin, r.experienceMax)?.replace(" experience", "");
+  return [where, type, r.department, experience, budgetLabel(r)].filter((p): p is string => !!p);
 }
 
 export default function JobHeader({
@@ -40,6 +43,9 @@ export default function JobHeader({
   onReopen,
   onReload,
   expandedContent,
+  readOnly,
+  onStageChange,
+  children,
 }: {
   requirement: Requirement;
   suspended: boolean;
@@ -48,6 +54,9 @@ export default function JobHeader({
   onReopen: () => void;
   onReload: () => void;
   expandedContent: ReactNode;
+  readOnly: boolean;
+  onStageChange: Parameters<typeof StageCell>[0]["onChange"];
+  children?: ReactNode;
 }) {
   const [archiveOpen, setArchiveOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -57,19 +66,21 @@ export default function JobHeader({
   const status = jobStatusPill(requirement.status);
   const meta = metaParts(requirement);
   const description = requirement.description ?? "";
-  const long = description.length > DESCRIPTION_PREVIEW;
-  const hasMore = long || expandedContent != null;
-  const shownDescription = expanded || !long ? description : `${description.slice(0, DESCRIPTION_PREVIEW).trimEnd()}…`;
+  const preview = previewText(description, DESCRIPTION_PREVIEW);
+  const hasMore = preview.truncated || expandedContent != null;
+  const shownDescription = expanded || !preview.truncated ? description.trim() : `${preview.text}…`;
+  const posted = timeAgoLabel(requirement.createdAt);
+  const matched = timeAgoLabel(requirement.lastMatchedAt);
 
   return (
-    <header>
+    <header className="min-w-0 rounded-xl border border-hx-line bg-white p-5 sm:p-6">
       <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
-        <div className="flex min-w-0 flex-1 basis-80 items-start gap-3.5">
-          <div aria-hidden="true" className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-hx-indigo-100 text-hx-indigo">
-            <BriefcaseIcon size={20} />
-          </div>
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        <div className="min-w-0 flex-1 basis-80">
+          <div className="flex items-center gap-3">
+            <div aria-hidden="true" className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-hx-indigo-100 text-hx-indigo">
+              <BriefcaseIcon size={19} />
+            </div>
+            <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
               <h1 className="m-0 text-[clamp(22px,5vw,26px)] leading-tight font-bold tracking-[-0.02em] text-hx-coal [overflow-wrap:anywhere]">
                 {requirement.title}
               </h1>
@@ -78,17 +89,33 @@ export default function JobHeader({
                 {status.label}
               </span>
             </div>
-            {meta.length > 0 && (
-              <p className="m-0 mt-1.5 flex flex-wrap items-center gap-x-2 text-[14px] text-hx-ink-soft">
-                {meta.map((part, i) => (
-                  <span key={part} className="inline-flex items-center gap-2">
-                    {i > 0 && <span aria-hidden="true">·</span>}
-                    {part}
-                  </span>
-                ))}
-              </p>
-            )}
           </div>
+          {meta.length > 0 && (
+            <p className="m-0 mt-3 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[14px] text-hx-coal max-sm:gap-x-3">
+              {meta.map((part, i) => (
+                <span key={part} className="inline-flex items-center gap-2">
+                  {i > 0 && <span aria-hidden="true" className="text-hx-ink-soft max-sm:hidden">·</span>}
+                  {part}
+                </span>
+              ))}
+            </p>
+          )}
+          <p className="m-0 mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[13px] text-hx-ink-soft max-sm:gap-x-3">
+            {posted && <span>Posted {posted}</span>}
+            {matched && (
+              <>
+                {posted && <span aria-hidden="true" className="max-sm:hidden">·</span>}
+                <span>Matched {matched}</span>
+              </>
+            )}
+            {(posted || matched) && <span aria-hidden="true" className="max-sm:hidden">·</span>}
+            <span className="inline-flex items-center gap-1.5">
+              Job stage
+              <span title={suspended ? "Stage changes are turned off while your account is suspended." : STAGE_HINT[requirement.stage]} className="inline-flex">
+                <StageCell stage={requirement.stage} hasEvaluatedCandidates={requirement.candidates.length > 0} onChange={onStageChange} frozen={readOnly || suspended} />
+              </span>
+            </span>
+          </p>
         </div>
 
         <div className="flex items-center gap-2">
@@ -134,7 +161,7 @@ export default function JobHeader({
       </div>
 
       {description && (
-        <p className="m-0 mt-4 max-w-[75ch] text-[14px] leading-relaxed text-hx-ink-soft [overflow-wrap:anywhere]">
+        <p className="m-0 mt-5 max-w-[75ch] text-[14px] leading-relaxed whitespace-pre-line text-hx-ink-soft [overflow-wrap:anywhere]">
           {shownDescription}
           {hasMore && (
             <>
@@ -156,8 +183,10 @@ export default function JobHeader({
 
       {expanded && expandedContent}
 
+      {children}
+
       {message && (
-        <div className="mt-3">
+        <div className="mt-4">
           <InlineNotice tone={message.tone}>{message.text}</InlineNotice>
         </div>
       )}

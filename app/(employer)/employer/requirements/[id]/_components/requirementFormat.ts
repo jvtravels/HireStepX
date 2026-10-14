@@ -25,15 +25,63 @@ export function dueLabel(dueDate: string): { text: string; overdue: boolean } {
   return { text: `Due in ${days} ${days === 1 ? "day" : "days"}`, overdue: false };
 }
 
-export function timeAgoLabel(iso: string): string {
-  const diffMs = Date.now() - new Date(iso).getTime();
-  const minutes = Math.round(diffMs / 60_000);
-  if (minutes < 1) return "just now";
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.round(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.round(hours / 24);
-  return `${days}d ago`;
+const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
+
+/** "5m ago" up to "2y ago". Returns null for an unreadable date so callers can
+    hide the line instead of printing NaN. A date-only value (createdAt) reads
+    as whole days, never a made-up hour count. */
+export function timeAgoLabel(iso: string | null | undefined, now: number = Date.now()): string | null {
+  if (!iso) return null;
+  const dateOnly = DATE_ONLY.test(iso);
+  const then = new Date(dateOnly ? `${iso}T00:00:00` : iso).getTime();
+  if (Number.isNaN(then)) return null;
+  const diffMs = Math.max(0, now - then);
+  if (!dateOnly) {
+    const minutes = Math.floor(diffMs / 60_000);
+    if (minutes < 1) return "just now";
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h ago`;
+  }
+  return agoFromDays(Math.floor(diffMs / 86_400_000));
+}
+
+function agoFromDays(days: number): string {
+  if (days < 1) return "today";
+  if (days === 1) return "yesterday";
+  if (days < 7) return `${days}d ago`;
+  if (days < 30) return `${Math.floor(days / 7)}w ago`;
+  if (days < 365) return `${Math.floor(days / 30)}mo ago`;
+  return `${Math.floor(days / 365)}y ago`;
+}
+
+/** lastActiveDaysAgo is the newest practice session; the server sends -1 when
+    the candidate has never practised. */
+export function practisedLabel(lastActiveDaysAgo: number): string | null {
+  return lastActiveDaysAgo >= 0 ? `Practised ${agoFromDays(lastActiveDaysAgo)}` : null;
+}
+
+/** First words of a description at a word boundary, keeping at most four
+    paragraph breaks so a pasted JD never shows a half word or a tall wall. */
+export function previewText(text: string, max: number): { text: string; truncated: boolean } {
+  const lines = text.trim().split("\n");
+  const kept = lines.slice(0, 4).join("\n");
+  if (kept.length <= max && lines.length <= 4) return { text: kept, truncated: false };
+  const cut = kept.slice(0, max);
+  const boundary = cut.search(/\s\S*$/);
+  const base = boundary > max * 0.6 ? cut.slice(0, boundary) : cut;
+  return { text: base.trimEnd(), truncated: true };
+}
+
+/** One line describing how a closed job ended, from what archive stored. */
+export function closedSummary(r: Pick<Requirement, "status" | "archiveReason" | "archiveDisposition">): string | null {
+  if (r.status !== "closed") return null;
+  const parts = ["This requirement is closed."];
+  if (r.archiveReason?.trim()) parts.push(`Reason: ${r.archiveReason.trim().replace(/[.\s]+$/, "")}.`);
+  if (r.archiveDisposition === "reject_remaining") parts.push("Open candidates were rejected when it closed.");
+  else if (r.archiveDisposition === "keep_candidates") parts.push("Open candidates were kept as they were.");
+  parts.push("Candidate details are read-only.");
+  return parts.join(" ");
 }
 
 /** budgetMin/budgetMax's unit depends on salaryType: whole INR lakhs for

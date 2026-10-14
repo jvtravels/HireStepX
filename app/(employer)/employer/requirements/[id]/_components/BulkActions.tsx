@@ -10,7 +10,7 @@ import { Card, OutlineCta } from "@/employer/_atoms";
 import { InlineNotice, LinkCta } from "@/employer/_requirementAtoms";
 import { failureMessage, setCandidateStatus } from "@/employer/_requirementCalls";
 import type { Candidate } from "@/employer/mockData";
-import { canReject } from "./requirementFormat";
+import { candidateDisplayName, canReject } from "./requirementFormat";
 
 type Outcome = { tone: "success" | "warning" | "error"; title: string; lines: string[] };
 
@@ -136,6 +136,16 @@ export default function BulkActions({
               {skipped > 0 && ` ${plural(skipped, "selected candidate is", "selected candidates are")} already hired, rejected or closed out, so they will be skipped.`}
             </DialogDescription>
           </DialogHeader>
+          {eligible.length > 0 && (
+            <ul aria-label="Candidates to reject" className="m-0 grid list-none gap-1 rounded-lg bg-hx-row p-3 text-[14px] text-hx-coal">
+              {eligible.slice(0, 5).map((c) => (
+                <li key={c.id} className="truncate">
+                  {candidateDisplayName(c)}
+                </li>
+              ))}
+              {eligible.length > 5 && <li className="text-hx-ink-soft">and {eligible.length - 5} more</li>}
+            </ul>
+          )}
           <div style={{ display: "grid", gap: 8, padding: "4px 0" }}>
             <Label htmlFor="bulk-reject-note">Reason (optional, applied to all)</Label>
             <Textarea id="bulk-reject-note" rows={3} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Anything you want on record about this decision." />

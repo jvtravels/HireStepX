@@ -5,7 +5,7 @@
    panel shows (point its element at `panelId`). Arrow keys, Home and End move
    between tabs and only the active tab is in the tab order. */
 
-import { useRef, type KeyboardEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { cn } from "cn";
 
 export interface StatusTabItem<K extends string> {
@@ -33,6 +33,20 @@ export default function StatusTabs<K extends string>({
   className?: string;
 }) {
   const refs = useRef<Array<HTMLButtonElement | null>>([]);
+  const listRef = useRef<HTMLDivElement | null>(null);
+  const [moreRight, setMoreRight] = useState(false);
+
+  /* A fade on the clipped edge tells a phone user the bar scrolls. */
+  const measure = useCallback(() => {
+    const el = listRef.current;
+    if (el) setMoreRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+  }, []);
+
+  useEffect(() => {
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, [measure, tabs.length]);
 
   const onKeyDown = (e: KeyboardEvent<HTMLButtonElement>, index: number) => {
     const last = tabs.length - 1;
@@ -50,9 +64,15 @@ export default function StatusTabs<K extends string>({
 
   return (
     <div
+      ref={listRef}
       role="tablist"
       aria-label={label}
-      className={cn("-mb-px flex min-w-0 gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden", className)}
+      onScroll={measure}
+      className={cn(
+        "-mb-px flex min-w-0 gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+        moreRight && "[mask-image:linear-gradient(to_right,black_calc(100%-32px),transparent)]",
+        className,
+      )}
     >
       {tabs.map((tab, i) => {
         const active = tab.key === value;

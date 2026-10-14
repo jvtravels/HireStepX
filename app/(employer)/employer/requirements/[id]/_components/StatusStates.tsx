@@ -1,22 +1,28 @@
 "use client";
 
 import { RefreshCwIcon } from "lucide-react";
-import { tokens as t, fonts as f, textSize } from "@/auth/_tokens";
+import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
-import { Card } from "@/employer/_atoms";
 import { EmptyNote, LinkCta } from "@/employer/_requirementAtoms";
 
-export function GeneratingState() {
+export function GeneratingState({ stalled, onRetry }: { stalled: boolean; onRetry: () => void }) {
   return (
-    <Card style={{ textAlign: "center", padding: 40 }}>
-      <div role="status" aria-live="polite" style={{ display: "grid", gap: 10, justifyItems: "center" }}>
-        <Spinner aria-hidden="true" />
-        <h2 style={{ fontFamily: f.sans, fontSize: textSize["2xl"], fontWeight: 600, color: t.coal, margin: 0 }}>Matching candidates…</h2>
-        <p style={{ fontFamily: f.sans, fontSize: textSize.md, color: t.inkFaint, margin: 0, maxWidth: 460 }}>
-          We&apos;re scoring active candidates against this requirement. This usually takes under a minute, and this page updates by itself.
+    <div className="rounded-xl border border-hx-line bg-white p-10 text-center">
+      <div role="status" aria-live="polite" className="grid justify-items-center gap-2.5">
+        {!stalled && <Spinner aria-hidden="true" />}
+        <h2 className="m-0 text-[20px] font-semibold text-hx-coal">{stalled ? "Matching is taking longer than usual" : "Matching candidates…"}</h2>
+        <p className="m-0 max-w-[460px] text-[15px] text-hx-ink-soft">
+          {stalled
+            ? "Your job is saved and matching is still running. You haven't been charged. Check again, or come back in a few minutes."
+            : "We're scoring active candidates against this requirement. This usually takes under a minute, and this page updates by itself."}
         </p>
+        {stalled && (
+          <Button type="button" variant="outline" onClick={onRetry} className="mt-1 gap-1.5 pointer-coarse:h-11">
+            <RefreshCwIcon size={14} aria-hidden="true" /> Check again
+          </Button>
+        )}
       </div>
-    </Card>
+    </div>
   );
 }
 

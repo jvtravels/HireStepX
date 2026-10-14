@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useEmployerData, type Requirement } from "@/employer/EmployerDataContext";
 import { STAGE_LABEL } from "@/employer/_atoms";
 import type { RequirementStage } from "@/employer/mockData";
@@ -16,6 +16,14 @@ export function useJobActions(requirement: Requirement | null, onPatch: (patch: 
   const { updateRequirementStage, reopenRequirement } = useEmployerData();
   const [message, setMessage] = useState<JobMessage | null>(null);
   const [reopenSaving, setReopenSaving] = useState(false);
+
+  // A success note is a confirmation, not state, so it fades; errors stay until
+  // the next action because they need a decision.
+  useEffect(() => {
+    if (message?.tone !== "success") return;
+    const timer = setTimeout(() => setMessage(null), 5000);
+    return () => clearTimeout(timer);
+  }, [message]);
 
   const changeStage = async (stage: RequirementStage) => {
     if (!requirement) return;

@@ -1,12 +1,45 @@
 /* Pure derivations behind the employer job details screen: skill tiers, the
    per-candidate fit/gap/availability/evidence cells, tab membership and the
-   right-rail summaries. Everything here is computed from fields the API
+   job summaries. Everything here is computed from fields the API
    already returns, so the screen never invents data. */
 
 import type { Candidate, CandidateStatus, Requirement } from "./mockData";
 import { STRONG_MATCH_THRESHOLD } from "../../server-handlers/_requirement-match-helpers";
 
-const key = (s: string): string => s.trim().toLowerCase();
+const SKILL_ALIASES: Record<string, string> = {
+  js: "javascript",
+  ts: "typescript",
+  reactjs: "react",
+  "react js": "react",
+  nodejs: "node",
+  "node js": "node",
+  nextjs: "next",
+  "next js": "next",
+  vuejs: "vue",
+  "vue js": "vue",
+  golang: "go",
+  postgres: "postgresql",
+  k8s: "kubernetes",
+  "c#": "csharp",
+  ml: "machine learning",
+  ai: "artificial intelligence",
+};
+
+/** Comparison key for a skill: "ReactJS", "react.js" and "React" are one skill.
+    Used on both sides of every comparison, so a false gap can only come from a
+    skill that is genuinely absent. */
+export function skillKey(raw: string): string {
+  const base = raw
+    .trim()
+    .toLowerCase()
+    .replace(/[.\-_/]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  const aliased = SKILL_ALIASES[base] ?? base;
+  return aliased.length > 3 && aliased.endsWith("s") && !aliased.endsWith("ss") ? aliased.slice(0, -1) : aliased;
+}
+
+const key = skillKey;
 
 function dedupe(list: string[]): string[] {
   const seen = new Set<string>();
@@ -36,17 +69,17 @@ export function parseNiceToHave(text: string): string[] {
 
 export interface SkillTiers {
   mustHave: string[];
-  important: string[];
+  other: string[];
   niceToHave: string[];
 }
 
 export function skillTiers(r: Pick<Requirement, "skills" | "customSkillSets" | "niceToHave">): SkillTiers {
   const mustHave = dedupe(r.skills);
   const taken = new Set(mustHave.map(key));
-  const important = dedupe(r.customSkillSets).filter((s) => !taken.has(key(s)));
-  important.forEach((s) => taken.add(key(s)));
+  const other = dedupe(r.customSkillSets).filter((s) => !taken.has(key(s)));
+  other.forEach((s) => taken.add(key(s)));
   const niceToHave = parseNiceToHave(r.niceToHave).filter((s) => !taken.has(key(s)));
-  return { mustHave, important, niceToHave };
+  return { mustHave, other, niceToHave };
 }
 
 /* ── Candidate cells ── */
@@ -86,34 +119,17 @@ export function availabilityOf(noticePeriod: string | null | undefined): Availab
   return { label: `Available in ${months} months`, tone };
 }
 
-export type EvidenceKind = "resume" | "web" | "github" | "practice";
-
-export interface EvidenceSources {
-  count: number;
-  kinds: EvidenceKind[];
+/** rosterScore defaults to 50 server-side for someone who never practised, so
+    it only counts once at least one graded session exists. */
+export function interviewScore(c: Pick<Candidate, "rosterScore" | "sessionsCompleted">): number | null {
+  return c.sessionsCompleted > 0 ? Math.round(c.rosterScore) : null;
 }
 
-export function evidenceSources(c: Pick<Candidate, "resume" | "portfolioLinks" | "sessionsCompleted">): EvidenceSources {
-  const kinds = new Set<EvidenceKind>();
-  let count = 0;
-  if (c.resume) {
-    kinds.add("resume");
-    count += 1;
-  }
-  for (const link of c.portfolioLinks ?? []) {
-    kinds.add(/github\.com/i.test(link.url) ? "github" : "web");
-    count += 1;
-  }
-  if (c.resume?.linkedin) {
-    kinds.add("web");
-    count += 1;
-  }
-  if (c.sessionsCompleted > 0) {
-    kinds.add("practice");
-    count += 1;
-  }
-  const order: EvidenceKind[] = ["resume", "web", "github", "practice"];
-  return { count, kinds: order.filter((k) => kinds.has(k)) };
+export type ScoreTone = "success" | "warning" | "error";
+
+/** Same cut-offs as the per-skill evidence report. */
+export function scoreTone(score: number): ScoreTone {
+  return score >= 70 ? "success" : score >= 50 ? "warning" : "error";
 }
 
 /* ── Tabs ── */
@@ -161,15 +177,37 @@ export function tabCounts(candidates: Array<Pick<Candidate, "matchScore" | "cand
   return out;
 }
 
-/** Hired only earns a tab once someone is hired, so the bar stays short. */
-export function visibleTabs(counts: Record<CandidateTab, number>): CandidateTab[] {
+/** Hired only earns a tab once someone is hired, so the bar stays short. The
+    tab being viewed always stays, so rejecting or moving the last candidate
+    never makes the active tab vanish. */
+export function visibleTabs(counts: Record<CandidateTab, number>, active?: CandidateTab): CandidateTab[] {
   const tabs: CandidateTab[] = ["recommended", "all", "interviewing"];
-  if (counts.hired > 0) tabs.push("hired");
+  if (counts.hired > 0 || active === "hired") tabs.push("hired");
   tabs.push("not_a_fit");
   return tabs;
 }
 
-/* ── Job status + right rail ── */
+export interface PipelineStep {
+  key: "matched" | "shortlisted" | "invited" | "interviewing" | "hired";
+  label: string;
+  count: number;
+  tab: CandidateTab;
+}
+
+/** Where everyone stands right now, in funnel order. Counts are current
+    statuses, not "ever reached", so they never add up to more than Matched. */
+export function pipelineSteps(candidates: Array<Pick<Candidate, "candidateStatus">>): PipelineStep[] {
+  const n = (status: CandidateStatus) => candidates.filter((c) => c.candidateStatus === status).length;
+  return [
+    { key: "matched", label: "Matched", count: candidates.length, tab: "all" },
+    { key: "shortlisted", label: "Shortlisted", count: n("shortlisted"), tab: "all" },
+    { key: "invited", label: "Invited", count: n("interview_invited"), tab: "interviewing" },
+    { key: "interviewing", label: "Interviewing", count: n("interviewing"), tab: "interviewing" },
+    { key: "hired", label: "Hired", count: n("hired"), tab: "hired" },
+  ];
+}
+
+/* ── Job status + summaries ── */
 
 export type JobStatusTone = "success" | "info" | "neutral" | "warning" | "error";
 
@@ -208,22 +246,6 @@ export function matchingSummary(r: Pick<Requirement, "status" | "totalMatched" |
   };
 }
 
-export interface PipelineRow {
-  tab: CandidateTab;
-  label: string;
-  count: number;
-  highlight: boolean;
-}
-
-export function pipelineRows(counts: Record<CandidateTab, number>): PipelineRow[] {
-  return [
-    { tab: "all", label: "Evaluated", count: counts.all, highlight: false },
-    { tab: "recommended", label: "Recommended", count: counts.recommended, highlight: true },
-    { tab: "interviewing", label: "Interviewing", count: counts.interviewing, highlight: false },
-    { tab: "hired", label: "Hired", count: counts.hired, highlight: false },
-  ];
-}
-
 export interface JobInsight {
   id: string;
   text: string;
@@ -251,6 +273,9 @@ export function jobInsights(r: Pick<Requirement, "skills" | "portfolioRequired" 
     const top = [...gapCount.entries()].sort((a, b) => b[1] - a[1])[0];
     if (top && top[1] >= 2 && top[1] / list.length >= 0.4) out.push({ id: "top-gap", text: `${top[0]} is the most common gap, missing for ${top[1]} candidates.` });
   }
+
+  const proven = list.filter((c) => (interviewScore(c) ?? 0) >= 70).length;
+  if (proven > 0) out.push({ id: "interview", text: `${proven} ${proven === 1 ? "candidate scores" : "candidates score"} 70 or higher in HireStepX mock interviews.` });
 
   const withLinks = list.filter((c) => (c.portfolioLinks?.length ?? 0) > 0).length;
   if (withLinks > 0) out.push({ id: "portfolio", text: `${withLinks} ${withLinks === 1 ? "candidate shares" : "candidates share"} portfolio or GitHub links.` });

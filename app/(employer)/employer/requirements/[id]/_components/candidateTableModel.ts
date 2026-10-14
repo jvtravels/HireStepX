@@ -3,11 +3,11 @@
 
 import type { Sort } from "@/components/SortableHead";
 import type { Candidate } from "@/employer/mockData";
-import { inTab, type CandidateTab } from "@/employer/_jobDetailHelpers";
+import { inTab, interviewScore, type CandidateTab } from "@/employer/_jobDetailHelpers";
 import { candidateDisplayName } from "./requirementFormat";
 
 export type ContactFilter = "all" | "locked" | "unlocked";
-export type SortColumn = "name" | "match" | "experience" | "pipeline";
+export type SortColumn = "name" | "match" | "experience" | "interview" | "pipeline";
 
 export const CONTACT_FILTER_OPTIONS: Array<{ value: ContactFilter; label: string }> = [
   { value: "all", label: "All candidates" },
@@ -21,6 +21,7 @@ export const COLUMN_LABEL: Record<SortColumn, string> = {
   name: "Candidate",
   match: "Role match",
   experience: "Experience",
+  interview: "Interview score",
   pipeline: "Stage",
 };
 
@@ -45,6 +46,8 @@ export function compareCandidates(a: Candidate, b: Candidate, sort: Sort<SortCol
       return dir * (a.matchScore - b.matchScore);
     case "experience":
       return dir * ((a.resume?.yearsExperience ?? -1) - (b.resume?.yearsExperience ?? -1));
+    case "interview":
+      return dir * ((interviewScore(a) ?? -1) - (interviewScore(b) ?? -1));
     case "pipeline":
       return dir * (PIPELINE_RANK[a.candidateStatus] - PIPELINE_RANK[b.candidateStatus]);
   }
@@ -65,9 +68,9 @@ export function filterCandidates(candidates: Candidate[], state: CandidateFilter
     if (state.location !== "all" && c.city !== state.location) return false;
     if (!inTab(c, state.tab)) return false;
     if (!q) return true;
-    /* Locked candidates are searchable by role/skills but never by a name the
-       employer isn't entitled to see. */
-    const haystack = [c.unlocked ? c.name : "", c.targetRole, c.city, c.resume?.noticePeriod || "", ...c.skills].join(" ").toLowerCase();
+    /* A locked candidate is found by the masked label the table shows, never
+       by the real name the employer hasn't paid to see. */
+    const haystack = [candidateDisplayName(c), c.targetRole, c.city, c.resume?.noticePeriod || "", ...c.skills].join(" ").toLowerCase();
     return haystack.includes(q);
   });
 }

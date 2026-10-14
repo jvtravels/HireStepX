@@ -5,12 +5,9 @@ import {
   CalendarPlusIcon,
   CheckIcon,
   ChevronDownIcon,
-  CodeXmlIcon,
   FileTextIcon,
-  GlobeIcon,
   LockIcon,
   MessageCircleIcon,
-  MicIcon,
   MoreVerticalIcon,
   SendIcon,
 } from "lucide-react";
@@ -22,13 +19,13 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { CANDIDATE_STATUS_LABEL } from "@/employer/_atoms";
-import { availabilityOf, evidenceSources, isRecommended, skillFit, type EvidenceKind } from "@/employer/_jobDetailHelpers";
+import { availabilityOf, interviewScore, isRecommended, scoreTone, skillFit, type ScoreTone } from "@/employer/_jobDetailHelpers";
 import { DotLabel } from "@/employer/_panelParts";
 import { IdentityHiddenBadge } from "@/employer/_requirementAtoms";
 import { canInviteToInterview } from "@/employer/InterviewInviteDialog";
 import type { Candidate, CandidateStatus } from "@/employer/mockData";
 import { formatPaise, singleUnlockPrice } from "../../../../../../server-handlers/_unlock-pricing";
-import { candidateDisplayName, candidateResponseOf, candidateSubtitle, canMessageCandidate, initials, interviewSubstep } from "./requirementFormat";
+import { candidateDisplayName, candidateResponseOf, candidateSubtitle, canMessageCandidate, initials, interviewSubstep, practisedLabel } from "./requirementFormat";
 
 const VISIBLE_FIT_ITEMS = 2;
 
@@ -42,11 +39,10 @@ const STAGE_TONE: Record<CandidateStatus, string> = {
   no_response: "bg-hx-soft text-hx-neutral-ink",
 };
 
-const EVIDENCE_ICON: Record<EvidenceKind, { Icon: typeof FileTextIcon; label: string }> = {
-  resume: { Icon: FileTextIcon, label: "Resume" },
-  web: { Icon: GlobeIcon, label: "Website or profile link" },
-  github: { Icon: CodeXmlIcon, label: "GitHub" },
-  practice: { Icon: MicIcon, label: "Practice interviews" },
+const SCORE_BAR: Record<ScoreTone, string> = {
+  success: "bg-hx-success",
+  warning: "bg-hx-warning",
+  error: "bg-hx-error",
 };
 
 const EMPTY = <span className="text-hx-ink-soft">&mdash;</span>;
@@ -133,9 +129,9 @@ export default function CandidateRow({
   const { matched, gaps } = skillFit(candidate.skills, requiredSkills);
   const years = candidate.resume?.yearsExperience ?? null;
   const availability = availabilityOf(candidate.resume?.noticePeriod);
-  const evidence = evidenceSources(candidate);
+  const score = interviewScore(candidate);
+  const practised = practisedLabel(candidate.lastActiveDaysAgo);
   const canInvite = !writeOff && canInviteToInterview(candidate.candidateStatus);
-  const stageMenu = !writeOff;
   const profileHref = `/employer/requirements/${requirementId}/candidates/${candidate.id}`;
 
   return (
@@ -185,41 +181,39 @@ export default function CandidateRow({
       <TableCell role="cell" className="cand-td cand-td-fit px-3 py-3 align-middle" data-label="Key gaps (validate)">
         <FitItems items={gaps} kind="gap" />
       </TableCell>
-      <TableCell role="cell" className="cand-td px-3 py-3 align-middle text-[13px] text-hx-coal" data-label="Experience">
-        {years != null ? `${years} ${years === 1 ? "year" : "years"}` : EMPTY}
+      <TableCell role="cell" className="cand-td px-3 py-3 align-middle" data-label="Experience">
+        <div className="flex flex-col items-start gap-1">
+          <span className="text-[13px] text-hx-coal">{years != null ? `${years} ${years === 1 ? "year" : "years"}` : EMPTY}</span>
+          <DotLabel tone={availability.tone}>{availability.label}</DotLabel>
+        </div>
       </TableCell>
-      <TableCell role="cell" className="cand-td px-3 py-3 align-middle" data-label="Availability">
-        <DotLabel tone={availability.tone}>{availability.label}</DotLabel>
-      </TableCell>
-      <TableCell role="cell" className="cand-td px-3 py-3 align-middle" data-label="Evidence">
-        {evidence.count === 0 ? (
-          EMPTY
+      <TableCell role="cell" className="cand-td px-3 py-3 align-middle" data-label="Interview">
+        {score == null ? (
+          <span className="text-[13px] text-hx-ink-soft">Not practised</span>
         ) : (
           <button
             type="button"
             onClick={onViewEvidence}
-            aria-label={`View evidence for ${name}, ${evidence.count} ${evidence.count === 1 ? "source" : "sources"}`}
-            className="group flex cursor-pointer flex-col items-start gap-1 rounded-md border-0 bg-transparent p-0 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hx-indigo pointer-coarse:min-h-11"
+            aria-label={`Interview score for ${name}: ${score} out of 100 across ${candidate.sessionsCompleted} ${candidate.sessionsCompleted === 1 ? "interview" : "interviews"}${practised ? `, ${practised.toLowerCase()}` : ""}. View evidence report`}
+            className="group flex w-24 cursor-pointer flex-col items-start gap-1.5 rounded-md border-0 bg-transparent p-0 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hx-indigo pointer-coarse:min-h-11"
           >
-            <span className="flex items-center gap-1.5 text-hx-ink-soft">
-              {evidence.kinds.map((k) => {
-                const { Icon, label } = EVIDENCE_ICON[k];
-                return (
-                  <span key={k} title={label}>
-                    <Icon size={14} aria-hidden="true" />
-                  </span>
-                );
-              })}
+            <span className="text-[14px] font-semibold text-hx-coal tabular-nums group-hover:underline">
+              {score}
+              <span className="font-normal text-hx-ink-soft"> / 100</span>
             </span>
-            <span className="text-[12px] text-hx-ink-soft group-hover:text-hx-coal group-hover:underline">
-              {evidence.count} {evidence.count === 1 ? "source" : "sources"}
+            <span aria-hidden="true" className="h-1 w-full overflow-hidden rounded-full bg-hx-soft">
+              <span className={cn("block h-full rounded-full", SCORE_BAR[scoreTone(score)])} style={{ width: `${score}%` }} />
+            </span>
+            <span className="text-[12px] text-hx-ink-soft">
+              {candidate.sessionsCompleted} {candidate.sessionsCompleted === 1 ? "interview" : "interviews"}
+              {practised && <span className="block">{practised}</span>}
             </span>
           </button>
         )}
       </TableCell>
       <TableCell role="cell" className="cand-td px-3 py-3 align-middle" data-label="Stage">
         <div className="flex flex-col items-start gap-1">
-          {stageMenu ? (
+          {!writeOff ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
