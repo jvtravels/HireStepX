@@ -120,6 +120,16 @@ function routedFetch() {
       const m = world.matches.find((x) => x.id === id);
       return json(m ? [accessRow(m)] : []);
     }
+    if (url.includes("employer_blocks?") && !url.includes("candidate_user_id=eq.")) {
+      return json(Array.from(world.blockedCandidates).map((c) => ({ candidate_user_id: c })));
+    }
+    if (url.includes("/rest/v1/profiles?id=in.(")) {
+      const wanted = decodeURIComponent(url.split("profiles?id=in.(")[1].split(")")[0]).split(",").map((x) => x.replace(/"/g, ""));
+      const rows = world.matches
+        .map((m) => ({ id: m.candidate ?? `cand-${m.id}`, employer_visibility: m.visibility ?? "on" }))
+        .filter((r) => wanted.includes(r.id));
+      return json(url.includes("select=id,employer_visibility") ? rows : rows.map((r) => ({ id: r.id })));
+    }
     if (url.includes("employer_blocks?")) {
       const cand = decodeURIComponent(url.split("candidate_user_id=eq.")[1].split("&")[0]);
       return json(world.blockedCandidates.has(cand) ? [{ candidate_user_id: cand }] : []);
@@ -131,7 +141,10 @@ function routedFetch() {
     }
     if (url.includes("requirement_matches?requirement_id=eq.")) {
       const sorted = [...world.matches].sort((a, b) => (b.score ?? 80) - (a.score ?? 80) || a.id.localeCompare(b.id));
-      return json(sorted.map((m) => ({ id: m.id, unlocked: !!m.unlocked })));
+      return json(sorted.map((m) => ({
+        id: m.id, unlocked: !!m.unlocked, candidate_user_id: m.candidate ?? `cand-${m.id}`, match_score: m.score ?? 80,
+        candidate_status: "shortlisted", candidate_status_note: null, interview_scheduled_at: null,
+      })));
     }
     if (url.includes("requirement_matches?unlocked=eq.true")) {
       return json(Array.from({ length: world.unlocked24h }, (_, i) => ({ id: `u${i}` })));
@@ -517,6 +530,23 @@ describe("employer-create-unlock-order — batch mode", () => {
     await handler(mockReq({ mode: "batch", requirementId: REQ }), res);
     expect(res.statusCode).toBe(429);
     expect(res.body).toMatchObject({ code: "unlock_daily_limit", limit: 3, tier: "basic" });
+  });
+
+  it("409s price_changed with the fresh quote when the client's expected amount is stale", async () => {
+    world.matches = ids(4).map((id, i) => ({ id, score: 90 - i, visibility: i === 1 ? "off" : "on" }));
+    const res = mockRes();
+    await handler(mockReq({ mode: "batch", requirementId: REQ, expectedAmountPaise: 11960 }), res);
+    expect(res.statusCode).toBe(409);
+    expect(res.body).toMatchObject({ code: "price_changed", quote: { count: 3, amountPaise: 8970 } });
+    expect(razorpayCall()).toBeUndefined();
+  });
+
+  it("orders when the client's expected amount matches the server quote", async () => {
+    world.matches = ids(4).map((id, i) => ({ id, score: 90 - i }));
+    const res = mockRes();
+    await handler(mockReq({ mode: "batch", requirementId: REQ, expectedAmountPaise: 11960 }), res);
+    expect(res.statusCode).toBe(200);
+    expect(razorpayCall()?.body).toMatchObject({ amount: 11960 });
   });
 
   it("reuses an existing unpaid order for exactly the same batch", async () => {

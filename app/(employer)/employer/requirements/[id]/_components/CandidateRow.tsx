@@ -13,7 +13,7 @@ import { CandidateStatusChip, Pill, ScoreChip, SkillTag } from "@/employer/_atom
 import { IdentityHiddenBadge } from "@/employer/_requirementAtoms";
 import type { Candidate } from "@/employer/mockData";
 import { canInviteToInterview } from "@/employer/InterviewInviteDialog";
-import { singleUnlockPrice } from "../../../../../../server-handlers/_unlock-pricing";
+import { formatPaise, singleUnlockPrice } from "../../../../../../server-handlers/_unlock-pricing";
 import {
   candidateDisplayName,
   candidateResponseOf,
@@ -64,7 +64,7 @@ export default function CandidateRow({
   const name = candidateDisplayName(candidate);
   const response = candidateResponseOf(candidate);
   const substep = interviewSubstep(candidate);
-  const unlockPrice = `₹${(singleUnlockPrice().amountPaise / 100).toFixed(0)}`;
+  const unlockPrice = formatPaise(singleUnlockPrice().amountPaise);
   const canMessage = !readOnly && canMessageCandidate(candidate);
   const writeOff = readOnly || suspended;
 

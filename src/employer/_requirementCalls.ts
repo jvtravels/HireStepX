@@ -74,7 +74,7 @@ export interface UnlockedCandidate {
 }
 
 export function createUnlockOrder(
-  request: { mode: "single"; matchId: string } | { mode: "batch"; requirementId: string },
+  request: { mode: "single"; matchId: string } | { mode: "batch"; requirementId: string; expectedAmountPaise?: number },
 ): Promise<CallResult<UnlockOrder>> {
   return apiFetch<UnlockOrder>("/api/employer-create-unlock-order", request, { method: "POST" }).then(fromApi);
 }
@@ -83,8 +83,8 @@ export function verifyUnlockPayment(payload: {
   razorpay_order_id: string;
   razorpay_payment_id: string;
   razorpay_signature: string;
-}): Promise<CallResult<{ candidates: UnlockedCandidate[] }>> {
-  return apiFetch<{ candidates: UnlockedCandidate[] }>("/api/employer-verify-unlock-payment", payload, { method: "POST" }).then(fromApi);
+}): Promise<CallResult<{ candidates: UnlockedCandidate[]; partial?: boolean; message?: string }>> {
+  return apiFetch<{ candidates: UnlockedCandidate[]; partial?: boolean; message?: string }>("/api/employer-verify-unlock-payment", payload, { method: "POST" }).then(fromApi);
 }
 
 export function setCandidateStatus(

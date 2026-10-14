@@ -42,13 +42,11 @@ import { extractResumeDetail, redactResumeDetailForLock } from "./_resume-detail
 import { runMatching, logRequirementActivity } from "./employer-requirements";
 import {
   fetchKeyset,
-  loadBlockedCandidateIds,
-  loadOptedOutCandidateIds,
-  loadEvidenceFlags,
   loadGradedSessions,
   parsePagination,
   paginate,
-  isTouchedMatch,
+  loadRankedVisibleMatches,
+  nextUnlockBatchQuote,
   scrubLockedResume,
   maskedCandidateName,
   checkEmployerAllowance,
@@ -203,34 +201,20 @@ export default async function handler(req: Request): Promise<Response> {
       headers: serviceHeaders(), keyField: "id", pageSize: 1000, maxRows: 5000,
     });
     if (matchesRead.failed) throw new Error("matches read failed");
-    const allMatches: MatchRow[] = matchesRead.rows
-      .slice()
-      .sort((x, y) => y.match_score - x.match_score || (x.id < y.id ? -1 : x.id > y.id ? 1 : 0));
+    const allMatches: MatchRow[] = matchesRead.rows;
 
-    // Consent: a candidate who blocked this employer is gone entirely; one who
-    // switched employer visibility off disappears while locked, but an
-    // already-paid-for (unlocked) row stays — the employer bought that
-    // snapshot — flagged so the UI can say the candidate withdrew.
-    const allCandidateIds = Array.from(new Set(allMatches.map((m) => m.candidate_user_id)));
-    const blocked = await loadBlockedCandidateIds(SUPABASE_URL, serviceHeaders(), auth.userId);
-    const optedOut = allCandidateIds.length > 0 ? await loadOptedOutCandidateIds(SUPABASE_URL, serviceHeaders(), allCandidateIds) : new Set<string>();
-    const evidence = allCandidateIds.length > 0 ? await loadEvidenceFlags(SUPABASE_URL, serviceHeaders(), allCandidateIds) : new Map<string, boolean>();
-    // Fail closed: if consent/evidence can't be read, show nothing rather than
-    // candidates who may have withdrawn.
-    if (!blocked || !optedOut || !evidence) throw new Error("candidate consent read failed");
-
-    /* Defense in depth against stale rows: rankAndCap (_requirement-match-helpers.ts)
-       already excludes no-evidence candidates when a requirement is created or
-       re-matched, but a row written before that filter existed — or one
-       "touched" by the employer, which runMatching preserves without
-       re-scoring — never gets cleaned up by re-running matching alone.
-       Re-apply the same evidence rule here at read time so it can't resurface,
-       while never hiding a row the employer has actually interacted with. */
-    const visibleMatches = allMatches.filter((m) => {
-      if (blocked.has(m.candidate_user_id)) return false;
-      if (optedOut.has(m.candidate_user_id) && !m.unlocked) return false;
-      return isTouchedMatch(m) || !!evidence.get(m.candidate_user_id);
-    });
+    /* Consent: a candidate who blocked this employer is gone entirely; one who
+       switched employer visibility off disappears while locked, but an
+       already-paid-for (unlocked) row stays — the employer bought that
+       snapshot. Evidence rule: rankAndCap already excludes no-evidence
+       candidates at match time, but older or employer-"touched" rows can
+       linger, so it is re-applied at read time. The unlock order uses the
+       same ranked list (loadRankedVisibleMatches) so rank positions and the
+       batch price shown here are exactly what gets charged. Fail closed. */
+    const gated = await loadRankedVisibleMatches(SUPABASE_URL, serviceHeaders(), auth.userId, allMatches);
+    if (!gated) throw new Error("candidate consent read failed");
+    const { ranked: visibleMatches, optedOut } = gated;
+    const nextUnlockBatch = nextUnlockBatchQuote(visibleMatches);
 
     const pageParams = parsePagination(new URL(req.url).searchParams);
     const paged = paginate(visibleMatches, pageParams);
@@ -355,6 +339,9 @@ export default async function handler(req: Request): Promise<Response> {
         page: paged.page,
         limit: paged.limit,
         total: paged.total,
+        nextUnlockBatch: nextUnlockBatch
+          ? { start: nextUnlockBatch.start, end: nextUnlockBatch.end, count: nextUnlockBatch.count, amountPaise: nextUnlockBatch.amountPaise }
+          : null,
         nextPage: paged.nextPage,
         pagination: { page: paged.page, limit: paged.limit, total: paged.total, nextPage: paged.nextPage },
         // True pre-cap matched-pool size (see rankAndCap's totalMatched in

@@ -44,3 +44,8 @@ export function batchUnlockPrice(count: number = UNLOCK_BUNDLE_SIZE): UnlockPric
 export function batchIndexForRank(rankIndex: number): number {
   return Math.floor(rankIndex / UNLOCK_BUNDLE_SIZE);
 }
+
+/** Rupees with paise only when present, so a prorated ₹29.90 is never shown as ₹30. */
+export function formatPaise(paise: number): string {
+  return paise % 100 === 0 ? `₹${paise / 100}` : `₹${(paise / 100).toFixed(2)}`;
+}

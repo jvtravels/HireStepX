@@ -151,7 +151,7 @@ function EmployerDashboard() {
     // On failure the count stays null: we can't claim "no unlocks yet", so the
     // checklist is withheld rather than shown with a wrong step 3.
     fetchUnlockHistory().then((purchases) => {
-      if (!cancelled && purchases) setUnlockCount(purchases.length);
+      if (!cancelled && purchases) setUnlockCount(purchases.filter((p) => !p.refundedAt && p.amount > 0).length);
     });
     return () => {
       cancelled = true;

@@ -28,7 +28,8 @@ import {
   supabaseServiceHeaders,
   verifyEmployerAuthToken,
 } from "./_shared";
-import { singleUnlockPrice, batchUnlockPrice, batchIndexForRank } from "./_unlock-pricing";
+import { singleUnlockPrice, batchUnlockPrice, formatPaise } from "./_unlock-pricing";
+import { loadRankedVisibleMatches, nextUnlockBatchQuote } from "./_employer-matching-helpers";
 import { razorpayBasicAuth } from "./_razorpay-auth";
 import { loadEmployerMatchAccess, loadAuthIdentity, DENIED_STATUS } from "./_entitlements";
 import { deriveEmployerTier, isSuspended, type EmployerTier } from "./_employer-trust";
@@ -125,6 +126,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const mode = req.body?.mode === "batch" ? "batch" : "single";
   const matchId = typeof req.body?.matchId === "string" ? req.body.matchId.slice(0, 64) : "";
+  const expectedAmountPaise = Number.isInteger(req.body?.expectedAmountPaise) ? (req.body.expectedAmountPaise as number) : null;
   const requirementId = typeof req.body?.requirementId === "string" ? req.body.requirementId.slice(0, 64) : "";
   if (mode === "single" && !matchId) {
     return res.status(400).json({ error: "matchId is required" });
@@ -188,42 +190,41 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
 
       const matchesRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/requirement_matches?requirement_id=eq.${encodeURIComponent(requirementId)}&select=id,unlocked&order=match_score.desc,id.asc`,
+        `${SUPABASE_URL}/rest/v1/requirement_matches?requirement_id=eq.${encodeURIComponent(requirementId)}&select=id,candidate_user_id,match_score,unlocked,candidate_status,candidate_status_note,interview_scheduled_at&order=match_score.desc,id.asc&limit=5000`,
         { headers: sh },
       );
       if (!matchesRes.ok) throw new Error(`matches read failed: ${matchesRes.status}`);
-      const matches = (await matchesRes.json().catch(() => [])) as Array<{ id: string; unlocked: boolean }>;
+      const matches = (await matchesRes.json().catch(() => [])) as Array<{
+        id: string; candidate_user_id: string; match_score: number; unlocked: boolean;
+        candidate_status: string | null; candidate_status_note: string | null; interview_scheduled_at: string | null;
+      }>;
 
-      const batches = new Map<number, Array<{ id: string; unlocked: boolean }>>();
-      matches.forEach((m, i) => {
-        const b = batchIndexForRank(i);
-        if (!batches.has(b)) batches.set(b, []);
-        batches.get(b)!.push(m);
-      });
-      let nextBatch: Array<{ id: string; unlocked: boolean }> | null = null;
-      for (const [, rows] of Array.from(batches.entries()).sort((a, b) => a[0] - b[0])) {
-        if (rows.some((r) => !r.unlocked)) {
-          nextBatch = rows;
-          break;
+      // Same visible ranked list the requirement page shows, so the batch
+      // window and price here match the "Unlock N–M" button the employer saw.
+      const gated = await loadRankedVisibleMatches(SUPABASE_URL, sh, employerId, matches);
+      if (!gated) throw new Error("candidate consent read failed");
+      const quote = nextUnlockBatchQuote(gated.ranked);
+      if (!quote) {
+        if (matches.some((m) => !m.unlocked)) {
+          return res.status(409).json({
+            error: "None of the candidates in this batch are currently available to unlock",
+            code: "no_eligible_candidates",
+          });
         }
-      }
-      if (!nextBatch) {
         return res.status(409).json({ error: "All candidates are already unlocked" });
       }
-
       // Never charge for a candidate the employer can't actually reach (opted
       // out, blocked) — they are dropped from this batch and from its price.
-      const locked = nextBatch.filter((r) => !r.unlocked);
       const decisions = await Promise.all(
-        locked.map((r) =>
+        quote.matchIds.map((id) =>
           loadEmployerMatchAccess({
-            supabaseUrl: SUPABASE_URL, headers: sh, employerId, matchId: r.id,
+            supabaseUrl: SUPABASE_URL, headers: sh, employerId, matchId: id,
             authEmail: identity.email, emailConfirmed: identity.emailConfirmed,
           }),
         ),
       );
       if (decisions.some((d) => !d.ok && d.reason === "error")) throw new Error("match access read failed");
-      targetMatchIds = locked.filter((_, i) => decisions[i].ok).map((r) => r.id);
+      targetMatchIds = quote.matchIds.filter((_, i) => decisions[i].ok);
       if (targetMatchIds.length === 0) {
         return res.status(409).json({
           error: "None of the candidates in this batch are currently available to unlock",
@@ -231,6 +232,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         });
       }
       orderRequirementId = requirementId;
+
+      // The client states the amount it showed the employer; if the batch
+      // changed underneath them (candidate withdrew, rows re-ranked) refuse
+      // and hand back the fresh quote rather than charge a different sum.
+      const actual = batchUnlockPrice(targetMatchIds.length);
+      if (expectedAmountPaise !== null && expectedAmountPaise !== actual.amountPaise) {
+        return res.status(409).json({
+          error: `This batch is now ${formatPaise(actual.amountPaise)} for ${targetMatchIds.length} candidate${targetMatchIds.length === 1 ? "" : "s"} (it was ${formatPaise(expectedAmountPaise)}). Close this and review the updated price.`,
+          code: "price_changed",
+          quote: { start: quote.start, end: quote.end, count: targetMatchIds.length, amountPaise: actual.amountPaise },
+        });
+      }
     }
 
     const nowMs = Date.now();

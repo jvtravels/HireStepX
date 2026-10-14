@@ -28,6 +28,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Skeleton } from "@/components/ui/skeleton";
+import { formatPaise } from "../../../../../../server-handlers/_unlock-pricing";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Card, HelpText, OutlineCta, Pill, SkillTag, STAGE_LABEL, StageCell } from "@/employer/_atoms";
@@ -77,7 +78,7 @@ const REQ_HEADER_CSS = `
 `;
 
 function formatPrice(paise: number): string {
-  return paise === 0 ? "Complimentary" : `₹${(paise / 100).toFixed(0)}`;
+  return paise === 0 ? "Complimentary" : formatPaise(paise);
 }
 
 function UnlockHistoryDialog({
@@ -109,8 +110,10 @@ function UnlockHistoryDialog({
     if (next && purchases == null && !loading) load();
   };
 
+  // Match by the requirement the order was placed for; candidates is only one
+  // page of the shortlist, so matching on it would hide purchases on other pages.
   const ids = new Set(requirement.candidates.map((c) => c.id));
-  const relevant = (purchases ?? []).filter((p) => p.matchIds.some((id) => ids.has(id)));
+  const relevant = (purchases ?? []).filter((p) => (p.requirementId ? p.requirementId === requirement.id : p.matchIds.some((id) => ids.has(id))));
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -149,7 +152,7 @@ function UnlockHistoryDialog({
                   >
                     <span style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.coal, minWidth: 0, overflowWrap: "anywhere" }}>{label}</span>
                     <span style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.inkFaint }}>
-                      {formatPrice(p.amount)} · {new Date(p.createdAt).toLocaleDateString()}
+                      {formatPrice(p.amount)}{p.refundedAt ? " (refunded)" : ""} · {new Date(p.createdAt).toLocaleDateString()}
                     </span>
                   </li>
                 );

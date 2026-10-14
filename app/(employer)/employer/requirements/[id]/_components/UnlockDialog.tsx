@@ -7,12 +7,8 @@ import { OutlineCta, PrimaryCta } from "@/employer/_atoms";
 import { IdentityHiddenBadge, InlineNotice } from "@/employer/_requirementAtoms";
 import type { UnlockedCandidate } from "@/employer/_requirementCalls";
 import type { EmployerAccess } from "@/employer/_useEmployerAccess";
-import { batchUnlockPrice, singleUnlockPrice } from "../../../../../../server-handlers/_unlock-pricing";
+import { formatPaise, singleUnlockPrice } from "../../../../../../server-handlers/_unlock-pricing";
 import { useUnlockCheckout, type UnlockTarget } from "./useUnlockCheckout";
-
-function rupees(paise: number): string {
-  return `₹${(paise / 100).toFixed(0)}`;
-}
 
 /** The single page-level unlock confirmation, for both one candidate and a
     batch. Replaces one Dialog per table row. */
@@ -33,8 +29,8 @@ export default function UnlockDialog({
     onUnlocked,
   });
 
-  const price = target?.mode === "batch" ? batchUnlockPrice(target.count) : singleUnlockPrice();
-  const priceText = rupees(price.amountPaise);
+  const amountPaise = target?.mode === "batch" ? target.amountPaise : singleUnlockPrice().amountPaise;
+  const priceText = formatPaise(amountPaise);
   const title =
     target?.mode === "batch"
       ? `Unlock candidates ${target.start}–${target.end} for ${priceText}?`

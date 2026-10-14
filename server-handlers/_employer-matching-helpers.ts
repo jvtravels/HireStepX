@@ -28,6 +28,7 @@ import {
 import { daysSinceLastActive } from "./_employer-requirements-helpers";
 import { TIER_LIMITS, deriveEmployerTier, isSuspended, maskedCandidateName, type EmployerTier } from "./_employer-trust";
 import { loadAuthIdentity } from "./_entitlements";
+import { batchUnlockPrice, UNLOCK_BUNDLE_SIZE } from "./_unlock-pricing";
 
 type FetchImpl = typeof fetch;
 type Headers = Record<string, string>;
@@ -677,3 +678,71 @@ export function maskStrongMatches<T extends StrongMatchLike>(
 }
 
 export { maskedCandidateName };
+
+/* ── Visible shortlist + next unlock batch ── */
+
+export interface RankableMatch extends Pick<ExistingMatchRow, "unlocked" | "candidate_status" | "candidate_status_note" | "interview_scheduled_at"> {
+  id: string;
+  candidate_user_id: string;
+  match_score: number;
+}
+
+/** Rows the employer may see, in the fixed rank order (score desc, id asc).
+ *  The detail page and the unlock order MUST share this so the rank positions
+ *  the UI shows are the ones the server batches and prices. */
+export function rankVisibleMatches<T extends RankableMatch>(
+  matches: T[],
+  gates: { blocked: Set<string>; optedOut: Set<string>; evidence: Map<string, boolean> },
+): T[] {
+  return matches
+    .filter((m) => {
+      if (gates.blocked.has(m.candidate_user_id)) return false;
+      if (gates.optedOut.has(m.candidate_user_id) && !m.unlocked) return false;
+      return isTouchedMatch(m) || !!gates.evidence.get(m.candidate_user_id);
+    })
+    .sort((x, y) => y.match_score - x.match_score || (x.id < y.id ? -1 : x.id > y.id ? 1 : 0));
+}
+
+export interface UnlockBatchQuote {
+  /** 1-based rank range of the batch window (visible rank). */
+  start: number;
+  end: number;
+  matchIds: string[];
+  count: number;
+  amountPaise: number;
+}
+
+/** The first rank window of UNLOCK_BUNDLE_SIZE that still has a locked row,
+ *  with the locked ids and the exact price the order will charge. */
+export function nextUnlockBatchQuote(ranked: Array<{ id: string; unlocked: boolean }>): UnlockBatchQuote | null {
+  for (let start = 0; start < ranked.length; start += UNLOCK_BUNDLE_SIZE) {
+    const block = ranked.slice(start, start + UNLOCK_BUNDLE_SIZE);
+    const locked = block.filter((r) => !r.unlocked);
+    if (locked.length > 0) {
+      return {
+        start: start + 1,
+        end: start + block.length,
+        matchIds: locked.map((r) => r.id),
+        count: locked.length,
+        amountPaise: batchUnlockPrice(locked.length).amountPaise,
+      };
+    }
+  }
+  return null;
+}
+
+/** Loads the consent/evidence gates for a requirement's matches and returns
+ *  the ranked visible list plus the opted-out set. Null when any gate read fails (fail closed). */
+export async function loadRankedVisibleMatches<T extends RankableMatch>(
+  supabaseUrl: string,
+  headers: Headers,
+  employerId: string,
+  matches: T[],
+): Promise<{ ranked: T[]; optedOut: Set<string> } | null> {
+  const ids = Array.from(new Set(matches.map((m) => m.candidate_user_id)));
+  const blocked = await loadBlockedCandidateIds(supabaseUrl, headers, employerId);
+  const optedOut = ids.length > 0 ? await loadOptedOutCandidateIds(supabaseUrl, headers, ids) : new Set<string>();
+  const evidence = ids.length > 0 ? await loadEvidenceFlags(supabaseUrl, headers, ids) : new Map<string, boolean>();
+  if (!blocked || !optedOut || !evidence) return null;
+  return { ranked: rankVisibleMatches(matches, { blocked, optedOut, evidence }), optedOut };
+}

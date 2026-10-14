@@ -60,7 +60,7 @@ export default async function handler(req: Request): Promise<Response> {
     // original column set so the list still loads on a database that hasn't
     // applied it yet.
     let res = await fetch(
-      `${baseUrl}&select=id,match_id,match_ids,amount,currency,created_at,razorpay_order_id,invoice_no,refunded_at&order=created_at.desc&limit=100`,
+      `${baseUrl}&select=id,match_id,match_ids,amount,currency,created_at,razorpay_order_id,invoice_no,refunded_at,requirement_id&order=created_at.desc&limit=100`,
       { headers: serviceHeaders() },
     );
     if (!res.ok) {
@@ -85,6 +85,7 @@ export default async function handler(req: Request): Promise<Response> {
       razorpay_order_id?: string | null;
       invoice_no?: string | null;
       refunded_at?: string | null;
+      requirement_id?: string | null;
     }>;
 
     // Snapshotted at unlock time (supabase-migrations/0026) so a candidate
@@ -162,6 +163,7 @@ export default async function handler(req: Request): Promise<Response> {
         createdAt: r.created_at,
         invoiceNo: r.invoice_no ?? null,
         refundedAt: r.refunded_at ?? null,
+        requirementId: r.requirement_id ?? null,
         orderId: r.razorpay_order_id ?? null,
         orderStatus: (r.razorpay_order_id && statusByOrderId.get(r.razorpay_order_id)) || null,
         gstin,

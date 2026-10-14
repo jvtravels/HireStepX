@@ -11,7 +11,7 @@ import type { EmployerTier } from "../../../../../../server-handlers/_employer-t
 
 export type UnlockTarget =
   | { mode: "single"; matchId: string }
-  | { mode: "batch"; requirementId: string; count: number; start: number; end: number };
+  | { mode: "batch"; requirementId: string; count: number; amountPaise: number; start: number; end: number };
 
 /** Dynamically loads the Razorpay checkout script with the CSP nonce. A script
     tag without the nonce is silently blocked under strict-dynamic. */
@@ -75,7 +75,7 @@ export function useUnlockCheckout({
       setError(null);
 
       const order = await createUnlockOrder(
-        target.mode === "single" ? { mode: "single", matchId: target.matchId } : { mode: "batch", requirementId: target.requirementId },
+        target.mode === "single" ? { mode: "single", matchId: target.matchId } : { mode: "batch", requirementId: target.requirementId, expectedAmountPaise: target.amountPaise },
       );
       if (!order.ok) {
         setError(failureMessage("unlock", order, { tier, limit }));
@@ -114,6 +114,10 @@ export function useUnlockCheckout({
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature,
             });
+            if (verified.ok && verified.data.candidates.length === 0 && verified.data.partial && verified.data.message) {
+              resolve({ kind: "error", message: verified.data.message });
+              return;
+            }
             if (!verified.ok || verified.data.candidates.length === 0) {
               resolve({
                 kind: "error",

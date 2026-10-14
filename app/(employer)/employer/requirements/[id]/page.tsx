@@ -18,7 +18,7 @@ import { Button } from "@/components/ui/button";
 import { SearchWithSuggestions } from "@/components/SearchWithSuggestions";
 import { type Sort } from "@/components/SortableHead";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { UNLOCK_BUNDLE_SIZE, batchUnlockPrice } from "../../../../../server-handlers/_unlock-pricing";
+import { formatPaise } from "../../../../../server-handlers/_unlock-pricing";
 import BulkActions from "./_components/BulkActions";
 import CandidatesFilters from "./_components/CandidatesFilters";
 import CandidatesTable from "./_components/CandidatesTable";
@@ -41,10 +41,6 @@ import { candidateDisplayName } from "./_components/requirementFormat";
 import type { UnlockTarget } from "./_components/useUnlockCheckout";
 
 const CANDIDATES_RECENT_SEARCHES_KEY = "hirestepx-employer-candidates-recent-searches";
-
-function rupees(paise: number): string {
-  return `₹${(paise / 100).toFixed(0)}`;
-}
 
 export default function RequirementDetailPage() {
   const params = useParams<{ id: string }>();
@@ -233,17 +229,10 @@ export default function RequirementDetailPage() {
   const evidenceCandidate = candidates.find((c) => c.id === evidenceId) ?? null;
   const messagesCandidate = candidates.find((c) => c.id === messagesId) ?? null;
 
-  // Candidates arrive ranked by match_score descending (the server's fixed
-  // order), so batch membership by position is stable under local filtering.
-  let nextLockedBatch: { start: number; end: number; count: number } | null = null;
-  for (let start = 0; start < candidates.length; start += UNLOCK_BUNDLE_SIZE) {
-    const block = candidates.slice(start, start + UNLOCK_BUNDLE_SIZE);
-    const locked = block.filter((c) => !c.unlocked).length;
-    if (locked > 0) {
-      nextLockedBatch = { start: start + 1, end: start + block.length, count: locked };
-      break;
-    }
-  }
+  // The server ranks the full visible shortlist and prices the next batch
+  // itself (employer-requirement-detail.ts); the page only displays that quote,
+  // so the button can never disagree with what the order charges.
+  const nextLockedBatch = requirement.nextUnlockBatch ?? null;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", flex: "1 0 auto", paddingBottom: 24, minWidth: 0 }}>
@@ -315,18 +304,19 @@ export default function RequirementDetailPage() {
                           size="sm"
                           icon={<LockIcon size={13} aria-hidden="true" />}
                           disabled={suspended}
-                          ariaLabel={`Unlock top ${nextLockedBatch.start} to ${nextLockedBatch.end} for ${rupees(batchUnlockPrice(nextLockedBatch.count).amountPaise)}`}
+                          ariaLabel={`Unlock top ${nextLockedBatch.start} to ${nextLockedBatch.end} for ${formatPaise(nextLockedBatch.amountPaise)}`}
                           onClick={() =>
                             setUnlockTarget({
                               mode: "batch",
                               requirementId: requirement.id,
                               count: nextLockedBatch.count,
+                              amountPaise: nextLockedBatch.amountPaise,
                               start: nextLockedBatch.start,
                               end: nextLockedBatch.end,
                             })
                           }
                         >
-                          Unlock {nextLockedBatch.start}–{nextLockedBatch.end} · {rupees(batchUnlockPrice(nextLockedBatch.count).amountPaise)}
+                          Unlock {nextLockedBatch.start}–{nextLockedBatch.end} · {formatPaise(nextLockedBatch.amountPaise)}
                         </PrimaryCta>
                       </span>
                     </TooltipTrigger>

@@ -119,6 +119,7 @@ export interface UnlockPurchase {
   /** Added by the payments ledger; absent on older rows/servers. */
   invoiceNo?: string | null;
   refundedAt?: string | null;
+  requirementId?: string | null;
   status?: string;
 }
 
