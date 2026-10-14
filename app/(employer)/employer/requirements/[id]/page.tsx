@@ -3,11 +3,13 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { LockIcon, RefreshCwIcon } from "lucide-react";
+import { LockIcon, RefreshCwIcon, SearchIcon } from "lucide-react";
 import { tokens as t, fonts as f, textSize } from "@/auth/_tokens";
 import { useEmployerData, type Requirement } from "@/employer/EmployerDataContext";
 import { useEmployerBreadcrumb } from "@/employer/EmployerShell";
 import { PrimaryCta } from "@/employer/_atoms";
+import { TAB_LABEL, tabCounts, visibleTabs, type CandidateTab } from "@/employer/_jobDetailHelpers";
+import StatusTabs from "@/components/StatusTabs";
 import InterviewInviteDialog, { statusErrorCopy, type InviteResult, type InviteValues } from "@/employer/InterviewInviteDialog";
 import { useToast } from "@/Toast";
 import { EmptyNote, ErrorRetry, InlineNotice, PageSkeleton, SuspendedBanner } from "@/employer/_requirementAtoms";
@@ -25,7 +27,10 @@ import CandidatesTable from "./_components/CandidatesTable";
 import EvidenceDialog from "./_components/EvidenceDialog";
 import MessagesDialog from "./_components/MessagesDialog";
 import RequirementDetails from "./_components/RequirementDetails";
-import RequirementHeader from "./_components/RequirementHeader";
+import JobHeader from "./_components/JobHeader";
+import JobSideRail from "./_components/JobSideRail";
+import KeyRequirements from "./_components/KeyRequirements";
+import { useJobActions } from "./_components/useJobActions";
 import { FailedState, GeneratingState, ZeroMatchState } from "./_components/StatusStates";
 import UnlockDialog from "./_components/UnlockDialog";
 import {
@@ -34,7 +39,6 @@ import {
   compareCandidates,
   filterCandidates,
   type ContactFilter,
-  type PipelineFilter,
   type SortColumn,
 } from "./_components/candidateTableModel";
 import { candidateDisplayName } from "./_components/requirementFormat";
@@ -57,7 +61,7 @@ export default function RequirementDetailPage() {
   const [search, setSearch] = useState("");
   const [contactFilter, setContactFilter] = useState<ContactFilter>("all");
   const [locationFilter, setLocationFilter] = useState<string>("all");
-  const [pipelineFilter, setPipelineFilter] = useState<PipelineFilter>("all");
+  const [tabChoice, setTabChoice] = useState<CandidateTab | null>(null);
   const [sort, setSort] = useState<Sort<SortColumn>>(DEFAULT_SORT);
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -123,8 +127,16 @@ export default function RequirementDetailPage() {
     return Array.from(cities).sort();
   }, [candidates]);
 
+  const patchRequirement = useCallback((patch: Partial<Requirement>) => {
+    setRequirement((prev) => (prev ? { ...prev, ...patch } : prev));
+  }, []);
+
+  const counts = useMemo(() => tabCounts(candidates), [candidates]);
+  const tab: CandidateTab = tabChoice ?? (counts.recommended > 0 || candidates.length === 0 ? "recommended" : "all");
+  const { message, reopenSaving, changeStage, reopen } = useJobActions(requirement, patchRequirement, load);
+
   const activeFilterCount = (contactFilter !== "all" ? 1 : 0) + (locationFilter !== "all" ? 1 : 0);
-  const hasActiveFilters = search.trim() !== "" || contactFilter !== "all" || locationFilter !== "all" || pipelineFilter !== "all";
+  const hasActiveFilters = search.trim() !== "" || contactFilter !== "all" || locationFilter !== "all";
 
   const suggestedFilters = useMemo(() => {
     const suggestions: Array<{ label: string; apply: () => void }> = [];
@@ -136,21 +148,17 @@ export default function RequirementDetailPage() {
   }, [contactFilter, locationOptions, locationFilter]);
 
   const filteredSorted = useMemo(
-    () => filterCandidates(candidates, { search, contact: contactFilter, location: locationFilter, pipeline: pipelineFilter }).sort((a, b) => compareCandidates(a, b, sort)),
-    [candidates, search, contactFilter, locationFilter, pipelineFilter, sort],
+    () => filterCandidates(candidates, { search, contact: contactFilter, location: locationFilter, tab }).sort((a, b) => compareCandidates(a, b, sort)),
+    [candidates, search, contactFilter, locationFilter, tab, sort],
   );
 
   useEffect(() => {
     setPage(1);
-  }, [search, contactFilter, locationFilter, pipelineFilter, sort, rowsPerPage]);
+  }, [search, contactFilter, locationFilter, tab, sort, rowsPerPage]);
 
   const totalPages = Math.max(1, Math.ceil(filteredSorted.length / rowsPerPage));
   const pageSafe = Math.min(page, totalPages);
   const pageRows = filteredSorted.slice((pageSafe - 1) * rowsPerPage, pageSafe * rowsPerPage);
-
-  const patchRequirement = useCallback((patch: Partial<Requirement>) => {
-    setRequirement((prev) => (prev ? { ...prev, ...patch } : prev));
-  }, []);
 
   const patchCandidates = useCallback((apply: (c: Candidate) => Candidate) => {
     setRequirement((prev) => (prev ? { ...prev, candidates: prev.candidates.map(apply) } : prev));
@@ -197,6 +205,23 @@ export default function RequirementDetailPage() {
     });
   };
 
+  const toggleAll = (ids: string[], select: boolean) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      for (const id of ids) {
+        if (select) next.add(id);
+        else next.delete(id);
+      }
+      return next;
+    });
+  };
+
+  const clearFilters = () => {
+    setSearch("");
+    setContactFilter("all");
+    setLocationFilter("all");
+  };
+
   if (loading && !requirement) return <PageSkeleton label="Loading requirement" />;
 
   if (!requirement) {
@@ -234,69 +259,78 @@ export default function RequirementDetailPage() {
   // so the button can never disagree with what the order charges.
   const nextLockedBatch = requirement.nextUnlockBatch ?? null;
 
+  const requiredSkills = Array.from(new Set([...requirement.skills, ...requirement.customSkillSets]));
+  const tabs = visibleTabs(counts).map((key) => ({ key, label: TAB_LABEL[key], count: counts[key] }));
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", flex: "1 0 auto", paddingBottom: 24, minWidth: 0 }}>
+    <div className="flex min-w-0 flex-[1_0_auto] flex-col pb-6">
       {suspended && (
-        <div style={{ marginBottom: 16 }}>
+        <div className="mb-4">
           <SuspendedBanner />
         </div>
       )}
 
-      <RequirementHeader
+      <JobHeader
         requirement={requirement}
         suspended={suspended}
-        pipelineFilter={pipelineFilter}
-        onPipelineFilterChange={setPipelineFilter}
-        onPatch={patchRequirement}
+        message={message}
+        reopening={reopenSaving}
+        onReopen={reopen}
         onReload={load}
+        expandedContent={<RequirementDetails requirement={requirement} />}
       />
 
-      <RequirementDetails requirement={requirement} />
+      <div className="mt-6 grid min-w-0 grid-cols-1 items-start gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="flex min-w-0 flex-col gap-6">
+          <KeyRequirements requirement={requirement} />
 
-      <section aria-labelledby="candidates-heading" style={{ marginTop: 24, flex: "1 0 auto", display: "flex", flexDirection: "column", minWidth: 0 }}>
-        <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 10, marginBottom: 16 }}>
-          <h2 id="candidates-heading" style={{ fontFamily: f.sans, fontSize: textSize.xl, fontWeight: 600, color: t.coal, margin: 0, flexShrink: 0 }}>
-            Candidates
-          </h2>
-          <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", flexWrap: "wrap", gap: 10, justifyContent: "flex-end", minWidth: 0 }}>
+          <section aria-labelledby="candidates-heading" className="flex min-w-0 flex-col">
+            <h2 id="candidates-heading" className="sr-only">
+              Candidates
+            </h2>
             {hasList && (
-              <>
-                <SearchWithSuggestions
-                  id="candidates-search"
-                  label="Search candidates"
-                  value={search}
-                  onChange={setSearch}
-                  placeholder="Search by role, skill, or notice period…"
-                  storageKey={CANDIDATES_RECENT_SEARCHES_KEY}
-                  suggestedFilters={suggestedFilters}
-                  style={{ flex: "1 1 200px", minWidth: 140, maxWidth: 280 }}
-                  inputStyle={{ background: t.white }}
-                />
-                <CandidatesFilters
-                  contactFilter={contactFilter}
-                  onContactFilterChange={setContactFilter}
-                  locationFilter={locationFilter}
-                  onLocationFilterChange={setLocationFilter}
-                  locationOptions={locationOptions}
-                  activeCount={activeFilterCount}
-                />
-                {hasActiveFilters && (
-                  <Button
-                    type="button"
-                    variant="link"
-                    onClick={() => {
-                      setSearch("");
-                      setContactFilter("all");
-                      setLocationFilter("all");
-                      setPipelineFilter("all");
-                    }}
-                    className="pointer-coarse:min-h-11"
-                    style={{ fontFamily: f.sans, fontSize: textSize.base, fontWeight: 600, height: "auto", flexShrink: 0 }}
-                  >
-                    Clear filters
-                  </Button>
-                )}
-                {!readOnly && nextLockedBatch && (
+              <StatusTabs
+                tabs={tabs}
+                value={tab}
+                onChange={setTabChoice}
+                label="Candidate groups"
+                idPrefix="cand"
+                panelId="cand-panel"
+                className="mb-4"
+              />
+            )}
+            <div className="mb-4 flex flex-wrap items-center gap-2.5">
+              {hasList && (
+                <>
+                  <div className="min-w-40 max-w-80 flex-[1_1_220px]">
+                    <SearchWithSuggestions
+                      id="candidates-search"
+                      label="Search candidates"
+                      value={search}
+                      onChange={setSearch}
+                      placeholder="Search candidates..."
+                      storageKey={CANDIDATES_RECENT_SEARCHES_KEY}
+                      suggestedFilters={suggestedFilters}
+                      inputClassName="bg-white"
+                    />
+                  </div>
+                  <CandidatesFilters
+                    contactFilter={contactFilter}
+                    onContactFilterChange={setContactFilter}
+                    locationFilter={locationFilter}
+                    onLocationFilterChange={setLocationFilter}
+                    locationOptions={locationOptions}
+                    activeCount={activeFilterCount}
+                  />
+                  {hasActiveFilters && (
+                    <Button type="button" variant="link" onClick={clearFilters} className="h-auto shrink-0 text-[14px] font-semibold pointer-coarse:min-h-11">
+                      Clear filters
+                    </Button>
+                  )}
+                </>
+              )}
+              <div className="ml-auto flex items-center gap-2.5">
+                {hasList && !readOnly && nextLockedBatch && (
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <span>
@@ -332,128 +366,146 @@ export default function RequirementDetailPage() {
                     </TooltipContent>
                   </Tooltip>
                 )}
-              </>
-            )}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  onClick={handleRefresh}
-                  disabled={refreshing}
-                  aria-label={refreshing ? "Refreshing candidates" : "Refresh candidates"}
-                  className="pointer-coarse:size-11"
-                  style={{ borderRadius: 8, flexShrink: 0 }}
-                >
-                  <RefreshCwIcon size={13} aria-hidden="true" className={refreshing ? "animate-spin motion-reduce:animate-none" : undefined} />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom" className="max-w-64">Refresh candidates</TooltipContent>
-            </Tooltip>
-          </div>
-        </div>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={handleRefresh}
+                      disabled={refreshing}
+                      aria-label={refreshing ? "Refreshing candidates" : "Refresh candidates"}
+                      className="shrink-0 rounded-lg pointer-coarse:size-11"
+                    >
+                      <RefreshCwIcon size={13} aria-hidden="true" className={refreshing ? "animate-spin motion-reduce:animate-none" : undefined} />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="max-w-64">Refresh candidates</TooltipContent>
+                </Tooltip>
+              </div>
+            </div>
 
-        <div aria-live="polite" style={{ marginBottom: refreshNote ? 12 : 0 }}>
-          {refreshNote && <InlineNotice tone={refreshNote.tone} live={false}>{refreshNote.text}</InlineNotice>}
-        </div>
+            <div aria-live="polite" className={refreshNote ? "mb-3" : undefined}>
+              {refreshNote && <InlineNotice tone={refreshNote.tone} live={false}>{refreshNote.text}</InlineNotice>}
+            </div>
 
-        {requirement.status === "generating" && <GeneratingState />}
-        {requirement.status === "failed" && <FailedState requirementId={requirement.id} canEdit={!suspended} />}
-        {requirement.status === "zero" && <ZeroMatchState requirementId={requirement.id} canEdit={!suspended} />}
+            {requirement.status === "generating" && <GeneratingState />}
+            {requirement.status === "failed" && <FailedState requirementId={requirement.id} canEdit={!suspended} />}
+            {requirement.status === "zero" && <ZeroMatchState requirementId={requirement.id} canEdit={!suspended} />}
 
-        {hasList && (
-          <>
-            {readOnly && (
-              <div style={{ marginBottom: 16 }}>
-                <InlineNotice tone="info" live={false}>This requirement is closed. Candidate details are read-only.</InlineNotice>
+            {hasList && (
+              <div id="cand-panel" role="tabpanel" aria-labelledby={`cand-tab-${tab}`}>
+                {readOnly && (
+                  <div className="mb-4">
+                    <InlineNotice tone="info" live={false}>This requirement is closed. Candidate details are read-only.</InlineNotice>
+                  </div>
+                )}
+
+                {!readOnly && (
+                  <BulkActions
+                    requirementId={requirement.id}
+                    requirementTitle={requirement.title}
+                    selected={selectedCandidates}
+                    suspended={suspended}
+                    onClearSelection={() => setSelectedIds(new Set())}
+                    onRejected={handleRejected}
+                  />
+                )}
+
+                {candidates.length === 0 ? (
+                  <EmptyNote title="No candidates yet">
+                    Nobody is on this shortlist right now. New matches appear here as candidates practise, and this page refreshes when you come back to it.
+                  </EmptyNote>
+                ) : filteredSorted.length === 0 ? (
+                  hasActiveFilters ? (
+                    <EmptyNote
+                      title="No candidates match"
+                      action={
+                        <Button type="button" variant="outline" className="pointer-coarse:h-11" onClick={clearFilters}>
+                          Clear search and filters
+                        </Button>
+                      }
+                    >
+                      Nothing in {TAB_LABEL[tab]} fits your search or filters. Try fewer filters, or clear them to see everyone.
+                    </EmptyNote>
+                  ) : (
+                    <EmptyNote
+                      title={`No candidates in ${TAB_LABEL[tab]}`}
+                      action={
+                        <Button type="button" variant="outline" className="gap-1.5 pointer-coarse:h-11" onClick={() => setTabChoice("all")}>
+                          <SearchIcon aria-hidden="true" /> View all candidates
+                        </Button>
+                      }
+                    >
+                      Candidates move here as you review them. Everyone matched to this job is under All candidates.
+                    </EmptyNote>
+                  )
+                ) : (
+                  <CandidatesTable
+                    rows={pageRows}
+                    requirementId={requirement.id}
+                    requiredSkills={requiredSkills}
+                    readOnly={readOnly}
+                    suspended={suspended}
+                    selectedIds={selectedIds}
+                    onToggleSelected={toggleSelected}
+                    onToggleAll={toggleAll}
+                    sort={sort}
+                    onSortChange={setSort}
+                    onUnlock={(c) => setUnlockTarget({ mode: "single", matchId: c.id })}
+                    onViewEvidence={(c) => setEvidenceId(c.id)}
+                    onMessage={(c) => setMessagesId(c.id)}
+                    onInvite={handleInvite}
+                    totalCount={candidates.length}
+                    filteredCount={filteredSorted.length}
+                    rowsPerPage={rowsPerPage}
+                    onRowsPerPageChange={setRowsPerPage}
+                    page={pageSafe}
+                    totalPages={totalPages}
+                    onPageChange={setPage}
+                  />
+                )}
+
+                <UnlockDialog target={unlockTarget} access={access} onClose={() => setUnlockTarget(null)} onUnlocked={handleUnlocked} />
+                <EvidenceDialog
+                  matchId={evidenceCandidate?.id ?? null}
+                  displayName={evidenceCandidate ? candidateDisplayName(evidenceCandidate) : "Candidate"}
+                  unlocked={evidenceCandidate?.unlocked ?? false}
+                  onClose={() => setEvidenceId(null)}
+                />
+                <InterviewInviteDialog
+                  open={inviteCandidate != null}
+                  onOpenChange={(o) => !o && setInviteId(null)}
+                  displayName={inviteCandidate ? candidateDisplayName(inviteCandidate) : "Candidate"}
+                  requirementTitle={requirement.title}
+                  onSubmit={submitInvite}
+                />
+                <MessagesDialog
+                  matchId={messagesCandidate?.id ?? null}
+                  displayName={messagesCandidate ? candidateDisplayName(messagesCandidate) : "Candidate"}
+                  unlocked={messagesCandidate?.unlocked ?? false}
+                  suspended={suspended}
+                  onClose={() => setMessagesId(null)}
+                />
               </div>
             )}
+          </section>
+        </div>
 
-            {!readOnly && (
-              <BulkActions
-                requirementId={requirement.id}
-                requirementTitle={requirement.title}
-                selected={selectedCandidates}
-                suspended={suspended}
-                onClearSelection={() => setSelectedIds(new Set())}
-                onRejected={handleRejected}
-              />
-            )}
-
-            {candidates.length === 0 ? (
-              <EmptyNote title="No candidates yet">
-                Nobody is on this shortlist right now. New matches appear here as candidates practise, and this page refreshes when you come back to it.
-              </EmptyNote>
-            ) : filteredSorted.length === 0 ? (
-              <EmptyNote
-                title="No candidates match"
-                action={
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="pointer-coarse:h-11"
-                    onClick={() => {
-                      setSearch("");
-                      setContactFilter("all");
-                      setLocationFilter("all");
-                      setPipelineFilter("all");
-                    }}
-                  >
-                    Clear search and filters
-                  </Button>
-                }
-              >
-                Nothing on this shortlist fits your search or filters. Try fewer filters, or clear them to see everyone.
-              </EmptyNote>
-            ) : (
-              <CandidatesTable
-                rows={pageRows}
-                requirementId={requirement.id}
-                readOnly={readOnly}
-                suspended={suspended}
-                selectedIds={selectedIds}
-                onToggleSelected={toggleSelected}
-                sort={sort}
-                onSortChange={setSort}
-                onUnlock={(c) => setUnlockTarget({ mode: "single", matchId: c.id })}
-                onViewEvidence={(c) => setEvidenceId(c.id)}
-                onMessage={(c) => setMessagesId(c.id)}
-                onInvite={handleInvite}
-                totalCount={candidates.length}
-                filteredCount={filteredSorted.length}
-                rowsPerPage={rowsPerPage}
-                onRowsPerPageChange={setRowsPerPage}
-                page={pageSafe}
-                totalPages={totalPages}
-                onPageChange={setPage}
-              />
-            )}
-
-            <UnlockDialog target={unlockTarget} access={access} onClose={() => setUnlockTarget(null)} onUnlocked={handleUnlocked} />
-            <EvidenceDialog
-              matchId={evidenceCandidate?.id ?? null}
-              displayName={evidenceCandidate ? candidateDisplayName(evidenceCandidate) : "Candidate"}
-              unlocked={evidenceCandidate?.unlocked ?? false}
-              onClose={() => setEvidenceId(null)}
-            />
-            <InterviewInviteDialog
-              open={inviteCandidate != null}
-              onOpenChange={(o) => !o && setInviteId(null)}
-              displayName={inviteCandidate ? candidateDisplayName(inviteCandidate) : "Candidate"}
-              requirementTitle={requirement.title}
-              onSubmit={submitInvite}
-            />
-            <MessagesDialog
-              matchId={messagesCandidate?.id ?? null}
-              displayName={messagesCandidate ? candidateDisplayName(messagesCandidate) : "Candidate"}
-              unlocked={messagesCandidate?.unlocked ?? false}
-              suspended={suspended}
-              onClose={() => setMessagesId(null)}
-            />
-          </>
-        )}
-      </section>
+        <aside aria-label="Job summary" className="min-w-0">
+          <JobSideRail
+            requirement={requirement}
+            counts={counts}
+            onSelectTab={(next) => {
+              setTabChoice(next);
+              document.getElementById("candidates-heading")?.scrollIntoView({ block: "start", behavior: "smooth" });
+            }}
+            readOnly={readOnly}
+            suspended={suspended}
+            onStageChange={changeStage}
+          />
+        </aside>
+      </div>
     </div>
   );
 }

@@ -3,11 +3,11 @@
 
 import type { Sort } from "@/components/SortableHead";
 import type { Candidate } from "@/employer/mockData";
+import { inTab, type CandidateTab } from "@/employer/_jobDetailHelpers";
 import { candidateDisplayName } from "./requirementFormat";
 
 export type ContactFilter = "all" | "locked" | "unlocked";
-export type PipelineFilter = "all" | "interviewing" | "hired";
-export type SortColumn = "name" | "match" | "sessions" | "pipeline";
+export type SortColumn = "name" | "match" | "experience" | "pipeline";
 
 export const CONTACT_FILTER_OPTIONS: Array<{ value: ContactFilter; label: string }> = [
   { value: "all", label: "All candidates" },
@@ -19,9 +19,9 @@ export const DEFAULT_SORT: Sort<SortColumn> = { column: "match", direction: "des
 
 export const COLUMN_LABEL: Record<SortColumn, string> = {
   name: "Candidate",
-  match: "Match",
-  sessions: "Practice history",
-  pipeline: "Pipeline",
+  match: "Role match",
+  experience: "Experience",
+  pipeline: "Stage",
 };
 
 /* Funnel order, not alphabetical: "hired" sorts ahead of "interviewing" ahead
@@ -43,8 +43,8 @@ export function compareCandidates(a: Candidate, b: Candidate, sort: Sort<SortCol
       return dir * candidateDisplayName(a).localeCompare(candidateDisplayName(b));
     case "match":
       return dir * (a.matchScore - b.matchScore);
-    case "sessions":
-      return dir * (a.sessionsCompleted - b.sessionsCompleted);
+    case "experience":
+      return dir * ((a.resume?.yearsExperience ?? -1) - (b.resume?.yearsExperience ?? -1));
     case "pipeline":
       return dir * (PIPELINE_RANK[a.candidateStatus] - PIPELINE_RANK[b.candidateStatus]);
   }
@@ -54,7 +54,7 @@ export interface CandidateFilterState {
   search: string;
   contact: ContactFilter;
   location: string;
-  pipeline: PipelineFilter;
+  tab: CandidateTab;
 }
 
 export function filterCandidates(candidates: Candidate[], state: CandidateFilterState): Candidate[] {
@@ -63,8 +63,7 @@ export function filterCandidates(candidates: Candidate[], state: CandidateFilter
     if (state.contact === "locked" && c.unlocked) return false;
     if (state.contact === "unlocked" && !c.unlocked) return false;
     if (state.location !== "all" && c.city !== state.location) return false;
-    if (state.pipeline === "interviewing" && c.candidateStatus !== "interview_invited" && c.candidateStatus !== "interviewing") return false;
-    if (state.pipeline === "hired" && c.candidateStatus !== "hired") return false;
+    if (!inTab(c, state.tab)) return false;
     if (!q) return true;
     /* Locked candidates are searchable by role/skills but never by a name the
        employer isn't entitled to see. */

@@ -1,55 +1,34 @@
 "use client";
 
-import { InfoIcon } from "lucide-react";
-import { tokens as t, fonts as f, textSize } from "@/auth/_tokens";
 import { SortableHead, type Sort } from "@/components/SortableHead";
 import { TablePaginationFooter } from "@/components/TablePaginationFooter";
 import { Table, TableBody, TableCaption, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Card } from "@/employer/_atoms";
+import { InfoTip } from "@/employer/_panelParts";
 import type { Candidate } from "@/employer/mockData";
 import CandidateRow from "./CandidateRow";
-import { CAND_TABLE_CSS, HEADER_CELL_STYLE } from "./candidateTableStyles";
+import { CAND_TABLE_CSS } from "./candidateTableStyles";
 import { COLUMN_LABEL, type SortColumn } from "./candidateTableModel";
-
-/** Focusable info trigger: a real button so keyboard and touch users get the
-    same explanation as hover users. */
-function HeadInfo({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <button
-          type="button"
-          className="rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 pointer-coarse:p-3"
-          style={{ display: "inline-flex", alignItems: "center", color: t.inkFaint, background: "transparent", border: "none", cursor: "pointer", padding: 8, margin: -6, outlineColor: t.indigo }}
-        >
-          <InfoIcon size={12} aria-hidden="true" />
-          <span className="sr-only">{label}</span>
-        </button>
-      </TooltipTrigger>
-      <TooltipContent side="bottom" className="max-w-64">
-        {children}
-      </TooltipContent>
-    </Tooltip>
-  );
-}
 
 /* Below 768px the column headers are hidden, so sorting moves to this select. */
 const MOBILE_SORTS: Array<{ value: string; label: string; sort: Sort<SortColumn> }> = [
   { value: "match-desc", label: "Best match first", sort: { column: "match", direction: "desc" } },
   { value: "match-asc", label: "Lowest match first", sort: { column: "match", direction: "asc" } },
   { value: "name-asc", label: "Candidate A to Z", sort: { column: "name", direction: "asc" } },
-  { value: "sessions-desc", label: "Most practice sessions", sort: { column: "sessions", direction: "desc" } },
-  { value: "pipeline-asc", label: "Pipeline: earliest stage", sort: { column: "pipeline", direction: "asc" } },
+  { value: "experience-desc", label: "Most experience", sort: { column: "experience", direction: "desc" } },
+  { value: "pipeline-asc", label: "Stage: earliest first", sort: { column: "pipeline", direction: "asc" } },
 ];
+
+const PLAIN_HEAD = "h-10 px-3 text-[13px] font-semibold text-hx-ink-soft";
 
 export default function CandidatesTable({
   rows,
   requirementId,
+  requiredSkills,
   readOnly,
   suspended,
   selectedIds,
   onToggleSelected,
+  onToggleAll,
   sort,
   onSortChange,
   onUnlock,
@@ -66,10 +45,12 @@ export default function CandidatesTable({
 }: {
   rows: Candidate[];
   requirementId: string;
+  requiredSkills: string[];
   readOnly: boolean;
   suspended: boolean;
   selectedIds: Set<string>;
   onToggleSelected: (id: string) => void;
+  onToggleAll: (ids: string[], select: boolean) => void;
   sort: Sort<SortColumn>;
   onSortChange: (s: Sort<SortColumn>) => void;
   onUnlock: (c: Candidate) => void;
@@ -86,11 +67,14 @@ export default function CandidatesTable({
 }) {
   const mobileValue = `${sort.column}-${sort.direction}`;
   const mobileKnown = MOBILE_SORTS.some((s) => s.value === mobileValue);
+  const selectedOnPage = rows.filter((r) => selectedIds.has(r.id)).length;
+  const allSelected = rows.length > 0 && selectedOnPage === rows.length;
+  const someSelected = selectedOnPage > 0 && !allSelected;
 
   return (
     <>
-      <div className="md:hidden" style={{ marginBottom: 12 }}>
-        <label htmlFor="cand-mobile-sort" style={{ display: "block", fontFamily: f.sans, fontSize: textSize.base, color: t.inkFaint, marginBottom: 4 }}>
+      <div className="mb-3 md:hidden">
+        <label htmlFor="cand-mobile-sort" className="mb-1 block text-[13px] text-hx-ink-soft">
           Sort candidates
         </label>
         <select
@@ -100,7 +84,7 @@ export default function CandidatesTable({
             const next = MOBILE_SORTS.find((s) => s.value === e.target.value);
             if (next) onSortChange(next.sort);
           }}
-          style={{ width: "100%", minHeight: 44, padding: "0 12px", borderRadius: 8, border: `1px solid ${t.line}`, background: t.white, color: t.coal, fontFamily: f.sans, fontSize: textSize.md }}
+          className="min-h-11 w-full rounded-lg border border-hx-line bg-white px-3 text-[14px] text-hx-coal"
         >
           {MOBILE_SORTS.map((s) => (
             <option key={s.value} value={s.value}>
@@ -109,61 +93,72 @@ export default function CandidatesTable({
           ))}
         </select>
       </div>
-      <Card pad={0} className="cand-shell" style={{ overflow: "hidden", boxShadow: "none", flex: "0 0 auto", display: "flex", flexDirection: "column" }}>
-        <div className="cand-scroll" style={{ overflowX: "auto", flex: "0 0 auto" }}>
+      <div className="cand-shell flex flex-none flex-col overflow-hidden rounded-xl border border-hx-line bg-white">
+        <div className="cand-scroll flex-none overflow-x-auto">
           <style>{CAND_TABLE_CSS}</style>
-          <Table role="table" className="cand-table" containerClassName="overflow-visible" style={{ minWidth: 950 }}>
+          <Table role="table" className="cand-table min-w-[1120px]" containerClassName="overflow-visible">
             <TableCaption className="sr-only">
               Candidates for this requirement, {filteredCount} shown. Column headers are buttons that sort the table.
             </TableCaption>
             <TableHeader className="cand-thead">
-              <TableRow style={{ background: t.rowTint, height: 40 }}>
+              <TableRow className="h-10 bg-hx-row">
                 {!readOnly && (
-                  <TableHead style={{ width: 32 }}>
-                    <span className="sr-only">Select</span>
+                  <TableHead className="w-10 pr-0 pl-4">
+                    <input
+                      type="checkbox"
+                      aria-label="Select all candidates on this page"
+                      checked={allSelected}
+                      ref={(el) => {
+                        if (el) el.indeterminate = someSelected;
+                      }}
+                      onChange={() => onToggleAll(rows.map((r) => r.id), !allSelected)}
+                      className="size-4 cursor-pointer accent-hx-indigo pointer-coarse:size-5"
+                    />
                   </TableHead>
                 )}
-                <SortableHead column="name" columnLabel={COLUMN_LABEL.name} defaultDirection="asc" width="30%" minWidth={240} sort={sort} onSortChange={onSortChange}>
+                <SortableHead column="name" columnLabel={COLUMN_LABEL.name} defaultDirection="asc" width="24%" minWidth={250} sort={sort} onSortChange={onSortChange}>
                   Candidate
                 </SortableHead>
                 <SortableHead
                   column="match"
                   columnLabel={COLUMN_LABEL.match}
-                  width="7%"
-                  minWidth={80}
+                  width="15%"
+                  minWidth={170}
                   sort={sort}
                   onSortChange={onSortChange}
-                  after={<HeadInfo label="About Match">How well this candidate&apos;s role, skills, and location fit this requirement, out of 100. Candidates with no practice sessions can still score on resume fit alone.</HeadInfo>}
+                  after={<InfoTip label="About Role match">Required skills from this posting that the candidate lists. Sorting uses the overall match score, out of 100, which also weighs role and location fit.</InfoTip>}
                 >
-                  Match
+                  Role match for this job
                 </SortableHead>
-                <SortableHead
-                  column="sessions"
-                  columnLabel={COLUMN_LABEL.sessions}
-                  width="13%"
-                  minWidth={150}
-                  sort={sort}
-                  onSortChange={onSortChange}
-                  after={<HeadInfo label="About Practice history">&quot;Avg score&quot; is this candidate&apos;s average score (0 to 100) across all their completed practice interviews on HireStepX, not specific to this requirement. &quot;Sessions&quot; is how many practice interviews they&apos;ve completed in total.</HeadInfo>}
-                >
-                  Practice history
+                <TableHead className={`${PLAIN_HEAD} w-[14%] min-w-40`}>
+                  <span className="inline-flex items-center gap-0.5">
+                    Key gaps (validate)
+                    <InfoTip label="About Key gaps">Required skills the candidate has not listed. They may still have them, so confirm in the interview.</InfoTip>
+                  </span>
+                </TableHead>
+                <SortableHead column="experience" columnLabel={COLUMN_LABEL.experience} width="9%" minWidth={120} sort={sort} onSortChange={onSortChange}>
+                  Experience
                 </SortableHead>
-                <TableHead style={{ ...HEADER_CELL_STYLE, width: "9%", minWidth: 110 }}>Notice period</TableHead>
-                <TableHead style={{ ...HEADER_CELL_STYLE, width: "10%", minWidth: 120 }}>Current CTC</TableHead>
-                <TableHead style={{ ...HEADER_CELL_STYLE, width: "21%", minWidth: 190 }}>Skills</TableHead>
+                <TableHead className={`${PLAIN_HEAD} w-[11%] min-w-36`}>Availability</TableHead>
+                <TableHead className={`${PLAIN_HEAD} w-[9%] min-w-28`}>
+                  <span className="inline-flex items-center gap-0.5">
+                    Evidence
+                    <InfoTip label="About Evidence">Where the signal comes from: the resume, portfolio or profile links, and HireStepX practice interviews.</InfoTip>
+                  </span>
+                </TableHead>
                 <SortableHead
                   column="pipeline"
                   columnLabel={COLUMN_LABEL.pipeline}
                   defaultDirection="asc"
                   width="10%"
-                  minWidth={140}
+                  minWidth={150}
                   sort={sort}
                   onSortChange={onSortChange}
-                  after={<HeadInfo label="About Pipeline">Where this candidate currently stands in your hiring process for this requirement.</HeadInfo>}
+                  after={<InfoTip label="About Stage">Where this candidate currently stands in your hiring process for this requirement.</InfoTip>}
                 >
-                  Pipeline
+                  Stage
                 </SortableHead>
-                <TableHead style={{ ...HEADER_CELL_STYLE, width: 48 }}>
+                <TableHead className="cand-th-act w-[200px] min-w-[200px]">
                   <span className="sr-only">Actions</span>
                 </TableHead>
               </TableRow>
@@ -174,6 +169,7 @@ export default function CandidatesTable({
                   key={c.id}
                   candidate={c}
                   requirementId={requirementId}
+                  requiredSkills={requiredSkills}
                   readOnly={readOnly}
                   suspended={suspended}
                   selected={selectedIds.has(c.id)}
@@ -198,7 +194,7 @@ export default function CandidatesTable({
           totalPages={totalPages}
           onPageChange={onPageChange}
         />
-      </Card>
+      </div>
     </>
   );
 }
