@@ -36,13 +36,10 @@ import {
   errorsForStep,
   hasAdvancedValues,
   initialDraft,
-  isDraftMeaningful,
   needsDuration,
-  parseStoredDraft,
   validateDraft,
   type FieldKey,
   type FormStep,
-  type StoredDraft,
 } from "./_requirementFormHelpers";
 import { CITY_SUGGESTIONS } from "../../data/city-tiers";
 import { ROLE_SUGGESTIONS } from "@/onboardingData";
@@ -109,8 +106,6 @@ const advancedBody: CSSProperties = { display: "flex", flexDirection: "column", 
 const checkboxCell: CSSProperties = { display: "flex", alignItems: "flex-end", paddingBottom: 8 };
 const noteText: CSSProperties = { fontFamily: f.sans, fontSize: textSize.sm, color: t.inkFaint, margin: 0 };
 const requiredStar: CSSProperties = { color: t.indigo };
-const bannerBox: CSSProperties = { display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12, padding: "12px 16px", borderRadius: 12, background: t.info100, border: `1px solid ${t.line}`, fontFamily: f.sans, fontSize: textSize.base, color: t.coal };
-const bannerText: CSSProperties = { flex: "1 1 240px" };
 const errorText: CSSProperties = { fontFamily: f.sans, fontSize: textSize.base, color: t.errorInk, margin: 0 };
 const cardStyle: CSSProperties = { background: t.white, borderRadius: 12, border: `1px solid ${t.line}`, overflow: "clip" };
 const actionRow: CSSProperties = { display: "flex", alignItems: "center", gap: 12, flexShrink: 0 };
@@ -146,8 +141,6 @@ export function RequirementForm({
   const [attempted, setAttempted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(() => hasAdvancedValues(initialDraft(initial)));
-  const [offer, setOffer] = useState<StoredDraft | null>(null);
-  const [savedAt, setSavedAt] = useState<number | null>(null);
 
   const submittedRef = useRef(false);
   const importedRef = useRef<Record<string, string>>({});
@@ -223,39 +216,16 @@ export function RequirementForm({
     }
   }, [step]);
 
-  /* ── Draft autosave (create only) ── */
+  /* ── Retire the old local draft autosave ── */
 
   useEffect(() => {
     if (!isCreate) return;
     try {
-      const stored = parseStoredDraft(window.localStorage.getItem(DRAFT_STORAGE_KEY));
-      if (stored && isDraftMeaningful(stored.draft)) setOffer(stored);
-    } catch {
-      // storage can be blocked; the form works without drafts
-    }
-  }, [isCreate]);
-
-  useEffect(() => {
-    if (!isCreate || !dirty || offer || submittedRef.current) return;
-    const id = window.setTimeout(() => {
-      try {
-        const at = Date.now();
-        window.localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify({ savedAt: at, draft }));
-        setSavedAt(at);
-      } catch {
-        // quota or blocked storage: drafts are best effort
-      }
-    }, 800);
-    return () => window.clearTimeout(id);
-  }, [draft, dirty, offer, isCreate]);
-
-  const clearStoredDraft = () => {
-    try {
       window.localStorage.removeItem(DRAFT_STORAGE_KEY);
     } catch {
-      // nothing to clear
+      // storage can be blocked; nothing to clear
     }
-  };
+  }, [isCreate]);
 
   // Browsers show their own generic prompt; the text is ignored but the
   // preventDefault is what triggers it.
@@ -315,7 +285,6 @@ export function RequirementForm({
     }));
     if (ok) {
       submittedRef.current = true;
-      clearStoredDraft();
       if (Object.keys(importedRef.current).length > 0) captureClientEvent("jd_import_outcome", outcomeCounts(importedRef.current, draft));
     } else {
       setSubmitting(false);
@@ -577,16 +546,6 @@ export function RequirementForm({
     </p>
   );
 
-  const draftBanner = offer && (
-    <div role="status" style={bannerBox}>
-      <span style={bannerText}>
-        You have an unfinished requirement{offer.draft.title.trim() ? ` ("${offer.draft.title.trim()}")` : ""} saved on this device.
-      </span>
-      <OutlineCta size="sm" onClick={() => { setDraft(offer.draft); setDirty(true); setOffer(null); }}>Restore draft</OutlineCta>
-      <OutlineCta size="sm" onClick={() => { clearStoredDraft(); setOffer(null); }}>Start fresh</OutlineCta>
-    </div>
-  );
-
   const bodyPadding: CSSProperties = { padding: "24px clamp(16px, 5vw, 104px)", display: "flex", flexDirection: "column", gap: 26 };
   const section = (title: string | undefined, children: ReactNode) => <FormSection title={title}>{children}</FormSection>;
   const submitErrorEl = submitError && (
@@ -643,7 +602,6 @@ export function RequirementForm({
           </div>
         </div>
         <div style={bodyPadding}>
-          {draftBanner}
           <ErrorSummary errors={attempted ? errors : {}} scope={step} onJump={focusField} />
           {step === 1 ? (
             <div style={stackedSections}>
@@ -655,11 +613,6 @@ export function RequirementForm({
             section(undefined, targeting)
           )}
           {submitErrorEl}
-          {savedAt && (
-            <p style={noteText}>
-              Draft saved on this device. You can close this page and come back.
-            </p>
-          )}
         </div>
       </div>
     </form>

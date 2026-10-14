@@ -9,10 +9,8 @@ import {
   errorsForStep,
   hasAdvancedValues,
   initialDraft,
-  isDraftMeaningful,
   needsDuration,
   normalizeNoticePeriod,
-  parseStoredDraft,
   presetIsActive,
   validateDraft,
 } from "../employer/_requirementFormHelpers";
@@ -178,33 +176,5 @@ describe("hasAdvancedValues", () => {
     expect(hasAdvancedValues(valid({ preferredIndustry: "Fintech" }))).toBe(true);
     expect(hasAdvancedValues(valid({ portfolioRequired: true }))).toBe(true);
     expect(hasAdvancedValues(valid({ customSkillSets: ["Bespoke"] }))).toBe(true);
-  });
-});
-
-describe("stored drafts", () => {
-  it("round trips a draft", () => {
-    const draft = valid({ title: "Designer" });
-    const parsed = parseStoredDraft(JSON.stringify({ savedAt: 5, draft }));
-    expect(parsed?.savedAt).toBe(5);
-    expect(parsed?.draft.title).toBe("Designer");
-  });
-
-  it("fills fields missing from an older draft", () => {
-    const parsed = parseStoredDraft(JSON.stringify({ savedAt: 1, draft: { title: "Old" } }));
-    expect(parsed?.draft.skills).toEqual([]);
-    expect(parsed?.draft.openPositions).toBe("1");
-  });
-
-  it("rejects corrupt input", () => {
-    expect(parseStoredDraft(null)).toBeNull();
-    expect(parseStoredDraft("not json")).toBeNull();
-    expect(parseStoredDraft("42")).toBeNull();
-    expect(parseStoredDraft(JSON.stringify({ draft: {} }))).toBeNull();
-  });
-
-  it("only offers a draft the user actually typed into", () => {
-    expect(isDraftMeaningful(initialDraft())).toBe(false);
-    expect(isDraftMeaningful(valid({ title: "x" }))).toBe(true);
-    expect(isDraftMeaningful({ ...initialDraft(), skills: ["React"] })).toBe(true);
   });
 });

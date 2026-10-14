@@ -121,44 +121,23 @@ describe("RequirementForm (create)", () => {
     expect(payload.hoursPerWeek).toBeNull();
   });
 
-  it("clears the stored draft after a successful submit", async () => {
+  it("does not offer a saved draft and clears any old one", async () => {
+    localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify({ savedAt: 1, draft: { ...initialDraft(), title: "Old" } }));
     setup();
-    await fillStepOne();
-    await waitFor(() => expect(localStorage.getItem(DRAFT_STORAGE_KEY)).not.toBeNull(), { timeout: 3000 });
-    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
-    fireEvent.click(await screen.findByRole("button", { name: "Post job" }));
     await waitFor(() => expect(localStorage.getItem(DRAFT_STORAGE_KEY)).toBeNull());
-  });
-
-  it("offers a saved draft back and restores it", async () => {
-    const draft = { ...initialDraft(), title: "Saved Role", locations: ["Delhi"] };
-    localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify({ savedAt: Date.now(), draft }));
-    setup();
-    expect(await screen.findByText(/unfinished requirement/i)).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Restore draft" }));
-    expect(screen.getByLabelText(/job title/i)).toHaveValue("Saved Role");
     expect(screen.queryByText(/unfinished requirement/i)).toBeNull();
+    expect(screen.queryByRole("button", { name: "Restore draft" })).toBeNull();
+    expect(screen.getByLabelText(/job title/i)).toHaveValue("");
   });
 
-  it("does not overwrite a pending draft before the user decides", async () => {
-    const draft = { ...initialDraft(), title: "Saved Role" };
-    const raw = JSON.stringify({ savedAt: 1, draft });
-    localStorage.setItem(DRAFT_STORAGE_KEY, raw);
+  it("does not store a draft while the employer types", async () => {
     setup();
-    await screen.findByText(/unfinished requirement/i);
-    type(/job title/i, "Something else");
+    type(/job title/i, "Something");
     await act(async () => {
       await new Promise((r) => setTimeout(r, 1000));
     });
-    expect(localStorage.getItem(DRAFT_STORAGE_KEY)).toBe(raw);
-  });
-
-  it("discards the saved draft on Start fresh", async () => {
-    localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify({ savedAt: 1, draft: { ...initialDraft(), title: "Old" } }));
-    setup();
-    fireEvent.click(await screen.findByRole("button", { name: "Start fresh" }));
     expect(localStorage.getItem(DRAFT_STORAGE_KEY)).toBeNull();
-    expect(screen.getByLabelText(/job title/i)).toHaveValue("");
+    expect(screen.queryByText(/draft saved/i)).toBeNull();
   });
 });
 

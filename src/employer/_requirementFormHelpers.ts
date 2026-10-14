@@ -228,32 +228,6 @@ const LEGACY_NOTICE: Record<string, string> = {
 };
 export const normalizeNoticePeriod = (v: string): string => LEGACY_NOTICE[v] ?? v;
 
-/* ── Local draft storage (create mode) ── */
+/* ── Retired local draft storage key (cleared on load) ── */
 
 export const DRAFT_STORAGE_KEY = "hsx-employer-requirement-draft-v1";
-
-export interface StoredDraft {
-  savedAt: number;
-  draft: RequirementDraft;
-}
-
-export function parseStoredDraft(raw: string | null): StoredDraft | null {
-  if (!raw) return null;
-  try {
-    const parsed: unknown = JSON.parse(raw);
-    if (!parsed || typeof parsed !== "object") return null;
-    const { savedAt, draft } = parsed as { savedAt?: unknown; draft?: unknown };
-    if (typeof savedAt !== "number" || !draft || typeof draft !== "object") return null;
-    // Merge over a blank draft so a draft saved by an older build never
-    // leaves a field undefined.
-    const merged = { ...initialDraft(), ...(draft as Partial<RequirementDraft>) };
-    return { savedAt, draft: merged };
-  } catch {
-    return null;
-  }
-}
-
-/** A draft is worth offering back only when the user actually typed something. */
-export function isDraftMeaningful(d: RequirementDraft): boolean {
-  return Boolean(d.title.trim() || d.description.trim() || d.locations.length || d.skills.length);
-}
