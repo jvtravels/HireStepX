@@ -251,9 +251,9 @@ export default function CandidateRow({
                   {evidence.resume && (
                     <button
                       type="button"
-                      onClick={() => void openResume()}
+                      onClick={() => (candidate.hasResumeFile ? void openResume() : router.push(profileHref))}
                       disabled={resumeBusy}
-                      aria-label={`Download ${name}'s resume`}
+                      aria-label={candidate.hasResumeFile ? `Download ${name}'s resume` : `View ${name}'s resume on their profile`}
                       className="cursor-pointer border-0 bg-transparent p-0 text-[12px] text-hx-indigo underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hx-indigo disabled:cursor-wait disabled:opacity-60 pointer-coarse:min-h-11"
                     >
                       Resume

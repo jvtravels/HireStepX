@@ -61,6 +61,7 @@ export interface Candidate {
   contact?: { email: string; phone?: string };
   resume?: CandidateResumeDetail;
   portfolioLinks?: Array<{ title: string; url: string }>;
+  hasResumeFile?: boolean;
   candidateStatus: CandidateStatus;
   candidateStatusNote: string | null;
   interviewScheduledAt: string | null;

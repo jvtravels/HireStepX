@@ -19,6 +19,7 @@ import {
   fallbackToProfile,
 } from "./resumeParser";
 import { type ResumeProfile, analyzeResumeWithAI } from "./dashboardData";
+import { archiveResumeFile } from "./resumeArchive";
 
 export type ResumePhase = "idle" | "extracting" | "analyzing" | "done" | "error";
 
@@ -197,6 +198,7 @@ export function useResumeUpload(): ResumeUploadState {
     }
 
     if (result?.profile) {
+      void archiveResumeFile(file, result.resumeVersionId);
       setProfile(result.profile);
       setAnalysisSource("ai");
       setTruncated(!!result.truncated);

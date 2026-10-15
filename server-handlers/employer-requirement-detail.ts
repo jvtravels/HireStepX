@@ -243,6 +243,21 @@ export default async function handler(req: Request): Promise<Response> {
       for (const r of graded) sessionCounts.set(r.user_id, (sessionCounts.get(r.user_id) || 0) + 1);
     }
 
+    /* Which unlocked candidates have an original resume file on record, so the
+       table only offers a download that will work. Best-effort: on a failed read
+       the flag stays false and the row links to the profile instead. */
+    const withResumeFile = new Set<string>();
+    const unlockedIds = pageMatches.filter((m) => m.unlocked).map((m) => m.candidate_user_id);
+    for (const batch of chunk(unlockedIds, 100)) {
+      const filesRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/resume_versions?select=resumes!inner(user_id)&resumes.user_id=in.(${inList(batch)})&file_path=not.is.null&limit=1000`,
+        { headers: serviceHeaders() },
+      ).catch(() => null);
+      if (!filesRes || !filesRes.ok) continue;
+      const fileRows = (await filesRes.json().catch(() => [])) as Array<{ resumes?: { user_id?: string } | null }>;
+      for (const r of fileRows) if (r.resumes?.user_id) withResumeFile.add(r.resumes.user_id);
+    }
+
     const candidates = pageMatches.map((m) => {
       const profile = profileById.get(m.candidate_user_id);
       const timestamps = Array.isArray(profile?.practice_timestamps) ? profile!.practice_timestamps : [];
@@ -282,6 +297,7 @@ export default async function handler(req: Request): Promise<Response> {
            candidate outside HireStepX without paying to unlock, so it's
            withheld entirely — not just scrubbed — for a locked match. */
         portfolioLinks: unlocked ? extractPortfolioLinks(profile?.portfolio_links) : [],
+        hasResumeFile: unlocked && withResumeFile.has(m.candidate_user_id),
         resume,
         candidateStatus: m.candidate_status,
         candidateStatusNote: m.candidate_status_note,

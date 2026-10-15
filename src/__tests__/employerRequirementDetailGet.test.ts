@@ -40,6 +40,8 @@ interface Sim {
   optedOut?: string[];
   blocksFail?: boolean;
   noResume?: string[];
+  withFile?: string[];
+  filesFail?: boolean;
 }
 
 const NAME = "Priya Sharma";
@@ -69,6 +71,11 @@ function install(sim: Sim) {
     }
     if (url.includes("/rest/v1/employer_blocks?")) return sim.blocksFail ? json([], false) : json((sim.blocks ?? []).map((c) => ({ candidate_user_id: c })));
     if (url.includes("/rest/v1/sessions?")) return json([]);
+    if (url.includes("/rest/v1/resume_versions?")) {
+      if (sim.filesFail) return json([], false);
+      const ids = decodeURIComponent(url.match(/user_id=in\.\(([^)]*)\)/)?.[1] || "").split(",").filter(Boolean);
+      return json(ids.filter((id) => (sim.withFile ?? []).includes(id)).map((id) => ({ resumes: { user_id: id } })));
+    }
     if (url.includes("/rest/v1/profiles?")) {
       const ids = decodeURIComponent(url.match(/id=in\.\(([^)]*)\)/)?.[1] || "").split(",").filter(Boolean);
       if (url.includes("select=id,employer_visibility")) {
@@ -124,6 +131,24 @@ describe("GET employer-requirement-detail — masking", () => {
     expect(c.contact).toMatchObject({ email: EMAIL });
     expect(c.maskedFields).toEqual([]);
     expect(c.candidateWithdrew).toBe(false);
+  });
+});
+
+describe("GET employer-requirement-detail — resume file flag", () => {
+  it("flags only unlocked candidates who have an uploaded original", async () => {
+    install({ matches: [m(1, { unlocked: true }), m(2, { unlocked: true }), m(3)], withFile: ["cand-1", "cand-3"] });
+    const { body } = await get();
+    const byId = Object.fromEntries(body.candidates.map((c) => [c.id, c.hasResumeFile]));
+    expect(byId[m(1).id]).toBe(true);
+    expect(byId[m(2).id]).toBe(false);
+    expect(byId[m(3).id]).toBe(false);
+  });
+
+  it("leaves the flag false when the file lookup fails", async () => {
+    install({ matches: [m(1, { unlocked: true })], withFile: ["cand-1"], filesFail: true });
+    const { status, body } = await get();
+    expect(status).toBe(200);
+    expect(body.candidates[0].hasResumeFile).toBe(false);
   });
 });
 

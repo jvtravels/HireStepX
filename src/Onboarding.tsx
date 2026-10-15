@@ -7,6 +7,7 @@ import { useAuth } from "./AuthContext";
 import type { ParsedResume } from "./resumeParser";
 import type { ResumeProfile } from "./dashboardData";
 import { FREE_SESSION_LIMIT } from "./dashboardData";
+import { archiveResumeFile } from "./resumeArchive";
 import { track } from "@vercel/analytics";
 import { EmailVerificationBanner } from "./onboarding/EmailVerificationBanner";
 import {
@@ -586,6 +587,7 @@ export default function Onboarding() {
           finalProfile = result.profile;
           setAiProfile(finalProfile);
           analyzedVersionId = result.resumeVersionId ?? null;
+          void archiveResumeFile(file, analyzedVersionId);
           aiSuccess = true;
           aiSuccessRef.current = true;
           if (finalProfile.headline && finalProfile.headline !== "Analyzing...") {
