@@ -29,8 +29,8 @@ export function Panel({
 }) {
   return (
     <section aria-labelledby={id} className={cn("min-w-0 rounded-xl border border-hx-line bg-white p-[18px]", className)}>
-      <div className="mb-3.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-        <h2 id={id} className="m-0 flex items-center gap-2 text-[15px] font-semibold text-hx-coal">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+        <h2 id={id} className="m-0 flex items-center gap-2 text-base font-semibold tracking-[-0.01em] text-hx-coal">
           {icon && <span aria-hidden="true" className="inline-flex text-hx-ink-soft">{icon}</span>}
           {title}
         </h2>
@@ -68,14 +68,29 @@ export function PanelButton({ onClick, children, expanded, controls }: { onClick
 }
 
 export function KeyValueList({ children, className }: { children: ReactNode; className?: string }) {
-  return <dl className={cn("m-0 flex flex-col gap-2.5", className)}>{children}</dl>;
+  return <dl className={cn("m-0 flex flex-col gap-3", className)}>{children}</dl>;
 }
 
 export function KeyValueRow({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="flex items-baseline justify-between gap-4 text-[13px]">
-      <dt className="shrink-0 text-hx-ink-soft">{label}</dt>
-      <dd className="m-0 min-w-0 text-right font-medium text-hx-coal [overflow-wrap:anywhere]">{children}</dd>
+    <div className="grid grid-cols-[7.5rem_minmax(0,1fr)] items-baseline gap-x-4 text-[13px]">
+      <dt className="text-[12px] text-hx-ink-soft">{label}</dt>
+      <dd className="m-0 min-w-0 font-medium text-hx-coal [overflow-wrap:anywhere]">{children}</dd>
+    </div>
+  );
+}
+
+/** Value-first facts: the figure leads and the label sits above it, so a row of them scans in one pass. */
+export function StatGrid({ children, className }: { children: ReactNode; className?: string }) {
+  return <dl className={cn("m-0 grid grid-cols-2 gap-x-4 gap-y-4", className)}>{children}</dl>;
+}
+
+export function Stat({ label, hint, children }: { label: string; hint?: ReactNode; children: ReactNode }) {
+  return (
+    <div className="min-w-0">
+      <dt className="text-[12px] text-hx-ink-soft">{label}</dt>
+      <dd className="m-0 mt-0.5 text-[15px] leading-snug font-semibold tabular-nums text-hx-coal [overflow-wrap:anywhere]">{children}</dd>
+      {hint && <p className="m-0 mt-0.5 text-[12px] leading-snug text-hx-ink-soft">{hint}</p>}
     </div>
   );
 }
@@ -104,15 +119,15 @@ export function MetaLine({ parts, className }: { parts: MetaPart[]; className?: 
 export type ChipTone = "danger" | "primary" | "info" | "neutral";
 
 const CHIP_TONE: Record<ChipTone, string> = {
-  danger: "border-hx-error-100 text-hx-error-ink",
-  primary: "border-hx-indigo-100 text-hx-indigo",
-  info: "border-hx-info-100 text-hx-info",
-  neutral: "border-hx-line text-hx-neutral-ink",
+  danger: "bg-hx-error-100 text-hx-error-ink",
+  primary: "bg-hx-indigo-100 text-hx-indigo",
+  info: "bg-hx-info-100 text-hx-info",
+  neutral: "bg-hx-soft text-hx-neutral-ink",
 };
 
 export function SkillChip({ tone = "neutral", children }: { tone?: ChipTone; children: ReactNode }) {
   return (
-    <span className={cn("inline-flex max-w-full items-center rounded-full border bg-white px-2.5 py-1 text-[12px] font-medium [overflow-wrap:anywhere]", CHIP_TONE[tone])}>
+    <span className={cn("inline-flex max-w-full items-center rounded-md px-2 py-1 text-[12px] leading-none font-medium [overflow-wrap:anywhere]", CHIP_TONE[tone])}>
       {children}
     </span>
   );
