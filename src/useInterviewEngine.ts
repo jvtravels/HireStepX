@@ -39,7 +39,6 @@ import { isDuplicateQuestionText } from "./_duplicate-question-guard";
 import { extractNounPhrases, appendToMemory } from "./_noun-phrase-memory";
 import type { NegotiationBandData } from "./interviewAPI";
 import type { DeepgramSTTHandle } from "./deepgramSTT";
-import type { SarvamSTTHandle } from "./sarvamSTT";
 import { getInterviewerName, getInterviewerGender, getPanelMembers, formatTime, getPersonaTrait, getInterviewerRerollCount } from "./InterviewComponents";
 import type { SpeechRecognitionInstance } from "./speechRecognition";
 import { safeUUID } from "./utils";
@@ -724,7 +723,6 @@ export function useInterviewEngine() {
   // Speech recognition
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
   const deepgramRef = useRef<DeepgramSTTHandle | null>(null);
-  const sarvamRef = useRef<SarvamSTTHandle | null>(null);
   // Restored from draft on resume so an in-progress answer (typed but not yet
   // submitted) survives a tab close / network blip / refresh.
   const [currentTranscript, setCurrentTranscript] = useState<string>(() => {
@@ -1144,7 +1142,6 @@ export function useInterviewEngine() {
       recognitionRef.current?.stop();
       /* eslint-disable react-hooks/exhaustive-deps */
       deepgramRef.current?.abort();
-      sarvamRef.current?.abort();
       /* eslint-enable react-hooks/exhaustive-deps */
     };
   }, [aiVoiceEnabled]);
@@ -1198,7 +1195,7 @@ export function useInterviewEngine() {
     toast("Listening — speak when ready", "info");
   }, [phase, toast]);
 
-  // STT fallback chain: Deepgram → Sarvam → Web Speech API + mic stream capture
+  // STT fallback chain: Deepgram → Web Speech API + mic stream capture
   // STT is gated behind awaitingSpeechStart — we pretend phase isn't yet
   // "listening" so the hook doesn't auto-start until the user clicks the
   // "Start speaking" button.
@@ -1207,7 +1204,7 @@ export function useInterviewEngine() {
     toast, textareaRef, interviewEndedRef,
     onLowSttConfidence: (snapshot) => { sttLowConfidenceRef.current = snapshot; },
   }, {
-    recognitionRef, deepgramRef, sarvamRef, noSpeechCountRef, micStreamRef,
+    recognitionRef, deepgramRef, noSpeechCountRef, micStreamRef,
   }, sttRestartTrigger);
 
   /* ── micQuiet poll ───────────────────────────────────────────────

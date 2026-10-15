@@ -61,10 +61,6 @@ function addInterviewPreconnects() {
   const hosts = [
     "https://api.cartesia.ai",   // Cartesia TTS — direct WSS from browser
     "https://api.deepgram.com",  // Deepgram STT — direct WSS from browser
-    // Sarvam STT opens wss://api.sarvam.ai/speech-to-text/ws directly from
-    // the browser (sarvamSTT.ts). Sarvam/Azure TTS go through the same-origin
-    // /api/* proxy, so only the STT host is a direct cross-origin connection.
-    "https://api.sarvam.ai",
   ];
   // Supabase (auth refresh + storage + realtime) is hit directly from the
   // browser on the project origin; preconnect it too. Env-derived, so guard

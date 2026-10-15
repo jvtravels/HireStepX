@@ -1,7 +1,7 @@
 /* Global Sarvam credit guardrail — the startup-program grant is a fixed
  * monthly credit pool (1 credit ≈ ₹1) shared across every user, not a
- * per-user allowance. The per-user daily caps in sarvam-tts.ts and
- * sarvam-token.ts stop one runaway account, but nothing stops a traffic
+ * per-user allowance. The per-user daily cap in sarvam-tts.ts
+ * stops one runaway account, but nothing stops a traffic
  * spike from burning the whole month's grant in a few days. This tracks
  * *estimated* spend (via the same rate estimates the admin cost dashboard
  * uses) against the grant in a single Redis counter and signals callers to
@@ -13,7 +13,7 @@
  * Sarvam API call (TTS cache miss, STT token issuance). */
 
 import { redisIncrByWithExpiry, redisGet } from "./_shared";
-import { ttsInr, sttInr, DEFAULT_COST_RATES } from "./_cost-helpers";
+import { ttsInr, DEFAULT_COST_RATES } from "./_cost-helpers";
 
 declare const process: { env: Record<string, string | undefined> };
 
@@ -43,11 +43,6 @@ async function recordAndCheck(inr: number): Promise<boolean> {
  * (and further) calls should fail over to the non-Sarvam TTS fallback chain. */
 export async function recordTtsSpendAndCheckCap(chars: number): Promise<boolean> {
   return recordAndCheck(ttsInr(chars, DEFAULT_COST_RATES));
-}
-
-/** Record one Sarvam STT session (token issuance ≈ one streaming session). */
-export async function recordSttSpendAndCheckCap(): Promise<boolean> {
-  return recordAndCheck(sttInr(1, DEFAULT_COST_RATES));
 }
 
 /** Read-only snapshot for the admin dashboard. */

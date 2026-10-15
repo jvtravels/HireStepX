@@ -65,8 +65,8 @@ const SARVAM_TTS_ENDPOINT = "https://api.sarvam.ai/text-to-speech";
  * traffic spike on free users can never run up a Sarvam bill.
  *   - FUNDED_VOICE_FREE_TIER=1  → let free users use paid Sarvam TTS too.
  *     Separate from VOICE_FREE_TIER (which also covers Cartesia/Azure, which
- *     we don't have a prepaid credit grant for) — see sarvam-token.ts and
- *     stt-token.ts for the other providers this flag currently covers.
+ *     we don't have a prepaid credit grant for) — see stt-token.ts
+ *     for the other provider this flag currently covers.
  *   - SARVAM_TTS_FREE_DISABLED=1 → legacy hard kill switch (still honoured).
  * Either guard active ⇒ free tier is pushed to the browser fallback. */
 const VOICE_FREE_TIER = process.env.FUNDED_VOICE_FREE_TIER === "1";

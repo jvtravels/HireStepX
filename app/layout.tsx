@@ -174,7 +174,6 @@ export default function RootLayout({
             latency when the user eventually starts a session without burning a
             TCP+TLS handshake on every page that never reaches the interview. */}
         <link rel="dns-prefetch" href="https://api.groq.com" />
-        <link rel="dns-prefetch" href="https://api.sarvam.ai" />
         <link rel="dns-prefetch" href="https://images.unsplash.com" />
         <link rel="dns-prefetch" href="https://us.i.posthog.com" />
       </head>

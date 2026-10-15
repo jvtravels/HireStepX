@@ -93,7 +93,6 @@ All of these fail safe if left unset — set only the ones you want. **Vercel Da
 | Variable | Value | Effect |
 | --- | --- | --- |
 | `DEEPGRAM_PROJECT_ID` | your Deepgram project id | Enables secure scoped STT voice tokens (else STT returns 503) |
-| `SARVAM_ALLOW_CLIENT_KEY` | `true` | Re-enables Sarvam client-side STT fallback |
 | `QUOTA_FAIL_CLOSED` | `1` | **Recommended on.** Strict LLM-cost mode: deny LLM calls when Redis is unavailable (else a Redis blip lets a user run up unbounded LLM cost) |
 | `SESSION_LIMIT_FAIL_CLOSED` | `1` | **Recommended on.** Deny new sessions when Supabase is unreachable (else a transient blip lets users exceed plan limits) |
 

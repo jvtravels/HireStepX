@@ -10,7 +10,6 @@ vi.mock("../../server-handlers/_shared", () => ({
 
 import {
   recordTtsSpendAndCheckCap,
-  recordSttSpendAndCheckCap,
   getSarvamMonthlySpend,
 } from "../../server-handlers/_sarvam-credit-guard";
 
@@ -33,13 +32,6 @@ describe("recordTtsSpendAndCheckCap", () => {
   it("fails open (no cap trip) on a Redis outage", async () => {
     redisIncrByWithExpiry.mockResolvedValue(null);
     expect(await recordTtsSpendAndCheckCap(1000)).toBe(false);
-  });
-});
-
-describe("recordSttSpendAndCheckCap", () => {
-  it("records one STT session's spend", async () => {
-    redisIncrByWithExpiry.mockResolvedValue(50);
-    expect(await recordSttSpendAndCheckCap()).toBe(false);
   });
 });
 
