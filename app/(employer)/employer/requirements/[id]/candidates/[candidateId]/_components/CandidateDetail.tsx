@@ -62,8 +62,8 @@ export default function CandidateDetail({ requirementId, matchId }: { requiremen
   }
 
   const evidenceState = { evidence: d.evidence, loading: d.evidenceLoading, failed: d.evidenceFailed, onRetry: d.reloadEvidence };
-  const matched = matchedSkillCount(requirement.skills, candidate.skills);
-  const unmatched = requirement.skills.filter((s) => !matched.some((m) => m.toLowerCase() === s.toLowerCase()));
+  const matched = matchedSkillCount(requirement.skills, candidate);
+  const unmatched = requirement.skills.filter((s) => !matched.includes(s));
   const resumeFileName = candidate.unlocked ? (d.evidence?.resumeFile?.fileName ?? null) : null;
   const openUnlock = () => {
     d.clearNotice();

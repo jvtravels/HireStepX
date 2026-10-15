@@ -7,6 +7,7 @@
  * only `name` and `score` are surfaced to the employer console, since
  * `weight` is an internal scoring detail with no display meaning here. */
 
+import { scrubFreeText } from "./_employer-matching-helpers";
 import { computeEvidenceCapabilities, type EvidenceCapability } from "../src/evidenceCapabilities";
 export type { EvidenceCapability } from "../src/evidenceCapabilities";
 
@@ -381,4 +382,23 @@ export function extractDeliveryMetrics(reportJson: unknown): DeliveryMetrics | n
     responseSec: latency != null ? round1(latency / 1000) : null,
     hedgesPerMin: hedges != null ? round1(hedges) : null,
   };
+}
+
+export interface LockedQuestionContext {
+  name: string;
+  companies: string[];
+  schools: string[];
+}
+
+/** Follow-up questions are generated from the resume, so they can name the
+ *  candidate's employer or school. While locked, swap those for neutral
+ *  wording ("At your company, ...") so the question still reads naturally. */
+export function scrubLockedQuestions<T extends { question: string }>(questions: T[], ctx: LockedQuestionContext): T[] {
+  const nameParts = ctx.name.trim().split(/\s+/).filter((p) => p.length > 1);
+  const scrub = (text: string): string => {
+    let out = scrubFreeText(scrubFreeText(text, ctx.schools, "your school"), ctx.companies, "your company");
+    for (const part of nameParts) out = out.replace(new RegExp(`\\b${part.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b[,]?\\s*`, "gi"), "");
+    return out.trim();
+  };
+  return questions.map((q) => ({ ...q, question: scrub(q.question) }));
 }

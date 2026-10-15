@@ -266,7 +266,7 @@ export default async function handler(req: Request): Promise<Response> {
       const resumeDetail = extractResumeDetail(profile?.resume_data);
       const matchBreakdown = explainMatch(
         { target_role: profile?.target_role ?? null, resume_data: profile?.resume_data ?? null },
-        { title: requirement.title, location: requirement.location, description: requirement.description || "" },
+        { title: requirement.title, location: requirement.location, description: requirement.description || "", skills: requirement.skills ?? [] },
       );
 
       const unlocked = m.unlocked;

@@ -30,6 +30,7 @@ import {
   extractStarCompleteness,
   extractSessionTrend,
   extractQuestionBreakdown,
+  scrubLockedQuestions,
   extractDeliveryMetrics,
   latestSessionByUser,
   computeVerifiedCapabilitiesForCandidate,
@@ -37,6 +38,7 @@ import {
   type SessionRow,
 } from "./_employer-candidate-evidence-helpers";
 import { notify } from "./_notify";
+import { extractResumeDetail } from "./_resume-detail-helpers";
 import { emailShell, title as emailTitle, para, button, escapeHtml } from "./_email-theme";
 import { isSuppressed, marketingEmailParts, preferenceDepsFromEnv } from "./_unsubscribe";
 import { loadEmployerMatchAccess, loadAuthIdentity, DENIED_STATUS } from "./_entitlements";
@@ -50,6 +52,25 @@ const APP_URL = (process.env.APP_URL || "https://hirestepx.vercel.app").replace(
 
 function serviceHeaders(): Record<string, string> {
   return { apikey: SUPABASE_SERVICE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_KEY}` };
+}
+
+/** Question wording is generated from the resume, so while locked it is scrubbed of the
+ *  candidate's employers, schools and name. A failed profile read hides the text rather than risk a leak. */
+async function loadQuestions(reportJson: unknown, unlocked: boolean, candidateUserId: string) {
+  const questions = extractQuestionBreakdown(reportJson, unlocked);
+  if (unlocked || questions.length === 0) return questions;
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(candidateUserId)}&select=name,resume_data`,
+    { headers: serviceHeaders(), signal: AbortSignal.timeout(5000) },
+  ).catch(() => null);
+  if (!res || !res.ok) return [];
+  const rows = (await res.json().catch(() => [])) as Array<{ name: string | null; resume_data: unknown }>;
+  const detail = extractResumeDetail(rows[0]?.resume_data);
+  return scrubLockedQuestions(questions, {
+    name: rows[0]?.name ?? "",
+    companies: detail.experience.map((e) => e.company),
+    schools: detail.education.map((e) => e.school),
+  });
 }
 
 /** Best-effort "an employer viewed your profile" email — fires alongside the
@@ -212,7 +233,7 @@ export default async function handler(req: Request): Promise<Response> {
         readiness: latest ? extractReadinessForecast(latest.report_json) : null,
         starCompleteness: latest ? extractStarCompleteness(latest.report_json) : null,
         sessionDate: latest?.created_at ?? null,
-        questions: latest ? extractQuestionBreakdown(latest.report_json, unlocked) : [],
+        questions: latest ? await loadQuestions(latest.report_json, unlocked, candidateUserId) : [],
         delivery: latest ? extractDeliveryMetrics(latest.report_json) : null,
         verifiedCapabilities: computeVerifiedCapabilitiesForCandidate(sessionRows, candidateUserId),
       }),

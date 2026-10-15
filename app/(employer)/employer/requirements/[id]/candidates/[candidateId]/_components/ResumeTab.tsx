@@ -4,7 +4,7 @@ import { Item, ItemActions, ItemContent, ItemDescription, ItemGroup, ItemMedia, 
 import type { Candidate } from "@/employer/mockData";
 import { OutlineCta } from "@/employer/_atoms";
 import { Panel } from "@/employer/_panelParts";
-import { ChipList, IconList, MutedText } from "./parts";
+import { BalancedColumns, ChipList, IconList, MutedText } from "./parts";
 import { averageTenureMonths, formatTenure, groupSkillsByDepth, periodMonths, skillChipLabel } from "./helpers";
 
 type EntryRow = { key: string; title: string; sub: string; when?: string; note?: string; extra?: ReactNode };
@@ -17,7 +17,7 @@ function Entries({ rows, label }: { rows: EntryRow[]; label: string }) {
           {i > 0 && <ItemSeparator className="my-0" />}
           <Item role="listitem" size="sm" className="items-start justify-between gap-4 px-0">
             <ItemContent>
-              <ItemTitle className="text-[14px]">{r.title}</ItemTitle>
+              <ItemTitle className="text-[13px]">{r.title}</ItemTitle>
               {r.sub && <ItemDescription className="line-clamp-none text-[13px]">{r.sub}</ItemDescription>}
               {r.extra}
             </ItemContent>
@@ -39,7 +39,6 @@ type Role = NonNullable<Candidate["resume"]>["experience"][number];
 function RoleDetail({ role }: { role: Role }) {
   const meta = [
     role.teamSize ? `Team of ${role.teamSize}` : "",
-    role.partners?.length ? `Works with ${role.partners.join(", ")}` : "",
   ].filter(Boolean);
   const points = [...(role.topProjects ?? []), ...(role.bullets ?? [])];
   if (!role.scope && meta.length === 0 && points.length === 0) return null;
@@ -84,7 +83,7 @@ export function ResumeTab({ candidate, onUnlock }: { candidate: Candidate; onUnl
   const highlights = [...achievements.filter((a) => /\d/.test(a)), ...achievements.filter((a) => !/\d/.test(a))];
   const avg = resume ? averageTenureMonths(resume.experience) : null;
   const progression = (resume?.promotionSignals ?? []).filter((p) => p.trim());
-  const hasStory = !!resume?.careerTrajectory?.trim() || progression.length > 0;
+  const hasStory = progression.length > 0;
 
   return (
     <div className="grid min-w-0 gap-4">
@@ -100,63 +99,85 @@ export function ResumeTab({ candidate, onUnlock }: { candidate: Candidate; onUnl
           </ItemActions>
         </Item>
       )}
-      <div className="grid min-w-0 gap-4 lg:grid-cols-2">
-        <div className="grid min-w-0 content-start gap-4">
-        <Panel id="employment-heading" title="Employment history">
-          {resume?.experience.length ? (
-            <div className="grid gap-3">
-              {avg != null && resume.experience.length > 1 && <p className="m-0 text-[13px] text-hx-ink-soft">{resume.experience.length} roles, about {formatTenure(avg)} each.</p>}
-              <Entries
-                label="Employment history"
-                rows={resume.experience.map((e, i) => {
-                  const months = periodMonths(e.period);
-                  return { key: `${e.company}-${e.period}-${i}`, title: e.title || "Role", sub: e.company, when: e.period, note: months != null ? formatTenure(months) : undefined, extra: <RoleDetail role={e} /> };
-                })}
-              />
-            </div>
-          ) : (
-            <MutedText>No structured employment history extracted from this resume.</MutedText>
-          )}
-        </Panel>
-        {!!resume?.education.length && (
-          <Panel id="education-heading" title="Education">
-            <Entries label="Education" rows={resume.education.map((ed, i) => ({ key: `${ed.school}-${ed.degree}-${i}`, title: ed.degree, sub: ed.school, when: ed.year }))} />
-          </Panel>
-        )}
-        </div>
-        <div className="grid min-w-0 content-start gap-4">
-        {highlights.length > 0 && (
-          <Panel id="highlights-heading" title="Achievements">
-            <IconList label="Achievements" items={highlights} icon={TrendingUpIcon} iconClassName="size-4 text-hx-success" />
-          </Panel>
-        )}
-        {hasStory && (
-          <Panel id="progression-heading" title="Career progression">
-            <div className="grid gap-3">
-              {resume?.careerTrajectory && <p className="m-0 text-[13px] leading-relaxed text-hx-coal">{resume.careerTrajectory}</p>}
-              {progression.length > 0 && <IconList label="Promotions and growth" items={progression} icon={TrendingUpIcon} iconClassName="size-4 text-hx-success" />}
-            </div>
-          </Panel>
-        )}
-        <Panel id="skills-heading" title="Skills">
-          <div className="grid gap-4">
-            <SkillsBlock candidate={candidate} />
-            {!!resume?.industries.length && (
-              <div className="grid gap-2 border-t border-hx-line pt-4">
-                <h3 className="m-0 text-[13px] font-semibold text-hx-coal">Industries</h3>
-                <ChipList label="Industries" items={resume.industries} />
-              </div>
-            )}
-            {!!resume?.certifications.length && (
-              <div className="grid gap-2 border-t border-hx-line pt-4">
-                <h3 className="m-0 text-[13px] font-semibold text-hx-coal">Certifications</h3>
-                <ChipList label="Certifications" items={resume.certifications} />
-              </div>
-            )}
-          </div>
-        </Panel>
-        </div>
-      </div>
+      <BalancedColumns
+        items={[
+          {
+            key: "employment",
+            weight: 2 + (resume?.experience ?? []).reduce((n, e) => n + 2 + (e.topProjects?.length ?? 0) + (e.bullets?.length ?? 0) + (e.scope ? 1 : 0), 0),
+            node: (
+              <Panel id="employment-heading" title="Employment history">
+                {resume?.experience.length ? (
+                  <div className="grid gap-3">
+                    {avg != null && resume.experience.length > 1 && <p className="m-0 text-[13px] text-hx-ink-soft">{resume.experience.length} roles, about {formatTenure(avg)} each.</p>}
+                    <Entries
+                      label="Employment history"
+                      rows={resume.experience.map((e, i) => {
+                        const months = periodMonths(e.period);
+                        return { key: `${e.company}-${e.period}-${i}`, title: e.title || "Role", sub: e.company, when: e.period, note: months != null ? formatTenure(months) : undefined, extra: <RoleDetail role={e} /> };
+                      })}
+                    />
+                  </div>
+                ) : (
+                  <MutedText>No structured employment history extracted from this resume.</MutedText>
+                )}
+              </Panel>
+            ),
+          },
+          !!resume?.education.length && {
+            key: "education",
+            weight: 2 + resume.education.length * 2,
+            node: (
+              <Panel id="education-heading" title="Education">
+                <Entries label="Education" rows={resume.education.map((ed, i) => ({ key: `${ed.school}-${ed.degree}-${i}`, title: ed.degree, sub: ed.school, when: ed.year }))} />
+              </Panel>
+            ),
+          },
+          highlights.length > 0 && {
+            key: "highlights",
+            weight: 2 + highlights.length * 2,
+            node: (
+              <Panel id="highlights-heading" title="Achievements">
+                <IconList label="Achievements" items={highlights} icon={TrendingUpIcon} iconClassName="size-4 text-hx-success" />
+              </Panel>
+            ),
+          },
+          hasStory && {
+            key: "progression",
+            weight: 2 + progression.length * 2 + (resume?.careerTrajectory ? 2 : 0),
+            node: (
+              <Panel id="progression-heading" title="Career progression">
+                <div className="grid gap-3">
+                  {resume?.careerTrajectory && <p className="m-0 text-[13px] leading-relaxed text-hx-coal">{resume.careerTrajectory}</p>}
+                  <IconList label="Promotions and growth" items={progression} icon={TrendingUpIcon} iconClassName="size-4 text-hx-success" />
+                </div>
+              </Panel>
+            ),
+          },
+          {
+            key: "skills",
+            weight: 3 + Math.ceil((resume?.skillsDetailed.length || candidate.skills.length) / 4) + (resume?.industries.length ? 2 : 0) + (resume?.certifications.length ? 2 : 0),
+            node: (
+              <Panel id="skills-heading" title="Skills">
+                <div className="grid gap-4">
+                  <SkillsBlock candidate={candidate} />
+                  {!!resume?.industries.length && (
+                    <div className="grid gap-2 border-t border-hx-line pt-4">
+                      <h3 className="m-0 text-[13px] font-semibold text-hx-coal">Industries</h3>
+                      <ChipList label="Industries" items={resume.industries} />
+                    </div>
+                  )}
+                  {!!resume?.certifications.length && (
+                    <div className="grid gap-2 border-t border-hx-line pt-4">
+                      <h3 className="m-0 text-[13px] font-semibold text-hx-coal">Certifications</h3>
+                      <ChipList label="Certifications" items={resume.certifications} />
+                    </div>
+                  )}
+                </div>
+              </Panel>
+            ),
+          },
+        ]}
+      />
     </div>
   );
 }

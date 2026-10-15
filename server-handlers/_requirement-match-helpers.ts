@@ -4,6 +4,8 @@
    re-ranking (see analyze-jd-match.ts's callLLM precedent) is a possible
    follow-up, not implemented here. */
 
+import { canonicalSkillToken } from "../src/skillNormalize";
+
 export interface CandidatePoolRow {
   id: string;
   name: string;
@@ -168,7 +170,7 @@ const STOPWORDS = new Set([
 
 function tokenize(text: string, opts: { stripStopwords?: boolean } = {}): string[] {
   const words = (text || "").toLowerCase().match(/[a-z0-9+.#]+/g) || [];
-  const stemmed = words.map(stem);
+  const stemmed = words.map((w) => stem(canonicalSkillToken(w)));
   return opts.stripStopwords ? stemmed.filter((w) => !STOPWORDS.has(w)) : stemmed;
 }
 

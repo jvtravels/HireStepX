@@ -1,4 +1,4 @@
-import { Children, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 import { Item, ItemContent, ItemDescription, ItemGroup, ItemMedia } from "@/components/ui/item";
 import { SkillChip, type ChipTone } from "@/employer/_panelParts";
@@ -37,12 +37,33 @@ export function MutedText({ children }: { children: React.ReactNode }) {
   return <p className="m-0 text-[13px] leading-relaxed text-hx-ink-soft">{children}</p>;
 }
 
-/** Panels flow top to bottom through two balanced columns, so a short panel never leaves a hole beside a tall one. */
-export function Masonry({ children }: { children: ReactNode }) {
+export interface ColumnItem { key: string; weight: number; node: ReactNode }
+
+/** Splits panels into two columns of roughly equal height (weight is an estimate of rows), keeping
+ *  source order inside each column. Stacks into a single column on small screens. */
+export function BalancedColumns({ items }: { items: Array<ColumnItem | false | null | undefined> }) {
+  const left: ColumnItem[] = [];
+  const right: ColumnItem[] = [];
+  let lw = 0;
+  let rw = 0;
+  for (const item of items) {
+    if (!item) continue;
+    if (lw <= rw) {
+      left.push(item);
+      lw += item.weight;
+    } else {
+      right.push(item);
+      rw += item.weight;
+    }
+  }
   return (
-    <div className="grid min-w-0 gap-4 lg:block lg:columns-2 lg:gap-4">
-      {Children.toArray(children).map((child, i) => (
-        <div key={i} className="min-w-0 break-inside-avoid empty:hidden lg:mb-4">{child}</div>
+    <div className="grid min-w-0 gap-4 lg:grid-cols-2 lg:items-start">
+      {[left, right].map((col, i) => (
+        <div key={i} className="grid min-w-0 content-start gap-4 empty:hidden">
+          {col.map((c) => (
+            <div key={c.key} className="min-w-0">{c.node}</div>
+          ))}
+        </div>
       ))}
     </div>
   );

@@ -9,7 +9,7 @@ import { readCandidateResponse } from "@/employer/_candidateFields";
 import { MetaLine, type MetaPart } from "@/employer/_panelParts";
 import { PortfolioLinkIcon } from "@/portfolioLinkIcons";
 import { formatPaise, singleUnlockPrice } from "../../../../../../../../server-handlers/_unlock-pricing";
-import { HEADER_ACTION, candidateLinks, initials, maskedName } from "./helpers";
+import { HEADER_ACTION, candidateLinks, formatYears, initials, maskedName } from "./helpers";
 import { RequestContact } from "./RequestContact";
 import { ResumeDownload } from "./ResumeDownload";
 
@@ -77,7 +77,7 @@ export function CandidateHeader({
 
   const meta: MetaPart[] = [];
   if (candidate.targetRole) meta.push({ icon: BriefcaseIcon, text: candidate.targetRole });
-  if (resume?.yearsExperience != null) meta.push({ icon: BriefcaseIcon, text: `${resume.yearsExperience} yrs experience` });
+  if (resume?.yearsExperience != null) meta.push({ icon: BriefcaseIcon, text: `${formatYears(resume.yearsExperience)} experience` });
   if (hasCity) meta.push({ icon: MapPinIcon, text: candidate.city });
   if (candidate.lastActiveDaysAgo >= 0) meta.push({ icon: ClockIcon, text: `Active ${candidate.lastActiveDaysAgo === 0 ? "today" : `${candidate.lastActiveDaysAgo}d ago`}` });
 

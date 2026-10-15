@@ -600,21 +600,31 @@ function escapeRegExp(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+const LEGAL_SUFFIX_RE = /[\s,]+(?:pvt\.?\s*ltd\.?|private\s+limited|limited|ltd\.?|llp|llc|inc\.?|corp\.?)\s*$/i;
+
+/** "Acme Solutions LLP" is routinely written back as "Acme Solutions", so both forms are scrubbed. */
+function withoutLegalSuffix(names: string[]): string[] {
+  return names.flatMap((n) => {
+    const base = n.replace(LEGAL_SUFFIX_RE, "").trim();
+    return base.length >= 3 && base !== n ? [n, base] : [n];
+  });
+}
+
 /** Removes contact patterns and every known employer/institution name from a
  *  free-text field. The candidate's own name is scrubbed by
  *  redactResumeDetailForLock; this covers what that leaves behind ("Led the
  *  payments team at Infosys", "B.Tech, IIT Madras", "reach me at ..."). */
-export function scrubFreeText(text: string, entityNames: string[], placeholder = "[redacted]"): string {
+export function scrubFreeText(text: string, entityNames: string[], placeholder = "[redacted]", contactPlaceholder = "[redacted]"): string {
   let out = text;
-  const names = Array.from(new Set(entityNames.map((n) => n.trim()).filter((n) => n.length >= 2))).sort((a, b) => b.length - a.length);
+  const names = Array.from(new Set(withoutLegalSuffix(entityNames.map((n) => n.trim()).filter((n) => n.length >= 2)))).sort((a, b) => b.length - a.length);
   for (const name of names) {
     out = out.replace(new RegExp(escapeRegExp(name), "gi"), placeholder);
   }
   return out
-    .replace(EMAIL_RE, placeholder)
-    .replace(URL_RE, placeholder)
+    .replace(EMAIL_RE, contactPlaceholder)
+    .replace(URL_RE, contactPlaceholder)
     // 10+ digits only, and never a run of bare years ("2018 - 2021 - 2023").
-    .replace(PHONE_RE, (m) => (m.replace(/\D/g, "").length >= 10 && !YEAR_RUN_RE.test(m) ? placeholder : m));
+    .replace(PHONE_RE, (m) => (m.replace(/\D/g, "").length >= 10 && !YEAR_RUN_RE.test(m) ? contactPlaceholder : m));
 }
 
 export const LOCKED_MASKED_FIELDS = [
@@ -632,11 +642,9 @@ export const LOCKED_MASKED_FIELDS = [
  *  company/school fields are blank, but the same names routinely reappear
  *  inside summary/headline/achievements/certifications text. */
 export function scrubLockedResume(original: ResumeDetail, redacted: ResumeDetail): ResumeDetail {
-  const entities = [
-    ...original.experience.map((e) => e.company),
-    ...original.education.map((e) => e.school),
-  ];
-  const s = (t: string) => scrubFreeText(t, entities);
+  const companies = original.experience.map((e) => e.company);
+  const schools = original.education.map((e) => e.school);
+  const s = (t: string) => scrubFreeText(scrubFreeText(t, schools, "their school"), companies, "their employer");
   return {
     ...redacted,
     summary: s(redacted.summary),

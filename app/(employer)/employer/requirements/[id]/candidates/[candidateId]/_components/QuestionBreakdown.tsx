@@ -6,7 +6,7 @@ import { cn } from "cn";
 import type { EvidenceQuestion } from "@/employer/EmployerDataContext";
 import { Badge, OutlineCta } from "@/employer/_atoms";
 import { InfoTip, Panel } from "@/employer/_panelParts";
-import { DIFFICULTY_LABEL, LENGTH_LABEL, PROVENANCE, VERDICT_LABEL, VERDICT_TONE, summarizeQuestions } from "./helpers";
+import { DIFFICULTY_LABEL, cleanQuestionText, dedupeQuestions, LENGTH_LABEL, PROVENANCE, VERDICT_LABEL, VERDICT_TONE, summarizeQuestions } from "./helpers";
 
 const STAR_LETTERS = [
   { key: "S", name: "Situation" },
@@ -26,7 +26,7 @@ function StarMarks({ star }: { star: NonNullable<EvidenceQuestion["star"]> }) {
           aria-hidden="true"
           title={`${l.name}: ${star[l.key] ? "covered" : "missing"}`}
           className={cn(
-            "inline-flex size-5 items-center justify-center rounded-md border text-[11px] font-semibold",
+            "inline-flex size-5 items-center justify-center rounded-md border text-[12px] font-semibold",
             star[l.key] ? "border-hx-indigo-100 bg-hx-indigo-100 text-hx-indigo" : "border-hx-line text-hx-ink-soft/70",
           )}
         >
@@ -47,11 +47,11 @@ function QuestionRow({ q, n, canExpand }: { q: EvidenceQuestion; n: number; canE
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-start gap-2.5">
           <span aria-hidden="true" className="mt-px w-5 shrink-0 text-[12px] font-semibold text-hx-ink-soft tabular-nums">{n}</span>
-          <p className="m-0 min-w-0 text-[14px] leading-snug font-medium text-hx-coal [overflow-wrap:anywhere]">{q.question}</p>
+          <p className="m-0 min-w-0 text-[13px] leading-snug font-medium text-hx-coal [overflow-wrap:anywhere]">{cleanQuestionText(q.question)}</p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <Badge tone={VERDICT_TONE[q.verdict]}>{VERDICT_LABEL[q.verdict]}</Badge>
-          <span className="w-8 text-right text-[14px] font-semibold text-hx-coal tabular-nums">{q.score}</span>
+          <span className="w-8 text-right text-[13px] font-semibold text-hx-coal tabular-nums">{q.score}</span>
           {hasDetail && <ChevronDownIcon size={16} aria-hidden="true" className={cn("shrink-0 text-hx-ink-soft transition-transform duration-200 ease-out motion-reduce:transition-none", open && "rotate-180")} />}
         </div>
       </div>
@@ -99,7 +99,8 @@ function QuestionRow({ q, n, canExpand }: { q: EvidenceQuestion; n: number; canE
 }
 
 export function QuestionBreakdown({ questions, unlocked, onUnlock }: { questions: EvidenceQuestion[]; unlocked: boolean; onUnlock: () => void }) {
-  const summary = summarizeQuestions(questions);
+  const list = dedupeQuestions(questions);
+  const summary = summarizeQuestions(list);
   return (
     <Panel
       id="questions-heading"
@@ -114,7 +115,7 @@ export function QuestionBreakdown({ questions, unlocked, onUnlock }: { questions
         </p>
       )}
       <ol aria-label="Interview questions" className="m-0 list-none p-0">
-        {questions.map((q, i) => (
+        {list.map((q, i) => (
           <QuestionRow key={`${q.idx}-${i}`} q={q} n={i + 1} canExpand={unlocked} />
         ))}
       </ol>

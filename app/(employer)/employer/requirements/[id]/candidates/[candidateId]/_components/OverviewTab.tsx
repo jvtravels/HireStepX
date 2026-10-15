@@ -6,7 +6,7 @@ import { Badge, OutlineCta } from "@/employer/_atoms";
 import { InfoTip, KeyValueList, KeyValueRow, MeterRow, Panel, PanelButton } from "@/employer/_panelParts";
 import { InlineNotice } from "@/employer/_requirementAtoms";
 import { ChipList, IconList, MutedText } from "./parts";
-import { PROVENANCE, READINESS_LABEL, averageTenureMonths, buildResumeInsights, buildRoleFit, evidenceAverage, formatSessionDate, formatTenure, type FitStatus } from "./helpers";
+import { PROVENANCE, READINESS_LABEL, averageTenureMonths, buildResumeInsights, buildRoleFit, employerCapabilities, evidenceAverage, formatSessionDate, formatTenure, formatYears, type FitStatus } from "./helpers";
 
 export type EvidenceState = { evidence: CandidateEvidence | null; loading: boolean; failed: boolean; onRetry: () => void };
 
@@ -39,7 +39,6 @@ const FIT_BADGE: Record<FitStatus, { tone: "success" | "warning" | "error"; labe
 
 function MatchPanel({ candidate, requirement, matched, unmatched, evidence }: { candidate: Candidate; requirement: Requirement; matched: string[]; unmatched: string[]; evidence: CandidateEvidence | null }) {
   const b = candidate.matchBreakdown;
-  const hasCity = !!candidate.city && candidate.city !== "Not specified";
   const rows = buildRoleFit(candidate, requirement, matched, evidence);
   const meets = rows.filter((r) => r.status === "meets").length;
   return (
@@ -48,8 +47,7 @@ function MatchPanel({ candidate, requirement, matched, unmatched, evidence }: { 
         {b && (
           <div className="grid gap-3.5">
             <MeterRow label="Role match" value={b.roleMatch} />
-            <MeterRow label="Skill match" value={b.skillMatch} />
-            {hasCity && <MeterRow label="Location match" value={b.locationMatch} />}
+            <MeterRow label="Required skills" value={requirement.skills.length > 0 ? Math.round((matched.length / requirement.skills.length) * 100) : b.skillMatch} />
           </div>
         )}
         {rows.length > 0 && (
@@ -104,24 +102,26 @@ function ProfilePanel({ candidate, onOpenResume }: { candidate: Candidate; onOpe
   const avgTenureMonths = averageTenureMonths(r.experience);
   const facts: Array<{ label: string; value: string; selfReported?: boolean }> = [];
   if (latestRole) facts.push({ label: "Latest role", value: latest?.period ? `${latestRole} (${latest.period})` : latestRole });
-  if (r.yearsExperience != null) facts.push({ label: "Experience", value: `${r.yearsExperience} year${r.yearsExperience === 1 ? "" : "s"}${r.seniorityLevel ? `, ${r.seniorityLevel}` : ""}` });
+  if (r.yearsExperience != null) facts.push({ label: "Experience", value: `${formatYears(r.yearsExperience)}${r.seniorityLevel ? `, ${r.seniorityLevel}` : ""}` });
   if (avgTenureMonths != null) facts.push({ label: "Average tenure", value: `${formatTenure(avgTenureMonths)} per role` });
   if (eduText) facts.push({ label: "Education", value: eduText });
   if (r.noticePeriod) facts.push({ label: "Notice period", value: r.noticePeriod, selfReported: true });
   if (r.currentCtc) facts.push({ label: "Current CTC", value: r.currentCtc, selfReported: true });
   const summary = r.summary?.trim();
   if (!summary && !r.headline && facts.length === 0) return null;
+  const hasIntro = !!(r.headline || summary);
   return (
     <Panel id="profile-heading" title="Profile" icon={<UserRoundIcon size={15} />} action={candidate.unlocked ? <PanelButton onClick={onOpenResume}>Full resume</PanelButton> : undefined}>
       <div className="grid gap-4">
+        {!r.headline && !summary && <MutedText>This resume has no written summary. The details below come from the structured fields.</MutedText>}
         {(r.headline || summary) && (
           <div className="grid gap-1.5">
-            {r.headline && <p className="m-0 text-[14px] font-semibold leading-snug text-hx-coal">{r.headline}</p>}
+            {r.headline && <p className="m-0 text-[13px] font-semibold leading-snug text-hx-coal">{r.headline}</p>}
             {summary && <p className="m-0 max-w-[75ch] text-[13px] leading-relaxed whitespace-pre-line text-hx-ink-soft [overflow-wrap:anywhere]">{summary}</p>}
           </div>
         )}
         {facts.length > 0 && (
-          <KeyValueList className={r.headline || summary ? "border-t border-hx-line pt-4" : undefined}>
+          <KeyValueList className={hasIntro ? "border-t border-hx-line pt-4" : undefined}>
             {facts.map((f) => (
               <KeyValueRow key={f.label} label={f.label}>
                 {f.value}
@@ -140,7 +140,7 @@ function PracticeSnapshot({ candidate, state, onOpenPractice }: { candidate: Can
   const { evidence } = state;
   const avg = evidenceAverage(evidence);
   const hasEvidence = !!(evidence?.readiness || evidence?.starCompleteness || evidence?.skills.length || evidence?.questions?.length);
-  const verified = evidence?.verifiedCapabilities ?? [];
+  const verified = employerCapabilities(evidence?.verifiedCapabilities ?? []);
   const verifiedCount = verified.filter((c) => c.verified).length;
   const last = evidence?.sessionDate ? formatSessionDate(evidence.sessionDate) : "";
   const tip = (

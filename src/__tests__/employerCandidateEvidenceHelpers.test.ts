@@ -8,6 +8,7 @@ import {
   isNegotiationSession,
   claimProfileView,
   computeVerifiedCapabilitiesForCandidate,
+  scrubLockedQuestions,
   type SessionRow,
 } from "../../server-handlers/_employer-candidate-evidence-helpers";
 
@@ -290,5 +291,26 @@ describe("extractDeliveryMetrics", () => {
   it("keeps a real zero for fillers but drops an unmeasured response gap", () => {
     const out = extractDeliveryMetrics({ coreMetrics: { paceWpm: 120, fillerPerMin: 0, silenceRatio: 0 }, advancedDelivery: { medianLatencyMs: 0 } });
     expect(out).toMatchObject({ fillersPerMin: 0, pausePct: 0, responseSec: null, hedgesPerMin: null });
+  });
+});
+
+describe("scrubLockedQuestions", () => {
+  const ctx = { name: "Priya Sharma", companies: ["maverickIgnite Solutions LLP"], schools: ["IIT Madras"] };
+
+  it("replaces the employer, its suffix-less form, the school and the name", () => {
+    const out = scrubLockedQuestions(
+      [
+        { question: "At maverickIgnite Solutions LLP, how did you ship the billing rewrite?" },
+        { question: "Priya, what did you take from IIT Madras into maverickIgnite Solutions?" },
+      ],
+      ctx,
+    );
+    expect(out[0].question).toBe("At your company, how did you ship the billing rewrite?");
+    expect(out[1].question).toBe("what did you take from your school into your company?");
+  });
+
+  it("leaves generic questions untouched", () => {
+    const out = scrubLockedQuestions([{ question: "Describe a project you are proud of." }], ctx);
+    expect(out[0].question).toBe("Describe a project you are proud of.");
   });
 });

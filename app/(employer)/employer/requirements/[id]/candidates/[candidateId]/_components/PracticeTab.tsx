@@ -6,14 +6,15 @@ import { readQuotesLocked } from "@/employer/_candidateFields";
 import { Badge } from "@/employer/_atoms";
 import { InfoTip, KeyValueList, KeyValueRow, MeterRow, Panel } from "@/employer/_panelParts";
 import { EmptyNote } from "@/employer/_requirementAtoms";
-import { PROVENANCE, READINESS_LABEL, describeDelivery, formatSessionDate } from "./helpers";
+import { PROVENANCE, READINESS_LABEL, dedupeQuestions, describeDelivery, employerCapabilities, formatSessionDate, summarizeQuestions } from "./helpers";
 import { LockedQuotes } from "./Notices";
-import { Masonry } from "./parts";
+import { BalancedColumns } from "./parts";
 import { QuestionBreakdown } from "./QuestionBreakdown";
 import { EvidenceStatus, type EvidenceState } from "./OverviewTab";
 
 function ReadinessPanel({ evidence, sessions }: { evidence: CandidateEvidence; sessions: number }) {
   const { readiness, starCompleteness: star, sessionDate } = evidence;
+  const answers = summarizeQuestions(dedupeQuestions(evidence.questions ?? []));
   const last = sessionDate ? formatSessionDate(sessionDate) : "";
   return (
     <Panel
@@ -31,11 +32,17 @@ function ReadinessPanel({ evidence, sessions }: { evidence: CandidateEvidence; s
           </KeyValueRow>
         )}
         {star && (
+          <KeyValueRow label="STAR coverage">
+            <span className="tabular-nums">{star.pct}%</span> <span className="font-normal text-hx-ink-soft">of Situation, Task, Action and Result parts</span>
+          </KeyValueRow>
+        )}
+        {answers && answers.starCounted > 0 && (
           <KeyValueRow label="Full STAR answers">
-            <span className="tabular-nums">{star.pct}%</span> <span className="font-normal text-hx-ink-soft">of {star.questionsConsidered} question{star.questionsConsidered === 1 ? "" : "s"}</span>
+            <span className="tabular-nums">{answers.fullStar} of {answers.starCounted}</span> <span className="font-normal text-hx-ink-soft">cover all four</span>
           </KeyValueRow>
         )}
       </KeyValueList>
+      {readiness && <p className="m-0 mt-3.5 text-[12px] text-hx-ink-soft">The forecast looks at the whole latest session. It is not an average of the answer scores above.</p>}
     </Panel>
   );
 }
@@ -132,8 +139,9 @@ export function PracticeTab({
   const trend = evidence?.sessionTrend ?? [];
   const quotes = evidence?.quotes ?? [];
   const questions = evidence?.questions ?? [];
-  const verified = evidence?.verifiedCapabilities ?? [];
+  const verified = employerCapabilities(evidence?.verifiedCapabilities ?? []);
   const sessions = candidate.sessionsCompleted || trend.length;
+  const deliveryRows = describeDelivery(evidence?.delivery).length;
   const hasReadiness = !!(evidence?.readiness || evidence?.starCompleteness);
   const hasAnything = skills.length > 0 || hasReadiness || trend.length > 0 || quotes.length > 0 || questions.length > 0 || !!evidence?.delivery;
 
@@ -149,46 +157,56 @@ export function PracticeTab({
     <EvidenceStatus state={state}>
       <div className="grid min-w-0 gap-4">
         {questions.length > 0 && <QuestionBreakdown questions={questions} unlocked={candidate.unlocked} onUnlock={onUnlock} />}
-        <Masonry>
-          {evidence && hasReadiness && <ReadinessPanel evidence={evidence} sessions={sessions} />}
-          {skills.length > 0 && (
-            <Panel id="skills-heading" title="Skill scores">
-              <p className="m-0 mb-3.5 text-[13px] text-hx-ink-soft">{PROVENANCE}, from the most recent completed session.</p>
-              <div className="grid gap-3.5">
-                {skills.map((s) => (
-                  <MeterRow key={s.name} label={s.name} value={s.score} />
-                ))}
-              </div>
-            </Panel>
-          )}
-          {describeDelivery(evidence?.delivery).length > 0 && <DeliveryPanel delivery={evidence?.delivery} />}
-          {verified.length > 0 && <VerifiedPanel capabilities={verified} />}
-          {trend.length > 0 && <HistoryPanel trend={trend} sessions={sessions} />}
-          {(quotesLocked || quotes.length > 0) && (
-            <Panel id="quotes-heading" title="Standout lines">
-              {quotesLocked ? (
-                <LockedQuotes onUnlock={onUnlock} />
-              ) : (
-                <>
-                  <p className="m-0 mb-2 text-[13px] text-hx-ink-soft">The strongest and weakest moments, quoted from their answers.</p>
-                  <ItemGroup className="gap-0">
-                    {quotes.map((q, i) => (
-                      <Item key={i} role="listitem" size="sm" className="items-start border-0 border-t border-hx-line px-0 first:border-t-0">
-                        <ItemContent>
-                          <ItemTitle className="items-start gap-2 text-[13px]">
-                            <Badge tone={q.kind === "redFlag" ? "error" : "success"}>{q.kind === "redFlag" ? "Flag" : "Win"}</Badge>
-                            <span>{q.text}</span>
-                          </ItemTitle>
-                          <ItemDescription className="line-clamp-none text-[13px] italic">&ldquo;{q.quote}&rdquo;</ItemDescription>
-                        </ItemContent>
-                      </Item>
+        <BalancedColumns
+          items={[
+            !!evidence && hasReadiness && { key: "readiness", weight: 4 + (evidence.starCompleteness ? 1 : 0), node: <ReadinessPanel evidence={evidence} sessions={sessions} /> },
+            skills.length > 0 && {
+              key: "skills",
+              weight: 2 + skills.length * 1.5,
+              node: (
+                <Panel id="skills-heading" title="Skill scores">
+                  <p className="m-0 mb-3.5 text-[13px] text-hx-ink-soft">{PROVENANCE}, from the most recent completed session.</p>
+                  <div className="grid gap-3.5">
+                    {skills.map((s) => (
+                      <MeterRow key={s.name} label={s.name} value={s.score} />
                     ))}
-                  </ItemGroup>
-                </>
-              )}
-            </Panel>
-          )}
-        </Masonry>
+                  </div>
+                </Panel>
+              ),
+            },
+            deliveryRows > 0 && { key: "delivery", weight: 2 + deliveryRows * 1.5, node: <DeliveryPanel delivery={evidence?.delivery} /> },
+            verified.length > 0 && { key: "verified", weight: 2 + verified.length, node: <VerifiedPanel capabilities={verified} /> },
+            trend.length > 0 && { key: "history", weight: 6 + trend.length * 1.5, node: <HistoryPanel trend={trend} sessions={sessions} /> },
+            (quotesLocked || quotes.length > 0) && {
+              key: "quotes",
+              weight: quotesLocked ? 3 : 2 + quotes.length * 3,
+              node: (
+                <Panel id="quotes-heading" title="Standout lines">
+                  {quotesLocked ? (
+                    <LockedQuotes onUnlock={onUnlock} />
+                  ) : (
+                    <>
+                      <p className="m-0 mb-2 text-[13px] text-hx-ink-soft">The strongest and weakest moments, quoted from their answers.</p>
+                      <ItemGroup className="gap-0">
+                        {quotes.map((q, i) => (
+                          <Item key={i} role="listitem" size="sm" className="items-start border-0 border-t border-hx-line px-0 first:border-t-0">
+                            <ItemContent>
+                              <ItemTitle className="items-start gap-2 text-[13px]">
+                                <Badge tone={q.kind === "redFlag" ? "error" : "success"}>{q.kind === "redFlag" ? "Flag" : "Win"}</Badge>
+                                <span>{q.text}</span>
+                              </ItemTitle>
+                              <ItemDescription className="line-clamp-none text-[13px] italic">&ldquo;{q.quote}&rdquo;</ItemDescription>
+                            </ItemContent>
+                          </Item>
+                        ))}
+                      </ItemGroup>
+                    </>
+                  )}
+                </Panel>
+              ),
+            },
+          ]}
+        />
       </div>
     </EvidenceStatus>
   );

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { averageTenureMonths, buildResumeInsights, buildRoleFit, describeDelivery, formatTenure, groupSkillsByDepth, noticeDays, skillChipLabel, summarizeQuestions } from "../../app/(employer)/employer/requirements/[id]/candidates/[candidateId]/_components/helpers";
+import { averageTenureMonths, buildResumeInsights, buildRoleFit, cleanQuestionText, dedupeQuestions, describeDelivery, employerCapabilities, formatTenure, formatYears, matchedSkillCount, groupSkillsByDepth, noticeDays, skillChipLabel, summarizeQuestions } from "../../app/(employer)/employer/requirements/[id]/candidates/[candidateId]/_components/helpers";
 import type { CandidateEvidence, EvidenceQuestion } from "../employer/EmployerDataContext";
 import type { Candidate, Requirement } from "../employer/mockData";
 
@@ -60,10 +60,10 @@ describe("buildRoleFit", () => {
     expect(by).toEqual({ skills: "gap", experience: "gap", location: "gap", notice: "gap" });
   });
 
-  it("treats remote roles as a location match and hides resume rows while locked", () => {
+  it("treats remote roles as a location match and still compares experience while locked", () => {
     const rows = buildRoleFit(candidate({ unlocked: false, city: "Delhi" }), req({ workMode: "remote" }), ["Figma"], null);
-    expect(rows.map((r) => r.id)).toEqual(["skills", "location"]);
-    expect(rows[1].status).toBe("meets");
+    expect(rows.map((r) => r.id)).toEqual(["skills", "experience", "location"]);
+    expect(rows[2].status).toBe("meets");
   });
 
   it("compares readiness and STAR to the posting's floor only when both sides exist", () => {
@@ -150,5 +150,65 @@ describe("skill depth helpers", () => {
       { name: "C", depth: "primary" },
     ]);
     expect(groups.map((g) => [g.label, g.skills.map((s) => s.name)])).toEqual([["Core", ["B", "C"]], ["Exposure", ["A"]]]);
+  });
+});
+
+describe("describeDelivery with too little speech", () => {
+  it("never praises measurements taken from a near-silent sample", () => {
+    const rows = describeDelivery({ paceWpm: 20, fillersPerMin: 0, pausePct: 0, responseSec: 0, hedgesPerMin: 0 });
+    expect(rows.length).toBe(5);
+    expect(rows.every((r) => r.tone === "neutral")).toBe(true);
+  });
+
+  it("treats an exact zero as not measured even at a normal pace", () => {
+    const rows = describeDelivery({ paceWpm: 140, fillersPerMin: 2, pausePct: 5, responseSec: 0, hedgesPerMin: 1 });
+    expect(rows.find((r) => r.id === "response")?.tone).toBe("neutral");
+    expect(rows.find((r) => r.id === "pace")?.tone).toBe("success");
+  });
+});
+
+describe("matchedSkillCount", () => {
+  it("counts React against React.js and reads skillsDetailed and resume text", () => {
+    const c = candidate({ skills: ["React.js"] }, { skillsDetailed: [{ name: "Node.js", depth: "primary" }], summary: "Ships TypeScript services." });
+    expect(matchedSkillCount(["React", "Node", "TypeScript", "Go"], c)).toEqual(["React", "Node", "TypeScript"]);
+  });
+});
+
+describe("buildRoleFit location and copy", () => {
+  const req = { skills: [], workMode: "hybrid", locations: ["Bengaluru"], experienceMin: 2, experienceMax: 5, noticePeriodPref: null, minReadinessBand: null, minStarCompleteness: 60 } as unknown as Requirement;
+
+  it("flags a hybrid role in another city as a gap", () => {
+    expect(buildRoleFit(candidate(), req, [], null).find((r) => r.id === "location")?.status).toBe("gap");
+  });
+
+  it("writes experience in full words", () => {
+    const row = buildRoleFit(candidate({}, { yearsExperience: 1 }), req, [], null).find((r) => r.id === "experience");
+    expect(row?.has).toBe("1 year");
+    expect(row?.asked).toBe("2 to 5 years");
+    expect(formatYears(3)).toBe("3 years");
+  });
+
+  it("labels the average-coverage figure as coverage, not full answers", () => {
+    const evidence = { starCompleteness: { pct: 40, questionsConsidered: 5 } } as unknown as CandidateEvidence;
+    expect(buildRoleFit(candidate(), req, [], evidence).find((r) => r.id === "star")?.label).toBe("STAR coverage");
+  });
+});
+
+describe("dedupeQuestions and employerCapabilities", () => {
+  const q = (question: string) => ({ question, idx: 0, score: 50, verdict: "partial" }) as unknown as EvidenceQuestion;
+
+  it("drops a re-asked near-identical question but keeps distinct ones", () => {
+    const out = dedupeQuestions([q("Tell me about a time you led a team through conflict."), q("Tell me about a time you led a team through a conflict"), q("How do you prioritise a backlog?")]);
+    expect(out.map((x) => x.question)).toEqual(["Tell me about a time you led a team through conflict.", "How do you prioritise a backlog?"]);
+  });
+
+  it("hides candidate-side salary negotiation from the employer's verified list", () => {
+    expect(employerCapabilities([{ key: "communication" }, { key: "salary-negotiation" }])).toEqual([{ key: "communication" }]);
+  });
+});
+
+describe("cleanQuestionText", () => {
+  it("strips interviewer stage directions", () => {
+    expect(cleanQuestionText("Tell me about a build. [pause] What went wrong?")).toBe("Tell me about a build. What went wrong?");
   });
 });

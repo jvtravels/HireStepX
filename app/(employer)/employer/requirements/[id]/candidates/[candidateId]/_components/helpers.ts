@@ -1,5 +1,6 @@
 import type { Candidate, CandidateStatus } from "@/employer/mockData";
 import type { Requirement, CandidateEvidence, EvidenceDelivery, EvidenceQuestion } from "@/employer/EmployerDataContext";
+import { matchRequiredSkills } from "@/skillNormalize";
 
 /* Pure helpers for the candidate detail page. Everything here derives from
    fields the API actually returns — no synthesized or seeded values. */
@@ -21,9 +22,26 @@ export function initials(name: string): string {
   return (parts[0][0] + (parts[1]?.[0] || "")).toUpperCase();
 }
 
-export function matchedSkillCount(requirementSkills: string[], candidateSkills: string[]): string[] {
-  const set = new Set(candidateSkills.map((s) => s.toLowerCase()));
-  return requirementSkills.filter((s) => set.has(s.toLowerCase()));
+/** Every skill name we hold for the candidate, from the flat list and the depth-graded one. */
+export function candidateSkillNames(candidate: Candidate): string[] {
+  return [...candidate.skills, ...(candidate.resume?.skillsDetailed.map((s) => s.name) ?? [])];
+}
+
+/** Free text from the resume where a required skill may be named without being listed as a skill. */
+export function resumeCorpus(candidate: Candidate): string {
+  const r = candidate.resume;
+  if (!r) return "";
+  return [
+    r.headline,
+    r.summary,
+    ...r.keyAchievements,
+    ...r.certifications,
+    ...r.experience.flatMap((e) => [e.title, e.scope ?? "", ...(e.topProjects ?? []), ...(e.bullets ?? [])]),
+  ].filter(Boolean).join("\n");
+}
+
+export function matchedSkillCount(requirementSkills: string[], candidate: Candidate): string[] {
+  return matchRequiredSkills(requirementSkills, candidateSkillNames(candidate), resumeCorpus(candidate));
 }
 
 /** Mean of the candidate's real per-skill scores; null when there are none
@@ -154,16 +172,20 @@ export function noticeDays(text: string): number | null {
   return Math.round(Number(m[1]) * (m[2] === "day" ? 1 : m[2] === "week" ? 7 : 30));
 }
 
+export function formatYears(n: number): string {
+  return `${n} ${n === 1 ? "year" : "years"}`;
+}
+
 function experienceAsk(min: number | null, max: number | null): string {
-  if (min != null && max != null) return min === max ? `${min} yrs` : `${min} to ${max} yrs`;
-  return min != null ? `${min}+ yrs` : `Up to ${max} yrs`;
+  if (min != null && max != null) return min === max ? formatYears(min) : `${min} to ${max} years`;
+  return min != null ? `${min}+ years` : `Up to ${max} years`;
 }
 
 /** Candidate vs what the posting asks for, one row per criterion we hold both sides of.
  *  Rows with missing data on either side are left out rather than guessed. */
 export function buildRoleFit(candidate: Candidate, requirement: Requirement, matched: string[], evidence: CandidateEvidence | null): FitRow[] {
   const rows: FitRow[] = [];
-  const r = candidate.unlocked ? candidate.resume : null;
+  const r = candidate.resume;
 
   const asked = requirement.skills.length;
   if (asked > 0) {
@@ -177,7 +199,7 @@ export function buildRoleFit(candidate: Candidate, requirement: Requirement, mat
     const below = min != null && y < min;
     const above = max != null && y > max;
     const status: FitStatus = !below && !above ? "meets" : (below && y >= min - 1) || (above && y <= max + 2) ? "partial" : "gap";
-    rows.push({ id: "experience", label: "Experience", asked: experienceAsk(min, max), has: `${y} yr${y === 1 ? "" : "s"}`, status });
+    rows.push({ id: "experience", label: "Experience", asked: experienceAsk(min, max), has: formatYears(y), status });
   }
 
   const hasCity = !!candidate.city && candidate.city !== "Not specified";
@@ -189,7 +211,7 @@ export function buildRoleFit(candidate: Candidate, requirement: Requirement, mat
       label: "Location",
       asked: remote ? "Remote" : requirement.locations.slice(0, 2).join(", "),
       has: candidate.city,
-      status: remote || inCity ? "meets" : requirement.workMode === "hybrid" ? "partial" : "gap",
+      status: remote || inCity ? "meets" : "gap",
     });
   }
 
@@ -214,7 +236,7 @@ export function buildRoleFit(candidate: Candidate, requirement: Requirement, mat
   if (requirement.minStarCompleteness != null && evidence?.starCompleteness) {
     const pct = evidence.starCompleteness.pct;
     const want = requirement.minStarCompleteness;
-    rows.push({ id: "star", label: "STAR answers", asked: `${want}%+`, has: `${pct}%`, status: pct >= want ? "meets" : pct >= want - 15 ? "partial" : "gap" });
+    rows.push({ id: "star", label: "STAR coverage", asked: `${want}%+`, has: `${pct}%`, status: pct >= want ? "meets" : pct >= want - 15 ? "partial" : "gap" });
   }
 
   return rows;
@@ -231,29 +253,36 @@ export function formatTenure(months: number): string {
 export type DeliveryTone = "success" | "warning" | "error" | "neutral";
 export interface DeliveryRow { id: string; label: string; value: string; note: string; tone: DeliveryTone; hint: string }
 
-/** Spoken delivery as plain-language readings. Thresholds are conversational-interview norms, not a hiring bar. */
+/** Below this the transcript is too short for rate-based readings to mean anything. */
+const MIN_RELIABLE_WPM = 60;
+
+/** Spoken delivery as plain-language readings. Thresholds are conversational-interview norms, not a hiring bar.
+ *  A near-silent sample or an exact zero is "not enough speech", never a positive badge. */
 export function describeDelivery(d: EvidenceDelivery | null | undefined): DeliveryRow[] {
   if (!d) return [];
   const rows: DeliveryRow[] = [];
+  const sparse = d.paceWpm != null && d.paceWpm < MIN_RELIABLE_WPM;
+  const unreliable = { note: "Too little speech to judge", tone: "neutral" as const };
+  const read = (value: number, scored: { note: string; tone: DeliveryTone }) => (sparse || value === 0 ? unreliable : scored);
   if (d.paceWpm != null) {
     const w = d.paceWpm;
-    rows.push({ id: "pace", label: "Speaking pace", value: `${w} wpm`, hint: "Easy to follow is roughly 110 to 170 words a minute.", ...(w < 110 ? { note: "Slow", tone: "warning" as const } : w > 170 ? { note: "Fast", tone: "warning" as const } : { note: "Easy to follow", tone: "success" as const }) });
+    rows.push({ id: "pace", label: "Speaking pace", value: `${w} wpm`, hint: "Easy to follow is roughly 110 to 170 words a minute.", ...(sparse ? unreliable : w < 110 ? { note: "Slow", tone: "warning" as const } : w > 170 ? { note: "Fast", tone: "warning" as const } : { note: "Easy to follow", tone: "success" as const }) });
   }
   if (d.fillersPerMin != null) {
     const f = d.fillersPerMin;
-    rows.push({ id: "fillers", label: "Filler words", value: `${f} / min`, hint: "Counts um, uh, like, you know, so, basically and similar.", ...(f <= 3 ? { note: "Low", tone: "success" as const } : f <= 6 ? { note: "Moderate", tone: "warning" as const } : { note: "High", tone: "error" as const }) });
+    rows.push({ id: "fillers", label: "Filler words", value: `${f} / min`, hint: "Counts um, uh, like, you know, so, basically and similar.", ...read(f, f <= 3 ? { note: "Low", tone: "success" } : f <= 6 ? { note: "Moderate", tone: "warning" } : { note: "High", tone: "error" }) });
   }
   if (d.responseSec != null) {
     const s = d.responseSec;
-    rows.push({ id: "response", label: "Time to start answering", value: `${s}s`, hint: "Median pause between the question ending and the answer starting.", ...(s <= 3 ? { note: "Quick", tone: "success" as const } : s <= 6 ? { note: "Considered", tone: "neutral" as const } : { note: "Slow to start", tone: "warning" as const }) });
+    rows.push({ id: "response", label: "Time to start answering", value: `${s}s`, hint: "Median pause between the question ending and the answer starting.", ...read(s, s <= 3 ? { note: "Quick", tone: "success" } : s <= 6 ? { note: "Considered", tone: "neutral" } : { note: "Slow to start", tone: "warning" }) });
   }
   if (d.pausePct != null) {
     const p = d.pausePct;
-    rows.push({ id: "pauses", label: "Time in long pauses", value: `${p}%`, hint: "Share of the session spent in silences longer than 1.5 seconds.", ...(p <= 10 ? { note: "Steady", tone: "success" as const } : p <= 25 ? { note: "Some pauses", tone: "warning" as const } : { note: "Long pauses", tone: "error" as const }) });
+    rows.push({ id: "pauses", label: "Time in long pauses", value: `${p}%`, hint: "Share of the session spent in silences longer than 1.5 seconds.", ...read(p, p <= 10 ? { note: "Steady", tone: "success" } : p <= 25 ? { note: "Some pauses", tone: "warning" } : { note: "Long pauses", tone: "error" }) });
   }
   if (d.hedgesPerMin != null) {
     const h = d.hedgesPerMin;
-    rows.push({ id: "hedges", label: "Hedging", value: `${h} / min`, hint: "Softeners such as 'I think', 'maybe' and 'kind of'.", ...(h <= 2 ? { note: "Confident", tone: "success" as const } : h <= 5 ? { note: "Some hedging", tone: "warning" as const } : { note: "Heavy hedging", tone: "error" as const }) });
+    rows.push({ id: "hedges", label: "Hedging", value: `${h} / min`, hint: "Softeners such as 'I think', 'maybe' and 'kind of'.", ...read(h, h <= 2 ? { note: "Confident", tone: "success" } : h <= 5 ? { note: "Some hedging", tone: "warning" } : { note: "Heavy hedging", tone: "error" }) });
   }
   return rows;
 }
@@ -262,6 +291,34 @@ export const VERDICT_LABEL: Record<EvidenceQuestion["verdict"], string> = { stro
 export const VERDICT_TONE: Record<EvidenceQuestion["verdict"], "success" | "warning" | "error" | "neutral"> = { strong: "success", complete: "success", partial: "warning", weak: "error", skipped: "neutral" };
 export const DIFFICULTY_LABEL: Record<NonNullable<EvidenceQuestion["difficulty"]>, string> = { warmup: "Warm-up", standard: "Standard", hard: "Hard" };
 export const LENGTH_LABEL: Record<NonNullable<EvidenceQuestion["length"]>["verdict"], string> = { "too-brief": "Too brief", right: "Right length", "too-long": "Too long" };
+
+function questionWords(text: string): Set<string> {
+  return new Set(text.toLowerCase().match(/[a-z0-9]+/g) ?? []);
+}
+
+/** Drops a later question that repeats an earlier one (the interviewer sometimes re-asks with
+ *  near-identical wording), so the list and its counts don't double-count one prompt. */
+export function cleanQuestionText(text: string): string {
+  return text.replace(/\s*\[(?:pause|beat|silence)\]\s*/gi, " ").replace(/\s+/g, " ").trim();
+}
+
+export function dedupeQuestions(questions: EvidenceQuestion[]): EvidenceQuestion[] {
+  const kept: Array<{ q: EvidenceQuestion; words: Set<string> }> = [];
+  for (const q of questions) {
+    const words = questionWords(q.question);
+    const dup = kept.some((k) => {
+      const shared = [...words].filter((w) => k.words.has(w)).length;
+      return shared / Math.max(1, Math.min(words.size, k.words.size)) >= 0.85;
+    });
+    if (!dup) kept.push({ q, words });
+  }
+  return kept.map((k) => k.q);
+}
+
+/** Capabilities that say something about hiring for a role. Salary negotiation is candidate-side practice. */
+export function employerCapabilities<T extends { key: string }>(capabilities: T[]): T[] {
+  return capabilities.filter((c) => c.key !== "salary-negotiation");
+}
 
 export interface QuestionSummary { count: number; avg: number; strong: number; weak: number; fullStar: number; starCounted: number }
 
