@@ -9,7 +9,7 @@ function PipelineRows({ status }: { status: CandidateStatus }) {
   const current = negative ? -1 : PIPELINE_STEPS.indexOf(status);
   return (
     <>
-      <ol aria-label="Hiring pipeline" className="m-0 flex list-none flex-col gap-1 p-0">
+      <ol aria-label="Hiring pipeline" className="m-0 grid list-none grid-cols-2 gap-2 p-0 md:grid-cols-4">
         {PIPELINE_STEPS.map((step, i) => {
           const reached = !negative && i <= current;
           const isCurrent = i === current;
@@ -39,12 +39,10 @@ function PipelineRows({ status }: { status: CandidateStatus }) {
   );
 }
 
-export function CandidateRail({ candidate }: { candidate: Candidate }) {
+export function CandidatePipeline({ candidate }: { candidate: Candidate }) {
   return (
-    <aside aria-label="Candidate summary" className="grid min-w-0 content-start gap-4 min-[1440px]:sticky min-[1440px]:top-0">
-      <Panel id="pipeline-heading" title="Hiring pipeline">
-        <PipelineRows status={candidate.candidateStatus} />
-      </Panel>
-    </aside>
+    <Panel id="pipeline-heading" title="Hiring pipeline">
+      <PipelineRows status={candidate.candidateStatus} />
+    </Panel>
   );
 }

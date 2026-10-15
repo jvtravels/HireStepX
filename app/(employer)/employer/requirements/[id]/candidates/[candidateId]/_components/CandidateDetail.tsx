@@ -9,7 +9,7 @@ import { ErrorRetry, EmptyNote, LinkCta, PageSkeleton, SuspendedBanner } from "@
 import UnlockDialog from "../../../_components/UnlockDialog";
 import { CandidateDialogsHost } from "./CandidateDialogsHost";
 import { CandidateHeader } from "./CandidateHeader";
-import { CandidateRail } from "./CandidateRail";
+import { CandidatePipeline } from "./CandidatePipeline";
 import { maskedName, matchedSkillCount } from "./helpers";
 import { ActionNoticeAlert } from "./Notices";
 import { OverviewTab } from "./OverviewTab";
@@ -92,49 +92,49 @@ export default function CandidateDetail({ requirementId, matchId }: { requiremen
         onUnlocked={() => void d.refresh()}
       />
 
-      <div className="grid min-w-0 gap-5 min-[1440px]:grid-cols-[minmax(0,1fr)_300px] min-[1440px]:items-start">
-        <div className="flex min-w-0 flex-col">
-          <CandidateHeader
-            candidate={candidate}
-            declined={d.declinedLocally}
-            suspended={suspended}
-            resumeFileName={resumeFileName}
-            onUnlock={openUnlock}
-            onInvite={() => {
-              d.clearNotice();
-              setDialog("invite");
-            }}
-            onReject={() => {
-              d.clearNotice();
-              setDialog("reject");
-            }}
-          />
+      <div className="flex min-w-0 flex-col">
+        <CandidateHeader
+          candidate={candidate}
+          declined={d.declinedLocally}
+          suspended={suspended}
+          resumeFileName={resumeFileName}
+          onUnlock={openUnlock}
+          onInvite={() => {
+            d.clearNotice();
+            setDialog("invite");
+          }}
+          onReject={() => {
+            d.clearNotice();
+            setDialog("reject");
+          }}
+        />
 
-          <section aria-labelledby="candidate-sections-heading" className="mt-5 flex min-w-0 flex-col">
-            <h2 id="candidate-sections-heading" className="sr-only">Candidate details</h2>
-            <div className="mb-4 flex flex-wrap items-center gap-x-5 gap-y-3">
-              <StatusTabs tabs={TABS} value={tab} onChange={setTab} label="Candidate sections" idPrefix="candtab" panelId="candtab-panel" className="shrink-0" />
-            </div>
-            <div id="candtab-panel" role="tabpanel" aria-labelledby={`candtab-tab-${tab}`}>
-              {tab === "overview" && (
-                <OverviewTab
-                  candidate={candidate}
-                  requirement={requirement}
-                  matched={matched}
-                  unmatched={unmatched}
-                  state={evidenceState}
-                  onOpenPractice={() => setTab("practice")}
-                  onOpenResume={() => setTab("resume")}
-                  onUnlock={openUnlock}
-                />
-              )}
-              {tab === "practice" && <PracticeTab evidence={d.evidence} candidate={candidate} state={evidenceState} onUnlock={openUnlock} />}
-              {tab === "resume" && <ResumeTab candidate={candidate} onUnlock={openUnlock} />}
-            </div>
-          </section>
+        <div className="mt-4">
+          <CandidatePipeline candidate={candidate} />
         </div>
 
-        <CandidateRail candidate={candidate} />
+        <section aria-labelledby="candidate-sections-heading" className="mt-5 flex min-w-0 flex-col">
+          <h2 id="candidate-sections-heading" className="sr-only">Candidate details</h2>
+          <div className="mb-4 flex flex-wrap items-center gap-x-5 gap-y-3">
+            <StatusTabs tabs={TABS} value={tab} onChange={setTab} label="Candidate sections" idPrefix="candtab" panelId="candtab-panel" className="shrink-0" />
+          </div>
+          <div id="candtab-panel" role="tabpanel" aria-labelledby={`candtab-tab-${tab}`}>
+            {tab === "overview" && (
+              <OverviewTab
+                candidate={candidate}
+                requirement={requirement}
+                matched={matched}
+                unmatched={unmatched}
+                state={evidenceState}
+                onOpenPractice={() => setTab("practice")}
+                onOpenResume={() => setTab("resume")}
+                onUnlock={openUnlock}
+              />
+            )}
+            {tab === "practice" && <PracticeTab evidence={d.evidence} candidate={candidate} state={evidenceState} onUnlock={openUnlock} />}
+            {tab === "resume" && <ResumeTab candidate={candidate} onUnlock={openUnlock} />}
+          </div>
+        </section>
       </div>
     </div>
   );
