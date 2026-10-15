@@ -1,78 +1,52 @@
-import { Lock, TriangleAlert } from "lucide-react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { cn } from "@/lib/utils";
-import { UnlockLink } from "./parts";
+import { LockIcon } from "lucide-react";
+import { Item, ItemActions, ItemContent, ItemDescription, ItemMedia, ItemTitle } from "@/components/ui/item";
+import { InlineNotice, LinkCta } from "@/employer/_requirementAtoms";
 import type { ActionNotice } from "./useCandidateDetail";
-
-/* Every notice carries an icon and explicit text, so colour is never the only signal. */
-
-const WARNING = "border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200 *:data-[slot=alert-description]:text-amber-900/90 dark:*:data-[slot=alert-description]:text-amber-200/90";
-
-export function SuspendedBanner() {
-  return (
-    <Alert className={WARNING}>
-      <TriangleAlert />
-      <AlertTitle>Your account is suspended</AlertTitle>
-      <AlertDescription>
-        This candidate view is read-only. You can review evidence but can't invite, reject or message candidates until support restores access.
-      </AlertDescription>
-    </Alert>
-  );
-}
 
 export function ActionNoticeAlert({ notice, shortlistHref }: { notice: ActionNotice; shortlistHref: string }) {
   if (notice.kind === "unlock_required") {
     return (
-      <Alert role="alert" className={cn(WARNING, "items-center sm:pr-52 has-data-[slot=alert-action]:pr-2.5")}>
-        <TriangleAlert />
-        <AlertTitle>Unlock required</AlertTitle>
-        <AlertDescription>{notice.message}</AlertDescription>
-        <div className="col-start-2 mt-2">
-          <UnlockLink href={shortlistHref} size="sm">Unlock from the shortlist</UnlockLink>
-        </div>
-      </Alert>
+      <InlineNotice
+        tone="warning"
+        title="Unlock required"
+        action={<LinkCta href={shortlistHref} size="sm" variant="outline">Unlock from the shortlist</LinkCta>}
+      >
+        {notice.message}
+      </InlineNotice>
     );
   }
   if (notice.kind === "declined") {
-    return (
-      <Alert role="alert" variant="destructive">
-        <TriangleAlert />
-        <AlertTitle>Candidate declined contact</AlertTitle>
-        <AlertDescription>{notice.message}</AlertDescription>
-      </Alert>
-    );
+    return <InlineNotice tone="error" title="Candidate declined contact">{notice.message}</InlineNotice>;
   }
-  return (
-    <Alert role="alert" className={WARNING}>
-      <TriangleAlert />
-      <AlertTitle>Action not allowed</AlertTitle>
-      <AlertDescription>{notice.message}</AlertDescription>
-    </Alert>
-  );
+  return <InlineNotice tone="warning" title="Action not allowed">{notice.message}</InlineNotice>;
 }
 
 /** Contact row shown in the header while the candidate is still masked. */
 export function LockedContact({ shortlistHref }: { shortlistHref: string }) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-muted/50 px-3 py-2.5">
-      <p className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Lock aria-hidden="true" className="size-4 shrink-0" />
-        Name, phone, email and links unlock together.
-      </p>
-      <UnlockLink href={shortlistHref} size="sm">Unlock from the shortlist</UnlockLink>
-    </div>
+    <Item variant="muted" size="sm">
+      <ItemMedia variant="icon"><LockIcon aria-hidden="true" /></ItemMedia>
+      <ItemContent>
+        <ItemDescription className="line-clamp-none text-[13px] text-hx-ink-soft">Name, phone, email and links unlock together.</ItemDescription>
+      </ItemContent>
+      <ItemActions>
+        <LinkCta href={shortlistHref} size="sm" variant="outline">Unlock from the shortlist</LinkCta>
+      </ItemActions>
+    </Item>
   );
 }
 
 export function LockedQuotes({ shortlistHref }: { shortlistHref: string }) {
   return (
-    <div className="flex flex-col items-start gap-3 rounded-lg border border-dashed border-border bg-muted/40 p-4 text-sm text-muted-foreground">
-      <p className="flex items-center gap-2 font-medium text-foreground">
-        <Lock aria-hidden="true" className="size-4" />
-        Verbatim quotes are locked
-      </p>
-      <p>What this candidate actually said in practice sessions is shown once you unlock them.</p>
-      <UnlockLink href={shortlistHref} size="sm">Unlock to read quotes</UnlockLink>
-    </div>
+    <Item variant="muted">
+      <ItemMedia variant="icon"><LockIcon aria-hidden="true" /></ItemMedia>
+      <ItemContent>
+        <ItemTitle>Verbatim quotes are locked</ItemTitle>
+        <ItemDescription className="line-clamp-none text-[13px]">What this candidate said in practice sessions is shown once you unlock them.</ItemDescription>
+      </ItemContent>
+      <ItemActions>
+        <LinkCta href={shortlistHref} size="sm" variant="outline">Unlock to read quotes</LinkCta>
+      </ItemActions>
+    </Item>
   );
 }

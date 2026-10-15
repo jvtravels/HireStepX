@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import type { Requirement } from "@/employer/EmployerDataContext";
 import { jobStatusPill, type JobStatusTone } from "@/employer/_jobDetailHelpers";
-import { PanelButton } from "@/employer/_panelParts";
+import { MetaLine, PanelButton, type MetaPart } from "@/employer/_panelParts";
 import { InlineNotice } from "@/employer/_requirementAtoms";
 import { EMPLOYMENT_TYPE_LABEL, WORK_MODE_LABEL } from "@/hiringMatchFormat";
 import { ArchiveDialog, UnlockHistoryDialog } from "./JobDialogs";
@@ -24,11 +24,6 @@ const STATUS_TONE: Record<JobStatusTone, string> = {
   warning: "bg-hx-warning-100 text-hx-warning-ink",
   error: "bg-hx-error-100 text-hx-error-ink",
 };
-
-export interface MetaPart {
-  icon: LucideIcon;
-  text: string;
-}
 
 export function metaParts(r: Requirement): MetaPart[] {
   const place = r.locations.length > 0 ? r.locations.join(", ") : r.location;
@@ -95,19 +90,7 @@ export default function JobHeader({
               </span>
             </div>
           </div>
-          {meta.length > 0 && (
-            <p className="m-0 mt-3 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[14px] text-hx-coal max-sm:gap-x-3">
-              {meta.map(({ icon: Icon, text }, i) => (
-                <span key={text} className="inline-flex items-center gap-2">
-                  {i > 0 && <span aria-hidden="true" className="text-hx-ink-soft max-sm:hidden">·</span>}
-                  <span className="inline-flex items-center gap-1.5">
-                    <Icon size={15} aria-hidden="true" className="shrink-0 text-hx-ink-soft" />
-                    {text}
-                  </span>
-                </span>
-              ))}
-            </p>
-          )}
+          <MetaLine parts={meta} className="mt-3" />
         </div>
 
         <div className="flex items-center gap-2">

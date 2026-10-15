@@ -1,202 +1,173 @@
-import { Briefcase, Check, Clock, ExternalLink, Lock, Mail, MapPin, Phone, X } from "lucide-react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
+import type { ReactNode } from "react";
+import { BriefcaseIcon, CalendarClockIcon, CheckIcon, CircleAlertIcon, ClockIcon, ExternalLinkIcon, LockIcon, MailIcon, MapPinIcon, PhoneIcon, SparklesIcon, WalletIcon } from "lucide-react";
+import { cn } from "cn";
+import type { Candidate } from "@/employer/mockData";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { cn } from "@/lib/utils";
-import type { Candidate, CandidateStatus } from "@/employer/mockData";
-import { CANDIDATE_STATUS_LABEL } from "@/employer/_atoms";
+import { Badge, CandidateStatusChip, ScoreChip } from "@/employer/_atoms";
 import { canInviteToInterview } from "@/employer/InterviewInviteDialog";
 import { readCandidateResponse } from "@/employer/_candidateFields";
+import { MetaLine, SkillChip, type ChipTone, type MetaPart } from "@/employer/_panelParts";
+import { IdentityHiddenBadge } from "@/employer/_requirementAtoms";
+import { PortfolioLinkIcon } from "@/portfolioLinkIcons";
 import { LockedContact } from "./Notices";
-import { CARD, NEGATIVE_STATUSES, PIPELINE_STEPS, TONE_DANGER, TONE_SUCCESS, TONE_WARNING, candidateLinks, initials, maskedName, scoreBand } from "./helpers";
+import { HEADER_ACTION, candidateLinks, initials, maskedName } from "./helpers";
 import { ResumeDownload } from "./ResumeDownload";
 
-const STATUS_TONE: Record<CandidateStatus, string> = {
-  shortlisted: "bg-secondary text-secondary-foreground",
-  interview_invited: "bg-primary/10 text-primary",
-  interviewing: "bg-primary/10 text-primary",
-  hired: TONE_SUCCESS,
-  rejected: TONE_DANGER,
-  not_a_fit: TONE_DANGER,
-  no_response: TONE_WARNING,
-};
-
-function ContactLink({ icon: Icon, label, href, children }: { icon: typeof Mail; label: string; href?: string; children: React.ReactNode }) {
-  const external = !!href?.startsWith("http");
+function ContactLink({ icon: Icon, label, href, children }: { icon: typeof MailIcon; label: string; href: string; children: ReactNode }) {
   return (
-    <a href={href} className="inline-flex items-center gap-2 text-md text-foreground hover:underline" {...(external ? { target: "_blank", rel: "noreferrer" } : {})}>
-      <Icon aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
+    <a href={href} className="inline-flex items-center gap-2 text-[13px] text-hx-coal hover:underline">
+      <Icon size={15} aria-hidden="true" className="shrink-0 text-hx-ink-soft" />
       <span className="sr-only">{label}: </span>
-      <span className="break-all">{children}</span>
-      {external && <span className="sr-only"> (opens in a new tab)</span>}
+      <span className="[overflow-wrap:anywhere]">{children}</span>
     </a>
   );
 }
 
-function ratioTone(ratio: number): string {
-  return ratio >= 0.75 ? TONE_SUCCESS : ratio >= 0.5 ? TONE_WARNING : TONE_DANGER;
-}
-
-function Stat({ label, value, unit, note, badge }: { label: string; value: string; unit?: string; note: string; badge?: { label: string; className: string } }) {
+function Tier({ title, icon, tone, skills, iconClass }: { title: string; icon: ReactNode; tone: ChipTone; skills: string[]; iconClass: string }) {
   return (
-    <div className="flex flex-col gap-1.5 bg-card p-4">
-      <div className="flex items-center justify-between gap-2">
-        <p className="text-sm font-semibold text-muted-foreground">{label}</p>
-        {badge && <Badge className={cn("h-5 px-2", badge.className)}>{badge.label}</Badge>}
-      </div>
-      <p className="text-2xl leading-none font-bold tabular-nums">
-        {value}
-        {unit && <span className="text-sm font-normal text-muted-foreground"> {unit}</span>}
-      </p>
-      <p className="text-sm text-muted-foreground">{note}</p>
+    <div className="grid min-w-0 gap-1.5 sm:grid-cols-[116px_minmax(0,1fr)] sm:items-start sm:gap-3">
+      <h3 className="m-0 flex items-center gap-2 whitespace-nowrap text-[13px] font-semibold text-hx-coal sm:pt-1">
+        <span aria-hidden="true" className={cn("inline-flex size-5 shrink-0 items-center justify-center rounded-md", iconClass)}>{icon}</span>
+        {title}
+      </h3>
+      <ul className="m-0 flex list-none flex-wrap gap-1.5 p-0">
+        {skills.map((s) => (
+          <li key={s}>
+            <SkillChip tone={tone}>{s}</SkillChip>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
 
-function SummaryStrip({ candidate, matchedCount, requiredCount }: { candidate: Candidate; matchedCount: number; requiredCount: number }) {
-  const band = scoreBand(candidate.matchScore);
-  const skillRatio = requiredCount ? matchedCount / requiredCount : 0;
-  const practised = candidate.sessionsCompleted > 0;
-  const years = candidate.resume?.yearsExperience;
+function KeySkills({ skills, required }: { skills: string[]; required: string[] }) {
+  const have = new Set(skills.map((s) => s.toLowerCase()));
+  const requiredSet = new Set(required.map((s) => s.toLowerCase()));
+  const matched = required.filter((s) => have.has(s.toLowerCase()));
+  const gaps = required.filter((s) => !have.has(s.toLowerCase()));
+  const other = skills.filter((s) => !requiredSet.has(s.toLowerCase())).slice(0, 8);
+  const tiers = [
+    matched.length > 0 && <Tier key="m" title="Matched" icon={<CheckIcon size={12} />} tone="primary" skills={matched} iconClass="bg-hx-indigo-100 text-hx-indigo" />,
+    gaps.length > 0 && <Tier key="g" title="Not on resume" icon={<CircleAlertIcon size={12} />} tone="danger" skills={gaps} iconClass="bg-hx-error-100 text-hx-error-ink" />,
+    other.length > 0 && <Tier key="o" title="Also lists" icon={<SparklesIcon size={12} />} tone="neutral" skills={other} iconClass="bg-hx-info-100 text-hx-info" />,
+  ].filter(Boolean);
+  if (tiers.length === 0) return null;
   return (
-    <Card className={cn(CARD, "gap-0 overflow-hidden py-0")}>
-      <div className="grid grid-cols-2 gap-px bg-border lg:grid-cols-4">
-        <Stat label="Match score" value={String(candidate.matchScore)} unit="/ 100" note="Role, skill and location fit" badge={band} />
-        <Stat
-          label="Required skills"
-          value={requiredCount ? `${matchedCount}/${requiredCount}` : "—"}
-          note={requiredCount ? "Found on the resume" : "None listed"}
-          badge={requiredCount ? { label: skillRatio >= 0.75 ? "Good" : skillRatio >= 0.5 ? "Partial" : "Low", className: ratioTone(skillRatio) } : undefined}
-        />
-        <Stat
-          label="Practice interviews"
-          value={practised ? String(candidate.sessionsCompleted) : "None"}
-          note={practised && candidate.rosterScore > 0 ? `Average score ${Math.round(candidate.rosterScore)} / 100` : "No graded interviews yet"}
-        />
-        <Stat label="Experience" value={years != null ? String(years) : "—"} unit={years != null ? "yrs" : undefined} note={candidate.resume?.seniorityLevel || "Not stated on resume"} />
-      </div>
-    </Card>
-  );
-}
-
-function Progress({ status }: { status: CandidateStatus }) {
-  const negative = NEGATIVE_STATUSES.includes(status);
-  const current = negative ? -1 : PIPELINE_STEPS.indexOf(status);
-  return (
-    <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-      <p className="text-sm font-semibold text-muted-foreground">Hiring progress</p>
-      <ol aria-label="Hiring pipeline" className="flex flex-wrap items-center gap-x-3 gap-y-1">
-        {PIPELINE_STEPS.map((step, i) => {
-          const reached = !negative && i <= current;
-          const isCurrent = i === current;
-          return (
-            <li key={step} aria-current={isCurrent ? "step" : undefined} className={cn("flex items-center gap-1.5 text-md", isCurrent ? "font-semibold text-foreground" : reached ? "text-foreground" : "text-muted-foreground")}>
-              <span aria-hidden="true" className={cn("flex size-4 items-center justify-center rounded-full border", reached ? "border-primary bg-primary text-primary-foreground" : "border-border")}>
-                {reached && !isCurrent && <Check className="size-2.5" />}
-                {isCurrent && <span className="size-1.5 rounded-full bg-primary-foreground" />}
-              </span>
-              {CANDIDATE_STATUS_LABEL[step]}
-              <span className="sr-only">{isCurrent ? " (current stage)" : reached ? " (completed)" : " (not reached)"}</span>
-            </li>
-          );
-        })}
-      </ol>
-      {negative && (
-        <p className="flex items-center gap-1.5 text-md font-semibold text-destructive">
-          <X aria-hidden="true" className="size-4" />
-          {CANDIDATE_STATUS_LABEL[status]}
-        </p>
-      )}
-    </div>
+    <section aria-labelledby="key-skills-heading" className="min-w-0">
+      <h2 id="key-skills-heading" className="m-0 mb-2.5 text-[13px] font-semibold text-hx-ink-soft">Key skills</h2>
+      <div className="flex flex-col gap-3">{tiers}</div>
+    </section>
   );
 }
 
 export function CandidateHeader({
   candidate,
-  suspended,
+  requiredSkills,
   declined,
+  suspended,
   shortlistHref,
   resumeFileName,
-  matchedCount,
-  requiredCount,
   onInvite,
   onReject,
 }: {
   candidate: Candidate;
-  suspended: boolean;
+  requiredSkills: string[];
   declined: boolean;
+  suspended: boolean;
   shortlistHref: string;
   resumeFileName: string | null;
-  matchedCount: number;
-  requiredCount: number;
   onInvite: () => void;
   onReject: () => void;
 }) {
   const resume = candidate.resume;
   const displayName = maskedName(candidate);
+  const response = declined ? "declined" : readCandidateResponse(candidate);
+  const hasCity = !!candidate.city && candidate.city !== "Not specified";
+  const summary = candidate.unlocked ? resume?.summary?.trim() : "";
+  const notice = candidate.unlocked ? resume?.noticePeriod : null;
+  const ctc = candidate.unlocked ? resume?.currentCtc : null;
+  const links = candidate.unlocked ? candidateLinks(candidate) : [];
+  const selfReported = <span className="sr-only"> (self-reported)</span>;
   const canInvite = canInviteToInterview(candidate.candidateStatus);
   const canReject = !["hired", "rejected", "not_a_fit"].includes(candidate.candidateStatus);
   const inviteBlocked = suspended || declined;
-  const response = declined ? "declined" : readCandidateResponse(candidate);
-  const links = candidateLinks(candidate);
-  const hasCity = !!candidate.city && candidate.city !== "Not specified";
   const blockedReason = suspended
     ? "Actions are unavailable while your account is suspended."
-    : declined
+    : declined && canInvite
       ? "Invite is disabled because this candidate declined contact."
       : null;
 
+  const meta: MetaPart[] = [];
+  if (candidate.targetRole) meta.push({ icon: BriefcaseIcon, text: candidate.targetRole });
+  if (resume?.yearsExperience != null) meta.push({ icon: BriefcaseIcon, text: `${resume.yearsExperience} yrs experience` });
+  if (hasCity) meta.push({ icon: MapPinIcon, text: candidate.city });
+  if (candidate.lastActiveDaysAgo >= 0) meta.push({ icon: ClockIcon, text: `Active ${candidate.lastActiveDaysAgo === 0 ? "today" : `${candidate.lastActiveDaysAgo}d ago`}` });
+  if (notice) meta.push({ icon: CalendarClockIcon, title: "Self-reported", text: <>{notice} notice{selfReported}</> });
+  if (ctc) meta.push({ icon: WalletIcon, title: "Self-reported", text: <>{ctc} CTC{selfReported}</> });
+
+  const keySkills = candidate.skills.length > 0 || requiredSkills.length > 0 ? <KeySkills skills={candidate.skills} required={requiredSkills} /> : null;
+  const hasContactRow = !candidate.unlocked || !!candidate.contact?.phone || !!candidate.contact?.email || links.length > 0;
+
   return (
-    <div className="flex flex-col gap-4">
-      <Card className={cn(CARD, "gap-0 py-0")}>
-        <div className="flex flex-col gap-4 p-5 md:flex-row md:items-center md:justify-between">
-          <div className="flex min-w-0 items-center gap-4">
-            <Avatar className="size-14 shrink-0" aria-hidden="true">
-              <AvatarFallback className="bg-primary/10 text-base font-semibold text-primary">
-                {candidate.unlocked ? initials(displayName) : <Lock className="size-5" />}
-              </AvatarFallback>
-            </Avatar>
-            <div className="min-w-0 space-y-1.5">
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-                <h1 className="text-2xl font-bold tracking-tight break-words">{displayName}</h1>
-                <Badge className={cn("h-6 px-2.5", STATUS_TONE[candidate.candidateStatus])}>{CANDIDATE_STATUS_LABEL[candidate.candidateStatus]}</Badge>
-                {response === "interested" && <Badge className={cn("h-6 px-2.5", TONE_SUCCESS)}>Candidate is interested</Badge>}
-                {response === "declined" && <Badge className={cn("h-6 px-2.5", TONE_DANGER)}>Declined contact</Badge>}
-              </div>
-              <p className="text-md font-semibold">{candidate.targetRole}</p>
-              <ul className="flex flex-wrap gap-x-4 gap-y-1 text-md text-muted-foreground">
-                {hasCity && <li className="inline-flex items-center gap-1.5"><MapPin aria-hidden="true" className="size-3.5" />{candidate.city}</li>}
-                {resume?.yearsExperience != null && <li className="inline-flex items-center gap-1.5"><Briefcase aria-hidden="true" className="size-3.5" />{resume.yearsExperience} yrs experience</li>}
-                {candidate.lastActiveDaysAgo >= 0 && <li className="inline-flex items-center gap-1.5"><Clock aria-hidden="true" className="size-3.5" />Active {candidate.lastActiveDaysAgo === 0 ? "today" : `${candidate.lastActiveDaysAgo}d ago`}</li>}
-              </ul>
+    <header className="min-w-0 rounded-xl border border-hx-line bg-white p-5">
+      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
+        <div className="min-w-0 flex-1 basis-80">
+          <div className="flex items-center gap-3">
+            <div aria-hidden="true" className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-hx-indigo-100 text-[14px] font-semibold text-hx-indigo">
+              {candidate.unlocked ? initials(displayName) : <LockIcon size={19} />}
             </div>
-          </div>
-          <div className="flex shrink-0 flex-col gap-2 sm:flex-row md:flex-col lg:flex-row">
-            {canInvite && <Button onClick={onInvite} disabled={inviteBlocked} className="pointer-coarse:h-11">Send interview invite</Button>}
-            {canReject && <Button variant="outline" onClick={onReject} disabled={suspended} className="pointer-coarse:h-11">Reject candidate</Button>}
+            <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+              <h1 className="m-0 text-[clamp(22px,5vw,26px)] leading-tight font-bold tracking-[-0.02em] text-hx-coal [overflow-wrap:anywhere]">{displayName}</h1>
+              <CandidateStatusChip status={candidate.candidateStatus} />
+              {!candidate.unlocked && <IdentityHiddenBadge />}
+              {response === "interested" && <Badge tone="success">Candidate is interested</Badge>}
+              {response === "declined" && <Badge tone="error">Declined contact</Badge>}
+            </div>
           </div>
         </div>
-        {blockedReason && (canInvite || canReject) && <p className="px-5 pb-3 text-sm text-muted-foreground">{blockedReason}</p>}
-        <Separator />
-        <div className="px-5 py-3">
-          {candidate.unlocked ? (
-            <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-              {candidate.contact?.phone && <ContactLink icon={Phone} label="Phone" href={`tel:${candidate.contact.phone}`}>{candidate.contact.phone}</ContactLink>}
-              {candidate.contact?.email && <ContactLink icon={Mail} label="Email" href={`mailto:${candidate.contact.email}`}>{candidate.contact.email}</ContactLink>}
-              {links.map((l) => <ContactLink key={l.url} icon={ExternalLink} label={l.label} href={l.url}>{l.label}</ContactLink>)}
-              {!candidate.contact?.phone && !candidate.contact?.email && links.length === 0 && <p className="text-md text-muted-foreground">No contact details on file.</p>}
-              {resumeFileName && <div className="sm:ml-auto"><ResumeDownload matchId={candidate.id} fileName={resumeFileName} size="sm" /></div>}
+
+        <div className="flex flex-wrap items-center gap-2">
+          <ScoreChip score={candidate.matchScore} />
+          {resumeFileName && <ResumeDownload matchId={candidate.id} fileName={resumeFileName} className={HEADER_ACTION} />}
+          {canReject && <Button type="button" variant="outline" onClick={onReject} disabled={suspended} className={cn("pointer-coarse:h-11", HEADER_ACTION)}>Reject</Button>}
+          {canInvite && <Button type="button" onClick={onInvite} disabled={inviteBlocked} className={cn("pointer-coarse:h-11", HEADER_ACTION)}>Send interview invite</Button>}
+        </div>
+      </div>
+      <MetaLine parts={meta} className="mt-3" />
+      {blockedReason && <p className="m-0 mt-3 text-right text-[12px] text-hx-ink-soft">{blockedReason}</p>}
+
+      {(summary || keySkills || hasContactRow) && (
+        <div className={cn("mt-4 grid min-w-0 gap-x-8 gap-y-4 border-t border-hx-line pt-4", keySkills && (summary || hasContactRow) && "lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]")}>
+          {(summary || hasContactRow) && (
+            <div className="flex min-w-0 flex-col gap-4">
+              {summary && <p className="m-0 max-w-[75ch] text-[14px] leading-relaxed whitespace-pre-line text-hx-ink-soft [overflow-wrap:anywhere]">{summary}</p>}
+              {hasContactRow && (
+                <div className={cn(summary && "border-t border-hx-line pt-4")}>
+                  {candidate.unlocked ? (
+                    <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+                      {candidate.contact?.phone && <ContactLink icon={PhoneIcon} label="Phone" href={`tel:${candidate.contact.phone}`}>{candidate.contact.phone}</ContactLink>}
+                      {candidate.contact?.email && <ContactLink icon={MailIcon} label="Email" href={`mailto:${candidate.contact.email}`}>{candidate.contact.email}</ContactLink>}
+                      {links.map((l) => (
+                        <a key={l.url} href={l.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-[13px] text-hx-coal hover:underline">
+                          <span aria-hidden="true" className="inline-flex shrink-0 text-hx-ink-soft"><PortfolioLinkIcon url={l.url} size={15} /></span>
+                          <span className="sr-only">{l.label}: </span>
+                          <span className="[overflow-wrap:anywhere]">{l.host}</span>
+                          <ExternalLinkIcon size={13} aria-hidden="true" className="shrink-0 text-hx-ink-soft" />
+                          <span className="sr-only"> (opens in a new tab)</span>
+                        </a>
+                      ))}
+                    </div>
+                  ) : (
+                    <LockedContact shortlistHref={shortlistHref} />
+                  )}
+                </div>
+              )}
             </div>
-          ) : (
-            <LockedContact shortlistHref={shortlistHref} />
           )}
+          {keySkills && <div className={cn("min-w-0", (summary || hasContactRow) && "lg:border-l lg:border-hx-line lg:pl-8")}>{keySkills}</div>}
         </div>
-        <Separator />
-        <div className="px-5 py-3"><Progress status={candidate.candidateStatus} /></div>
-      </Card>
-      <SummaryStrip candidate={candidate} matchedCount={matchedCount} requiredCount={requiredCount} />
-    </div>
+      )}
+    </header>
   );
 }

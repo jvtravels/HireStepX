@@ -26,24 +26,6 @@ export function matchedSkillCount(requirementSkills: string[], candidateSkills: 
   return requirementSkills.filter((s) => set.has(s.toLowerCase()));
 }
 
-/** Only statements backed by returned fields; an empty list is a valid result. */
-export function buildFitReasons(candidate: Candidate, requirement: Requirement, matchedSkills: string[]): string[] {
-  const reasons: string[] = [];
-  if (matchedSkills.length) {
-    reasons.push(`Matches ${matchedSkills.length} of ${requirement.skills.length} required skills: ${matchedSkills.slice(0, 4).join(", ")}`);
-  }
-  if (candidate.resume?.yearsExperience != null) {
-    reasons.push(`${candidate.resume.yearsExperience} years of experience on their resume`);
-  }
-  if (candidate.sessionsCompleted > 0) {
-    reasons.push(`Completed ${candidate.sessionsCompleted} practice session${candidate.sessionsCompleted === 1 ? "" : "s"} for this target role`);
-  }
-  if (candidate.city && requirement.locations.some((l) => l.toLowerCase().includes(candidate.city.toLowerCase()))) {
-    reasons.push(`Based in ${candidate.city}, matching the role's location`);
-  }
-  return reasons.slice(0, 4);
-}
-
 /** Mean of the candidate's real per-skill scores; null when there are none
  *  (never falls back to the match score — they measure different things). */
 export function evidenceAverage(evidence: CandidateEvidence | null): number | null {
@@ -58,28 +40,6 @@ export function formatSessionDate(iso: string): string {
   const d = new Date(iso);
   return Number.isNaN(d.getTime()) ? "" : d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
 }
-
-export const TONE_SUCCESS = "bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300";
-export const TONE_WARNING = "bg-amber-50 text-amber-800 dark:bg-amber-950 dark:text-amber-300";
-export const TONE_DANGER = "bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300";
-
-/** Text label always accompanies the colour, so the band is never colour-only. */
-export function scoreBand(score: number): { label: string; className: string } {
-  if (score >= 70) return { label: "Strong match", className: TONE_SUCCESS };
-  if (score >= 50) return { label: "Fair match", className: TONE_WARNING };
-  return { label: "Low match", className: TONE_DANGER };
-}
-
-export function formatDateTime(iso: string): string {
-  const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? "" : d.toLocaleString("en-IN", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
-}
-
-/** A real border instead of the Card's translucent ring: the ring is clipped
- *  at the page edge by the shell's overflow container and reads too faint. */
-export const CARD = "border border-border ring-0";
-export const TITLE = "flex items-center gap-2 text-lg leading-snug font-bold";
-export const MAIN_SIDE = "grid items-start gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]";
 
 export interface CandidateLink { label: string; url: string; host: string }
 
@@ -137,16 +97,36 @@ export function periodMonths(period: string, now = new Date()): number | null {
 export interface ResumeInsights {
   snapshot: string;
   strengths: string[];
-  probes: string[];
+  concerns: string[];
+  validate: string[];
   avgTenureMonths: number | null;
 }
+
+export function buildFitReasons(candidate: Candidate, requirement: Requirement, matchedSkills: string[]): string[] {
+  const reasons: string[] = [];
+  if (matchedSkills.length) {
+    reasons.push(`Matches ${matchedSkills.length} of ${requirement.skills.length} required skills: ${matchedSkills.slice(0, 4).join(", ")}`);
+  }
+  if (candidate.resume?.yearsExperience != null) {
+    reasons.push(`${candidate.resume.yearsExperience} years of experience on their resume`);
+  }
+  if (candidate.sessionsCompleted > 0) {
+    reasons.push(`Completed ${candidate.sessionsCompleted} practice session${candidate.sessionsCompleted === 1 ? "" : "s"} for this target role`);
+  }
+  if (candidate.city && requirement.locations.some((l) => l.toLowerCase().includes(candidate.city.toLowerCase()))) {
+    reasons.push(`Based in ${candidate.city}, matching the role's location`);
+  }
+  return reasons.slice(0, 4);
+}
+
 
 /** Deterministic read of the structured resume data against the requirement.
  *  No model call and no invented facts: every line cites a field we hold. */
 export function buildResumeInsights(candidate: Candidate, requirement: Requirement, matched: string[], unmatched: string[]): ResumeInsights {
   const r = candidate.resume;
   const latest = r?.experience[0];
-  const lead = [r?.seniorityLevel, candidate.targetRole].filter(Boolean).join(" ");
+  const seniority = r?.seniorityLevel && !candidate.targetRole.toLowerCase().includes(r.seniorityLevel.toLowerCase()) ? r.seniorityLevel : null;
+  const lead = [seniority, candidate.targetRole].filter(Boolean).join(" ");
   const years = r?.yearsExperience != null ? ` with ${r.yearsExperience} year${r.yearsExperience === 1 ? "" : "s"} of experience` : "";
   const recent = latest?.company ? `, most recently ${latest.title || "in a role"} at ${latest.company}${latest.period ? ` (${latest.period})` : ""}` : "";
   const snapshot = `${lead || "Candidate"}${years}${recent}.`;
@@ -162,12 +142,96 @@ export function buildResumeInsights(candidate: Candidate, requirement: Requireme
   if (avgTenureMonths != null && avgTenureMonths >= 24) strengths.push(`Stays in roles: about ${Math.round(avgTenureMonths / 12 * 10) / 10} years on average.`);
   if (candidate.sessionsCompleted > 0) strengths.push(`Practises: ${candidate.sessionsCompleted} graded mock interview${candidate.sessionsCompleted === 1 ? "" : "s"} on record.`);
 
-  const probes: string[] = [];
-  if (unmatched.length) probes.push(`Required skills not on the resume: ${unmatched.slice(0, 4).join(", ")}. Ask for hands-on examples.`);
-  if (avgTenureMonths != null && tenures.length >= 2 && avgTenureMonths < 12) probes.push(`Short stints (about ${avgTenureMonths} months per role). Ask what drove each move.`);
-  if (r?.noticePeriod) probes.push(`Notice period is self-reported as ${r.noticePeriod}. Confirm before planning a start date.`);
-  if (r?.currentCtc) probes.push(`Current CTC is self-reported as ${r.currentCtc}. Confirm against your budget early.`);
-  if (candidate.sessionsCompleted === 0) probes.push("No practice interviews yet, so there is no spoken-answer evidence. Use your own screen.");
+  const concerns: string[] = [];
+  if (unmatched.length) concerns.push(`Not on the resume: ${unmatched.slice(0, 4).join(", ")}.`);
+  if (avgTenureMonths != null && tenures.length >= 2 && avgTenureMonths < 12) concerns.push(`Short stints, about ${avgTenureMonths} months per role.`);
+  if (candidate.sessionsCompleted === 0) concerns.push("No practice interviews yet, so no spoken-answer evidence.");
 
-  return { snapshot, strengths: strengths.slice(0, 4), probes: probes.slice(0, 4), avgTenureMonths };
+  const validate: string[] = [];
+  if (unmatched.length) validate.push(`Hands-on examples of ${unmatched.slice(0, 3).join(", ")}.`);
+  if (avgTenureMonths != null && tenures.length >= 2 && avgTenureMonths < 12) validate.push("What drove each move.");
+
+  return { snapshot, strengths: strengths.slice(0, 4), concerns: concerns.slice(0, 4), validate: validate.slice(0, 4), avgTenureMonths };
+}
+
+export const HEADER_ACTION = "text-[13px] font-semibold";
+
+export type FitStatus = "meets" | "partial" | "gap";
+export interface FitRow { id: string; label: string; asked: string; has: string; status: FitStatus }
+
+const BAND_RANK = { leanHire: 1, hire: 2, strongHire: 3 } as const;
+
+/** Days implied by a free-text notice period ("30 days", "2 months", "Immediate"); null when unreadable. */
+export function noticeDays(text: string): number | null {
+  const t = text.toLowerCase();
+  if (/immediate|no notice|serving|available now/.test(t)) return 0;
+  const m = t.match(/(\d+(?:\.\d+)?)\s*(day|week|month)/);
+  if (!m) return null;
+  return Math.round(Number(m[1]) * (m[2] === "day" ? 1 : m[2] === "week" ? 7 : 30));
+}
+
+function experienceAsk(min: number | null, max: number | null): string {
+  if (min != null && max != null) return min === max ? `${min} yrs` : `${min} to ${max} yrs`;
+  return min != null ? `${min}+ yrs` : `Up to ${max} yrs`;
+}
+
+/** Candidate vs what the posting asks for, one row per criterion we hold both sides of.
+ *  Rows with missing data on either side are left out rather than guessed. */
+export function buildRoleFit(candidate: Candidate, requirement: Requirement, matched: string[], evidence: CandidateEvidence | null): FitRow[] {
+  const rows: FitRow[] = [];
+  const r = candidate.unlocked ? candidate.resume : null;
+
+  const asked = requirement.skills.length;
+  if (asked > 0) {
+    const ratio = matched.length / asked;
+    rows.push({ id: "skills", label: "Required skills", asked: `${asked} listed`, has: `${matched.length} of ${asked}`, status: ratio === 1 ? "meets" : ratio >= 0.5 ? "partial" : "gap" });
+  }
+
+  const { experienceMin: min, experienceMax: max } = requirement;
+  if (r?.yearsExperience != null && (min != null || max != null)) {
+    const y = r.yearsExperience;
+    const below = min != null && y < min;
+    const above = max != null && y > max;
+    const status: FitStatus = !below && !above ? "meets" : (below && y >= min - 1) || (above && y <= max + 2) ? "partial" : "gap";
+    rows.push({ id: "experience", label: "Experience", asked: experienceAsk(min, max), has: `${y} yr${y === 1 ? "" : "s"}`, status });
+  }
+
+  const hasCity = !!candidate.city && candidate.city !== "Not specified";
+  if (hasCity && (requirement.workMode === "remote" || requirement.locations.length > 0)) {
+    const inCity = requirement.locations.some((l) => l.toLowerCase().includes(candidate.city.toLowerCase()) || candidate.city.toLowerCase().includes(l.toLowerCase()));
+    const remote = requirement.workMode === "remote";
+    rows.push({
+      id: "location",
+      label: "Location",
+      asked: remote ? "Remote" : requirement.locations.slice(0, 2).join(", "),
+      has: candidate.city,
+      status: remote || inCity ? "meets" : requirement.workMode === "hybrid" ? "partial" : "gap",
+    });
+  }
+
+  const pref = requirement.noticePeriodPref;
+  if (r?.noticePeriod && pref && pref !== "Any") {
+    const limit = pref.toLowerCase().startsWith("immediate") && !/to/.test(pref.toLowerCase()) ? 0 : (() => {
+      const nums = pref.match(/\d+/g);
+      return nums ? Number(nums[nums.length - 1]) : null;
+    })();
+    const days = noticeDays(r.noticePeriod);
+    if (limit != null && days != null) {
+      rows.push({ id: "notice", label: "Notice period", asked: pref, has: r.noticePeriod, status: days <= limit ? "meets" : days <= limit + 30 ? "partial" : "gap" });
+    }
+  }
+
+  if (requirement.minReadinessBand && evidence?.readiness) {
+    const got = BAND_RANK[evidence.readiness.band];
+    const want = BAND_RANK[requirement.minReadinessBand];
+    rows.push({ id: "readiness", label: "Interview readiness", asked: `${READINESS_LABEL[requirement.minReadinessBand]} or better`, has: READINESS_LABEL[evidence.readiness.band], status: got >= want ? "meets" : got === want - 1 ? "partial" : "gap" });
+  }
+
+  if (requirement.minStarCompleteness != null && evidence?.starCompleteness) {
+    const pct = evidence.starCompleteness.pct;
+    const want = requirement.minStarCompleteness;
+    rows.push({ id: "star", label: "STAR answers", asked: `${want}%+`, has: `${pct}%`, status: pct >= want ? "meets" : pct >= want - 15 ? "partial" : "gap" });
+  }
+
+  return rows;
 }

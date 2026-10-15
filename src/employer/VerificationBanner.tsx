@@ -1,29 +1,13 @@
 "use client";
 
-import { useState } from "react";
-import { ShieldAlertIcon, ShieldCheckIcon, XIcon } from "lucide-react";
+import { ShieldAlertIcon } from "lucide-react";
 import { tokens as t, fonts as f } from "../auth/_tokens";
 import { useEmployerData } from "./EmployerDataContext";
 
-const DISMISS_KEY = "hsx_employer_verify_banner_dismissed";
-
-function readDismissed(): boolean {
-  try {
-    return sessionStorage.getItem(DISMISS_KEY) === "1";
-  } catch {
-    return false;
-  }
-}
-
-/* Account-trust banner at the top of the console body. Two variants:
-   - suspended: role="alert", not dismissible — the console is read-only.
-   - basic tier: role="status", dismissible for the session — states the
-     limits the account is under.
-   Higher tiers render nothing. Copy never promises a verification flow the
-   server doesn't have; it only states the limits the account is under. */
+/* Suspended-account alert at the top of the console body (role="alert", not
+   dismissible: the console is read-only). Everything else renders nothing. */
 export default function VerificationBanner() {
-  const { verificationTier, limits, suspended, companyStatus } = useEmployerData();
-  const [dismissed, setDismissed] = useState(readDismissed);
+  const { suspended, companyStatus } = useEmployerData();
 
   if (companyStatus !== "approved") return null;
 
@@ -46,44 +30,5 @@ export default function VerificationBanner() {
     );
   }
 
-  if (verificationTier !== "basic" || dismissed) return null;
-
-  const dismiss = () => {
-    setDismissed(true);
-    try {
-      sessionStorage.setItem(DISMISS_KEY, "1");
-    } catch {
-      // private mode — the banner just returns next load
-    }
-  };
-
-  return (
-    <div
-      role="status"
-      style={{
-        display: "flex", alignItems: "flex-start", gap: 12, padding: "12px 12px 12px 16px", marginBottom: 12,
-        background: t.warning100, border: `1px solid ${t.warningLine}`, borderRadius: 10,
-        fontFamily: f.sans, fontSize: 14, color: t.warningInk, lineHeight: 1.5,
-      }}
-    >
-      <ShieldCheckIcon size={18} aria-hidden="true" style={{ flexShrink: 0, marginTop: 2 }} />
-      <p style={{ margin: 0, flex: 1, minWidth: 0 }}>
-        <strong>Unverified company account.</strong> Limits: {limits.unlocksPerDay} unlocks a day and{" "}
-        {limits.openRequirements} open jobs.
-      </p>
-      <button
-        type="button"
-        onClick={dismiss}
-        aria-label="Dismiss account limits notice"
-        className="hsx-btn-icon"
-        style={{
-          flexShrink: 0, width: 44, height: 44, margin: "-10px -2px -10px 0", display: "inline-flex",
-          alignItems: "center", justifyContent: "center", background: "transparent", border: "none",
-          borderRadius: 8, color: t.warningInk, cursor: "pointer",
-        }}
-      >
-        <XIcon size={16} aria-hidden="true" />
-      </button>
-    </div>
-  );
+  return null;
 }

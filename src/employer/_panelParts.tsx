@@ -7,7 +7,7 @@
 
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { InfoIcon } from "lucide-react";
+import { InfoIcon, type LucideIcon } from "lucide-react";
 import { cn } from "cn";
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -80,6 +80,27 @@ export function KeyValueRow({ label, children }: { label: string; children: Reac
   );
 }
 
+export interface MetaPart {
+  icon: LucideIcon;
+  text: ReactNode;
+  title?: string;
+}
+
+/** Icon + text facts on one wrapping line; the icons separate them, so a wrap never strands a divider. */
+export function MetaLine({ parts, className }: { parts: MetaPart[]; className?: string }) {
+  if (parts.length === 0) return null;
+  return (
+    <p className={cn("m-0 flex flex-wrap items-center gap-x-4 gap-y-1 text-[14px] text-hx-coal", className)}>
+      {parts.map(({ icon: Icon, text, title }, i) => (
+        <span key={i} title={title} className="inline-flex items-center gap-1.5">
+          <Icon size={15} aria-hidden="true" className="shrink-0 text-hx-ink-soft" />
+          {text}
+        </span>
+      ))}
+    </p>
+  );
+}
+
 export type ChipTone = "danger" | "primary" | "info" | "neutral";
 
 const CHIP_TONE: Record<ChipTone, string> = {
@@ -125,6 +146,22 @@ export function MeterBar({ value, label, tone = "success", thin = false }: { val
         tone === "indigo" ? "[&_[data-slot=progress-indicator]]:bg-hx-indigo" : "[&_[data-slot=progress-indicator]]:bg-hx-success",
       )}
     />
+  );
+}
+
+/** Label and printed percentage over a thin bar; the number carries the meaning, so the bar is decorative. */
+export function MeterRow({ label, value, tone = "indigo" }: { label: string; value: number; tone?: "success" | "indigo" }) {
+  const v = Math.max(0, Math.min(100, Math.round(value)));
+  return (
+    <div className="grid gap-1.5">
+      <div className="flex items-baseline justify-between gap-3 text-[13px] text-hx-coal">
+        <span className="min-w-0 [overflow-wrap:anywhere]">{label}</span>
+        <span className="font-medium tabular-nums">{v}%</span>
+      </div>
+      <span aria-hidden="true">
+        <MeterBar thin tone={tone} value={v} label={label} />
+      </span>
+    </div>
   );
 }
 

@@ -1160,8 +1160,6 @@ input[type="range"]::-moz-range-thumb {
 }
 
 /* ─── Settings ─── */
-.settings-pills { scrollbar-width: none; }
-.settings-pills::-webkit-scrollbar { display: none; }
 .settings-form-grid { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
 .settings-referral-grid { grid-template-columns: minmax(0, 1fr) 280px; }
 .settings-payment-row { grid-template-columns: auto 1fr auto auto; }
@@ -1191,13 +1189,6 @@ input[type="range"]::-moz-range-thumb {
   .settings-refer-row > :nth-child(2) { grid-area: info; }
   .settings-refer-row > :nth-child(3) { grid-area: date; justify-self: start; }
   .settings-refer-row > :nth-child(4) { grid-area: status; justify-self: end; align-self: start; }
-}
-
-/* Touch target for tab pills on coarse pointers (iOS/Android) */
-@media (pointer: coarse) {
-  .settings-pills [role="tab"] { min-height: 44px; }
-  /* Numeric hotkey chips are keyboard cues — hide on touch devices. */
-  .settings-pills [role="tab"] kbd { display: none !important; }
 }
 
 /* Narrow phones — tighten card padding and trim non-essential chrome. */

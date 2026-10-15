@@ -130,9 +130,13 @@ export function Pill({ children, tone = "neutral", filled = false }: { children:
    relevance — so 20 is "worth a look," not "strong." */
 const FAIR_MATCH_THRESHOLD = 20;
 
+export function matchBand(score: number): "strong" | "fair" | "low" {
+  return score >= STRONG_MATCH_THRESHOLD ? "strong" : score >= FAIR_MATCH_THRESHOLD ? "fair" : "low";
+}
+
 export function ScoreChip({ score, label = "Match score" }: { score: number; label?: string }) {
-  const tone: PillTone = score >= STRONG_MATCH_THRESHOLD ? "success" : score >= FAIR_MATCH_THRESHOLD ? "copper" : "neutral";
-  const band = score >= STRONG_MATCH_THRESHOLD ? "strong" : score >= FAIR_MATCH_THRESHOLD ? "fair" : "low";
+  const band = matchBand(score);
+  const tone: PillTone = band === "strong" ? "success" : band === "fair" ? "copper" : "neutral";
   return (
     <div
       role="img"

@@ -1,38 +1,31 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import { SearchX, TriangleAlert } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import StatusTabs from "@/components/StatusTabs";
 import { useEmployerData } from "@/employer/EmployerDataContext";
 import { useEmployerBreadcrumb } from "@/employer/EmployerShell";
+import { ErrorRetry, EmptyNote, LinkCta, PageSkeleton, SuspendedBanner } from "@/employer/_requirementAtoms";
 import { CandidateDialogsHost } from "./CandidateDialogsHost";
 import { CandidateHeader } from "./CandidateHeader";
+import { CandidateRail } from "./CandidateRail";
 import { buildFitReasons, maskedName, matchedSkillCount } from "./helpers";
-import { ActionNoticeAlert, SuspendedBanner } from "./Notices";
+import { ActionNoticeAlert } from "./Notices";
 import { OverviewTab } from "./OverviewTab";
 import { PracticeTab } from "./PracticeTab";
 import { ResumeTab } from "./ResumeTab";
 import { useCandidateDetail } from "./useCandidateDetail";
 
-function LoadingSkeleton() {
-  return (
-    <div role="status" className="space-y-4">
-      <span className="sr-only">Loading candidate…</span>
-      <Skeleton className="h-52 w-full" />
-      <Skeleton className="h-24 w-full" />
-      <Skeleton className="h-72 w-full" />
-    </div>
-  );
-}
+type CandidateTabKey = "overview" | "practice" | "resume";
+const TABS: ReadonlyArray<{ key: CandidateTabKey; label: string }> = [
+  { key: "overview", label: "Overview" },
+  { key: "practice", label: "Evidence" },
+  { key: "resume", label: "Resume" },
+];
 
 export default function CandidateDetail({ requirementId, matchId }: { requirementId: string; matchId: string }) {
   const { suspended } = useEmployerData();
   const d = useCandidateDetail(requirementId, matchId);
-  const [tab, setTab] = useState("overview");
+  const [tab, setTab] = useState<CandidateTabKey>("overview");
   const [dialog, setDialog] = useState<"invite" | "reject" | null>(null);
 
   const { requirement, candidate } = d;
@@ -44,40 +37,23 @@ export default function CandidateDetail({ requirementId, matchId }: { requiremen
       : null,
   );
 
-  const back = (
-    <Button asChild variant="link">
-      <Link href={shortlistHref}>Back to shortlist</Link>
-    </Button>
-  );
+  const back = <LinkCta href={shortlistHref} variant="outline">Back to shortlist</LinkCta>;
 
-  if (d.loading) return <LoadingSkeleton />;
+  if (d.loading) return <PageSkeleton label="Loading candidate…" />;
 
   if (d.loadFailed || !requirement) {
     return (
-      <Empty className="border">
-        <EmptyHeader>
-          <EmptyMedia variant="icon"><TriangleAlert /></EmptyMedia>
-          <EmptyTitle>We couldn't load this candidate</EmptyTitle>
-          <EmptyDescription>Check your connection and try again.</EmptyDescription>
-        </EmptyHeader>
-        <EmptyContent className="flex-row justify-center">
-          <Button onClick={() => void d.reload()}>Try again</Button>
-          {back}
-        </EmptyContent>
-      </Empty>
+      <ErrorRetry title="We couldn't load this candidate" message="Check your connection and try again." onRetry={() => void d.reload()}>
+        {back}
+      </ErrorRetry>
     );
   }
 
   if (!candidate || d.unavailable) {
     return (
-      <Empty className="border">
-        <EmptyHeader>
-          <EmptyMedia variant="icon"><SearchX /></EmptyMedia>
-          <EmptyTitle>{d.unavailable ? "This candidate is no longer available" : "Candidate not found"}</EmptyTitle>
-          <EmptyDescription>They may have withdrawn or been removed from this shortlist.</EmptyDescription>
-        </EmptyHeader>
-        <EmptyContent>{back}</EmptyContent>
-      </Empty>
+      <EmptyNote title={d.unavailable ? "This candidate is no longer available" : "Candidate not found"} action={back}>
+        They may have withdrawn or been removed from this shortlist.
+      </EmptyNote>
     );
   }
 
@@ -85,30 +61,13 @@ export default function CandidateDetail({ requirementId, matchId }: { requiremen
   const matched = matchedSkillCount(requirement.skills, candidate.skills);
   const unmatched = requirement.skills.filter((s) => !matched.some((m) => m.toLowerCase() === s.toLowerCase()));
   const resumeFileName = candidate.unlocked ? (d.evidence?.resumeFile?.fileName ?? null) : null;
-  const fitReasons = buildFitReasons(candidate, requirement, matched);
+
+  const reasons = buildFitReasons(candidate, requirement, matched);
 
   return (
-    <div className="flex flex-col gap-4">
-      {suspended && <SuspendedBanner />}
-      {d.notice && !dialog && <ActionNoticeAlert notice={d.notice} shortlistHref={shortlistHref} />}
-
-      <CandidateHeader
-        candidate={candidate}
-        suspended={suspended}
-        declined={d.declinedLocally}
-        shortlistHref={shortlistHref}
-        resumeFileName={resumeFileName}
-        matchedCount={matched.length}
-        requiredCount={requirement.skills.length}
-        onInvite={() => {
-          d.clearNotice();
-          setDialog("invite");
-        }}
-        onReject={() => {
-          d.clearNotice();
-          setDialog("reject");
-        }}
-      />
+    <div className="flex min-w-0 flex-[1_0_auto] flex-col pb-6">
+      {suspended && <div className="mb-4"><SuspendedBanner /></div>}
+      {d.notice && !dialog && <div className="mb-4"><ActionNoticeAlert notice={d.notice} shortlistHref={shortlistHref} /></div>}
 
       <CandidateDialogsHost
         dialog={dialog}
@@ -120,31 +79,51 @@ export default function CandidateDetail({ requirementId, matchId }: { requiremen
         changeStatus={d.changeStatus}
       />
 
-      <Tabs value={tab} onValueChange={setTab} className="min-w-0 gap-4">
-        <TabsList variant="line" aria-label="Candidate sections" className="h-10 w-full justify-start gap-2 overflow-x-auto border-b border-border pb-0">
-          <TabsTrigger value="overview" className="flex-none px-3 after:bottom-0">Overview</TabsTrigger>
-          <TabsTrigger value="resume" className="flex-none px-3 after:bottom-0">Resume</TabsTrigger>
-          <TabsTrigger value="practice" className="flex-none px-3 after:bottom-0">Practice evidence</TabsTrigger>
-        </TabsList>
-        <TabsContent value="overview">
-          <OverviewTab
+      <div className="grid min-w-0 gap-5 min-[1440px]:grid-cols-[minmax(0,1fr)_300px] min-[1440px]:items-start">
+        <div className="flex min-w-0 flex-col">
+          <CandidateHeader
             candidate={candidate}
-            requirement={requirement}
-            fitReasons={fitReasons}
-            matched={matched}
-            unmatched={unmatched}
+            requiredSkills={requirement.skills}
+            declined={d.declinedLocally}
+            suspended={suspended}
             shortlistHref={shortlistHref}
-            state={evidenceState}
-            onOpenPractice={() => setTab("practice")}
+            resumeFileName={resumeFileName}
+            onInvite={() => {
+              d.clearNotice();
+              setDialog("invite");
+            }}
+            onReject={() => {
+              d.clearNotice();
+              setDialog("reject");
+            }}
           />
-        </TabsContent>
-        <TabsContent value="resume">
-          <ResumeTab candidate={candidate} shortlistHref={shortlistHref} resumeFileName={resumeFileName} />
-        </TabsContent>
-        <TabsContent value="practice">
-          <PracticeTab evidence={d.evidence} candidate={candidate} shortlistHref={shortlistHref} state={evidenceState} />
-        </TabsContent>
-      </Tabs>
+
+          <section aria-labelledby="candidate-sections-heading" className="mt-5 flex min-w-0 flex-col">
+            <h2 id="candidate-sections-heading" className="sr-only">Candidate details</h2>
+            <div className="mb-4 flex flex-wrap items-center gap-x-5 gap-y-3">
+              <StatusTabs tabs={TABS} value={tab} onChange={setTab} label="Candidate sections" idPrefix="candtab" panelId="candtab-panel" className="shrink-0" />
+            </div>
+            <div id="candtab-panel" role="tabpanel" aria-labelledby={`candtab-tab-${tab}`}>
+              {tab === "overview" && (
+                <OverviewTab
+                  candidate={candidate}
+                  requirement={requirement}
+                  matched={matched}
+                  unmatched={unmatched}
+                  shortlistHref={shortlistHref}
+                  state={evidenceState}
+                  onOpenPractice={() => setTab("practice")}
+                  onOpenResume={() => setTab("resume")}
+                />
+              )}
+              {tab === "practice" && <PracticeTab evidence={d.evidence} candidate={candidate} shortlistHref={shortlistHref} state={evidenceState} />}
+              {tab === "resume" && <ResumeTab candidate={candidate} shortlistHref={shortlistHref} />}
+            </div>
+          </section>
+        </div>
+
+        <CandidateRail candidate={candidate} insights={reasons} />
+      </div>
     </div>
   );
 }
