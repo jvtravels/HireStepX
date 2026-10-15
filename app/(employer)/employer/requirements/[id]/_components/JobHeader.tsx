@@ -12,10 +12,10 @@ import { PanelButton } from "@/employer/_panelParts";
 import { InlineNotice } from "@/employer/_requirementAtoms";
 import { EMPLOYMENT_TYPE_LABEL, WORK_MODE_LABEL } from "@/hiringMatchFormat";
 import { ArchiveDialog, UnlockHistoryDialog } from "./JobDialogs";
-import { budgetLabel, experienceLabel, previewText } from "./requirementFormat";
+import { budgetLabel, experienceLabel, previewText, whereLabel } from "./requirementFormat";
 import type { JobMessage } from "./useJobActions";
 
-const DESCRIPTION_PREVIEW = 220;
+const DESCRIPTION_PREVIEW = 420;
 
 const STATUS_TONE: Record<JobStatusTone, string> = {
   success: "bg-hx-success-100 text-hx-success-ink",
@@ -34,7 +34,7 @@ export function metaParts(r: Requirement): MetaPart[] {
   const place = r.locations.length > 0 ? r.locations.join(", ") : r.location;
   const mode = r.workMode ? WORK_MODE_LABEL[r.workMode] || r.workMode : null;
   const type = r.employmentType ? EMPLOYMENT_TYPE_LABEL[r.employmentType] || r.employmentType : null;
-  const where = place && mode ? `${mode} (${place})` : place || mode;
+  const where = whereLabel(place, mode);
   const experience = experienceLabel(r.experienceMin, r.experienceMax)?.replace(" experience", "");
   const parts: Array<[LucideIcon, string | null | undefined]> = [
     [MapPinIcon, where],

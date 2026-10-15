@@ -12,8 +12,8 @@ interface OverviewRow {
   wide?: boolean;
 }
 
-/* Tiers render in Key requirements; openings and notice period in the side rail. */
-const SHOWN_ELSEWHERE = new Set(["Nice to have", "Other skills", "Open positions", "Notice period"]);
+/* Department is in the header meta line, tiers in Key requirements, openings and notice period in the side rail. */
+const SHOWN_ELSEWHERE = new Set(["Department", "Nice to have", "Other skills", "Open positions", "Notice period"]);
 
 function overviewRows(r: Requirement): OverviewRow[] {
   const rows: OverviewRow[] = [];
@@ -59,7 +59,7 @@ export default function JobOverview({ requirement }: { requirement: Requirement 
         {rows.map((row) => (
           <div key={row.label} className={cn("min-w-0", row.wide && "sm:col-span-2 lg:col-span-4")}>
             <dt className="text-[12px] text-hx-ink-soft">{row.label}</dt>
-            <dd className="m-0 mt-0.5 text-[14px] font-medium whitespace-pre-wrap text-hx-coal [overflow-wrap:anywhere]">{row.value}</dd>
+            <dd className={cn("m-0 mt-0.5 text-[14px] whitespace-pre-wrap text-hx-coal [overflow-wrap:anywhere]", row.wide ? "max-w-[75ch] leading-relaxed" : "font-medium")}>{row.value}</dd>
           </div>
         ))}
       </dl>

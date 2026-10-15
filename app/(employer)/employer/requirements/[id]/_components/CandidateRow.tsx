@@ -2,36 +2,35 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import type { MouseEvent } from "react";
+import { useState, type MouseEvent } from "react";
 import {
   CalendarPlusIcon,
   CheckIcon,
   ChevronDownIcon,
-  CodeXmlIcon,
   FileTextIcon,
-  GlobeIcon,
   LockIcon,
   MessageCircleIcon,
-  MicIcon,
   MoreVerticalIcon,
   SendIcon,
+  UserRoundCheckIcon,
+  XIcon,
+  type LucideIcon,
 } from "lucide-react";
 import { cn } from "cn";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useToast } from "@/Toast";
 import { CANDIDATE_STATUS_LABEL } from "@/employer/_atoms";
-import { availabilityOf, evidenceSources, interviewScore, scoreTone, skillFit, type ScoreTone } from "@/employer/_jobDetailHelpers";
+import { useEmployerData } from "@/employer/EmployerDataContext";
+import { availabilityOf, evidenceLabels, evidenceLinks, evidenceSources, interviewScore, scoreTone, skillFit, type ScoreTone } from "@/employer/_jobDetailHelpers";
 import { DotLabel } from "@/employer/_panelParts";
-import { IdentityHiddenBadge } from "@/employer/_requirementAtoms";
-import { canInviteToInterview } from "@/employer/InterviewInviteDialog";
 import type { Candidate, CandidateStatus } from "@/employer/mockData";
+import { nextCandidateStatuses } from "../../../../../../server-handlers/_employer-candidate-status-helpers";
 import { formatPaise, singleUnlockPrice } from "../../../../../../server-handlers/_unlock-pricing";
 import { candidateDisplayName, candidateResponseOf, candidateSubtitle, canMessageCandidate, initials, interviewSubstep, practisedLabel } from "./requirementFormat";
-
-const VISIBLE_FIT_ITEMS = 2;
 
 const STAGE_TONE: Record<CandidateStatus, string> = {
   shortlisted: "bg-hx-indigo-100 text-hx-indigo",
@@ -49,45 +48,70 @@ const SCORE_TEXT: Record<ScoreTone, string> = {
   error: "text-hx-error-ink",
 };
 
-const EMPTY = <span className="text-hx-ink-soft">&mdash;</span>;
+const VISIBLE_GAPS = 2;
 
-function FitItems({ items, kind }: { items: string[]; kind: "match" | "gap" }) {
-  if (items.length === 0) return EMPTY;
-  const shown = items.slice(0, VISIBLE_FIT_ITEMS);
-  const rest = items.slice(VISIBLE_FIT_ITEMS);
+/* One cell for the whole skills story: the overall score, how many required
+   skills the candidate lists, and which are missing. Matched skills sit in a
+   tooltip so the row stays scannable. */
+function SkillMatch({ score, matched, gaps }: { score: number; matched: string[]; gaps: string[] }) {
+  const total = matched.length + gaps.length;
+  const rounded = Math.round(score);
+  const shownGaps = gaps.slice(0, VISIBLE_GAPS);
+  const hiddenGaps = gaps.length - shownGaps.length;
   return (
-    <ul className="m-0 flex list-none flex-col gap-1 p-0">
-      {shown.map((item) => (
-        <li key={item} className="flex items-center gap-1.5 text-[13px] text-hx-coal">
-          {kind === "match" ? (
-            <CheckIcon size={13} strokeWidth={2.5} aria-hidden="true" className="shrink-0 text-hx-success" />
-          ) : (
-            <span aria-hidden="true" className="mx-[3px] size-1.5 shrink-0 rounded-full bg-hx-warning" />
-          )}
-          <span className="min-w-0 [overflow-wrap:anywhere]">{item}</span>
-        </li>
-      ))}
-      {rest.length > 0 && (
-        <li>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                type="button"
-                aria-label={`${rest.length} more: ${rest.join(", ")}`}
-                className="cursor-default rounded-md border-0 bg-transparent p-0 text-[12px] font-medium text-hx-ink-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hx-indigo pointer-coarse:min-h-11 pointer-coarse:min-w-11"
-              >
-                +{rest.length} more
-              </button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom" className="max-w-64">
-              {rest.join(", ")}
-            </TooltipContent>
-          </Tooltip>
-        </li>
+    <div className="flex min-w-0 flex-col gap-0.5">
+      <span className="text-[13px] text-hx-ink-soft tabular-nums">
+        <span className={cn("text-[15px] font-semibold", SCORE_TEXT[scoreTone(rounded)])}>{rounded}</span>/100
+      </span>
+      {total > 0 && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              aria-label={`${matched.length} of ${total} required skills.${matched.length > 0 ? ` Has ${matched.join(", ")}.` : ""}${gaps.length > 0 ? ` Missing ${gaps.join(", ")}.` : ""}`}
+              className="w-fit cursor-default rounded-md border-0 bg-transparent p-0 text-left text-[13px] text-hx-coal focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hx-indigo pointer-coarse:min-h-11"
+            >
+              {matched.length} of {total} skills
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="max-w-64">
+            {matched.length > 0 && <div>Has: {matched.join(", ")}</div>}
+            {gaps.length > 0 && <div>Missing: {gaps.join(", ")}</div>}
+          </TooltipContent>
+        </Tooltip>
       )}
-    </ul>
+      {gaps.length > 0 && (
+        <span className="flex min-w-0 items-center gap-1.5 text-[12px] text-hx-ink-soft">
+          <span aria-hidden="true" className="size-1.5 shrink-0 rounded-full bg-hx-warning" />
+          <span className="truncate">
+            Missing {shownGaps.join(", ")}
+            {hiddenGaps > 0 ? ` +${hiddenGaps}` : ""}
+          </span>
+        </span>
+      )}
+    </div>
   );
 }
+
+interface PrimaryAction {
+  label: string;
+  icon: LucideIcon;
+  disabled: boolean;
+  onSelect: () => void;
+}
+
+/* How each legal next stage reads in the Stage menu. Forward moves come first,
+   closing outcomes after the separator; the order within each group follows the
+   server transition table. */
+const MOVE_COPY: Record<CandidateStatus, { label: string; icon: LucideIcon; closes: boolean }> = {
+  shortlisted: { label: "Shortlisted", icon: CheckIcon, closes: false },
+  interview_invited: { label: "Invite to interview", icon: CalendarPlusIcon, closes: false },
+  interviewing: { label: "Mark as interviewing", icon: UserRoundCheckIcon, closes: false },
+  hired: { label: "Mark as hired", icon: CheckIcon, closes: true },
+  rejected: { label: "Reject", icon: XIcon, closes: true },
+  not_a_fit: { label: "Not a fit", icon: XIcon, closes: true },
+  no_response: { label: "No response", icon: XIcon, closes: true },
+};
 
 function StagePill({ status, className }: { status: CandidateStatus; className?: string }) {
   return (
@@ -106,7 +130,7 @@ export default function CandidateRow({
   onUnlock,
   onViewEvidence,
   onMessage,
-  onInvite,
+  onStageChange,
 }: {
   candidate: Candidate;
   requirementId: string;
@@ -116,7 +140,7 @@ export default function CandidateRow({
   onUnlock: () => void;
   onViewEvidence: () => void;
   onMessage: () => void;
-  onInvite: () => void;
+  onStageChange: (status: CandidateStatus) => void;
 }) {
   const name = candidateDisplayName(candidate);
   const subtitle = candidateSubtitle(candidate);
@@ -126,12 +150,37 @@ export default function CandidateRow({
   const canMessage = !readOnly && canMessageCandidate(candidate);
   const writeOff = readOnly || suspended;
   const { matched, gaps } = skillFit(candidate.skills, requiredSkills);
-  const years = candidate.resume?.yearsExperience ?? null;
   const availability = availabilityOf(candidate.resume?.noticePeriod);
   const score = interviewScore(candidate);
   const evidence = evidenceSources(candidate);
+  const sourceLabels = evidenceLabels(evidence);
+  const links = evidenceLinks(candidate);
+  const { fetchCandidateResumeUrl } = useEmployerData();
+  const { toast } = useToast();
+  const [resumeBusy, setResumeBusy] = useState(false);
+  const openResume = async () => {
+    setResumeBusy(true);
+    const file = await fetchCandidateResumeUrl(candidate.id);
+    setResumeBusy(false);
+    if (!file) {
+      toast("Couldn't open the resume. Try again, or open the evidence report.", "error");
+      return;
+    }
+    window.location.assign(file.url);
+  };
   const practised = practisedLabel(candidate.lastActiveDaysAgo);
-  const canInvite = !writeOff && canInviteToInterview(candidate.candidateStatus);
+  const moves = writeOff ? [] : nextCandidateStatuses(candidate.candidateStatus);
+  const forwardMoves = moves.filter((m) => !MOVE_COPY[m].closes);
+  const closingMoves = moves.filter((m) => MOVE_COPY[m].closes);
+  const canInvite = moves.includes("interview_invited");
+  const primary: PrimaryAction | null =
+    !candidate.unlocked && !readOnly
+      ? { label: `Unlock for ${unlockPrice}`, icon: LockIcon, disabled: suspended, onSelect: onUnlock }
+      : canInvite
+        ? { label: "Invite to interview", icon: CalendarPlusIcon, disabled: false, onSelect: () => onStageChange("interview_invited") }
+        : canMessage
+          ? { label: "Message candidate", icon: SendIcon, disabled: suspended, onSelect: onMessage }
+          : null;
   const profileHref = `/employer/requirements/${requirementId}/candidates/${candidate.id}`;
   const router = useRouter();
 
@@ -147,9 +196,9 @@ export default function CandidateRow({
 
   return (
     <TableRow role="row" onClick={openProfile} className="cand-tr rq-row h-[76px] cursor-pointer border-b border-hx-line">
-      <TableCell role="cell" className="cand-td cand-td-name max-w-[300px] px-3 py-3 align-middle">
+      <TableCell role="cell" className="cand-td cand-td-name max-w-[240px] px-3 py-3 align-middle">
         <div className="flex min-w-0 items-center gap-3">
-          <Avatar size="lg" aria-hidden="true">
+          <Avatar size="lg" aria-hidden="true" title={candidate.unlocked ? undefined : "Name and contact are hidden until you unlock."}>
             <AvatarFallback className={cn("text-[13px] font-bold", candidate.unlocked ? "bg-hx-indigo-100 text-hx-indigo" : "bg-hx-soft text-hx-ink-soft")}>
               {candidate.unlocked ? initials(candidate.name) : <LockIcon size={15} />}
             </AvatarFallback>
@@ -164,7 +213,6 @@ export default function CandidateRow({
               </div>
             )}
             <div className="mt-1.5 flex flex-wrap items-center gap-1">
-              {!candidate.unlocked && <IdentityHiddenBadge compact />}
               {response === "interested" && <span className="rounded-full bg-hx-success-100 px-2 py-0.5 text-[11px] font-semibold text-hx-success-ink">Interested</span>}
               {response === "declined" && <span className="rounded-full bg-hx-soft px-2 py-0.5 text-[11px] font-semibold text-hx-neutral-ink">Declined</span>}
             </div>
@@ -172,13 +220,7 @@ export default function CandidateRow({
         </div>
       </TableCell>
       <TableCell role="cell" className="cand-td cand-td-fit px-3 py-3 align-middle" data-label="Role match for this job">
-        <FitItems items={matched} kind="match" />
-      </TableCell>
-      <TableCell role="cell" className="cand-td cand-td-fit px-3 py-3 align-middle" data-label="Key gaps">
-        <FitItems items={gaps} kind="gap" />
-      </TableCell>
-      <TableCell role="cell" className="cand-td px-3 py-3 align-middle" data-label="Experience">
-        <span className="text-[13px] text-hx-coal">{years != null ? `${years} ${years === 1 ? "year" : "years"}` : EMPTY}</span>
+        <SkillMatch score={candidate.matchScore} matched={matched} gaps={gaps} />
       </TableCell>
       <TableCell role="cell" className="cand-td px-3 py-3 align-middle whitespace-normal" data-label="Availability">
         <DotLabel tone={availability.tone}>{availability.label}</DotLabel>
@@ -187,37 +229,67 @@ export default function CandidateRow({
         {evidence.total === 0 ? (
           <span className="text-[13px] text-hx-ink-soft">No sources yet</span>
         ) : (
-          <button
-            type="button"
-            onClick={onViewEvidence}
-            aria-label={`Evidence for ${name}: ${evidence.total} ${evidence.total === 1 ? "source" : "sources"}${score != null ? `, interview score ${score} out of 100 across ${candidate.sessionsCompleted} ${candidate.sessionsCompleted === 1 ? "interview" : "interviews"}${practised ? `, ${practised.toLowerCase()}` : ""}` : ""}. View evidence report`}
-            className="group flex cursor-pointer flex-col items-start gap-1 rounded-md border-0 bg-transparent p-0 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hx-indigo pointer-coarse:min-h-11"
-          >
-            <span aria-hidden="true" className="flex items-center gap-1.5 text-hx-ink-soft">
-              {evidence.resume && <FileTextIcon size={15} />}
-              {evidence.interviews > 0 && <MicIcon size={15} />}
-              {evidence.web > 0 && <GlobeIcon size={15} />}
-              {evidence.github > 0 && <CodeXmlIcon size={15} />}
-            </span>
-            <span className="text-[13px] text-hx-coal group-hover:underline">
-              {evidence.total} {evidence.total === 1 ? "source" : "sources"}
-            </span>
-            {score != null && (
-              <span title={practised ?? undefined} className="text-[12px] text-hx-ink-soft tabular-nums">
-                Interview <span className={cn("font-semibold", SCORE_TEXT[scoreTone(score)])}>{score}</span>/100
-              </span>
-            )}
-          </button>
+          <div className="flex flex-col items-start gap-0.5">
+            <button
+              type="button"
+              onClick={onViewEvidence}
+              aria-label={`Evidence for ${name}: ${score != null ? `interview score ${score} out of 100 across ${evidence.interviews} ${evidence.interviews === 1 ? "interview" : "interviews"}${practised ? `, ${practised.toLowerCase()}` : ""}` : "no graded interviews"}${!candidate.unlocked && sourceLabels.length > 0 ? `. Also ${sourceLabels.join(", ")}` : ""}. View evidence report`}
+              className="group flex cursor-pointer flex-col items-start rounded-md border-0 bg-transparent p-0 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hx-indigo pointer-coarse:min-h-11"
+            >
+              {score != null ? (
+                <span title={practised ?? undefined} className="text-[13px] text-hx-ink-soft tabular-nums group-hover:underline">
+                  <span className={cn("text-[15px] font-semibold", SCORE_TEXT[scoreTone(score)])}>{score}</span>/100
+                  <span> · {evidence.interviews} {evidence.interviews === 1 ? "interview" : "interviews"}</span>
+                </span>
+              ) : (
+                <span className="text-[13px] text-hx-ink-soft group-hover:underline">No interviews yet</span>
+              )}
+            </button>
+            {sourceLabels.length > 0 &&
+              (candidate.unlocked ? (
+                <span className="flex flex-wrap items-center text-[12px] text-hx-ink-soft">
+                  {evidence.resume && (
+                    <button
+                      type="button"
+                      onClick={() => void openResume()}
+                      disabled={resumeBusy}
+                      aria-label={`Download ${name}'s resume`}
+                      className="cursor-pointer border-0 bg-transparent p-0 text-[12px] text-hx-indigo underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hx-indigo disabled:cursor-wait disabled:opacity-60 pointer-coarse:min-h-11"
+                    >
+                      Resume
+                    </button>
+                  )}
+                  {links.github && (
+                    <>
+                      {evidence.resume && <span aria-hidden="true" className="px-1">·</span>}
+                      <a href={links.github} target="_blank" rel="noopener noreferrer" aria-label={`${name}'s GitHub, opens in a new tab`} className="text-hx-indigo underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hx-indigo pointer-coarse:inline-flex pointer-coarse:min-h-11 pointer-coarse:items-center">
+                        GitHub
+                      </a>
+                    </>
+                  )}
+                  {links.web && (
+                    <>
+                      {(evidence.resume || links.github) && <span aria-hidden="true" className="px-1">·</span>}
+                      <a href={links.web} target="_blank" rel="noopener noreferrer" aria-label={`${name}'s portfolio, opens in a new tab`} className="text-hx-indigo underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hx-indigo pointer-coarse:inline-flex pointer-coarse:min-h-11 pointer-coarse:items-center">
+                        Portfolio
+                      </a>
+                    </>
+                  )}
+                </span>
+              ) : (
+                <span className="text-[12px] text-hx-ink-soft">{sourceLabels.join(" · ")}</span>
+              ))}
+          </div>
         )}
       </TableCell>
       <TableCell role="cell" className="cand-td px-3 py-3 align-middle" data-label="Stage">
         <div className="flex flex-col items-start gap-1">
-          {!writeOff ? (
+          {moves.length > 0 ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
-                  aria-label={`Stage for ${name}: ${CANDIDATE_STATUS_LABEL[candidate.candidateStatus]}. Open stage actions`}
+                  aria-label={`Stage for ${name}: ${CANDIDATE_STATUS_LABEL[candidate.candidateStatus]}. Move to another stage`}
                   className={cn(
                     "inline-flex cursor-pointer items-center gap-1 rounded-full border-0 py-1 pr-2 pl-2.5 text-[12px] font-semibold whitespace-nowrap transition-[filter] duration-150 hover:brightness-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hx-indigo motion-reduce:transition-none pointer-coarse:min-h-11",
                     STAGE_TONE[candidate.candidateStatus],
@@ -227,15 +299,31 @@ export default function CandidateRow({
                   <ChevronDownIcon size={13} aria-hidden="true" />
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-52">
-                {canInvite && (
-                  <DropdownMenuItem onSelect={onInvite}>
-                    <CalendarPlusIcon className="size-4" aria-hidden="true" /> {candidate.unlocked ? "Invite to interview" : "Unlock to invite"}
-                  </DropdownMenuItem>
-                )}
+              <DropdownMenuContent align="start" className="w-56">
+                <DropdownMenuLabel>Move to</DropdownMenuLabel>
+                {forwardMoves.map((m) => {
+                  const Icon = MOVE_COPY[m].icon;
+                  const needsUnlock = !candidate.unlocked && (m === "interview_invited" || m === "interviewing" || m === "hired");
+                  return (
+                    <DropdownMenuItem key={m} onSelect={() => onStageChange(m)}>
+                      <Icon className="size-4" aria-hidden="true" /> {needsUnlock ? `Unlock to ${MOVE_COPY[m].label.toLowerCase()}` : MOVE_COPY[m].label}
+                    </DropdownMenuItem>
+                  );
+                })}
+                {forwardMoves.length > 0 && closingMoves.length > 0 && <DropdownMenuSeparator />}
+                {closingMoves.map((m) => {
+                  const Icon = MOVE_COPY[m].icon;
+                  const needsUnlock = !candidate.unlocked && m === "hired";
+                  return (
+                    <DropdownMenuItem key={m} onSelect={() => onStageChange(m)}>
+                      <Icon className="size-4" aria-hidden="true" /> {needsUnlock ? `Unlock to ${MOVE_COPY[m].label.toLowerCase()}` : MOVE_COPY[m].label}
+                    </DropdownMenuItem>
+                  );
+                })}
+                <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
                   <Link href={`/employer/requirements/${requirementId}/outcome?candidate=${candidate.id}`}>
-                    <MessageCircleIcon className="size-4" aria-hidden="true" /> Record outcome
+                    <MessageCircleIcon className="size-4" aria-hidden="true" /> Move with a note
                   </Link>
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -246,11 +334,21 @@ export default function CandidateRow({
           {substep && <span className="text-[11.5px] text-hx-ink-soft">{substep}</span>}
         </div>
       </TableCell>
-      <TableCell role="cell" className="cand-td cand-td-act px-3 py-3 align-middle">
-        <div className="flex items-center justify-end gap-1.5">
+      <TableCell role="cell" className="cand-td cand-td-act w-px whitespace-nowrap px-2 py-3 align-middle">
+        <div className="flex items-center justify-end gap-0.5">
+          {primary && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon" disabled={primary.disabled} onClick={primary.onSelect} aria-label={`${primary.label}: ${name}`} className="size-8 text-hx-indigo pointer-coarse:size-11">
+                  <primary.icon size={16} aria-hidden="true" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">{primary.label}</TooltipContent>
+            </Tooltip>
+          )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" aria-label={`Actions for ${name}`} className="size-9 text-hx-ink-soft pointer-coarse:size-11">
+              <Button variant="ghost" size="icon" aria-label={`Actions for ${name}`} className="size-8 text-hx-ink-soft pointer-coarse:size-11">
                 <MoreVerticalIcon size={16} aria-hidden="true" />
               </Button>
             </DropdownMenuTrigger>
@@ -266,18 +364,6 @@ export default function CandidateRow({
               {canMessage && (
                 <DropdownMenuItem disabled={suspended} onSelect={onMessage}>
                   <SendIcon className="size-4" aria-hidden="true" /> Message candidate
-                </DropdownMenuItem>
-              )}
-              {canInvite && (
-                <DropdownMenuItem onSelect={onInvite}>
-                  <CalendarPlusIcon className="size-4" aria-hidden="true" /> {candidate.unlocked ? "Invite to interview" : "Unlock to invite"}
-                </DropdownMenuItem>
-              )}
-              {!writeOff && (
-                <DropdownMenuItem asChild>
-                  <Link href={`/employer/requirements/${requirementId}/outcome?candidate=${candidate.id}`}>
-                    <MessageCircleIcon className="size-4" aria-hidden="true" /> Record outcome
-                  </Link>
                 </DropdownMenuItem>
               )}
             </DropdownMenuContent>

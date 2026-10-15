@@ -214,6 +214,25 @@ export function evidenceSources(c: Pick<Candidate, "resume" | "sessionsCompleted
   return { resume, interviews, github, web, total: (resume ? 1 : 0) + (interviews > 0 ? 1 : 0) + links.length };
 }
 
+/** Named sources other than interviews, so the table can say what backs a
+    profile instead of showing icons the employer has to decode. */
+export function evidenceLabels(e: Pick<EvidenceSources, "resume" | "github" | "web">): string[] {
+  const out: string[] = [];
+  if (e.resume) out.push("Resume");
+  if (e.github > 0) out.push("GitHub");
+  if (e.web > 0) out.push("Portfolio");
+  return out;
+}
+
+/** The first GitHub link and the first other link a candidate shared, so the
+    table can open them directly. The API sends none for a locked match. */
+export function evidenceLinks(c: Pick<Candidate, "portfolioLinks">): { github: string | null; web: string | null } {
+  const links = (c.portfolioLinks ?? []).filter((l) => /^https?:\/\//i.test(l.url));
+  const github = links.find((l) => /(^|\/\/|\.)github\.com\b/i.test(l.url));
+  const web = links.find((l) => l !== github && !/(^|\/\/|\.)github\.com\b/i.test(l.url));
+  return { github: github?.url ?? null, web: web?.url ?? null };
+}
+
 /* ── Job status + summaries ── */
 
 export type JobStatusTone = "success" | "info" | "neutral" | "warning" | "error";
@@ -251,9 +270,35 @@ export function matchingSummary(r: Pick<Requirement, "status" | "totalMatched" |
   };
 }
 
+/** What clicking an insight narrows the candidate list to. Carries its own
+    data so the filter never depends on the page re-deriving it. */
+export type InsightFilter =
+  | { kind: "all-must"; skills: string[] }
+  | { kind: "gap"; skill: string }
+  | { kind: "interview" }
+  | { kind: "portfolio" }
+  | { kind: "immediate" };
+
 export interface JobInsight {
   id: string;
   text: string;
+  label: string;
+  filter: InsightFilter;
+}
+
+export function matchesInsight(c: Candidate, f: InsightFilter): boolean {
+  switch (f.kind) {
+    case "all-must":
+      return skillFit(c.skills, f.skills).gaps.length === 0;
+    case "gap":
+      return skillFit(c.skills, [f.skill]).gaps.length > 0;
+    case "interview":
+      return (interviewScore(c) ?? 0) >= 70;
+    case "portfolio":
+      return (c.portfolioLinks?.length ?? 0) > 0;
+    case "immediate":
+      return availabilityOf(c.resume?.noticePeriod).label === "Immediate";
+  }
 }
 
 /** Plain-language observations, emitted only when the data supports them. */
@@ -271,19 +316,34 @@ export function jobInsights(r: Pick<Requirement, "skills" | "portfolioRequired" 
       if (gaps.length === 0) meetsAll += 1;
       for (const g of gaps) gapCount.set(g, (gapCount.get(g) ?? 0) + 1);
     }
-    if (meetsAll > 0) out.push({ id: "all-must", text: `${meetsAll} ${meetsAll === 1 ? "candidate meets" : "candidates meet"} every must-have skill.` });
+    if (meetsAll > 0) {
+      out.push({
+        id: "all-must",
+        text: `${meetsAll} ${meetsAll === 1 ? "candidate meets" : "candidates meet"} every must-have skill.`,
+        label: "Meets every must-have",
+        filter: { kind: "all-must", skills: must },
+      });
+    }
     const top = [...gapCount.entries()].sort((a, b) => b[1] - a[1])[0];
-    if (top && top[1] >= 2 && top[1] / list.length >= 0.4) out.push({ id: "top-gap", text: `${top[0]} is the most common gap, missing for ${top[1]} candidates.` });
+    if (top && top[1] >= 2 && top[1] / list.length >= 0.4) {
+      out.push({ id: "top-gap", text: `${top[0]} is the most common gap, missing for ${top[1]} candidates.`, label: `Missing ${top[0]}`, filter: { kind: "gap", skill: top[0] } });
+    }
   }
 
-  const proven = list.filter((c) => (interviewScore(c) ?? 0) >= 70).length;
-  if (proven > 0) out.push({ id: "interview", text: `${proven} ${proven === 1 ? "candidate scores" : "candidates score"} 70 or higher in HireStepX mock interviews.` });
+  const proven = list.filter((c) => matchesInsight(c, { kind: "interview" })).length;
+  if (proven > 0) {
+    out.push({ id: "interview", text: `${proven} ${proven === 1 ? "candidate scores" : "candidates score"} 70 or higher in HireStepX mock interviews.`, label: "Interview score 70+", filter: { kind: "interview" } });
+  }
 
-  const withLinks = list.filter((c) => (c.portfolioLinks?.length ?? 0) > 0).length;
-  if (withLinks > 0) out.push({ id: "portfolio", text: `${withLinks} ${withLinks === 1 ? "candidate shares" : "candidates share"} portfolio or GitHub links.` });
+  const withLinks = list.filter((c) => matchesInsight(c, { kind: "portfolio" })).length;
+  if (withLinks > 0) {
+    out.push({ id: "portfolio", text: `${withLinks} ${withLinks === 1 ? "candidate shares" : "candidates share"} portfolio or GitHub links.`, label: "Shares portfolio or GitHub", filter: { kind: "portfolio" } });
+  }
 
-  const quick = list.filter((c) => availabilityOf(c.resume?.noticePeriod).label === "Immediate").length;
-  if (quick > 0) out.push({ id: "immediate", text: `${quick} ${quick === 1 ? "candidate is" : "candidates are"} available immediately.` });
+  const quick = list.filter((c) => matchesInsight(c, { kind: "immediate" })).length;
+  if (quick > 0) {
+    out.push({ id: "immediate", text: `${quick} ${quick === 1 ? "candidate is" : "candidates are"} available immediately.`, label: "Available immediately", filter: { kind: "immediate" } });
+  }
 
   return out.slice(0, 4);
 }

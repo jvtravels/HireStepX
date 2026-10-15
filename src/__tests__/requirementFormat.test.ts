@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { closedSummary, practisedLabel, previewText, timeAgoLabel } from "../../app/(employer)/employer/requirements/[id]/_components/requirementFormat";
+import { closedSummary, practisedLabel, previewText, timeAgoLabel, whereLabel } from "../../app/(employer)/employer/requirements/[id]/_components/requirementFormat";
 
 const NOW = new Date("2026-10-15T12:00:00").getTime();
 
@@ -75,5 +75,18 @@ describe("closedSummary", () => {
     );
     expect(closedSummary({ status: "closed", archiveReason: null, archiveDisposition: "keep_candidates" })).toContain("kept as they were");
     expect(closedSummary({ status: "closed", archiveReason: null, archiveDisposition: null })).toBe("This requirement is closed. Candidate details are read-only.");
+  });
+});
+
+describe("whereLabel", () => {
+  it("shows the work mode once when it is the only location", () => {
+    expect(whereLabel("Remote", "Remote")).toBe("Remote");
+    expect(whereLabel("remote", "Remote")).toBe("Remote");
+  });
+  it("combines a mode with a real place, and falls back to whichever exists", () => {
+    expect(whereLabel("Bengaluru", "Hybrid")).toBe("Hybrid (Bengaluru)");
+    expect(whereLabel("Pune", null)).toBe("Pune");
+    expect(whereLabel(null, "Remote")).toBe("Remote");
+    expect(whereLabel("", null)).toBeNull();
   });
 });

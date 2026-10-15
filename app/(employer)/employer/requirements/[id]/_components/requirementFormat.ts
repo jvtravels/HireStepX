@@ -63,6 +63,14 @@ export function practisedLabel(lastActiveDaysAgo: number): string | null {
 
 /** First words of a description at a word boundary, keeping at most four
     paragraph breaks so a pasted JD never shows a half word or a tall wall. */
+/** "Remote (Bengaluru)" but never "Remote (Remote)": a posting whose only location is its work mode shows it once. */
+export function whereLabel(place: string | null | undefined, mode: string | null | undefined): string | null {
+  const p = place?.trim() || null;
+  const m = mode?.trim() || null;
+  if (p && m) return p.toLowerCase() === m.toLowerCase() ? m : `${m} (${p})`;
+  return p || m;
+}
+
 export function previewText(text: string, max: number): { text: string; truncated: boolean } {
   const lines = text.trim().split("\n");
   const kept = lines.slice(0, 4).join("\n");
@@ -128,7 +136,9 @@ export function initials(name: string): string {
 }
 
 export function candidateSubtitle(c: Candidate): string {
-  return [c.targetRole, c.city].filter((part) => part && part !== "Not specified").join(" · ");
+  const years = c.resume?.yearsExperience;
+  const experience = years != null ? `${years} ${years === 1 ? "yr" : "yrs"}` : null;
+  return [c.targetRole, experience, c.city].filter((part) => part && part !== "Not specified").join(" · ");
 }
 
 export type CandidateResponse = "none" | "interested" | "declined";

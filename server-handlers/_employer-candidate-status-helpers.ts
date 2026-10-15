@@ -67,6 +67,12 @@ const ALLOWED_TRANSITIONS: Record<CandidateStatus, readonly CandidateStatus[]> =
   no_response: [],
 };
 
+/** The statuses a candidate can move to next, in pipeline order. Empty once
+ *  they reach a terminal state. The Stage menu renders exactly this list. */
+export function nextCandidateStatuses(from: CandidateStatus): readonly CandidateStatus[] {
+  return ALLOWED_TRANSITIONS[from];
+}
+
 /** Whether moving a candidate from `from` to `to` is a legal pipeline
  *  transition. Same-status "transitions" (note/date-only updates) are
  *  always allowed. */

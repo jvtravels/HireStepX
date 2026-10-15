@@ -7,7 +7,10 @@ import {
   jobStatusPill,
   matchingSummary,
   parseNiceToHave,
+  evidenceLabels,
+  evidenceLinks,
   evidenceSources,
+  matchesInsight,
   pipelineRows,
   scoreTone,
   skillFit,
@@ -169,5 +172,62 @@ describe("evidenceSources", () => {
 
   it("does not mistake a lookalike host for GitHub", () => {
     expect(evidenceSources({ ...base, portfolioLinks: [{ title: "x", url: "https://notgithub.com.evil.io/a" }] }).github).toBe(0);
+  });
+});
+
+describe("evidenceLabels", () => {
+  it("names only the sources that exist", () => {
+    expect(evidenceLabels({ resume: true, github: 2, web: 0 })).toEqual(["Resume", "GitHub"]);
+    expect(evidenceLabels({ resume: false, github: 0, web: 1 })).toEqual(["Portfolio"]);
+    expect(evidenceLabels({ resume: false, github: 0, web: 0 })).toEqual([]);
+  });
+});
+
+describe("matchesInsight", () => {
+  it("keeps candidates missing the named skill", () => {
+    const a = cand(80, "shortlisted", { skills: ["Java"] });
+    const b = cand(80, "shortlisted", { skills: ["Java", "React"] });
+    expect(matchesInsight(a, { kind: "gap", skill: "react" })).toBe(true);
+    expect(matchesInsight(b, { kind: "gap", skill: "react" })).toBe(false);
+  });
+
+  it("keeps candidates covering every must-have", () => {
+    const f = { kind: "all-must" as const, skills: ["Java", "React"] };
+    expect(matchesInsight(cand(80, "shortlisted", { skills: ["java", "react"] }), f)).toBe(true);
+    expect(matchesInsight(cand(80, "shortlisted", { skills: ["java"] }), f)).toBe(false);
+  });
+
+  it("keeps candidates with portfolio links", () => {
+    expect(matchesInsight(cand(80, "shortlisted", { portfolioLinks: [{ title: "Site", url: "https://x.dev" }] }), { kind: "portfolio" })).toBe(true);
+    expect(matchesInsight(cand(80), { kind: "portfolio" })).toBe(false);
+  });
+
+  it("treats a candidate with no interviews as below the interview bar", () => {
+    expect(matchesInsight(cand(80), { kind: "interview" })).toBe(false);
+  });
+
+  it("gives every insight a label and a filter that selects at least one candidate", () => {
+    const list = [cand(90, "shortlisted", { skills: ["Java"], portfolioLinks: [{ title: "Site", url: "https://x.dev" }] })];
+    const insights = jobInsights({ skills: ["Java", "React"], portfolioRequired: false, candidates: list });
+    for (const i of insights) {
+      expect(i.label.length).toBeGreaterThan(0);
+      expect(list.some((c) => matchesInsight(c, i.filter))).toBe(true);
+    }
+  });
+});
+
+describe("evidenceLinks", () => {
+  const link = (url: string) => ({ title: "x", url });
+  it("picks the first GitHub link and the first other link", () => {
+    expect(
+      evidenceLinks({ portfolioLinks: [link("https://example.dev"), link("https://github.com/a"), link("https://github.com/b"), link("https://other.io")] }),
+    ).toEqual({ github: "https://github.com/a", web: "https://example.dev" });
+  });
+  it("returns nothing for a locked match with no links", () => {
+    expect(evidenceLinks({ portfolioLinks: [] })).toEqual({ github: null, web: null });
+    expect(evidenceLinks({})).toEqual({ github: null, web: null });
+  });
+  it("ignores links that are not http(s)", () => {
+    expect(evidenceLinks({ portfolioLinks: [link("javascript:alert(1)"), link("mailto:a@b.co")] })).toEqual({ github: null, web: null });
   });
 });

@@ -4,6 +4,7 @@ import {
   asCandidateStatusNote,
   asInterviewScheduledAt,
   isValidCandidateStatusTransition,
+  nextCandidateStatuses,
   CANDIDATE_STATUSES,
 } from "../../server-handlers/_employer-candidate-status-helpers";
 
@@ -108,6 +109,29 @@ describe("isValidCandidateStatusTransition", () => {
   it("allows a same-status update (note/interview-time only change)", () => {
     for (const status of CANDIDATE_STATUSES) {
       expect(isValidCandidateStatusTransition(status, status)).toBe(true);
+    }
+  });
+});
+
+describe("nextCandidateStatuses", () => {
+  it("lists the pipeline moves in order", () => {
+    expect(nextCandidateStatuses("shortlisted")).toEqual(["interview_invited", "rejected", "not_a_fit"]);
+    expect(nextCandidateStatuses("interview_invited")).toEqual(["interviewing", "rejected", "not_a_fit", "no_response"]);
+    expect(nextCandidateStatuses("interviewing")).toEqual(["hired", "rejected", "not_a_fit", "no_response"]);
+  });
+
+  it("is empty for every terminal status", () => {
+    for (const terminal of ["hired", "rejected", "not_a_fit", "no_response"] as const) {
+      expect(nextCandidateStatuses(terminal)).toEqual([]);
+    }
+  });
+
+  it("agrees with isValidCandidateStatusTransition", () => {
+    for (const from of CANDIDATE_STATUSES) {
+      for (const to of CANDIDATE_STATUSES) {
+        if (from === to) continue;
+        expect(nextCandidateStatuses(from).includes(to)).toBe(isValidCandidateStatusTransition(from, to));
+      }
     }
   });
 });

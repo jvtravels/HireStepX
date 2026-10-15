@@ -3,19 +3,24 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { LockIcon, RefreshCwIcon, SearchIcon } from "lucide-react";
+import { LockIcon, RefreshCwIcon, SearchIcon, XIcon } from "lucide-react";
 import { tokens as t, fonts as f, textSize } from "@/auth/_tokens";
 import { useEmployerData, type Requirement } from "@/employer/EmployerDataContext";
 import { useEmployerBreadcrumb } from "@/employer/EmployerShell";
 import { PrimaryCta } from "@/employer/_atoms";
-import { TAB_LABEL, tabCounts, visibleTabs, type CandidateTab } from "@/employer/_jobDetailHelpers";
+import { TAB_LABEL, jobInsights, tabCounts, visibleTabs, type CandidateTab } from "@/employer/_jobDetailHelpers";
 import StatusTabs from "@/components/StatusTabs";
 import InterviewInviteDialog, { statusErrorCopy, type InviteResult, type InviteValues } from "@/employer/InterviewInviteDialog";
 import { useToast } from "@/Toast";
 import { EmptyNote, ErrorRetry, InlineNotice, PageSkeleton, SuspendedBanner } from "@/employer/_requirementAtoms";
 import type { UnlockedCandidate } from "@/employer/_requirementCalls";
 import { useEmployerAccess } from "@/employer/_useEmployerAccess";
-import type { Candidate } from "@/employer/mockData";
+import type { Candidate, CandidateStatus } from "@/employer/mockData";
+import { CANDIDATE_STATUS_LABEL } from "@/employer/_atoms";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { SearchWithSuggestions } from "@/components/SearchWithSuggestions";
 import { type Sort } from "@/components/SortableHead";
@@ -64,6 +69,7 @@ export default function RequirementDetailPage() {
   const [contactFilter, setContactFilter] = useState<ContactFilter>("all");
   const [locationFilter, setLocationFilter] = useState<string>("all");
   const [tabChoice, setTabChoice] = useState<CandidateTab | null>(null);
+  const [insightId, setInsightId] = useState<string | null>(null);
   const [sort, setSort] = useState<Sort<SortColumn>>(DEFAULT_SORT);
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -175,8 +181,11 @@ export default function RequirementDetailPage() {
   const tab: CandidateTab = tabChoice ?? "all";
   const { message, reopenSaving, changeStage, reopen } = useJobActions(requirement, patchRequirement, load);
 
+  const insights = useMemo(() => (requirement ? jobInsights(requirement) : []), [requirement]);
+  const activeInsight = insights.find((i) => i.id === insightId) ?? null;
+
   const activeFilterCount = (contactFilter !== "all" ? 1 : 0) + (locationFilter !== "all" ? 1 : 0);
-  const hasActiveFilters = search.trim() !== "" || contactFilter !== "all" || locationFilter !== "all";
+  const hasActiveFilters = search.trim() !== "" || contactFilter !== "all" || locationFilter !== "all" || activeInsight != null;
 
   const suggestedFilters = useMemo(() => {
     const suggestions: Array<{ label: string; apply: () => void }> = [];
@@ -187,14 +196,19 @@ export default function RequirementDetailPage() {
     return suggestions.slice(0, 4);
   }, [contactFilter, locationOptions, locationFilter]);
 
+  const appliedChips: Array<{ key: string; label: string; remove: () => void }> = [];
+  if (contactFilter !== "all") appliedChips.push({ key: "contact", label: CONTACT_FILTER_OPTIONS.find((o) => o.value === contactFilter)?.label ?? contactFilter, remove: () => setContactFilter("all") });
+  if (locationFilter !== "all") appliedChips.push({ key: "location", label: locationFilter, remove: () => setLocationFilter("all") });
+  if (activeInsight) appliedChips.push({ key: "insight", label: activeInsight.label, remove: () => setInsightId(null) });
+
   const filteredSorted = useMemo(
-    () => filterCandidates(candidates, { search, contact: contactFilter, location: locationFilter, tab }).sort((a, b) => compareCandidates(a, b, sort)),
-    [candidates, search, contactFilter, locationFilter, tab, sort],
+    () => filterCandidates(candidates, { search, contact: contactFilter, location: locationFilter, tab, insight: activeInsight?.filter ?? null }).sort((a, b) => compareCandidates(a, b, sort)),
+    [candidates, search, contactFilter, locationFilter, tab, sort, activeInsight],
   );
 
   useEffect(() => {
     setPage(1);
-  }, [search, contactFilter, locationFilter, tab, sort, rowsPerPage]);
+  }, [search, contactFilter, locationFilter, tab, sort, rowsPerPage, insightId]);
 
   const totalPages = Math.max(1, Math.ceil(filteredSorted.length / rowsPerPage));
   const pageSafe = Math.min(page, totalPages);
@@ -217,9 +231,37 @@ export default function RequirementDetailPage() {
 
   // Locked candidates can't be contacted, so the menu entry routes to unlock
   // first instead of dead-ending in a 402.
-  const handleInvite = (c: Candidate) => {
-    if (!c.unlocked) setUnlockTarget({ mode: "single", matchId: c.id });
-    else setInviteId(c.id);
+  const needsUnlockFor = (status: CandidateStatus) => status === "interview_invited" || status === "interviewing" || status === "hired";
+
+  const [pendingStage, setPendingStage] = useState<{ id: string; status: CandidateStatus } | null>(null);
+  const [stageBusy, setStageBusy] = useState(false);
+
+  const applyStage = async (c: Candidate, status: CandidateStatus) => {
+    const res = await updateCandidateStatusResult(c.id, { candidateStatus: status });
+    if (!res.ok) {
+      toast(statusErrorCopy(res.error), "error");
+      return false;
+    }
+    patchCandidates((x) => (x.id === c.id ? { ...x, candidateStatus: status } : x));
+    toast(`${candidateDisplayName(c)} moved to ${CANDIDATE_STATUS_LABEL[status]}`, "success");
+    return true;
+  };
+
+  const handleStageChange = (c: Candidate, status: CandidateStatus) => {
+    if (!c.unlocked && needsUnlockFor(status)) setUnlockTarget({ mode: "single", matchId: c.id });
+    else if (status === "interview_invited") setInviteId(c.id);
+    else if (status === "interviewing") void applyStage(c, status);
+    else setPendingStage({ id: c.id, status });
+  };
+
+  const pendingCandidate = candidates.find((c) => c.id === pendingStage?.id) ?? null;
+
+  const confirmStage = async () => {
+    if (!pendingStage || !pendingCandidate) return;
+    setStageBusy(true);
+    await applyStage(pendingCandidate, pendingStage.status);
+    setStageBusy(false);
+    setPendingStage(null);
   };
 
   const submitInvite = async ({ note, scheduledAt }: InviteValues): Promise<InviteResult> => {
@@ -235,6 +277,7 @@ export default function RequirementDetailPage() {
     setSearch("");
     setContactFilter("all");
     setLocationFilter("all");
+    setInsightId(null);
   };
 
   if (loading && !requirement) return <PageSkeleton label="Loading requirement" />;
@@ -301,6 +344,7 @@ export default function RequirementDetailPage() {
             <h2 id="candidates-heading" className="sr-only">
               Candidates
             </h2>
+            <div className="mb-4 flex flex-wrap items-center gap-x-5 gap-y-3">
             {hasList && (
               <StatusTabs
                 tabs={tabs}
@@ -309,13 +353,13 @@ export default function RequirementDetailPage() {
                 label="Candidate groups"
                 idPrefix="cand"
                 panelId="cand-panel"
-                className="mb-4"
+                className="shrink-0"
               />
             )}
-            <div className="mb-4 flex flex-wrap items-center gap-2.5">
+            <div className="flex min-w-0 flex-[1_1_auto] flex-wrap items-center gap-2.5 min-[1100px]:flex-nowrap">
               {hasList && (
                 <>
-                  <div className="min-w-40 max-w-80 flex-[1_1_220px]">
+                  <div className="min-w-36 max-w-80 flex-[1_1_220px]">
                     <SearchWithSuggestions
                       id="candidates-search"
                       label="Search candidates"
@@ -397,6 +441,25 @@ export default function RequirementDetailPage() {
                 </Tooltip>
               </div>
             </div>
+            </div>
+
+            {hasList && appliedChips.length > 0 && (
+              <ul aria-label="Applied filters" className="m-0 mb-4 flex list-none flex-wrap items-center gap-2 p-0">
+                {appliedChips.map((chip) => (
+                  <li key={chip.key}>
+                    <button
+                      type="button"
+                      onClick={chip.remove}
+                      aria-label={`Remove filter: ${chip.label}`}
+                      className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-hx-line bg-white py-1 pr-2 pl-3 text-[13px] text-hx-coal transition-colors duration-150 hover:bg-hx-row focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hx-indigo motion-reduce:transition-none pointer-coarse:min-h-11"
+                    >
+                      {chip.label}
+                      <XIcon size={13} aria-hidden="true" className="text-hx-ink-soft" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
 
             <div aria-live="polite" className={refreshNote ? "mb-3" : undefined}>
               {refreshNote && <InlineNotice tone={refreshNote.tone} live={false}>{refreshNote.text}</InlineNotice>}
@@ -451,6 +514,12 @@ export default function RequirementDetailPage() {
                     </EmptyNote>
                   )
                 ) : (
+                  <>
+                  {!readOnly && pageRows.some((c) => !c.unlocked) && (
+                    <p className="mt-0 mb-2 text-[12.5px] text-hx-ink-soft">
+                      Locked candidates show an ID until you unlock them.
+                    </p>
+                  )}
                   <CandidatesTable
                     rows={pageRows}
                     requirementId={requirement.id}
@@ -462,7 +531,7 @@ export default function RequirementDetailPage() {
                     onUnlock={(c) => setUnlockTarget({ mode: "single", matchId: c.id })}
                     onViewEvidence={(c) => setEvidenceId(c.id)}
                     onMessage={(c) => setMessagesId(c.id)}
-                    onInvite={handleInvite}
+                    onStageChange={handleStageChange}
                     totalCount={candidates.length}
                     filteredCount={filteredSorted.length}
                     rowsPerPage={rowsPerPage}
@@ -471,6 +540,7 @@ export default function RequirementDetailPage() {
                     totalPages={totalPages}
                     onPageChange={setPage}
                   />
+                  </>
                 )}
 
                 <UnlockDialog target={unlockTarget} access={access} onClose={() => setUnlockTarget(null)} onUnlocked={handleUnlocked} />
@@ -487,6 +557,24 @@ export default function RequirementDetailPage() {
                   requirementTitle={requirement.title}
                   onSubmit={submitInvite}
                 />
+                <AlertDialog open={pendingStage != null} onOpenChange={(o) => { if (!o && !stageBusy) setPendingStage(null); }}>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>
+                        {pendingStage ? `Mark ${pendingCandidate ? candidateDisplayName(pendingCandidate) : "this candidate"} as ${CANDIDATE_STATUS_LABEL[pendingStage.status]}?` : ""}
+                      </AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This is a final outcome for this job and can't be undone from here. To add a note first, use Move with a note in the Stage menu.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel disabled={stageBusy}>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={(e) => { e.preventDefault(); void confirmStage(); }} disabled={stageBusy}>
+                        {stageBusy ? "Saving…" : "Confirm"}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
                 <MessagesDialog
                   matchId={messagesCandidate?.id ?? null}
                   displayName={messagesCandidate ? candidateDisplayName(messagesCandidate) : "Candidate"}
@@ -504,6 +592,9 @@ export default function RequirementDetailPage() {
           counts={counts}
           tab={tab}
           onSelectTab={setTabChoice}
+          insights={insights}
+          activeInsightId={activeInsight?.id ?? null}
+          onSelectInsight={setInsightId}
           readOnly={readOnly}
           suspended={suspended}
           onStageChange={changeStage}

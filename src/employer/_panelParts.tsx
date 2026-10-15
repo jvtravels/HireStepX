@@ -113,12 +113,16 @@ export function DotLabel({ tone, children }: { tone: DotTone; children: ReactNod
   );
 }
 
-export function MeterBar({ value, label }: { value: number; label: string }) {
+export function MeterBar({ value, label, tone = "success", thin = false }: { value: number; label: string; tone?: "success" | "indigo"; thin?: boolean }) {
   return (
     <Progress
       value={Math.max(0, Math.min(100, value))}
       aria-label={label}
-      className="h-2 bg-hx-soft [&_[data-slot=progress-indicator]]:rounded-full [&_[data-slot=progress-indicator]]:bg-hx-success [&_[data-slot=progress-indicator]]:duration-300 [&_[data-slot=progress-indicator]]:ease-out motion-reduce:[&_[data-slot=progress-indicator]]:transition-none"
+      className={cn(
+        thin ? "h-1" : "h-2",
+        "bg-hx-soft [&_[data-slot=progress-indicator]]:rounded-full [&_[data-slot=progress-indicator]]:duration-300 [&_[data-slot=progress-indicator]]:ease-out motion-reduce:[&_[data-slot=progress-indicator]]:transition-none",
+        tone === "indigo" ? "[&_[data-slot=progress-indicator]]:bg-hx-indigo" : "[&_[data-slot=progress-indicator]]:bg-hx-success",
+      )}
     />
   );
 }

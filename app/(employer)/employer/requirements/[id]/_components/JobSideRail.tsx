@@ -22,7 +22,6 @@ import {
   PanelLink,
 } from "@/employer/_panelParts";
 import {
-  jobInsights,
   matchingSummary,
   pipelineRows,
   type CandidateTab,
@@ -39,34 +38,25 @@ const INSIGHT_ICON: Record<string, LucideIcon> = {
   immediate: ZapIcon,
 };
 
-const MATCH_STATE = {
-  complete: { label: "Complete", tone: "success" },
-  running: { label: "Running", tone: "info" },
-  stopped: { label: "Stopped", tone: "warning" },
-} as const;
-
-function Stat({ value, label }: { value: number; label: string }) {
-  return (
-    <div>
-      <div className="text-[26px] leading-none font-semibold text-hx-coal tabular-nums">
-        {value}
-      </div>
-      <div className="mt-1.5 text-[13px] text-hx-ink-soft">{label}</div>
-    </div>
-  );
-}
-
-function InsightRow({ insight }: { insight: JobInsight }) {
+function InsightRow({ insight, active, onSelect }: { insight: JobInsight; active: boolean; onSelect: () => void }) {
   const Icon = INSIGHT_ICON[insight.id] ?? UsersIcon;
   return (
-    <li className="flex items-start gap-2.5 text-[13px] leading-snug text-hx-coal">
-      <span
-        aria-hidden="true"
-        className="inline-flex size-6 shrink-0 items-center justify-center rounded-md bg-hx-indigo-100 text-hx-indigo"
+    <li>
+      <button
+        type="button"
+        onClick={onSelect}
+        aria-pressed={active}
+        aria-label={`${insight.text} ${active ? "Showing these candidates. Select to show everyone." : "Show these candidates."}`}
+        className={cn(
+          "flex w-full cursor-pointer items-start gap-2.5 rounded-lg border-0 px-2 py-1.5 text-left text-[13px] leading-snug text-hx-coal transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hx-indigo motion-reduce:transition-none pointer-coarse:min-h-11",
+          active ? "bg-hx-indigo-100" : "bg-transparent hover:bg-hx-row",
+        )}
       >
-        <Icon size={13} />
-      </span>
-      <span className="pt-0.5">{insight.text}</span>
+        <span aria-hidden="true" className="inline-flex size-6 shrink-0 items-center justify-center rounded-md bg-hx-indigo-100 text-hx-indigo">
+          <Icon size={13} />
+        </span>
+        <span className="pt-0.5">{insight.text}</span>
+      </button>
     </li>
   );
 }
@@ -97,6 +87,9 @@ export default function JobSideRail({
   counts,
   tab,
   onSelectTab,
+  insights,
+  activeInsightId,
+  onSelectInsight,
   readOnly,
   suspended,
   onStageChange,
@@ -105,15 +98,17 @@ export default function JobSideRail({
   counts: Record<CandidateTab, number>;
   tab: CandidateTab;
   onSelectTab: (tab: CandidateTab) => void;
+  insights: JobInsight[];
+  activeInsightId: string | null;
+  onSelectInsight: (id: string | null) => void;
   readOnly: boolean;
   suspended: boolean;
   onStageChange: Parameters<typeof StageCell>[0]["onChange"];
 }) {
   const r = requirement;
   const match = matchingSummary(r);
-  const insights = jobInsights(r);
-  const state = MATCH_STATE[match.state];
   const pool = Math.max(r.totalMatched ?? 0, match.evaluated);
+  const showMatched = pool > match.evaluated;
   const editHref = `/employer/requirements/${r.id}/edit`;
   const canEdit = !readOnly && !suspended;
   const hasList =
@@ -151,30 +146,19 @@ export default function JobSideRail({
       className="grid min-w-0 content-start gap-4 sm:max-[1439px]:grid-cols-2"
     >
       {hasList && (
-        <Panel
-          id="matching-heading"
-          title="Candidate matching"
-          action={<Badge tone={state.tone}>{state.label}</Badge>}
-        >
-          <div className="flex gap-8">
-            <Stat value={match.evaluated} label="Candidates evaluated" />
-          </div>
-          <div className="mt-4">
-            <MeterBar
-              value={match.coverage}
-              label={`${match.evaluated} of ${pool} matched candidates shown`}
-            />
-            <p className="mt-2 mb-0 text-[12px] text-hx-ink-soft">
-              {match.evaluated} of {pool} matched{" "}
-              {pool === 1 ? "candidate" : "candidates"} shown, ranked by fit
-            </p>
-          </div>
-        </Panel>
-      )}
-
-      {hasList && (
         <Panel id="pipeline-heading" title="Hiring pipeline">
           <ul className="m-0 flex list-none flex-col gap-1 p-0">
+            {showMatched && (
+              <li className="flex flex-col gap-1.5 px-3 py-2 text-[13px] text-hx-ink-soft">
+                <span className="flex w-full items-center justify-between">
+                  <span>Matched</span>
+                  <span className="tabular-nums">{pool}</span>
+                </span>
+                <span aria-hidden="true">
+                  <MeterBar thin tone="indigo" value={100} label="All matched candidates" />
+                </span>
+              </li>
+            )}
             {pipelineRows(counts).map((row) => {
               const active = row.tab === tab;
               return (
@@ -185,19 +169,29 @@ export default function JobSideRail({
                     aria-current={active || undefined}
                     aria-label={`${row.label}: ${row.count}. Show these candidates`}
                     className={cn(
-                      "flex w-full cursor-pointer items-center justify-between rounded-lg border-0 px-3 py-2 text-left text-[13px] transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hx-indigo motion-reduce:transition-none pointer-coarse:min-h-11",
+                      "flex w-full cursor-pointer flex-col items-stretch gap-1.5 rounded-lg border-0 px-3 py-2 text-left text-[13px] transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hx-indigo motion-reduce:transition-none pointer-coarse:min-h-11",
                       active
                         ? "bg-hx-success-100 font-semibold text-hx-success-ink"
                         : "bg-transparent text-hx-coal hover:bg-hx-row",
                     )}
                   >
-                    <span>{row.label}</span>
-                    <span className="tabular-nums">{row.count}</span>
+                    <span className="flex w-full items-center justify-between">
+                      <span>{row.label}</span>
+                      <span className="tabular-nums">{row.count}</span>
+                    </span>
+                    <span aria-hidden="true">
+                      <MeterBar thin tone={active ? "success" : "indigo"} value={row.count === 0 ? 0 : Math.max(3, (row.count / Math.max(pool, 1)) * 100)} label={`${row.label} share of matched candidates`} />
+                    </span>
                   </button>
                 </li>
               );
             })}
           </ul>
+          {showMatched && (
+            <p className="mt-3 mb-0 text-[12px] text-hx-ink-soft">
+              Top {match.evaluated} shown, ranked by fit.
+            </p>
+          )}
         </Panel>
       )}
 
@@ -217,9 +211,14 @@ export default function JobSideRail({
 
       {insights.length > 0 && (
         <Panel id="insights-heading" title="Key insights">
-          <ul className="m-0 flex list-none flex-col gap-3 p-0">
+          <ul className="m-0 -mx-2 flex list-none flex-col gap-1 p-0">
             {insights.map((insight) => (
-              <InsightRow key={insight.id} insight={insight} />
+              <InsightRow
+                key={insight.id}
+                insight={insight}
+                active={insight.id === activeInsightId}
+                onSelect={() => onSelectInsight(insight.id === activeInsightId ? null : insight.id)}
+              />
             ))}
           </ul>
         </Panel>
@@ -245,7 +244,7 @@ export default function JobSideRail({
               },
             ]}
           />
-          <KeyValueRow label="Job stage">
+          <KeyValueRow label="Hiring stage">
             <span
               title={
                 suspended

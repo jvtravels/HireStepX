@@ -21,6 +21,7 @@ export function SortableHead<C extends string>({
   onSortChange,
   defaultDirection = "desc",
   after,
+  inset = 20,
   children,
 }: {
   column: C;
@@ -35,6 +36,8 @@ export function SortableHead<C extends string>({
   /* Extra content (e.g. an info-tooltip trigger) rendered after the sort
      button, outside it, so it doesn't also trigger a sort on click. */
   after?: React.ReactNode;
+  /* Left padding of the label, so a table whose cells use less than the default 20px can line the header up with them. */
+  inset?: number;
   children: React.ReactNode;
 }) {
   const active = sort.column === column;
@@ -46,7 +49,7 @@ export function SortableHead<C extends string>({
           type="button"
           onClick={() => onSortChange({ column, direction: active && sort.direction === "asc" ? "desc" : active ? "asc" : defaultDirection })}
           aria-label={`Sort by ${columnLabel}${active ? `, currently ${sort.direction === "asc" ? "ascending" : "descending"}` : ""}`}
-          style={{ display: "flex", alignItems: "center", gap: 8, flex: after ? "0 1 auto" : 1, minWidth: 0, height: 40, padding: after ? "0 4px 0 20px" : "0 20px", background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit", fontSize: "inherit", fontWeight: "inherit", color: active ? T.coal : "inherit", transition: `background ${dur.instant} ${ease.snap}` }}
+          style={{ display: "flex", alignItems: "center", gap: 8, flex: after ? "0 1 auto" : 1, minWidth: 0, height: 40, padding: after ? `0 4px 0 ${inset}px` : `0 ${inset}px`, background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit", fontSize: "inherit", fontWeight: "inherit", color: active ? T.coal : "inherit", transition: `background ${dur.instant} ${ease.snap}` }}
           onMouseEnter={(e) => { e.currentTarget.style.background = T.rowTint; }}
           onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
         >
