@@ -9,6 +9,8 @@ import {
   claimProfileView,
   computeVerifiedCapabilitiesForCandidate,
   scrubLockedQuestions,
+  scrubLockedQuotes,
+  toThirdPerson,
   type SessionRow,
 } from "../../server-handlers/_employer-candidate-evidence-helpers";
 
@@ -236,15 +238,14 @@ describe("extractQuestionBreakdown", () => {
     ...over,
   });
 
-  it("keeps what the candidate said out of the response until unlocked", () => {
+  it("omits answers and grader notes unless asked", () => {
     const [row] = extractQuestionBreakdown({ perQuestion: [q()] }, false);
     expect(row).not.toHaveProperty("answerText");
     expect(row).not.toHaveProperty("explanation");
-    expect(JSON.stringify(row)).not.toContain("Acme");
     expect(row.question).toBe("Tell me about a time you led a migration.");
   });
 
-  it("includes the answer and grader note when unlocked", () => {
+  it("includes the answer and grader note when asked", () => {
     const [row] = extractQuestionBreakdown({ perQuestion: [q()] }, true);
     expect(row.answerText).toContain("Acme Corp");
     expect(row.explanation).toContain("ownership");
@@ -294,23 +295,36 @@ describe("extractDeliveryMetrics", () => {
   });
 });
 
-describe("scrubLockedQuestions", () => {
-  const ctx = { name: "Priya Sharma", companies: ["maverickIgnite Solutions LLP"], schools: ["IIT Madras"] };
-
-  it("replaces the employer, its suffix-less form, the school and the name", () => {
-    const out = scrubLockedQuestions(
-      [
-        { question: "At maverickIgnite Solutions LLP, how did you ship the billing rewrite?" },
-        { question: "Priya, what did you take from IIT Madras into maverickIgnite Solutions?" },
-      ],
-      ctx,
+describe("locked evidence scrubbing", () => {
+  it("strips the name from questions and masks it in answers, keeping employers", () => {
+    const [out] = scrubLockedQuestions(
+      [{ question: "Priya, what did you ship at Acme?", answerText: "I'm Priya Sharma. At Acme I mail priya@acme.in.", explanation: "Priya showed ownership." }],
+      "Priya Sharma",
     );
-    expect(out[0].question).toBe("At your company, how did you ship the billing rewrite?");
-    expect(out[1].question).toBe("what did you take from your school into your company?");
+    expect(out.question).toBe("what did you ship at Acme?");
+    expect(out.answerText).toBe("I'm [name]. At Acme I mail [redacted].");
+    expect(out.explanation).toBe("[name] showed ownership.");
   });
 
   it("leaves generic questions untouched", () => {
-    const out = scrubLockedQuestions([{ question: "Describe a project you are proud of." }], ctx);
-    expect(out[0].question).toBe("Describe a project you are proud of.");
+    const [out] = scrubLockedQuestions([{ question: "Describe a project you are proud of." }], "Priya Sharma");
+    expect(out.question).toBe("Describe a project you are proud of.");
+  });
+
+  it("scrubs the name and contact details out of quotes", () => {
+    const [out] = scrubLockedQuotes([{ kind: "win", text: "Priya led it", quote: "Call me on +91 98765 43210, Priya here" }], "Priya Sharma");
+    expect(JSON.stringify(out)).not.toMatch(/Priya|98765/);
+  });
+});
+
+describe("toThirdPerson", () => {
+  it("recasts grader notes written to the candidate", () => {
+    expect(toThirdPerson("You gave a concrete timeline and your trade-offs were clear.")).toBe("They gave a concrete timeline and their trade-offs were clear.");
+    expect(toThirdPerson("You're specific, but the team told you to slow down.")).toBe("They're specific, but the team told them to slow down.");
+    expect(toThirdPerson("Shipped it when you had to.")).toBe("Shipped it when they had to.");
+  });
+
+  it("leaves text without second person untouched", () => {
+    expect(toThirdPerson("Clear ownership of the migration.")).toBe("Clear ownership of the migration.");
   });
 });

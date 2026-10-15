@@ -2,12 +2,10 @@ import { TrendingDownIcon, TrendingUpIcon } from "lucide-react";
 import { Item, ItemContent, ItemDescription, ItemGroup, ItemTitle } from "@/components/ui/item";
 import type { CandidateEvidence } from "@/employer/EmployerDataContext";
 import type { Candidate } from "@/employer/mockData";
-import { readQuotesLocked } from "@/employer/_candidateFields";
 import { Badge } from "@/employer/_atoms";
 import { InfoTip, KeyValueList, KeyValueRow, MeterRow, Panel } from "@/employer/_panelParts";
 import { EmptyNote } from "@/employer/_requirementAtoms";
 import { PROVENANCE, READINESS_LABEL, dedupeQuestions, describeDelivery, employerCapabilities, formatSessionDate, summarizeQuestions } from "./helpers";
-import { LockedQuotes } from "./Notices";
 import { BalancedColumns } from "./parts";
 import { QuestionBreakdown } from "./QuestionBreakdown";
 import { EvidenceStatus, type EvidenceState } from "./OverviewTab";
@@ -127,14 +125,11 @@ export function PracticeTab({
   evidence,
   candidate,
   state,
-  onUnlock,
 }: {
   evidence: CandidateEvidence | null;
   candidate: Candidate;
   state: EvidenceState;
-  onUnlock: () => void;
 }) {
-  const quotesLocked = readQuotesLocked(evidence, candidate.unlocked);
   const skills = evidence?.skills ?? [];
   const trend = evidence?.sessionTrend ?? [];
   const quotes = evidence?.quotes ?? [];
@@ -156,7 +151,7 @@ export function PracticeTab({
   return (
     <EvidenceStatus state={state}>
       <div className="grid min-w-0 gap-4">
-        {questions.length > 0 && <QuestionBreakdown questions={questions} unlocked={candidate.unlocked} onUnlock={onUnlock} />}
+        {questions.length > 0 && <QuestionBreakdown questions={questions} />}
         <BalancedColumns
           items={[
             !!evidence && hasReadiness && { key: "readiness", weight: 4 + (evidence.starCompleteness ? 1 : 0), node: <ReadinessPanel evidence={evidence} sessions={sessions} /> },
@@ -177,31 +172,25 @@ export function PracticeTab({
             deliveryRows > 0 && { key: "delivery", weight: 2 + deliveryRows * 1.5, node: <DeliveryPanel delivery={evidence?.delivery} /> },
             verified.length > 0 && { key: "verified", weight: 2 + verified.length, node: <VerifiedPanel capabilities={verified} /> },
             trend.length > 0 && { key: "history", weight: 6 + trend.length * 1.5, node: <HistoryPanel trend={trend} sessions={sessions} /> },
-            (quotesLocked || quotes.length > 0) && {
+            quotes.length > 0 && {
               key: "quotes",
-              weight: quotesLocked ? 3 : 2 + quotes.length * 3,
+              weight: 2 + quotes.length * 3,
               node: (
                 <Panel id="quotes-heading" title="Standout lines">
-                  {quotesLocked ? (
-                    <LockedQuotes onUnlock={onUnlock} />
-                  ) : (
-                    <>
-                      <p className="m-0 mb-2 text-[13px] text-hx-ink-soft">The strongest and weakest moments, quoted from their answers.</p>
-                      <ItemGroup className="gap-0">
-                        {quotes.map((q, i) => (
-                          <Item key={i} role="listitem" size="sm" className="items-start border-0 border-t border-hx-line px-0 first:border-t-0">
-                            <ItemContent>
-                              <ItemTitle className="items-start gap-2 text-[13px]">
-                                <Badge tone={q.kind === "redFlag" ? "error" : "success"}>{q.kind === "redFlag" ? "Flag" : "Win"}</Badge>
-                                <span>{q.text}</span>
-                              </ItemTitle>
-                              <ItemDescription className="line-clamp-none text-[13px] italic">&ldquo;{q.quote}&rdquo;</ItemDescription>
-                            </ItemContent>
-                          </Item>
-                        ))}
-                      </ItemGroup>
-                    </>
-                  )}
+                  <p className="m-0 mb-2 text-[13px] text-hx-ink-soft">The strongest and weakest moments, quoted from their answers.</p>
+                  <ItemGroup className="gap-0">
+                    {quotes.map((q, i) => (
+                      <Item key={i} role="listitem" size="sm" className="items-start border-0 border-t border-hx-line px-0 first:border-t-0">
+                        <ItemContent>
+                          <ItemTitle className="items-start gap-2 text-[13px]">
+                            <Badge tone={q.kind === "redFlag" ? "error" : "success"}>{q.kind === "redFlag" ? "Flag" : "Win"}</Badge>
+                            <span>{q.text}</span>
+                          </ItemTitle>
+                          <ItemDescription className="line-clamp-none text-[13px] italic">&ldquo;{q.quote}&rdquo;</ItemDescription>
+                        </ItemContent>
+                      </Item>
+                    ))}
+                  </ItemGroup>
                 </Panel>
               ),
             },

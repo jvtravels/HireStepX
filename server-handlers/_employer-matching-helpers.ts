@@ -610,10 +610,8 @@ function withoutLegalSuffix(names: string[]): string[] {
   });
 }
 
-/** Removes contact patterns and every known employer/institution name from a
- *  free-text field. The candidate's own name is scrubbed by
- *  redactResumeDetailForLock; this covers what that leaves behind ("Led the
- *  payments team at Infosys", "B.Tech, IIT Madras", "reach me at ..."). */
+/** Removes contact patterns (and optionally named entities) from a free-text
+ *  field. The candidate's own name is scrubbed separately. */
 export function scrubFreeText(text: string, entityNames: string[], placeholder = "[redacted]", contactPlaceholder = "[redacted]"): string {
   let out = text;
   const names = Array.from(new Set(withoutLegalSuffix(entityNames.map((n) => n.trim()).filter((n) => n.length >= 2)))).sort((a, b) => b.length - a.length);
@@ -627,24 +625,12 @@ export function scrubFreeText(text: string, entityNames: string[], placeholder =
     .replace(PHONE_RE, (m) => (m.replace(/\D/g, "").length >= 10 && !YEAR_RUN_RE.test(m) ? contactPlaceholder : m));
 }
 
-export const LOCKED_MASKED_FIELDS = [
-  "name",
-  "email",
-  "phone",
-  "linkedin",
-  "portfolioLinks",
-  "employerNames",
-  "institutionNames",
-  "freeTextIdentifiers",
-] as const;
+export const LOCKED_MASKED_FIELDS = ["name", "email", "phone", "linkedin", "portfolioLinks", "contactInText"] as const;
 
-/** Second pass over an already lock-redacted resume: the structured
- *  company/school fields are blank, but the same names routinely reappear
- *  inside summary/headline/achievements/certifications text. */
-export function scrubLockedResume(original: ResumeDetail, redacted: ResumeDetail): ResumeDetail {
-  const companies = original.experience.map((e) => e.company);
-  const schools = original.education.map((e) => e.school);
-  const s = (t: string) => scrubFreeText(scrubFreeText(t, schools, "their school"), companies, "their employer");
+/** Second pass over an already lock-redacted resume: a phone number, email or
+ *  link written into the free text would defeat the contact lock. */
+export function scrubLockedResume(redacted: ResumeDetail): ResumeDetail {
+  const s = (t: string) => scrubFreeText(t, []);
   return {
     ...redacted,
     summary: s(redacted.summary),

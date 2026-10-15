@@ -347,14 +347,15 @@ describe("pre-unlock masking", () => {
     expect(out).not.toMatch(/Infosys|IIT Madras|@|linkedin|98765/i);
     expect(out).toContain("2018 - 2021 - 2023");
   });
-  it("scrubLockedResume scrubs institutions out of free text after structural redaction", () => {
-    const original = {
-      summary: "Ten years at Flipkart building checkout.", headline: "Engineer at Flipkart", keyAchievements: ["Cut Flipkart latency by 40%"],
-      certifications: ["AWS"], careerTrajectory: null, promotionSignals: [], skillsDetailed: [], experience: [{ company: "Flipkart", title: "SDE at Flipkart" }], education: [{ school: "BITS Pilani" }],
+  it("scrubLockedResume strips contact details from free text but keeps employers and schools", () => {
+    const redacted = {
+      summary: "Ten years at Flipkart. Mail a@b.in or +91 98765 43210.", headline: "Engineer at Flipkart", keyAchievements: ["Cut latency by 40%, see https://linkedin.com/in/x"],
+      certifications: ["AWS"], careerTrajectory: null, promotionSignals: [], skillsDetailed: [], experience: [{ company: "Flipkart", title: "SDE" }], education: [{ school: "BITS Pilani" }],
     } as never;
-    const redacted = { ...(original as object), experience: [{ company: "", title: "SDE at Flipkart" }], education: [{ school: "" }] } as never;
-    const out = scrubLockedResume(original, redacted);
-    expect(JSON.stringify(out)).not.toMatch(/Flipkart|BITS/);
+    const out = scrubLockedResume(redacted);
+    expect(JSON.stringify(out)).not.toMatch(/a@b\.in|98765|linkedin/);
+    expect(JSON.stringify(out)).toMatch(/Flipkart/);
+    expect(JSON.stringify(out)).toMatch(/BITS Pilani/);
   });
   it("maskStrongMatches masks locked candidates and exposes the match id, not the user id", () => {
     const chips = [
@@ -373,6 +374,7 @@ describe("pre-unlock masking", () => {
     expect(out[2].name).not.toBe("No Lookup"); // unknown = mask, never leak
   });
   it("lists what is masked", () => {
-    expect(LOCKED_MASKED_FIELDS).toEqual(expect.arrayContaining(["name", "email", "phone", "linkedin", "employerNames", "institutionNames"]));
+    expect(LOCKED_MASKED_FIELDS).not.toContain("employerNames");
+    expect(LOCKED_MASKED_FIELDS).toEqual(expect.arrayContaining(["name", "email", "phone", "linkedin", "portfolioLinks"]));
   });
 });

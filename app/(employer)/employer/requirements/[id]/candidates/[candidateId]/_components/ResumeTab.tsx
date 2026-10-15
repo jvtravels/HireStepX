@@ -1,8 +1,7 @@
 import type { ReactNode } from "react";
-import { LockIcon, TrendingUpIcon } from "lucide-react";
-import { Item, ItemActions, ItemContent, ItemDescription, ItemGroup, ItemMedia, ItemSeparator, ItemTitle } from "@/components/ui/item";
+import { TrendingUpIcon } from "lucide-react";
+import { Item, ItemContent, ItemDescription, ItemGroup, ItemSeparator, ItemTitle } from "@/components/ui/item";
 import type { Candidate } from "@/employer/mockData";
-import { OutlineCta } from "@/employer/_atoms";
 import { Panel } from "@/employer/_panelParts";
 import { BalancedColumns, ChipList, IconList, MutedText } from "./parts";
 import { averageTenureMonths, formatTenure, groupSkillsByDepth, periodMonths, skillChipLabel } from "./helpers";
@@ -77,7 +76,7 @@ function SkillsBlock({ candidate }: { candidate: Candidate }) {
   );
 }
 
-export function ResumeTab({ candidate, onUnlock }: { candidate: Candidate; onUnlock: () => void }) {
+export function ResumeTab({ candidate }: { candidate: Candidate }) {
   const resume = candidate.resume;
   const achievements = (resume?.keyAchievements ?? []).filter((a) => a.trim());
   const highlights = [...achievements.filter((a) => /\d/.test(a)), ...achievements.filter((a) => !/\d/.test(a))];
@@ -87,18 +86,6 @@ export function ResumeTab({ candidate, onUnlock }: { candidate: Candidate; onUnl
 
   return (
     <div className="grid min-w-0 gap-4">
-      {!candidate.unlocked && (
-        <Item variant="muted">
-          <ItemMedia variant="icon"><LockIcon aria-hidden="true" /></ItemMedia>
-          <ItemContent>
-            <ItemTitle>Employers, schools and the original file are hidden</ItemTitle>
-            <ItemDescription className="line-clamp-none text-[13px]">Everything else we hold is shown below. Unlock the candidate to see where they worked and studied and to download the resume.</ItemDescription>
-          </ItemContent>
-          <ItemActions>
-            <OutlineCta size="sm" onClick={onUnlock}>Unlock candidate</OutlineCta>
-          </ItemActions>
-        </Item>
-      )}
       <BalancedColumns
         items={[
           {

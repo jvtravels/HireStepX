@@ -75,18 +75,11 @@ function scrubName(text: string, fullName: string): string {
   return out.replace(/(The candidate)(\s+\1)+/gi, "$1");
 }
 
-/** Locking a candidate hides only their contact details and identity —
-    summary, headline, achievements, certifications, seniority, industries,
-    and self-reported notice period / CTC all stay visible so an employer
-    has enough to get impressed and pay to unlock. What must never leak
-    pre-unlock is how to find the person outside HireStepX: phone/LinkedIn,
-    the specific employer/school names in their work and education history
-    (C7 — a name like "Meesho" combined with a title is enough to identify
-    someone on LinkedIn for free), and — easy to miss — their own name
-    re-appearing inside free-text fields an AI wrote about them (summary,
-    achievements, headline, certifications all routinely open with
-    "<Full Name> is a ..."). `realName` is the candidate's actual name,
-    known only server-side; never forwarded to the client unredacted. */
+/** Locking a candidate hides only who they are and how to reach them: their
+    name (including inside the AI-written free text, which routinely opens
+    with "<Full Name> is a ...") plus phone and LinkedIn. Everything on the
+    resume itself, employers and schools included, stays visible.
+    `realName` is the candidate's actual name, known only server-side. */
 export function redactResumeDetailForLock(detail: ResumeDetail, realName: string): ResumeDetail {
   return {
     ...detail,
@@ -98,12 +91,10 @@ export function redactResumeDetailForLock(detail: ResumeDetail, realName: string
     promotionSignals: detail.promotionSignals.map((p) => scrubName(p, realName)),
     experience: detail.experience.map((e) => ({
       ...e,
-      company: "",
       ...(e.scope ? { scope: scrubName(e.scope, realName) } : {}),
       ...(e.topProjects ? { topProjects: e.topProjects.map((t) => scrubName(t, realName)) } : {}),
       ...(e.bullets ? { bullets: e.bullets.map((b) => scrubName(b, realName)) } : {}),
     })),
-    education: detail.education.map((e) => ({ ...e, school: "" })),
     linkedin: null,
     phone: null,
   };
@@ -228,7 +219,8 @@ export function extractResumeDetail(resumeData: unknown): ResumeDetail {
         degree: asString(e.degree) || "",
         school: asString(e.school) || "",
         year: asString(e.year) || "",
-      })),
+      }))
+      .filter((e) => e.degree || e.school),
     certifications: asStringArray(r.certifications),
   };
 }

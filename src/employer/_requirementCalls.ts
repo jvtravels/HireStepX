@@ -113,9 +113,7 @@ export function postFlagMessage(messageId: string, reason: string): Promise<Call
   return apiFetch<{ ok: boolean }>("/api/flag-message", { messageId, reason }, { method: "POST" }).then(fromApi);
 }
 
-/** Evidence payload. Before unlock the server sends `quotesLocked: true`,
-    `unlocked: false` and an empty `quotes` array. */
-export type EvidenceResponse = CandidateEvidence & { quotesLocked?: boolean; unlocked?: boolean };
+export type EvidenceResponse = CandidateEvidence & { unlocked?: boolean };
 
 export function getEvidence(matchId: string): Promise<CallResult<EvidenceResponse>> {
   return getJson<EvidenceResponse>(`/api/employer-candidate-evidence?matchId=${encodeURIComponent(matchId)}`);

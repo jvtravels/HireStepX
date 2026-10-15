@@ -1,6 +1,6 @@
 import type { Candidate, CandidateStatus } from "@/employer/mockData";
 import type { Requirement, CandidateEvidence, EvidenceDelivery, EvidenceQuestion } from "@/employer/EmployerDataContext";
-import { matchRequiredSkills } from "@/skillNormalize";
+import { candidateSkillFit } from "@/employer/_jobDetailHelpers";
 
 /* Pure helpers for the candidate detail page. Everything here derives from
    fields the API actually returns — no synthesized or seeded values. */
@@ -22,26 +22,8 @@ export function initials(name: string): string {
   return (parts[0][0] + (parts[1]?.[0] || "")).toUpperCase();
 }
 
-/** Every skill name we hold for the candidate, from the flat list and the depth-graded one. */
-export function candidateSkillNames(candidate: Candidate): string[] {
-  return [...candidate.skills, ...(candidate.resume?.skillsDetailed.map((s) => s.name) ?? [])];
-}
-
-/** Free text from the resume where a required skill may be named without being listed as a skill. */
-export function resumeCorpus(candidate: Candidate): string {
-  const r = candidate.resume;
-  if (!r) return "";
-  return [
-    r.headline,
-    r.summary,
-    ...r.keyAchievements,
-    ...r.certifications,
-    ...r.experience.flatMap((e) => [e.title, e.scope ?? "", ...(e.topProjects ?? []), ...(e.bullets ?? [])]),
-  ].filter(Boolean).join("\n");
-}
-
 export function matchedSkillCount(requirementSkills: string[], candidate: Candidate): string[] {
-  return matchRequiredSkills(requirementSkills, candidateSkillNames(candidate), resumeCorpus(candidate));
+  return candidateSkillFit(candidate, requirementSkills).matched;
 }
 
 /** Mean of the candidate's real per-skill scores; null when there are none

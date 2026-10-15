@@ -1,4 +1,3 @@
-import type { CandidateEvidence } from "./EmployerDataContext";
 import type { Candidate } from "./mockData";
 
 /* Readers for backend fields that ship in parallel with the UI. Each returns
@@ -17,9 +16,3 @@ export function readCandidateResponse(c: Candidate | null | undefined): Candidat
   return null;
 }
 
-/** Quotes are withheld pre-unlock. If the server did not say, treat an empty
- *  quotes list on a locked candidate as locked rather than as "no quotes". */
-export function readQuotesLocked(ev: CandidateEvidence | null | undefined, unlocked: boolean): boolean {
-  if (ev && "quotesLocked" in ev && typeof ev.quotesLocked === "boolean") return ev.quotesLocked;
-  return !unlocked;
-}

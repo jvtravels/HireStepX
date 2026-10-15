@@ -10,6 +10,7 @@ import { MetaLine, type MetaPart } from "@/employer/_panelParts";
 import { PortfolioLinkIcon } from "@/portfolioLinkIcons";
 import { formatPaise, singleUnlockPrice } from "../../../../../../../../server-handlers/_unlock-pricing";
 import { HEADER_ACTION, candidateLinks, formatYears, initials, maskedName } from "./helpers";
+import { PipelineStepper } from "./CandidatePipeline";
 import { RequestContact } from "./RequestContact";
 import { ResumeDownload } from "./ResumeDownload";
 
@@ -86,7 +87,7 @@ export function CandidateHeader({
       <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
         <div className="min-w-0 flex-1 basis-80">
           <div className="flex items-center gap-3">
-            <div aria-hidden="true" className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-hx-indigo-100 text-[14px] font-semibold text-hx-indigo">
+            <div aria-hidden="true" className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-hx-indigo-100 text-[13px] font-semibold text-hx-indigo">
               {candidate.unlocked ? initials(displayName) : <LockIcon size={19} />}
             </div>
             <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
@@ -112,7 +113,10 @@ export function CandidateHeader({
           {canInvite && candidate.unlocked && <Button type="button" onClick={onInvite} disabled={inviteBlocked} className={cn("pointer-coarse:h-11", HEADER_ACTION)}>Send interview invite</Button>}
         </div>
       </div>
-      <MetaLine parts={meta} className="mt-3" />
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
+        <MetaLine parts={meta} />
+        <PipelineStepper status={candidate.candidateStatus} />
+      </div>
       {blockedReason && <p className="m-0 mt-3 text-right text-[12px] text-hx-ink-soft">{blockedReason}</p>}
 
       <div className="mt-4 min-w-0 border-t border-hx-line pt-4">

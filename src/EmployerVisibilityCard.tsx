@@ -117,16 +117,16 @@ export default function EmployerVisibilityCard({ showToast }: { showToast: (msg:
           <ul style={listStyle}>
             <li>Skill strengths and verified capabilities from your practice sessions</li>
             <li>Your practice scores and readiness and answer-structure (STAR) indicators</li>
-            <li>A summary of your resume with your name, past employers and schools removed, and your city</li>
+            <li>Your resume, including past employers and schools, and your city</li>
+            <li>Word-for-word excerpts of your answers, with your name and contact details removed</li>
             <li>When you last practised</li>
           </ul>
         </div>
         <div>
           <h3 style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.coal, margin: "0 0 6px" }}>What an employer gets if they pay to unlock you</h3>
           <ul style={listStyle}>
-            <li>Your name, email, phone number and LinkedIn</li>
-            <li>Your resume, including past employers and schools</li>
-            <li>Word-for-word excerpts of your answers</li>
+            <li>Your name, email, phone number, LinkedIn and portfolio links</li>
+            <li>The ability to message and invite you</li>
             <li>Until then, they see only &ldquo;Candidate #&hellip;&rdquo;</li>
           </ul>
         </div>

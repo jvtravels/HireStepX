@@ -9,7 +9,6 @@ import { ErrorRetry, EmptyNote, LinkCta, PageSkeleton, SuspendedBanner } from "@
 import UnlockDialog from "../../../_components/UnlockDialog";
 import { CandidateDialogsHost } from "./CandidateDialogsHost";
 import { CandidateHeader } from "./CandidateHeader";
-import { CandidatePipeline } from "./CandidatePipeline";
 import { maskedName, matchedSkillCount } from "./helpers";
 import { ActionNoticeAlert } from "./Notices";
 import { OverviewTab } from "./OverviewTab";
@@ -109,10 +108,6 @@ export default function CandidateDetail({ requirementId, matchId }: { requiremen
           }}
         />
 
-        <div className="mt-4">
-          <CandidatePipeline candidate={candidate} />
-        </div>
-
         <section aria-labelledby="candidate-sections-heading" className="mt-5 flex min-w-0 flex-col">
           <h2 id="candidate-sections-heading" className="sr-only">Candidate details</h2>
           <div className="mb-4 flex flex-wrap items-center gap-x-5 gap-y-3">
@@ -128,11 +123,10 @@ export default function CandidateDetail({ requirementId, matchId }: { requiremen
                 state={evidenceState}
                 onOpenPractice={() => setTab("practice")}
                 onOpenResume={() => setTab("resume")}
-                onUnlock={openUnlock}
               />
             )}
-            {tab === "practice" && <PracticeTab evidence={d.evidence} candidate={candidate} state={evidenceState} onUnlock={openUnlock} />}
-            {tab === "resume" && <ResumeTab candidate={candidate} onUnlock={openUnlock} />}
+            {tab === "practice" && <PracticeTab evidence={d.evidence} candidate={candidate} state={evidenceState} />}
+            {tab === "resume" && <ResumeTab candidate={candidate} />}
           </div>
         </section>
       </div>

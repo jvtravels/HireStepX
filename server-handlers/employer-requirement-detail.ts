@@ -270,15 +270,13 @@ export default async function handler(req: Request): Promise<Response> {
       );
 
       const unlocked = m.unlocked;
-      /* Identity must never leave the server for a Locked match — masking
-         only in the client is cosmetic; anyone reading the network response
-         sees the real name/phone/LinkedIn regardless. Redact here: the
-         structured fields via redactResumeDetailForLock, then names that
-         survive inside free text (employers, colleges, emails, links). */
+      /* Name and contact details must never leave the server for a Locked
+         match; masking only in the client is cosmetic. The resume itself
+         (employers, schools, history) is visible either way. */
       const name = unlocked ? profile?.name || "Candidate" : maskedCandidateName(m.id);
       const resume = unlocked
         ? resumeDetail
-        : scrubLockedResume(resumeDetail, redactResumeDetailForLock(resumeDetail, profile?.name || ""));
+        : scrubLockedResume(redactResumeDetailForLock(resumeDetail, profile?.name || ""));
 
       return {
         id: m.id,

@@ -25,7 +25,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { useToast } from "@/Toast";
 import { CANDIDATE_STATUS_LABEL } from "@/employer/_atoms";
 import { useEmployerData } from "@/employer/EmployerDataContext";
-import { availabilityOf, evidenceLabels, evidenceLinks, evidenceSources, interviewScore, scoreTone, skillFit, type ScoreTone } from "@/employer/_jobDetailHelpers";
+import { availabilityOf, evidenceLabels, evidenceLinks, evidenceSources, interviewScore, scoreTone, candidateSkillFit, type ScoreTone } from "@/employer/_jobDetailHelpers";
 import { DotLabel } from "@/employer/_panelParts";
 import type { Candidate, CandidateStatus } from "@/employer/mockData";
 import { nextCandidateStatuses } from "../../../../../../server-handlers/_employer-candidate-status-helpers";
@@ -149,7 +149,7 @@ export default function CandidateRow({
   const unlockPrice = formatPaise(singleUnlockPrice().amountPaise);
   const canMessage = !readOnly && canMessageCandidate(candidate);
   const writeOff = readOnly || suspended;
-  const { matched, gaps } = skillFit(candidate.skills, requiredSkills);
+  const { matched, gaps } = candidateSkillFit(candidate, requiredSkills);
   const availability = availabilityOf(candidate.resume?.noticePeriod);
   const score = interviewScore(candidate);
   const evidence = evidenceSources(candidate);

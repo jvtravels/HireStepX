@@ -4,6 +4,7 @@
    already returns, so the screen never invents data. */
 
 import type { Candidate, CandidateStatus, Requirement } from "./mockData";
+import { matchRequiredSkills } from "../skillNormalize";
 
 const SKILL_ALIASES: Record<string, string> = {
   js: "javascript",
@@ -83,12 +84,38 @@ export function skillTiers(r: Pick<Requirement, "skills" | "customSkillSets" | "
 
 /* ── Candidate cells ── */
 
-export function skillFit(candidateSkills: string[], required: string[]): { matched: string[]; gaps: string[] } {
+/** Free text from the resume where a required skill may be named without being listed as a skill. */
+export function resumeCorpus(candidate: Candidate): string {
+  const r = candidate.resume;
+  if (!r) return "";
+  return [
+    r.headline,
+    r.summary,
+    ...r.keyAchievements,
+    ...r.certifications,
+    ...r.experience.flatMap((e) => [e.title, e.scope ?? "", ...(e.topProjects ?? []), ...(e.bullets ?? [])]),
+  ].filter(Boolean).join("\n");
+}
+
+/** Every skill name we hold for the candidate, from the flat list and the depth-graded one. */
+export function candidateSkillNames(candidate: Candidate): string[] {
+  return [...candidate.skills, ...(candidate.resume?.skillsDetailed.map((s) => s.name) ?? [])];
+}
+
+/** Matched/gap split of the required skills. Pass the resume text so a skill
+    named in the candidate's work history counts, exactly as on the candidate page. */
+export function skillFit(candidateSkills: string[], required: string[], corpus = ""): { matched: string[]; gaps: string[] } {
   const have = new Set(candidateSkills.map(key));
+  const alsoMatched = new Set(matchRequiredSkills(required, candidateSkills, corpus));
   const matched: string[] = [];
   const gaps: string[] = [];
-  for (const skill of dedupe(required)) (have.has(key(skill)) ? matched : gaps).push(skill);
+  for (const skill of dedupe(required)) (have.has(key(skill)) || alsoMatched.has(skill) ? matched : gaps).push(skill);
   return { matched, gaps };
+}
+
+/** skillFit over everything we hold for one candidate. */
+export function candidateSkillFit(candidate: Candidate, required: string[]): { matched: string[]; gaps: string[] } {
+  return skillFit(candidateSkillNames(candidate), required, resumeCorpus(candidate));
 }
 
 export type AvailabilityTone = "good" | "soon" | "unknown";
@@ -289,9 +316,9 @@ export interface JobInsight {
 export function matchesInsight(c: Candidate, f: InsightFilter): boolean {
   switch (f.kind) {
     case "all-must":
-      return skillFit(c.skills, f.skills).gaps.length === 0;
+      return candidateSkillFit(c, f.skills).gaps.length === 0;
     case "gap":
-      return skillFit(c.skills, [f.skill]).gaps.length > 0;
+      return candidateSkillFit(c, [f.skill]).gaps.length > 0;
     case "interview":
       return (interviewScore(c) ?? 0) >= 70;
     case "portfolio":
@@ -312,7 +339,7 @@ export function jobInsights(r: Pick<Requirement, "skills" | "portfolioRequired" 
     const gapCount = new Map<string, number>();
     let meetsAll = 0;
     for (const c of list) {
-      const { gaps } = skillFit(c.skills, must);
+      const { gaps } = candidateSkillFit(c, must);
       if (gaps.length === 0) meetsAll += 1;
       for (const g of gaps) gapCount.set(g, (gapCount.get(g) ?? 0) + 1);
     }

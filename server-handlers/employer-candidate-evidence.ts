@@ -31,6 +31,7 @@ import {
   extractSessionTrend,
   extractQuestionBreakdown,
   scrubLockedQuestions,
+  scrubLockedQuotes,
   extractDeliveryMetrics,
   latestSessionByUser,
   computeVerifiedCapabilitiesForCandidate,
@@ -38,7 +39,6 @@ import {
   type SessionRow,
 } from "./_employer-candidate-evidence-helpers";
 import { notify } from "./_notify";
-import { extractResumeDetail } from "./_resume-detail-helpers";
 import { emailShell, title as emailTitle, para, button, escapeHtml } from "./_email-theme";
 import { isSuppressed, marketingEmailParts, preferenceDepsFromEnv } from "./_unsubscribe";
 import { loadEmployerMatchAccess, loadAuthIdentity, DENIED_STATUS } from "./_entitlements";
@@ -54,23 +54,14 @@ function serviceHeaders(): Record<string, string> {
   return { apikey: SUPABASE_SERVICE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_KEY}` };
 }
 
-/** Question wording is generated from the resume, so while locked it is scrubbed of the
- *  candidate's employers, schools and name. A failed profile read hides the text rather than risk a leak. */
-async function loadQuestions(reportJson: unknown, unlocked: boolean, candidateUserId: string) {
-  const questions = extractQuestionBreakdown(reportJson, unlocked);
-  if (unlocked || questions.length === 0) return questions;
+async function loadCandidateName(candidateUserId: string): Promise<string | null> {
   const res = await fetch(
-    `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(candidateUserId)}&select=name,resume_data`,
+    `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(candidateUserId)}&select=name`,
     { headers: serviceHeaders(), signal: AbortSignal.timeout(5000) },
   ).catch(() => null);
-  if (!res || !res.ok) return [];
-  const rows = (await res.json().catch(() => [])) as Array<{ name: string | null; resume_data: unknown }>;
-  const detail = extractResumeDetail(rows[0]?.resume_data);
-  return scrubLockedQuestions(questions, {
-    name: rows[0]?.name ?? "",
-    companies: detail.experience.map((e) => e.company),
-    schools: detail.education.map((e) => e.school),
-  });
+  if (!res || !res.ok) return null;
+  const rows = (await res.json().catch(() => [])) as Array<{ name: string | null }>;
+  return rows[0]?.name ?? "";
 }
 
 /** Best-effort "an employer viewed your profile" email — fires alongside the
@@ -209,6 +200,14 @@ export default async function handler(req: Request): Promise<Response> {
     const sessionRows = (await sessionsRes.json().catch(() => [])) as SessionRow[];
     const latest = latestSessionByUser(sessionRows).get(candidateUserId);
 
+    /* Answers are shown while locked; only the candidate's name and contact
+       details are scrubbed. A failed name lookup withholds the text instead. */
+    const lockedName = unlocked || !latest ? "" : await loadCandidateName(candidateUserId);
+    const scrubQuestions = (qs: ReturnType<typeof extractQuestionBreakdown>) =>
+      unlocked ? qs : lockedName === null ? [] : scrubLockedQuestions(qs, lockedName);
+    const scrubQuotes = (qs: ReturnType<typeof extractEvidenceQuotes>) =>
+      unlocked ? qs : lockedName === null ? [] : scrubLockedQuotes(qs, lockedName);
+
     let resumeFile: { fileName: string } | null = null;
     if (unlocked) {
       const fileRes = await fetch(
@@ -225,15 +224,12 @@ export default async function handler(req: Request): Promise<Response> {
         sessionTrend: extractSessionTrend(sessionRows),
         resumeFile,
         skills: latest ? extractEvidenceSkills(latest.report_json) : [],
-        // Verbatim answers often name past employers/colleagues, so they stay
-        // locked until the employer has paid to unlock this candidate.
-        quotes: unlocked && latest ? extractEvidenceQuotes(latest.report_json) : [],
-        quotesLocked: !unlocked,
+        quotes: latest ? scrubQuotes(extractEvidenceQuotes(latest.report_json)) : [],
         unlocked,
         readiness: latest ? extractReadinessForecast(latest.report_json) : null,
         starCompleteness: latest ? extractStarCompleteness(latest.report_json) : null,
         sessionDate: latest?.created_at ?? null,
-        questions: latest ? await loadQuestions(latest.report_json, unlocked, candidateUserId) : [],
+        questions: latest ? scrubQuestions(extractQuestionBreakdown(latest.report_json, true)) : [],
         delivery: latest ? extractDeliveryMetrics(latest.report_json) : null,
         verifiedCapabilities: computeVerifiedCapabilitiesForCandidate(sessionRows, candidateUserId),
       }),

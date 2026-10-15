@@ -231,3 +231,10 @@ describe("evidenceLinks", () => {
     expect(evidenceLinks({ portfolioLinks: [link("javascript:alert(1)"), link("mailto:a@b.co")] })).toEqual({ github: null, web: null });
   });
 });
+
+describe("skillFit with resume text", () => {
+  it("counts a required skill named in the work history, not only the skills list", () => {
+    expect(skillFit(["Figma"], ["React", "Figma"], "Built the dashboard in React with a design system")).toEqual({ matched: ["React", "Figma"], gaps: [] });
+    expect(skillFit(["Figma"], ["React"], "")).toEqual({ matched: [], gaps: ["React"] });
+  });
+});

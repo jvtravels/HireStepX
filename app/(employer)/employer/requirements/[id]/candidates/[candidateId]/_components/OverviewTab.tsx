@@ -1,4 +1,4 @@
-import { CheckIcon, LockIcon, MinusIcon, TargetIcon, UserRoundIcon } from "lucide-react";
+import { CheckIcon, MinusIcon, TargetIcon, UserRoundIcon } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { CandidateEvidence, Requirement } from "@/employer/EmployerDataContext";
 import type { Candidate } from "@/employer/mockData";
@@ -48,6 +48,9 @@ function MatchPanel({ candidate, requirement, matched, unmatched, evidence }: { 
           <div className="grid gap-3.5">
             <MeterRow label="Role match" value={b.roleMatch} />
             <MeterRow label="Required skills" value={requirement.skills.length > 0 ? Math.round((matched.length / requirement.skills.length) * 100) : b.skillMatch} />
+            <p className="m-0 text-[12px] text-hx-ink-soft">
+              The {candidate.matchScore} match score also weighs practice results and recent activity, so it can sit above these two bars.
+            </p>
           </div>
         )}
         {rows.length > 0 && (
@@ -111,7 +114,7 @@ function ProfilePanel({ candidate, onOpenResume }: { candidate: Candidate; onOpe
   if (!summary && !r.headline && facts.length === 0) return null;
   const hasIntro = !!(r.headline || summary);
   return (
-    <Panel id="profile-heading" title="Profile" icon={<UserRoundIcon size={15} />} action={candidate.unlocked ? <PanelButton onClick={onOpenResume}>Full resume</PanelButton> : undefined}>
+    <Panel id="profile-heading" title="Profile" icon={<UserRoundIcon size={15} />} action={<PanelButton onClick={onOpenResume}>Full resume</PanelButton>}>
       <div className="grid gap-4">
         {!r.headline && !summary && <MutedText>This resume has no written summary. The details below come from the structured fields.</MutedText>}
         {(r.headline || summary) && (
@@ -172,17 +175,7 @@ function PracticeSnapshot({ candidate, state, onOpenPractice }: { candidate: Can
   );
 }
 
-function AnalysisPanel({ candidate, requirement, unmatched, onUnlock }: { candidate: Candidate; requirement: Requirement; unmatched: string[]; onUnlock: () => void }) {
-  if (!candidate.unlocked) {
-    return (
-      <Panel id="analysis-heading" title="Resume analysis" icon={<LockIcon size={15} />}>
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <MutedText>Strengths, concerns and what to validate unlock with the candidate.</MutedText>
-          <OutlineCta size="sm" onClick={onUnlock}>Unlock candidate</OutlineCta>
-        </div>
-      </Panel>
-    );
-  }
+function AnalysisPanel({ candidate, requirement, unmatched }: { candidate: Candidate; requirement: Requirement; unmatched: string[] }) {
   const insights = buildResumeInsights(candidate, unmatched);
   const columns = [
     { id: "strengths", title: "Key strengths", items: insights.strengths, empty: "Nothing stands out yet.", icon: CheckIcon, cls: "size-4 text-hx-success" },
@@ -212,7 +205,6 @@ export function OverviewTab({
   state,
   onOpenPractice,
   onOpenResume,
-  onUnlock,
 }: {
   candidate: Candidate;
   requirement: Requirement;
@@ -221,7 +213,6 @@ export function OverviewTab({
   state: EvidenceState;
   onOpenPractice: () => void;
   onOpenResume: () => void;
-  onUnlock: () => void;
 }) {
   return (
     <div className="grid min-w-0 gap-4">
@@ -230,7 +221,7 @@ export function OverviewTab({
         <MatchPanel candidate={candidate} requirement={requirement} matched={matched} unmatched={unmatched} evidence={state.evidence} />
       </div>
       <PracticeSnapshot candidate={candidate} state={state} onOpenPractice={onOpenPractice} />
-      <AnalysisPanel candidate={candidate} requirement={requirement} unmatched={unmatched} onUnlock={onUnlock} />
+      <AnalysisPanel candidate={candidate} requirement={requirement} unmatched={unmatched} />
     </div>
   );
 }

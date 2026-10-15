@@ -9,7 +9,6 @@ import { IdentityHiddenBadge, InlineNotice } from "@/employer/_requirementAtoms"
 import { failureMessage, getEvidence, type EvidenceResponse } from "@/employer/_requirementCalls";
 
 function EvidenceBody({ evidence }: { evidence: EvidenceResponse }) {
-  const locked = evidence.quotesLocked === true || evidence.unlocked === false;
   return (
     <div style={{ display: "grid", gap: 14 }}>
       {evidence.sessionDate && (
@@ -42,17 +41,11 @@ function EvidenceBody({ evidence }: { evidence: EvidenceResponse }) {
           })}
         </ul>
       )}
-      {locked && (
-        <InlineNotice tone="info" live={false}>
-          Interview answer quotes are hidden until you unlock this candidate.
-        </InlineNotice>
-      )}
     </div>
   );
 }
 
-/** Per-skill evidence for one candidate. Skill scores are always visible;
-    verbatim answer quotes only arrive after unlock (server-enforced). */
+/** Per-skill evidence for one candidate. */
 export default function EvidenceDialog({
   matchId,
   displayName,

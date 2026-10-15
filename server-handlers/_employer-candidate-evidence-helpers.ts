@@ -47,6 +47,19 @@ export interface EvidenceQuote {
  *  quote admitted there is already checked to be a real substring of the
  *  candidate's transcript, so this doesn't re-validate grounding). Entries
  *  missing a usable quote are skipped rather than surfaced with empty text. */
+/** Grader notes are written to the candidate ("You gave a concrete timeline").
+ *  An employer reads them about the candidate, so recast second person to third. */
+export function toThirdPerson(text: string): string {
+  const keepCase = (from: string, to: string) => (from[0] === from[0].toUpperCase() ? to[0].toUpperCase() + to.slice(1) : to);
+  return text
+    .replace(/\byou(['’])(re|ve|ll|d)\b/gi, (m, q: string, s: string) => keepCase(m, `they${q}${s.toLowerCase()}`))
+    .replace(/\byourselves?\b/gi, (m) => keepCase(m, "themselves"))
+    .replace(/\byours\b/gi, (m) => keepCase(m, "theirs"))
+    .replace(/\byour\b/gi, (m) => keepCase(m, "their"))
+    .replace(/(^|[.!?]\s+|[,;:]\s+|\b(?:and|but|when|that|because|which|if|while|so|as|where)\s+)you\b/gi, (_m, lead: string) => `${lead}${lead === "" || /[.!?]\s+$/.test(lead) ? "They" : "they"}`)
+    .replace(/\byou\b/gi, "them");
+}
+
 export function extractEvidenceQuotes(reportJson: unknown): EvidenceQuote[] {
   if (!reportJson || typeof reportJson !== "object") return [];
   const r = reportJson as { wins?: unknown; redFlags?: unknown };
@@ -59,7 +72,7 @@ export function extractEvidenceQuotes(reportJson: unknown): EvidenceQuote[] {
     const text = (w as { text?: unknown }).text;
     const quote = (w as { quote?: unknown }).quote;
     if (typeof text === "string" && text.trim() && typeof quote === "string" && quote.trim()) {
-      out.push({ kind: "win", text: text.trim(), quote: quote.trim() });
+      out.push({ kind: "win", text: toThirdPerson(text.trim()), quote: quote.trim() });
     }
   }
 
@@ -69,7 +82,7 @@ export function extractEvidenceQuotes(reportJson: unknown): EvidenceQuote[] {
     const title = (rf as { title?: unknown }).title;
     const quote = (rf as { quote?: unknown }).quote;
     if (typeof title === "string" && title.trim() && typeof quote === "string" && quote.trim()) {
-      out.push({ kind: "redFlag", text: title.trim(), quote: quote.trim() });
+      out.push({ kind: "redFlag", text: toThirdPerson(title.trim()), quote: quote.trim() });
       break;
     }
   }
@@ -384,21 +397,41 @@ export function extractDeliveryMetrics(reportJson: unknown): DeliveryMetrics | n
   };
 }
 
-export interface LockedQuestionContext {
-  name: string;
-  companies: string[];
-  schools: string[];
+function nameTokens(name: string): RegExp[] {
+  return name
+    .trim()
+    .split(/\s+/)
+    .filter((p) => p.length > 1)
+    .map((part) => new RegExp(`\\b${part.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "gi"));
 }
 
-/** Follow-up questions are generated from the resume, so they can name the
- *  candidate's employer or school. While locked, swap those for neutral
- *  wording ("At your company, ...") so the question still reads naturally. */
-export function scrubLockedQuestions<T extends { question: string }>(questions: T[], ctx: LockedQuestionContext): T[] {
-  const nameParts = ctx.name.trim().split(/\s+/).filter((p) => p.length > 1);
-  const scrub = (text: string): string => {
-    let out = scrubFreeText(scrubFreeText(text, ctx.schools, "your school"), ctx.companies, "your company");
-    for (const part of nameParts) out = out.replace(new RegExp(`\\b${part.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b[,]?\\s*`, "gi"), "");
+/** While locked, the candidate's name and any contact detail must not appear
+ *  in text they wrote or spoke. Everything else is shown as-is. */
+function scrubLockedText(text: string, tokens: RegExp[], replacement: string): string {
+  let out = scrubFreeText(text, []);
+  for (const re of tokens) out = out.replace(re, replacement);
+  const placeholder = replacement.replace(/[[\]]/g, "\\$&");
+  out = out.replace(new RegExp(`(${placeholder})(\\s+${placeholder})+`, "g"), "$1");
+  return out;
+}
+
+/** Question wording can address the candidate by name ("Priya, how did you..."), so it is stripped. */
+export function scrubLockedQuestions<T extends { question: string; answerText?: string; explanation?: string }>(questions: T[], name: string): T[] {
+  const tokens = nameTokens(name);
+  const strip = (text: string): string => {
+    let out = scrubFreeText(text, []);
+    for (const re of tokens) out = out.replace(new RegExp(`${re.source}[,]?\\s*`, "gi"), "");
     return out.trim();
   };
-  return questions.map((q) => ({ ...q, question: scrub(q.question) }));
+  return questions.map((q) => ({
+    ...q,
+    question: strip(q.question),
+    ...(q.answerText ? { answerText: scrubLockedText(q.answerText, tokens, "[name]") } : {}),
+    ...(q.explanation ? { explanation: scrubLockedText(q.explanation, tokens, "[name]") } : {}),
+  }));
+}
+
+export function scrubLockedQuotes(quotes: EvidenceQuote[], name: string): EvidenceQuote[] {
+  const tokens = nameTokens(name);
+  return quotes.map((q) => ({ ...q, text: scrubLockedText(q.text, tokens, "the candidate"), quote: scrubLockedText(q.quote, tokens, "[name]") }));
 }

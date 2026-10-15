@@ -79,7 +79,7 @@ export function RequestContact({ candidate, disabled, disabledReason }: { candid
       </PopoverTrigger>
       <PopoverContent align="start" className="w-80 gap-3 p-4">
         <div>
-          <h3 className="m-0 text-[14px] font-semibold text-hx-coal">Request details</h3>
+          <h3 className="m-0 text-[13px] font-semibold text-hx-coal">Request details</h3>
           <p className="m-0 mt-1 text-[13px] leading-snug text-hx-ink-soft">
             We'll tell the candidate you'd like these and ask them to upload an updated resume or add them to their profile.
           </p>

@@ -1,10 +1,10 @@
 "use client";
 
 import { useId, useState } from "react";
-import { ChevronDownIcon, LockIcon } from "lucide-react";
+import { ChevronDownIcon } from "lucide-react";
 import { cn } from "cn";
 import type { EvidenceQuestion } from "@/employer/EmployerDataContext";
-import { Badge, OutlineCta } from "@/employer/_atoms";
+import { Badge } from "@/employer/_atoms";
 import { InfoTip, Panel } from "@/employer/_panelParts";
 import { DIFFICULTY_LABEL, cleanQuestionText, dedupeQuestions, LENGTH_LABEL, PROVENANCE, VERDICT_LABEL, VERDICT_TONE, summarizeQuestions } from "./helpers";
 
@@ -37,10 +37,10 @@ function StarMarks({ star }: { star: NonNullable<EvidenceQuestion["star"]> }) {
   );
 }
 
-function QuestionRow({ q, n, canExpand }: { q: EvidenceQuestion; n: number; canExpand: boolean }) {
+function QuestionRow({ q, n }: { q: EvidenceQuestion; n: number }) {
   const [open, setOpen] = useState(false);
   const bodyId = useId();
-  const hasDetail = canExpand && !!(q.answerText || q.explanation);
+  const hasDetail = !!(q.answerText || q.explanation);
 
   const head = (
     <div className="grid min-w-0 gap-2">
@@ -98,7 +98,7 @@ function QuestionRow({ q, n, canExpand }: { q: EvidenceQuestion; n: number; canE
   );
 }
 
-export function QuestionBreakdown({ questions, unlocked, onUnlock }: { questions: EvidenceQuestion[]; unlocked: boolean; onUnlock: () => void }) {
+export function QuestionBreakdown({ questions }: { questions: EvidenceQuestion[] }) {
   const list = dedupeQuestions(questions);
   const summary = summarizeQuestions(list);
   return (
@@ -116,18 +116,9 @@ export function QuestionBreakdown({ questions, unlocked, onUnlock }: { questions
       )}
       <ol aria-label="Interview questions" className="m-0 list-none p-0">
         {list.map((q, i) => (
-          <QuestionRow key={`${q.idx}-${i}`} q={q} n={i + 1} canExpand={unlocked} />
+          <QuestionRow key={`${q.idx}-${i}`} q={q} n={i + 1} />
         ))}
       </ol>
-      {!unlocked && (
-        <div className="mt-1 flex flex-wrap items-center justify-between gap-3 rounded-lg bg-hx-soft px-3.5 py-3">
-          <p className="m-0 flex items-center gap-2 text-[13px] text-hx-ink-soft">
-            <LockIcon size={14} aria-hidden="true" className="shrink-0" />
-            What they actually said, and how it was graded, unlocks with the candidate.
-          </p>
-          <OutlineCta size="sm" onClick={onUnlock}>Unlock to read answers</OutlineCta>
-        </div>
-      )}
     </Panel>
   );
 }

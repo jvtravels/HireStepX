@@ -66,7 +66,7 @@ describe("extractResumeDetail", () => {
 });
 
 describe("redactResumeDetailForLock", () => {
-  it("hides only contact details and employer/school names, keeping everything else visible to impress the employer", () => {
+  it("hides only identity and contact details, keeping the whole resume visible", () => {
     const detail = extractResumeDetail({
       topSkills: ["Figma"],
       summary: "Product Manager at Meesho, drives strategy for Valmo.",
@@ -87,7 +87,7 @@ describe("redactResumeDetailForLock", () => {
     expect(redacted.keyAchievements).toEqual(["Led a 4-person team"]);
     expect(redacted.linkedin).toBeNull();
     expect(redacted.phone).toBeNull();
-    expect(redacted.experience).toEqual([{ title: "Product Manager", company: "", period: "2022 – Present" }]);
+    expect(redacted.experience).toEqual([{ title: "Product Manager", company: "Meesho", period: "2022 – Present" }]);
     expect(redacted.seniorityLevel).toBe("Senior");
     expect(redacted.yearsExperience).toBe(6);
     expect(redacted.industries).toEqual(["E-commerce"]);
@@ -104,7 +104,7 @@ describe("redactResumeDetailForLock", () => {
     expect(redactResumeDetailForLock(detail, "Jane Doe").certifications).toEqual(["Google UX Design"]);
   });
 
-  it("blanks the school field in education entries without dropping degree/year", () => {
+  it("keeps the school in education entries", () => {
     const detail = extractResumeDetail({
       skills: [],
       education: [{ degree: "B.Tech", school: "IIT Bombay", year: "2018" }],
@@ -112,7 +112,7 @@ describe("redactResumeDetailForLock", () => {
 
     const redacted = redactResumeDetailForLock(detail, "Jane Doe");
 
-    expect(redacted.education).toEqual([{ degree: "B.Tech", school: "", year: "2018" }]);
+    expect(redacted.education).toEqual([{ degree: "B.Tech", school: "IIT Bombay", year: "2018" }]);
   });
 
   it("strips the candidate's name out of the AI-written summary so a locked candidate stays anonymous", () => {
@@ -202,15 +202,23 @@ describe("richer resume detail", () => {
     expect(d.careerTrajectory).toBeNull();
   });
 
-  it("leaks no employer or candidate name through the new fields while locked", () => {
+  it("leaks no candidate name or contact detail through the new fields while locked", () => {
     const original = extractResumeDetail({
       ...aiResume,
-      careerTrajectory: "Jane Doe moved from QA into product at Flipkart.",
+      careerTrajectory: "Jane Doe moved from QA into product at Flipkart. Reach her at jane@doe.in.",
     });
-    const locked = scrubLockedResume(original, redactResumeDetailForLock(original, "Jane Doe"));
+    const locked = scrubLockedResume(redactResumeDetailForLock(original, "Jane Doe"));
     const json = JSON.stringify(locked);
-    expect(json).not.toMatch(/Flipkart|Jane|Doe/);
-    expect(locked.experience[0]).toMatchObject({ company: "", teamSize: 8, partners: ["Design", "Eng"] });
+    expect(json).not.toMatch(/Jane|Doe|jane@/);
+    expect(json).toContain("Flipkart");
+    expect(locked.experience[0]).toMatchObject({ company: "Flipkart", teamSize: 8, partners: ["Design", "Eng"] });
     expect(locked.skillsDetailed).toHaveLength(2);
+  });
+});
+
+describe("extractResumeDetail education", () => {
+  it("drops entries with neither a degree nor a school", () => {
+    const d = extractResumeDetail({ education: [{ year: "Sep / 2021" }, { degree: "B.Des", school: "NID", year: "2020" }] });
+    expect(d.education).toEqual([{ degree: "B.Des", school: "NID", year: "2020" }]);
   });
 });
