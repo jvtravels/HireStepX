@@ -145,6 +145,75 @@ export default function JobSideRail({
       aria-label="Job summary"
       className="grid min-w-0 content-start gap-4 sm:max-[1439px]:grid-cols-2"
     >
+      <Panel id="details-heading" title="Job details">
+        <KeyValueList>
+          <Rows
+            rows={[
+              { label: "Posted", value: posted },
+              { label: "Last matched", value: matched },
+              {
+                label: "Openings",
+                value: r.openPositions != null ? String(r.openPositions) : null,
+              },
+              {
+                label: "Due",
+                value: due ? (
+                  <span className={cn(due.overdue && "text-hx-error-ink")}>
+                    {due.text}
+                  </span>
+                ) : null,
+              },
+            ]}
+          />
+          <KeyValueRow label="Hiring stage">
+            <span
+              title={
+                suspended
+                  ? "Stage changes are turned off while your account is suspended."
+                  : STAGE_HINT[r.stage]
+              }
+              className="inline-flex"
+            >
+              <StageCell
+                stage={r.stage}
+                hasEvaluatedCandidates={r.candidates.length > 0}
+                onChange={onStageChange}
+                frozen={readOnly || suspended}
+              />
+            </span>
+          </KeyValueRow>
+        </KeyValueList>
+      </Panel>
+
+      {hasPreferences && (
+        <Panel
+          id="preferences-heading"
+          title="Talent preferences"
+          action={
+            canEdit ? <PanelLink href={editHref}>Edit</PanelLink> : undefined
+          }
+        >
+          <KeyValueList>
+            <Rows rows={preferences} />
+          </KeyValueList>
+        </Panel>
+      )}
+
+      {insights.length > 0 && (
+        <Panel id="insights-heading" title="Key insights">
+          <ul className="m-0 -mx-2 flex list-none flex-col gap-1 p-0">
+            {insights.map((insight) => (
+              <InsightRow
+                key={insight.id}
+                insight={insight}
+                active={insight.id === activeInsightId}
+                onSelect={() => onSelectInsight(insight.id === activeInsightId ? null : insight.id)}
+              />
+            ))}
+          </ul>
+        </Panel>
+      )}
+
       {hasList && (
         <Panel id="pipeline-heading" title="Hiring pipeline">
           <ul className="m-0 flex list-none flex-col gap-1 p-0">
@@ -194,75 +263,6 @@ export default function JobSideRail({
           )}
         </Panel>
       )}
-
-      {hasPreferences && (
-        <Panel
-          id="preferences-heading"
-          title="Talent preferences"
-          action={
-            canEdit ? <PanelLink href={editHref}>Edit</PanelLink> : undefined
-          }
-        >
-          <KeyValueList>
-            <Rows rows={preferences} />
-          </KeyValueList>
-        </Panel>
-      )}
-
-      {insights.length > 0 && (
-        <Panel id="insights-heading" title="Key insights">
-          <ul className="m-0 -mx-2 flex list-none flex-col gap-1 p-0">
-            {insights.map((insight) => (
-              <InsightRow
-                key={insight.id}
-                insight={insight}
-                active={insight.id === activeInsightId}
-                onSelect={() => onSelectInsight(insight.id === activeInsightId ? null : insight.id)}
-              />
-            ))}
-          </ul>
-        </Panel>
-      )}
-
-      <Panel id="details-heading" title="Job details">
-        <KeyValueList>
-          <Rows
-            rows={[
-              { label: "Posted", value: posted },
-              { label: "Last matched", value: matched },
-              {
-                label: "Openings",
-                value: r.openPositions != null ? String(r.openPositions) : null,
-              },
-              {
-                label: "Due",
-                value: due ? (
-                  <span className={cn(due.overdue && "text-hx-error-ink")}>
-                    {due.text}
-                  </span>
-                ) : null,
-              },
-            ]}
-          />
-          <KeyValueRow label="Hiring stage">
-            <span
-              title={
-                suspended
-                  ? "Stage changes are turned off while your account is suspended."
-                  : STAGE_HINT[r.stage]
-              }
-              className="inline-flex"
-            >
-              <StageCell
-                stage={r.stage}
-                hasEvaluatedCandidates={r.candidates.length > 0}
-                onChange={onStageChange}
-                frozen={readOnly || suspended}
-              />
-            </span>
-          </KeyValueRow>
-        </KeyValueList>
-      </Panel>
     </aside>
   );
 }
