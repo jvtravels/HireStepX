@@ -126,7 +126,6 @@ export function buildResumeInsights(candidate: Candidate, unmatched: string[]): 
   const measurable = (r?.keyAchievements ?? []).filter((a) => /\d/.test(a));
   if (measurable.length) strengths.push(`${measurable.length} achievement${measurable.length === 1 ? "" : "s"} with measurable results, for example: ${measurable[0]}`);
   if (r?.certifications.length) strengths.push(`Holds ${r.certifications.length} certification${r.certifications.length === 1 ? "" : "s"}: ${r.certifications.slice(0, 3).join(", ")}.`);
-  if (avgTenureMonths != null && avgTenureMonths >= 24) strengths.push(`Stays in roles: about ${Math.round(avgTenureMonths / 12 * 10) / 10} years on average.`);
 
   const concerns: string[] = [];
   if (avgTenureMonths != null && tenures.length >= 2 && avgTenureMonths < 12) concerns.push(`Short stints, about ${avgTenureMonths} months per role.`);

@@ -4,7 +4,7 @@ import { cn } from "cn";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { CandidateEvidence, Requirement } from "@/employer/EmployerDataContext";
 import type { Candidate } from "@/employer/mockData";
-import { OutlineCta, matchBand } from "@/employer/_atoms";
+import { OutlineCta } from "@/employer/_atoms";
 import { InfoTip, KeyValueList, KeyValueRow, Panel, PanelButton, Stat, StatGrid } from "@/employer/_panelParts";
 import { InlineNotice } from "@/employer/_requirementAtoms";
 import { ChipList, IconList, MutedText } from "./parts";
@@ -52,31 +52,21 @@ function FitMark({ status }: { status: FitStatus }) {
   );
 }
 
-const BAND_HERO: Record<ReturnType<typeof matchBand>, { label: string; cls: string }> = {
-  strong: { label: "Strong match", cls: "bg-hx-success-100 text-hx-success-ink" },
-  fair: { label: "Fair match", cls: "bg-hx-warning-100 text-hx-warning-ink" },
-  low: { label: "Low match", cls: "bg-hx-soft text-hx-neutral-ink" },
-};
-
 const SEGMENT_CLS: Record<FitStatus, string> = { meets: "bg-hx-success", partial: "bg-hx-warning", gap: "bg-hx-error" };
 
 function MatchPanel({ candidate, requirement, matched, unmatched, evidence, requestUi }: { candidate: Candidate; requirement: Requirement; matched: string[]; unmatched: string[]; evidence: CandidateEvidence | null; requestUi: RequestUi }) {
   const rows = buildRoleFit(candidate, requirement, matched, evidence);
   const fit = summarizeFit(rows);
-  const band = BAND_HERO[matchBand(candidate.matchScore)];
   const shortfalls = [fit.gaps.length > 0 && `Gap: ${fit.gaps.join(", ")}.`, fit.close.length > 0 && `Close: ${fit.close.join(", ")}.`].filter(Boolean).join(" ");
   return (
     <Panel id="match-heading" title="Fit for this role" icon={<TargetIcon size={15} />}>
       <div className="grid gap-5">
         <div className="@container">
           <div className="grid gap-5 @xl:grid-cols-[auto_minmax(0,1fr)] @xl:items-center @xl:gap-10">
-            <div className="grid justify-items-start gap-2">
-              <p className="m-0 flex items-baseline gap-2">
-                <span className="text-[44px] leading-none font-semibold tracking-[-0.03em] tabular-nums text-hx-coal">{candidate.matchScore}</span>
-                <span className="text-[13px] text-hx-ink-soft">out of 100</span>
-              </p>
-              <span className={cn("inline-flex items-center rounded-full px-2.5 py-1 text-[12px] leading-none font-medium", band.cls)}>{band.label}</span>
-            </div>
+            <p className="m-0 flex items-baseline gap-2">
+              <span className="text-[44px] leading-none font-semibold tracking-[-0.03em] tabular-nums text-hx-coal">{candidate.matchScore}</span>
+              <span className="text-[13px] text-hx-ink-soft">out of 100</span>
+            </p>
             {fit.total > 0 && (
               <div className="grid gap-2">
                 <p className="m-0 text-[15px] font-semibold text-hx-coal">
@@ -91,11 +81,9 @@ function MatchPanel({ candidate, requirement, matched, unmatched, evidence, requ
               </div>
             )}
           </div>
-          <p className="m-0 mt-3 text-[12px] text-hx-ink-soft">The score also weighs title match, practice results and recent activity, so it is more than the criteria below.</p>
         </div>
         {rows.length > 0 && (
-          <div className="border-t border-hx-line pt-4">
-            <p className="m-0 mb-1 text-[13px] text-hx-ink-soft">Compared with {requirement.title}</p>
+          <div className="border-t border-hx-line pt-2">
             <ul aria-label="Criteria compared with the posting" className="m-0 flex list-none flex-col p-0">
               {rows.map((row) => (
                 <li key={row.id} className="grid gap-2.5 border-b border-hx-line py-3 last:border-b-0 last:pb-0">
@@ -218,8 +206,8 @@ function PracticeSnapshot({ candidate, state, onOpenPractice, requirementTitle, 
     <Panel id="evidence-heading" title="Practice snapshot" icon={<ActivityIcon size={15} />} action={tip}>
       <EvidenceStatus state={state}>
         {hasEvidence ? (
-          <div className="grid gap-4">
-            <StatGrid>
+          <div className="@container grid gap-4">
+            <StatGrid className="@xl:grid-cols-4">
               <Stat label="Interviews" hint={last ? `Latest ${last}` : undefined}>{candidate.sessionsCompleted} graded</Stat>
               {evidence?.readiness && (
                 <Stat label="Readiness" hint={`${evidence.readiness.confidence} confidence`}>
@@ -254,9 +242,15 @@ function AnalysisPanel({ candidate, requirement, unmatched, requestUi }: { candi
   ];
   const filled = columns.filter((c) => c.items.length > 0);
   const empties = columns.filter((c) => c.items.length === 0);
+  if (filled.length === 0) {
+    return (
+      <Panel id="analysis-heading" title="Resume analysis" icon={<FileSearchIcon size={15} />}>
+        <p className="m-0 text-[13px] text-hx-ink-soft">Nothing to flag from the resume for {requirement.title}.</p>
+      </Panel>
+    );
+  }
   return (
     <Panel id="analysis-heading" title="Resume analysis" icon={<FileSearchIcon size={15} />}>
-      <p className="m-0 mb-4 text-[13px] text-hx-ink-soft">Read from the resume against {requirement.title}.</p>
       <div className="@container">
         {filled.length > 0 && (
           <div className={cn("grid gap-6 @2xl:gap-8", COLUMNS_CLS[filled.length])}>
@@ -319,12 +313,12 @@ export function OverviewTab({
     <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:items-start">
       <div className="flex min-w-0 flex-col gap-4">
         <MatchPanel candidate={candidate} requirement={requirement} matched={matched} unmatched={unmatched} evidence={state.evidence} requestUi={requestUi} />
-        <AnalysisPanel candidate={candidate} requirement={requirement} unmatched={unmatched} requestUi={requestUi} />
+        <PracticeSnapshot candidate={candidate} state={state} onOpenPractice={onOpenPractice} requirementTitle={requirement.title} requestUi={requestUi} />
         <RequestsPanel state={requestUi.state} disabled={requestUi.disabled} />
       </div>
       <div className="flex min-w-0 flex-col gap-4">
         <ProfilePanel candidate={candidate} onOpenResume={onOpenResume} />
-        <PracticeSnapshot candidate={candidate} state={state} onOpenPractice={onOpenPractice} requirementTitle={requirement.title} requestUi={requestUi} />
+        <AnalysisPanel candidate={candidate} requirement={requirement} unmatched={unmatched} requestUi={requestUi} />
       </div>
     </div>
   );
