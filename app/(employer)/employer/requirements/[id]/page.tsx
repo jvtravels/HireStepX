@@ -515,11 +515,6 @@ export default function RequirementDetailPage() {
                   )
                 ) : (
                   <>
-                  {!readOnly && pageRows.some((c) => !c.unlocked) && (
-                    <p className="mt-0 mb-2 text-[12.5px] text-hx-ink-soft">
-                      Locked candidates show an ID until you unlock them.
-                    </p>
-                  )}
                   <CandidatesTable
                     rows={pageRows}
                     requirementId={requirement.id}
