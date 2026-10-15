@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import Link from "next/link";
 import { BriefcaseIcon, CalendarClockIcon, CheckIcon, CircleAlertIcon, ClockIcon, ExternalLinkIcon, LockIcon, MailIcon, MapPinIcon, PhoneIcon, SparklesIcon, WalletIcon } from "lucide-react";
 import { cn } from "cn";
 import type { Candidate } from "@/employer/mockData";
@@ -7,10 +8,10 @@ import { Badge, CandidateStatusChip, ScoreChip } from "@/employer/_atoms";
 import { canInviteToInterview } from "@/employer/InterviewInviteDialog";
 import { readCandidateResponse } from "@/employer/_candidateFields";
 import { MetaLine, SkillChip, type ChipTone, type MetaPart } from "@/employer/_panelParts";
-import { IdentityHiddenBadge } from "@/employer/_requirementAtoms";
 import { PortfolioLinkIcon } from "@/portfolioLinkIcons";
 import { LockedContact } from "./Notices";
 import { HEADER_ACTION, candidateLinks, initials, maskedName } from "./helpers";
+import { RequestContact } from "./RequestContact";
 import { ResumeDownload } from "./ResumeDownload";
 
 function ContactLink({ icon: Icon, label, href, children }: { icon: typeof MailIcon; label: string; href: string; children: ReactNode }) {
@@ -20,6 +21,27 @@ function ContactLink({ icon: Icon, label, href, children }: { icon: typeof MailI
       <span className="sr-only">{label}: </span>
       <span className="[overflow-wrap:anywhere]">{children}</span>
     </a>
+  );
+}
+
+function MissingContact({ icon: Icon, label }: { icon: typeof MailIcon; label: string }) {
+  return (
+    <span className="inline-flex items-center gap-2 text-[13px] text-hx-ink-soft">
+      <Icon size={15} aria-hidden="true" className="shrink-0" />
+      <span className="sr-only">{label}: </span>
+      <span>Not provided</span>
+    </span>
+  );
+}
+
+function HiddenContact({ icon: Icon, label }: { icon: typeof MailIcon; label: string }) {
+  return (
+    <span className="inline-flex items-center gap-2 text-[13px] text-hx-ink-soft">
+      <Icon size={15} aria-hidden="true" className="shrink-0" />
+      <span>{label}</span>
+      <LockIcon size={12} aria-hidden="true" className="shrink-0" />
+      <span className="sr-only">hidden until unlock</span>
+    </span>
   );
 }
 
@@ -84,9 +106,9 @@ export function CandidateHeader({
   const displayName = maskedName(candidate);
   const response = declined ? "declined" : readCandidateResponse(candidate);
   const hasCity = !!candidate.city && candidate.city !== "Not specified";
-  const summary = candidate.unlocked ? resume?.summary?.trim() : "";
-  const notice = candidate.unlocked ? resume?.noticePeriod : null;
-  const ctc = candidate.unlocked ? resume?.currentCtc : null;
+  const summary = resume?.summary?.trim();
+  const notice = resume?.noticePeriod;
+  const ctc = resume?.currentCtc;
   const links = candidate.unlocked ? candidateLinks(candidate) : [];
   const selfReported = <span className="sr-only"> (self-reported)</span>;
   const canInvite = canInviteToInterview(candidate.candidateStatus);
@@ -107,7 +129,6 @@ export function CandidateHeader({
   if (ctc) meta.push({ icon: WalletIcon, title: "Self-reported", text: <>{ctc} CTC{selfReported}</> });
 
   const keySkills = candidate.skills.length > 0 || requiredSkills.length > 0 ? <KeySkills skills={candidate.skills} required={requiredSkills} /> : null;
-  const hasContactRow = !candidate.unlocked || !!candidate.contact?.phone || !!candidate.contact?.email || links.length > 0;
 
   return (
     <header className="min-w-0 rounded-xl border border-hx-line bg-white p-5">
@@ -120,7 +141,15 @@ export function CandidateHeader({
             <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
               <h1 className="m-0 text-[clamp(22px,5vw,26px)] leading-tight font-bold tracking-[-0.02em] text-hx-coal [overflow-wrap:anywhere]">{displayName}</h1>
               <CandidateStatusChip status={candidate.candidateStatus} />
-              {!candidate.unlocked && <IdentityHiddenBadge />}
+              {!candidate.unlocked && (
+                <Button asChild size="sm" className={cn("gap-1.5 pointer-coarse:h-11", HEADER_ACTION)}>
+                  <Link href={shortlistHref}>
+                    <LockIcon size={13} aria-hidden="true" />
+                    Unlock
+                    <span className="sr-only"> candidate identity and contact details</span>
+                  </Link>
+                </Button>
+              )}
               {response === "interested" && <Badge tone="success">Candidate is interested</Badge>}
               {response === "declined" && <Badge tone="error">Declined contact</Badge>}
             </div>
@@ -137,37 +166,39 @@ export function CandidateHeader({
       <MetaLine parts={meta} className="mt-3" />
       {blockedReason && <p className="m-0 mt-3 text-right text-[12px] text-hx-ink-soft">{blockedReason}</p>}
 
-      {(summary || keySkills || hasContactRow) && (
-        <div className={cn("mt-4 grid min-w-0 gap-x-8 gap-y-4 border-t border-hx-line pt-4", keySkills && (summary || hasContactRow) && "lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]")}>
-          {(summary || hasContactRow) && (
-            <div className="flex min-w-0 flex-col gap-4">
-              {summary && <p className="m-0 max-w-[75ch] text-[14px] leading-relaxed whitespace-pre-line text-hx-ink-soft [overflow-wrap:anywhere]">{summary}</p>}
-              {hasContactRow && (
-                <div className={cn(summary && "border-t border-hx-line pt-4")}>
-                  {candidate.unlocked ? (
-                    <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-                      {candidate.contact?.phone && <ContactLink icon={PhoneIcon} label="Phone" href={`tel:${candidate.contact.phone}`}>{candidate.contact.phone}</ContactLink>}
-                      {candidate.contact?.email && <ContactLink icon={MailIcon} label="Email" href={`mailto:${candidate.contact.email}`}>{candidate.contact.email}</ContactLink>}
-                      {links.map((l) => (
-                        <a key={l.url} href={l.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-[13px] text-hx-coal hover:underline">
-                          <span aria-hidden="true" className="inline-flex shrink-0 text-hx-ink-soft"><PortfolioLinkIcon url={l.url} size={15} /></span>
-                          <span className="sr-only">{l.label}: </span>
-                          <span className="[overflow-wrap:anywhere]">{l.host}</span>
-                          <ExternalLinkIcon size={13} aria-hidden="true" className="shrink-0 text-hx-ink-soft" />
-                          <span className="sr-only"> (opens in a new tab)</span>
-                        </a>
-                      ))}
-                    </div>
-                  ) : (
-                    <LockedContact shortlistHref={shortlistHref} />
-                  )}
+      <div className={cn("mt-4 grid min-w-0 gap-x-8 gap-y-4 border-t border-hx-line pt-4", keySkills && "lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]")}>
+        <div className="flex min-w-0 flex-col gap-4">
+          {summary && <p className="m-0 max-w-[75ch] text-[14px] leading-relaxed whitespace-pre-line text-hx-ink-soft [overflow-wrap:anywhere]">{summary}</p>}
+          <div className={cn(summary && "border-t border-hx-line pt-4")}>
+            {candidate.unlocked ? (
+              <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+                {candidate.contact?.email ? <ContactLink icon={MailIcon} label="Email" href={`mailto:${candidate.contact.email}`}>{candidate.contact.email}</ContactLink> : <MissingContact icon={MailIcon} label="Email" />}
+                {candidate.contact?.phone ? <ContactLink icon={PhoneIcon} label="Phone" href={`tel:${candidate.contact.phone}`}>{candidate.contact.phone}</ContactLink> : <MissingContact icon={PhoneIcon} label="Phone" />}
+                {links.map((l) => (
+                  <a key={l.url} href={l.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-[13px] text-hx-coal hover:underline">
+                    <span aria-hidden="true" className="inline-flex shrink-0 text-hx-ink-soft"><PortfolioLinkIcon url={l.url} size={15} /></span>
+                    <span className="sr-only">{l.label}: </span>
+                    <span className="[overflow-wrap:anywhere]">{l.host}</span>
+                    <ExternalLinkIcon size={13} aria-hidden="true" className="shrink-0 text-hx-ink-soft" />
+                    <span className="sr-only"> (opens in a new tab)</span>
+                  </a>
+                ))}
+                <RequestContact candidate={candidate} disabled={inviteBlocked} disabledReason={blockedReason} />
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3">
+                <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+                  <HiddenContact icon={MailIcon} label="Email" />
+                  <HiddenContact icon={PhoneIcon} label="Phone" />
+                  <HiddenContact icon={ExternalLinkIcon} label="Links" />
                 </div>
-              )}
-            </div>
-          )}
-          {keySkills && <div className={cn("min-w-0", (summary || hasContactRow) && "lg:border-l lg:border-hx-line lg:pl-8")}>{keySkills}</div>}
+                <LockedContact shortlistHref={shortlistHref} />
+              </div>
+            )}
+          </div>
         </div>
-      )}
+        {keySkills && <div className="min-w-0 lg:border-l lg:border-hx-line lg:pl-8">{keySkills}</div>}
+      </div>
     </header>
   );
 }

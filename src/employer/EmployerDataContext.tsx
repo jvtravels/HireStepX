@@ -204,6 +204,7 @@ interface EmployerDataContextValue {
   updateCandidateStatus: (matchId: string, payload: StatusPayload) => Promise<boolean>;
   /** Same as updateCandidateStatus but exposes `code: "unlock_required"` (402) / suspended (403). */
   updateCandidateStatusResult: (matchId: string, payload: StatusPayload) => Promise<EmployerApiResult<null>>;
+  requestCandidateContact: (matchId: string, fields: string[]) => Promise<EmployerApiResult<null>>;
   fetchCandidateEvidence: (matchId: string) => Promise<CandidateEvidence | null>;
   fetchCandidateResumeUrl: (matchId: string) => Promise<{ url: string; fileName: string } | null>;
   fetchRequirementActivity: (id: string) => Promise<RequirementActivity[] | null>;
@@ -472,6 +473,12 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
 
   const updateCandidateStatus = useCallback(async (matchId: string, payload: StatusPayload) => (await updateCandidateStatusResult(matchId, payload)).ok, [updateCandidateStatusResult]);
 
+  const requestCandidateContact = useCallback(async (matchId: string, fields: string[]): Promise<EmployerApiResult<null>> => {
+    const res = await apiFetch<{ ok: boolean }>("/api/employer-request-contact", { matchId, fields }, { method: "POST" });
+    if (res.ok) return { ok: true, data: null };
+    return { ok: false, error: toApiError(res, res.status === 403 ? SUSPENDED_MESSAGE : "Couldn't send the request — please try again.") };
+  }, []);
+
   const fetchCandidateEvidence = useCallback(async (matchId: string): Promise<CandidateEvidence | null> => {
     const res = await getWithRetry(`/api/employer-candidate-evidence?matchId=${encodeURIComponent(matchId)}`);
     if (!res || !res.ok || !res.data) return null;
@@ -592,6 +599,7 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
     updateRequirementStage,
     updateCandidateStatus,
     updateCandidateStatusResult,
+    requestCandidateContact,
     fetchCandidateEvidence,
     fetchCandidateResumeUrl,
     fetchRequirementActivity,
@@ -611,7 +619,7 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
     refreshCompanyStatus, submitCompanyProfile, submitCompanyProfileResult, addRequirement, updateRequirement,
     createUnlockOrder, createUnlockOrderResult, verifyUnlockPayment, fetchRequirementDetail, archiveRequirement,
     reopenRequirement, updateRequirementStage, updateCandidateStatus, updateCandidateStatusResult,
-    fetchCandidateEvidence, fetchCandidateResumeUrl, fetchRequirementActivity, fetchUnlockHistory, fetchDashboard, refreshRequirements, listConversations,
+    requestCandidateContact, fetchCandidateEvidence, fetchCandidateResumeUrl, fetchRequirementActivity, fetchUnlockHistory, fetchDashboard, refreshRequirements, listConversations,
     fetchMessages, sendMessage, sendMessageResult, uploadMessageAttachment, flagMessage, fetchMessageAttachmentUrl,
   ]);
 
