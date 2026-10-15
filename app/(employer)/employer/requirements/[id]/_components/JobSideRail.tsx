@@ -92,14 +92,17 @@ export default function JobSideRail({
 }) {
   const r = requirement;
   const canEdit = !readOnly && !suspended;
+  const notSet = <span className="font-normal text-hx-ink-soft">Not set</span>;
   const preferences = [
-    { label: "Industry", value: r.preferredIndustry },
-    { label: "Domain", value: r.preferredDomain },
-    { label: "Availability", value: r.availability && r.availability !== "Any" ? r.availability : null },
-    { label: "Notice period", value: r.noticePeriodPref && r.noticePeriodPref !== "Any" ? r.noticePeriodPref : null },
-    { label: "Portfolio / GitHub", value: r.portfolioRequired ? <Badge tone="success">Preferred</Badge> : null },
+    { label: "Industry", value: r.preferredIndustry || notSet },
+    { label: "Domain", value: r.preferredDomain || notSet },
+    { label: "Availability", value: r.availability && r.availability !== "Any" ? r.availability : notSet },
+    { label: "Notice period", value: r.noticePeriodPref && r.noticePeriodPref !== "Any" ? r.noticePeriodPref : notSet },
+    {
+      label: "Portfolio / GitHub",
+      value: r.portfolioRequired ? <Badge tone="success">Preferred</Badge> : <span className="font-normal text-hx-ink-soft">Not preferred</span>,
+    },
   ];
-  const hasPreferences = preferences.some((p) => p.value);
 
   return (
     <aside aria-label="Job summary" className="grid min-w-0 content-start gap-4 sm:max-[1439px]:grid-cols-2">
@@ -126,13 +129,9 @@ export default function JobSideRail({
         title="Talent preferences"
         action={canEdit ? <PanelLink href={`/employer/requirements/${r.id}/edit`}>Edit</PanelLink> : undefined}
       >
-        {hasPreferences ? (
-          <KeyValueList>
-            <Rows rows={preferences} />
-          </KeyValueList>
-        ) : (
-          <p className="m-0 text-[13px] text-hx-ink-soft">No preferences set for this role yet.</p>
-        )}
+        <KeyValueList>
+          <Rows rows={preferences} />
+        </KeyValueList>
       </Panel>
     </aside>
   );
