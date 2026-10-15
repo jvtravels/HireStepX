@@ -30,7 +30,7 @@ import CandidatesFilters from "./_components/CandidatesFilters";
 import CandidatesTable from "./_components/CandidatesTable";
 import EvidenceDialog from "./_components/EvidenceDialog";
 import MessagesDialog from "./_components/MessagesDialog";
-import JobOverview from "./_components/JobOverview";
+import JobOverview, { hasRoleDetails } from "./_components/JobOverview";
 import JobHeader from "./_components/JobHeader";
 import JobSideRail from "./_components/JobSideRail";
 import KeyRequirements, { hasKeyRequirements } from "./_components/KeyRequirements";
@@ -336,7 +336,7 @@ export default function RequirementDetailPage() {
             reopening={reopenSaving}
             onReopen={reopen}
             onReload={load}
-            expandedContent={<JobOverview requirement={requirement} />}
+            expandedContent={hasRoleDetails(requirement) ? <JobOverview requirement={requirement} /> : null}
             requirementsSlot={hasKeyRequirements(requirement) ? <KeyRequirements requirement={requirement} /> : null}
           />
 

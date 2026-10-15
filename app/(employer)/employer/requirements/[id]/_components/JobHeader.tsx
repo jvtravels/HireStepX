@@ -68,13 +68,13 @@ export default function JobHeader({
   const [archiveOpen, setArchiveOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
 
   const closed = requirement.status === "closed";
   const status = jobStatusPill(requirement.status);
   const meta = metaParts(requirement);
   const description = requirement.description ?? "";
   const preview = previewText(description, DESCRIPTION_PREVIEW);
-  const hasMore = preview.truncated || expandedContent != null;
   const shownDescription = expanded || !preview.truncated ? description.trim() : `${preview.text.replace(/\n{2,}/g, "\n")}…`;
 
   return (
@@ -155,9 +155,9 @@ export default function JobHeader({
       <div className={cn("mt-4 grid min-w-0 gap-x-8 gap-y-4 border-t border-hx-line pt-4 ", requirementsSlot && "lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]")}>
         <div className="min-w-0">
           {description && (
-            <p className="m-0 max-w-[75ch] text-[14px] leading-relaxed whitespace-pre-line text-hx-ink-soft [overflow-wrap:anywhere]">
+            <p className="m-0 max-w-[75ch] text-[14px] leading-relaxed whitespace-pre-line text-hx-coal [overflow-wrap:anywhere]">
               {shownDescription}
-              {hasMore && (
+              {preview.truncated && (
                 <>
                   {" "}
                   <PanelButton expanded={expanded} onClick={() => setExpanded((v) => !v)}>
@@ -167,16 +167,25 @@ export default function JobHeader({
               )}
             </p>
           )}
-          {!description && hasMore && (
-            <PanelButton expanded={expanded} onClick={() => setExpanded((v) => !v)}>
-              {expanded ? "View less" : "View role details"}
-            </PanelButton>
-          )}
         </div>
         {requirementsSlot && <div className="min-w-0 lg:border-l lg:border-hx-line lg:pl-8">{requirementsSlot}</div>}
       </div>
 
-      {expanded && expandedContent}
+      {expandedContent != null && (
+        <div className="mt-4 border-t border-hx-line pt-3">
+          <h2 className="m-0">
+            <PanelButton expanded={detailsOpen} controls="job-role-details" onClick={() => setDetailsOpen((v) => !v)}>
+              Role details
+              <ChevronDownIcon size={15} aria-hidden="true" className={cn("transition-transform duration-150 motion-reduce:transition-none", detailsOpen && "rotate-180")} />
+            </PanelButton>
+          </h2>
+          {detailsOpen && (
+            <div id="job-role-details" className="mt-3">
+              {expandedContent}
+            </div>
+          )}
+        </div>
+      )}
 
       {message && (
         <div className="mt-4">

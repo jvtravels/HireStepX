@@ -53,12 +53,13 @@ export function PanelLink({ href, children, label }: { href: string; children: R
   );
 }
 
-export function PanelButton({ onClick, children, expanded }: { onClick: () => void; children: ReactNode; expanded?: boolean }) {
+export function PanelButton({ onClick, children, expanded, controls }: { onClick: () => void; children: ReactNode; expanded?: boolean; controls?: string }) {
   return (
     <button
       type="button"
       onClick={onClick}
       aria-expanded={expanded}
+      aria-controls={controls}
       className="inline-flex cursor-pointer items-center gap-1 rounded-md border-0 bg-transparent p-0 text-[13px] font-semibold text-hx-indigo transition-colors duration-150 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hx-indigo motion-reduce:transition-none pointer-coarse:min-h-11"
     >
       {children}

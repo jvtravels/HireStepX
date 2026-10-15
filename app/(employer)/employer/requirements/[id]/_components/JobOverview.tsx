@@ -45,24 +45,23 @@ function overviewRows(r: Requirement): OverviewRow[] {
   return rows;
 }
 
+export function hasRoleDetails(r: Requirement): boolean {
+  return overviewRows(r).length > 0;
+}
+
 /** Everything the posting form collected that the header and Key requirements
-    don't already show, so nothing is listed twice. */
+    don't already show, so nothing is listed twice. The header owns the toggle
+    and the heading; this is only the body. */
 export default function JobOverview({ requirement }: { requirement: Requirement }) {
   const rows = overviewRows(requirement);
-  if (rows.length === 0) return null;
   return (
-    <section aria-labelledby="job-overview-heading" className="mt-5 border-t border-hx-line pt-5">
-      <h2 id="job-overview-heading" className="m-0 text-[15px] font-semibold text-hx-coal">
-        Role details
-      </h2>
-      <dl className="m-0 mt-3.5 grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2 lg:grid-cols-4">
-        {rows.map((row) => (
-          <div key={row.label} className={cn("min-w-0", row.wide && "sm:col-span-2 lg:col-span-4")}>
-            <dt className="text-[12px] text-hx-ink-soft">{row.label}</dt>
-            <dd className={cn("m-0 mt-0.5 text-[14px] whitespace-pre-wrap text-hx-coal [overflow-wrap:anywhere]", row.wide ? "max-w-[75ch] leading-relaxed" : "font-medium")}>{row.value}</dd>
-          </div>
-        ))}
-      </dl>
-    </section>
+    <dl className="m-0 grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2 lg:grid-cols-4">
+      {rows.map((row) => (
+        <div key={row.label} className={cn("min-w-0", row.wide && "sm:col-span-2 lg:col-span-4")}>
+          <dt className="text-[12px] text-hx-ink-soft">{row.label}</dt>
+          <dd className={cn("m-0 mt-0.5 text-[14px] whitespace-pre-wrap text-hx-coal [overflow-wrap:anywhere]", row.wide ? "max-w-[75ch] leading-relaxed" : "font-medium")}>{row.value}</dd>
+        </div>
+      ))}
+    </dl>
   );
 }
