@@ -572,10 +572,20 @@ export async function getSubscriptionTier(userId: string): Promise<"free" | "sta
     }
   };
 
+  // Only paid tiers are cached: a free result is never stored, so an upgrade
+  // takes effect on the very next request without needing invalidation, and a
+  // downgrade lags at most TIER_CACHE_TTL_SEC.
+  const cacheKey = `tier:${userId}`;
+  const cached = await redisGet(cacheKey);
+  if (cached === "starter" || cached === "team") return cached;
+
   const first = await attempt();
-  if (!first.transient) return first.tier;
-  return (await attempt()).tier;
+  const result = first.transient ? (await attempt()).tier : first.tier;
+  if (result !== "free") void redisSetEx(cacheKey, TIER_CACHE_TTL_SEC, result);
+  return result;
 }
+
+const TIER_CACHE_TTL_SEC = 30;
 
 /* ─── CSRF Origin Validation ─── */
 
@@ -675,11 +685,15 @@ async function redisRateLimit(ip: string, bucket: string, limit: number, windowS
  * failure (Redis down, network blip, malformed JSON) so callers can fall
  * through to the live path without try/catch noise. */
 
+// A slow Redis must degrade to a cache miss, never stall the request.
+const REDIS_KV_TIMEOUT_MS = 800;
+
 export async function redisGet(key: string): Promise<string | null> {
   if (!useRedis) return null;
   try {
     const res = await fetch(`${UPSTASH_URL}/get/${encodeURIComponent(key)}`, {
       headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` },
+      signal: AbortSignal.timeout(REDIS_KV_TIMEOUT_MS),
     });
     if (!res.ok) return null;
     const data = await res.json();
@@ -694,6 +708,7 @@ export async function redisSetEx(key: string, ttlSec: number, value: string): Pr
       method: "POST",
       headers: { Authorization: `Bearer ${UPSTASH_TOKEN}`, "Content-Type": "application/json" },
       body: JSON.stringify([["SET", key, value, "EX", ttlSec]]),
+      signal: AbortSignal.timeout(REDIS_KV_TIMEOUT_MS),
     });
   } catch { /* swallow — caching is best-effort */ }
 }
@@ -711,6 +726,7 @@ export async function redisIncrByWithExpiry(key: string, by: number, ttlSec: num
         ["INCRBY", key, String(by)],
         ["EXPIRE", key, String(ttlSec), "NX"],
       ]),
+      signal: AbortSignal.timeout(REDIS_KV_TIMEOUT_MS),
     });
     if (!res.ok) return null;
     const data = await res.json() as Array<{ result?: unknown }>;

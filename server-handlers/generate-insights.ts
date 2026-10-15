@@ -3,6 +3,7 @@
 export const config = { runtime: "edge" };
 
 import { callLLM, extractJSON } from "./_llm-pii";
+import { singleFlight, CACHE_VERSION } from "./_single-flight";
 import {
   handleCorsPreflightOrMethod, corsHeaders, verifyAuth,
   unauthorizedResponse, isRateLimited, getClientIp, rateLimitResponse,
@@ -61,7 +62,7 @@ export default async function handler(req: Request) {
     // Insights are a pure function of these inputs, so an unchanged profile
     // (page reload, tab switch, second device) must not pay for another LLM
     // call. Cache hits also skip the daily quota. Keyed per user.
-    const cacheKey = `ins:${auth.userId}:${await hashStable(JSON.stringify({ role, company, industry, skills, recentSessions, sessionCount }))}`;
+    const cacheKey = `ins:${CACHE_VERSION.ins}:${auth.userId}:${await hashStable(JSON.stringify({ role, company, industry, skills, recentSessions, sessionCount }))}`;
     const cachedRaw = await redisGet(cacheKey).catch(() => null);
     if (cachedRaw) {
       try {
@@ -107,7 +108,7 @@ Return a JSON array where each element has:
 
 Return ONLY the JSON array, no other text.`;
 
-    const result = await callLLM({ prompt, temperature: 0.7, maxTokens: 600, jsonMode: true, fast: true }, 12000, { userId: auth.userId, endpoint: "insights" });
+    const result = await singleFlight(cacheKey, () => callLLM({ prompt, temperature: 0.7, maxTokens: 600, jsonMode: true, fast: true }, 12000, { userId: auth.userId, endpoint: "insights" }));
     const parsed = extractJSON<{ type?: string; text?: string }[]>(result.text);
 
     if (!Array.isArray(parsed)) {

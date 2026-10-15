@@ -2398,3 +2398,16 @@ drop policy if exists "Users view own consents" on user_consents;
 create policy "Users view own consents" on user_consents
   for select using ((auth.uid())::text = user_id::text);
 revoke insert, update, delete on user_consents from anon, authenticated;
+
+-- ── 0039: scale indexes + policy cleanup (see supabase-migrations/0039-*.sql) ──
+CREATE INDEX IF NOT EXISTS idx_employer_blocks_employer ON public.employer_blocks (employer_id);
+CREATE INDEX IF NOT EXISTS idx_employer_reports_match ON public.employer_reports (match_id);
+CREATE INDEX IF NOT EXISTS idx_unlock_orders_requirement ON public.employer_unlock_orders (requirement_id);
+CREATE INDEX IF NOT EXISTS idx_match_status_events_employer ON public.match_status_events (employer_id);
+CREATE INDEX IF NOT EXISTS idx_match_status_events_match ON public.match_status_events (match_id);
+CREATE INDEX IF NOT EXISTS idx_employer_requirements_open_stage ON public.employer_requirements (stage) WHERE status <> 'closed';
+CREATE INDEX IF NOT EXISTS idx_notifications_created ON public.notifications (created_at);
+CREATE INDEX IF NOT EXISTS idx_notifications_user_unread ON public.notifications (user_id) WHERE read_at IS NULL AND archived_at IS NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS uq_unlock_orders_payment ON public.employer_unlock_orders (razorpay_payment_id) WHERE razorpay_payment_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_requirement_matches_unlocked_at ON public.requirement_matches (unlocked_at) WHERE unlocked;
+CREATE INDEX IF NOT EXISTS idx_profiles_created ON public.profiles (created_at DESC, id);

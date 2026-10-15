@@ -249,6 +249,12 @@ const nextConfig = {
         source: "/(.*)",
         headers,
       },
+      {
+        // Unhashed public/ assets: cache a day at the edge and browser, serve stale
+        // for a week while revalidating. /_next/static is already immutable.
+        source: "/:path*.(png|jpg|jpeg|webp|avif|svg|ico|woff2)",
+        headers: [{ key: "Cache-Control", value: "public, max-age=86400, stale-while-revalidate=604800" }],
+      },
     ];
   },
 };

@@ -14,7 +14,8 @@
 
 export const config = { runtime: "edge" };
 
-import { withAuthAndRateLimit, sanitizeForLLM, corsHeaders, withRequestId } from "./_shared";
+import { withAuthAndRateLimit, sanitizeForLLM, corsHeaders, withRequestId, redisGet, redisSetEx, hashStable } from "./_shared";
+import { singleFlight, CACHE_VERSION } from "./_single-flight";
 import { callLLM, extractJSON } from "./_llm-pii";
 
 declare const process: { env: Record<string, string | undefined> };
@@ -68,6 +69,14 @@ export default async function handler(req: Request): Promise<Response> {
   const domain = typeof body.context?.domain === "string" ? sanitizeForLLM(body.context.domain, 32) : "";
   const cleanBullet = sanitizeForLLM(bullet, 600);
 
+  const cacheKey = `rwb:${CACHE_VERSION.bulletRewrite}:${auth.userId}:${await hashStable(JSON.stringify([cleanBullet, role, domain]))}`;
+  const cachedRaw = await redisGet(cacheKey);
+  if (cachedRaw) {
+    try {
+      return new Response(JSON.stringify({ ...JSON.parse(cachedRaw), _cached: true }), { status: 200, headers });
+    } catch { /* corrupt entry: regenerate */ }
+  }
+
   const prompt = `You are a resume editor. Rewrite the resume bullet below so it:
 1. Starts with a strong action verb
 2. Quantifies impact wherever plausible (use realistic numbers if the original implies metrics; otherwise keep it qualitative — never invent specific numbers that weren't there)
@@ -95,14 +104,14 @@ CRITICAL:
 
   let result;
   try {
-    result = await callLLM(
+    result = await singleFlight(cacheKey, () => callLLM(
       // Single-bullet rewrites are short and don't need the 70b model's
       // reasoning depth — 8b handles the diction rules cleanly. Dropped
       // maxTokens from 300 to 150 because real rewrites land under 80 tokens.
       { prompt, temperature: 0.3, maxTokens: 150, jsonMode: true, fast: true },
       8000,
       { userId: auth.userId, endpoint: "resume-rewrite-bullet" },
-    );
+    ));
   } catch (err) {
     const isTimeout = err instanceof Error && (err.name === "AbortError" || err.message.includes("abort"));
     return new Response(
@@ -117,12 +126,11 @@ CRITICAL:
     return new Response(JSON.stringify({ error: "Failed to parse rewrite" }), { status: 500, headers });
   }
 
-  return new Response(
-    JSON.stringify({
-      rewrite: parsed.rewrite.trim().slice(0, 600),
-      rationale: typeof parsed.rationale === "string" ? parsed.rationale.trim().slice(0, 200) : "",
-      model: result.model,
-    }),
-    { status: 200, headers },
-  );
+  const responseBody = {
+    rewrite: parsed.rewrite.trim().slice(0, 600),
+    rationale: typeof parsed.rationale === "string" ? parsed.rationale.trim().slice(0, 200) : "",
+    model: result.model,
+  };
+  await redisSetEx(cacheKey, 7 * 24 * 3600, JSON.stringify(responseBody));
+  return new Response(JSON.stringify(responseBody), { status: 200, headers });
 }
