@@ -294,20 +294,20 @@ export default function AppShellFrame({
           <Breadcrumb style={{ flex: 1, minWidth: 0 }}>
             <BreadcrumbList style={{ fontFamily: F.sans, fontSize: 13, flexWrap: "nowrap", overflow: "hidden", alignItems: "center" }}>
               {/* Root crumb is dropped on narrow phones so the current page label keeps the room. */}
-              <BreadcrumbItem className="max-[480px]:hidden">
+              <BreadcrumbItem className="h-5 shrink-0 overflow-hidden whitespace-nowrap max-[480px]:hidden">
                 <BreadcrumbLink onClick={() => onNavigate(breadcrumbRoot.path)} style={{ color: c.inkSoft, cursor: "pointer", display: "flex", alignItems: "center" }}>
                   {breadcrumbRoot.label}
                 </BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator className="max-[480px]:hidden" />
               {extraCrumbs && extraCrumbs.length > 0 ? (
-                <BreadcrumbItem className="min-w-0 shrink-[3]">
+                <BreadcrumbItem className="h-5 min-w-0 shrink-[3] overflow-hidden whitespace-nowrap">
                   <BreadcrumbLink onClick={() => onNavigate(pageLabelPath ?? breadcrumbRoot.path)} style={{ color: c.inkSoft, cursor: "pointer", display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     {pageLabel}
                   </BreadcrumbLink>
                 </BreadcrumbItem>
               ) : (
-                <BreadcrumbItem className="min-w-0">
+                <BreadcrumbItem className="h-5 min-w-0 overflow-hidden whitespace-nowrap">
                   <BreadcrumbPage style={{ fontSize: 13, fontWeight: 600, color: c.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>
                     {pageLabel}
                   </BreadcrumbPage>
@@ -318,7 +318,7 @@ export default function AppShellFrame({
                 return (
                   <Fragment key={`${crumb.label}-${i}`}>
                     <BreadcrumbSeparator />
-                    <BreadcrumbItem className={isLast || !crumb.path ? "min-w-0" : "min-w-0 shrink-[3]"}>
+                    <BreadcrumbItem className={isLast || !crumb.path ? "h-5 min-w-0 overflow-hidden whitespace-nowrap" : "h-5 min-w-0 shrink-[3] overflow-hidden whitespace-nowrap"}>
                       {isLast || !crumb.path ? (
                         <BreadcrumbPage style={{ fontSize: 13, fontWeight: 600, color: c.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>
                           {crumb.label}

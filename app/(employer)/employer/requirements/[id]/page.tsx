@@ -359,7 +359,7 @@ export default function RequirementDetailPage() {
             <h2 id="candidates-heading" className="sr-only">
               Candidates
             </h2>
-            <div ref={trackToolbarHeight} className="-mt-3 flex flex-wrap items-center gap-x-5 gap-y-3 bg-sidebar pt-3 pb-4 md:sticky md:top-0 md:z-20">
+            <div ref={trackToolbarHeight} className="-mt-3 flex flex-wrap items-center gap-x-4 gap-y-3 bg-sidebar pt-3 pb-4 min-[1280px]:flex-nowrap md:sticky md:top-0 md:z-20">
             {hasList && (
               <StatusTabs
                 tabs={tabs}
@@ -396,7 +396,7 @@ export default function RequirementDetailPage() {
                   />
                   {hasActiveFilters && (
                     <Button type="button" variant="link" onClick={clearFilters} className="h-auto shrink-0 text-[14px] font-semibold pointer-coarse:min-h-11">
-                      Clear filters
+                      Clear<span className="min-[1280px]:max-[1439px]:hidden"> filters</span>
                     </Button>
                   )}
                 </>
@@ -423,7 +423,8 @@ export default function RequirementDetailPage() {
                             })
                           }
                         >
-                          Unlock {nextLockedBatch.count} candidate{nextLockedBatch.count === 1 ? "" : "s"} · {formatPaise(nextLockedBatch.amountPaise)}
+                          Unlock {nextLockedBatch.count}
+                          <span className="min-[1280px]:max-[1439px]:hidden"> candidate{nextLockedBatch.count === 1 ? "" : "s"}</span> · {formatPaise(nextLockedBatch.amountPaise)}
                         </PrimaryCta>
                       </span>
                     </TooltipTrigger>

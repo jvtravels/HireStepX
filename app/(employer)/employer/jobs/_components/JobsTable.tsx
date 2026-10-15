@@ -38,6 +38,14 @@ tr:hover > .jobs-col-act { background: color-mix(in srgb, var(--muted) 50%, ${t.
   .jobs-col-dept { display: none; }
   .jobs-table { min-width: 1176px; }
 }
+@container (max-width: 1199px) {
+  .jobs-table :is(th, td):nth-last-child(2) { display: none; }
+  .jobs-table { min-width: 1046px; }
+}
+@container (max-width: 1049px) {
+  .jobs-table :is(th, td):nth-last-child(4) { display: none; }
+  .jobs-table { min-width: 906px; }
+}
 `;
 
 /** Row-wide click is a pointer convenience only; the title link is the real

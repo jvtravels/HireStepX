@@ -174,12 +174,13 @@ function FooterDomeDesktop() {
         position: "absolute",
         left: 96,
         bottom: 24,
+        maxWidth: "calc(50% - 400px)",
         fontFamily: fonts.sans,
         fontSize: 12,
         color: t.inkFaint,
         letterSpacing: "0.01em",
       }}>
-        <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 2 }}>
+        <div style={{ display: "flex", columnGap: 14, rowGap: 0, flexWrap: "wrap", marginBottom: 2 }}>
           {LEGAL_LINKS.map(([label, href]) => (
             <a key={label} href={href} style={{ color: t.inkFaint, textDecoration: "none", minHeight: 32, display: "flex", alignItems: "center" }}>{label}</a>
           ))}
