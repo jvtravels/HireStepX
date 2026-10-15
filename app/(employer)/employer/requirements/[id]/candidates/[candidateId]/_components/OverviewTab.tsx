@@ -49,7 +49,7 @@ function MatchPanel({ candidate, requirement, matched, unmatched, evidence }: { 
             <MeterRow label="Role match" value={b.roleMatch} />
             <MeterRow label="Required skills" value={requirement.skills.length > 0 ? Math.round((matched.length / requirement.skills.length) * 100) : b.skillMatch} />
             <p className="m-0 text-[12px] text-hx-ink-soft">
-              The {candidate.matchScore} match score also weighs practice results and recent activity, so it can sit above these two bars.
+              The {candidate.matchScore} match score blends these with practice results and recent activity, so it can differ from the two bars.
             </p>
           </div>
         )}
