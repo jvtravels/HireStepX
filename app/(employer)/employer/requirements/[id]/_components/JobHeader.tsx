@@ -146,7 +146,7 @@ export default function JobHeader({
       >
         <div className="min-w-0">
           {description && (
-            <p className="m-0 max-w-[75ch] text-[14px] leading-relaxed whitespace-pre-line text-hx-ink-soft [overflow-wrap:anywhere]">
+            <p className="m-0 max-w-[75ch] text-[13.5px] leading-relaxed whitespace-pre-line text-hx-ink-soft [overflow-wrap:anywhere]">
               {shownDescription}
               {preview.truncated && (
                 <>
@@ -160,8 +160,8 @@ export default function JobHeader({
           )}
           {responsibilities && (
             <div className={cn(description && "mt-4")}>
-              <h2 className="m-0 mb-1.5 text-[13px] font-semibold text-hx-ink-soft">Responsibilities</h2>
-              <p className="m-0 max-w-[75ch] text-[14px] leading-relaxed whitespace-pre-line text-hx-ink-soft [overflow-wrap:anywhere]">{responsibilities}</p>
+              <h2 className="m-0 mb-1.5 text-[13px] font-semibold text-hx-coal">Responsibilities</h2>
+              <p className="m-0 max-w-[75ch] text-[13.5px] leading-relaxed whitespace-pre-line text-hx-ink-soft [overflow-wrap:anywhere]">{responsibilities}</p>
             </div>
           )}
         </div>
