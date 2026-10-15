@@ -46,12 +46,11 @@ function ContactLink({ icon: Icon, label, href, children }: { icon: typeof MailI
   );
 }
 
-function MissingContact({ icon: Icon, label }: { icon: typeof MailIcon; label: string }) {
+function NoContact() {
   return (
     <span className="inline-flex items-center gap-2 text-[13px] text-hx-ink-soft">
-      <Icon size={15} aria-hidden="true" className="shrink-0" />
-      <span className="sr-only">{label}: </span>
-      <span>Not provided</span>
+      <MailIcon size={15} aria-hidden="true" className="shrink-0" />
+      No contact details on file
     </span>
   );
 }
@@ -91,7 +90,7 @@ export function CandidateHeader({
 
   const meta: MetaPart[] = [];
   if (candidate.targetRole) meta.push({ icon: BriefcaseIcon, text: candidate.targetRole });
-  if (resume?.yearsExperience != null) meta.push({ icon: BriefcaseIcon, text: `${formatYears(resume.yearsExperience)} experience` });
+  if (resume?.yearsExperience != null) meta.push({ icon: BriefcaseIcon, text: `${formatYears(resume.yearsExperience)} experience${resume.seniorityLevel ? `, ${resume.seniorityLevel}` : ""}` });
   if (hasCity) meta.push({ icon: MapPinIcon, text: candidate.city });
   if (candidate.lastActiveDaysAgo >= 0) meta.push({ icon: ClockIcon, text: `Active ${candidate.lastActiveDaysAgo === 0 ? "today" : `${candidate.lastActiveDaysAgo}d ago`}` });
 
@@ -141,8 +140,9 @@ export function CandidateHeader({
       <div className="mt-4 min-w-0 border-t border-hx-line pt-4">
         {candidate.unlocked ? (
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-            {candidate.contact?.email ? <ContactLink icon={MailIcon} label="Email" href={`mailto:${candidate.contact.email}`}>{candidate.contact.email}</ContactLink> : <MissingContact icon={MailIcon} label="Email" />}
-            {candidate.contact?.phone ? <ContactLink icon={PhoneIcon} label="Phone" href={`tel:${candidate.contact.phone}`}>{candidate.contact.phone}</ContactLink> : <MissingContact icon={PhoneIcon} label="Phone" />}
+            {candidate.contact?.email && <ContactLink icon={MailIcon} label="Email" href={`mailto:${candidate.contact.email}`}>{candidate.contact.email}</ContactLink>}
+            {candidate.contact?.phone && <ContactLink icon={PhoneIcon} label="Phone" href={`tel:${candidate.contact.phone}`}>{candidate.contact.phone}</ContactLink>}
+            {!candidate.contact?.email && !candidate.contact?.phone && links.length === 0 && <NoContact />}
             {links.map((l) => (
               <a key={l.url} href={l.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-[13px] text-hx-coal hover:underline">
                 <span aria-hidden="true" className="inline-flex shrink-0 text-hx-ink-soft"><PortfolioLinkIcon url={l.url} size={15} /></span>

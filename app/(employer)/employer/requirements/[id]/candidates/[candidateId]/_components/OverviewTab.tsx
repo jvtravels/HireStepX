@@ -11,7 +11,7 @@ import { ChipList, IconList, MutedText } from "./parts";
 import { ItemRequest, type RequestUi } from "./RequestPopover";
 import { RequestsPanel } from "./RequestsPanel";
 import { RoleMismatchNotice, hasRoleMismatch } from "./RoleMismatchNotice";
-import { PROVENANCE, READINESS_LABEL, averageTenureMonths, buildResumeInsights, buildRoleFit, employerCapabilities, evidenceAverage, formatSessionDate, formatTenure, formatYears, summarizeFit, type FitStatus } from "./helpers";
+import { PROVENANCE, READINESS_LABEL, averageTenureMonths, buildResumeInsights, buildRoleFit, employerCapabilities, evidenceAverage, formatSessionDate, formatTenure, formatYears, summarizeFit, type FitStatus, type ResumeInsights } from "./helpers";
 
 export type EvidenceState = { evidence: CandidateEvidence | null; loading: boolean; failed: boolean; onRetry: () => void };
 
@@ -54,10 +54,15 @@ function FitMark({ status }: { status: FitStatus }) {
 
 const SEGMENT_CLS: Record<FitStatus, string> = { meets: "bg-hx-success", partial: "bg-hx-warning", gap: "bg-hx-error" };
 
-function MatchPanel({ candidate, requirement, matched, unmatched, evidence, requestUi }: { candidate: Candidate; requirement: Requirement; matched: string[]; unmatched: string[]; evidence: CandidateEvidence | null; requestUi: RequestUi }) {
+function MatchPanel({ candidate, requirement, matched, unmatched, evidence, requestUi, analysisClear }: { candidate: Candidate; requirement: Requirement; matched: string[]; unmatched: string[]; evidence: CandidateEvidence | null; requestUi: RequestUi; analysisClear: boolean }) {
   const rows = buildRoleFit(candidate, requirement, matched, evidence);
   const fit = summarizeFit(rows);
-  const shortfalls = [fit.gaps.length > 0 && `Gap: ${fit.gaps.join(", ")}.`, fit.close.length > 0 && `Close: ${fit.close.join(", ")}.`].filter(Boolean).join(" ");
+  const caption = [
+    fit.gaps.length > 0 && `Gap: ${fit.gaps.join(", ")}.`,
+    fit.close.length > 0 && `Close: ${fit.close.join(", ")}.`,
+    candidate.matchScore < 100 && "The score also weighs practice results and recent activity.",
+    analysisClear && "No concerns flagged on the resume.",
+  ].filter(Boolean).join(" ");
   return (
     <Panel id="match-heading" title="Fit for this role" icon={<TargetIcon size={15} />}>
       <div className="grid gap-5">
@@ -77,7 +82,7 @@ function MatchPanel({ candidate, requirement, matched, unmatched, evidence, requ
                     <span key={row.id} className={cn("h-1.5 flex-1 rounded-full", SEGMENT_CLS[row.status])} />
                   ))}
                 </div>
-                <p className="m-0 text-[13px] text-hx-ink-soft">{shortfalls || "Nothing short of what the posting asks for."}</p>
+                {caption && <p className="m-0 text-[13px] text-hx-ink-soft">{caption}</p>}
               </div>
             )}
           </div>
@@ -131,10 +136,10 @@ function MatchPanel({ candidate, requirement, matched, unmatched, evidence, requ
 
 function ClampedText({ text }: { text: string }) {
   const [open, setOpen] = useState(false);
-  const long = text.length > 520;
+  const long = text.length > 300;
   return (
     <div className="grid justify-items-start gap-1">
-      <p className={cn("m-0 max-w-[75ch] text-[13px] leading-relaxed whitespace-pre-line text-hx-ink-soft [overflow-wrap:anywhere]", long && !open && "line-clamp-6")}>{text}</p>
+      <p className={cn("m-0 max-w-[75ch] text-[13px] leading-relaxed whitespace-pre-line text-hx-ink-soft [overflow-wrap:anywhere]", long && !open && "line-clamp-5")}>{text}</p>
       {long && <PanelButton onClick={() => setOpen((v) => !v)} expanded={open}>{open ? "Show less" : "Show more"}</PanelButton>}
     </div>
   );
@@ -150,7 +155,6 @@ function ProfilePanel({ candidate, onOpenResume }: { candidate: Candidate; onOpe
   const avgTenureMonths = averageTenureMonths(r.experience);
   const facts: Array<{ label: string; value: string; selfReported?: boolean }> = [];
   if (latestRole) facts.push({ label: "Latest role", value: latest?.period ? `${latestRole} (${latest.period})` : latestRole });
-  if (r.yearsExperience != null) facts.push({ label: "Experience", value: `${formatYears(r.yearsExperience)}${r.seniorityLevel ? `, ${r.seniorityLevel}` : ""}` });
   if (r.noticePeriod) facts.push({ label: "Notice period", value: r.noticePeriod, selfReported: true });
   if (r.currentCtc) facts.push({ label: "Current CTC", value: r.currentCtc, selfReported: true });
   if (r.primaryDomain) {
@@ -196,17 +200,20 @@ function PracticeSnapshot({ candidate, state, onOpenPractice, requirementTitle, 
   const verified = employerCapabilities(evidence?.verifiedCapabilities ?? []);
   const verifiedCount = verified.filter((c) => c.verified).length;
   const last = evidence?.sessionDate ? formatSessionDate(evidence.sessionDate) : "";
-  const tip = (
-    <InfoTip label="How practice evidence is scored">
-      {PROVENANCE}. This is practice performance, not an employment check.
-    </InfoTip>
+  const action = (
+    <div className="flex items-center gap-3">
+      {hasEvidence && <PanelButton onClick={onOpenPractice}>See every answer and score</PanelButton>}
+      <InfoTip label="How practice evidence is scored">
+        {PROVENANCE}. This is practice performance, not an employment check.
+      </InfoTip>
+    </div>
   );
 
   return (
-    <Panel id="evidence-heading" title="Practice snapshot" icon={<ActivityIcon size={15} />} action={tip}>
+    <Panel id="evidence-heading" title="Practice snapshot" icon={<ActivityIcon size={15} />} action={action}>
       <EvidenceStatus state={state}>
         {hasEvidence ? (
-          <div className="@container grid gap-4">
+          <div className="@container">
             <StatGrid className="@xl:grid-cols-4">
               <Stat label="Interviews" hint={last ? `Latest ${last}` : undefined}>{candidate.sessionsCompleted} graded</Stat>
               {evidence?.readiness && (
@@ -219,7 +226,6 @@ function PracticeSnapshot({ candidate, state, onOpenPractice, requirementTitle, 
               {avg != null && <Stat label="Avg skill score" hint="out of 100">{avg}</Stat>}
               {verified.length > 0 && <Stat label="Verified skills" hint={`of ${verified.length} checked`}>{verifiedCount}</Stat>}
             </StatGrid>
-            <div><PanelButton onClick={onOpenPractice}>See every answer and score</PanelButton></div>
           </div>
         ) : evidence && hasRoleMismatch(evidence) ? (
           <RoleMismatchNotice evidence={evidence} candidate={candidate} requirementTitle={requirementTitle} requestUi={requestUi} />
@@ -233,8 +239,7 @@ function PracticeSnapshot({ candidate, state, onOpenPractice, requirementTitle, 
 
 const COLUMNS_CLS = ["", "@2xl:grid-cols-1", "@2xl:grid-cols-2", "@2xl:grid-cols-3"];
 
-function AnalysisPanel({ candidate, requirement, unmatched, requestUi }: { candidate: Candidate; requirement: Requirement; unmatched: string[]; requestUi: RequestUi }) {
-  const insights = buildResumeInsights(candidate, unmatched);
+function AnalysisPanel({ candidate, insights, requestUi }: { candidate: Candidate; insights: ResumeInsights; requestUi: RequestUi }) {
   const columns = [
     { id: "strengths", title: "Key strengths", items: insights.strengths, empty: "Nothing stands out yet.", icon: CheckIcon, cls: "size-4 text-hx-success", ask: false },
     { id: "concerns", title: "Potential concerns", items: insights.concerns, empty: "No concerns flagged.", icon: MinusIcon, cls: "size-4 text-hx-warning", ask: true },
@@ -242,13 +247,7 @@ function AnalysisPanel({ candidate, requirement, unmatched, requestUi }: { candi
   ];
   const filled = columns.filter((c) => c.items.length > 0);
   const empties = columns.filter((c) => c.items.length === 0);
-  if (filled.length === 0) {
-    return (
-      <Panel id="analysis-heading" title="Resume analysis" icon={<FileSearchIcon size={15} />}>
-        <p className="m-0 text-[13px] text-hx-ink-soft">Nothing to flag from the resume for {requirement.title}.</p>
-      </Panel>
-    );
-  }
+  if (filled.length === 0) return null;
   return (
     <Panel id="analysis-heading" title="Resume analysis" icon={<FileSearchIcon size={15} />}>
       <div className="@container">
@@ -309,16 +308,18 @@ export function OverviewTab({
   onOpenResume: () => void;
   requestUi: RequestUi;
 }) {
+  const insights = buildResumeInsights(candidate, unmatched);
+  const analysisClear = insights.strengths.length + insights.concerns.length + insights.validate.length === 0;
   return (
     <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:items-start">
       <div className="flex min-w-0 flex-col gap-4">
-        <MatchPanel candidate={candidate} requirement={requirement} matched={matched} unmatched={unmatched} evidence={state.evidence} requestUi={requestUi} />
+        <MatchPanel candidate={candidate} requirement={requirement} matched={matched} unmatched={unmatched} evidence={state.evidence} requestUi={requestUi} analysisClear={analysisClear} />
         <PracticeSnapshot candidate={candidate} state={state} onOpenPractice={onOpenPractice} requirementTitle={requirement.title} requestUi={requestUi} />
         <RequestsPanel state={requestUi.state} disabled={requestUi.disabled} />
       </div>
       <div className="flex min-w-0 flex-col gap-4">
         <ProfilePanel candidate={candidate} onOpenResume={onOpenResume} />
-        <AnalysisPanel candidate={candidate} requirement={requirement} unmatched={unmatched} requestUi={requestUi} />
+        <AnalysisPanel candidate={candidate} insights={insights} requestUi={requestUi} />
       </div>
     </div>
   );
