@@ -32,7 +32,7 @@ import EvidenceDialog from "./_components/EvidenceDialog";
 import MessagesDialog from "./_components/MessagesDialog";
 import JobOverview, { hasRoleDetails } from "./_components/JobOverview";
 import JobHeader from "./_components/JobHeader";
-import JobSideRail from "./_components/JobSideRail";
+import JobSideRail, { JobInsights } from "./_components/JobSideRail";
 import KeyRequirements, { hasKeyRequirements } from "./_components/KeyRequirements";
 import { useJobActions } from "./_components/useJobActions";
 import { FailedState, GeneratingState, ZeroMatchState } from "./_components/StatusStates";
@@ -327,20 +327,23 @@ export default function RequirementDetailPage() {
         </div>
       )}
 
-      <div className="grid min-w-0 gap-5 min-[1440px]:grid-cols-[minmax(0,1fr)_300px] min-[1440px]:items-start">
-        <div className="flex min-w-0 flex-col">
-          <JobHeader
-            requirement={requirement}
-            suspended={suspended}
-            message={message}
-            reopening={reopenSaving}
-            onReopen={reopen}
-            onReload={load}
-            expandedContent={hasRoleDetails(requirement) ? <JobOverview requirement={requirement} /> : null}
-            requirementsSlot={hasKeyRequirements(requirement) ? <KeyRequirements requirement={requirement} /> : null}
-          />
+      <div className="grid min-w-0 gap-5 min-[1440px]:grid-cols-[minmax(0,1fr)_300px]">
+      <JobHeader
+        requirement={requirement}
+        suspended={suspended}
+        message={message}
+        reopening={reopenSaving}
+        onReopen={reopen}
+        onReload={load}
+        expandedContent={hasRoleDetails(requirement) ? <JobOverview requirement={requirement} /> : null}
+        requirementsSlot={hasKeyRequirements(requirement) ? <KeyRequirements requirement={requirement} /> : null}
+        insightsSlot={insights.length > 0 ? <JobInsights insights={insights} activeInsightId={activeInsight?.id ?? null} onSelectInsight={setInsightId} /> : null}
+      />
+      <JobSideRail requirement={requirement} readOnly={readOnly} suspended={suspended} onStageChange={changeStage} />
+      </div>
 
-          <section aria-labelledby="candidates-heading" className="mt-5 flex min-w-0 flex-col">
+      <div className="mt-5 flex min-w-0 flex-col gap-5">
+          <section aria-labelledby="candidates-heading" className="flex min-w-0 flex-col">
             <h2 id="candidates-heading" className="sr-only">
               Candidates
             </h2>
@@ -356,7 +359,7 @@ export default function RequirementDetailPage() {
                 className="shrink-0"
               />
             )}
-            <div className="flex min-w-0 flex-[1_1_auto] flex-wrap items-center gap-2.5 min-[1100px]:flex-nowrap">
+            <div className="flex min-w-0 flex-[1_1_auto] flex-wrap items-center justify-end gap-2.5 min-[1100px]:flex-nowrap">
               {hasList && (
                 <>
                   <div className="min-w-36 max-w-80 flex-[1_1_220px]">
@@ -386,7 +389,7 @@ export default function RequirementDetailPage() {
                   )}
                 </>
               )}
-              <div className="ml-auto flex items-center gap-2.5">
+              <div className="flex items-center gap-2.5">
                 {hasList && !readOnly && nextLockedBatch && (
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -442,7 +445,7 @@ export default function RequirementDetailPage() {
               </div>
             </div>
             </div>
-
+  
             {hasList && appliedChips.length > 0 && (
               <ul aria-label="Applied filters" className="m-0 mb-4 flex list-none flex-wrap items-center gap-2 p-0">
                 {appliedChips.map((chip) => (
@@ -460,11 +463,11 @@ export default function RequirementDetailPage() {
                 ))}
               </ul>
             )}
-
+  
             <div aria-live="polite" className={refreshNote ? "mb-3" : undefined}>
               {refreshNote && <InlineNotice tone={refreshNote.tone} live={false}>{refreshNote.text}</InlineNotice>}
             </div>
-
+  
             {requirement.status === "generating" && (
               <GeneratingState
                 stalled={pollStalled}
@@ -476,7 +479,7 @@ export default function RequirementDetailPage() {
             )}
             {requirement.status === "failed" && <FailedState requirementId={requirement.id} canEdit={!suspended} />}
             {requirement.status === "zero" && <ZeroMatchState requirementId={requirement.id} canEdit={!suspended} />}
-
+  
             {hasList && (
               <div id="cand-panel" role="tabpanel" aria-labelledby={`cand-tab-${tab}`}>
                 {readOnly && (
@@ -484,7 +487,7 @@ export default function RequirementDetailPage() {
                     <InlineNotice tone="info" live={false}>{closedSummary(requirement)}</InlineNotice>
                   </div>
                 )}
-
+  
                 {candidates.length === 0 ? (
                   <EmptyNote title="No candidates yet">
                     Nobody is on this shortlist right now. New matches appear here as candidates practise, and this page refreshes when you come back to it.
@@ -537,7 +540,7 @@ export default function RequirementDetailPage() {
                   />
                   </>
                 )}
-
+  
                 <UnlockDialog target={unlockTarget} access={access} onClose={() => setUnlockTarget(null)} onUnlocked={handleUnlocked} />
                 <EvidenceDialog
                   matchId={evidenceCandidate?.id ?? null}
@@ -580,17 +583,6 @@ export default function RequirementDetailPage() {
               </div>
             )}
           </section>
-        </div>
-
-        <JobSideRail
-          requirement={requirement}
-          insights={insights}
-          activeInsightId={activeInsight?.id ?? null}
-          onSelectInsight={setInsightId}
-          readOnly={readOnly}
-          suspended={suspended}
-          onStageChange={changeStage}
-        />
       </div>
     </div>
   );

@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { cn } from "cn";
 import type { Requirement } from "@/employer/EmployerDataContext";
 import { SkillChip } from "@/employer/_panelParts";
-import { budgetLabel, experienceLabel, roleDetailRows } from "./requirementFormat";
+import { roleDetailRows } from "./requirementFormat";
 
 interface OverviewRow {
   label: string;
@@ -12,16 +12,14 @@ interface OverviewRow {
   wide?: boolean;
 }
 
-/* Department is in the header meta line, tiers in Key requirements, openings and notice period in the side rail. */
-const SHOWN_ELSEWHERE = new Set(["Department", "Nice to have", "Other skills", "Open positions", "Notice period"]);
+/* Department, experience and budget are in the header meta line, responsibilities under the description, tiers in Key requirements, openings and notice period in the header facts and preferences. */
+const SHOWN_ELSEWHERE = new Set(["Department", "Responsibilities", "Nice to have", "Other skills", "Open positions", "Notice period"]);
 
 function overviewRows(r: Requirement): OverviewRow[] {
   const rows: OverviewRow[] = [];
   const add = (label: string, value: ReactNode | null | undefined) => {
     if (value != null && value !== "") rows.push({ label, value });
   };
-  add("Experience", experienceLabel(r.experienceMin, r.experienceMax)?.replace(" experience", ""));
-  add("Budget", budgetLabel(r));
   add("Duration", r.durationWeeks ? `${r.durationWeeks} weeks` : null);
   add("Hours", r.hoursPerWeek ? `${r.hoursPerWeek} hrs/week` : null);
   for (const row of roleDetailRows(r)) {

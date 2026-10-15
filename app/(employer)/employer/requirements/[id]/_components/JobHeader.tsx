@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
-import { ArchiveIcon, BriefcaseIcon, ChevronDownIcon, ClockIcon, HistoryIcon, IndianRupeeIcon, LayersIcon, MapPinIcon, PencilIcon, TrendingUpIcon, type LucideIcon } from "lucide-react";
+import { ArchiveIcon, BriefcaseIcon, ChevronDownIcon, ClockIcon, HistoryIcon, IndianRupeeIcon, LayersIcon, MapPinIcon, MoreVerticalIcon, PencilIcon, TrendingUpIcon, type LucideIcon } from "lucide-react";
 import { cn } from "cn";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -50,6 +50,7 @@ export default function JobHeader({
   onReload,
   expandedContent,
   requirementsSlot,
+  insightsSlot,
 }: {
   requirement: Requirement;
   suspended: boolean;
@@ -59,6 +60,7 @@ export default function JobHeader({
   onReload: () => void;
   expandedContent: ReactNode;
   requirementsSlot: ReactNode;
+  insightsSlot?: ReactNode;
 }) {
   const [archiveOpen, setArchiveOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -69,11 +71,12 @@ export default function JobHeader({
   const status = jobStatusPill(requirement.status);
   const meta = metaParts(requirement);
   const description = requirement.description ?? "";
+  const responsibilities = requirement.responsibilities?.trim() ?? "";
   const preview = previewText(description, DESCRIPTION_PREVIEW);
   const shownDescription = expanded || !preview.truncated ? description.trim() : `${preview.text.replace(/\n{2,}/g, "\n")}…`;
 
   return (
-    <header className="min-w-0 rounded-xl border border-hx-line bg-white p-5">
+    <header className="flex min-w-0 flex-col rounded-xl border border-hx-line bg-white p-5">
       <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
         <div className="min-w-0 flex-1 basis-80">
           <div className="flex items-center gap-3">
@@ -113,8 +116,8 @@ export default function JobHeader({
             ))}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button type="button" variant="outline" aria-label={`More actions for ${requirement.title}`} className="gap-1.5 pointer-coarse:h-11">
-                More <ChevronDownIcon aria-hidden="true" />
+              <Button type="button" variant="ghost" size="icon" aria-label={`More actions for ${requirement.title}`} className="text-hx-ink-soft pointer-coarse:size-11">
+                <MoreVerticalIcon size={16} aria-hidden="true" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
@@ -135,7 +138,12 @@ export default function JobHeader({
         </div>
       </div>
 
-      <div className={cn("mt-4 grid min-w-0 gap-x-8 gap-y-4 border-t border-hx-line pt-4 ", requirementsSlot && "lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]")}>
+      <div
+        className={cn(
+          "mt-4 grid min-w-0 flex-1 content-start gap-x-8 gap-y-5 border-t border-hx-line pt-4",
+          requirementsSlot && "lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]",
+        )}
+      >
         <div className="min-w-0">
           {description && (
             <p className="m-0 max-w-[75ch] text-[14px] leading-relaxed whitespace-pre-line text-hx-ink-soft [overflow-wrap:anywhere]">
@@ -150,9 +158,17 @@ export default function JobHeader({
               )}
             </p>
           )}
+          {responsibilities && (
+            <div className={cn(description && "mt-4")}>
+              <h2 className="m-0 mb-1.5 text-[13px] font-semibold text-hx-ink-soft">Responsibilities</h2>
+              <p className="m-0 max-w-[75ch] text-[14px] leading-relaxed whitespace-pre-line text-hx-ink-soft [overflow-wrap:anywhere]">{responsibilities}</p>
+            </div>
+          )}
         </div>
         {requirementsSlot && <div className="min-w-0 lg:border-l lg:border-hx-line lg:pl-8">{requirementsSlot}</div>}
       </div>
+
+      {insightsSlot && <div className="mt-4 border-t border-hx-line pt-4">{insightsSlot}</div>}
 
       {expandedContent != null && (
         <div className="mt-4 border-t border-hx-line pt-3">
