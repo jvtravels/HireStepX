@@ -8,7 +8,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { tokens as t, fonts as f } from "./auth/_tokens";
 import { daysAgo } from "./hiringMatchFormat";
 import { REQUEST_REPLY_MAX, resolveCandidateRequest } from "./employerActions";
 import type { JobRequest } from "./DashboardJobs";
@@ -41,15 +40,15 @@ function RequestRow({ matchId, request, unlocked, onResolved, onError }: {
   };
 
   return (
-    <li style={{ listStyle: "none", padding: "14px 0", borderTop: `1px solid ${t.line}` }}>
-      <div style={{ fontFamily: f.sans, fontSize: 14, fontWeight: 600, color: t.coal, overflowWrap: "anywhere" }}>{request.headline}</div>
-      <div style={{ fontFamily: f.sans, fontSize: 12, color: t.inkFaint, marginTop: 2 }}>Asked {daysAgo(request.createdAt)}</div>
+    <li className="list-none border-t border-hx-line py-3.5">
+      <div className="text-[14px] font-semibold text-hx-coal [overflow-wrap:anywhere]">{request.headline}</div>
+      <div className="mt-0.5 text-[12px] text-hx-ink-soft">Asked {daysAgo(request.createdAt)}</div>
       {request.note && (
-        <p style={{ fontFamily: f.sans, fontSize: 13.5, color: t.coal, margin: "8px 0 0", lineHeight: 1.5, overflowWrap: "anywhere", whiteSpace: "pre-line" }}>{request.note}</p>
+        <p className="m-0 mt-2 text-[13.5px] leading-normal whitespace-pre-line text-hx-coal [overflow-wrap:anywhere]">{request.note}</p>
       )}
       {isContact ? (
-        <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, margin: "8px 0 0", lineHeight: 1.5 }}>
-          Add these to your <Link href="/resume" style={{ color: t.coal, textDecoration: "underline" }}>resume</Link>, then mark this done. Employers only see them once they unlock your profile.
+        <p className="m-0 mt-2 text-[13px] leading-normal text-hx-ink-soft">
+          Add these to your <Link href="/resume" className="text-hx-coal underline">resume</Link>, then mark this done. Employers only see them once they unlock your profile.
         </p>
       ) : (
         <>
@@ -59,16 +58,16 @@ function RequestRow({ matchId, request, unlocked, onResolved, onError }: {
             placeholder={PLACEHOLDER[request.kind]}
             aria-label={`Your reply to: ${request.headline}`}
             rows={3}
-            style={{ marginTop: 10 }}
+            className="mt-2.5"
           />
           {!unlocked && (
-            <p style={{ fontFamily: f.sans, fontSize: 12, color: t.inkFaint, margin: "6px 0 0" }}>
+            <p className="m-0 mt-1.5 text-[12px] text-hx-ink-soft">
               Links and contact details can be shared once this employer unlocks your profile.
             </p>
           )}
         </>
       )}
-      <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
+      <div className="mt-3 flex flex-wrap gap-2">
         <Button type="button" size="sm" disabled={busy !== null || (needsReply && !reply.trim())} onClick={() => void submit("fulfilled")}>
           {busy === "fulfilled" ? "Saving…" : isContact ? "Mark done" : "Send reply"}
         </Button>
@@ -91,13 +90,13 @@ export default function CandidateRequestsCard({ matchId, requests, unlocked, onR
   if (requests.length === 0) return null;
   return (
     <section aria-labelledby="job-requests-heading" style={style}>
-      <h2 id="job-requests-heading" style={{ fontFamily: f.sans, fontSize: 15, fontWeight: 600, color: t.coal, margin: 0 }}>
+      <h2 id="job-requests-heading" className="m-0 text-[15px] font-semibold text-hx-coal">
         Requests from this employer
       </h2>
-      <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, margin: "4px 0 6px", lineHeight: 1.5 }}>
+      <p className="mt-1 mb-1.5 text-[13px] leading-normal text-hx-ink-soft">
         Sharing more evidence can strengthen your profile. You can decline anything you would rather not provide.
       </p>
-      <ul style={{ margin: 0, padding: 0 }}>
+      <ul className="m-0 p-0">
         {requests.map((r) => (
           <RequestRow key={r.id} matchId={matchId} request={r} unlocked={unlocked} onResolved={onResolved} onError={onError} />
         ))}
