@@ -168,19 +168,23 @@ export default function JobSideRail({
         </KeyValueList>
       </Panel>
 
-      {hasPreferences && (
-        <Panel
-          id="preferences-heading"
-          title="Talent preferences"
-          action={
-            canEdit ? <PanelLink href={editHref}>Edit</PanelLink> : undefined
-          }
-        >
+      <Panel
+        id="preferences-heading"
+        title="Talent preferences"
+        action={
+          canEdit ? <PanelLink href={editHref}>Edit</PanelLink> : undefined
+        }
+      >
+        {hasPreferences ? (
           <KeyValueList>
             <Rows rows={preferences} />
           </KeyValueList>
-        </Panel>
-      )}
+        ) : (
+          <p className="m-0 text-[13px] text-hx-ink-soft">
+            No preferences set for this role yet.
+          </p>
+        )}
+      </Panel>
 
       {insights.length > 0 && (
         <Panel id="insights-heading" title="Key insights">
