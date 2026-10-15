@@ -114,7 +114,7 @@ export function QuestionBreakdown({ questions, candidate, requestUi }: { questio
   const list = dedupeQuestions(questions);
   const summary = summarizeQuestions(list);
   return (
-    <Panel plain
+    <Panel
       id="questions-heading"
       title="Answer by answer"
       action={<InfoTip label="How answers are graded">{PROVENANCE}. Scores are out of 100 and shown for the most recent completed interview.</InfoTip>}

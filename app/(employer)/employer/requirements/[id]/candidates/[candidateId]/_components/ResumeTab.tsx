@@ -93,7 +93,7 @@ export function ResumeTab({ candidate }: { candidate: Candidate }) {
             key: "employment",
             weight: 2 + (resume?.experience ?? []).reduce((n, e) => n + 2 + (e.topProjects?.length ?? 0) + (e.bullets?.length ?? 0) + (e.scope ? 1 : 0), 0),
             node: (
-              <Panel plain id="employment-heading" title="Employment history">
+              <Panel id="employment-heading" title="Employment history">
                 {resume?.experience.length ? (
                   <div className="grid gap-3">
                     {avg != null && resume.experience.length > 1 && <p className="m-0 text-[13px] text-hx-ink-soft">{resume.experience.length} roles, about {formatTenure(avg)} each.</p>}
@@ -115,7 +115,7 @@ export function ResumeTab({ candidate }: { candidate: Candidate }) {
             key: "education",
             weight: 2 + resume.education.length * 2,
             node: (
-              <Panel plain id="education-heading" title="Education">
+              <Panel id="education-heading" title="Education">
                 <Entries label="Education" rows={resume.education.map((ed, i) => ({ key: `${ed.school}-${ed.degree}-${i}`, title: ed.degree, sub: ed.school, when: ed.year }))} />
               </Panel>
             ),
@@ -124,7 +124,7 @@ export function ResumeTab({ candidate }: { candidate: Candidate }) {
             key: "highlights",
             weight: 2 + highlights.length * 2,
             node: (
-              <Panel plain id="highlights-heading" title="Achievements">
+              <Panel id="highlights-heading" title="Achievements">
                 <IconList label="Achievements" items={highlights} icon={TrendingUpIcon} iconClassName="size-4 text-hx-success" />
               </Panel>
             ),
@@ -133,7 +133,7 @@ export function ResumeTab({ candidate }: { candidate: Candidate }) {
             key: "progression",
             weight: 2 + progression.length * 2 + (resume?.careerTrajectory ? 2 : 0),
             node: (
-              <Panel plain id="progression-heading" title="Career progression">
+              <Panel id="progression-heading" title="Career progression">
                 <div className="grid gap-3">
                   {resume?.careerTrajectory && <p className="m-0 text-[13px] leading-relaxed text-hx-coal">{resume.careerTrajectory}</p>}
                   <IconList label="Promotions and growth" items={progression} icon={TrendingUpIcon} iconClassName="size-4 text-hx-success" />
@@ -145,7 +145,7 @@ export function ResumeTab({ candidate }: { candidate: Candidate }) {
             key: "strengths",
             weight: 2 + strengths.length * 2,
             node: (
-              <Panel plain id="strengths-heading" title="Interview strengths">
+              <Panel id="strengths-heading" title="Interview strengths">
                 <IconList label="Interview strengths" items={strengths} icon={TrendingUpIcon} iconClassName="size-4 text-hx-success" />
               </Panel>
             ),
@@ -154,7 +154,7 @@ export function ResumeTab({ candidate }: { candidate: Candidate }) {
             key: "skills",
             weight: 3 + Math.ceil((resume?.skillsDetailed.length || candidate.skills.length) / 4) + (resume?.industries.length ? 2 : 0) + (resume?.certifications.length ? 2 : 0),
             node: (
-              <Panel plain id="skills-heading" title="Skills">
+              <Panel id="skills-heading" title="Skills">
                 <div className="grid gap-4">
                   <SkillsBlock candidate={candidate} />
                   {!!resume?.industries.length && (

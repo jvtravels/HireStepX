@@ -17,18 +17,18 @@ export function PipelineStepper({ status, className }: { status: CandidateStatus
         const done = reached && !isCurrent;
         return (
           <Fragment key={step}>
-            {i > 0 && <li aria-hidden="true" className={cn("h-px w-4 shrink-0", i <= current ? "bg-hx-ink-soft/50" : "bg-hx-line")} />}
+            {i > 0 && <li aria-hidden="true" className={cn("h-px w-4 shrink-0", i <= current ? "bg-hx-indigo" : "bg-hx-line")} />}
             <li aria-current={isCurrent ? "step" : undefined} className="inline-flex items-center gap-1.5 text-[12px]">
               <span
                 aria-hidden="true"
                 className={cn(
                   "flex size-4 shrink-0 items-center justify-center rounded-full border",
-                  isCurrent ? "border-hx-success-ink bg-hx-success-ink" : done ? "border-hx-line bg-hx-soft" : "border-hx-line bg-white",
+                  isCurrent ? "border-hx-success-ink bg-hx-success-ink" : done ? "border-hx-indigo bg-hx-indigo" : "border-hx-line bg-white",
                 )}
               >
-                {(isCurrent || done) && <CheckIcon size={10} strokeWidth={3} className={isCurrent ? "text-white" : "text-hx-ink-soft"} />}
+                {(isCurrent || done) && <CheckIcon size={10} strokeWidth={3} className="text-white" />}
               </span>
-              <span className={cn(isCurrent ? "font-semibold text-hx-success-ink" : "text-hx-ink-soft")}>
+              <span className={cn(isCurrent ? "font-semibold text-hx-success-ink" : reached ? "text-hx-coal" : "text-hx-ink-soft")}>
                 {CANDIDATE_STATUS_LABEL[step]}
               </span>
               <span className="sr-only">{isCurrent ? "Current stage" : done ? "Completed" : "Not reached"}</span>

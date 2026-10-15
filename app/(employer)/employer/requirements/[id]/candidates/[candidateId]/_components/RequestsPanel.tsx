@@ -26,7 +26,7 @@ function describe(r: CandidateRequestDto): string {
 export function RequestsPanel({ state, disabled }: { state: CandidateRequestsState; disabled: boolean }) {
   if (!state.available || state.requests.length === 0) return null;
   return (
-    <Panel plain id="requests-heading" title="Requests to this candidate">
+    <Panel id="requests-heading" title="Requests to this candidate">
       <ul aria-label="Requests sent to this candidate" className="m-0 flex list-none flex-col p-0">
         {state.requests.map((r) => (
           <li key={r.id} className="grid gap-1 border-b border-hx-line py-3 first:pt-0 last:border-b-0 last:pb-0">

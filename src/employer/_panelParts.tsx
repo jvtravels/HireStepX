@@ -19,7 +19,6 @@ export function Panel({
   action,
   children,
   className,
-  plain = false,
 }: {
   id: string;
   title: string;
@@ -27,13 +26,9 @@ export function Panel({
   action?: ReactNode;
   children: ReactNode;
   className?: string;
-  plain?: boolean;
 }) {
   return (
-    <section
-      aria-labelledby={id}
-      className={cn("min-w-0", plain ? "border-t border-hx-line pt-5" : "rounded-xl border border-hx-line bg-white p-[18px]", className)}
-    >
+    <section aria-labelledby={id} className={cn("min-w-0 rounded-xl border border-hx-line bg-white p-[18px]", className)}>
       <div className="mb-3.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
         <h2 id={id} className="m-0 flex items-center gap-2 text-[15px] font-semibold text-hx-coal">
           {icon && <span aria-hidden="true" className="inline-flex text-hx-ink-soft">{icon}</span>}
@@ -148,7 +143,7 @@ export function MeterBar({ value, label, tone = "success", thin = false }: { val
       className={cn(
         thin ? "h-1" : "h-2",
         "bg-hx-soft [&_[data-slot=progress-indicator]]:rounded-full [&_[data-slot=progress-indicator]]:duration-300 [&_[data-slot=progress-indicator]]:ease-out motion-reduce:[&_[data-slot=progress-indicator]]:transition-none",
-        tone === "indigo" ? "[&_[data-slot=progress-indicator]]:bg-hx-coal" : "[&_[data-slot=progress-indicator]]:bg-hx-success",
+        tone === "indigo" ? "[&_[data-slot=progress-indicator]]:bg-hx-indigo" : "[&_[data-slot=progress-indicator]]:bg-hx-success",
       )}
     />
   );
