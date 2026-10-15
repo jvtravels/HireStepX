@@ -105,7 +105,7 @@ export default function CandidatesTable({
           ))}
         </select>
       </div>
-      <div className="cand-shell flex flex-none flex-col overflow-hidden rounded-xl border border-hx-line bg-white">
+      <div className="cand-shell flex flex-none flex-col overflow-clip rounded-xl border border-hx-line bg-white">
         <div className="relative">
         <div
           ref={scrollRef}
@@ -115,7 +115,7 @@ export default function CandidatesTable({
           // Keyboard users can only scroll an overflow region they can focus.
           // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
           tabIndex={0}
-          className="cand-scroll flex-none overflow-x-auto focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-hx-indigo"
+          className="cand-scroll flex-none overflow-x-auto min-[1240px]:overflow-x-clip focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-hx-indigo"
         >
           <style>{CAND_TABLE_CSS}</style>
           <Table role="table" className="cand-table min-w-[860px]" containerClassName="overflow-visible">

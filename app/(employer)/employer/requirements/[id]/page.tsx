@@ -64,6 +64,18 @@ export default function RequirementDetailPage() {
   const [pollRun, setPollRun] = useState(0);
   const latestRefresh = useRef(0);
   const localChanges = useRef(0);
+  const toolbarObserver = useRef<ResizeObserver | null>(null);
+  // The column header row sticks just below the toolbar, so the table CSS needs the toolbar's live height.
+  const trackToolbarHeight = useCallback((el: HTMLDivElement | null) => {
+    toolbarObserver.current?.disconnect();
+    toolbarObserver.current = null;
+    const section = el?.parentElement;
+    if (!el || !section) return;
+    const sync = () => section.style.setProperty("--cand-sticky-top", `${el.offsetHeight}px`);
+    sync();
+    toolbarObserver.current = new ResizeObserver(sync);
+    toolbarObserver.current.observe(el);
+  }, []);
 
   const [search, setSearch] = useState("");
   const [contactFilter, setContactFilter] = useState<ContactFilter>("all");
@@ -347,7 +359,7 @@ export default function RequirementDetailPage() {
             <h2 id="candidates-heading" className="sr-only">
               Candidates
             </h2>
-            <div className="mb-4 flex flex-wrap items-center gap-x-5 gap-y-3">
+            <div ref={trackToolbarHeight} className="-mt-3 flex flex-wrap items-center gap-x-5 gap-y-3 bg-sidebar pt-3 pb-4 md:sticky md:top-0 md:z-20">
             {hasList && (
               <StatusTabs
                 tabs={tabs}
