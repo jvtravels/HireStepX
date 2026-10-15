@@ -7,12 +7,11 @@ import { NEGATIVE_STATUSES, PIPELINE_STEPS } from "./helpers";
 
 export function PipelineStepper({ status, className }: { status: CandidateStatus; className?: string }) {
   const negative = NEGATIVE_STATUSES.includes(status);
-  if (negative) return null;
-  const current = PIPELINE_STEPS.indexOf(status);
+  const current = negative ? -1 : PIPELINE_STEPS.indexOf(status);
   return (
     <ol aria-label="Hiring pipeline" className={cn("m-0 flex list-none flex-wrap items-center gap-x-1.5 gap-y-1 p-0", className)}>
       {PIPELINE_STEPS.map((step, i) => {
-        const reached = i <= current;
+        const reached = !negative && i <= current;
         const isCurrent = i === current;
         const done = reached && !isCurrent;
         return (
