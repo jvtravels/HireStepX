@@ -226,6 +226,7 @@ export interface SessionTrendPoint {
   date: string;
   score: number;
   focus: string | null;
+  type: string | null;
 }
 
 /** Graded, non-negotiation sessions as an oldest-to-newest score series so an
@@ -241,6 +242,7 @@ export function extractSessionTrend(rows: SessionRow[], limit = 8): SessionTrend
       date: row.created_at,
       score: Math.round(Math.min(100, row.score)),
       focus: typeof row.focus === "string" && row.focus.trim() ? row.focus.trim().slice(0, 60) : null,
+      type: typeof row.type === "string" && row.type.trim() ? row.type.trim().slice(0, 40) : null,
     });
   }
   return points
@@ -274,4 +276,109 @@ export function computeVerifiedCapabilitiesForCandidate(
       skill_scores: typeof r.score === "number" && r.score >= SKILL_SCORE_PLAUSIBILITY_FLOOR ? (r.skill_scores ?? null) : null,
     })),
   );
+}
+
+export type AnswerVerdict = "strong" | "complete" | "partial" | "weak" | "skipped";
+const ANSWER_VERDICTS: AnswerVerdict[] = ["strong", "complete", "partial", "weak", "skipped"];
+const DIFFICULTIES = ["warmup", "standard", "hard"] as const;
+const LENGTH_VERDICTS = ["too-brief", "right", "too-long"] as const;
+
+export interface QuestionBreakdown {
+  idx: number;
+  question: string;
+  score: number;
+  verdict: AnswerVerdict;
+  difficulty: (typeof DIFFICULTIES)[number] | null;
+  star: { S: boolean; T: boolean; A: boolean; R: boolean } | null;
+  length: { verdict: (typeof LENGTH_VERDICTS)[number]; wordCount: number } | null;
+  /** Verbatim answer and the grader's note on it. Both routinely name past
+   *  employers and colleagues, so they are only present once unlocked. */
+  answerText?: string;
+  explanation?: string;
+}
+
+/** One row per scored question from report_json.perQuestion, in interview
+ *  order. Question wording is generated from the target role, so it is safe
+ *  to show while locked; `includeAnswers` gates everything the candidate said. */
+export function extractQuestionBreakdown(reportJson: unknown, includeAnswers: boolean, limit = 12): QuestionBreakdown[] {
+  if (!reportJson || typeof reportJson !== "object") return [];
+  const perQuestion = (reportJson as { perQuestion?: unknown }).perQuestion;
+  if (!Array.isArray(perQuestion)) return [];
+  const out: QuestionBreakdown[] = [];
+  for (const raw of perQuestion) {
+    if (!raw || typeof raw !== "object") continue;
+    const q = raw as Record<string, unknown>;
+    const question = typeof q.question === "string" ? q.question.trim() : "";
+    const verdict = q.verdict;
+    if (!question || typeof verdict !== "string" || !ANSWER_VERDICTS.includes(verdict as AnswerVerdict)) continue;
+    const score = typeof q.score === "number" && Number.isFinite(q.score) ? Math.round(Math.max(0, Math.min(100, q.score))) : null;
+    if (score == null) continue;
+
+    const sp = q.starPresence && typeof q.starPresence === "object" ? (q.starPresence as Record<string, unknown>) : null;
+    const star = sp && (["S", "T", "A", "R"] as const).some((l) => typeof sp[l] === "boolean")
+      ? { S: sp.S === true, T: sp.T === true, A: sp.A === true, R: sp.R === true }
+      : null;
+
+    const lv = q.lengthVerdict && typeof q.lengthVerdict === "object" ? (q.lengthVerdict as Record<string, unknown>) : null;
+    const length = lv && (LENGTH_VERDICTS as readonly string[]).includes(lv.verdict as string) && typeof lv.wordCount === "number" && Number.isFinite(lv.wordCount)
+      ? { verdict: lv.verdict as (typeof LENGTH_VERDICTS)[number], wordCount: Math.max(0, Math.round(lv.wordCount)) }
+      : null;
+
+    const row: QuestionBreakdown = {
+      idx: typeof q.idx === "number" && Number.isFinite(q.idx) ? q.idx : out.length,
+      question: question.slice(0, 400),
+      score,
+      verdict: verdict as AnswerVerdict,
+      difficulty: (DIFFICULTIES as readonly string[]).includes(q.difficulty as string) ? (q.difficulty as (typeof DIFFICULTIES)[number]) : null,
+      star,
+      length,
+    };
+    if (includeAnswers) {
+      if (typeof q.answerText === "string" && q.answerText.trim()) row.answerText = q.answerText.trim().slice(0, 1500);
+      if (typeof q.explanation === "string" && q.explanation.trim()) row.explanation = q.explanation.trim().slice(0, 500);
+    }
+    out.push(row);
+    if (out.length >= limit) break;
+  }
+  return out.sort((a, b) => a.idx - b.idx);
+}
+
+export interface DeliveryMetrics {
+  paceWpm: number | null;
+  fillersPerMin: number | null;
+  /** Share of the session spent in pauses over 1.5s, 0-100. */
+  pausePct: number | null;
+  /** Median gap before starting an answer, in seconds. */
+  responseSec: number | null;
+  /** Hedging phrases per minute ("I think", "maybe"). */
+  hedgesPerMin: number | null;
+}
+
+const positive = (v: unknown): number | null => (typeof v === "number" && Number.isFinite(v) && v > 0 ? v : null);
+const nonNegative = (v: unknown): number | null => (typeof v === "number" && Number.isFinite(v) && v >= 0 ? v : null);
+const round1 = (n: number) => Math.round(n * 10) / 10;
+
+/** Spoken-delivery numbers from report_json.coreMetrics / advancedDelivery.
+ *  The evaluator writes all zeros when it had no timing data, so a zero pace
+ *  means "not measured" and the whole block is dropped. With pace present,
+ *  zero fillers or pauses are real readings; a zero response gap is not. */
+export function extractDeliveryMetrics(reportJson: unknown): DeliveryMetrics | null {
+  if (!reportJson || typeof reportJson !== "object") return null;
+  const r = reportJson as { coreMetrics?: unknown; advancedDelivery?: unknown };
+  const core = r.coreMetrics && typeof r.coreMetrics === "object" ? (r.coreMetrics as Record<string, unknown>) : {};
+  const adv = r.advancedDelivery && typeof r.advancedDelivery === "object" ? (r.advancedDelivery as Record<string, unknown>) : {};
+
+  const pace = positive(core.paceWpm);
+  if (pace == null) return null;
+  const fillers = nonNegative(core.fillerPerMin);
+  const pause = nonNegative(core.silenceRatio);
+  const latency = positive(adv.medianLatencyMs);
+  const hedges = nonNegative(adv.hedgingPerMin);
+  return {
+    paceWpm: Math.round(pace),
+    fillersPerMin: fillers != null ? round1(fillers) : null,
+    pausePct: pause != null ? Math.round(Math.min(100, pause)) : null,
+    responseSec: latency != null ? round1(latency / 1000) : null,
+    hedgesPerMin: hedges != null ? round1(hedges) : null,
+  };
 }

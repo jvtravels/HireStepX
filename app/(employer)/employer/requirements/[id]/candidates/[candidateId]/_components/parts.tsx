@@ -42,7 +42,7 @@ export function Masonry({ children }: { children: ReactNode }) {
   return (
     <div className="grid min-w-0 gap-4 lg:block lg:columns-2 lg:gap-4">
       {Children.toArray(children).map((child, i) => (
-        <div key={i} className="min-w-0 break-inside-avoid lg:mb-4">{child}</div>
+        <div key={i} className="min-w-0 break-inside-avoid empty:hidden lg:mb-4">{child}</div>
       ))}
     </div>
   );

@@ -2,6 +2,8 @@ import { describe, it, expect, vi } from "vitest";
 import {
   extractEvidenceSkills,
   extractSessionTrend,
+  extractQuestionBreakdown,
+  extractDeliveryMetrics,
   latestSessionByUser,
   isNegotiationSession,
   claimProfileView,
@@ -208,13 +210,85 @@ describe("extractSessionTrend", () => {
   it("returns scored sessions oldest first, clamped and rounded", () => {
     const out = extractSessionTrend([row("2026-03-02", 140), row("2026-01-01", 61.6, "  Behavioral  "), row("2026-02-01", 0), row("2026-02-15")]);
     expect(out).toEqual([
-      { date: "2026-01-01", score: 62, focus: "Behavioral" },
-      { date: "2026-03-02", score: 100, focus: null },
+      { date: "2026-01-01", score: 62, focus: "Behavioral", type: null },
+      { date: "2026-03-02", score: 100, focus: null, type: null },
     ]);
   });
 
   it("skips negotiation sessions and keeps only the latest `limit`", () => {
     const rows = [row("2026-01-01", 50, undefined, "negotiation"), row("2026-01-02", 60), row("2026-01-03", 70), row("2026-01-04", 80)];
     expect(extractSessionTrend(rows, 2).map((p) => p.score)).toEqual([70, 80]);
+  });
+});
+
+describe("extractQuestionBreakdown", () => {
+  const q = (over: Record<string, unknown> = {}) => ({
+    idx: 0,
+    question: "Tell me about a time you led a migration.",
+    answerText: "At Acme Corp I led the move to Postgres.",
+    explanation: "Good ownership at Acme Corp, thin on results.",
+    verdict: "complete",
+    score: 72.4,
+    difficulty: "standard",
+    starPresence: { S: true, T: false, A: true, R: true, L: false },
+    lengthVerdict: { verdict: "right", wordCount: 180.2, targetRange: "120-240 words", note: "ok" },
+    ...over,
+  });
+
+  it("keeps what the candidate said out of the response until unlocked", () => {
+    const [row] = extractQuestionBreakdown({ perQuestion: [q()] }, false);
+    expect(row).not.toHaveProperty("answerText");
+    expect(row).not.toHaveProperty("explanation");
+    expect(JSON.stringify(row)).not.toContain("Acme");
+    expect(row.question).toBe("Tell me about a time you led a migration.");
+  });
+
+  it("includes the answer and grader note when unlocked", () => {
+    const [row] = extractQuestionBreakdown({ perQuestion: [q()] }, true);
+    expect(row.answerText).toContain("Acme Corp");
+    expect(row.explanation).toContain("ownership");
+  });
+
+  it("normalises score, STAR and length", () => {
+    const [row] = extractQuestionBreakdown({ perQuestion: [q()] }, false);
+    expect(row).toMatchObject({ score: 72, verdict: "complete", difficulty: "standard", star: { S: true, T: false, A: true, R: true }, length: { verdict: "right", wordCount: 180 } });
+  });
+
+  it("returns rows in interview order and skips malformed ones", () => {
+    const out = extractQuestionBreakdown({ perQuestion: [q({ idx: 2, question: "Third" }), q({ idx: 1, question: "Second" }), q({ question: "" }), q({ verdict: "bogus" }), q({ score: "x" }), null] }, false);
+    expect(out.map((r) => r.question)).toEqual(["Second", "Third"]);
+  });
+
+  it("leaves optional blocks null when absent and handles bad input", () => {
+    const [row] = extractQuestionBreakdown({ perQuestion: [q({ starPresence: undefined, lengthVerdict: null, difficulty: "weird" })] }, false);
+    expect(row).toMatchObject({ star: null, length: null, difficulty: null });
+    expect(extractQuestionBreakdown(null, true)).toEqual([]);
+    expect(extractQuestionBreakdown({}, true)).toEqual([]);
+  });
+
+  it("caps the number of rows", () => {
+    const many = Array.from({ length: 30 }, (_, i) => q({ idx: i, question: `Q${i}` }));
+    expect(extractQuestionBreakdown({ perQuestion: many }, false)).toHaveLength(12);
+  });
+});
+
+describe("extractDeliveryMetrics", () => {
+  it("reads pace, fillers, pauses, response time and hedging", () => {
+    const out = extractDeliveryMetrics({
+      coreMetrics: { paceWpm: 142.6, fillerPerMin: 2.34, silenceRatio: 8, energy: 70 },
+      advancedDelivery: { medianLatencyMs: 2400, hedgingPerMin: 1.26 },
+    });
+    expect(out).toEqual({ paceWpm: 143, fillersPerMin: 2.3, pausePct: 8, responseSec: 2.4, hedgesPerMin: 1.3 });
+  });
+
+  it("treats the evaluator's all-zero default as not measured", () => {
+    expect(extractDeliveryMetrics({ coreMetrics: { paceWpm: 0, fillerPerMin: 0, silenceRatio: 0, energy: 0 } })).toBeNull();
+    expect(extractDeliveryMetrics({})).toBeNull();
+    expect(extractDeliveryMetrics(null)).toBeNull();
+  });
+
+  it("keeps a real zero for fillers but drops an unmeasured response gap", () => {
+    const out = extractDeliveryMetrics({ coreMetrics: { paceWpm: 120, fillerPerMin: 0, silenceRatio: 0 }, advancedDelivery: { medianLatencyMs: 0 } });
+    expect(out).toMatchObject({ fillersPerMin: 0, pausePct: 0, responseSec: null, hedgesPerMin: null });
   });
 });

@@ -60,6 +60,11 @@ export function useCandidateDetail(requirementId: string, matchId: string) {
     load();
   }, [load]);
 
+  const refresh = useCallback(async () => {
+    const r = await fetchRequirementDetail(requirementId);
+    if (r) setRequirement(r);
+  }, [fetchRequirementDetail, requirementId]);
+
   const candidate = requirement?.candidates.find((c) => c.id === matchId);
   const candidateId = candidate?.id;
   const unlockedFlag = candidate?.unlocked;
@@ -127,6 +132,7 @@ export function useCandidateDetail(requirementId: string, matchId: string) {
     unavailable,
     declinedLocally,
     reload: load,
+    refresh,
     evidence,
     evidenceLoading,
     evidenceFailed,

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { buildResumeInsights, buildRoleFit, noticeDays } from "../../app/(employer)/employer/requirements/[id]/candidates/[candidateId]/_components/helpers";
-import type { CandidateEvidence } from "../employer/EmployerDataContext";
+import { averageTenureMonths, buildResumeInsights, buildRoleFit, describeDelivery, formatTenure, noticeDays, summarizeQuestions } from "../../app/(employer)/employer/requirements/[id]/candidates/[candidateId]/_components/helpers";
+import type { CandidateEvidence, EvidenceQuestion } from "../employer/EmployerDataContext";
 import type { Candidate, Requirement } from "../employer/mockData";
 
 const requirement = { skills: ["Figma", "Python", "SQL"] } as unknown as Requirement;
@@ -31,9 +31,11 @@ describe("buildResumeInsights", () => {
     expect(out.validate).toContain("Hands-on examples of Python, SQL.");
   });
 
-  it("flags a missing practice record as a concern", () => {
-    const out = buildResumeInsights(candidate({ sessionsCompleted: 0 }), requirement, [], []);
-    expect(out.concerns.some((c) => c.startsWith("No practice interviews"))).toBe(true);
+  it("leaves practice-interview facts to the Evidence tab", () => {
+    for (const sessionsCompleted of [0, 3]) {
+      const out = buildResumeInsights(candidate({ sessionsCompleted }), requirement, [], []);
+      expect([...out.strengths, ...out.concerns].join(" ")).not.toMatch(/practice|mock interview/i);
+    }
   });
 
   it("leaves self-reported notice and CTC to the header and caps each list at four", () => {
@@ -80,5 +82,59 @@ describe("buildRoleFit", () => {
     expect(noticeDays("2 months")).toBe(60);
     expect(noticeDays("4 weeks")).toBe(28);
     expect(noticeDays("negotiable")).toBeNull();
+  });
+});
+
+describe("tenure helpers", () => {
+  it("formats months as years and months", () => {
+    expect(formatTenure(7)).toBe("7 mo");
+    expect(formatTenure(12)).toBe("1 yr");
+    expect(formatTenure(16)).toBe("1 yr 4 mo");
+    expect(formatTenure(36)).toBe("3 yrs");
+  });
+
+  it("averages only the periods it can read", () => {
+    expect(averageTenureMonths([{ period: "Jan 2020 - Jan 2022" }, { period: "Jan 2022 - Jan 2023" }, { period: "sometime" }])).toBe(18);
+    expect(averageTenureMonths([{ period: "unknown" }])).toBeNull();
+    expect(averageTenureMonths([])).toBeNull();
+  });
+});
+
+describe("describeDelivery", () => {
+  it("returns nothing when no delivery was measured", () => {
+    expect(describeDelivery(null)).toEqual([]);
+    expect(describeDelivery({ paceWpm: null, fillersPerMin: null, pausePct: null, responseSec: null, hedgesPerMin: null })).toEqual([]);
+  });
+
+  it("labels each reading in plain language", () => {
+    const rows = describeDelivery({ paceWpm: 140, fillersPerMin: 1.5, pausePct: 5, responseSec: 2, hedgesPerMin: 1 });
+    expect(rows.map((r) => [r.id, r.note, r.tone])).toEqual([
+      ["pace", "Easy to follow", "success"],
+      ["fillers", "Low", "success"],
+      ["response", "Quick", "success"],
+      ["pauses", "Steady", "success"],
+      ["hedges", "Confident", "success"],
+    ]);
+  });
+
+  it("flags the awkward ends of each scale", () => {
+    const rows = describeDelivery({ paceWpm: 200, fillersPerMin: 9, pausePct: 40, responseSec: 8, hedgesPerMin: 7 });
+    expect(rows.map((r) => r.tone)).toEqual(["warning", "error", "warning", "error", "error"]);
+    expect(describeDelivery({ paceWpm: 80, fillersPerMin: null, pausePct: null, responseSec: null, hedgesPerMin: null })[0]).toMatchObject({ note: "Slow", tone: "warning" });
+  });
+});
+
+describe("summarizeQuestions", () => {
+  const q = (over: Partial<EvidenceQuestion>): EvidenceQuestion => ({ idx: 0, question: "Q", score: 70, verdict: "complete", difficulty: null, star: null, length: null, ...over });
+  const full = { S: true, T: true, A: true, R: true };
+
+  it("ignores skipped questions and counts verdicts and full STAR answers", () => {
+    const out = summarizeQuestions([q({ score: 90, verdict: "strong", star: full }), q({ score: 50, verdict: "weak", star: { ...full, R: false } }), q({ score: 0, verdict: "skipped" }), q({ score: 70 })]);
+    expect(out).toEqual({ count: 3, avg: 70, strong: 2, weak: 1, fullStar: 1, starCounted: 2 });
+  });
+
+  it("is null when nothing was answered", () => {
+    expect(summarizeQuestions([])).toBeNull();
+    expect(summarizeQuestions([q({ verdict: "skipped" })])).toBeNull();
   });
 });

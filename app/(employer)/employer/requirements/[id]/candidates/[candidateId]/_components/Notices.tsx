@@ -1,5 +1,6 @@
 import { LockIcon } from "lucide-react";
 import { Item, ItemActions, ItemContent, ItemDescription, ItemMedia, ItemTitle } from "@/components/ui/item";
+import { OutlineCta } from "@/employer/_atoms";
 import { InlineNotice, LinkCta } from "@/employer/_requirementAtoms";
 import type { ActionNotice } from "./useCandidateDetail";
 
@@ -21,22 +22,7 @@ export function ActionNoticeAlert({ notice, shortlistHref }: { notice: ActionNot
   return <InlineNotice tone="warning" title="Action not allowed">{notice.message}</InlineNotice>;
 }
 
-/** Contact row shown in the header while the candidate is still masked. */
-export function LockedContact({ shortlistHref }: { shortlistHref: string }) {
-  return (
-    <Item variant="muted" size="sm">
-      <ItemMedia variant="icon"><LockIcon aria-hidden="true" /></ItemMedia>
-      <ItemContent>
-        <ItemDescription className="line-clamp-none text-[13px] text-hx-ink-soft">Name, phone, email and links unlock together.</ItemDescription>
-      </ItemContent>
-      <ItemActions>
-        <LinkCta href={shortlistHref} size="sm" variant="outline">Unlock from the shortlist</LinkCta>
-      </ItemActions>
-    </Item>
-  );
-}
-
-export function LockedQuotes({ shortlistHref }: { shortlistHref: string }) {
+export function LockedQuotes({ onUnlock }: { onUnlock: () => void }) {
   return (
     <Item variant="muted">
       <ItemMedia variant="icon"><LockIcon aria-hidden="true" /></ItemMedia>
@@ -45,7 +31,7 @@ export function LockedQuotes({ shortlistHref }: { shortlistHref: string }) {
         <ItemDescription className="line-clamp-none text-[13px]">What this candidate said in practice sessions is shown once you unlock them.</ItemDescription>
       </ItemContent>
       <ItemActions>
-        <LinkCta href={shortlistHref} size="sm" variant="outline">Unlock to read quotes</LinkCta>
+        <OutlineCta size="sm" onClick={onUnlock}>Unlock to read quotes</OutlineCta>
       </ItemActions>
     </Item>
   );

@@ -1,5 +1,5 @@
 import type { Candidate, CandidateStatus } from "@/employer/mockData";
-import type { Requirement, CandidateEvidence } from "@/employer/EmployerDataContext";
+import type { Requirement, CandidateEvidence, EvidenceDelivery, EvidenceQuestion } from "@/employer/EmployerDataContext";
 
 /* Pure helpers for the candidate detail page. Everything here derives from
    fields the API actually returns — no synthesized or seeded values. */
@@ -94,6 +94,12 @@ export function periodMonths(period: string, now = new Date()): number | null {
   return Math.max(1, end - start);
 }
 
+/** Mean months per role across the entries whose period can be read; null when none can. */
+export function averageTenureMonths(experience: ReadonlyArray<{ period: string }>): number | null {
+  const tenures = experience.map((e) => periodMonths(e.period)).filter((n): n is number => n != null);
+  return tenures.length ? Math.round(tenures.reduce((a, b) => a + b, 0) / tenures.length) : null;
+}
+
 export interface ResumeInsights {
   snapshot: string;
   strengths: string[];
@@ -101,24 +107,6 @@ export interface ResumeInsights {
   validate: string[];
   avgTenureMonths: number | null;
 }
-
-export function buildFitReasons(candidate: Candidate, requirement: Requirement, matchedSkills: string[]): string[] {
-  const reasons: string[] = [];
-  if (matchedSkills.length) {
-    reasons.push(`Matches ${matchedSkills.length} of ${requirement.skills.length} required skills: ${matchedSkills.slice(0, 4).join(", ")}`);
-  }
-  if (candidate.resume?.yearsExperience != null) {
-    reasons.push(`${candidate.resume.yearsExperience} years of experience on their resume`);
-  }
-  if (candidate.sessionsCompleted > 0) {
-    reasons.push(`Completed ${candidate.sessionsCompleted} practice session${candidate.sessionsCompleted === 1 ? "" : "s"} for this target role`);
-  }
-  if (candidate.city && requirement.locations.some((l) => l.toLowerCase().includes(candidate.city.toLowerCase()))) {
-    reasons.push(`Based in ${candidate.city}, matching the role's location`);
-  }
-  return reasons.slice(0, 4);
-}
-
 
 /** Deterministic read of the structured resume data against the requirement.
  *  No model call and no invented facts: every line cites a field we hold. */
@@ -132,7 +120,7 @@ export function buildResumeInsights(candidate: Candidate, requirement: Requireme
   const snapshot = `${lead || "Candidate"}${years}${recent}.`;
 
   const tenures = (r?.experience ?? []).map((e) => periodMonths(e.period)).filter((n): n is number => n != null);
-  const avgTenureMonths = tenures.length ? Math.round(tenures.reduce((a, b) => a + b, 0) / tenures.length) : null;
+  const avgTenureMonths = averageTenureMonths(r?.experience ?? []);
 
   const strengths: string[] = [];
   if (matched.length) strengths.push(`Lists ${matched.length} of ${requirement.skills.length} required skills: ${matched.slice(0, 5).join(", ")}.`);
@@ -140,12 +128,10 @@ export function buildResumeInsights(candidate: Candidate, requirement: Requireme
   if (measurable.length) strengths.push(`${measurable.length} achievement${measurable.length === 1 ? "" : "s"} with measurable results, for example: ${measurable[0]}`);
   if (r?.certifications.length) strengths.push(`Holds ${r.certifications.length} certification${r.certifications.length === 1 ? "" : "s"}: ${r.certifications.slice(0, 3).join(", ")}.`);
   if (avgTenureMonths != null && avgTenureMonths >= 24) strengths.push(`Stays in roles: about ${Math.round(avgTenureMonths / 12 * 10) / 10} years on average.`);
-  if (candidate.sessionsCompleted > 0) strengths.push(`Practises: ${candidate.sessionsCompleted} graded mock interview${candidate.sessionsCompleted === 1 ? "" : "s"} on record.`);
 
   const concerns: string[] = [];
   if (unmatched.length) concerns.push(`Not on the resume: ${unmatched.slice(0, 4).join(", ")}.`);
   if (avgTenureMonths != null && tenures.length >= 2 && avgTenureMonths < 12) concerns.push(`Short stints, about ${avgTenureMonths} months per role.`);
-  if (candidate.sessionsCompleted === 0) concerns.push("No practice interviews yet, so no spoken-answer evidence.");
 
   const validate: string[] = [];
   if (unmatched.length) validate.push(`Hands-on examples of ${unmatched.slice(0, 3).join(", ")}.`);
@@ -234,4 +220,63 @@ export function buildRoleFit(candidate: Candidate, requirement: Requirement, mat
   }
 
   return rows;
+}
+
+/** "1 yr 4 mo", "7 mo"; used for per-role tenure. */
+export function formatTenure(months: number): string {
+  if (months < 12) return `${months} mo`;
+  const y = Math.floor(months / 12);
+  const m = months % 12;
+  return m === 0 ? `${y} yr${y === 1 ? "" : "s"}` : `${y} yr ${m} mo`;
+}
+
+export type DeliveryTone = "success" | "warning" | "error" | "neutral";
+export interface DeliveryRow { id: string; label: string; value: string; note: string; tone: DeliveryTone; hint: string }
+
+/** Spoken delivery as plain-language readings. Thresholds are conversational-interview norms, not a hiring bar. */
+export function describeDelivery(d: EvidenceDelivery | null | undefined): DeliveryRow[] {
+  if (!d) return [];
+  const rows: DeliveryRow[] = [];
+  if (d.paceWpm != null) {
+    const w = d.paceWpm;
+    rows.push({ id: "pace", label: "Speaking pace", value: `${w} wpm`, hint: "Easy to follow is roughly 110 to 170 words a minute.", ...(w < 110 ? { note: "Slow", tone: "warning" as const } : w > 170 ? { note: "Fast", tone: "warning" as const } : { note: "Easy to follow", tone: "success" as const }) });
+  }
+  if (d.fillersPerMin != null) {
+    const f = d.fillersPerMin;
+    rows.push({ id: "fillers", label: "Filler words", value: `${f} / min`, hint: "Counts um, uh, like, you know, so, basically and similar.", ...(f <= 3 ? { note: "Low", tone: "success" as const } : f <= 6 ? { note: "Moderate", tone: "warning" as const } : { note: "High", tone: "error" as const }) });
+  }
+  if (d.responseSec != null) {
+    const s = d.responseSec;
+    rows.push({ id: "response", label: "Time to start answering", value: `${s}s`, hint: "Median pause between the question ending and the answer starting.", ...(s <= 3 ? { note: "Quick", tone: "success" as const } : s <= 6 ? { note: "Considered", tone: "neutral" as const } : { note: "Slow to start", tone: "warning" as const }) });
+  }
+  if (d.pausePct != null) {
+    const p = d.pausePct;
+    rows.push({ id: "pauses", label: "Time in long pauses", value: `${p}%`, hint: "Share of the session spent in silences longer than 1.5 seconds.", ...(p <= 10 ? { note: "Steady", tone: "success" as const } : p <= 25 ? { note: "Some pauses", tone: "warning" as const } : { note: "Long pauses", tone: "error" as const }) });
+  }
+  if (d.hedgesPerMin != null) {
+    const h = d.hedgesPerMin;
+    rows.push({ id: "hedges", label: "Hedging", value: `${h} / min`, hint: "Softeners such as 'I think', 'maybe' and 'kind of'.", ...(h <= 2 ? { note: "Confident", tone: "success" as const } : h <= 5 ? { note: "Some hedging", tone: "warning" as const } : { note: "Heavy hedging", tone: "error" as const }) });
+  }
+  return rows;
+}
+
+export const VERDICT_LABEL: Record<EvidenceQuestion["verdict"], string> = { strong: "Strong", complete: "Complete", partial: "Partial", weak: "Weak", skipped: "Skipped" };
+export const VERDICT_TONE: Record<EvidenceQuestion["verdict"], "success" | "warning" | "error" | "neutral"> = { strong: "success", complete: "success", partial: "warning", weak: "error", skipped: "neutral" };
+export const DIFFICULTY_LABEL: Record<NonNullable<EvidenceQuestion["difficulty"]>, string> = { warmup: "Warm-up", standard: "Standard", hard: "Hard" };
+export const LENGTH_LABEL: Record<NonNullable<EvidenceQuestion["length"]>["verdict"], string> = { "too-brief": "Too brief", right: "Right length", "too-long": "Too long" };
+
+export interface QuestionSummary { count: number; avg: number; strong: number; weak: number; fullStar: number; starCounted: number }
+
+export function summarizeQuestions(questions: EvidenceQuestion[]): QuestionSummary | null {
+  const answered = questions.filter((q) => q.verdict !== "skipped");
+  if (answered.length === 0) return null;
+  const withStar = answered.filter((q) => q.star);
+  return {
+    count: answered.length,
+    avg: Math.round(answered.reduce((n, q) => n + q.score, 0) / answered.length),
+    strong: answered.filter((q) => q.verdict === "strong" || q.verdict === "complete").length,
+    weak: answered.filter((q) => q.verdict === "weak").length,
+    fullStar: withStar.filter((q) => q.star && q.star.S && q.star.T && q.star.A && q.star.R).length,
+    starCounted: withStar.length,
+  };
 }

@@ -91,8 +91,30 @@ export interface CandidateEvidence {
   starCompleteness: { pct: number; questionsConsidered: number } | null;
   sessionDate: string | null;
   verifiedCapabilities: VerifiedCapability[];
-  sessionTrend?: Array<{ date: string; score: number; focus: string | null }>;
+  sessionTrend?: Array<{ date: string; score: number; focus: string | null; type?: string | null }>;
+  questions?: EvidenceQuestion[];
+  delivery?: EvidenceDelivery | null;
   resumeFile?: { fileName: string } | null;
+}
+
+export interface EvidenceQuestion {
+  idx: number;
+  question: string;
+  score: number;
+  verdict: "strong" | "complete" | "partial" | "weak" | "skipped";
+  difficulty: "warmup" | "standard" | "hard" | null;
+  star: { S: boolean; T: boolean; A: boolean; R: boolean } | null;
+  length: { verdict: "too-brief" | "right" | "too-long"; wordCount: number } | null;
+  answerText?: string;
+  explanation?: string;
+}
+
+export interface EvidenceDelivery {
+  paceWpm: number | null;
+  fillersPerMin: number | null;
+  pausePct: number | null;
+  responseSec: number | null;
+  hedgesPerMin: number | null;
 }
 
 export interface RequirementActivity {

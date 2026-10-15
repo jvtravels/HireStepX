@@ -1,12 +1,12 @@
-import { BriefcaseIcon, CheckIcon, LockIcon, MinusIcon, TargetIcon } from "lucide-react";
+import { CheckIcon, LockIcon, MinusIcon, TargetIcon, UserRoundIcon } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { CandidateEvidence, Requirement } from "@/employer/EmployerDataContext";
 import type { Candidate } from "@/employer/mockData";
 import { Badge, OutlineCta } from "@/employer/_atoms";
 import { InfoTip, KeyValueList, KeyValueRow, MeterRow, Panel, PanelButton } from "@/employer/_panelParts";
-import { InlineNotice, LinkCta } from "@/employer/_requirementAtoms";
+import { InlineNotice } from "@/employer/_requirementAtoms";
 import { ChipList, IconList, Masonry, MutedText } from "./parts";
-import { PROVENANCE, READINESS_LABEL, buildResumeInsights, buildRoleFit, evidenceAverage, formatSessionDate, type FitStatus } from "./helpers";
+import { PROVENANCE, READINESS_LABEL, averageTenureMonths, buildResumeInsights, buildRoleFit, evidenceAverage, formatSessionDate, formatTenure, type FitStatus } from "./helpers";
 
 export type EvidenceState = { evidence: CandidateEvidence | null; loading: boolean; failed: boolean; onRetry: () => void };
 
@@ -37,7 +37,7 @@ const FIT_BADGE: Record<FitStatus, { tone: "success" | "warning" | "error"; labe
   gap: { tone: "error", label: "Gap" },
 };
 
-function MatchPanel({ candidate, requirement, matched, evidence }: { candidate: Candidate; requirement: Requirement; matched: string[]; evidence: CandidateEvidence | null }) {
+function MatchPanel({ candidate, requirement, matched, unmatched, evidence }: { candidate: Candidate; requirement: Requirement; matched: string[]; unmatched: string[]; evidence: CandidateEvidence | null }) {
   const b = candidate.matchBreakdown;
   const hasCity = !!candidate.city && candidate.city !== "Not specified";
   const rows = buildRoleFit(candidate, requirement, matched, evidence);
@@ -73,44 +73,20 @@ function MatchPanel({ candidate, requirement, matched, evidence }: { candidate: 
             </ul>
           </div>
         )}
-      </div>
-    </Panel>
-  );
-}
-
-function CareerPanel({ candidate, requirement, matched, unmatched, onOpenResume }: { candidate: Candidate; requirement: Requirement; matched: string[]; unmatched: string[]; onOpenResume: () => void }) {
-  const r = candidate.resume;
-  if (!candidate.unlocked || !r) return null;
-  const roles = r.experience.slice(0, 3);
-  const edu = r.education[0];
-  const { avgTenureMonths } = buildResumeInsights(candidate, requirement, matched, unmatched);
-  const tenure = avgTenureMonths == null ? null : avgTenureMonths >= 24 ? `${Math.round((avgTenureMonths / 12) * 10) / 10} years per role` : `${avgTenureMonths} months per role`;
-  if (!r.headline && roles.length === 0 && !edu && r.industries.length === 0 && r.certifications.length === 0) return null;
-  return (
-    <Panel id="career-heading" title="Career snapshot" icon={<BriefcaseIcon size={15} />} action={<PanelButton onClick={onOpenResume}>Full resume</PanelButton>}>
-      <div className="grid gap-4">
-        {r.headline && <p className="m-0 text-[14px] font-medium leading-snug text-hx-coal">{r.headline}</p>}
-        {roles.length > 0 && (
-          <ol aria-label="Recent roles" className="m-0 flex list-none flex-col p-0">
-            {roles.map((e, i) => (
-              <li key={`${e.company}-${e.period}-${i}`} className="border-b border-hx-line py-2.5 first:pt-0 last:border-b-0 last:pb-0">
-                <div className="text-[13px] font-semibold text-hx-coal [overflow-wrap:anywhere]">{e.title || "Role not listed"}</div>
-                <div className="text-[12px] text-hx-ink-soft [overflow-wrap:anywhere]">{[e.company, e.period].filter(Boolean).join(" · ")}</div>
-              </li>
-            ))}
-          </ol>
-        )}
-        {(tenure || edu || r.certifications.length > 0) && (
-          <KeyValueList className="border-t border-hx-line pt-4">
-            {tenure && <KeyValueRow label="Average tenure">{tenure}</KeyValueRow>}
-            {edu && <KeyValueRow label="Education">{[edu.degree, edu.school].filter(Boolean).join(", ")}</KeyValueRow>}
-            {r.certifications.length > 0 && <KeyValueRow label="Certifications">{r.certifications.slice(0, 2).join(", ")}{r.certifications.length > 2 ? ` +${r.certifications.length - 2}` : ""}</KeyValueRow>}
-          </KeyValueList>
-        )}
-        {r.industries.length > 0 && (
-          <div className="grid gap-1.5">
-            <h3 className="m-0 text-[13px] font-semibold text-hx-ink-soft">Industries</h3>
-            <ChipList items={r.industries.slice(0, 6)} label="Industries" />
+        {(matched.length > 0 || unmatched.length > 0) && (
+          <div className="grid gap-3 border-t border-hx-line pt-4">
+            {matched.length > 0 && (
+              <div className="grid gap-1.5">
+                <h3 className="m-0 text-[13px] font-semibold text-hx-coal">On the resume</h3>
+                <ChipList items={matched} tone="primary" label="Required skills on the resume" />
+              </div>
+            )}
+            {unmatched.length > 0 && (
+              <div className="grid gap-1.5">
+                <h3 className="m-0 text-[13px] font-semibold text-hx-coal">Not on the resume</h3>
+                <ChipList items={unmatched} tone="danger" label="Required skills missing from the resume" />
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -118,65 +94,91 @@ function CareerPanel({ candidate, requirement, matched, unmatched, onOpenResume 
   );
 }
 
-function EvidencePanel({ candidate, state, onOpenPractice }: { candidate: Candidate; state: EvidenceState; onOpenPractice: () => void }) {
+function ProfilePanel({ candidate, onOpenResume }: { candidate: Candidate; onOpenResume: () => void }) {
+  const r = candidate.resume;
+  if (!r) return null;
+  const latest = r.experience[0];
+  const latestRole = latest ? [latest.title, latest.company].filter(Boolean).join(" at ") : "";
+  const edu = r.education[0];
+  const eduText = edu ? [edu.degree, edu.school].filter(Boolean).join(", ") : "";
+  const avgTenureMonths = averageTenureMonths(r.experience);
+  const facts: Array<{ label: string; value: string; selfReported?: boolean }> = [];
+  if (latestRole) facts.push({ label: "Latest role", value: latest?.period ? `${latestRole} (${latest.period})` : latestRole });
+  if (r.yearsExperience != null) facts.push({ label: "Experience", value: `${r.yearsExperience} year${r.yearsExperience === 1 ? "" : "s"}${r.seniorityLevel ? `, ${r.seniorityLevel}` : ""}` });
+  if (avgTenureMonths != null) facts.push({ label: "Average tenure", value: `${formatTenure(avgTenureMonths)} per role` });
+  if (eduText) facts.push({ label: "Education", value: eduText });
+  if (r.noticePeriod) facts.push({ label: "Notice period", value: r.noticePeriod, selfReported: true });
+  if (r.currentCtc) facts.push({ label: "Current CTC", value: r.currentCtc, selfReported: true });
+  const summary = r.summary?.trim();
+  if (!summary && !r.headline && facts.length === 0) return null;
+  return (
+    <Panel id="profile-heading" title="Profile" icon={<UserRoundIcon size={15} />} action={candidate.unlocked ? <PanelButton onClick={onOpenResume}>Full resume</PanelButton> : undefined}>
+      <div className="grid gap-4">
+        {(r.headline || summary) && (
+          <div className="grid gap-1.5">
+            {r.headline && <p className="m-0 text-[14px] font-semibold leading-snug text-hx-coal">{r.headline}</p>}
+            {summary && <p className="m-0 max-w-[75ch] text-[13px] leading-relaxed whitespace-pre-line text-hx-ink-soft [overflow-wrap:anywhere]">{summary}</p>}
+          </div>
+        )}
+        {facts.length > 0 && (
+          <KeyValueList className={r.headline || summary ? "border-t border-hx-line pt-4" : undefined}>
+            {facts.map((f) => (
+              <KeyValueRow key={f.label} label={f.label}>
+                {f.value}
+                {f.selfReported && <span className="sr-only"> (self-reported)</span>}
+              </KeyValueRow>
+            ))}
+          </KeyValueList>
+        )}
+        {facts.some((f) => f.selfReported) && <p className="m-0 text-[12px] text-hx-ink-soft">Notice period and CTC are as the candidate entered them.</p>}
+      </div>
+    </Panel>
+  );
+}
+
+function PracticeSnapshot({ candidate, state, onOpenPractice }: { candidate: Candidate; state: EvidenceState; onOpenPractice: () => void }) {
   const { evidence } = state;
   const avg = evidenceAverage(evidence);
-  const hasEvidence = !!(evidence?.readiness || evidence?.starCompleteness || evidence?.skills.length);
+  const hasEvidence = !!(evidence?.readiness || evidence?.starCompleteness || evidence?.skills.length || evidence?.questions?.length);
   const verified = evidence?.verifiedCapabilities ?? [];
+  const verifiedCount = verified.filter((c) => c.verified).length;
   const last = evidence?.sessionDate ? formatSessionDate(evidence.sessionDate) : "";
   const tip = (
     <InfoTip label="How practice evidence is scored">
-      {PROVENANCE}. This is practice performance, not an employment check. Verified means 70+ on the skill across 2 or more sessions.
+      {PROVENANCE}. This is practice performance, not an employment check.
     </InfoTip>
   );
 
   return (
-    <Panel id="evidence-heading" title="Practice evidence" action={tip}>
+    <Panel id="evidence-heading" title="Practice snapshot" action={tip}>
       <EvidenceStatus state={state}>
         {hasEvidence ? (
           <div className="grid gap-4">
-            <p className="m-0 text-[13px] text-hx-ink-soft">
-              {candidate.sessionsCompleted} graded session{candidate.sessionsCompleted === 1 ? "" : "s"}
-              {last ? `, last on ${last}` : ""}
-            </p>
             <KeyValueList>
+              <KeyValueRow label="Interviews">
+                {candidate.sessionsCompleted} graded{last ? <span className="font-normal text-hx-ink-soft">, latest {last}</span> : null}
+              </KeyValueRow>
               {evidence?.readiness && <KeyValueRow label="Readiness">{READINESS_LABEL[evidence.readiness.band]} <span className="font-normal text-hx-ink-soft">({evidence.readiness.confidence} confidence)</span></KeyValueRow>}
               {avg != null && <KeyValueRow label="Avg skill score"><span className="tabular-nums">{avg} / 100</span></KeyValueRow>}
-              {evidence?.starCompleteness && (
-                <KeyValueRow label="STAR answers">
-                  <span className="tabular-nums">{evidence.starCompleteness.pct}%</span>{" "}
-                  <span className="font-normal text-hx-ink-soft">({evidence.starCompleteness.questionsConsidered} question{evidence.starCompleteness.questionsConsidered === 1 ? "" : "s"})</span>
-                </KeyValueRow>
-              )}
+              {verified.length > 0 && <KeyValueRow label="Verified skills"><span className="tabular-nums">{verifiedCount} of {verified.length}</span></KeyValueRow>}
             </KeyValueList>
-            {verified.length > 0 && (
-              <KeyValueList className="border-t border-hx-line pt-4">
-                {verified.map((cap) => (
-                  <KeyValueRow key={cap.key} label={cap.label}>
-                    {cap.verified ? <Badge tone="success">Verified{cap.verifiedDateLabel ? ` · ${cap.verifiedDateLabel}` : ""}</Badge> : <Badge tone="neutral">Not yet verified</Badge>}
-                  </KeyValueRow>
-                ))}
-              </KeyValueList>
-            )}
+            <div><PanelButton onClick={onOpenPractice}>See every answer and score</PanelButton></div>
           </div>
         ) : (
-          <div className="grid gap-2">
-            <MutedText>No graded practice interviews yet, so this match reflects the resume only.</MutedText>
-            <div><PanelButton onClick={onOpenPractice}>View evidence tab</PanelButton></div>
-          </div>
+          <MutedText>No graded practice interviews yet, so this match reflects the resume only.</MutedText>
         )}
       </EvidenceStatus>
     </Panel>
   );
 }
 
-function AnalysisPanel({ candidate, requirement, matched, unmatched, shortlistHref }: { candidate: Candidate; requirement: Requirement; matched: string[]; unmatched: string[]; shortlistHref: string }) {
+function AnalysisPanel({ candidate, requirement, matched, unmatched, onUnlock }: { candidate: Candidate; requirement: Requirement; matched: string[]; unmatched: string[]; onUnlock: () => void }) {
   if (!candidate.unlocked) {
     return (
       <Panel id="analysis-heading" title="Resume analysis" icon={<LockIcon size={15} />}>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <MutedText>Strengths, concerns and what to validate unlock with the candidate.</MutedText>
-          <LinkCta href={shortlistHref} size="sm" variant="outline">Unlock from the shortlist</LinkCta>
+          <OutlineCta size="sm" onClick={onUnlock}>Unlock candidate</OutlineCta>
         </div>
       </Panel>
     );
@@ -207,26 +209,26 @@ export function OverviewTab({
   requirement,
   matched,
   unmatched,
-  shortlistHref,
   state,
   onOpenPractice,
   onOpenResume,
+  onUnlock,
 }: {
   candidate: Candidate;
   requirement: Requirement;
   matched: string[];
   unmatched: string[];
-  shortlistHref: string;
   state: EvidenceState;
   onOpenPractice: () => void;
   onOpenResume: () => void;
+  onUnlock: () => void;
 }) {
   return (
     <Masonry>
-      <MatchPanel candidate={candidate} requirement={requirement} matched={matched} evidence={state.evidence} />
-      <EvidencePanel candidate={candidate} state={state} onOpenPractice={onOpenPractice} />
-      <AnalysisPanel candidate={candidate} requirement={requirement} matched={matched} unmatched={unmatched} shortlistHref={shortlistHref} />
-      <CareerPanel candidate={candidate} requirement={requirement} matched={matched} unmatched={unmatched} onOpenResume={onOpenResume} />
+      <ProfilePanel candidate={candidate} onOpenResume={onOpenResume} />
+      <MatchPanel candidate={candidate} requirement={requirement} matched={matched} unmatched={unmatched} evidence={state.evidence} />
+      <PracticeSnapshot candidate={candidate} state={state} onOpenPractice={onOpenPractice} />
+      <AnalysisPanel candidate={candidate} requirement={requirement} matched={matched} unmatched={unmatched} onUnlock={onUnlock} />
     </Masonry>
   );
 }

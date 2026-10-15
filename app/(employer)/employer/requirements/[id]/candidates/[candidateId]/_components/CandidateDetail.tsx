@@ -4,11 +4,13 @@ import { useState } from "react";
 import StatusTabs from "@/components/StatusTabs";
 import { useEmployerData } from "@/employer/EmployerDataContext";
 import { useEmployerBreadcrumb } from "@/employer/EmployerShell";
+import { useEmployerAccess } from "@/employer/_useEmployerAccess";
 import { ErrorRetry, EmptyNote, LinkCta, PageSkeleton, SuspendedBanner } from "@/employer/_requirementAtoms";
+import UnlockDialog from "../../../_components/UnlockDialog";
 import { CandidateDialogsHost } from "./CandidateDialogsHost";
 import { CandidateHeader } from "./CandidateHeader";
 import { CandidateRail } from "./CandidateRail";
-import { buildFitReasons, maskedName, matchedSkillCount } from "./helpers";
+import { maskedName, matchedSkillCount } from "./helpers";
 import { ActionNoticeAlert } from "./Notices";
 import { OverviewTab } from "./OverviewTab";
 import { PracticeTab } from "./PracticeTab";
@@ -27,6 +29,8 @@ export default function CandidateDetail({ requirementId, matchId }: { requiremen
   const d = useCandidateDetail(requirementId, matchId);
   const [tab, setTab] = useState<CandidateTabKey>("overview");
   const [dialog, setDialog] = useState<"invite" | "reject" | null>(null);
+  const [unlockOpen, setUnlockOpen] = useState(false);
+  const access = useEmployerAccess();
 
   const { requirement, candidate } = d;
   const shortlistHref = `/employer/requirements/${requirementId}`;
@@ -61,8 +65,10 @@ export default function CandidateDetail({ requirementId, matchId }: { requiremen
   const matched = matchedSkillCount(requirement.skills, candidate.skills);
   const unmatched = requirement.skills.filter((s) => !matched.some((m) => m.toLowerCase() === s.toLowerCase()));
   const resumeFileName = candidate.unlocked ? (d.evidence?.resumeFile?.fileName ?? null) : null;
-
-  const reasons = buildFitReasons(candidate, requirement, matched);
+  const openUnlock = () => {
+    d.clearNotice();
+    setUnlockOpen(true);
+  };
 
   return (
     <div className="flex min-w-0 flex-[1_0_auto] flex-col pb-6">
@@ -79,15 +85,21 @@ export default function CandidateDetail({ requirementId, matchId }: { requiremen
         changeStatus={d.changeStatus}
       />
 
+      <UnlockDialog
+        target={unlockOpen ? { mode: "single", matchId: candidate.id } : null}
+        access={access}
+        onClose={() => setUnlockOpen(false)}
+        onUnlocked={() => void d.refresh()}
+      />
+
       <div className="grid min-w-0 gap-5 min-[1440px]:grid-cols-[minmax(0,1fr)_300px] min-[1440px]:items-start">
         <div className="flex min-w-0 flex-col">
           <CandidateHeader
             candidate={candidate}
-            requiredSkills={requirement.skills}
             declined={d.declinedLocally}
             suspended={suspended}
-            shortlistHref={shortlistHref}
             resumeFileName={resumeFileName}
+            onUnlock={openUnlock}
             onInvite={() => {
               d.clearNotice();
               setDialog("invite");
@@ -110,19 +122,19 @@ export default function CandidateDetail({ requirementId, matchId }: { requiremen
                   requirement={requirement}
                   matched={matched}
                   unmatched={unmatched}
-                  shortlistHref={shortlistHref}
                   state={evidenceState}
                   onOpenPractice={() => setTab("practice")}
                   onOpenResume={() => setTab("resume")}
+                  onUnlock={openUnlock}
                 />
               )}
-              {tab === "practice" && <PracticeTab evidence={d.evidence} candidate={candidate} shortlistHref={shortlistHref} state={evidenceState} />}
-              {tab === "resume" && <ResumeTab candidate={candidate} shortlistHref={shortlistHref} />}
+              {tab === "practice" && <PracticeTab evidence={d.evidence} candidate={candidate} state={evidenceState} onUnlock={openUnlock} />}
+              {tab === "resume" && <ResumeTab candidate={candidate} onUnlock={openUnlock} />}
             </div>
           </section>
         </div>
 
-        <CandidateRail candidate={candidate} insights={reasons} />
+        <CandidateRail candidate={candidate} />
       </div>
     </div>
   );
