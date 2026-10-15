@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { CheckIcon, MinusIcon, TargetIcon, UserRoundIcon, XIcon } from "lucide-react";
+import { ActivityIcon, CheckIcon, FileSearchIcon, MinusIcon, TargetIcon, UserRoundIcon, XIcon } from "lucide-react";
 import { cn } from "cn";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { CandidateEvidence, Requirement } from "@/employer/EmployerDataContext";
 import type { Candidate } from "@/employer/mockData";
-import { OutlineCta } from "@/employer/_atoms";
+import { OutlineCta, matchBand } from "@/employer/_atoms";
 import { InfoTip, KeyValueList, KeyValueRow, MeterRow, Panel, PanelButton, Stat, StatGrid } from "@/employer/_panelParts";
 import { InlineNotice } from "@/employer/_requirementAtoms";
 import { ChipList, IconList, MutedText } from "./parts";
@@ -52,61 +52,83 @@ function FitMark({ status }: { status: FitStatus }) {
   );
 }
 
+const BAND_HERO: Record<ReturnType<typeof matchBand>, { label: string; cls: string }> = {
+  strong: { label: "Strong match", cls: "bg-hx-success-100 text-hx-success-ink" },
+  fair: { label: "Fair match", cls: "bg-hx-warning-100 text-hx-warning-ink" },
+  low: { label: "Low match", cls: "bg-hx-soft text-hx-neutral-ink" },
+};
+
 function MatchPanel({ candidate, requirement, matched, unmatched, evidence, requestUi }: { candidate: Candidate; requirement: Requirement; matched: string[]; unmatched: string[]; evidence: CandidateEvidence | null; requestUi: RequestUi }) {
   const b = candidate.matchBreakdown;
   const rows = buildRoleFit(candidate, requirement, matched, evidence);
   const meets = rows.filter((r) => r.status === "meets").length;
+  const band = BAND_HERO[matchBand(candidate.matchScore)];
+  const showLocation = requirement.workMode === "remote" || requirement.locations.length > 0;
   return (
     <Panel id="match-heading" title="Fit for this role" icon={<TargetIcon size={15} />}>
       <div className="grid gap-5">
-        {b && <MeterRow label="Role match" value={b.roleMatch} />}
+        <div className="@container">
+          <div className="grid gap-5 @xl:grid-cols-[auto_minmax(0,1fr)] @xl:items-center @xl:gap-10">
+            <div className="grid justify-items-start gap-2">
+              <p className="m-0 flex items-baseline gap-2">
+                <span className="text-[44px] leading-none font-semibold tracking-[-0.03em] tabular-nums text-hx-coal">{candidate.matchScore}</span>
+                <span className="text-[13px] text-hx-ink-soft">out of 100</span>
+              </p>
+              <span className={cn("inline-flex items-center rounded-full px-2.5 py-1 text-[12px] leading-none font-medium", band.cls)}>{band.label}</span>
+            </div>
+            {b && (
+              <div className="grid gap-3">
+                <MeterRow label="Role title" value={b.roleMatch} />
+                <MeterRow label="Skills" value={b.skillMatch} />
+                {showLocation && <MeterRow label="Location" value={b.locationMatch} />}
+              </div>
+            )}
+          </div>
+          <p className="m-0 mt-3 text-[12px] text-hx-ink-soft">The score also weighs practice results and recent activity.</p>
+        </div>
         {rows.length > 0 && (
-          <div>
-            <p className="m-0 mb-2 text-[13px] text-hx-ink-soft">
+          <div className="border-t border-hx-line pt-4">
+            <p className="m-0 mb-1 text-[13px] text-hx-ink-soft">
               Meets <span className="font-semibold text-hx-coal tabular-nums">{meets} of {rows.length}</span> criteria set for {requirement.title}
             </p>
             <ul aria-label="Criteria compared with the posting" className="m-0 flex list-none flex-col p-0">
               {rows.map((row) => (
-                <li key={row.id} className="flex items-center justify-between gap-3 py-2">
-                  <div className="min-w-0">
-                    <div className="text-[13px] font-medium text-hx-coal">{row.label}</div>
-                    <div className="text-[12px] text-hx-ink-soft [overflow-wrap:anywhere]">Asks for {row.asked}</div>
+                <li key={row.id} className="grid gap-2.5 border-b border-hx-line py-3 last:border-b-0 last:pb-0">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="text-[13px] font-medium text-hx-coal">{row.label}</div>
+                      <div className="text-[12px] text-hx-ink-soft [overflow-wrap:anywhere]">Asks for {row.asked}</div>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-3">
+                      <span className="max-w-36 text-right text-[13px] font-medium text-hx-coal [overflow-wrap:anywhere]">{row.has}</span>
+                      <FitMark status={row.status} />
+                    </div>
                   </div>
-                  <div className="flex shrink-0 items-center gap-3">
-                    <span className="max-w-36 text-right text-[13px] font-medium text-hx-coal [overflow-wrap:anywhere]">{row.has}</span>
-                    <FitMark status={row.status} />
-                  </div>
+                  {row.id === "skills" && (matched.length > 0 || unmatched.length > 0) && (
+                    <div className="grid gap-2">
+                      <div className="flex flex-wrap gap-1.5">
+                        {matched.length > 0 && <ChipList items={matched} tone="primary" label="Required skills on the resume" />}
+                        {unmatched.length > 0 && <ChipList items={unmatched} tone="danger" label="Required skills missing from the resume" />}
+                      </div>
+                      {unmatched.length > 0 && (
+                        <ul aria-label="Ask for proof of a missing skill" className="m-0 flex list-none flex-wrap gap-x-4 gap-y-1 p-0">
+                          {unmatched.slice(0, 6).map((skill) => (
+                            <li key={skill}>
+                              <ItemRequest
+                                candidate={candidate}
+                                ui={requestUi}
+                                label={`Ask for proof of ${skill}`}
+                                preset={{ kind: "document", topic: `Evidence of ${skill}`.slice(0, 120) }}
+                              />
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  )}
                 </li>
               ))}
             </ul>
-          </div>
-        )}
-        {(matched.length > 0 || unmatched.length > 0) && (
-          <div className="grid gap-4 border-t border-hx-line pt-4">
-            {matched.length > 0 && (
-              <div className="grid gap-2">
-                <h3 className="m-0 text-[12px] font-medium text-hx-ink-soft">On the resume</h3>
-                <ChipList items={matched} tone="primary" label="Required skills on the resume" />
-              </div>
-            )}
-            {unmatched.length > 0 && (
-              <div className="grid gap-2">
-                <h3 className="m-0 text-[12px] font-medium text-hx-ink-soft">Not on the resume</h3>
-                <ChipList items={unmatched} tone="danger" label="Required skills missing from the resume" />
-                <ul aria-label="Ask for proof of a missing skill" className="m-0 flex list-none flex-wrap gap-x-4 gap-y-1 p-0">
-                  {unmatched.slice(0, 6).map((skill) => (
-                    <li key={skill}>
-                      <ItemRequest
-                        candidate={candidate}
-                        ui={requestUi}
-                        label={`Ask for proof of ${skill}`}
-                        preset={{ kind: "document", topic: `Evidence of ${skill}`.slice(0, 120) }}
-                      />
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
           </div>
         )}
       </div>
@@ -116,10 +138,10 @@ function MatchPanel({ candidate, requirement, matched, unmatched, evidence, requ
 
 function ClampedText({ text }: { text: string }) {
   const [open, setOpen] = useState(false);
-  const long = text.length > 220;
+  const long = text.length > 280;
   return (
     <div className="grid justify-items-start gap-1">
-      <p className={cn("m-0 max-w-[75ch] text-[13px] leading-relaxed whitespace-pre-line text-hx-ink-soft [overflow-wrap:anywhere]", long && !open && "line-clamp-3")}>{text}</p>
+      <p className={cn("m-0 max-w-[75ch] text-[13px] leading-relaxed whitespace-pre-line text-hx-ink-soft [overflow-wrap:anywhere]", long && !open && "line-clamp-4")}>{text}</p>
       {long && <PanelButton onClick={() => setOpen((v) => !v)} expanded={open}>{open ? "Show less" : "Show more"}</PanelButton>}
     </div>
   );
@@ -188,13 +210,19 @@ function PracticeSnapshot({ candidate, state, onOpenPractice, requirementTitle, 
   );
 
   return (
-    <Panel id="evidence-heading" title="Practice snapshot" action={tip}>
+    <Panel id="evidence-heading" title="Practice snapshot" icon={<ActivityIcon size={15} />} action={tip}>
       <EvidenceStatus state={state}>
         {hasEvidence ? (
           <div className="grid gap-4">
             <StatGrid>
               <Stat label="Interviews" hint={last ? `Latest ${last}` : undefined}>{candidate.sessionsCompleted} graded</Stat>
-              {evidence?.readiness && <Stat label="Readiness" hint={`${evidence.readiness.confidence} confidence`}>{READINESS_LABEL[evidence.readiness.band]}</Stat>}
+              {evidence?.readiness && (
+                <Stat label="Readiness" hint={`${evidence.readiness.confidence} confidence`}>
+                  <span className={cn("inline-flex items-center rounded-md px-2 py-0.5 text-[13px] leading-snug", evidence.readiness.band === "leanHire" ? "bg-hx-warning-100 text-hx-warning-ink" : "bg-hx-success-100 text-hx-success-ink")}>
+                    {READINESS_LABEL[evidence.readiness.band]}
+                  </span>
+                </Stat>
+              )}
               {avg != null && <Stat label="Avg skill score" hint="out of 100">{avg}</Stat>}
               {verified.length > 0 && <Stat label="Verified skills" hint={`of ${verified.length} checked`}>{verifiedCount}</Stat>}
             </StatGrid>
@@ -210,27 +238,30 @@ function PracticeSnapshot({ candidate, state, onOpenPractice, requirementTitle, 
   );
 }
 
+const COLUMNS_CLS = ["", "@2xl:grid-cols-1", "@2xl:grid-cols-2", "@2xl:grid-cols-3"];
+
 function AnalysisPanel({ candidate, requirement, unmatched, requestUi }: { candidate: Candidate; requirement: Requirement; unmatched: string[]; requestUi: RequestUi }) {
   const insights = buildResumeInsights(candidate, unmatched);
   const columns = [
     { id: "strengths", title: "Key strengths", items: insights.strengths, empty: "Nothing stands out yet.", icon: CheckIcon, cls: "size-4 text-hx-success", ask: false },
-    { id: "concerns", title: "Potential concerns", items: insights.concerns, empty: "Nothing flagged.", icon: MinusIcon, cls: "size-4 text-hx-warning", ask: true },
+    { id: "concerns", title: "Potential concerns", items: insights.concerns, empty: "No concerns flagged.", icon: MinusIcon, cls: "size-4 text-hx-warning", ask: true },
     { id: "validate", title: "Worth validating", items: insights.validate, empty: "Nothing to confirm.", icon: TargetIcon, cls: "size-4 text-hx-indigo", ask: true },
   ];
+  const filled = columns.filter((c) => c.items.length > 0);
+  const empties = columns.filter((c) => c.items.length === 0);
   return (
-    <Panel id="analysis-heading" title="Resume analysis">
-      <p className="m-0 mb-5 max-w-[75ch] text-[14px] leading-snug text-hx-coal">
-        {insights.snapshot} <span className="text-hx-ink-soft">Read from the resume against {requirement.title}.</span>
-      </p>
+    <Panel id="analysis-heading" title="Resume analysis" icon={<FileSearchIcon size={15} />}>
+      <p className="m-0 mb-4 text-[13px] text-hx-ink-soft">Read from the resume against {requirement.title}.</p>
       <div className="@container">
-        <div className="grid gap-6 @2xl:grid-cols-3 @2xl:gap-8">
-          {columns.map((c) => (
-            <div key={c.id} className="min-w-0">
-              <h3 className="m-0 mb-2 flex items-baseline gap-1.5 text-[13px] font-semibold text-hx-coal">
-                {c.title}
-                {c.items.length > 0 && <span className="text-[12px] font-medium text-hx-ink-soft tabular-nums">{c.items.length}</span>}
-              </h3>
-              {c.items.length ? <IconList
+        {filled.length > 0 && (
+          <div className={cn("grid gap-6 @2xl:gap-8", COLUMNS_CLS[filled.length])}>
+            {filled.map((c) => (
+              <div key={c.id} className="min-w-0">
+                <h3 className="m-0 mb-2 flex items-center gap-2 text-[13px] font-semibold text-hx-coal">
+                  {c.title}
+                  <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-hx-soft px-1.5 py-0.5 text-[11px] leading-none font-medium text-hx-neutral-ink tabular-nums">{c.items.length}</span>
+                </h3>
+                <IconList
                   label={c.title}
                   items={c.items}
                   icon={c.icon}
@@ -247,10 +278,14 @@ function AnalysisPanel({ candidate, requirement, unmatched, requestUi }: { candi
                         )
                       : undefined
                   }
-                /> : <MutedText>{c.empty}</MutedText>}
-            </div>
-          ))}
-        </div>
+                />
+              </div>
+            ))}
+          </div>
+        )}
+        {empties.length > 0 && (
+          <p className={cn("m-0 text-[13px] text-hx-ink-soft", filled.length > 0 && "mt-4 border-t border-hx-line pt-4")}>{empties.map((c) => c.empty).join(" ")}</p>
+        )}
       </div>
     </Panel>
   );
@@ -276,15 +311,15 @@ export function OverviewTab({
   requestUi: RequestUi;
 }) {
   return (
-    <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:items-start">
-      <div className="grid min-w-0 content-start gap-4 lg:order-last">
-        <ProfilePanel candidate={candidate} onOpenResume={onOpenResume} />
-        <PracticeSnapshot candidate={candidate} state={state} onOpenPractice={onOpenPractice} requirementTitle={requirement.title} requestUi={requestUi} />
-      </div>
-      <div className="grid min-w-0 content-start gap-4 lg:order-first">
+    <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">
+      <div className="flex min-w-0 flex-col gap-4 *:last:flex-1">
         <MatchPanel candidate={candidate} requirement={requirement} matched={matched} unmatched={unmatched} evidence={state.evidence} requestUi={requestUi} />
         <AnalysisPanel candidate={candidate} requirement={requirement} unmatched={unmatched} requestUi={requestUi} />
         <RequestsPanel state={requestUi.state} disabled={requestUi.disabled} />
+      </div>
+      <div className="flex min-w-0 flex-col gap-4 *:last:flex-1">
+        <ProfilePanel candidate={candidate} onOpenResume={onOpenResume} />
+        <PracticeSnapshot candidate={candidate} state={state} onOpenPractice={onOpenPractice} requirementTitle={requirement.title} requestUi={requestUi} />
       </div>
     </div>
   );
