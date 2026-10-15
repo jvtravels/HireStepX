@@ -110,7 +110,7 @@ export interface ResumeInsights {
 
 /** Deterministic read of the structured resume data against the requirement.
  *  No model call and no invented facts: every line cites a field we hold. */
-export function buildResumeInsights(candidate: Candidate, requirement: Requirement, matched: string[], unmatched: string[]): ResumeInsights {
+export function buildResumeInsights(candidate: Candidate, unmatched: string[]): ResumeInsights {
   const r = candidate.resume;
   const latest = r?.experience[0];
   const seniority = r?.seniorityLevel && !candidate.targetRole.toLowerCase().includes(r.seniorityLevel.toLowerCase()) ? r.seniorityLevel : null;
@@ -123,14 +123,12 @@ export function buildResumeInsights(candidate: Candidate, requirement: Requireme
   const avgTenureMonths = averageTenureMonths(r?.experience ?? []);
 
   const strengths: string[] = [];
-  if (matched.length) strengths.push(`Lists ${matched.length} of ${requirement.skills.length} required skills: ${matched.slice(0, 5).join(", ")}.`);
   const measurable = (r?.keyAchievements ?? []).filter((a) => /\d/.test(a));
   if (measurable.length) strengths.push(`${measurable.length} achievement${measurable.length === 1 ? "" : "s"} with measurable results, for example: ${measurable[0]}`);
   if (r?.certifications.length) strengths.push(`Holds ${r.certifications.length} certification${r.certifications.length === 1 ? "" : "s"}: ${r.certifications.slice(0, 3).join(", ")}.`);
   if (avgTenureMonths != null && avgTenureMonths >= 24) strengths.push(`Stays in roles: about ${Math.round(avgTenureMonths / 12 * 10) / 10} years on average.`);
 
   const concerns: string[] = [];
-  if (unmatched.length) concerns.push(`Not on the resume: ${unmatched.slice(0, 4).join(", ")}.`);
   if (avgTenureMonths != null && tenures.length >= 2 && avgTenureMonths < 12) concerns.push(`Short stints, about ${avgTenureMonths} months per role.`);
 
   const validate: string[] = [];
@@ -279,4 +277,23 @@ export function summarizeQuestions(questions: EvidenceQuestion[]): QuestionSumma
     fullStar: withStar.filter((q) => q.star && q.star.S && q.star.T && q.star.A && q.star.R).length,
     starCounted: withStar.length,
   };
+}
+
+/* ── Skill depth (AI-parsed resumes) ── */
+
+type DetailedSkill = NonNullable<Candidate["resume"]>["skillsDetailed"][number];
+
+const DEPTH_ORDER: Array<{ depth: DetailedSkill["depth"]; label: string }> = [
+  { depth: "primary", label: "Core" },
+  { depth: "secondary", label: "Working knowledge" },
+  { depth: "exposure", label: "Exposure" },
+];
+
+export function skillChipLabel(s: Pick<DetailedSkill, "name" | "yearsUsed">): string {
+  if (!s.yearsUsed) return s.name;
+  return `${s.name} · ${s.yearsUsed} ${s.yearsUsed === 1 ? "yr" : "yrs"}`;
+}
+
+export function groupSkillsByDepth(skills: DetailedSkill[]): Array<{ label: string; skills: DetailedSkill[] }> {
+  return DEPTH_ORDER.map(({ depth, label }) => ({ label, skills: skills.filter((s) => s.depth === depth) })).filter((g) => g.skills.length > 0);
 }

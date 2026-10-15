@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { extractResumeDetail, redactResumeDetailForLock } from "../../server-handlers/_resume-detail-helpers";
+import { scrubLockedResume } from "../../server-handlers/_employer-matching-helpers";
 
 describe("extractResumeDetail", () => {
   it("returns an empty detail for null/non-object input", () => {
@@ -46,7 +47,7 @@ describe("extractResumeDetail", () => {
 
     expect(detail.linkedin).toBe("linkedin.com/in/jdoe");
     expect(detail.phone).toBe("9123456780");
-    expect(detail.experience).toEqual([{ title: "Designer", company: "Orange Digital", period: "2021 - 2023" }]);
+    expect(detail.experience).toEqual([{ title: "Designer", company: "Orange Digital", period: "2021 - 2023", bullets: ["Redesigned onboarding"] }]);
     expect(detail.education).toEqual([{ degree: "B.Des", school: "NID", year: "2019" }]);
     expect(detail.certifications).toEqual(["Google UX Design"]);
     expect(detail.headline).toBeNull();
@@ -155,5 +156,61 @@ describe("redactResumeDetailForLock", () => {
     // Name "Ravi" should only match the whole word, not clobber "leadership".
     const redacted = redactResumeDetailForLock(detail, "Ravi");
     expect(redacted.summary).toBe("Experienced with The candidate Shastri's leadership books.");
+  });
+});
+
+describe("richer resume detail", () => {
+  const aiResume = {
+    topSkills: ["React"],
+    careerTrajectory: "Moved from QA into product at Flipkart within two years.",
+    promotionSignals: ["Promoted to Senior PM in 18 months at Flipkart", "  "],
+    interviewGaps: ["No system design"],
+    improvements: ["Add metrics"],
+    resumeScore: 71,
+    skillsDetailed: [
+      { name: "React", depth: "primary", yearsUsed: 5, recent: true },
+      { name: "Go", depth: "bogus" },
+      { name: "", depth: "primary" },
+      null,
+    ],
+    experiences: [
+      { company: "Flipkart", title: "PM", start: "2021", end: "Present", scope: "Owned Flipkart checkout", teamSize: 8, partners: ["Design", "Eng"], topProjects: ["UPI autopay at Flipkart"] },
+      { company: "Acme", title: "QA", start: "2019", end: "2021", scope: "", teamSize: null, partners: [], topProjects: [] },
+    ],
+  };
+
+  it("carries trajectory, promotions, skill depth and per-role context from an AI resume", () => {
+    const d = extractResumeDetail(aiResume);
+    expect(d.careerTrajectory).toContain("QA into product");
+    expect(d.promotionSignals).toEqual(["Promoted to Senior PM in 18 months at Flipkart"]);
+    expect(d.skillsDetailed).toEqual([
+      { name: "React", depth: "primary", yearsUsed: 5, recent: true },
+      { name: "Go", depth: "secondary" },
+    ]);
+    expect(d.experience[0]).toMatchObject({ scope: "Owned Flipkart checkout", teamSize: 8, partners: ["Design", "Eng"], topProjects: ["UPI autopay at Flipkart"] });
+    expect(d.experience[1]).toEqual({ title: "QA", company: "Acme", period: "2019 – 2021" });
+  });
+
+  it("never copies the coaching-only fields", () => {
+    expect(JSON.stringify(extractResumeDetail(aiResume))).not.toMatch(/system design|Add metrics|resumeScore|interviewGaps|improvements/);
+  });
+
+  it("keeps bullets from a regex-parsed resume, capped at five", () => {
+    const d = extractResumeDetail({ skills: [], experience: [{ title: "Dev", company: "X", period: "2020", bullets: ["a", "b", "c", "d", "e", "f"] }] });
+    expect(d.experience[0].bullets).toEqual(["a", "b", "c", "d", "e"]);
+    expect(d.skillsDetailed).toEqual([]);
+    expect(d.careerTrajectory).toBeNull();
+  });
+
+  it("leaks no employer or candidate name through the new fields while locked", () => {
+    const original = extractResumeDetail({
+      ...aiResume,
+      careerTrajectory: "Jane Doe moved from QA into product at Flipkart.",
+    });
+    const locked = scrubLockedResume(original, redactResumeDetailForLock(original, "Jane Doe"));
+    const json = JSON.stringify(locked);
+    expect(json).not.toMatch(/Flipkart|Jane|Doe/);
+    expect(locked.experience[0]).toMatchObject({ company: "", teamSize: 8, partners: ["Design", "Eng"] });
+    expect(locked.skillsDetailed).toHaveLength(2);
   });
 });

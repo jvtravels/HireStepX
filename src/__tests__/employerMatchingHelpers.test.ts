@@ -350,7 +350,7 @@ describe("pre-unlock masking", () => {
   it("scrubLockedResume scrubs institutions out of free text after structural redaction", () => {
     const original = {
       summary: "Ten years at Flipkart building checkout.", headline: "Engineer at Flipkart", keyAchievements: ["Cut Flipkart latency by 40%"],
-      certifications: ["AWS"], experience: [{ company: "Flipkart", title: "SDE at Flipkart" }], education: [{ school: "BITS Pilani" }],
+      certifications: ["AWS"], careerTrajectory: null, promotionSignals: [], skillsDetailed: [], experience: [{ company: "Flipkart", title: "SDE at Flipkart" }], education: [{ school: "BITS Pilani" }],
     } as never;
     const redacted = { ...(original as object), experience: [{ company: "", title: "SDE at Flipkart" }], education: [{ school: "" }] } as never;
     const out = scrubLockedResume(original, redacted);

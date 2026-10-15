@@ -643,7 +643,16 @@ export function scrubLockedResume(original: ResumeDetail, redacted: ResumeDetail
     headline: redacted.headline ? s(redacted.headline) : redacted.headline,
     keyAchievements: redacted.keyAchievements.map(s),
     certifications: redacted.certifications.map(s),
-    experience: redacted.experience.map((e) => ({ ...e, title: s(e.title) })),
+    careerTrajectory: redacted.careerTrajectory ? s(redacted.careerTrajectory) : redacted.careerTrajectory,
+    promotionSignals: redacted.promotionSignals.map(s),
+    experience: redacted.experience.map((e) => ({
+      ...e,
+      title: s(e.title),
+      ...(e.scope ? { scope: s(e.scope) } : {}),
+      ...(e.partners ? { partners: e.partners.map(s) } : {}),
+      ...(e.topProjects ? { topProjects: e.topProjects.map(s) } : {}),
+      ...(e.bullets ? { bullets: e.bullets.map(s) } : {}),
+    })),
   };
 }
 

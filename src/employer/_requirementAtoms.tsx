@@ -168,7 +168,7 @@ export function ErrorRetry({
   children?: ReactNode;
 }) {
   return (
-    <Card style={{ textAlign: "center", padding: 40 }}>
+    <Card style={{ textAlign: "center", padding: 40, boxShadow: "none" }}>
       <div
         aria-hidden="true"
         style={{ width: 40, height: 40, borderRadius: 10, background: t.error100, color: t.errorInk, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}

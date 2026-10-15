@@ -1,9 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { averageTenureMonths, buildResumeInsights, buildRoleFit, describeDelivery, formatTenure, noticeDays, summarizeQuestions } from "../../app/(employer)/employer/requirements/[id]/candidates/[candidateId]/_components/helpers";
+import { averageTenureMonths, buildResumeInsights, buildRoleFit, describeDelivery, formatTenure, groupSkillsByDepth, noticeDays, skillChipLabel, summarizeQuestions } from "../../app/(employer)/employer/requirements/[id]/candidates/[candidateId]/_components/helpers";
 import type { CandidateEvidence, EvidenceQuestion } from "../employer/EmployerDataContext";
 import type { Candidate, Requirement } from "../employer/mockData";
-
-const requirement = { skills: ["Figma", "Python", "SQL"] } as unknown as Requirement;
 
 function candidate(over: Partial<Candidate> = {}, resume: Partial<NonNullable<Candidate["resume"]>> = {}): Candidate {
   return {
@@ -19,27 +17,26 @@ function candidate(over: Partial<Candidate> = {}, resume: Partial<NonNullable<Ca
 
 describe("buildResumeInsights", () => {
   it("does not repeat seniority already present in the target role", () => {
-    const out = buildResumeInsights(candidate({ targetRole: "Senior Product Designer" }), requirement, [], []);
+    const out = buildResumeInsights(candidate({ targetRole: "Senior Product Designer" }), []);
     expect(out.snapshot.startsWith("Senior Product Designer with 7 years")).toBe(true);
     expect(out.snapshot).not.toContain("Senior Senior");
   });
 
-  it("flags unmatched required skills as a concern and something to validate", () => {
-    const out = buildResumeInsights(candidate(), requirement, ["Figma"], ["Python", "SQL"]);
-    expect(out.strengths[0]).toContain("Lists 1 of 3 required skills");
-    expect(out.concerns).toContain("Not on the resume: Python, SQL.");
+  it("asks to validate missing skills without repeating the fit panel's skill lists", () => {
+    const out = buildResumeInsights(candidate(), ["Python", "SQL"]);
     expect(out.validate).toContain("Hands-on examples of Python, SQL.");
+    expect([...out.strengths, ...out.concerns].join(" ")).not.toMatch(/required skills|Not on the resume/);
   });
 
   it("leaves practice-interview facts to the Evidence tab", () => {
     for (const sessionsCompleted of [0, 3]) {
-      const out = buildResumeInsights(candidate({ sessionsCompleted }), requirement, [], []);
+      const out = buildResumeInsights(candidate({ sessionsCompleted }), []);
       expect([...out.strengths, ...out.concerns].join(" ")).not.toMatch(/practice|mock interview/i);
     }
   });
 
   it("leaves self-reported notice and CTC to the header and caps each list at four", () => {
-    const out = buildResumeInsights(candidate({}, { noticePeriod: "30 days", currentCtc: "32 LPA" }), requirement, [], ["Python"]);
+    const out = buildResumeInsights(candidate({}, { noticePeriod: "30 days", currentCtc: "32 LPA" }), ["Python"]);
     expect(out.validate.join(" ")).not.toMatch(/Notice period|Current CTC/);
     expect(out.strengths.length).toBeLessThanOrEqual(4);
     expect(out.concerns.length).toBeLessThanOrEqual(4);
@@ -136,5 +133,22 @@ describe("summarizeQuestions", () => {
   it("is null when nothing was answered", () => {
     expect(summarizeQuestions([])).toBeNull();
     expect(summarizeQuestions([q({ verdict: "skipped" })])).toBeNull();
+  });
+});
+
+describe("skill depth helpers", () => {
+  it("labels years used, singular and plural, and omits them when unknown", () => {
+    expect(skillChipLabel({ name: "SQL", yearsUsed: 1 })).toBe("SQL · 1 yr");
+    expect(skillChipLabel({ name: "React", yearsUsed: 5 })).toBe("React · 5 yrs");
+    expect(skillChipLabel({ name: "Go" })).toBe("Go");
+  });
+
+  it("groups core before working knowledge before exposure and drops empty groups", () => {
+    const groups = groupSkillsByDepth([
+      { name: "A", depth: "exposure" },
+      { name: "B", depth: "primary" },
+      { name: "C", depth: "primary" },
+    ]);
+    expect(groups.map((g) => [g.label, g.skills.map((s) => s.name)])).toEqual([["Core", ["B", "C"]], ["Exposure", ["A"]]]);
   });
 });

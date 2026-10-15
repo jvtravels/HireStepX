@@ -5,7 +5,7 @@ import type { Candidate } from "@/employer/mockData";
 import { Badge, OutlineCta } from "@/employer/_atoms";
 import { InfoTip, KeyValueList, KeyValueRow, MeterRow, Panel, PanelButton } from "@/employer/_panelParts";
 import { InlineNotice } from "@/employer/_requirementAtoms";
-import { ChipList, IconList, Masonry, MutedText } from "./parts";
+import { ChipList, IconList, MutedText } from "./parts";
 import { PROVENANCE, READINESS_LABEL, averageTenureMonths, buildResumeInsights, buildRoleFit, evidenceAverage, formatSessionDate, formatTenure, type FitStatus } from "./helpers";
 
 export type EvidenceState = { evidence: CandidateEvidence | null; loading: boolean; failed: boolean; onRetry: () => void };
@@ -154,7 +154,7 @@ function PracticeSnapshot({ candidate, state, onOpenPractice }: { candidate: Can
       <EvidenceStatus state={state}>
         {hasEvidence ? (
           <div className="grid gap-4">
-            <KeyValueList>
+            <KeyValueList className="md:grid md:grid-cols-2 md:gap-x-10 xl:grid-cols-4">
               <KeyValueRow label="Interviews">
                 {candidate.sessionsCompleted} graded{last ? <span className="font-normal text-hx-ink-soft">, latest {last}</span> : null}
               </KeyValueRow>
@@ -172,7 +172,7 @@ function PracticeSnapshot({ candidate, state, onOpenPractice }: { candidate: Can
   );
 }
 
-function AnalysisPanel({ candidate, requirement, matched, unmatched, onUnlock }: { candidate: Candidate; requirement: Requirement; matched: string[]; unmatched: string[]; onUnlock: () => void }) {
+function AnalysisPanel({ candidate, requirement, unmatched, onUnlock }: { candidate: Candidate; requirement: Requirement; unmatched: string[]; onUnlock: () => void }) {
   if (!candidate.unlocked) {
     return (
       <Panel id="analysis-heading" title="Resume analysis" icon={<LockIcon size={15} />}>
@@ -183,7 +183,7 @@ function AnalysisPanel({ candidate, requirement, matched, unmatched, onUnlock }:
       </Panel>
     );
   }
-  const insights = buildResumeInsights(candidate, requirement, matched, unmatched);
+  const insights = buildResumeInsights(candidate, unmatched);
   const columns = [
     { id: "strengths", title: "Key strengths", items: insights.strengths, empty: "Nothing stands out yet.", icon: CheckIcon, cls: "size-4 text-hx-success" },
     { id: "concerns", title: "Potential concerns", items: insights.concerns, empty: "Nothing flagged.", icon: MinusIcon, cls: "size-4 text-hx-warning" },
@@ -192,7 +192,7 @@ function AnalysisPanel({ candidate, requirement, matched, unmatched, onUnlock }:
   return (
     <Panel id="analysis-heading" title="Resume analysis">
       <p className="m-0 mb-4 max-w-[75ch] text-[13px] text-hx-ink-soft">{insights.snapshot} Read from the resume against {requirement.title}.</p>
-      <div className="grid gap-5">
+      <div className="grid gap-5 md:grid-cols-3 md:gap-8">
         {columns.map((c) => (
           <div key={c.id} className="min-w-0">
             <h3 className="m-0 mb-1.5 text-[13px] font-semibold text-hx-coal">{c.title}</h3>
@@ -224,11 +224,13 @@ export function OverviewTab({
   onUnlock: () => void;
 }) {
   return (
-    <Masonry>
-      <ProfilePanel candidate={candidate} onOpenResume={onOpenResume} />
-      <MatchPanel candidate={candidate} requirement={requirement} matched={matched} unmatched={unmatched} evidence={state.evidence} />
+    <div className="grid min-w-0 gap-4">
+      <div className="grid min-w-0 gap-4 lg:grid-cols-2">
+        <ProfilePanel candidate={candidate} onOpenResume={onOpenResume} />
+        <MatchPanel candidate={candidate} requirement={requirement} matched={matched} unmatched={unmatched} evidence={state.evidence} />
+      </div>
       <PracticeSnapshot candidate={candidate} state={state} onOpenPractice={onOpenPractice} />
-      <AnalysisPanel candidate={candidate} requirement={requirement} matched={matched} unmatched={unmatched} onUnlock={onUnlock} />
-    </Masonry>
+      <AnalysisPanel candidate={candidate} requirement={requirement} unmatched={unmatched} onUnlock={onUnlock} />
+    </div>
   );
 }

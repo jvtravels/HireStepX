@@ -19,9 +19,21 @@ export interface CandidateResumeDetail {
   yearsExperience: number | null;
   keyAchievements: string[];
   industries: string[];
-  experience: Array<{ title: string; company: string; period: string }>;
+  experience: Array<{
+    title: string;
+    company: string;
+    period: string;
+    scope?: string;
+    teamSize?: number;
+    partners?: string[];
+    topProjects?: string[];
+    bullets?: string[];
+  }>;
   education: Array<{ degree: string; school: string; year: string }>;
   certifications: string[];
+  careerTrajectory: string | null;
+  promotionSignals: string[];
+  skillsDetailed: Array<{ name: string; depth: "primary" | "secondary" | "exposure"; yearsUsed?: number; recent?: boolean }>;
   linkedin: string | null;
   phone: string | null;
   noticePeriod: string | null;
