@@ -4,7 +4,6 @@
    already returns, so the screen never invents data. */
 
 import type { Candidate, CandidateStatus, Requirement } from "./mockData";
-import { STRONG_MATCH_THRESHOLD } from "../../server-handlers/_requirement-match-helpers";
 
 const SKILL_ALIASES: Record<string, string> = {
   js: "javascript",
@@ -134,29 +133,22 @@ export function scoreTone(score: number): ScoreTone {
 
 /* ── Tabs ── */
 
-export type CandidateTab = "recommended" | "all" | "interviewing" | "hired" | "not_a_fit";
+export type CandidateTab = "all" | "interviewing" | "hired" | "not_a_fit";
 
 const NOT_A_FIT: ReadonlySet<CandidateStatus> = new Set(["rejected", "not_a_fit"]);
 const INTERVIEWING: ReadonlySet<CandidateStatus> = new Set(["interview_invited", "interviewing"]);
 
 export const TAB_LABEL: Record<CandidateTab, string> = {
-  recommended: "Recommended",
   all: "All candidates",
   interviewing: "Interviewing",
   hired: "Hired",
   not_a_fit: "Not a fit",
 };
 
-export function isRecommended(c: Pick<Candidate, "matchScore" | "candidateStatus">): boolean {
-  return c.matchScore >= STRONG_MATCH_THRESHOLD && !NOT_A_FIT.has(c.candidateStatus);
-}
-
 export function inTab(c: Pick<Candidate, "matchScore" | "candidateStatus">, tab: CandidateTab): boolean {
   switch (tab) {
     case "all":
       return true;
-    case "recommended":
-      return isRecommended(c);
     case "interviewing":
       return INTERVIEWING.has(c.candidateStatus);
     case "hired":
@@ -167,9 +159,8 @@ export function inTab(c: Pick<Candidate, "matchScore" | "candidateStatus">, tab:
 }
 
 export function tabCounts(candidates: Array<Pick<Candidate, "matchScore" | "candidateStatus">>): Record<CandidateTab, number> {
-  const out: Record<CandidateTab, number> = { recommended: 0, all: candidates.length, interviewing: 0, hired: 0, not_a_fit: 0 };
+  const out: Record<CandidateTab, number> = { all: candidates.length, interviewing: 0, hired: 0, not_a_fit: 0 };
   for (const c of candidates) {
-    if (isRecommended(c)) out.recommended += 1;
     if (INTERVIEWING.has(c.candidateStatus)) out.interviewing += 1;
     if (c.candidateStatus === "hired") out.hired += 1;
     if (NOT_A_FIT.has(c.candidateStatus)) out.not_a_fit += 1;
@@ -181,30 +172,46 @@ export function tabCounts(candidates: Array<Pick<Candidate, "matchScore" | "cand
     tab being viewed always stays, so rejecting or moving the last candidate
     never makes the active tab vanish. */
 export function visibleTabs(counts: Record<CandidateTab, number>, active?: CandidateTab): CandidateTab[] {
-  const tabs: CandidateTab[] = ["recommended", "all", "interviewing"];
+  const tabs: CandidateTab[] = ["all", "interviewing"];
   if (counts.hired > 0 || active === "hired") tabs.push("hired");
   tabs.push("not_a_fit");
   return tabs;
 }
 
-export interface PipelineStep {
-  key: "matched" | "shortlisted" | "invited" | "interviewing" | "hired";
+export interface PipelineRow {
+  key: "evaluated" | "interviewing" | "hired" | "not_a_fit";
   label: string;
   count: number;
   tab: CandidateTab;
 }
 
-/** Where everyone stands right now, in funnel order. Counts are current
-    statuses, not "ever reached", so they never add up to more than Matched. */
-export function pipelineSteps(candidates: Array<Pick<Candidate, "candidateStatus">>): PipelineStep[] {
-  const n = (status: CandidateStatus) => candidates.filter((c) => c.candidateStatus === status).length;
+/** One row per candidate tab, so every row opens the list it counts. */
+export function pipelineRows(counts: Record<CandidateTab, number>): PipelineRow[] {
   return [
-    { key: "matched", label: "Matched", count: candidates.length, tab: "all" },
-    { key: "shortlisted", label: "Shortlisted", count: n("shortlisted"), tab: "all" },
-    { key: "invited", label: "Invited", count: n("interview_invited"), tab: "interviewing" },
-    { key: "interviewing", label: "Interviewing", count: n("interviewing"), tab: "interviewing" },
-    { key: "hired", label: "Hired", count: n("hired"), tab: "hired" },
+    { key: "evaluated", label: "Evaluated", count: counts.all, tab: "all" },
+    { key: "interviewing", label: "Interviewing", count: counts.interviewing, tab: "interviewing" },
+    { key: "hired", label: "Hired", count: counts.hired, tab: "hired" },
+    { key: "not_a_fit", label: "Not a fit", count: counts.not_a_fit, tab: "not_a_fit" },
   ];
+}
+
+export interface EvidenceSources {
+  resume: boolean;
+  interviews: number;
+  github: number;
+  web: number;
+  total: number;
+}
+
+/** What backs a candidate's profile, counted from what the API returned: the
+    resume, graded mock interviews (as one source) and each shared link. */
+export function evidenceSources(c: Pick<Candidate, "resume" | "sessionsCompleted" | "portfolioLinks">): EvidenceSources {
+  const links = c.portfolioLinks ?? [];
+  const github = links.filter((l) => /(^|\/\/|\.)github\.com\b/i.test(l.url)).length;
+  const web = links.length - github;
+  const resume = c.resume != null;
+  const interviews = c.sessionsCompleted > 0 ? c.sessionsCompleted : 0;
+  return { resume, interviews, github, web, total: (resume ? 1 : 0) + (interviews > 0 ? 1 : 0) + links.length };
 }
 
 /* ── Job status + summaries ── */
@@ -230,7 +237,6 @@ export function jobStatusPill(status: Requirement["status"]): { label: string; t
 export interface MatchingSummary {
   state: "running" | "complete" | "stopped";
   evaluated: number;
-  recommended: number;
   /** 0 to 100, share of the matched pool we show and score. */
   coverage: number;
 }
@@ -241,7 +247,6 @@ export function matchingSummary(r: Pick<Requirement, "status" | "totalMatched" |
   return {
     state: r.status === "generating" ? "running" : r.status === "failed" || r.status === "zero" ? "stopped" : "complete",
     evaluated,
-    recommended: r.candidates.filter(isRecommended).length,
     coverage: pool === 0 ? 0 : Math.round((evaluated / pool) * 100),
   };
 }
@@ -256,9 +261,6 @@ export function jobInsights(r: Pick<Requirement, "skills" | "portfolioRequired" 
   const out: JobInsight[] = [];
   const list = r.candidates;
   if (list.length === 0) return out;
-
-  const strong = list.filter(isRecommended).length;
-  if (strong > 0) out.push({ id: "strong", text: `${strong} of ${list.length} candidates are a strong match for this role.` });
 
   const must = dedupe(r.skills);
   if (must.length > 0) {

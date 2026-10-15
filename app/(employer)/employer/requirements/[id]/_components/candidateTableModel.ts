@@ -21,7 +21,7 @@ export const COLUMN_LABEL: Record<SortColumn, string> = {
   name: "Candidate",
   match: "Role match",
   experience: "Experience",
-  interview: "Interview score",
+  interview: "Evidence (interview score)",
   pipeline: "Stage",
 };
 

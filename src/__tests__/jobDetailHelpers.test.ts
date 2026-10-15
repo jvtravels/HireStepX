@@ -7,7 +7,8 @@ import {
   jobStatusPill,
   matchingSummary,
   parseNiceToHave,
-  pipelineSteps,
+  evidenceSources,
+  pipelineRows,
   scoreTone,
   skillFit,
   skillKey,
@@ -83,18 +84,17 @@ describe("interview score", () => {
 describe("tabs", () => {
   const list = [cand(80), cand(30), cand(90, "interviewing"), cand(95, "rejected"), cand(70, "hired")];
 
-  it("puts a candidate under Recommended only when strong and not rejected", () => {
-    expect(inTab(list[0], "recommended")).toBe(true);
-    expect(inTab(list[1], "recommended")).toBe(false);
-    expect(inTab(list[3], "recommended")).toBe(false);
+  it("files rejected candidates under Not a fit and everyone under All", () => {
     expect(inTab(list[3], "not_a_fit")).toBe(true);
+    expect(inTab(list[0], "not_a_fit")).toBe(false);
+    expect(list.every((c) => inTab(c, "all"))).toBe(true);
   });
 
   it("counts every tab and shows Hired only once someone is hired", () => {
     const counts = tabCounts(list);
-    expect(counts).toEqual({ recommended: 3, all: 5, interviewing: 1, hired: 1, not_a_fit: 1 });
+    expect(counts).toEqual({ all: 5, interviewing: 1, hired: 1, not_a_fit: 1 });
     expect(visibleTabs(counts)).toContain("hired");
-    expect(visibleTabs({ ...counts, hired: 0 })).toEqual(["recommended", "all", "interviewing", "not_a_fit"]);
+    expect(visibleTabs({ ...counts, hired: 0 })).toEqual(["all", "interviewing", "not_a_fit"]);
     expect(visibleTabs({ ...counts, hired: 0 }, "hired")).toContain("hired");
   });
 });
@@ -107,7 +107,7 @@ describe("job summaries", () => {
 
   it("summarises matching", () => {
     const candidates = [cand(80), cand(20)];
-    expect(matchingSummary({ status: "ready", totalMatched: 4, candidates })).toEqual({ state: "complete", evaluated: 2, recommended: 1, coverage: 50 });
+    expect(matchingSummary({ status: "ready", totalMatched: 4, candidates })).toEqual({ state: "complete", evaluated: 2, coverage: 50 });
     expect(matchingSummary({ status: "generating", totalMatched: 0, candidates: [] }).state).toBe("running");
   });
 
@@ -118,7 +118,7 @@ describe("job summaries", () => {
       portfolioRequired: false,
       candidates: [cand(80, "shortlisted", { skills: ["Go"] }), cand(20)],
     }).map((i) => i.id);
-    expect(ids).toEqual(["strong", "all-must"]);
+    expect(ids).toEqual(["all-must"]);
   });
 
   it("reports interview-proven candidates only when someone has practised", () => {
@@ -131,19 +131,43 @@ describe("job summaries", () => {
   });
 });
 
-describe("pipelineSteps", () => {
-  it("counts current statuses in funnel order and points each step at its tab", () => {
-    const steps = pipelineSteps([cand(80), cand(70), cand(60, "interview_invited"), cand(60, "interviewing"), cand(60, "hired"), cand(20, "rejected")]);
-    expect(steps.map((s) => [s.key, s.count, s.tab])).toEqual([
-      ["matched", 6, "all"],
-      ["shortlisted", 2, "all"],
-      ["invited", 1, "interviewing"],
-      ["interviewing", 1, "interviewing"],
-      ["hired", 1, "hired"],
+describe("pipelineRows", () => {
+  it("maps each row to the tab it counts", () => {
+    const counts = tabCounts([cand(80), cand(70), cand(60, "interview_invited"), cand(60, "interviewing"), cand(60, "hired"), cand(20, "rejected")]);
+    expect(pipelineRows(counts).map((r) => [r.key, r.tab])).toEqual([
+      ["evaluated", "all"],
+      ["interviewing", "interviewing"],
+      ["hired", "hired"],
+      ["not_a_fit", "not_a_fit"],
     ]);
+    expect(pipelineRows(counts).map((r) => r.count)).toEqual([counts.all, counts.interviewing, counts.hired, counts.not_a_fit]);
   });
 
   it("is all zeros for an empty list", () => {
-    expect(pipelineSteps([]).every((s) => s.count === 0)).toBe(true);
+    expect(pipelineRows(tabCounts([])).every((r) => r.count === 0)).toBe(true);
+  });
+});
+
+describe("evidenceSources", () => {
+  const base = { resume: undefined, sessionsCompleted: 0, portfolioLinks: undefined };
+
+  it("is empty when nothing backs the profile", () => {
+    expect(evidenceSources(base)).toEqual({ resume: false, interviews: 0, github: 0, web: 0, total: 0 });
+  });
+
+  it("counts the resume, interviews as one source, and each link by kind", () => {
+    const out = evidenceSources({
+      resume: {} as never,
+      sessionsCompleted: 3,
+      portfolioLinks: [
+        { title: "Code", url: "https://github.com/asha" },
+        { title: "Site", url: "https://asha.dev" },
+      ],
+    });
+    expect(out).toEqual({ resume: true, interviews: 3, github: 1, web: 1, total: 4 });
+  });
+
+  it("does not mistake a lookalike host for GitHub", () => {
+    expect(evidenceSources({ ...base, portfolioLinks: [{ title: "x", url: "https://notgithub.com.evil.io/a" }] }).github).toBe(0);
   });
 });

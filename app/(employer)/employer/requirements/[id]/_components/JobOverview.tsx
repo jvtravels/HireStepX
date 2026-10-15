@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { cn } from "cn";
 import type { Requirement } from "@/employer/EmployerDataContext";
 import { SkillChip } from "@/employer/_panelParts";
-import { budgetLabel, dueLabel, experienceLabel, roleDetailRows } from "./requirementFormat";
+import { budgetLabel, experienceLabel, roleDetailRows } from "./requirementFormat";
 
 interface OverviewRow {
   label: string;
@@ -12,24 +12,18 @@ interface OverviewRow {
   wide?: boolean;
 }
 
-/* Nice to have and Other skills already render as tiers in Key requirements. */
-const SHOWN_ELSEWHERE = new Set(["Nice to have", "Other skills"]);
+/* Tiers render in Key requirements; openings and notice period in the side rail. */
+const SHOWN_ELSEWHERE = new Set(["Nice to have", "Other skills", "Open positions", "Notice period"]);
 
 function overviewRows(r: Requirement): OverviewRow[] {
   const rows: OverviewRow[] = [];
   const add = (label: string, value: ReactNode | null | undefined) => {
     if (value != null && value !== "") rows.push({ label, value });
   };
-  const due = r.dueDate ? dueLabel(r.dueDate) : null;
   add("Experience", experienceLabel(r.experienceMin, r.experienceMax)?.replace(" experience", ""));
   add("Budget", budgetLabel(r));
   add("Duration", r.durationWeeks ? `${r.durationWeeks} weeks` : null);
   add("Hours", r.hoursPerWeek ? `${r.hoursPerWeek} hrs/week` : null);
-  if (due) add("Due", <span className={cn(due.overdue && "text-hx-error-ink")}>{due.text}</span>);
-  add("Industry", r.preferredIndustry);
-  add("Domain", r.preferredDomain);
-  add("Availability", r.availability && r.availability !== "Any" ? r.availability : null);
-  add("Portfolio / GitHub", r.portfolioRequired ? "Preferred" : null);
   for (const row of roleDetailRows(r)) {
     if (SHOWN_ELSEWHERE.has(row.label)) continue;
     rows.push({

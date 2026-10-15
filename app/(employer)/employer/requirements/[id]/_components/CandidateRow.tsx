@@ -1,25 +1,29 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import type { MouseEvent } from "react";
 import {
   CalendarPlusIcon,
   CheckIcon,
   ChevronDownIcon,
+  CodeXmlIcon,
   FileTextIcon,
+  GlobeIcon,
   LockIcon,
   MessageCircleIcon,
+  MicIcon,
   MoreVerticalIcon,
   SendIcon,
 } from "lucide-react";
 import { cn } from "cn";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { CANDIDATE_STATUS_LABEL } from "@/employer/_atoms";
-import { availabilityOf, interviewScore, isRecommended, scoreTone, skillFit, type ScoreTone } from "@/employer/_jobDetailHelpers";
+import { availabilityOf, evidenceSources, interviewScore, scoreTone, skillFit, type ScoreTone } from "@/employer/_jobDetailHelpers";
 import { DotLabel } from "@/employer/_panelParts";
 import { IdentityHiddenBadge } from "@/employer/_requirementAtoms";
 import { canInviteToInterview } from "@/employer/InterviewInviteDialog";
@@ -39,10 +43,10 @@ const STAGE_TONE: Record<CandidateStatus, string> = {
   no_response: "bg-hx-soft text-hx-neutral-ink",
 };
 
-const SCORE_BAR: Record<ScoreTone, string> = {
-  success: "bg-hx-success",
-  warning: "bg-hx-warning",
-  error: "bg-hx-error",
+const SCORE_TEXT: Record<ScoreTone, string> = {
+  success: "text-hx-success-ink",
+  warning: "text-hx-warning-ink",
+  error: "text-hx-error-ink",
 };
 
 const EMPTY = <span className="text-hx-ink-soft">&mdash;</span>;
@@ -99,8 +103,6 @@ export default function CandidateRow({
   requiredSkills,
   readOnly,
   suspended,
-  selected,
-  onToggleSelected,
   onUnlock,
   onViewEvidence,
   onMessage,
@@ -111,8 +113,6 @@ export default function CandidateRow({
   requiredSkills: string[];
   readOnly: boolean;
   suspended: boolean;
-  selected: boolean;
-  onToggleSelected: () => void;
   onUnlock: () => void;
   onViewEvidence: () => void;
   onMessage: () => void;
@@ -125,22 +125,28 @@ export default function CandidateRow({
   const unlockPrice = formatPaise(singleUnlockPrice().amountPaise);
   const canMessage = !readOnly && canMessageCandidate(candidate);
   const writeOff = readOnly || suspended;
-  const recommended = isRecommended(candidate);
   const { matched, gaps } = skillFit(candidate.skills, requiredSkills);
   const years = candidate.resume?.yearsExperience ?? null;
   const availability = availabilityOf(candidate.resume?.noticePeriod);
   const score = interviewScore(candidate);
+  const evidence = evidenceSources(candidate);
   const practised = practisedLabel(candidate.lastActiveDaysAgo);
   const canInvite = !writeOff && canInviteToInterview(candidate.candidateStatus);
   const profileHref = `/employer/requirements/${requirementId}/candidates/${candidate.id}`;
+  const router = useRouter();
+
+  // Menus render in portals but React still bubbles their clicks here, so only
+  // act on clicks whose target is really inside the row and not a control.
+  const openProfile = (e: MouseEvent<HTMLTableRowElement>) => {
+    const target = e.target as HTMLElement;
+    if (!e.currentTarget.contains(target)) return;
+    if (target.closest("a, button, input, [role='menuitem'], [role='menu']")) return;
+    if (window.getSelection()?.toString()) return;
+    router.push(profileHref);
+  };
 
   return (
-    <TableRow role="row" className="cand-tr rq-row h-[76px] border-b border-hx-line" data-selected={selected || undefined}>
-      {!readOnly && (
-        <TableCell role="cell" className="cand-td cand-td-chk w-10 pr-0 pl-4 align-middle">
-          <Checkbox className="rq-chk" checked={selected} onCheckedChange={onToggleSelected} aria-label={`Select ${name}`} />
-        </TableCell>
-      )}
+    <TableRow role="row" onClick={openProfile} className="cand-tr rq-row h-[76px] cursor-pointer border-b border-hx-line">
       <TableCell role="cell" className="cand-td cand-td-name max-w-[300px] px-3 py-3 align-middle">
         <div className="flex min-w-0 items-center gap-3">
           <Avatar size="lg" aria-hidden="true">
@@ -158,16 +164,6 @@ export default function CandidateRow({
               </div>
             )}
             <div className="mt-1.5 flex flex-wrap items-center gap-1">
-              <span
-                title={`${candidate.matchScore} out of 100 match`}
-                className={cn(
-                  "inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold",
-                  recommended ? "bg-hx-success-100 text-hx-success-ink" : "bg-hx-soft text-hx-neutral-ink",
-                )}
-              >
-                {recommended ? "Recommended" : "Needs review"}
-                <span className="sr-only">, {candidate.matchScore} out of 100 match</span>
-              </span>
               {!candidate.unlocked && <IdentityHiddenBadge compact />}
               {response === "interested" && <span className="rounded-full bg-hx-success-100 px-2 py-0.5 text-[11px] font-semibold text-hx-success-ink">Interested</span>}
               {response === "declined" && <span className="rounded-full bg-hx-soft px-2 py-0.5 text-[11px] font-semibold text-hx-neutral-ink">Declined</span>}
@@ -178,36 +174,39 @@ export default function CandidateRow({
       <TableCell role="cell" className="cand-td cand-td-fit px-3 py-3 align-middle" data-label="Role match for this job">
         <FitItems items={matched} kind="match" />
       </TableCell>
-      <TableCell role="cell" className="cand-td cand-td-fit px-3 py-3 align-middle" data-label="Key gaps (validate)">
+      <TableCell role="cell" className="cand-td cand-td-fit px-3 py-3 align-middle" data-label="Key gaps">
         <FitItems items={gaps} kind="gap" />
       </TableCell>
       <TableCell role="cell" className="cand-td px-3 py-3 align-middle" data-label="Experience">
-        <div className="flex flex-col items-start gap-1">
-          <span className="text-[13px] text-hx-coal">{years != null ? `${years} ${years === 1 ? "year" : "years"}` : EMPTY}</span>
-          <DotLabel tone={availability.tone}>{availability.label}</DotLabel>
-        </div>
+        <span className="text-[13px] text-hx-coal">{years != null ? `${years} ${years === 1 ? "year" : "years"}` : EMPTY}</span>
       </TableCell>
-      <TableCell role="cell" className="cand-td px-3 py-3 align-middle" data-label="Interview">
-        {score == null ? (
-          <span className="text-[13px] text-hx-ink-soft">Not practised</span>
+      <TableCell role="cell" className="cand-td px-3 py-3 align-middle whitespace-normal" data-label="Availability">
+        <DotLabel tone={availability.tone}>{availability.label}</DotLabel>
+      </TableCell>
+      <TableCell role="cell" className="cand-td px-3 py-3 align-middle" data-label="Evidence">
+        {evidence.total === 0 ? (
+          <span className="text-[13px] text-hx-ink-soft">No sources yet</span>
         ) : (
           <button
             type="button"
             onClick={onViewEvidence}
-            aria-label={`Interview score for ${name}: ${score} out of 100 across ${candidate.sessionsCompleted} ${candidate.sessionsCompleted === 1 ? "interview" : "interviews"}${practised ? `, ${practised.toLowerCase()}` : ""}. View evidence report`}
-            className="group flex w-24 cursor-pointer flex-col items-start gap-1.5 rounded-md border-0 bg-transparent p-0 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hx-indigo pointer-coarse:min-h-11"
+            aria-label={`Evidence for ${name}: ${evidence.total} ${evidence.total === 1 ? "source" : "sources"}${score != null ? `, interview score ${score} out of 100 across ${candidate.sessionsCompleted} ${candidate.sessionsCompleted === 1 ? "interview" : "interviews"}${practised ? `, ${practised.toLowerCase()}` : ""}` : ""}. View evidence report`}
+            className="group flex cursor-pointer flex-col items-start gap-1 rounded-md border-0 bg-transparent p-0 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hx-indigo pointer-coarse:min-h-11"
           >
-            <span className="text-[14px] font-semibold text-hx-coal tabular-nums group-hover:underline">
-              {score}
-              <span className="font-normal text-hx-ink-soft"> / 100</span>
+            <span aria-hidden="true" className="flex items-center gap-1.5 text-hx-ink-soft">
+              {evidence.resume && <FileTextIcon size={15} />}
+              {evidence.interviews > 0 && <MicIcon size={15} />}
+              {evidence.web > 0 && <GlobeIcon size={15} />}
+              {evidence.github > 0 && <CodeXmlIcon size={15} />}
             </span>
-            <span aria-hidden="true" className="h-1 w-full overflow-hidden rounded-full bg-hx-soft">
-              <span className={cn("block h-full rounded-full", SCORE_BAR[scoreTone(score)])} style={{ width: `${score}%` }} />
+            <span className="text-[13px] text-hx-coal group-hover:underline">
+              {evidence.total} {evidence.total === 1 ? "source" : "sources"}
             </span>
-            <span className="text-[12px] text-hx-ink-soft">
-              {candidate.sessionsCompleted} {candidate.sessionsCompleted === 1 ? "interview" : "interviews"}
-              {practised && <span className="block">{practised}</span>}
-            </span>
+            {score != null && (
+              <span title={practised ?? undefined} className="text-[12px] text-hx-ink-soft tabular-nums">
+                Interview <span className={cn("font-semibold", SCORE_TEXT[scoreTone(score)])}>{score}</span>/100
+              </span>
+            )}
           </button>
         )}
       </TableCell>
@@ -247,13 +246,8 @@ export default function CandidateRow({
           {substep && <span className="text-[11.5px] text-hx-ink-soft">{substep}</span>}
         </div>
       </TableCell>
-      <TableCell role="cell" className="cand-td cand-td-act px-3 py-3 pr-4 align-middle">
+      <TableCell role="cell" className="cand-td cand-td-act px-3 py-3 align-middle">
         <div className="flex items-center justify-end gap-1.5">
-          <Button asChild variant="outline" size="sm" className="pointer-coarse:h-11">
-            <Link href={profileHref} aria-label={`View profile of ${name}`}>
-              View profile
-            </Link>
-          </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" aria-label={`Actions for ${name}`} className="size-9 text-hx-ink-soft pointer-coarse:size-11">

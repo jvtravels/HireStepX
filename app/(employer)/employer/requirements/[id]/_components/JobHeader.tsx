@@ -2,21 +2,20 @@
 
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
-import { ArchiveIcon, BriefcaseIcon, ChevronDownIcon, HistoryIcon, PencilIcon } from "lucide-react";
+import { ArchiveIcon, BriefcaseIcon, ChevronDownIcon, ClockIcon, HistoryIcon, IndianRupeeIcon, LayersIcon, MapPinIcon, PencilIcon, TrendingUpIcon, type LucideIcon } from "lucide-react";
 import { cn } from "cn";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import type { Requirement } from "@/employer/EmployerDataContext";
-import { StageCell } from "@/employer/_atoms";
 import { jobStatusPill, type JobStatusTone } from "@/employer/_jobDetailHelpers";
 import { PanelButton } from "@/employer/_panelParts";
 import { InlineNotice } from "@/employer/_requirementAtoms";
 import { EMPLOYMENT_TYPE_LABEL, WORK_MODE_LABEL } from "@/hiringMatchFormat";
 import { ArchiveDialog, UnlockHistoryDialog } from "./JobDialogs";
-import { budgetLabel, experienceLabel, previewText, STAGE_HINT, timeAgoLabel } from "./requirementFormat";
+import { budgetLabel, experienceLabel, previewText } from "./requirementFormat";
 import type { JobMessage } from "./useJobActions";
 
-const DESCRIPTION_PREVIEW = 240;
+const DESCRIPTION_PREVIEW = 220;
 
 const STATUS_TONE: Record<JobStatusTone, string> = {
   success: "bg-hx-success-100 text-hx-success-ink",
@@ -26,13 +25,25 @@ const STATUS_TONE: Record<JobStatusTone, string> = {
   error: "bg-hx-error-100 text-hx-error-ink",
 };
 
-export function metaParts(r: Requirement): string[] {
+export interface MetaPart {
+  icon: LucideIcon;
+  text: string;
+}
+
+export function metaParts(r: Requirement): MetaPart[] {
   const place = r.locations.length > 0 ? r.locations.join(", ") : r.location;
   const mode = r.workMode ? WORK_MODE_LABEL[r.workMode] || r.workMode : null;
   const type = r.employmentType ? EMPLOYMENT_TYPE_LABEL[r.employmentType] || r.employmentType : null;
   const where = place && mode ? `${mode} (${place})` : place || mode;
   const experience = experienceLabel(r.experienceMin, r.experienceMax)?.replace(" experience", "");
-  return [where, type, r.department, experience, budgetLabel(r)].filter((p): p is string => !!p);
+  const parts: Array<[LucideIcon, string | null | undefined]> = [
+    [MapPinIcon, where],
+    [ClockIcon, type],
+    [LayersIcon, r.department],
+    [TrendingUpIcon, experience],
+    [IndianRupeeIcon, budgetLabel(r)],
+  ];
+  return parts.filter((p): p is [LucideIcon, string] => !!p[1]).map(([icon, text]) => ({ icon, text }));
 }
 
 export default function JobHeader({
@@ -43,9 +54,7 @@ export default function JobHeader({
   onReopen,
   onReload,
   expandedContent,
-  readOnly,
-  onStageChange,
-  children,
+  requirementsSlot,
 }: {
   requirement: Requirement;
   suspended: boolean;
@@ -54,9 +63,7 @@ export default function JobHeader({
   onReopen: () => void;
   onReload: () => void;
   expandedContent: ReactNode;
-  readOnly: boolean;
-  onStageChange: Parameters<typeof StageCell>[0]["onChange"];
-  children?: ReactNode;
+  requirementsSlot: ReactNode;
 }) {
   const [archiveOpen, setArchiveOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -68,12 +75,10 @@ export default function JobHeader({
   const description = requirement.description ?? "";
   const preview = previewText(description, DESCRIPTION_PREVIEW);
   const hasMore = preview.truncated || expandedContent != null;
-  const shownDescription = expanded || !preview.truncated ? description.trim() : `${preview.text}…`;
-  const posted = timeAgoLabel(requirement.createdAt);
-  const matched = timeAgoLabel(requirement.lastMatchedAt);
+  const shownDescription = expanded || !preview.truncated ? description.trim() : `${preview.text.replace(/\n{2,}/g, "\n")}…`;
 
   return (
-    <header className="min-w-0 rounded-xl border border-hx-line bg-white p-5 sm:p-6">
+    <header className="min-w-0 rounded-xl border border-hx-line bg-white p-5">
       <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
         <div className="min-w-0 flex-1 basis-80">
           <div className="flex items-center gap-3">
@@ -92,30 +97,17 @@ export default function JobHeader({
           </div>
           {meta.length > 0 && (
             <p className="m-0 mt-3 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[14px] text-hx-coal max-sm:gap-x-3">
-              {meta.map((part, i) => (
-                <span key={part} className="inline-flex items-center gap-2">
+              {meta.map(({ icon: Icon, text }, i) => (
+                <span key={text} className="inline-flex items-center gap-2">
                   {i > 0 && <span aria-hidden="true" className="text-hx-ink-soft max-sm:hidden">·</span>}
-                  {part}
+                  <span className="inline-flex items-center gap-1.5">
+                    <Icon size={15} aria-hidden="true" className="shrink-0 text-hx-ink-soft" />
+                    {text}
+                  </span>
                 </span>
               ))}
             </p>
           )}
-          <p className="m-0 mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[13px] text-hx-ink-soft max-sm:gap-x-3">
-            {posted && <span>Posted {posted}</span>}
-            {matched && (
-              <>
-                {posted && <span aria-hidden="true" className="max-sm:hidden">·</span>}
-                <span>Matched {matched}</span>
-              </>
-            )}
-            {(posted || matched) && <span aria-hidden="true" className="max-sm:hidden">·</span>}
-            <span className="inline-flex items-center gap-1.5">
-              Job stage
-              <span title={suspended ? "Stage changes are turned off while your account is suspended." : STAGE_HINT[requirement.stage]} className="inline-flex">
-                <StageCell stage={requirement.stage} hasEvaluatedCandidates={requirement.candidates.length > 0} onChange={onStageChange} frozen={readOnly || suspended} />
-              </span>
-            </span>
-          </p>
         </div>
 
         <div className="flex items-center gap-2">
@@ -160,30 +152,31 @@ export default function JobHeader({
         </div>
       </div>
 
-      {description && (
-        <p className="m-0 mt-5 max-w-[75ch] text-[14px] leading-relaxed whitespace-pre-line text-hx-ink-soft [overflow-wrap:anywhere]">
-          {shownDescription}
-          {hasMore && (
-            <>
-              {" "}
-              <PanelButton expanded={expanded} onClick={() => setExpanded((v) => !v)}>
-                {expanded ? "View less" : "View more"}
-              </PanelButton>
-            </>
+      <div className={cn("mt-4 grid min-w-0 gap-x-8 gap-y-4 border-t border-hx-line pt-4 ", requirementsSlot && "lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]")}>
+        <div className="min-w-0">
+          {description && (
+            <p className="m-0 max-w-[75ch] text-[14px] leading-relaxed whitespace-pre-line text-hx-ink-soft [overflow-wrap:anywhere]">
+              {shownDescription}
+              {hasMore && (
+                <>
+                  {" "}
+                  <PanelButton expanded={expanded} onClick={() => setExpanded((v) => !v)}>
+                    {expanded ? "View less" : "View more"}
+                  </PanelButton>
+                </>
+              )}
+            </p>
           )}
-        </p>
-      )}
-      {!description && hasMore && (
-        <div className="mt-3">
-          <PanelButton expanded={expanded} onClick={() => setExpanded((v) => !v)}>
-            {expanded ? "View less" : "View role details"}
-          </PanelButton>
+          {!description && hasMore && (
+            <PanelButton expanded={expanded} onClick={() => setExpanded((v) => !v)}>
+              {expanded ? "View less" : "View role details"}
+            </PanelButton>
+          )}
         </div>
-      )}
+        {requirementsSlot && <div className="min-w-0 lg:border-l lg:border-hx-line lg:pl-8">{requirementsSlot}</div>}
+      </div>
 
       {expanded && expandedContent}
-
-      {children}
 
       {message && (
         <div className="mt-4">

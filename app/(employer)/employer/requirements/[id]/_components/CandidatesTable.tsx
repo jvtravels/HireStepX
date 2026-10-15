@@ -29,9 +29,6 @@ export default function CandidatesTable({
   requiredSkills,
   readOnly,
   suspended,
-  selectedIds,
-  onToggleSelected,
-  onToggleAll,
   sort,
   onSortChange,
   onUnlock,
@@ -51,9 +48,6 @@ export default function CandidatesTable({
   requiredSkills: string[];
   readOnly: boolean;
   suspended: boolean;
-  selectedIds: Set<string>;
-  onToggleSelected: (id: string) => void;
-  onToggleAll: (ids: string[], select: boolean) => void;
   sort: Sort<SortColumn>;
   onSortChange: (s: Sort<SortColumn>) => void;
   onUnlock: (c: Candidate) => void;
@@ -89,9 +83,6 @@ export default function CandidatesTable({
 
   const mobileValue = `${sort.column}-${sort.direction}`;
   const mobileKnown = MOBILE_SORTS.some((s) => s.value === mobileValue);
-  const selectedOnPage = rows.filter((r) => selectedIds.has(r.id)).length;
-  const allSelected = rows.length > 0 && selectedOnPage === rows.length;
-  const someSelected = selectedOnPage > 0 && !allSelected;
 
   return (
     <>
@@ -128,73 +119,65 @@ export default function CandidatesTable({
           className="cand-scroll flex-none overflow-x-auto focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-hx-indigo"
         >
           <style>{CAND_TABLE_CSS}</style>
-          <Table role="table" className="cand-table min-w-[1020px]" containerClassName="overflow-visible">
+          <Table role="table" className="cand-table min-w-[880px]" containerClassName="overflow-visible">
             <TableCaption className="sr-only">
               Candidates for this requirement, {filteredCount} shown. Column headers are buttons that sort the table.
             </TableCaption>
             <TableHeader className="cand-thead">
               <TableRow className="h-10 bg-hx-row">
-                {!readOnly && (
-                  <TableHead className="w-10 pr-0 pl-4">
-                    <input
-                      type="checkbox"
-                      aria-label="Select all candidates on this page"
-                      checked={allSelected}
-                      ref={(el) => {
-                        if (el) el.indeterminate = someSelected;
-                      }}
-                      onChange={() => onToggleAll(rows.map((r) => r.id), !allSelected)}
-                      className="size-4 cursor-pointer accent-hx-indigo pointer-coarse:size-5"
-                    />
-                  </TableHead>
-                )}
-                <SortableHead column="name" columnLabel={COLUMN_LABEL.name} defaultDirection="asc" width="24%" minWidth={220} sort={sort} onSortChange={onSortChange}>
+                <SortableHead column="name" columnLabel={COLUMN_LABEL.name} defaultDirection="asc" width="22%" minWidth={200} sort={sort} onSortChange={onSortChange}>
                   Candidate
                 </SortableHead>
                 <SortableHead
                   column="match"
                   columnLabel={COLUMN_LABEL.match}
                   width="14%"
-                  minWidth={130}
+                  minWidth={120}
                   sort={sort}
                   onSortChange={onSortChange}
                   after={<InfoTip label="About Role match">How well the candidate fits this job. Shows required skills from this posting that the candidate lists. Sorting uses the overall match score, out of 100, which also weighs role and location fit.</InfoTip>}
                 >
                   Role match
                 </SortableHead>
-                <TableHead className={`${PLAIN_HEAD} w-[13%] min-w-[120px]`}>
+                <TableHead className={`${PLAIN_HEAD} w-[13%] min-w-[110px]`}>
                   <span className="inline-flex items-center gap-0.5">
-                    Key gaps (validate)
+                    Key gaps
                     <InfoTip label="About Key gaps">Required skills the candidate has not listed. They may still have them, so confirm in the interview.</InfoTip>
                   </span>
                 </TableHead>
-                <SortableHead column="experience" columnLabel={COLUMN_LABEL.experience} width="12%" minWidth={120} sort={sort} onSortChange={onSortChange}>
+                <SortableHead column="experience" columnLabel={COLUMN_LABEL.experience} width="9%" minWidth={96} sort={sort} onSortChange={onSortChange}>
                   Experience
                 </SortableHead>
+                <TableHead className={`${PLAIN_HEAD} w-[11%] min-w-[120px]`}>
+                  <span className="inline-flex items-center gap-0.5">
+                    Availability
+                    <InfoTip label="About Availability">The candidate's own notice period, as written on their resume. We show their words when we can't read a number.</InfoTip>
+                  </span>
+                </TableHead>
                 <SortableHead
                   column="interview"
                   columnLabel={COLUMN_LABEL.interview}
-                  width="10%"
-                  minWidth={110}
+                  width="12%"
+                  minWidth={120}
                   sort={sort}
                   onSortChange={onSortChange}
-                  after={<InfoTip label="About Interview score">Average score, out of 100, across the candidate's graded HireStepX mock interviews. It is practice performance, separate from the resume match. Select a score to see the per-skill report.</InfoTip>}
+                  after={<InfoTip label="About Evidence">What backs the profile: resume, graded HireStepX mock interviews and shared portfolio or GitHub links. Sorting uses the average interview score, out of 100, which is practice performance and separate from the resume match. Select a row's evidence to see the per-skill report.</InfoTip>}
                 >
-                  Interview
+                  Evidence
                 </SortableHead>
                 <SortableHead
                   column="pipeline"
                   columnLabel={COLUMN_LABEL.pipeline}
                   defaultDirection="asc"
                   width="11%"
-                  minWidth={130}
+                  minWidth={120}
                   sort={sort}
                   onSortChange={onSortChange}
                   after={<InfoTip label="About Stage">Where this candidate currently stands in your hiring process for this requirement.</InfoTip>}
                 >
                   Stage
                 </SortableHead>
-                <TableHead className="cand-th-act w-[150px] min-w-[150px]">
+                <TableHead className="cand-th-act w-16 min-w-16">
                   <span className="sr-only">Actions</span>
                 </TableHead>
               </TableRow>
@@ -208,8 +191,6 @@ export default function CandidatesTable({
                   requiredSkills={requiredSkills}
                   readOnly={readOnly}
                   suspended={suspended}
-                  selected={selectedIds.has(c.id)}
-                  onToggleSelected={() => onToggleSelected(c.id)}
                   onUnlock={() => onUnlock(c)}
                   onViewEvidence={() => onViewEvidence(c)}
                   onMessage={() => onMessage(c)}
@@ -222,7 +203,7 @@ export default function CandidatesTable({
         <div
           aria-hidden="true"
           className={cn(
-            "pointer-events-none absolute inset-y-0 right-[150px] hidden w-12 bg-[linear-gradient(to_left,var(--color-white),transparent)] transition-opacity duration-200 ease-out motion-reduce:transition-none md:block",
+            "pointer-events-none absolute inset-y-0 right-16 hidden w-12 bg-[linear-gradient(to_left,var(--color-white),transparent)] transition-opacity duration-200 ease-out motion-reduce:transition-none md:block",
             moreRight ? "opacity-100" : "opacity-0",
           )}
         />
