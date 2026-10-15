@@ -6,6 +6,7 @@
  *   block   -> employer_blocks upsert; the employer can no longer reach this candidate (see _entitlements.ts)
  *   report  -> employer_reports insert (+ block); 3 distinct reporters auto-suspend the employer
  *   respond -> requirement_matches.candidate_response = interested | declined, audit event, employer notified
+ *   resolve_request -> { requestId, resolution: fulfilled | declined, note? } closes an employer request (candidate_requests)
  *
  * The caller must BE the candidate of the match; the employer id is derived
  * from the match's requirement, never taken from the client. A match that
@@ -16,6 +17,15 @@ export const config = { runtime: "edge" };
 import { withAuthAndRateLimit, corsHeaders, slog, supabaseUrl, supabaseServiceHeaders } from "./_shared";
 import { notify } from "./_notify";
 import { maskedCandidateName } from "./_employer-trust";
+import { detectContactInfoFlag } from "./_messages-helpers";
+import {
+  REQUEST_RESPONSE_MAX,
+  asRequestResolution,
+  isMissingTableResponse,
+  resolutionNotificationText,
+  type CandidateRequestRow,
+  type RequestResolution,
+} from "./_candidate-request-helpers";
 import {
   asCandidateResponse,
   asEmployerAction,
@@ -207,6 +217,50 @@ export async function doRespond(
   return { ok: true, response, respondedAt, changed: true };
 }
 
+export async function doResolveRequest(
+  base: string,
+  match: MatchRow,
+  userId: string,
+  input: { requestId: string; resolution: RequestResolution; note: string | null },
+  f: typeof fetch,
+): Promise<Done<{ resolution: RequestResolution }> | Failure> {
+  // Before unlock the employer is not entitled to contact details, so a free-text
+  // reply must not carry them (the unlock fee prices in that first contact).
+  if (!match.unlocked && input.note && detectContactInfoFlag(input.note)) {
+    return { ok: false, status: 400, error: "Contact details can be shared once this employer unlocks your profile. Describe it in words for now." };
+  }
+  const patchRes = await f(
+    `${base}/rest/v1/candidate_requests?id=eq.${encodeURIComponent(input.requestId)}&match_id=eq.${encodeURIComponent(match.id)}&candidate_user_id=eq.${encodeURIComponent(userId)}&status=eq.pending`,
+    {
+      method: "PATCH",
+      headers: writeHeaders("return=representation"),
+      body: JSON.stringify({ status: input.resolution, response_note: input.note, resolved_at: new Date().toISOString() }),
+      signal: AbortSignal.timeout(8000),
+    },
+  ).catch(() => null);
+  if (!patchRes) return { ok: false, status: 500, error: "Could not save your response" };
+  if (!patchRes.ok) {
+    const text = await patchRes.text().catch(() => "");
+    if (isMissingTableResponse(patchRes.status, text)) return { ok: false, status: 404, error: "Request not found" };
+    slog.error("candidate-employer-actions: resolve_request PATCH failed", { status: patchRes.status });
+    return { ok: false, status: 500, error: "Could not save your response" };
+  }
+  const rows = (await patchRes.json().catch(() => [])) as CandidateRequestRow[];
+  const row = rows[0];
+  if (!row) return { ok: false, status: 409, error: "This request was already answered or withdrawn." };
+
+  const text = resolutionNotificationText(input.resolution, row, maskedCandidateName(match.id));
+  await notify({
+    userId: match.employer_requirements!.employer_id,
+    type: "candidate_request_resolved",
+    title: text.title,
+    body: text.body,
+    link: candidateDetailLink(match.requirement_id, match.id),
+    groupKey: `candidate_request_resolved:${match.id}`,
+  });
+  return { ok: true, resolution: input.resolution };
+}
+
 export default async function handler(req: Request): Promise<Response> {
   const pre = await withAuthAndRateLimit(req, {
     endpoint: "candidate-employer-actions",
@@ -223,7 +277,7 @@ export default async function handler(req: Request): Promise<Response> {
   const base = supabaseUrl();
   if (!base || !supabaseServiceHeaders().apikey) return json({ error: "Server misconfigured" }, 503, headers);
 
-  let body: { action?: unknown; matchId?: unknown; reason?: unknown; note?: unknown; response?: unknown };
+  let body: { action?: unknown; matchId?: unknown; reason?: unknown; note?: unknown; response?: unknown; requestId?: unknown; resolution?: unknown };
   try {
     body = await req.json();
   } catch {
@@ -231,7 +285,7 @@ export default async function handler(req: Request): Promise<Response> {
   }
 
   const action = asEmployerAction(body?.action);
-  if (!action) return json({ error: "action must be block, report or respond" }, 400, headers);
+  if (!action) return json({ error: "action must be block, report, respond or resolve_request" }, 400, headers);
   if (!isUuid(body.matchId)) return json({ error: "matchId is required" }, 400, headers);
 
   let reason: ReportReason | null = null;
@@ -245,6 +299,12 @@ export default async function handler(req: Request): Promise<Response> {
     if (!response) return json({ error: "response must be interested or declined" }, 400, headers);
   }
 
+  let resolution: RequestResolution | null = null;
+  if (action === "resolve_request") {
+    resolution = asRequestResolution(body.resolution);
+    if (!resolution || !isUuid(body.requestId)) return json({ error: "requestId and a valid resolution are required" }, 400, headers);
+  }
+
   try {
     const match = await loadOwnMatch(base, body.matchId, auth.userId, fetch);
     if (match === "error") return json({ error: "Could not load this match" }, 502, headers);
@@ -253,7 +313,9 @@ export default async function handler(req: Request): Promise<Response> {
     const result =
       action === "block" ? await doBlock(base, match, auth.userId, fetch)
       : action === "report" ? await doReport(base, match, auth.userId, { reason: reason!, note: sanitizeNote(body.note) }, fetch)
-      : await doRespond(base, match, auth.userId, response!, fetch);
+      : action === "resolve_request"
+        ? await doResolveRequest(base, match, auth.userId, { requestId: body.requestId as string, resolution: resolution!, note: sanitizeNote(body.note, REQUEST_RESPONSE_MAX) }, fetch)
+        : await doRespond(base, match, auth.userId, response!, fetch);
 
     if (!result.ok) return json({ error: result.error }, result.status, headers);
     return json(result, 200, headers);

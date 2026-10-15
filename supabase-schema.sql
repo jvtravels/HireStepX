@@ -2411,3 +2411,38 @@ CREATE INDEX IF NOT EXISTS idx_notifications_user_unread ON public.notifications
 CREATE UNIQUE INDEX IF NOT EXISTS uq_unlock_orders_payment ON public.employer_unlock_orders (razorpay_payment_id) WHERE razorpay_payment_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_requirement_matches_unlocked_at ON public.requirement_matches (unlocked_at) WHERE unlocked;
 CREATE INDEX IF NOT EXISTS idx_profiles_created ON public.profiles (created_at DESC, id);
+
+-- ── Candidate requests (2026-10-15, migration 0040) ────────────────────
+create table if not exists public.candidate_requests (
+  id uuid primary key default gen_random_uuid(),
+  match_id uuid not null references public.requirement_matches(id) on delete cascade,
+  requirement_id uuid not null references public.employer_requirements(id) on delete cascade,
+  employer_id uuid not null references public.employers(id) on delete cascade,
+  candidate_user_id uuid not null references auth.users(id) on delete cascade,
+  kind text not null check (kind in ('contact', 'document', 'practice', 'clarification')),
+  topic text check (topic is null or char_length(topic) <= 120),
+  fields text[],
+  note text check (note is null or char_length(note) <= 300),
+  status text not null default 'pending' check (status in ('pending', 'fulfilled', 'declined', 'cancelled')),
+  response_note text check (response_note is null or char_length(response_note) <= 500),
+  created_at timestamptz not null default now(),
+  resolved_at timestamptz
+);
+
+create index if not exists idx_candidate_requests_match on public.candidate_requests(match_id, created_at desc);
+create index if not exists idx_candidate_requests_candidate_pending on public.candidate_requests(candidate_user_id, created_at desc)
+  where status = 'pending';
+create index if not exists idx_candidate_requests_employer_day on public.candidate_requests(employer_id, created_at desc);
+-- One open request per (match, kind, topic): re-asking the same thing is a no-op.
+create unique index if not exists uq_candidate_requests_open
+  on public.candidate_requests (match_id, kind, (coalesce(topic, '')))
+  where status = 'pending';
+
+alter table public.candidate_requests enable row level security;
+
+drop policy if exists "Employers view own requests" on public.candidate_requests;
+create policy "Employers view own requests" on public.candidate_requests
+  for select using (employer_id = (select auth.uid()));
+drop policy if exists "Candidates view own requests" on public.candidate_requests;
+create policy "Candidates view own requests" on public.candidate_requests
+  for select using (candidate_user_id = (select auth.uid()));

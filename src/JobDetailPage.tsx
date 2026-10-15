@@ -25,6 +25,7 @@ import type { JobMatch } from "./DashboardJobs";
 import EmployerActionsMenu, { EmployerResponseBadge } from "./EmployerActionsMenu";
 import { normalizeResponse, readStoredResponse, type EmployerResponse } from "./employerActions";
 import { useToast } from "./Toast";
+import CandidateRequestsCard from "./CandidateRequestsCard";
 
 /* Same surface as the employer console's <Card> (white, 1px line, 16px
    radius, 24px padding, flat) so the two detail screens read as one product. */
@@ -174,6 +175,9 @@ export default function JobDetailPage() {
   }, [load]);
 
   const job = useMemo(() => matches?.find((m) => m.id === id) ?? null, [matches, id]);
+  const dropRequest = useCallback((requestId: string) => {
+    setMatches((prev) => prev && prev.map((m) => (m.id === id ? { ...m, requests: (m.requests ?? []).filter((r) => r.id !== requestId) } : m)));
+  }, [id]);
   const stacked = useMaxWidth(820);
   const { toast } = useToast();
   // Local answer wins over the list payload so the badge/menu stay truthful
@@ -333,6 +337,17 @@ export default function JobDetailPage() {
                 onToast={(msg, kind) => toast(msg, kind)}
               />
             }
+          />
+          <CandidateRequestsCard
+            matchId={job.id}
+            requests={job.requests ?? []}
+            unlocked={job.unlocked}
+            style={PANEL_STYLE}
+            onResolved={(requestId, resolution) => {
+              dropRequest(requestId);
+              toast(resolution === "fulfilled" ? "Sent to the employer" : "Request declined", "success");
+            }}
+            onError={(msg) => toast(msg, "error")}
           />
           <section aria-labelledby="job-details-heading" style={PANEL_STYLE}>
             <h2 id="job-details-heading" style={{ ...SECTION_HEADING_STYLE, margin: 0 }}>Role details</h2>

@@ -15,6 +15,7 @@ export const config = { runtime: "edge" };
 import { withAuthAndRateLimit, corsHeaders, withRequestId, slog } from "./_shared";
 import { describeMatch } from "./_requirement-match-helpers";
 import { asBoundedSalaryType } from "./_employer-requirements-helpers";
+import { requestHeadline, type CandidateRequestRow } from "./_candidate-request-helpers";
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
@@ -139,6 +140,21 @@ export default async function handler(req: Request): Promise<Response> {
     const full = url.searchParams.get("full") === "1";
     const limited = full ? activeMatches : activeMatches.slice(0, 4);
 
+    // Optional: the table arrives with migration 0040, so any failure just means "no requests".
+    const pendingByMatch = new Map<string, CandidateRequestRow[]>();
+    if (limited.length > 0) {
+      const reqRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/candidate_requests?candidate_user_id=eq.${encodeURIComponent(auth.userId)}&status=eq.pending` +
+          `&select=id,match_id,kind,topic,fields,note,status,response_note,created_at,resolved_at&order=created_at.desc&limit=200`,
+        { headers: serviceHeaders(), signal: AbortSignal.timeout(4000) },
+      ).catch(() => null);
+      if (reqRes && reqRes.ok) {
+        for (const r of (await reqRes.json().catch(() => [])) as CandidateRequestRow[]) {
+          pendingByMatch.set(r.match_id, [...(pendingByMatch.get(r.match_id) ?? []), r]);
+        }
+      }
+    }
+
     const recent = limited.map((m) => {
       const req = m.employer_requirements;
       const skills = req?.skills || [];
@@ -180,6 +196,13 @@ export default async function handler(req: Request): Promise<Response> {
         // a date-only slice throws away.
         matchedAt: m.created_at,
         unlockedAt: m.unlocked_at,
+        requests: (pendingByMatch.get(m.id) ?? []).map((r) => ({
+          id: r.id,
+          kind: r.kind,
+          headline: requestHeadline(r),
+          note: r.note,
+          createdAt: r.created_at,
+        })),
       };
     });
 

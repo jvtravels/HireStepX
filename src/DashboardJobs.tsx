@@ -78,6 +78,16 @@ export interface JobMatch {
   unlockedAt: string | null;
   /** The candidate's own answer to this employer, when the API echoes it. */
   candidateResponse?: string | null;
+  /** Pending employer requests (evidence, documents, clarifications). */
+  requests?: JobRequest[];
+}
+
+export interface JobRequest {
+  id: string;
+  kind: "contact" | "document" | "practice" | "clarification";
+  headline: string;
+  note: string | null;
+  createdAt: string;
 }
 
 interface HiringActivity {

@@ -15,6 +15,8 @@ import { OverviewTab } from "./OverviewTab";
 import { PracticeTab } from "./PracticeTab";
 import { ResumeTab } from "./ResumeTab";
 import { useCandidateDetail } from "./useCandidateDetail";
+import { useCandidateRequests } from "./useCandidateRequests";
+import type { RequestUi } from "./RequestPopover";
 
 type CandidateTabKey = "overview" | "practice" | "resume";
 const TABS: ReadonlyArray<{ key: CandidateTabKey; label: string }> = [
@@ -30,6 +32,7 @@ export default function CandidateDetail({ requirementId, matchId }: { requiremen
   const [dialog, setDialog] = useState<"invite" | "reject" | null>(null);
   const [unlockOpen, setUnlockOpen] = useState(false);
   const access = useEmployerAccess();
+  const requests = useCandidateRequests(d.candidate?.id);
 
   const { requirement, candidate } = d;
   const shortlistHref = `/employer/requirements/${requirementId}`;
@@ -64,6 +67,11 @@ export default function CandidateDetail({ requirementId, matchId }: { requiremen
   const matched = matchedSkillCount(requirement.skills, candidate);
   const unmatched = requirement.skills.filter((s) => !matched.includes(s));
   const resumeFileName = candidate.unlocked ? (d.evidence?.resumeFile?.fileName ?? null) : null;
+  const requestUi: RequestUi = {
+    state: requests,
+    disabled: suspended || d.declinedLocally,
+    disabledReason: suspended ? "Actions are unavailable while your account is suspended." : d.declinedLocally ? "This candidate declined contact." : null,
+  };
   const openUnlock = () => {
     d.clearNotice();
     setUnlockOpen(true);
@@ -98,6 +106,7 @@ export default function CandidateDetail({ requirementId, matchId }: { requiremen
           suspended={suspended}
           resumeFileName={resumeFileName}
           onUnlock={openUnlock}
+          requests={requests}
           onInvite={() => {
             d.clearNotice();
             setDialog("invite");
@@ -123,9 +132,10 @@ export default function CandidateDetail({ requirementId, matchId }: { requiremen
                 state={evidenceState}
                 onOpenPractice={() => setTab("practice")}
                 onOpenResume={() => setTab("resume")}
+                requestUi={requestUi}
               />
             )}
-            {tab === "practice" && <PracticeTab evidence={d.evidence} candidate={candidate} state={evidenceState} />}
+            {tab === "practice" && <PracticeTab evidence={d.evidence} candidate={candidate} state={evidenceState} requestUi={requestUi} requirementTitle={requirement.title} />}
             {tab === "resume" && <ResumeTab candidate={candidate} />}
           </div>
         </section>

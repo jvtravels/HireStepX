@@ -46,6 +46,7 @@ export type EmployerActionResult = { ok: true } | { ok: false; error: string };
 type ActionBody =
   | { action: "respond"; matchId: string; response: EmployerResponse }
   | { action: "block"; matchId: string }
+  | { action: "resolve_request"; matchId: string; requestId: string; resolution: "fulfilled" | "declined"; note?: string }
   | { action: "report"; matchId: string; reason: EmployerReportReason; note?: string };
 
 async function post(body: ActionBody): Promise<EmployerActionResult> {
@@ -56,6 +57,13 @@ async function post(body: ActionBody): Promise<EmployerActionResult> {
 
 export const respondToEmployer = (matchId: string, response: EmployerResponse) =>
   post({ action: "respond", matchId, response });
+
+export const REQUEST_REPLY_MAX = 500;
+
+export const resolveCandidateRequest = (matchId: string, requestId: string, resolution: "fulfilled" | "declined", note: string) => {
+  const trimmed = note.trim().slice(0, REQUEST_REPLY_MAX);
+  return post({ action: "resolve_request", matchId, requestId, resolution, ...(trimmed ? { note: trimmed } : {}) });
+};
 
 export const blockEmployer = (matchId: string) => post({ action: "block", matchId });
 

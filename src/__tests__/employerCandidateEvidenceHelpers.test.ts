@@ -6,6 +6,9 @@ import {
   extractDeliveryMetrics,
   latestSessionByUser,
   isNegotiationSession,
+  roleTokens,
+  roleMatches,
+  selectSessionsForRole,
   claimProfileView,
   computeVerifiedCapabilitiesForCandidate,
   scrubLockedQuestions,
@@ -326,5 +329,70 @@ describe("toThirdPerson", () => {
 
   it("leaves text without second person untouched", () => {
     expect(toThirdPerson("Clear ownership of the migration.")).toBe("Clear ownership of the migration.");
+  });
+});
+
+describe("roleTokens / roleMatches", () => {
+  it("drops seniority filler and normalises synonyms", () => {
+    expect([...roleTokens("Senior Product Designer")]).toEqual(["product", "designer"]);
+    expect(roleTokens("SDE II")).toEqual(new Set(["software", "engineer"]));
+    expect(roleTokens("Backend Developer")).toEqual(new Set(["backend", "engineer"]));
+    expect(roleTokens(null).size).toBe(0);
+  });
+
+  it("matches seniority variants of the same role", () => {
+    expect(roleMatches("Product Designer", "Senior Product Designer")).toBe("yes");
+    expect(roleMatches("Senior Product Designer", "Product Designer")).toBe("yes");
+    expect(roleMatches("Senior Engineer", "Software Engineer")).toBe("yes");
+    expect(roleMatches("SDE", "Software Engineer")).toBe("yes");
+  });
+
+  it("matches a long profile headline that contains the role", () => {
+    expect(roleMatches("Aspiring Software Engineer | BCA Honours Student", "Software Engineer")).toBe("yes");
+  });
+
+  it("rejects a different role", () => {
+    expect(roleMatches("Product Designer", "Software Engineer")).toBe("no");
+    expect(roleMatches("Engineering Manager", "Product Designer")).toBe("no");
+  });
+
+  it("is unknown when either side has no usable role text", () => {
+    expect(roleMatches("", "Software Engineer")).toBe("unknown");
+    expect(roleMatches("Software Engineer", null)).toBe("unknown");
+    expect(roleMatches("Senior", "Software Engineer")).toBe("unknown");
+  });
+});
+
+describe("selectSessionsForRole", () => {
+  const scored = { skills: [{ name: "Clarity", score: 70 }] };
+  const row = (over: Partial<SessionRow>): SessionRow => ({ user_id: "u1", created_at: "2026-03-01T00:00:00Z", report_json: scored, target_role: "Software Engineer", ...over });
+
+  it("is matched and keeps only the requirement's role when sessions exist for it", () => {
+    const rows = [
+      row({ created_at: "2026-03-01T00:00:00Z", target_role: "Software Engineer" }),
+      row({ created_at: "2026-02-01T00:00:00Z", target_role: "Senior Product Designer" }),
+    ];
+    const out = selectSessionsForRole(rows, "Product Designer");
+    expect(out.fit.status).toBe("matched");
+    expect(out.rows).toHaveLength(1);
+    expect(out.rows[0].target_role).toBe("Senior Product Designer");
+  });
+
+  it("is a mismatch, with no evidence rows, when the candidate only practised another role", () => {
+    const out = selectSessionsForRole([row({ target_role: "Software Engineer" })], "Product Designer");
+    expect(out.rows).toHaveLength(0);
+    expect(out.fit).toEqual({ status: "mismatch", practicedFor: "Software Engineer", practicedAt: "2026-03-01T00:00:00Z" });
+  });
+
+  it("keeps sessions with no recorded role instead of calling them a mismatch", () => {
+    const out = selectSessionsForRole([row({ target_role: null })], "Product Designer");
+    expect(out.fit.status).toBe("matched");
+    expect(out.rows).toHaveLength(1);
+  });
+
+  it("is none when there is no interview evidence at all", () => {
+    expect(selectSessionsForRole([], "Product Designer").fit.status).toBe("none");
+    const negotiationOnly = row({ type: "salary-negotiation", target_role: "Software Engineer" });
+    expect(selectSessionsForRole([negotiationOnly], "Product Designer").fit.status).toBe("none");
   });
 });

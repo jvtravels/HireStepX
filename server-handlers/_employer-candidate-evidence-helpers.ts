@@ -194,6 +194,8 @@ export interface SessionRow {
   skill_scores?: Record<string, number> | null;
   score?: number;
   focus?: string;
+  /** The role the candidate practised for (sessions.target_role). */
+  target_role?: string | null;
 }
 
 /** Mirrors skillFamily() in src/interviewAPI.ts: salary-negotiation sessions
@@ -234,6 +236,65 @@ export function latestSessionByUser(rows: SessionRow[]): Map<string, SessionRow>
     }
   }
   return latest;
+}
+
+/* ── Role fit ──
+   A candidate often practises for several roles. Evidence shown for a job must
+   come from a session for that role, not simply the newest session. */
+
+const ROLE_FILLER = new Set([
+  "senior", "sr", "junior", "jr", "lead", "principal", "staff", "associate", "intern", "trainee", "head", "chief",
+  "entry", "level", "fresher", "i", "ii", "iii", "iv", "l3", "l4", "l5", "l6", "and", "of", "the", "for", "a", "at",
+]);
+const ROLE_SYNONYM: Record<string, string[]> = {
+  developer: ["engineer"], programmer: ["engineer"], swe: ["software", "engineer"], sde: ["software", "engineer"],
+  pm: ["product", "manager"], em: ["engineering", "manager"], eng: ["engineer"], engg: ["engineer"],
+};
+
+export function roleTokens(role: string | null | undefined): Set<string> {
+  const out = new Set<string>();
+  for (const raw of (role ?? "").toLowerCase().split(/[^a-z0-9]+/)) {
+    if (!raw || ROLE_FILLER.has(raw)) continue;
+    for (const t of ROLE_SYNONYM[raw] ?? [raw]) out.add(t);
+  }
+  return out;
+}
+
+/** "yes" / "no", or "unknown" when either side has no usable role text, in which
+ *  case the session is kept rather than hidden on a guess. Senior/lead variants
+ *  match their base role; either role may carry extra words ("Backend Engineer"
+ *  vs "Engineer", or a long profile headline containing the role). */
+export function roleMatches(sessionRole: string | null | undefined, requirementTitle: string | null | undefined): "yes" | "no" | "unknown" {
+  const a = roleTokens(sessionRole);
+  const b = roleTokens(requirementTitle);
+  if (a.size === 0 || b.size === 0) return "unknown";
+  const subset = (x: Set<string>, y: Set<string>) => [...x].every((t) => y.has(t));
+  return subset(a, b) || subset(b, a) ? "yes" : "no";
+}
+
+export interface RoleFit {
+  status: "matched" | "mismatch" | "none";
+  /** Set on mismatch: the role of the closest practice session. */
+  practicedFor: string | null;
+  practicedAt: string | null;
+}
+
+/** Keeps only the sessions for the requirement's role. When the candidate has
+ *  interview evidence but none of it is for this role, nothing is returned as
+ *  evidence and `fit` says what they practised for instead. */
+export function selectSessionsForRole(rows: SessionRow[], requirementTitle: string | null | undefined): { rows: SessionRow[]; fit: RoleFit } {
+  const matching = rows.filter((r) => roleMatches(r.target_role, requirementTitle) !== "no");
+  const uid = rows[0]?.user_id;
+  const anyEvidence = uid ? latestSessionByUser(rows).get(uid) : undefined;
+  const roleEvidence = uid ? latestSessionByUser(matching).get(uid) : undefined;
+  if (roleEvidence) return { rows: matching, fit: { status: "matched", practicedFor: null, practicedAt: null } };
+  if (anyEvidence) {
+    return {
+      rows: matching,
+      fit: { status: "mismatch", practicedFor: anyEvidence.target_role?.trim() || null, practicedAt: anyEvidence.created_at },
+    };
+  }
+  return { rows: matching, fit: { status: "none", practicedFor: null, practicedAt: null } };
 }
 
 export interface SessionTrendPoint {

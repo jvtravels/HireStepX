@@ -105,9 +105,11 @@ export const USER_TABLE_DELETES: TableStep[] = [
   { table: "message_flags", column: "flagged_by", scope: "user" },
   { table: "conversation_messages", column: "candidate_user_id", scope: "user" },
   { table: "conversations", column: "candidate_user_id", scope: "user" },
+  { table: "candidate_requests", column: "candidate_user_id", scope: "user" },
   { table: "requirement_matches", column: "candidate_user_id", scope: "user" },
   // Employer side (only run when the user has an employers row).
   { table: "employer_requirement_activity", column: "employer_id", scope: "employer" },
+  { table: "candidate_requests", column: "employer_id", scope: "employer" },
   { table: "match_status_events", column: "employer_id", scope: "employer" },
   { table: "conversation_messages", column: "employer_id", scope: "employer" },
   { table: "conversations", column: "employer_id", scope: "employer" },
@@ -119,7 +121,7 @@ export const OPTIONAL_TABLES = new Set([
   "candidate_consent_log", "user_consents", "email_preferences", "employer_blocks", "employer_reports", "match_status_events", "message_flags",
   "conversation_messages", "conversations", "requirement_matches", "product_ratings", "interview_turns",
   "notifications", "notification_preferences", "employer_unlock_orders", "employer_requirement_activity",
-  "employer_requirements", "account_erasure_log", "used_verification_tokens", "payment_dedup",
+  "employer_requirements", "candidate_requests", "account_erasure_log", "used_verification_tokens", "payment_dedup",
 ]);
 
 export function posthogConfigFromEnv(env: Record<string, string | undefined>): PostHogErasureConfig | null {

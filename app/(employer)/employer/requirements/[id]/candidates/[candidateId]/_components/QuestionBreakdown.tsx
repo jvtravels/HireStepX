@@ -5,7 +5,9 @@ import { ChevronDownIcon } from "lucide-react";
 import { cn } from "cn";
 import type { EvidenceQuestion } from "@/employer/EmployerDataContext";
 import { Badge } from "@/employer/_atoms";
+import type { Candidate } from "@/employer/mockData";
 import { InfoTip, Panel } from "@/employer/_panelParts";
+import { ItemRequest, type RequestUi } from "./RequestPopover";
 import { DIFFICULTY_LABEL, cleanQuestionText, dedupeQuestions, LENGTH_LABEL, PROVENANCE, VERDICT_LABEL, VERDICT_TONE, summarizeQuestions } from "./helpers";
 
 const STAR_LETTERS = [
@@ -37,7 +39,7 @@ function StarMarks({ star }: { star: NonNullable<EvidenceQuestion["star"]> }) {
   );
 }
 
-function QuestionRow({ q, n }: { q: EvidenceQuestion; n: number }) {
+function QuestionRow({ q, n, candidate, requestUi }: { q: EvidenceQuestion; n: number; candidate: Candidate; requestUi: RequestUi }) {
   const [open, setOpen] = useState(false);
   const bodyId = useId();
   const hasDetail = !!(q.answerText || q.explanation);
@@ -78,6 +80,16 @@ function QuestionRow({ q, n }: { q: EvidenceQuestion; n: number }) {
       ) : (
         <div className="py-3.5">{head}</div>
       )}
+      {(q.verdict === "weak" || q.verdict === "partial" || q.verdict === "skipped") && (
+        <div className="pb-3 pl-7.5">
+          <ItemRequest
+            candidate={candidate}
+            ui={requestUi}
+            label="Ask them to retake this"
+            preset={{ kind: "practice", topic: cleanQuestionText(q.question).slice(0, 120) }}
+          />
+        </div>
+      )}
       {hasDetail && open && (
         <div id={bodyId} className="grid gap-3 pb-4 pl-7.5">
           {q.answerText && (
@@ -98,11 +110,11 @@ function QuestionRow({ q, n }: { q: EvidenceQuestion; n: number }) {
   );
 }
 
-export function QuestionBreakdown({ questions }: { questions: EvidenceQuestion[] }) {
+export function QuestionBreakdown({ questions, candidate, requestUi }: { questions: EvidenceQuestion[]; candidate: Candidate; requestUi: RequestUi }) {
   const list = dedupeQuestions(questions);
   const summary = summarizeQuestions(list);
   return (
-    <Panel
+    <Panel plain
       id="questions-heading"
       title="Answer by answer"
       action={<InfoTip label="How answers are graded">{PROVENANCE}. Scores are out of 100 and shown for the most recent completed interview.</InfoTip>}
@@ -116,7 +128,7 @@ export function QuestionBreakdown({ questions }: { questions: EvidenceQuestion[]
       )}
       <ol aria-label="Interview questions" className="m-0 list-none p-0">
         {list.map((q, i) => (
-          <QuestionRow key={`${q.idx}-${i}`} q={q} n={i + 1} />
+          <QuestionRow key={`${q.idx}-${i}`} q={q} n={i + 1} candidate={candidate} requestUi={requestUi} />
         ))}
       </ol>
     </Panel>

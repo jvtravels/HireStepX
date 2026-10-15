@@ -96,6 +96,7 @@ describe("candidate-hiring-activity handler", () => {
           },
         ],
       });
+    fetchMock.mockResolvedValue({ ok: true, json: async () => [] });
     global.fetch = fetchMock as unknown as typeof fetch;
 
     const res = await handler(req());

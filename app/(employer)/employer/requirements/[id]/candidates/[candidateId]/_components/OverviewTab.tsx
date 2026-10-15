@@ -1,11 +1,16 @@
-import { CheckIcon, MinusIcon, TargetIcon, UserRoundIcon } from "lucide-react";
+import { useState } from "react";
+import { CheckIcon, MinusIcon, TargetIcon } from "lucide-react";
+import { cn } from "cn";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { CandidateEvidence, Requirement } from "@/employer/EmployerDataContext";
 import type { Candidate } from "@/employer/mockData";
 import { Badge, OutlineCta } from "@/employer/_atoms";
 import { InfoTip, KeyValueList, KeyValueRow, MeterRow, Panel, PanelButton } from "@/employer/_panelParts";
 import { InlineNotice } from "@/employer/_requirementAtoms";
-import { ChipList, IconList, MutedText } from "./parts";
+import { IconList, MutedText } from "./parts";
+import { ItemRequest, type RequestUi } from "./RequestPopover";
+import { RequestsPanel } from "./RequestsPanel";
+import { RoleMismatchNotice, hasRoleMismatch } from "./RoleMismatchNotice";
 import { PROVENANCE, READINESS_LABEL, averageTenureMonths, buildResumeInsights, buildRoleFit, employerCapabilities, evidenceAverage, formatSessionDate, formatTenure, formatYears, type FitStatus } from "./helpers";
 
 export type EvidenceState = { evidence: CandidateEvidence | null; loading: boolean; failed: boolean; onRetry: () => void };
@@ -37,20 +42,17 @@ const FIT_BADGE: Record<FitStatus, { tone: "success" | "warning" | "error"; labe
   gap: { tone: "error", label: "Gap" },
 };
 
-function MatchPanel({ candidate, requirement, matched, unmatched, evidence }: { candidate: Candidate; requirement: Requirement; matched: string[]; unmatched: string[]; evidence: CandidateEvidence | null }) {
+function MatchPanel({ candidate, requirement, matched, unmatched, evidence, requestUi }: { candidate: Candidate; requirement: Requirement; matched: string[]; unmatched: string[]; evidence: CandidateEvidence | null; requestUi: RequestUi }) {
   const b = candidate.matchBreakdown;
   const rows = buildRoleFit(candidate, requirement, matched, evidence);
   const meets = rows.filter((r) => r.status === "meets").length;
   return (
-    <Panel id="match-heading" title="Fit for this role" icon={<TargetIcon size={15} />}>
+    <Panel plain id="match-heading" title="Fit for this role">
       <div className="grid gap-5">
         {b && (
-          <div className="grid gap-3.5">
+          <div className="grid gap-x-6 gap-y-3.5 sm:grid-cols-2">
             <MeterRow label="Role match" value={b.roleMatch} />
             <MeterRow label="Required skills" value={requirement.skills.length > 0 ? Math.round((matched.length / requirement.skills.length) * 100) : b.skillMatch} />
-            <p className="m-0 text-[12px] text-hx-ink-soft">
-              The {candidate.matchScore} match score blends these with practice results and recent activity, so it can differ from the two bars.
-            </p>
           </div>
         )}
         {rows.length > 0 && (
@@ -75,23 +77,48 @@ function MatchPanel({ candidate, requirement, matched, unmatched, evidence }: { 
           </div>
         )}
         {(matched.length > 0 || unmatched.length > 0) && (
-          <div className="grid gap-3 border-t border-hx-line pt-4">
+          <div className="grid gap-2 border-t border-hx-line pt-4 text-[13px] leading-relaxed text-hx-ink-soft">
             {matched.length > 0 && (
-              <div className="grid gap-1.5">
-                <h3 className="m-0 text-[13px] font-semibold text-hx-coal">On the resume</h3>
-                <ChipList items={matched} tone="primary" label="Required skills on the resume" />
-              </div>
+              <p className="m-0 [overflow-wrap:anywhere]">
+                <span className="font-semibold text-hx-coal">On the resume: </span>
+                {matched.join(", ")}
+              </p>
             )}
             {unmatched.length > 0 && (
-              <div className="grid gap-1.5">
-                <h3 className="m-0 text-[13px] font-semibold text-hx-coal">Not on the resume</h3>
-                <ChipList items={unmatched} tone="danger" label="Required skills missing from the resume" />
-              </div>
+              <p className="m-0 [overflow-wrap:anywhere]">
+                <span className="font-semibold text-hx-coal">Not on the resume: </span>
+                {unmatched.join(", ")}
+              </p>
+            )}
+            {unmatched.length > 0 && (
+              <ul aria-label="Ask for proof of a missing skill" className="m-0 flex list-none flex-wrap gap-x-4 gap-y-1 p-0">
+                {unmatched.slice(0, 6).map((skill) => (
+                  <li key={skill}>
+                    <ItemRequest
+                      candidate={candidate}
+                      ui={requestUi}
+                      label={`Ask for proof of ${skill}`}
+                      preset={{ kind: "document", topic: `Evidence of ${skill}`.slice(0, 120) }}
+                    />
+                  </li>
+                ))}
+              </ul>
             )}
           </div>
         )}
       </div>
     </Panel>
+  );
+}
+
+function ClampedText({ text }: { text: string }) {
+  const [open, setOpen] = useState(false);
+  const long = text.length > 220;
+  return (
+    <div className="grid justify-items-start gap-1">
+      <p className={cn("m-0 max-w-[75ch] text-[13px] leading-relaxed whitespace-pre-line text-hx-ink-soft [overflow-wrap:anywhere]", long && !open && "line-clamp-3")}>{text}</p>
+      {long && <PanelButton onClick={() => setOpen((v) => !v)} expanded={open}>{open ? "Show less" : "Show more"}</PanelButton>}
+    </div>
   );
 }
 
@@ -114,13 +141,13 @@ function ProfilePanel({ candidate, onOpenResume }: { candidate: Candidate; onOpe
   if (!summary && !r.headline && facts.length === 0) return null;
   const hasIntro = !!(r.headline || summary);
   return (
-    <Panel id="profile-heading" title="Profile" icon={<UserRoundIcon size={15} />} action={<PanelButton onClick={onOpenResume}>Full resume</PanelButton>}>
+    <Panel plain id="profile-heading" title="Profile" action={<PanelButton onClick={onOpenResume}>Full resume</PanelButton>}>
       <div className="grid gap-4">
         {!r.headline && !summary && <MutedText>This resume has no written summary. The details below come from the structured fields.</MutedText>}
         {(r.headline || summary) && (
           <div className="grid gap-1.5">
             {r.headline && <p className="m-0 text-[13px] font-semibold leading-snug text-hx-coal">{r.headline}</p>}
-            {summary && <p className="m-0 max-w-[75ch] text-[13px] leading-relaxed whitespace-pre-line text-hx-ink-soft [overflow-wrap:anywhere]">{summary}</p>}
+            {summary && <ClampedText text={summary} />}
           </div>
         )}
         {facts.length > 0 && (
@@ -139,7 +166,7 @@ function ProfilePanel({ candidate, onOpenResume }: { candidate: Candidate; onOpe
   );
 }
 
-function PracticeSnapshot({ candidate, state, onOpenPractice }: { candidate: Candidate; state: EvidenceState; onOpenPractice: () => void }) {
+function PracticeSnapshot({ candidate, state, onOpenPractice, requirementTitle, requestUi }: { candidate: Candidate; state: EvidenceState; onOpenPractice: () => void; requirementTitle: string; requestUi: RequestUi }) {
   const { evidence } = state;
   const avg = evidenceAverage(evidence);
   const hasEvidence = !!(evidence?.readiness || evidence?.starCompleteness || evidence?.skills.length || evidence?.questions?.length);
@@ -153,7 +180,7 @@ function PracticeSnapshot({ candidate, state, onOpenPractice }: { candidate: Can
   );
 
   return (
-    <Panel id="evidence-heading" title="Practice snapshot" action={tip}>
+    <Panel plain id="evidence-heading" title="Practice snapshot" action={tip}>
       <EvidenceStatus state={state}>
         {hasEvidence ? (
           <div className="grid gap-4">
@@ -167,6 +194,8 @@ function PracticeSnapshot({ candidate, state, onOpenPractice }: { candidate: Can
             </KeyValueList>
             <div><PanelButton onClick={onOpenPractice}>See every answer and score</PanelButton></div>
           </div>
+        ) : evidence && hasRoleMismatch(evidence) ? (
+          <RoleMismatchNotice evidence={evidence} candidate={candidate} requirementTitle={requirementTitle} requestUi={requestUi} />
         ) : (
           <MutedText>No graded practice interviews yet, so this match reflects the resume only.</MutedText>
         )}
@@ -175,21 +204,38 @@ function PracticeSnapshot({ candidate, state, onOpenPractice }: { candidate: Can
   );
 }
 
-function AnalysisPanel({ candidate, requirement, unmatched }: { candidate: Candidate; requirement: Requirement; unmatched: string[] }) {
+function AnalysisPanel({ candidate, requirement, unmatched, requestUi }: { candidate: Candidate; requirement: Requirement; unmatched: string[]; requestUi: RequestUi }) {
   const insights = buildResumeInsights(candidate, unmatched);
   const columns = [
-    { id: "strengths", title: "Key strengths", items: insights.strengths, empty: "Nothing stands out yet.", icon: CheckIcon, cls: "size-4 text-hx-success" },
-    { id: "concerns", title: "Potential concerns", items: insights.concerns, empty: "Nothing flagged.", icon: MinusIcon, cls: "size-4 text-hx-warning" },
-    { id: "validate", title: "Worth validating", items: insights.validate, empty: "Nothing to confirm.", icon: TargetIcon, cls: "size-4 text-hx-indigo" },
+    { id: "strengths", title: "Key strengths", items: insights.strengths, empty: "Nothing stands out yet.", icon: CheckIcon, cls: "size-4 text-hx-success", ask: false },
+    { id: "concerns", title: "Potential concerns", items: insights.concerns, empty: "Nothing flagged.", icon: MinusIcon, cls: "size-4 text-hx-warning", ask: true },
+    { id: "validate", title: "Worth validating", items: insights.validate, empty: "Nothing to confirm.", icon: TargetIcon, cls: "size-4 text-hx-indigo", ask: true },
   ];
   return (
-    <Panel id="analysis-heading" title="Resume analysis">
+    <Panel plain id="analysis-heading" title="Resume analysis">
       <p className="m-0 mb-4 max-w-[75ch] text-[13px] text-hx-ink-soft">{insights.snapshot} Read from the resume against {requirement.title}.</p>
       <div className="grid gap-5 md:grid-cols-3 md:gap-8">
         {columns.map((c) => (
           <div key={c.id} className="min-w-0">
             <h3 className="m-0 mb-1.5 text-[13px] font-semibold text-hx-coal">{c.title}</h3>
-            {c.items.length ? <IconList label={c.title} items={c.items} icon={c.icon} iconClassName={c.cls} /> : <MutedText>{c.empty}</MutedText>}
+            {c.items.length ? <IconList
+                label={c.title}
+                items={c.items}
+                icon={c.icon}
+                iconClassName={c.cls}
+                renderAction={
+                  c.ask
+                    ? (text) => (
+                        <ItemRequest
+                          candidate={candidate}
+                          ui={requestUi}
+                          label="Ask them about this"
+                          preset={{ kind: "clarification", topic: text.slice(0, 120), note: `Could you tell me more about this? ${text}`.slice(0, 300) }}
+                        />
+                      )
+                    : undefined
+                }
+              /> : <MutedText>{c.empty}</MutedText>}
           </div>
         ))}
       </div>
@@ -205,6 +251,7 @@ export function OverviewTab({
   state,
   onOpenPractice,
   onOpenResume,
+  requestUi,
 }: {
   candidate: Candidate;
   requirement: Requirement;
@@ -213,15 +260,17 @@ export function OverviewTab({
   state: EvidenceState;
   onOpenPractice: () => void;
   onOpenResume: () => void;
+  requestUi: RequestUi;
 }) {
   return (
-    <div className="grid min-w-0 gap-4">
-      <div className="grid min-w-0 gap-4 lg:grid-cols-2">
+    <div className="grid min-w-0 gap-7">
+      <div className="grid min-w-0 gap-x-10 gap-y-7 lg:grid-cols-2">
         <ProfilePanel candidate={candidate} onOpenResume={onOpenResume} />
-        <MatchPanel candidate={candidate} requirement={requirement} matched={matched} unmatched={unmatched} evidence={state.evidence} />
+        <MatchPanel candidate={candidate} requirement={requirement} matched={matched} unmatched={unmatched} evidence={state.evidence} requestUi={requestUi} />
       </div>
-      <PracticeSnapshot candidate={candidate} state={state} onOpenPractice={onOpenPractice} />
-      <AnalysisPanel candidate={candidate} requirement={requirement} unmatched={unmatched} />
+      <PracticeSnapshot candidate={candidate} state={state} onOpenPractice={onOpenPractice} requirementTitle={requirement.title} requestUi={requestUi} />
+      <AnalysisPanel candidate={candidate} requirement={requirement} unmatched={unmatched} requestUi={requestUi} />
+      <RequestsPanel state={requestUi.state} disabled={requestUi.disabled} />
     </div>
   );
 }

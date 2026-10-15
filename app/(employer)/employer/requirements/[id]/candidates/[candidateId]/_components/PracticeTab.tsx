@@ -9,13 +9,15 @@ import { PROVENANCE, READINESS_LABEL, dedupeQuestions, describeDelivery, employe
 import { BalancedColumns } from "./parts";
 import { QuestionBreakdown } from "./QuestionBreakdown";
 import { EvidenceStatus, type EvidenceState } from "./OverviewTab";
+import type { RequestUi } from "./RequestPopover";
+import { RoleMismatchNotice, hasRoleMismatch } from "./RoleMismatchNotice";
 
 function ReadinessPanel({ evidence, sessions }: { evidence: CandidateEvidence; sessions: number }) {
   const { readiness, starCompleteness: star, sessionDate } = evidence;
   const answers = summarizeQuestions(dedupeQuestions(evidence.questions ?? []));
   const last = sessionDate ? formatSessionDate(sessionDate) : "";
   return (
-    <Panel
+    <Panel plain
       id="readiness-heading"
       title="Interview readiness"
       action={<InfoTip label="How readiness is scored">{PROVENANCE}. This is practice performance, not an employment check.</InfoTip>}
@@ -48,7 +50,7 @@ function ReadinessPanel({ evidence, sessions }: { evidence: CandidateEvidence; s
 function DeliveryPanel({ delivery }: { delivery: CandidateEvidence["delivery"] }) {
   const rows = describeDelivery(delivery);
   return (
-    <Panel id="delivery-heading" title="How they speak">
+    <Panel plain id="delivery-heading" title="How they speak">
       <p className="m-0 mb-1 text-[13px] text-hx-ink-soft">Measured from the timing and wording of the latest spoken interview.</p>
       <ul aria-label="Spoken delivery" className="m-0 flex list-none flex-col p-0">
         {rows.map((r) => (
@@ -71,7 +73,7 @@ function DeliveryPanel({ delivery }: { delivery: CandidateEvidence["delivery"] }
 function VerifiedPanel({ capabilities }: { capabilities: NonNullable<CandidateEvidence["verifiedCapabilities"]> }) {
   const count = capabilities.filter((c) => c.verified).length;
   return (
-    <Panel
+    <Panel plain
       id="verified-heading"
       title="Verified skills"
       action={<InfoTip label="What verified means">Verified means a score of 70 or more on the skill across 2 or more graded sessions.</InfoTip>}
@@ -94,7 +96,7 @@ function HistoryPanel({ trend, sessions }: { trend: NonNullable<CandidateEvidenc
   const best = Math.max(...trend.map((t) => t.score));
   const delta = last - first;
   return (
-    <Panel id="history-heading" title="Practice history">
+    <Panel plain id="history-heading" title="Practice history">
       <p className="m-0 mb-3.5 text-[13px] text-hx-ink-soft">Overall score of each graded interview, oldest first. {sessions} session{sessions === 1 ? "" : "s"} in total.</p>
       <KeyValueList>
         <KeyValueRow label="Latest"><span className="tabular-nums">{last} / 100</span></KeyValueRow>
@@ -125,10 +127,14 @@ export function PracticeTab({
   evidence,
   candidate,
   state,
+  requestUi,
+  requirementTitle,
 }: {
   evidence: CandidateEvidence | null;
   candidate: Candidate;
+  requirementTitle: string;
   state: EvidenceState;
+  requestUi: RequestUi;
 }) {
   const skills = evidence?.skills ?? [];
   const trend = evidence?.sessionTrend ?? [];
@@ -139,6 +145,10 @@ export function PracticeTab({
   const deliveryRows = describeDelivery(evidence?.delivery).length;
   const hasReadiness = !!(evidence?.readiness || evidence?.starCompleteness);
   const hasAnything = skills.length > 0 || hasReadiness || trend.length > 0 || quotes.length > 0 || questions.length > 0 || !!evidence?.delivery;
+
+  if (!state.loading && !state.failed && !hasAnything && evidence && hasRoleMismatch(evidence)) {
+    return <RoleMismatchNotice evidence={evidence} candidate={candidate} requirementTitle={requirementTitle} requestUi={requestUi} />;
+  }
 
   if (!state.loading && !state.failed && !hasAnything) {
     return (
@@ -151,7 +161,7 @@ export function PracticeTab({
   return (
     <EvidenceStatus state={state}>
       <div className="grid min-w-0 gap-4">
-        {questions.length > 0 && <QuestionBreakdown questions={questions} />}
+        {questions.length > 0 && <QuestionBreakdown questions={questions} candidate={candidate} requestUi={requestUi} />}
         <BalancedColumns
           items={[
             !!evidence && hasReadiness && { key: "readiness", weight: 4 + (evidence.starCompleteness ? 1 : 0), node: <ReadinessPanel evidence={evidence} sessions={sessions} /> },
@@ -159,7 +169,7 @@ export function PracticeTab({
               key: "skills",
               weight: 2 + skills.length * 1.5,
               node: (
-                <Panel id="skills-heading" title="Skill scores">
+                <Panel plain id="skills-heading" title="Skill scores">
                   <p className="m-0 mb-3.5 text-[13px] text-hx-ink-soft">{PROVENANCE}, from the most recent completed session.</p>
                   <div className="grid gap-3.5">
                     {skills.map((s) => (
@@ -176,7 +186,7 @@ export function PracticeTab({
               key: "quotes",
               weight: 2 + quotes.length * 3,
               node: (
-                <Panel id="quotes-heading" title="Standout lines">
+                <Panel plain id="quotes-heading" title="Standout lines">
                   <p className="m-0 mb-2 text-[13px] text-hx-ink-soft">The strongest and weakest moments, quoted from their answers.</p>
                   <ItemGroup className="gap-0">
                     {quotes.map((q, i) => (

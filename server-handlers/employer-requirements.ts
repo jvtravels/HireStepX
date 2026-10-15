@@ -53,6 +53,7 @@ import {
   isEligiblePoolProfile,
   isRelevantProfile,
   computeTrustedSessionStats,
+  keepSessionsForRole,
   buildCandidatePoolRow,
   selectNewStrongMatches,
   strongMatchAlertBody,
@@ -621,7 +622,7 @@ async function runMatchingInner(requirementId: string, req: RequirementInput, ow
 
   const needsReports = !!(req.minReadinessBand || req.minStarCompleteness);
   const sessionRows = pool.length > 0 ? await loadGradedSessions(SUPABASE_URL, headers, pool.map((p) => p.id), needsReports) : [];
-  const stats = computeTrustedSessionStats(sessionRows);
+  const stats = computeTrustedSessionStats(keepSessionsForRole(sessionRows, req.title));
 
   const nowMs = Date.now();
   const candidateRows: CandidatePoolRow[] = pool.map((p) => buildCandidatePoolRow(p, stats, nowMs));

@@ -23,6 +23,7 @@ import {
   extractReadinessForecast,
   extractStarCompleteness,
   latestSessionByUser,
+  roleMatches,
   type SessionRow,
 } from "./_employer-candidate-evidence-helpers";
 import { daysSinceLastActive } from "./_employer-requirements-helpers";
@@ -161,6 +162,13 @@ export function isRelevantProfile(p: PoolProfile, req: RequirementInput): boolea
 export interface GradedSessionRow extends SessionRow {
   score: number;
   report_generated_at?: string | null;
+}
+
+/** Practice for a different role is not evidence for this requirement, so it
+ *  must not lift (or sink) the shortlist score. Sessions with no usable role
+ *  text are kept rather than discarded on a guess. */
+export function keepSessionsForRole<T extends { target_role?: string | null }>(rows: T[], requirementTitle: string | null | undefined): T[] {
+  return rows.filter((r) => roleMatches(r.target_role, requirementTitle) !== "no");
 }
 
 /** Only sessions the server graded count toward employer-visible numbers. */
@@ -356,7 +364,7 @@ export async function loadGradedSessions(
   withReports: boolean,
   fetchImpl: FetchImpl = fetch,
 ): Promise<GradedSessionRow[]> {
-  const select = `user_id,score,created_at,type,report_generated_at${withReports ? ",report_json" : ""}`;
+  const select = `user_id,score,created_at,type,target_role,report_generated_at${withReports ? ",report_json" : ""}`;
   const out: GradedSessionRow[] = [];
   for (const batch of chunk(ids, SESSION_BATCH)) {
     try {

@@ -4,7 +4,7 @@ import { Item, ItemContent, ItemDescription, ItemGroup, ItemMedia } from "@/comp
 import { SkillChip, type ChipTone } from "@/employer/_panelParts";
 
 /** Icon-led sentences built on the shared Item; the icon, not just its colour, carries the meaning. */
-export function IconList({ items, icon: Icon, iconClassName, label }: { items: string[]; icon: LucideIcon; iconClassName: string; label?: string }) {
+export function IconList({ items, icon: Icon, iconClassName, label, renderAction }: { items: string[]; icon: LucideIcon; iconClassName: string; label?: string; renderAction?: (text: string) => ReactNode }) {
   return (
     <ItemGroup aria-label={label} className="gap-0.5">
       {items.map((text) => (
@@ -14,6 +14,7 @@ export function IconList({ items, icon: Icon, iconClassName, label }: { items: s
           </ItemMedia>
           <ItemContent>
             <ItemDescription className="line-clamp-none text-[13px] leading-snug text-hx-coal">{text}</ItemDescription>
+            {renderAction?.(text)}
           </ItemContent>
         </Item>
       ))}

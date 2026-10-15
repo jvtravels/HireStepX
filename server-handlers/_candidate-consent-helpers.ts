@@ -29,7 +29,7 @@ export const REPORT_REASONS = [
 ] as const;
 export type ReportReason = (typeof REPORT_REASONS)[number];
 
-export const EMPLOYER_ACTIONS = ["block", "report", "respond"] as const;
+export const EMPLOYER_ACTIONS = ["block", "report", "respond", "resolve_request"] as const;
 export type EmployerAction = (typeof EMPLOYER_ACTIONS)[number];
 
 export type CandidateResponse = "interested" | "declined";

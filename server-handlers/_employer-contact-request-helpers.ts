@@ -28,12 +28,3 @@ export function joinFieldLabels(fields: readonly ContactRequestField[]): string 
   if (labels.length <= 1) return labels[0] ?? "";
   return `${labels.slice(0, -1).join(", ")} and ${labels[labels.length - 1]}`;
 }
-
-export function contactRequestText(companyName: string, roleTitle: string, fields: readonly ContactRequestField[]) {
-  const list = joinFieldLabels(fields);
-  return {
-    title: `${companyName} asked for your contact details`,
-    body: `${companyName} would like your ${list} for ${roleTitle}. Please upload an updated resume or add them to your profile.`,
-    systemMessage: `📎 ${companyName} requested your ${list}. Please upload an updated resume or add them to your profile.`,
-  };
-}

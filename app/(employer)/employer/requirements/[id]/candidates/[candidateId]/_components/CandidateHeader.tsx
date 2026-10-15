@@ -3,16 +3,38 @@ import { BriefcaseIcon, ClockIcon, ExternalLinkIcon, LockIcon, MailIcon, MapPinI
 import { cn } from "cn";
 import type { Candidate } from "@/employer/mockData";
 import { Button } from "@/components/ui/button";
-import { Badge, CandidateStatusChip, ScoreChip } from "@/employer/_atoms";
+import { Badge, CandidateStatusChip, matchBand } from "@/employer/_atoms";
 import { canInviteToInterview } from "@/employer/InterviewInviteDialog";
 import { readCandidateResponse } from "@/employer/_candidateFields";
-import { MetaLine, type MetaPart } from "@/employer/_panelParts";
+import { DotLabel, InfoTip, MetaLine, type DotTone, type MetaPart } from "@/employer/_panelParts";
 import { PortfolioLinkIcon } from "@/portfolioLinkIcons";
 import { formatPaise, singleUnlockPrice } from "../../../../../../../../server-handlers/_unlock-pricing";
 import { HEADER_ACTION, candidateLinks, formatYears, initials, maskedName } from "./helpers";
 import { PipelineStepper } from "./CandidatePipeline";
-import { RequestContact } from "./RequestContact";
+import { RequestButton, RequestPopover } from "./RequestPopover";
+import type { CandidateRequestsState } from "./useCandidateRequests";
 import { ResumeDownload } from "./ResumeDownload";
+
+const BAND_SIGNAL: Record<ReturnType<typeof matchBand>, { label: string; tone: DotTone }> = {
+  strong: { label: "Strong match", tone: "good" },
+  fair: { label: "Fair match", tone: "soon" },
+  low: { label: "Low match", tone: "unknown" },
+};
+
+function MatchSignal({ score }: { score: number }) {
+  const { label, tone } = BAND_SIGNAL[matchBand(score)];
+  return (
+    <span className="inline-flex items-center gap-0.5 pr-1">
+      <DotLabel tone={tone}>
+        <span className="font-medium">{label}</span>
+        <span className="tabular-nums text-hx-ink-soft">{score}</span>
+      </DotLabel>
+      <InfoTip label="How the match score works">
+        The score blends role match, required skills, practice results and recent activity, so it can differ from the bars under Fit for this role.
+      </InfoTip>
+    </span>
+  );
+}
 
 function ContactLink({ icon: Icon, label, href, children }: { icon: typeof MailIcon; label: string; href: string; children: ReactNode }) {
   return (
@@ -34,17 +56,6 @@ function MissingContact({ icon: Icon, label }: { icon: typeof MailIcon; label: s
   );
 }
 
-function HiddenContact({ icon: Icon, label }: { icon: typeof MailIcon; label: string }) {
-  return (
-    <span className="inline-flex items-center gap-2 text-[13px] text-hx-ink-soft">
-      <Icon size={15} aria-hidden="true" className="shrink-0" />
-      <span>{label}</span>
-      <LockIcon size={12} aria-hidden="true" className="shrink-0" />
-      <span className="sr-only">hidden until unlock</span>
-    </span>
-  );
-}
-
 export function CandidateHeader({
   candidate,
   declined,
@@ -53,6 +64,7 @@ export function CandidateHeader({
   onUnlock,
   onInvite,
   onReject,
+  requests,
 }: {
   candidate: Candidate;
   declined: boolean;
@@ -61,6 +73,7 @@ export function CandidateHeader({
   onUnlock: () => void;
   onInvite: () => void;
   onReject: () => void;
+  requests: CandidateRequestsState;
 }) {
   const resume = candidate.resume;
   const displayName = maskedName(candidate);
@@ -82,14 +95,22 @@ export function CandidateHeader({
   if (hasCity) meta.push({ icon: MapPinIcon, text: candidate.city });
   if (candidate.lastActiveDaysAgo >= 0) meta.push({ icon: ClockIcon, text: `Active ${candidate.lastActiveDaysAgo === 0 ? "today" : `${candidate.lastActiveDaysAgo}d ago`}` });
 
+  const requestControl = requests.available ? (
+    <RequestPopover candidate={candidate} state={requests} disabled={inviteBlocked} disabledReason={blockedReason}>
+      <RequestButton pendingCount={requests.pending.length} />
+    </RequestPopover>
+  ) : null;
+
   return (
-    <header className="min-w-0 rounded-xl border border-hx-line bg-white p-5">
+    <header className="min-w-0">
       <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
         <div className="min-w-0 flex-1 basis-80">
           <div className="flex items-center gap-3">
-            <div aria-hidden="true" className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-hx-indigo-100 text-[13px] font-semibold text-hx-indigo">
-              {candidate.unlocked ? initials(displayName) : <LockIcon size={19} />}
-            </div>
+            {candidate.unlocked && (
+              <div aria-hidden="true" className="flex size-10 shrink-0 items-center justify-center rounded-full bg-hx-soft text-[13px] font-semibold text-hx-coal">
+                {initials(displayName)}
+              </div>
+            )}
             <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
               <h1 className="m-0 text-[clamp(22px,5vw,26px)] leading-tight font-bold tracking-[-0.02em] text-hx-coal [overflow-wrap:anywhere]">{displayName}</h1>
               <CandidateStatusChip status={candidate.candidateStatus} />
@@ -100,7 +121,7 @@ export function CandidateHeader({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <ScoreChip score={candidate.matchScore} />
+          <MatchSignal score={candidate.matchScore} />
           {resumeFileName && <ResumeDownload matchId={candidate.id} fileName={resumeFileName} className={HEADER_ACTION} />}
           {canReject && <Button type="button" variant="outline" onClick={onReject} disabled={suspended} className={cn("pointer-coarse:h-11", HEADER_ACTION)}>Reject</Button>}
           {!candidate.unlocked && (
@@ -113,13 +134,13 @@ export function CandidateHeader({
           {canInvite && candidate.unlocked && <Button type="button" onClick={onInvite} disabled={inviteBlocked} className={cn("pointer-coarse:h-11", HEADER_ACTION)}>Send interview invite</Button>}
         </div>
       </div>
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
-        <MetaLine parts={meta} />
+      <div className="mt-2.5 flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
+        <MetaLine parts={meta} className="text-[13px] text-hx-ink-soft" />
         <PipelineStepper status={candidate.candidateStatus} />
       </div>
       {blockedReason && <p className="m-0 mt-3 text-right text-[12px] text-hx-ink-soft">{blockedReason}</p>}
 
-      <div className="mt-4 min-w-0 border-t border-hx-line pt-4">
+      <div className="mt-3 min-w-0">
         {candidate.unlocked ? (
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
             {candidate.contact?.email ? <ContactLink icon={MailIcon} label="Email" href={`mailto:${candidate.contact.email}`}>{candidate.contact.email}</ContactLink> : <MissingContact icon={MailIcon} label="Email" />}
@@ -133,13 +154,12 @@ export function CandidateHeader({
                 <span className="sr-only"> (opens in a new tab)</span>
               </a>
             ))}
-            <RequestContact candidate={candidate} disabled={inviteBlocked} disabledReason={blockedReason} />
+            {requestControl}
           </div>
         ) : (
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-            <HiddenContact icon={MailIcon} label="Email" />
-            <HiddenContact icon={PhoneIcon} label="Phone" />
-            <HiddenContact icon={ExternalLinkIcon} label="Links" />
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            <p className="m-0 text-[13px] text-hx-ink-soft">Email, phone and links are shared after unlock.</p>
+            {requestControl}
           </div>
         )}
       </div>

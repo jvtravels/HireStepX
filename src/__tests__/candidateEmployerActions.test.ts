@@ -22,11 +22,12 @@ const UID = "cand-1";
 const MATCH = "11111111-1111-4111-8111-111111111111";
 const EMP = "emp-1";
 const REQ = "req-1";
+const RID = "22222222-2222-4222-8222-222222222222";
 type Call = { url: string; method: string; body?: string };
 
 function fakeDb(o: {
   owner?: string; response?: string; employerSuspended?: boolean; reporters?: string[];
-  duplicateReport?: boolean; matchMissing?: boolean; blockFails?: boolean; unlocked?: boolean;
+  duplicateReport?: boolean; matchMissing?: boolean; blockFails?: boolean; unlocked?: boolean; requestGone?: boolean;
 } = {}) {
   const calls: Call[] = [];
   const res = (body: unknown, status = 200) => ({ ok: status < 400, status, json: async () => body }) as unknown as Response;
@@ -42,6 +43,9 @@ function fakeDb(o: {
       }]);
     }
     if (u.includes("/rest/v1/requirement_matches") && method === "PATCH") return res([{ id: MATCH }]);
+    if (u.includes("/rest/v1/candidate_requests") && method === "PATCH") {
+      return o.requestGone ? res([]) : res([{ id: RID, match_id: MATCH, kind: "document", topic: "Certificate", fields: null, note: null, status: "fulfilled", response_note: null, created_at: "c", resolved_at: "r" }]);
+    }
     if (u.includes("/rest/v1/employer_blocks")) return o.blockFails ? res({}, 500) : res([]);
     if (u.includes("/rest/v1/employer_reports") && method === "POST") return o.duplicateReport ? res({}, 409) : res([], 201);
     if (u.includes("/rest/v1/employer_reports") && method === "GET") return res((o.reporters ?? [UID]).map((r) => ({ reporter_user_id: r })));
@@ -189,5 +193,45 @@ describe("respond", () => {
     expect((await res.json()).changed).toBe(false);
     expect(calls.some((c) => c.method !== "GET")).toBe(false);
     expect(notify).not.toHaveBeenCalled();
+  });
+});
+
+describe("resolve_request", () => {
+  it("400 on a bad requestId or resolution", async () => {
+    fakeDb();
+    expect((await handler(post({ action: "resolve_request", matchId: MATCH, requestId: "x", resolution: "fulfilled" }))).status).toBe(400);
+    expect((await handler(post({ action: "resolve_request", matchId: MATCH, requestId: RID, resolution: "cancelled" }))).status).toBe(400);
+  });
+
+  it("patches only a pending request owned by this candidate and match, then notifies the employer", async () => {
+    const calls = fakeDb();
+    const res = await handler(post({ action: "resolve_request", matchId: MATCH, requestId: RID, resolution: "fulfilled", note: "Shared the certificate" }));
+    expect(res.status).toBe(200);
+    const p = calls.find((c) => c.url.includes("candidate_requests") && c.method === "PATCH")!;
+    expect(p.url).toContain(`id=eq.${RID}`);
+    expect(p.url).toContain(`match_id=eq.${MATCH}`);
+    expect(p.url).toContain(`candidate_user_id=eq.${UID}`);
+    expect(p.url).toContain("status=eq.pending");
+    expect(JSON.parse(p.body!)).toMatchObject({ status: "fulfilled", response_note: "Shared the certificate" });
+    expect(notify).toHaveBeenCalledWith(expect.objectContaining({ userId: EMP, type: "candidate_request_resolved" }));
+  });
+
+  it("409 when the request is no longer pending", async () => {
+    fakeDb({ requestGone: true });
+    expect((await handler(post({ action: "resolve_request", matchId: MATCH, requestId: RID, resolution: "declined" }))).status).toBe(409);
+    expect(notify).not.toHaveBeenCalled();
+  });
+
+  it("refuses contact details in the reply while the match is locked", async () => {
+    const calls = fakeDb({ unlocked: false });
+    const res = await handler(post({ action: "resolve_request", matchId: MATCH, requestId: RID, resolution: "fulfilled", note: "mail me a@b.com" }));
+    expect(res.status).toBe(400);
+    expect(calls.some((c) => c.url.includes("candidate_requests"))).toBe(false);
+  });
+
+  it("allows contact details in the reply once unlocked", async () => {
+    fakeDb({ unlocked: true });
+    const res = await handler(post({ action: "resolve_request", matchId: MATCH, requestId: RID, resolution: "fulfilled", note: "mail me a@b.com" }));
+    expect(res.status).toBe(200);
   });
 });

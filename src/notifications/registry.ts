@@ -17,6 +17,8 @@ export const NOTIFICATION_TYPES = {
   candidate_status_change: { audience: "candidate", category: "applications", priority: "normal" },
   employer_viewed_profile: { audience: "candidate", category: "activity", priority: "low" },
   employer_contact_request: { audience: "candidate", category: "applications", priority: "normal" },
+  candidate_request: { audience: "candidate", category: "applications", priority: "normal" },
+  candidate_request_resolved: { audience: "employer", category: "applications", priority: "normal" },
   unlock_confirmed: { audience: "employer", category: "billing", priority: "normal" },
   matches_ready: { audience: "employer", category: "matches", priority: "normal" },
   strong_match_found: { audience: "employer", category: "matches", priority: "normal" },

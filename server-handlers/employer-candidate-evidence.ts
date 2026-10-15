@@ -34,6 +34,7 @@ import {
   scrubLockedQuotes,
   extractDeliveryMetrics,
   latestSessionByUser,
+  selectSessionsForRole,
   computeVerifiedCapabilitiesForCandidate,
   claimProfileView,
   type SessionRow,
@@ -194,10 +195,14 @@ export default async function handler(req: Request): Promise<Response> {
        dashboard draws on, so a capability the candidate sees "Verified"
        doesn't come up unverified here purely from a shallower fetch. */
     const sessionsRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/sessions?user_id=eq.${encodeURIComponent(candidateUserId)}&select=user_id,created_at,report_json,type,skill_scores,score,focus&report_generated_at=not.is.null&order=created_at.desc&limit=50`,
+      `${SUPABASE_URL}/rest/v1/sessions?user_id=eq.${encodeURIComponent(candidateUserId)}&select=user_id,created_at,report_json,type,skill_scores,score,focus,target_role&report_generated_at=not.is.null&order=created_at.desc&limit=50`,
       { headers: serviceHeaders() },
     );
-    const sessionRows = (await sessionsRes.json().catch(() => [])) as SessionRow[];
+    const allSessionRows = (await sessionsRes.json().catch(() => [])) as SessionRow[];
+    /* The newest session is often for a different role than this job (a
+       Software Engineer practice run shown under a Product Designer opening).
+       Evidence, trend and verified capabilities all use the role's sessions. */
+    const { rows: sessionRows, fit: roleFit } = selectSessionsForRole(allSessionRows, match.employer_requirements?.title);
     const latest = latestSessionByUser(sessionRows).get(candidateUserId);
 
     /* Answers are shown while locked; only the candidate's name and contact
@@ -226,6 +231,7 @@ export default async function handler(req: Request): Promise<Response> {
         skills: latest ? extractEvidenceSkills(latest.report_json) : [],
         quotes: latest ? scrubQuotes(extractEvidenceQuotes(latest.report_json)) : [],
         unlocked,
+        roleFit,
         readiness: latest ? extractReadinessForecast(latest.report_json) : null,
         starCompleteness: latest ? extractStarCompleteness(latest.report_json) : null,
         sessionDate: latest?.created_at ?? null,

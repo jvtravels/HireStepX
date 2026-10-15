@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { authHeaders } from "@/supabase";
 import { apiFetch } from "@/apiClient";
+import type { CandidateRequestDto, CreateRequestBody } from "./_candidateRequestTypes";
 import { captureClientEvent } from "@/posthogClient";
 import { isDashboardData, type EmployerDashboardData, type DashboardRange } from "./dashboardData";
 import { RequirementSummary, Requirement, Candidate, RequirementStage, RequirementFormValues, CandidateStatus, ArchiveDisposition } from "./mockData";
@@ -90,6 +91,7 @@ export interface CandidateEvidence {
   readiness: { band: "strongHire" | "hire" | "leanHire"; confidence: "low" | "medium" | "high" } | null;
   starCompleteness: { pct: number; questionsConsidered: number } | null;
   sessionDate: string | null;
+  roleFit?: { status: "matched" | "mismatch" | "none"; practicedFor: string | null; practicedAt: string | null };
   verifiedCapabilities: VerifiedCapability[];
   sessionTrend?: Array<{ date: string; score: number; focus: string | null; type?: string | null }>;
   questions?: EvidenceQuestion[];
@@ -226,7 +228,9 @@ interface EmployerDataContextValue {
   updateCandidateStatus: (matchId: string, payload: StatusPayload) => Promise<boolean>;
   /** Same as updateCandidateStatus but exposes `code: "unlock_required"` (402) / suspended (403). */
   updateCandidateStatusResult: (matchId: string, payload: StatusPayload) => Promise<EmployerApiResult<null>>;
-  requestCandidateContact: (matchId: string, fields: string[]) => Promise<EmployerApiResult<null>>;
+  fetchCandidateRequests: (matchId: string) => Promise<{ requests: CandidateRequestDto[]; available: boolean } | null>;
+  createCandidateRequest: (matchId: string, body: CreateRequestBody) => Promise<EmployerApiResult<CandidateRequestDto>>;
+  cancelCandidateRequest: (matchId: string, requestId: string) => Promise<EmployerApiResult<CandidateRequestDto>>;
   fetchCandidateEvidence: (matchId: string) => Promise<CandidateEvidence | null>;
   fetchCandidateResumeUrl: (matchId: string) => Promise<{ url: string; fileName: string } | null>;
   fetchRequirementActivity: (id: string) => Promise<RequirementActivity[] | null>;
@@ -495,10 +499,22 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
 
   const updateCandidateStatus = useCallback(async (matchId: string, payload: StatusPayload) => (await updateCandidateStatusResult(matchId, payload)).ok, [updateCandidateStatusResult]);
 
-  const requestCandidateContact = useCallback(async (matchId: string, fields: string[]): Promise<EmployerApiResult<null>> => {
-    const res = await apiFetch<{ ok: boolean }>("/api/employer-request-contact", { matchId, fields }, { method: "POST" });
-    if (res.ok) return { ok: true, data: null };
-    return { ok: false, error: toApiError(res, res.status === 403 ? SUSPENDED_MESSAGE : "Couldn't send the request — please try again.") };
+  const fetchCandidateRequests = useCallback(async (matchId: string) => {
+    const res = await getWithRetry(`/api/employer-candidate-requests?matchId=${encodeURIComponent(matchId)}`);
+    if (!res || !res.ok || !isRecord(res.data) || !Array.isArray(res.data.requests)) return null;
+    return { requests: res.data.requests as CandidateRequestDto[], available: res.data.available !== false };
+  }, []);
+
+  const createCandidateRequest = useCallback(async (matchId: string, body: CreateRequestBody): Promise<EmployerApiResult<CandidateRequestDto>> => {
+    const res = await apiFetch<{ request?: CandidateRequestDto }>("/api/employer-candidate-requests", { matchId, ...body }, { method: "POST" });
+    if (res.ok && res.data?.request) return { ok: true, data: res.data.request };
+    return { ok: false, error: toApiError(res, res.status === 403 ? SUSPENDED_MESSAGE : "Couldn't send the request. Please try again.") };
+  }, []);
+
+  const cancelCandidateRequest = useCallback(async (matchId: string, requestId: string): Promise<EmployerApiResult<CandidateRequestDto>> => {
+    const res = await apiFetch<{ request?: CandidateRequestDto }>("/api/employer-candidate-requests", { action: "cancel", matchId, requestId }, { method: "POST" });
+    if (res.ok && res.data?.request) return { ok: true, data: res.data.request };
+    return { ok: false, error: toApiError(res, "Couldn't cancel the request. Please try again.") };
   }, []);
 
   const fetchCandidateEvidence = useCallback(async (matchId: string): Promise<CandidateEvidence | null> => {
@@ -621,7 +637,7 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
     updateRequirementStage,
     updateCandidateStatus,
     updateCandidateStatusResult,
-    requestCandidateContact,
+    fetchCandidateRequests, createCandidateRequest, cancelCandidateRequest,
     fetchCandidateEvidence,
     fetchCandidateResumeUrl,
     fetchRequirementActivity,
@@ -641,7 +657,7 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
     refreshCompanyStatus, submitCompanyProfile, submitCompanyProfileResult, addRequirement, updateRequirement,
     createUnlockOrder, createUnlockOrderResult, verifyUnlockPayment, fetchRequirementDetail, archiveRequirement,
     reopenRequirement, updateRequirementStage, updateCandidateStatus, updateCandidateStatusResult,
-    requestCandidateContact, fetchCandidateEvidence, fetchCandidateResumeUrl, fetchRequirementActivity, fetchUnlockHistory, fetchDashboard, refreshRequirements, listConversations,
+    fetchCandidateRequests, createCandidateRequest, cancelCandidateRequest, fetchCandidateEvidence, fetchCandidateResumeUrl, fetchRequirementActivity, fetchUnlockHistory, fetchDashboard, refreshRequirements, listConversations,
     fetchMessages, sendMessage, sendMessageResult, uploadMessageAttachment, flagMessage, fetchMessageAttachmentUrl,
   ]);
 

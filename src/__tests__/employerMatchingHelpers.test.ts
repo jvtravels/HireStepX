@@ -8,6 +8,7 @@ import {
   isEligiblePoolProfile,
   isRelevantProfile,
   keepGradedSessions,
+  keepSessionsForRole,
   computeTrustedSessionStats,
   fetchKeyset,
   loadBlockedCandidateIds,
@@ -99,6 +100,17 @@ describe("graded-session trust", () => {
     ]);
     expect(stats.sessionCount.get("u")).toBe(2);
     expect(stats.avgScore.get("u")).toBe(70);
+  });
+});
+
+describe("keepSessionsForRole", () => {
+  it("drops practice for a different role so it can't move the shortlist score", () => {
+    const rows = [
+      { user_id: "u", score: 90, target_role: "Software Engineer" },
+      { user_id: "u", score: 60, target_role: "Senior Product Designer" },
+      { user_id: "u", score: 70, target_role: null },
+    ];
+    expect(keepSessionsForRole(rows, "Product Designer").map((r) => r.score)).toEqual([60, 70]);
   });
 });
 
