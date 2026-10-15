@@ -30,7 +30,7 @@ function MatchSignal({ score }: { score: number }) {
         <span className="tabular-nums text-hx-ink-soft">{score}</span>
       </DotLabel>
       <InfoTip label="How the match score works">
-        The score blends role match, required skills, practice results and recent activity, so it can differ from the bars under Fit for this role.
+        The score blends role match, required skills, practice results and recent activity, so it can differ from the criteria under Fit for this role.
       </InfoTip>
     </span>
   );

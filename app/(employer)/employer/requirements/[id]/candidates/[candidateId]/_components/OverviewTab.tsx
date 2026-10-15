@@ -5,13 +5,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type { CandidateEvidence, Requirement } from "@/employer/EmployerDataContext";
 import type { Candidate } from "@/employer/mockData";
 import { OutlineCta, matchBand } from "@/employer/_atoms";
-import { InfoTip, KeyValueList, KeyValueRow, MeterRow, Panel, PanelButton, Stat, StatGrid } from "@/employer/_panelParts";
+import { InfoTip, KeyValueList, KeyValueRow, Panel, PanelButton, Stat, StatGrid } from "@/employer/_panelParts";
 import { InlineNotice } from "@/employer/_requirementAtoms";
 import { ChipList, IconList, MutedText } from "./parts";
 import { ItemRequest, type RequestUi } from "./RequestPopover";
 import { RequestsPanel } from "./RequestsPanel";
 import { RoleMismatchNotice, hasRoleMismatch } from "./RoleMismatchNotice";
-import { PROVENANCE, READINESS_LABEL, averageTenureMonths, buildResumeInsights, buildRoleFit, employerCapabilities, evidenceAverage, formatSessionDate, formatTenure, formatYears, type FitStatus } from "./helpers";
+import { PROVENANCE, READINESS_LABEL, averageTenureMonths, buildResumeInsights, buildRoleFit, employerCapabilities, evidenceAverage, formatSessionDate, formatTenure, formatYears, summarizeFit, type FitStatus } from "./helpers";
 
 export type EvidenceState = { evidence: CandidateEvidence | null; loading: boolean; failed: boolean; onRetry: () => void };
 
@@ -58,12 +58,13 @@ const BAND_HERO: Record<ReturnType<typeof matchBand>, { label: string; cls: stri
   low: { label: "Low match", cls: "bg-hx-soft text-hx-neutral-ink" },
 };
 
+const SEGMENT_CLS: Record<FitStatus, string> = { meets: "bg-hx-success", partial: "bg-hx-warning", gap: "bg-hx-error" };
+
 function MatchPanel({ candidate, requirement, matched, unmatched, evidence, requestUi }: { candidate: Candidate; requirement: Requirement; matched: string[]; unmatched: string[]; evidence: CandidateEvidence | null; requestUi: RequestUi }) {
-  const b = candidate.matchBreakdown;
   const rows = buildRoleFit(candidate, requirement, matched, evidence);
-  const meets = rows.filter((r) => r.status === "meets").length;
+  const fit = summarizeFit(rows);
   const band = BAND_HERO[matchBand(candidate.matchScore)];
-  const showLocation = requirement.workMode === "remote" || requirement.locations.length > 0;
+  const shortfalls = [fit.gaps.length > 0 && `Gap: ${fit.gaps.join(", ")}.`, fit.close.length > 0 && `Close: ${fit.close.join(", ")}.`].filter(Boolean).join(" ");
   return (
     <Panel id="match-heading" title="Fit for this role" icon={<TargetIcon size={15} />}>
       <div className="grid gap-5">
@@ -76,21 +77,25 @@ function MatchPanel({ candidate, requirement, matched, unmatched, evidence, requ
               </p>
               <span className={cn("inline-flex items-center rounded-full px-2.5 py-1 text-[12px] leading-none font-medium", band.cls)}>{band.label}</span>
             </div>
-            {b && (
-              <div className="grid gap-3">
-                <MeterRow label="Role title" value={b.roleMatch} />
-                <MeterRow label="Skills" value={b.skillMatch} />
-                {showLocation && <MeterRow label="Location" value={b.locationMatch} />}
+            {fit.total > 0 && (
+              <div className="grid gap-2">
+                <p className="m-0 text-[15px] font-semibold text-hx-coal">
+                  Meets <span className="tabular-nums">{fit.meets} of {fit.total}</span> criteria
+                </p>
+                <div aria-hidden="true" className="flex gap-1">
+                  {rows.map((row) => (
+                    <span key={row.id} className={cn("h-1.5 flex-1 rounded-full", SEGMENT_CLS[row.status])} />
+                  ))}
+                </div>
+                <p className="m-0 text-[13px] text-hx-ink-soft">{shortfalls || "Nothing short of what the posting asks for."}</p>
               </div>
             )}
           </div>
-          <p className="m-0 mt-3 text-[12px] text-hx-ink-soft">The score also weighs practice results and recent activity.</p>
+          <p className="m-0 mt-3 text-[12px] text-hx-ink-soft">The score also weighs title match, practice results and recent activity, so it is more than the criteria below.</p>
         </div>
         {rows.length > 0 && (
           <div className="border-t border-hx-line pt-4">
-            <p className="m-0 mb-1 text-[13px] text-hx-ink-soft">
-              Meets <span className="font-semibold text-hx-coal tabular-nums">{meets} of {rows.length}</span> criteria set for {requirement.title}
-            </p>
+            <p className="m-0 mb-1 text-[13px] text-hx-ink-soft">Compared with {requirement.title}</p>
             <ul aria-label="Criteria compared with the posting" className="m-0 flex list-none flex-col p-0">
               {rows.map((row) => (
                 <li key={row.id} className="grid gap-2.5 border-b border-hx-line py-3 last:border-b-0 last:pb-0">
@@ -138,10 +143,10 @@ function MatchPanel({ candidate, requirement, matched, unmatched, evidence, requ
 
 function ClampedText({ text }: { text: string }) {
   const [open, setOpen] = useState(false);
-  const long = text.length > 280;
+  const long = text.length > 520;
   return (
     <div className="grid justify-items-start gap-1">
-      <p className={cn("m-0 max-w-[75ch] text-[13px] leading-relaxed whitespace-pre-line text-hx-ink-soft [overflow-wrap:anywhere]", long && !open && "line-clamp-4")}>{text}</p>
+      <p className={cn("m-0 max-w-[75ch] text-[13px] leading-relaxed whitespace-pre-line text-hx-ink-soft [overflow-wrap:anywhere]", long && !open && "line-clamp-6")}>{text}</p>
       {long && <PanelButton onClick={() => setOpen((v) => !v)} expanded={open}>{open ? "Show less" : "Show more"}</PanelButton>}
     </div>
   );
@@ -311,13 +316,13 @@ export function OverviewTab({
   requestUi: RequestUi;
 }) {
   return (
-    <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">
-      <div className="flex min-w-0 flex-col gap-4 *:last:flex-1">
+    <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:items-start">
+      <div className="flex min-w-0 flex-col gap-4">
         <MatchPanel candidate={candidate} requirement={requirement} matched={matched} unmatched={unmatched} evidence={state.evidence} requestUi={requestUi} />
         <AnalysisPanel candidate={candidate} requirement={requirement} unmatched={unmatched} requestUi={requestUi} />
         <RequestsPanel state={requestUi.state} disabled={requestUi.disabled} />
       </div>
-      <div className="flex min-w-0 flex-col gap-4 *:last:flex-1">
+      <div className="flex min-w-0 flex-col gap-4">
         <ProfilePanel candidate={candidate} onOpenResume={onOpenResume} />
         <PracticeSnapshot candidate={candidate} state={state} onOpenPractice={onOpenPractice} requirementTitle={requirement.title} requestUi={requestUi} />
       </div>

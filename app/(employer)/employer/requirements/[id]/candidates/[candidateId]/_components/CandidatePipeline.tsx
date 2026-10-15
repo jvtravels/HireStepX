@@ -1,5 +1,5 @@
 import { Fragment } from "react";
-import { CheckIcon } from "lucide-react";
+import { CheckIcon, XIcon } from "lucide-react";
 import { cn } from "cn";
 import type { CandidateStatus } from "@/employer/mockData";
 import { CANDIDATE_STATUS_LABEL } from "@/employer/_atoms";
@@ -35,6 +35,21 @@ export function PipelineStepper({ status, className }: { status: CandidateStatus
           </Fragment>
         );
       })}
+      {negative && (
+        <>
+          <li aria-hidden="true" className="h-px w-4 shrink-0 bg-hx-line" />
+          <li aria-current="step" className="inline-flex items-center gap-1.5 text-[12px]">
+            <span
+              aria-hidden="true"
+              className={cn("flex size-4 shrink-0 items-center justify-center rounded-full", status === "no_response" ? "bg-hx-ink-soft" : "bg-hx-error-ink")}
+            >
+              <XIcon size={10} strokeWidth={3} className="text-white" />
+            </span>
+            <span className={cn("font-semibold", status === "no_response" ? "text-hx-neutral-ink" : "text-hx-error-ink")}>{CANDIDATE_STATUS_LABEL[status]}</span>
+            <span className="sr-only">Current stage</span>
+          </li>
+        </>
+      )}
     </ol>
   );
 }

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { averageTenureMonths, buildResumeInsights, buildRoleFit, cleanQuestionText, dedupeQuestions, describeDelivery, employerCapabilities, formatTenure, formatYears, matchedSkillCount, groupSkillsByDepth, noticeDays, skillChipLabel, summarizeQuestions } from "../../app/(employer)/employer/requirements/[id]/candidates/[candidateId]/_components/helpers";
+import { averageTenureMonths, buildResumeInsights, buildRoleFit, cleanQuestionText, dedupeQuestions, describeDelivery, employerCapabilities, formatTenure, formatYears, matchedSkillCount, groupSkillsByDepth, noticeDays, skillChipLabel, summarizeFit, summarizeQuestions } from "../../app/(employer)/employer/requirements/[id]/candidates/[candidateId]/_components/helpers";
 import type { CandidateEvidence, EvidenceQuestion } from "../employer/EmployerDataContext";
 import type { Candidate, Requirement } from "../employer/mockData";
 
@@ -210,5 +210,20 @@ describe("dedupeQuestions and employerCapabilities", () => {
 describe("cleanQuestionText", () => {
   it("strips interviewer stage directions", () => {
     expect(cleanQuestionText("Tell me about a build. [pause] What went wrong?")).toBe("Tell me about a build. What went wrong?");
+  });
+});
+
+describe("summarizeFit", () => {
+  it("counts met criteria and names gaps and near misses", () => {
+    const rows = [
+      { id: "skills", label: "Required skills", asked: "3 listed", has: "3 of 3", status: "meets" as const },
+      { id: "experience", label: "Experience", asked: "5+ years", has: "4 years", status: "partial" as const },
+      { id: "location", label: "Location", asked: "Pune", has: "Delhi", status: "gap" as const },
+    ];
+    expect(summarizeFit(rows)).toEqual({ meets: 1, total: 3, gaps: ["Location"], close: ["Experience"] });
+  });
+
+  it("is empty when no criteria are set", () => {
+    expect(summarizeFit([])).toEqual({ meets: 0, total: 0, gaps: [], close: [] });
   });
 });

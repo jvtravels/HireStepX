@@ -224,6 +224,17 @@ export function buildRoleFit(candidate: Candidate, requirement: Requirement, mat
   return rows;
 }
 
+export interface FitSummary { meets: number; total: number; gaps: string[]; close: string[] }
+
+export function summarizeFit(rows: FitRow[]): FitSummary {
+  return {
+    meets: rows.filter((r) => r.status === "meets").length,
+    total: rows.length,
+    gaps: rows.filter((r) => r.status === "gap").map((r) => r.label),
+    close: rows.filter((r) => r.status === "partial").map((r) => r.label),
+  };
+}
+
 /** "1 yr 4 mo", "7 mo"; used for per-role tenure. */
 export function formatTenure(months: number): string {
   if (months < 12) return `${months} mo`;
