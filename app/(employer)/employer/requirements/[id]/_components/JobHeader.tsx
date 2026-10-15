@@ -155,7 +155,7 @@ export default function JobHeader({
       <div className={cn("mt-4 grid min-w-0 gap-x-8 gap-y-4 border-t border-hx-line pt-4 ", requirementsSlot && "lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]")}>
         <div className="min-w-0">
           {description && (
-            <p className="m-0 max-w-[75ch] text-[14px] leading-relaxed whitespace-pre-line text-hx-coal [overflow-wrap:anywhere]">
+            <p className="m-0 max-w-[75ch] text-[14px] leading-relaxed whitespace-pre-line text-hx-ink-soft [overflow-wrap:anywhere]">
               {shownDescription}
               {preview.truncated && (
                 <>
