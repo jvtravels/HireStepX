@@ -133,6 +133,10 @@ function ProfilePanel({ candidate, onOpenResume }: { candidate: Candidate; onOpe
   const facts: Array<{ label: string; value: string; selfReported?: boolean }> = [];
   if (latestRole) facts.push({ label: "Latest role", value: latest?.period ? `${latestRole} (${latest.period})` : latestRole });
   if (r.yearsExperience != null) facts.push({ label: "Experience", value: `${formatYears(r.yearsExperience)}${r.seniorityLevel ? `, ${r.seniorityLevel}` : ""}` });
+  if (r.primaryDomain) {
+    const primaryYears = r.domainYears?.find((d) => d.domain.toLowerCase() === r.primaryDomain?.toLowerCase())?.years;
+    facts.push({ label: "Domain", value: primaryYears ? `${r.primaryDomain} (${formatYears(primaryYears)})` : r.primaryDomain });
+  }
   if (avgTenureMonths != null) facts.push({ label: "Average tenure", value: `${formatTenure(avgTenureMonths)} per role` });
   if (eduText) facts.push({ label: "Education", value: eduText });
   if (r.noticePeriod) facts.push({ label: "Notice period", value: r.noticePeriod, selfReported: true });

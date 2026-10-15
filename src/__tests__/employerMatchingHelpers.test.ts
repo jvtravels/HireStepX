@@ -362,7 +362,7 @@ describe("pre-unlock masking", () => {
   it("scrubLockedResume strips contact details from free text but keeps employers and schools", () => {
     const redacted = {
       summary: "Ten years at Flipkart. Mail a@b.in or +91 98765 43210.", headline: "Engineer at Flipkart", keyAchievements: ["Cut latency by 40%, see https://linkedin.com/in/x"],
-      certifications: ["AWS"], careerTrajectory: null, promotionSignals: [], skillsDetailed: [], experience: [{ company: "Flipkart", title: "SDE" }], education: [{ school: "BITS Pilani" }],
+      certifications: ["AWS"], careerTrajectory: null, promotionSignals: [], primaryDomain: "Backend, a@b.in", interviewStrengths: ["Calls +91 98765 43210"], skillsDetailed: [], experience: [{ company: "Flipkart", title: "SDE" }], education: [{ school: "BITS Pilani" }],
     } as never;
     const out = scrubLockedResume(redacted);
     expect(JSON.stringify(out)).not.toMatch(/a@b\.in|98765|linkedin/);

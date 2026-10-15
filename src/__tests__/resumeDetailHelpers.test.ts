@@ -195,6 +195,21 @@ describe("richer resume detail", () => {
     expect(JSON.stringify(extractResumeDetail(aiResume))).not.toMatch(/system design|Add metrics|resumeScore|interviewGaps|improvements/);
   });
 
+  it("carries primary domain, years per domain and interview strengths, scrubbing the name when locked", () => {
+    const d = extractResumeDetail({
+      topSkills: ["Figma"],
+      primaryDomain: "Product Design",
+      domainYearsExperience: { "Frontend Engineering": 1, "Product Design": 5, Bad: "x" },
+      interviewStrengths: ["Ravi explains design tradeoffs clearly", " "],
+      interviewGaps: ["No system design"],
+    });
+    expect(d.primaryDomain).toBe("Product Design");
+    expect(d.domainYears).toEqual([{ domain: "Product Design", years: 5 }, { domain: "Frontend Engineering", years: 1 }]);
+    expect(d.interviewStrengths).toEqual(["Ravi explains design tradeoffs clearly"]);
+    expect(redactResumeDetailForLock(d, "Ravi Kumar").interviewStrengths).toEqual(["The candidate explains design tradeoffs clearly"]);
+    expect(JSON.stringify(d)).not.toMatch(/system design/);
+  });
+
   it("keeps bullets from a regex-parsed resume, capped at five", () => {
     const d = extractResumeDetail({ skills: [], experience: [{ title: "Dev", company: "X", period: "2020", bullets: ["a", "b", "c", "d", "e", "f"] }] });
     expect(d.experience[0].bullets).toEqual(["a", "b", "c", "d", "e"]);

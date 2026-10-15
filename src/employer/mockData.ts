@@ -33,6 +33,9 @@ export interface CandidateResumeDetail {
   certifications: string[];
   careerTrajectory: string | null;
   promotionSignals: string[];
+  primaryDomain?: string | null;
+  domainYears?: Array<{ domain: string; years: number }>;
+  interviewStrengths?: string[];
   skillsDetailed: Array<{ name: string; depth: "primary" | "secondary" | "exposure"; yearsUsed?: number; recent?: boolean }>;
   linkedin: string | null;
   phone: string | null;

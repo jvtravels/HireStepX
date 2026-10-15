@@ -647,6 +647,8 @@ export function scrubLockedResume(redacted: ResumeDetail): ResumeDetail {
     certifications: redacted.certifications.map(s),
     careerTrajectory: redacted.careerTrajectory ? s(redacted.careerTrajectory) : redacted.careerTrajectory,
     promotionSignals: redacted.promotionSignals.map(s),
+    primaryDomain: redacted.primaryDomain ? s(redacted.primaryDomain) : redacted.primaryDomain,
+    interviewStrengths: redacted.interviewStrengths.map(s),
     experience: redacted.experience.map((e) => ({
       ...e,
       title: s(e.title),

@@ -31,6 +31,11 @@ export interface ResumeEducationEntry {
   year: string;
 }
 
+export interface ResumeDomainYears {
+  domain: string;
+  years: number;
+}
+
 export interface ResumeDetail {
   summary: string;
   headline: string | null;
@@ -45,6 +50,11 @@ export interface ResumeDetail {
   // deliberately never copied across, they are advice to the candidate.
   careerTrajectory: string | null;
   promotionSignals: string[];
+  primaryDomain: string | null;
+  domainYears: ResumeDomainYears[];
+  // What the resume shows they will do well in an interview. The mirror
+  // image (interviewGaps) is coaching and stays withheld.
+  interviewStrengths: string[];
   skillsDetailed: ResumeSkillEntry[];
   linkedin: string | null;
   phone: string | null;
@@ -89,6 +99,7 @@ export function redactResumeDetailForLock(detail: ResumeDetail, realName: string
     certifications: detail.certifications.map((c) => scrubName(c, realName)),
     careerTrajectory: detail.careerTrajectory ? scrubName(detail.careerTrajectory, realName) : detail.careerTrajectory,
     promotionSignals: detail.promotionSignals.map((p) => scrubName(p, realName)),
+    interviewStrengths: detail.interviewStrengths.map((t) => scrubName(t, realName)),
     experience: detail.experience.map((e) => ({
       ...e,
       ...(e.scope ? { scope: scrubName(e.scope, realName) } : {}),
@@ -98,6 +109,16 @@ export function redactResumeDetailForLock(detail: ResumeDetail, realName: string
     linkedin: null,
     phone: null,
   };
+}
+
+function extractDomainYears(v: unknown): ResumeDomainYears[] {
+  if (!v || typeof v !== "object" || Array.isArray(v)) return [];
+  const out: ResumeDomainYears[] = [];
+  for (const [domain, years] of Object.entries(v as Record<string, unknown>)) {
+    const name = domain.trim();
+    if (name && typeof years === "number" && years > 0) out.push({ domain: name, years });
+  }
+  return out.sort((a, b) => b.years - a.years).slice(0, MAX_BULLETS);
 }
 
 function asStringArray(v: unknown): string[] {
@@ -161,6 +182,9 @@ export function extractResumeDetail(resumeData: unknown): ResumeDetail {
     certifications: [],
     careerTrajectory: null,
     promotionSignals: [],
+    primaryDomain: null,
+    domainYears: [],
+    interviewStrengths: [],
     skillsDetailed: [],
     linkedin: null,
     phone: null,
@@ -192,6 +216,9 @@ export function extractResumeDetail(resumeData: unknown): ResumeDetail {
         })),
       careerTrajectory: asString(r.careerTrajectory),
       promotionSignals: nonEmpty(asStringArray(r.promotionSignals), MAX_BULLETS),
+      primaryDomain: asString(r.primaryDomain),
+      domainYears: extractDomainYears(r.domainYearsExperience),
+      interviewStrengths: nonEmpty(asStringArray(r.interviewStrengths), MAX_BULLETS),
       skillsDetailed: extractSkillsDetailed(r.skillsDetailed),
       noticePeriod: asString(r.noticePeriod),
       currentCtc: asString(r.currentCtc),

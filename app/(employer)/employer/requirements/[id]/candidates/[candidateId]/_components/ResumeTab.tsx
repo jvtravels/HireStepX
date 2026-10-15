@@ -83,6 +83,7 @@ export function ResumeTab({ candidate }: { candidate: Candidate }) {
   const avg = resume ? averageTenureMonths(resume.experience) : null;
   const progression = (resume?.promotionSignals ?? []).filter((p) => p.trim());
   const hasStory = progression.length > 0;
+  const strengths = (resume?.interviewStrengths ?? []).filter((t) => t.trim());
 
   return (
     <div className="grid min-w-0 gap-4">
@@ -137,6 +138,15 @@ export function ResumeTab({ candidate }: { candidate: Candidate }) {
                   {resume?.careerTrajectory && <p className="m-0 text-[13px] leading-relaxed text-hx-coal">{resume.careerTrajectory}</p>}
                   <IconList label="Promotions and growth" items={progression} icon={TrendingUpIcon} iconClassName="size-4 text-hx-success" />
                 </div>
+              </Panel>
+            ),
+          },
+          strengths.length > 0 && {
+            key: "strengths",
+            weight: 2 + strengths.length * 2,
+            node: (
+              <Panel plain id="strengths-heading" title="Interview strengths">
+                <IconList label="Interview strengths" items={strengths} icon={TrendingUpIcon} iconClassName="size-4 text-hx-success" />
               </Panel>
             ),
           },
