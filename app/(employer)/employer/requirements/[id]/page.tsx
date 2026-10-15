@@ -584,9 +584,6 @@ export default function RequirementDetailPage() {
 
         <JobSideRail
           requirement={requirement}
-          counts={counts}
-          tab={tab}
-          onSelectTab={setTabChoice}
           insights={insights}
           activeInsightId={activeInsight?.id ?? null}
           onSelectInsight={setInsightId}

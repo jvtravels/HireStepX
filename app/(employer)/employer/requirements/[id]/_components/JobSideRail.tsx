@@ -17,16 +17,10 @@ import type { Requirement } from "@/employer/EmployerDataContext";
 import {
   KeyValueList,
   KeyValueRow,
-  MeterBar,
   Panel,
   PanelLink,
 } from "@/employer/_panelParts";
-import {
-  matchingSummary,
-  pipelineRows,
-  type CandidateTab,
-  type JobInsight,
-} from "@/employer/_jobDetailHelpers";
+import type { JobInsight } from "@/employer/_jobDetailHelpers";
 import { dueLabel, STAGE_HINT, timeAgoLabel } from "./requirementFormat";
 
 const INSIGHT_ICON: Record<string, LucideIcon> = {
@@ -79,14 +73,11 @@ function Rows({
   );
 }
 
-/** The right-hand column of the job screen: matching status, the hiring funnel,
-    the posting's talent preferences, plain-language insights and posting facts.
+/** The right-hand column of the job screen: posting facts, the posting's
+    talent preferences and plain-language insights.
     Every row is drawn from fields the API returns; empty ones are skipped. */
 export default function JobSideRail({
   requirement,
-  counts,
-  tab,
-  onSelectTab,
   insights,
   activeInsightId,
   onSelectInsight,
@@ -95,9 +86,6 @@ export default function JobSideRail({
   onStageChange,
 }: {
   requirement: Requirement;
-  counts: Record<CandidateTab, number>;
-  tab: CandidateTab;
-  onSelectTab: (tab: CandidateTab) => void;
   insights: JobInsight[];
   activeInsightId: string | null;
   onSelectInsight: (id: string | null) => void;
@@ -106,13 +94,8 @@ export default function JobSideRail({
   onStageChange: Parameters<typeof StageCell>[0]["onChange"];
 }) {
   const r = requirement;
-  const match = matchingSummary(r);
-  const pool = Math.max(r.totalMatched ?? 0, match.evaluated);
-  const showMatched = pool > match.evaluated;
   const editHref = `/employer/requirements/${r.id}/edit`;
   const canEdit = !readOnly && !suspended;
-  const hasList =
-    r.status === "ready" || r.status === "partial" || r.status === "closed";
   const due = r.dueDate ? dueLabel(r.dueDate) : null;
   const posted = timeAgoLabel(r.createdAt);
   const matched = timeAgoLabel(r.lastMatchedAt);
@@ -211,56 +194,6 @@ export default function JobSideRail({
               />
             ))}
           </ul>
-        </Panel>
-      )}
-
-      {hasList && (
-        <Panel id="pipeline-heading" title="Hiring pipeline">
-          <ul className="m-0 flex list-none flex-col gap-1 p-0">
-            {showMatched && (
-              <li className="flex flex-col gap-1.5 px-3 py-2 text-[13px] text-hx-ink-soft">
-                <span className="flex w-full items-center justify-between">
-                  <span>Matched</span>
-                  <span className="tabular-nums">{pool}</span>
-                </span>
-                <span aria-hidden="true">
-                  <MeterBar thin tone="indigo" value={100} label="All matched candidates" />
-                </span>
-              </li>
-            )}
-            {pipelineRows(counts).map((row) => {
-              const active = row.tab === tab;
-              return (
-                <li key={row.key}>
-                  <button
-                    type="button"
-                    onClick={() => onSelectTab(row.tab)}
-                    aria-current={active || undefined}
-                    aria-label={`${row.label}: ${row.count}. Show these candidates`}
-                    className={cn(
-                      "flex w-full cursor-pointer flex-col items-stretch gap-1.5 rounded-lg border-0 px-3 py-2 text-left text-[13px] transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hx-indigo motion-reduce:transition-none pointer-coarse:min-h-11",
-                      active
-                        ? "bg-hx-success-100 font-semibold text-hx-success-ink"
-                        : "bg-transparent text-hx-coal hover:bg-hx-row",
-                    )}
-                  >
-                    <span className="flex w-full items-center justify-between">
-                      <span>{row.label}</span>
-                      <span className="tabular-nums">{row.count}</span>
-                    </span>
-                    <span aria-hidden="true">
-                      <MeterBar thin tone={active ? "success" : "indigo"} value={row.count === 0 ? 0 : Math.max(3, (row.count / Math.max(pool, 1)) * 100)} label={`${row.label} share of matched candidates`} />
-                    </span>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-          {showMatched && (
-            <p className="mt-3 mb-0 text-[12px] text-hx-ink-soft">
-              Top {match.evaluated} shown, ranked by fit.
-            </p>
-          )}
         </Panel>
       )}
     </aside>
