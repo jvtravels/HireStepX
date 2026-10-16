@@ -87,11 +87,11 @@ export function DashboardHeader({
     <div className="flex flex-wrap items-start justify-between gap-4">
       <div className="min-w-0">
         <h1 className="m-0 mb-1 text-[28px] font-bold tracking-[-0.01em] text-hx-coal [overflow-wrap:anywhere]">
-          Welcome back{companyName ? `, ${companyName}` : ""}
+          Welcome back
         </h1>
-        <p className="m-0 text-[14px] text-hx-ink-soft">Your hiring pipeline, {RANGE_LABEL[range].toLowerCase()}.</p>
+        <p className="m-0 text-[14px] text-hx-ink-soft">{companyName ? `${companyName} hiring pipeline` : "Your hiring pipeline"}, {RANGE_LABEL[range].toLowerCase()}.</p>
       </div>
-      <div className="flex w-full items-center gap-2.5 min-[900px]:w-auto">
+      <div className="flex w-full flex-wrap items-center gap-2.5 min-[900px]:w-auto min-[900px]:flex-nowrap">
         <DashboardSearch jobs={jobs} candidates={recommended} />
         <label className="inline-flex shrink-0 items-center">
           <span className="sr-only">Date range</span>
@@ -119,7 +119,7 @@ function DashboardSearch({ jobs, candidates }: { jobs: RequirementSummary[]; can
   }, [term, jobs, candidates]);
 
   return (
-    <div className="relative min-w-0 flex-1 min-[900px]:w-[260px] min-[900px]:flex-none">
+    <div className="relative min-w-[220px] flex-1 min-[900px]:w-[260px] min-[900px]:min-w-0 min-[900px]:flex-none">
       <SearchInput id="employer-dashboard-search" label="Search jobs or skills" value={q} onChange={setQ} onKeyDown={(e) => { if (e.key === "Escape") setQ(""); }} placeholder="Search jobs or skills" />
       <p role="status" className="sr-only">
         {term ? (results.length === 0 ? "No results" : `${results.length} ${results.length === 1 ? "result" : "results"}`) : ""}
@@ -174,7 +174,10 @@ const STEP_ICON: Record<FunnelStep["key"], ReactNode> = {
 };
 
 function FunnelStepItem({ step, range, last }: { step: FunnelStep; range: DashboardRange; last: boolean }) {
-  const added = step.added === null ? null : step.added > 0 ? `+${step.added} in last ${range} days` : `None new in last ${range} days`;
+  const added = step.added === null ? null
+    : step.added <= 0 ? `None new in last ${range} days`
+    : step.key === "recommended" ? `${step.added} new ${step.added === 1 ? "match" : "matches"} in last ${range} days`
+    : `+${step.added} in last ${range} days`;
   return (
     <li className={`flex min-w-0 flex-col gap-2.5 p-[18px] ${last ? "" : "border-b border-hx-line min-[640px]:border-b-0 min-[640px]:border-r"}`}>
       <p className="sr-only">{step.value} {step.label}{added ? `, ${added}` : ""}</p>

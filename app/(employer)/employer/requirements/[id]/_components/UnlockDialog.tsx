@@ -61,10 +61,7 @@ export default function UnlockDialog({
           </DialogDescription>
         </DialogHeader>
         <div style={{ display: "grid", gap: 10, fontFamily: f.sans, fontSize: textSize.base, color: t.inkFaint }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-            <IdentityHiddenBadge compact />
-            <span>until payment is confirmed.</span>
-          </div>
+          <div><IdentityHiddenBadge compact /></div>
           <p className="mx-fade m-0 rounded-[10px] bg-hx-row px-3 py-2 text-[13px] leading-normal text-hx-coal">
             <strong className="tabular-nums">{rate.perCandidate} per candidate.</strong>{" "}
             {rate.savings ?? rate.batchHint}

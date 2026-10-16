@@ -288,7 +288,7 @@ export function EmailPreferencesSection({ audience }: { audience: "candidate" | 
     key: "employer_notifications_opt_out",
     title: audience === "employer" ? "New match alerts" : "Employer activity",
     desc: audience === "employer"
-      ? "An email when a requirement gets a new strong match."
+      ? "An email when one of your jobs gets a new strong match."
       : "An email when an employer views your practice evidence.",
   });
 

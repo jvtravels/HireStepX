@@ -141,7 +141,7 @@ test.describe("Employer console — mocked network", () => {
 
     await page.goto("/employer");
 
-    await expect(page.getByRole("heading", { level: 1, name: `Welcome back, ${COMPANY}` })).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole("heading", { level: 1, name: "Welcome back" })).toBeVisible({ timeout: 15_000 });
 
     // The funnel's numbers are animated visually; its sr-only summary is the stable contract.
     const funnel = page.getByRole("region", { name: "Hiring funnel" });
