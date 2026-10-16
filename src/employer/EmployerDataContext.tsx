@@ -259,19 +259,33 @@ export function useEmployerData() {
 const RETRY_DELAYS_MS = [300, 900];
 const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
+/** Server failures and dead networks are worth a ticket; 4xx and 429 are answers. */
+function reportFetchFailure(url: string, status: number | null) {
+  const path = url.split("?")[0];
+  void import("../errorReporter").then((m) => m.reportHandledError(`Employer fetch failed: ${path} ${status ?? "network"}`)).catch(() => {});
+}
+
 /** GET with exponential backoff. Only transient failures retry (network error,
- *  5xx, 429); a 4xx is a real answer and returns immediately. Never throws —
- *  `null` means the network never produced a response. Idempotent GETs only. */
-async function getWithRetry(url: string): Promise<{ ok: boolean; status: number; data: unknown } | null> {
+ *  5xx); a 4xx is a real answer and returns immediately. 429 is not retried:
+ *  the limiter's window outlasts our backoff, so retrying only spends the
+ *  user's remaining budget. Never throws — `null` means the network never
+ *  produced a response. Idempotent GETs only. */
+export async function getWithRetry(url: string): Promise<{ ok: boolean; status: number; data: unknown } | null> {
   for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
+    const last = attempt === RETRY_DELAYS_MS.length;
     try {
       const headers = await authHeaders();
       const res = await fetch(url, { headers });
       const data: unknown = await res.json().catch(() => null);
-      const transient = res.status >= 500 || res.status === 429;
-      if (!transient || attempt === RETRY_DELAYS_MS.length) return { ok: res.ok, status: res.status, data };
+      if (res.status < 500 || last) {
+        if (res.status >= 500) reportFetchFailure(url, res.status);
+        return { ok: res.ok, status: res.status, data };
+      }
     } catch {
-      if (attempt === RETRY_DELAYS_MS.length) return null;
+      if (last) {
+        reportFetchFailure(url, null);
+        return null;
+      }
     }
     await wait(RETRY_DELAYS_MS[attempt]);
   }
@@ -409,7 +423,7 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
       refreshRequirements();
       return { id: res.data.id };
     }
-    const err = toApiError(res, "Couldn't create this requirement — please try again.");
+    const err = toApiError(res, "Couldn't create this job — please try again.");
     if (res.status === 403 && !err.code) err.code = "suspended";
     return err;
   }, [refreshRequirements]);

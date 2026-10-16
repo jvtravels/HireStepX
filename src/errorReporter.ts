@@ -109,6 +109,11 @@ function buildReport(message: string, stack?: string): ErrorReport {
   };
 }
 
+/** For failures the app already handles (retries exhausted, fallback shown) that still deserve a ticket. */
+export function reportHandledError(message: string) {
+  sendError(buildReport(message));
+}
+
 let _initialized = false;
 export function initErrorReporter() {
   if (_initialized) return;
