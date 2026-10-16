@@ -4,14 +4,14 @@ import { cn } from "cn";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { CandidateEvidence, Requirement } from "@/employer/EmployerDataContext";
 import type { Candidate } from "@/employer/mockData";
-import { Badge, OutlineCta } from "@/employer/_atoms";
+import { Badge, FAIR_MATCH_THRESHOLD, OutlineCta, STRONG_MATCH_THRESHOLD } from "@/employer/_atoms";
 import { InfoTip, KeyValueList, KeyValueRow, MeterRow, Panel, PanelButton, Stat, StatGrid } from "@/employer/_panelParts";
 import { InlineNotice } from "@/employer/_requirementAtoms";
 import { ChipList, IconList, MutedText } from "./parts";
 import { ItemRequest, type RequestUi } from "./RequestPopover";
 import { RequestsPanel } from "./RequestsPanel";
 import { RoleMismatchNotice, hasRoleMismatch } from "./RoleMismatchNotice";
-import { PROVENANCE, READINESS_LABEL, averageTenureMonths, buildResumeInsights, buildRoleFit, employerCapabilities, evidenceAverage, formatSessionDate, formatTenure, formatYears, groupSkillsByDepth, skillChipLabel, summarizeFit, type FitStatus, type ResumeInsights } from "./helpers";
+import { PROVENANCE, READINESS_LABEL, averageTenureMonths, buildResumeInsights, buildRoleFit, employerCapabilities, evidenceAverage, fitHeadline, formatSessionDate, formatTenure, formatYears, groupSkillsByDepth, skillChipLabel, summarizeFit, type FitStatus, type ResumeInsights } from "./helpers";
 
 export type EvidenceState = { evidence: CandidateEvidence | null; loading: boolean; failed: boolean; onRetry: () => void };
 
@@ -68,15 +68,16 @@ function MatchPanel({ candidate, requirement, matched, unmatched, evidence, requ
       <div className="grid gap-5">
         <div className="@container">
           <div className="grid gap-5 @xl:grid-cols-[auto_minmax(0,1fr)] @xl:items-center @xl:gap-10">
-            <p className="m-0 flex items-baseline gap-2">
-              <span className="text-[44px] leading-none font-semibold tracking-[-0.03em] tabular-nums text-hx-coal">{candidate.matchScore}</span>
-              <span className="text-[13px] text-hx-ink-soft">out of 100</span>
-            </p>
+            <div className="grid gap-1.5">
+              <p className="m-0 flex items-baseline gap-2">
+                <span className="text-[44px] leading-none font-semibold tracking-[-0.03em] tabular-nums text-hx-coal">{candidate.matchScore}</span>
+                <span className="text-[13px] text-hx-ink-soft">out of 100</span>
+              </p>
+              <p className="m-0 text-[12px] text-hx-ink-soft tabular-nums">{STRONG_MATCH_THRESHOLD}+ strong, {FAIR_MATCH_THRESHOLD} to {STRONG_MATCH_THRESHOLD - 1} fair, under {FAIR_MATCH_THRESHOLD} low</p>
+            </div>
             {fit.total > 0 && (
               <div className="grid gap-2">
-                <p className="m-0 text-[15px] font-semibold text-hx-coal">
-                  Meets <span className="tabular-nums">{fit.meets} of {fit.total}</span> criteria
-                </p>
+                <p className="m-0 text-[15px] font-semibold text-hx-coal tabular-nums">{fitHeadline(fit)}</p>
                 <div aria-hidden="true" className="flex gap-1">
                   {rows.map((row) => (
                     <span key={row.id} className={cn("h-1.5 flex-1 rounded-full", SEGMENT_CLS[row.status])} />
@@ -90,13 +91,13 @@ function MatchPanel({ candidate, requirement, matched, unmatched, evidence, requ
         {candidate.matchBreakdown && (
           <div className="@container grid gap-3 border-t border-hx-line pt-4">
             <p className="m-0 flex items-center gap-1 text-[13px] font-medium text-hx-coal">
-              What feeds the score
-              <InfoTip label="About the score inputs">Overlap between this resume and the posting. Practice results and recent activity are weighed on top, so these three do not add up to the score.</InfoTip>
+              Resume overlap
+              <InfoTip label="About resume overlap">How much of this resume overlaps the posting. These are inputs, not shares of the score: practice results and recent activity are weighed too, so they do not add up to it.</InfoTip>
             </p>
             <div className="grid gap-x-8 gap-y-3.5 @xl:grid-cols-3">
-              <MeterRow label="Role overlap" value={candidate.matchBreakdown.roleMatch} tone={candidate.matchBreakdown.roleMatch >= 70 ? "success" : "indigo"} />
-              <MeterRow label="Skill overlap" value={candidate.matchBreakdown.skillMatch} tone={candidate.matchBreakdown.skillMatch >= 70 ? "success" : "indigo"} />
-              <MeterRow label="Location fit" value={candidate.matchBreakdown.locationMatch} tone={candidate.matchBreakdown.locationMatch >= 70 ? "success" : "indigo"} />
+              <MeterRow label="Role overlap" value={candidate.matchBreakdown.roleMatch} tone="indigo" />
+              <MeterRow label="Skill overlap" value={candidate.matchBreakdown.skillMatch} tone="indigo" />
+              <MeterRow label="Location fit" value={candidate.matchBreakdown.locationMatch} tone="indigo" />
             </div>
           </div>
         )}

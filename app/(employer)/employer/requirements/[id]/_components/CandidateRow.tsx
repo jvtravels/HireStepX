@@ -11,6 +11,7 @@ import {
   LockIcon,
   MessageCircleIcon,
   MoreVerticalIcon,
+  RotateCcwIcon,
   SendIcon,
   UserRoundCheckIcon,
   XIcon,
@@ -104,7 +105,7 @@ interface PrimaryAction {
    closing outcomes after the separator; the order within each group follows the
    server transition table. */
 const MOVE_COPY: Record<CandidateStatus, { label: string; icon: LucideIcon; closes: boolean }> = {
-  shortlisted: { label: "Shortlisted", icon: CheckIcon, closes: false },
+  shortlisted: { label: "Reopen", icon: RotateCcwIcon, closes: false },
   interview_invited: { label: "Invite to interview", icon: CalendarPlusIcon, closes: false },
   interviewing: { label: "Mark as interviewing", icon: UserRoundCheckIcon, closes: false },
   hired: { label: "Mark as hired", icon: CheckIcon, closes: true },

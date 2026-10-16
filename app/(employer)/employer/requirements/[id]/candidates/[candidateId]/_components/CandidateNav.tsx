@@ -57,9 +57,10 @@ export function CandidateNav({
       aria-label="Shortlist navigation"
       className={cn(
         "sticky top-0 z-20 mb-3 flex min-h-12 min-w-0 items-center gap-3 rounded-xl border px-2 py-1.5 transition-colors",
-        condensed ? "border-hx-line bg-white shadow-sm" : "border-transparent bg-transparent",
+        condensed ? "border-hx-line bg-white shadow-sm" : "border-transparent bg-background",
       )}
     >
+      {shortlist.total > 1 && (
       <div className="flex shrink-0 items-center gap-1.5">
         <Step href={shortlist.prev ? hrefFor(shortlist.prev) : null} label="Previous candidate" shortcut="k">
           <ChevronLeftIcon size={16} aria-hidden="true" />
@@ -72,6 +73,7 @@ export function CandidateNav({
           <span className="max-sm:hidden"> by match</span>
         </span>
       </div>
+      )}
 
       {condensed && (
         <div className="flex min-w-0 flex-1 items-center gap-2.5">
@@ -116,7 +118,7 @@ export function CandidateNav({
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuLabel className="grid gap-1.5 text-[12px] font-normal text-hx-ink-soft">
-              <span className="flex items-center justify-between gap-4">Next or previous <span className="flex gap-1"><Kbd>J</Kbd><Kbd>K</Kbd></span></span>
+              {shortlist.total > 1 && <span className="flex items-center justify-between gap-4">Next or previous <span className="flex gap-1"><Kbd>J</Kbd><Kbd>K</Kbd></span></span>}
               <span className="flex items-center justify-between gap-4">Switch tab <span className="flex gap-1"><Kbd>1</Kbd><Kbd>2</Kbd><Kbd>3</Kbd></span></span>
             </DropdownMenuLabel>
           </DropdownMenuContent>

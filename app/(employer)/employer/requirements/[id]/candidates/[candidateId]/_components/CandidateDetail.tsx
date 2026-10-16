@@ -11,7 +11,7 @@ import { ErrorRetry, EmptyNote, LinkCta, PageSkeleton, SuspendedBanner } from "@
 import UnlockDialog from "../../../_components/UnlockDialog";
 import { CandidateDialogsHost } from "./CandidateDialogsHost";
 import { CandidateHeader } from "./CandidateHeader";
-import { buildCandidateSummary, dedupeQuestions, maskedName, matchedSkillCount, rankCandidates, shortlistPosition } from "./helpers";
+import { buildCandidateSummary, buildRoleFit, dedupeQuestions, maskedName, matchedSkillCount, rankCandidates, shortlistPosition, summarizeFit } from "./helpers";
 import { CandidateNav } from "./CandidateNav";
 import { PrimaryCandidateAction } from "./PrimaryCandidateAction";
 import { useCandidateShortcuts } from "./useCandidateShortcuts";
@@ -33,7 +33,9 @@ function useScrolledPast(ref: React.RefObject<HTMLElement | null>, active: boole
   useEffect(() => {
     const el = ref.current;
     if (!active || !el || typeof IntersectionObserver === "undefined") return;
-    const io = new IntersectionObserver(([entry]) => setPast(!entry.isIntersecting && entry.boundingClientRect.bottom < 64), { rootMargin: "-56px 0px 0px 0px" });
+    // The observer fires only when visibility flips, so "scrolled out the top" must hold at that
+    // instant: compare against the root's midline, not a pixel offset that depends on the page chrome.
+    const io = new IntersectionObserver(([entry]) => setPast(!entry.isIntersecting && entry.boundingClientRect.bottom < (entry.rootBounds?.height ?? window.innerHeight) / 2), { rootMargin: "-56px 0px 0px 0px" });
     io.observe(el);
     return () => io.disconnect();
   }, [ref, active]);
@@ -124,6 +126,11 @@ export default function CandidateDetail({ requirementId, matchId }: { requiremen
   const evidenceState = { evidence: d.evidence, loading: d.evidenceLoading, failed: d.evidenceFailed, onRetry: d.reloadEvidence };
   const matched = matchedSkillCount(requirement.skills, candidate);
   const unmatched = requirement.skills.filter((s) => !matched.includes(s));
+  const fit = summarizeFit(buildRoleFit(candidate, requirement, matched, d.evidence));
+  const reopen = async () => {
+    d.clearNotice();
+    if (await d.changeStatus({ status: "shortlisted" })) toast("Candidate reopened and moved back to the shortlist", "success");
+  };
   const resumeFileName = candidate.unlocked ? (d.evidence?.resumeFile?.fileName ?? null) : null;
   const requestUi: RequestUi = {
     state: requests,
@@ -178,6 +185,7 @@ export default function CandidateDetail({ requirementId, matchId }: { requiremen
                   d.clearNotice();
                   setDialog("invite");
                 }}
+                onReopen={() => void reopen()}
               />
             }
           />
@@ -188,6 +196,7 @@ export default function CandidateDetail({ requirementId, matchId }: { requiremen
           declined={d.declinedLocally}
           suspended={suspended}
           resumeFileName={resumeFileName}
+          fit={fit}
           onUnlock={openUnlock}
           requests={requests}
           onInvite={() => {
@@ -198,6 +207,7 @@ export default function CandidateDetail({ requirementId, matchId }: { requiremen
             d.clearNotice();
             setDialog("reject");
           }}
+          onReopen={() => void reopen()}
         />
         </div>
 

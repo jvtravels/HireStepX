@@ -128,7 +128,8 @@ export function Pill({ children, tone = "neutral", filled = false }: { children:
    candidates with some genuine but partial overlap clustered 20-39, with a
    sharp drop into single digits below that for candidates with no real
    relevance — so 20 is "worth a look," not "strong." */
-const FAIR_MATCH_THRESHOLD = 20;
+export const FAIR_MATCH_THRESHOLD = 20;
+export { STRONG_MATCH_THRESHOLD };
 
 export function matchBand(score: number): "strong" | "fair" | "low" {
   return score >= STRONG_MATCH_THRESHOLD ? "strong" : score >= FAIR_MATCH_THRESHOLD ? "fair" : "low";

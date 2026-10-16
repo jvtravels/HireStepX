@@ -2,6 +2,7 @@ import type { Candidate, CandidateStatus } from "@/employer/mockData";
 import type { Requirement, CandidateEvidence, EvidenceDelivery, EvidenceQuestion } from "@/employer/EmployerDataContext";
 import { candidateSkillFit } from "@/employer/_jobDetailHelpers";
 import { CANDIDATE_STATUS_LABEL, matchBand } from "@/employer/_atoms";
+import type { DotTone } from "@/employer/_panelParts";
 
 /* Pure helpers for the candidate detail page. Everything here derives from
    fields the API actually returns — no synthesized or seeded values. */
@@ -235,6 +236,28 @@ export function summarizeFit(rows: FitRow[]): FitSummary {
   };
 }
 
+/** "0 of 1 criterion fully met, 1 partly"; "partly" is what reconciles a criterion like
+ *  "Required skills 2 of 4" with a headline that counts whole criteria. */
+export function fitHeadline(fit: FitSummary): string | null {
+  if (fit.total === 0) return null;
+  const partly = fit.close.length;
+  return `${fit.meets} of ${fit.total} ${fit.total === 1 ? "criterion" : "criteria"} fully met${partly > 0 ? `, ${partly} partly` : ""}`;
+}
+
+export type CandidateSignalKey = "strong" | "promising" | "fair" | "low";
+
+/** The one-word read shown beside the score. The score band alone says "Strong" even when the
+ *  criteria card shows gaps, so a strong score with any gap or near-miss reads "Promising". */
+export function candidateSignal(score: number, fit: FitSummary): { key: CandidateSignalKey; label: string; tone: DotTone } {
+  const band = matchBand(score);
+  if (band === "strong") {
+    return fit.gaps.length === 0 && fit.close.length === 0
+      ? { key: "strong", label: "Strong match", tone: "good" }
+      : { key: "promising", label: "Promising match", tone: "soon" };
+  }
+  return band === "fair" ? { key: "fair", label: "Fair match", tone: "soon" } : { key: "low", label: "Low match", tone: "unknown" };
+}
+
 /** "1 yr 4 mo", "7 mo"; used for per-role tenure. */
 export function formatTenure(months: number): string {
   if (months < 12) return `${months} mo`;
@@ -384,7 +407,7 @@ export function buildCandidateSummary(candidate: Candidate, requirement: Require
   const missing = requirement.skills.filter((s) => !matched.includes(s));
   const lines = [
     `${maskedName(candidate)} for ${requirement.title}`,
-    `Match: ${candidate.matchScore} out of 100 (${matchBand(candidate.matchScore)})${fit.total > 0 ? `, meets ${fit.meets} of ${fit.total} criteria` : ""}`,
+    `Match: ${candidate.matchScore} out of 100 (${candidateSignal(candidate.matchScore, fit).label.toLowerCase()})${fitHeadline(fit) ? `, ${fitHeadline(fit)}` : ""}`,
     `Stage: ${CANDIDATE_STATUS_LABEL[candidate.candidateStatus]}`,
     resume?.yearsExperience != null && `Experience: ${formatYears(resume.yearsExperience)}${resume.seniorityLevel ? `, ${resume.seniorityLevel}` : ""}`,
     candidate.city && candidate.city !== "Not specified" && `Location: ${candidate.city}`,

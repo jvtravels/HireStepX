@@ -3,26 +3,20 @@ import { BriefcaseIcon, ClockIcon, ExternalLinkIcon, LockIcon, MailIcon, MapPinI
 import { cn } from "cn";
 import type { Candidate } from "@/employer/mockData";
 import { Button } from "@/components/ui/button";
-import { Badge, CandidateStatusChip, matchBand } from "@/employer/_atoms";
+import { Badge, CandidateStatusChip } from "@/employer/_atoms";
 import { canInviteToInterview } from "@/employer/InterviewInviteDialog";
 import { readCandidateResponse } from "@/employer/_candidateFields";
-import { DotLabel, InfoTip, MetaLine, type DotTone, type MetaPart } from "@/employer/_panelParts";
+import { DotLabel, InfoTip, MetaLine, type MetaPart } from "@/employer/_panelParts";
 import { PortfolioLinkIcon } from "@/portfolioLinkIcons";
-import { HEADER_ACTION, candidateLinks, formatYears, initials, maskedName } from "./helpers";
+import { HEADER_ACTION, candidateLinks, candidateSignal, formatYears, initials, maskedName, type FitSummary } from "./helpers";
 import { PipelineStepper } from "./CandidatePipeline";
 import { PrimaryCandidateAction } from "./PrimaryCandidateAction";
 import { RequestButton, RequestPopover } from "./RequestPopover";
 import type { CandidateRequestsState } from "./useCandidateRequests";
 import { ResumeDownload } from "./ResumeDownload";
 
-const BAND_SIGNAL: Record<ReturnType<typeof matchBand>, { label: string; tone: DotTone }> = {
-  strong: { label: "Strong match", tone: "good" },
-  fair: { label: "Fair match", tone: "soon" },
-  low: { label: "Low match", tone: "unknown" },
-};
-
-function MatchSignal({ score }: { score: number }) {
-  const { label, tone } = BAND_SIGNAL[matchBand(score)];
+function MatchSignal({ score, fit }: { score: number; fit: FitSummary }) {
+  const { label, tone } = candidateSignal(score, fit);
   return (
     <span className="inline-flex items-center gap-0.5 pr-1">
       <DotLabel tone={tone}>
@@ -30,7 +24,7 @@ function MatchSignal({ score }: { score: number }) {
         <span className="tabular-nums text-hx-ink-soft">{score}</span>
       </DotLabel>
       <InfoTip label="How the match score works">
-        The score blends role match, required skills, practice results and recent activity, so it can differ from the criteria under Fit for this role.
+        The score blends role match, required skills, practice results and recent activity. A strong score with unmet criteria reads "Promising" until you check the gaps under Fit for this role.
       </InfoTip>
     </span>
   );
@@ -60,18 +54,22 @@ export function CandidateHeader({
   declined,
   suspended,
   resumeFileName,
+  fit,
   onUnlock,
   onInvite,
   onReject,
+  onReopen,
   requests,
 }: {
   candidate: Candidate;
   declined: boolean;
   suspended: boolean;
   resumeFileName: string | null;
+  fit: FitSummary;
   onUnlock: () => void;
   onInvite: () => void;
   onReject: () => void;
+  onReopen: () => void;
   requests: CandidateRequestsState;
 }) {
   const resume = candidate.resume;
@@ -118,10 +116,10 @@ export function CandidateHeader({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <MatchSignal score={candidate.matchScore} />
+          <MatchSignal score={candidate.matchScore} fit={fit} />
           {resumeFileName && <ResumeDownload matchId={candidate.id} fileName={resumeFileName} className={HEADER_ACTION} />}
           {canReject && <Button type="button" variant="outline" onClick={onReject} disabled={suspended} className={cn("pointer-coarse:h-11", HEADER_ACTION)}>Reject</Button>}
-          <PrimaryCandidateAction candidate={candidate} declined={declined} suspended={suspended} onUnlock={onUnlock} onInvite={onInvite} />
+          <PrimaryCandidateAction candidate={candidate} declined={declined} suspended={suspended} onUnlock={onUnlock} onInvite={onInvite} onReopen={onReopen} />
         </div>
       </div>
       <div className="mt-3 flex flex-wrap items-center justify-between gap-x-6 gap-y-2">

@@ -98,11 +98,19 @@ describe("isValidCandidateStatusTransition", () => {
   });
 
   it("rejects any transition out of a terminal status", () => {
-    for (const terminal of ["hired", "rejected", "not_a_fit", "no_response"] as const) {
+    for (const terminal of ["hired", "not_a_fit", "no_response"] as const) {
       for (const target of CANDIDATE_STATUSES) {
         if (target === terminal) continue;
         expect(isValidCandidateStatusTransition(terminal, target)).toBe(false);
       }
+    }
+  });
+
+  it("lets a rejected candidate be reopened onto the shortlist, and nowhere else", () => {
+    expect(isValidCandidateStatusTransition("rejected", "shortlisted")).toBe(true);
+    for (const target of CANDIDATE_STATUSES) {
+      if (target === "rejected" || target === "shortlisted") continue;
+      expect(isValidCandidateStatusTransition("rejected", target)).toBe(false);
     }
   });
 
@@ -121,9 +129,13 @@ describe("nextCandidateStatuses", () => {
   });
 
   it("is empty for every terminal status", () => {
-    for (const terminal of ["hired", "rejected", "not_a_fit", "no_response"] as const) {
+    for (const terminal of ["hired", "not_a_fit", "no_response"] as const) {
       expect(nextCandidateStatuses(terminal)).toEqual([]);
     }
+  });
+
+  it("offers only Reopen for a rejected candidate", () => {
+    expect(nextCandidateStatuses("rejected")).toEqual(["shortlisted"]);
   });
 
   it("agrees with isValidCandidateStatusTransition", () => {

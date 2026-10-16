@@ -262,7 +262,7 @@ export default function RequirementDetailPage() {
   const handleStageChange = (c: Candidate, status: CandidateStatus) => {
     if (!c.unlocked && needsUnlockFor(status)) setUnlockTarget({ mode: "single", matchId: c.id });
     else if (status === "interview_invited") setInviteId(c.id);
-    else if (status === "interviewing") void applyStage(c, status);
+    else if (status === "interviewing" || status === "shortlisted") void applyStage(c, status);
     else setPendingStage({ id: c.id, status });
   };
 

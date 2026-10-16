@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import type { Candidate } from "@/employer/mockData";
-import { composeRejectNote, rankCandidates, shortlistPosition } from "../../app/(employer)/employer/requirements/[id]/candidates/[candidateId]/_components/helpers";
+import { candidateSignal, composeRejectNote, fitHeadline, rankCandidates, shortlistPosition } from "../../app/(employer)/employer/requirements/[id]/candidates/[candidateId]/_components/helpers";
 
 const cand = (id: string, matchScore: number) => ({ id, matchScore }) as Candidate;
 
@@ -49,5 +49,36 @@ describe("composeRejectNote", () => {
   it("works with reasons only or text only", () => {
     expect(composeRejectNote(["Communication"], "")).toBe("Reasons: Communication.");
     expect(composeRejectNote([], "Too junior")).toBe("Too junior");
+  });
+});
+
+const fit = (meets: number, total: number, gaps: string[] = [], close: string[] = []) => ({ meets, total, gaps, close });
+
+describe("fitHeadline", () => {
+  it("counts whole criteria and says how many are only partly met", () => {
+    expect(fitHeadline(fit(0, 1, [], ["Required skills"]))).toBe("0 of 1 criterion fully met, 1 partly");
+    expect(fitHeadline(fit(3, 5, ["Location"], ["Skills"]))).toBe("3 of 5 criteria fully met, 1 partly");
+    expect(fitHeadline(fit(4, 4))).toBe("4 of 4 criteria fully met");
+  });
+
+  it("is null when there is nothing to compare", () => {
+    expect(fitHeadline(fit(0, 0))).toBeNull();
+  });
+});
+
+describe("candidateSignal", () => {
+  it("keeps Strong only when the criteria agree", () => {
+    expect(candidateSignal(44, fit(2, 2)).label).toBe("Strong match");
+    expect(candidateSignal(44, fit(0, 1, [], ["Required skills"])).label).toBe("Promising match");
+    expect(candidateSignal(60, fit(1, 2, ["Experience"])).label).toBe("Promising match");
+  });
+
+  it("follows the score band below the strong line", () => {
+    expect(candidateSignal(39, fit(2, 2)).label).toBe("Fair match");
+    expect(candidateSignal(19, fit(2, 2)).label).toBe("Low match");
+  });
+
+  it("treats a candidate with no comparable criteria like the score alone", () => {
+    expect(candidateSignal(44, fit(0, 0)).label).toBe("Strong match");
   });
 });

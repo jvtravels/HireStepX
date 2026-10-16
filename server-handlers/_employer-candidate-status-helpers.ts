@@ -51,24 +51,25 @@ export function asInterviewScheduledAt(v: unknown): string | null {
  *  - the outcome-feedback page (.../outcome/page.tsx): records a final
  *    outcome (hired/interviewing/not_a_fit/no_response) once an interview
  *    has happened.
- *  `hired`, `rejected`, `not_a_fit` and `no_response` are terminal — none of
- *  the employer surfaces ever move a candidate out of them, so the pipeline
- *  can't be pushed backwards (e.g. hired -> shortlisted) or skipped forward
- *  (e.g. shortlisted -> hired) through a raw PATCH. A status "changing" to
- *  its own current value is always allowed — that's just a note/interview
- *  time update, not a transition. */
+ *  `hired`, `not_a_fit` and `no_response` are terminal, so the pipeline can't
+ *  be pushed backwards (e.g. hired -> shortlisted) or skipped forward (e.g.
+ *  shortlisted -> hired) through a raw PATCH. `rejected` is the one
+ *  reversible decision: "Reopen" puts a rejected candidate back on the
+ *  shortlist, since a misclick or a changed mind shouldn't be a dead end.
+ *  A status "changing" to its own current value is always allowed — that's
+ *  just a note/interview time update, not a transition. */
 const ALLOWED_TRANSITIONS: Record<CandidateStatus, readonly CandidateStatus[]> = {
   shortlisted: ["interview_invited", "rejected", "not_a_fit"],
   interview_invited: ["interviewing", "rejected", "not_a_fit", "no_response"],
   interviewing: ["hired", "rejected", "not_a_fit", "no_response"],
   hired: [],
-  rejected: [],
+  rejected: ["shortlisted"],
   not_a_fit: [],
   no_response: [],
 };
 
 /** The statuses a candidate can move to next, in pipeline order. Empty once
- *  they reach a terminal state. The Stage menu renders exactly this list. */
+ *  they reach a terminal state (a rejected candidate can only be reopened). The Stage menu renders exactly this list. */
 export function nextCandidateStatuses(from: CandidateStatus): readonly CandidateStatus[] {
   return ALLOWED_TRANSITIONS[from];
 }
