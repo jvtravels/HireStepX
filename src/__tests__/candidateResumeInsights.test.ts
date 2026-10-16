@@ -227,3 +227,13 @@ describe("summarizeFit", () => {
     expect(summarizeFit([])).toEqual({ meets: 0, total: 0, gaps: [], close: [] });
   });
 });
+
+describe("displaySkillName", () => {
+  it("lowercases the .Js and .Ts suffix and leaves other names alone", async () => {
+    const { displaySkillName } = await import("../../app/(employer)/employer/requirements/[id]/candidates/[candidateId]/_components/helpers");
+    expect(displaySkillName("React.Js")).toBe("React.js");
+    expect(displaySkillName("Node.JS")).toBe("Node.js");
+    expect(displaySkillName("Python")).toBe("Python");
+    expect(displaySkillName("Asp.Net")).toBe("Asp.Net");
+  });
+});

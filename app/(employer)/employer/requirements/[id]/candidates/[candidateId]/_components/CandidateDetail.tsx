@@ -216,7 +216,7 @@ export default function CandidateDetail({ requirementId, matchId }: { requiremen
           <div className="mb-4 flex flex-wrap items-center gap-x-5 gap-y-3">
             <StatusTabs tabs={tabs} value={tab} onChange={selectTab} label="Candidate sections" idPrefix="candtab" panelId="candtab-panel" className="shrink-0" />
           </div>
-          <div id="candtab-panel" role="tabpanel" aria-labelledby={`candtab-tab-${tab}`}>
+          <div key={tab} id="candtab-panel" role="tabpanel" aria-labelledby={`candtab-tab-${tab}`} className="mx-swap">
             {tab === "overview" && (
               <OverviewTab
                 candidate={candidate}

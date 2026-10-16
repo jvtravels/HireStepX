@@ -10,6 +10,7 @@ import { tokens as t, fonts as f, textSize } from "@/auth/_tokens";
 import { Card, CandidateStatusChip, Eyebrow, ScoreChip, SkillTag } from "@/employer/_atoms";
 import { EmptyNote, ErrorRetry, IdentityHiddenBadge, LinkCta, PageSkeleton } from "@/employer/_requirementAtoms";
 import { candidateDisplayName } from "../_components/requirementFormat";
+import { displaySkillName } from "../candidates/[candidateId]/_components/helpers";
 
 const COMPARE_CSS = `
 .cmp-back:focus-visible { outline: 2px solid ${t.indigo}; outline-offset: 2px; border-radius: 4px; }
@@ -117,7 +118,7 @@ const ROWS: CompareRow[] = [
         <ul style={{ display: "flex", gap: 6, flexWrap: "wrap", listStyle: "none", margin: 0, padding: 0 }}>
           {c.skills.map((s) => (
             <li key={s}>
-              <SkillTag>{s}</SkillTag>
+              <SkillTag>{displaySkillName(s)}</SkillTag>
             </li>
           ))}
         </ul>
@@ -158,7 +159,7 @@ export default function ComparePage() {
 
   if (!requirement) {
     return (
-      <ErrorRetry title="Couldn't load this comparison" message="We couldn't reach HireStepX, or this requirement no longer exists." onRetry={() => load()}>
+      <ErrorRetry title="Couldn't load this comparison" message="We couldn't reach HireStepX, or this job no longer exists." onRetry={() => load()}>
         <BackLink requirementId={params.id} />
       </ErrorRetry>
     );

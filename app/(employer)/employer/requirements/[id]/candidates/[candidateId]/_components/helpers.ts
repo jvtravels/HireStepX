@@ -362,9 +362,15 @@ const DEPTH_ORDER: Array<{ depth: DetailedSkill["depth"]; label: string }> = [
   { depth: "exposure", label: "Exposure" },
 ];
 
+/** Resume parsers title-case "React.js" into "React.Js"; fix the suffix at display time. */
+export function displaySkillName(name: string): string {
+  return name.replace(/\.(js|ts)$/i, (_, ext: string) => `.${ext.toLowerCase()}`);
+}
+
 export function skillChipLabel(s: Pick<DetailedSkill, "name" | "yearsUsed">): string {
-  if (!s.yearsUsed) return s.name;
-  return `${s.name} · ${s.yearsUsed} ${s.yearsUsed === 1 ? "yr" : "yrs"}`;
+  const name = displaySkillName(s.name);
+  if (!s.yearsUsed) return name;
+  return `${name} · ${s.yearsUsed} ${s.yearsUsed === 1 ? "yr" : "yrs"}`;
 }
 
 export function groupSkillsByDepth(skills: DetailedSkill[]): Array<{ label: string; skills: DetailedSkill[] }> {

@@ -4,7 +4,7 @@ import { Item, ItemContent, ItemDescription, ItemGroup, ItemSeparator, ItemTitle
 import type { Candidate } from "@/employer/mockData";
 import { Panel } from "@/employer/_panelParts";
 import { BalancedColumns, ChipList, IconList, MutedText } from "./parts";
-import { averageTenureMonths, formatTenure, groupSkillsByDepth, periodMonths, skillChipLabel } from "./helpers";
+import { averageTenureMonths, formatTenure, groupSkillsByDepth, periodMonths, skillChipLabel, displaySkillName } from "./helpers";
 
 type EntryRow = { key: string; title: string; sub: string; when?: string; note?: string; extra?: ReactNode };
 
@@ -59,7 +59,7 @@ function RoleDetail({ role }: { role: Role }) {
 function SkillsBlock({ candidate }: { candidate: Candidate }) {
   const detailed = candidate.resume?.skillsDetailed ?? [];
   if (detailed.length === 0) {
-    return candidate.skills.length ? <ChipList label="Skills" items={candidate.skills} /> : <MutedText>No tools or skills listed on this resume.</MutedText>;
+    return candidate.skills.length ? <ChipList label="Skills" items={candidate.skills.map(displaySkillName)} /> : <MutedText>No tools or skills listed on this resume.</MutedText>;
   }
   const groups = groupSkillsByDepth(detailed);
   const recent = detailed.filter((s) => s.recent).map((s) => s.name);

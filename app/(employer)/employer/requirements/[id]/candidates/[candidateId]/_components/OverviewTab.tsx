@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ActivityIcon, CheckIcon, FileSearchIcon, MessageSquareQuoteIcon, MinusIcon, SparklesIcon, TargetIcon, TrendingUpIcon, UserRoundIcon, XIcon } from "lucide-react";
 import { cn } from "cn";
+import AnimatedNumber from "@/AnimatedNumber";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { CandidateEvidence, Requirement } from "@/employer/EmployerDataContext";
 import type { Candidate } from "@/employer/mockData";
@@ -11,7 +12,7 @@ import { ChipList, IconList, MutedText } from "./parts";
 import { ItemRequest, type RequestUi } from "./RequestPopover";
 import { RequestsPanel } from "./RequestsPanel";
 import { RoleMismatchNotice, hasRoleMismatch } from "./RoleMismatchNotice";
-import { PROVENANCE, READINESS_LABEL, averageTenureMonths, buildResumeInsights, buildRoleFit, employerCapabilities, evidenceAverage, fitHeadline, formatSessionDate, formatTenure, formatYears, groupSkillsByDepth, skillChipLabel, summarizeFit, type FitStatus, type ResumeInsights } from "./helpers";
+import { PROVENANCE, displaySkillName, READINESS_LABEL, averageTenureMonths, buildResumeInsights, buildRoleFit, employerCapabilities, evidenceAverage, fitHeadline, formatSessionDate, formatTenure, formatYears, groupSkillsByDepth, skillChipLabel, summarizeFit, type FitStatus, type ResumeInsights } from "./helpers";
 
 export type EvidenceState = { evidence: CandidateEvidence | null; loading: boolean; failed: boolean; onRetry: () => void };
 
@@ -70,8 +71,10 @@ function MatchPanel({ candidate, requirement, matched, unmatched, evidence, requ
           <div className="grid gap-5 @xl:grid-cols-[auto_minmax(0,1fr)] @xl:items-center @xl:gap-10">
             <div className="grid gap-1.5">
               <p className="m-0 flex items-baseline gap-2">
-                <span className="text-[44px] leading-none font-semibold tracking-[-0.03em] tabular-nums text-hx-coal">{candidate.matchScore}</span>
-                <span className="text-[13px] text-hx-ink-soft">out of 100</span>
+                <span className="text-[44px] leading-none font-semibold tracking-[-0.03em] tabular-nums text-hx-coal"><AnimatedNumber value={candidate.matchScore} /></span>
+                <span className="text-[13px] text-hx-ink-soft">
+                  out of 100{candidate.sessionsCompleted > 0 ? `, based on ${candidate.sessionsCompleted} graded session${candidate.sessionsCompleted === 1 ? "" : "s"}` : ""}
+                </span>
               </p>
               <p className="m-0 text-[12px] text-hx-ink-soft tabular-nums">{STRONG_MATCH_THRESHOLD}+ strong, {FAIR_MATCH_THRESHOLD} to {STRONG_MATCH_THRESHOLD - 1} fair, under {FAIR_MATCH_THRESHOLD} low</p>
             </div>
@@ -79,8 +82,8 @@ function MatchPanel({ candidate, requirement, matched, unmatched, evidence, requ
               <div className="grid gap-2">
                 <p className="m-0 text-[15px] font-semibold text-hx-coal tabular-nums">{fitHeadline(fit)}</p>
                 <div aria-hidden="true" className="flex gap-1">
-                  {rows.map((row) => (
-                    <span key={row.id} className={cn("h-1.5 flex-1 rounded-full", SEGMENT_CLS[row.status])} />
+                  {rows.map((row, i) => (
+                    <span key={row.id} style={{ animationDelay: `${160 + i * 45}ms` }} className={cn("mx-seg h-1.5 flex-1 rounded-full", SEGMENT_CLS[row.status])} />
                   ))}
                 </div>
                 {caption && <p className="m-0 text-[13px] text-hx-ink-soft">{caption}</p>}
@@ -307,7 +310,7 @@ function HighlightsPanel({ candidate }: { candidate: Candidate }) {
 function SkillsPanel({ candidate, onOpenResume }: { candidate: Candidate; onOpenResume: () => void }) {
   const detailed = candidate.resume?.skillsDetailed ?? [];
   const groups = groupSkillsByDepth(detailed).slice(0, 2).map((g) => ({ label: g.label, items: g.skills.slice(0, 8).map(skillChipLabel), more: Math.max(0, g.skills.length - 8) }));
-  const fallback = detailed.length === 0 ? candidate.skills.slice(0, 12) : [];
+  const fallback = detailed.length === 0 ? candidate.skills.slice(0, 12).map(displaySkillName) : [];
   if (groups.length === 0 && fallback.length === 0) return null;
   const industries = (candidate.resume?.industries ?? []).slice(0, 4);
   return (
