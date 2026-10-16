@@ -169,6 +169,7 @@ function EmployerDashboard() {
     [openRequirements, dashboard, now],
   );
   const canCreate = !suspended && !atJobLimit;
+  const refreshing = dashboardState === "loading" && dashboard !== null;
   const nextAction = useMemo(
     () => (dashboard ? buildNextAction(openRequirements, dashboard.upcomingInterviews, dashboard.totals.awaitingReview, now, canCreate, recommendedCards[0] ?? null) : null),
     [openRequirements, dashboard, now, canCreate, recommendedCards],
@@ -184,7 +185,7 @@ function EmployerDashboard() {
     },
     {
       label: "Review your first AI match",
-      body: "Once candidates are scored against your requirement, their shortlist shows up on the job's page.",
+      body: "Once candidates are scored against your job, their shortlist shows up on the job's page.",
       done: false,
       href: "/employer/jobs",
       cta: "View your jobs",
@@ -224,8 +225,8 @@ function EmployerDashboard() {
             <InlineAlert message="Interview, hiring and activity figures didn't load." onRetry={() => setDashboardNonce((n) => n + 1)} />
           )}
           {nextAction && <NextActionCard action={nextAction} />}
-          <DashboardFunnel data={dashboard} recommendedTotal={recommendedTotal} range={range} />
-          <div className="grid grid-cols-1 gap-5 min-[1100px]:grid-cols-[minmax(0,1fr)_minmax(300px,380px)]">
+          <DashboardFunnel data={dashboard} recommendedTotal={recommendedTotal} range={range} busy={refreshing} />
+          <div aria-busy={refreshing} className="mx-busy grid grid-cols-1 gap-5 min-[1100px]:grid-cols-[minmax(0,1fr)_minmax(300px,380px)]">
             <div style={{ display: "flex", flexDirection: "column", gap: 20, minWidth: 0 }}>
               <ActiveJobsCard jobs={openRequirements} pipeline={dashboard?.jobs ?? null} canCreate={canCreate} now={now} rowActions={rowActions} />
               <RecommendedCandidatesCard cards={recommendedCards} total={dashboard?.totals.awaitingReview ?? recommendedCards.length} />
