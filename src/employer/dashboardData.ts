@@ -73,12 +73,21 @@ export function jobHealth(
   now: number,
 ): { tone: "warning" | "error"; label: string } | null {
   if (job.status === "failed") return { tone: "error", label: "Matching failed. Retry from Edit" };
-  if (job.status === "generating") return null;
+  if (job.status === "generating" || job.stage === "ai_matching") return null;
   const last = pipeline?.lastUpdatedAt ?? job.createdAt;
   const idleDays = Math.floor((now - Date.parse(last)) / 86_400_000);
-  if (job.aiScreening.topMatches === 0) return { tone: "warning", label: "No strong matches yet" };
+  if (job.aiScreening.topMatches === 0) {
+    return { tone: "warning", label: job.aiScreening.evaluated > 0 ? "No strong matches yet" : "No candidates yet" };
+  }
   if (idleDays > STALE_DAYS) return { tone: "warning", label: `Quiet for ${idleDays} days` };
   return null;
+}
+
+/** Matching has finished and scored candidates, yet none reached the strong-match
+ *  bar. Jobs still matching, or with nobody evaluated, are not "weak": they are
+ *  simply not done or not reachable, so tuning the job would not help. */
+function hasNoStrongMatch(j: RequirementSummary): boolean {
+  return j.status !== "generating" && j.stage !== "ai_matching" && j.aiScreening.evaluated > 0 && j.aiScreening.topMatches === 0;
 }
 
 export type InsightTone = "positive" | "action" | "attention" | "neutral";
@@ -117,7 +126,7 @@ export function buildInsights(
     });
   }
 
-  const noMatches = jobs.filter((j) => j.status !== "generating" && j.aiScreening.topMatches === 0);
+  const noMatches = jobs.filter(hasNoStrongMatch);
   if (noMatches.length > 0) {
     out.push({
       id: "no-strong",
@@ -265,6 +274,7 @@ export function buildNextAction(
   awaitingReview: number,
   now: number,
   canCreate: boolean,
+  topCandidate?: { requirementId: string; matchId: string } | null,
 ): NextAction | null {
   const soon = upcoming.find((i) => Date.parse(i.scheduledAt) - now <= SOON_MS);
   if (soon) {
@@ -280,15 +290,15 @@ export function buildNextAction(
     return {
       title: `${awaitingReview} ${awaitingReview === 1 ? "candidate is" : "candidates are"} waiting for your decision`,
       body: "Recommended candidates move faster when you respond within a couple of days.",
-      cta: "Review candidates",
-      href: "/employer/jobs",
+      cta: topCandidate ? "Review top candidate" : "Review candidates",
+      href: topCandidate ? `/employer/requirements/${topCandidate.requirementId}/candidates/${topCandidate.matchId}` : "/employer/jobs",
     };
   }
   const failed = jobs.find((j) => j.status === "failed");
   if (failed) {
     return { title: `Matching failed for ${failed.title}`, body: "Edit and save the job to run matching again.", cta: "Edit job", href: `/employer/requirements/${failed.id}/edit` };
   }
-  const empty = jobs.find((j) => j.status !== "generating" && j.aiScreening.topMatches === 0);
+  const empty = jobs.find(hasNoStrongMatch);
   if (empty) {
     return { title: `${empty.title} has no strong matches`, body: "Broadening skills or location usually surfaces more candidates.", cta: "Edit job", href: `/employer/requirements/${empty.id}/edit` };
   }
@@ -327,6 +337,15 @@ export function buildFunnel(data: EmployerDashboardData | null, recommendedTotal
 
 export type JobSortKey = "title" | "recommended" | "interviewing" | "hired";
 export type SortDir = "asc" | "desc";
+
+/** Default order for a capped list: jobs with strong matches first (most first),
+ *  then the rest in the server's order, so what is shown is what needs a look. */
+export function jobsNeedingAttentionFirst(jobs: RequirementSummary[]): RequirementSummary[] {
+  return jobs
+    .map((j, i) => ({ j, i }))
+    .sort((a, b) => b.j.aiScreening.topMatches - a.j.aiScreening.topMatches || a.i - b.i)
+    .map((x) => x.j);
+}
 
 /** Sorts a copy of the jobs; ties keep the server's order. */
 export function sortJobs(

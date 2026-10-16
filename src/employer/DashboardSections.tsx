@@ -24,7 +24,7 @@ import { Badge, Pill, ScoreChip, STAGE_LABEL, STAGE_TONE } from "./_atoms";
 import { PrimaryLink, OutlineLink } from "./_consoleParts";
 import type { RequirementSummary } from "./mockData";
 import {
-  RANGE_LABEL, FUNNEL_SEGMENTS, buildFunnel, interviewSlot, jobHealth, pipelineStage, sortJobs,
+  RANGE_LABEL, FUNNEL_SEGMENTS, buildFunnel, interviewSlot, jobHealth, pipelineStage, sortJobs, jobsNeedingAttentionFirst,
   type DashboardRange, type DashboardJobPipeline, type FunnelStep, type JobSortKey, type SortDir, type DashboardUpcomingInterview,
   type DashboardActivityItem, type DashboardInsight, type InsightTone, type RecommendedCard, type EmployerDashboardData, type NextAction,
 } from "./dashboardData";
@@ -87,7 +87,7 @@ export function DashboardHeader({
         <h1 className="m-0 mb-1 text-[28px] font-bold tracking-[-0.01em] text-hx-coal [overflow-wrap:anywhere]">
           Welcome back{companyName ? `, ${companyName}` : ""}
         </h1>
-        <p className="m-0 text-[14px] text-hx-ink-soft">Here&apos;s what you need to focus on today.</p>
+        <p className="m-0 text-[14px] text-hx-ink-soft">Your hiring pipeline, {RANGE_LABEL[range].toLowerCase()}.</p>
       </div>
       <div className="flex w-full items-center gap-2.5 min-[900px]:w-auto">
         <DashboardSearch jobs={jobs} candidates={recommended} />
@@ -118,7 +118,7 @@ function DashboardSearch({ jobs, candidates }: { jobs: RequirementSummary[]; can
 
   return (
     <div className="relative min-w-0 flex-1 min-[900px]:w-[260px] min-[900px]:flex-none">
-      <SearchInput id="employer-dashboard-search" label="Search jobs, candidates, or skills" value={q} onChange={setQ} onKeyDown={(e) => { if (e.key === "Escape") setQ(""); }} placeholder="Search jobs or skills" />
+      <SearchInput id="employer-dashboard-search" label="Search jobs or skills" value={q} onChange={setQ} onKeyDown={(e) => { if (e.key === "Escape") setQ(""); }} placeholder="Search jobs or skills" />
       <p role="status" className="sr-only">
         {term ? (results.length === 0 ? "No results" : `${results.length} ${results.length === 1 ? "result" : "results"}`) : ""}
       </p>
@@ -225,6 +225,8 @@ function JobStatusBadge({ job, pipeline }: { job: RequirementSummary; pipeline: 
   return <Badge tone={STAGE_TONE[stage]}>{STAGE_LABEL[stage]}</Badge>;
 }
 
+const JOBS_SHOWN = 5;
+
 export function ActiveJobsCard({
   jobs, pipeline, canCreate, now, rowActions,
 }: {
@@ -237,7 +239,8 @@ export function ActiveJobsCard({
   const router = useRouter();
   const [sort, setSort] = useState<{ key: JobSortKey; dir: SortDir } | null>(null);
   const byId = new Map((pipeline ?? []).map((p) => [p.requirementId, p]));
-  const shown = sortJobs(jobs, pipeline, sort?.key ?? null, sort?.dir ?? "desc").slice(0, 5);
+  const ordered = sort ? sortJobs(jobs, pipeline, sort.key, sort.dir) : jobsNeedingAttentionFirst(jobs);
+  const shown = ordered.slice(0, JOBS_SHOWN);
   const toggleSort = (key: JobSortKey) => setSort((cur) => (cur?.key === key ? { key, dir: cur.dir === "desc" ? "asc" : "desc" } : { key, dir: key === "title" ? "asc" : "desc" }));
   const sortHead = (key: JobSortKey, label: string, center: boolean) => {
     const active = sort?.key === key;
@@ -262,14 +265,14 @@ export function ActiveJobsCard({
             <TextLink href="/employer/jobs">View all jobs</TextLink>
             {canCreate && (
               <Button asChild size="sm" className="h-9 gap-1.5">
-                <Link href="/employer/requirements/new"><PlusIcon size={14} aria-hidden="true" />Create Job</Link>
+                <Link href="/employer/requirements/new"><PlusIcon size={14} aria-hidden="true" />Post a job</Link>
               </Button>
             )}
           </div>
         }
       />
       {shown.length === 0 ? (
-        <EmptyState className={EMPTY} title="No active jobs" description="Post a requirement and matched candidates will show up here." />
+        <EmptyState className={EMPTY} title="No active jobs" description="Post a job and matched candidates will show up here." />
       ) : (
         <>
           <div className="hidden rounded-lg border border-hx-line @min-[700px]:block">
@@ -298,12 +301,10 @@ export function ActiveJobsCard({
                       <TableCell className={`${TD} whitespace-normal`}>
                         <Link href={`/employer/requirements/${j.id}`} className="inline-block py-0.5 font-semibold text-hx-coal no-underline hover:underline">{j.title}</Link>
                         <JobMeta job={j} updatedAt={p?.lastUpdatedAt ?? null} />
+                        {health && <div className="mt-1.5"><Pill tone={health.tone}>{health.label}</Pill></div>}
                       </TableCell>
                       <TableCell className={TD}>
-                        <div className="flex flex-col items-start gap-1.5">
-                          <JobStatusBadge job={j} pipeline={p} />
-                          {health && <Pill tone={health.tone}>{health.label}</Pill>}
-                        </div>
+                        <JobStatusBadge job={j} pipeline={p} />
                       </TableCell>
                       <TableCell className={`${TD} text-center`}>{j.aiScreening.evaluated}</TableCell>
                       <TableCell className={`${TD} text-center`}>{j.aiScreening.topMatches}</TableCell>
@@ -351,6 +352,11 @@ export function ActiveJobsCard({
               );
             })}
           </ul>
+          {jobs.length > JOBS_SHOWN && (
+            <p className="m-0 mt-3 text-[12px] text-hx-ink-soft">
+              Showing {JOBS_SHOWN} of {jobs.length} jobs. <TextLink href="/employer/jobs">View all jobs</TextLink>
+            </p>
+          )}
         </>
       )}
     </section>
@@ -442,7 +448,7 @@ export function RecommendedCandidatesCard({ cards, total }: { cards: Recommended
         <EmptyState className={EMPTY} title="No candidates to review" description="Strong matches appear here as soon as a job finishes screening." />
       ) : (
         <>
-          <div aria-hidden="true" className={`mt-5 hidden gap-x-8 border-b border-hx-line px-1 pb-2.5 text-[12px] font-medium text-hx-ink-soft @min-[960px]:grid ${REVIEW_COLS}`}>
+          <div aria-hidden="true" className={`mt-4 hidden gap-x-8 border-b border-hx-line px-1 pb-2.5 text-[12px] font-medium text-hx-ink-soft @min-[960px]:grid ${REVIEW_COLS}`}>
             <span>Candidate</span>
             <span>Skills</span>
             <span>Experience</span>
@@ -452,7 +458,7 @@ export function RecommendedCandidatesCard({ cards, total }: { cards: Recommended
             {cards.map((c) => {
               const waiting = waitingLabel(c.waitingDays);
               return (
-                <li key={c.matchId} className={`grid grid-cols-1 gap-x-8 gap-y-5 px-1 py-6 @min-[960px]:items-center ${REVIEW_COLS}`}>
+                <li key={c.matchId} className={`grid grid-cols-1 gap-x-8 gap-y-4 px-1 py-4 @min-[960px]:items-center ${REVIEW_COLS}`}>
                   <div className="flex min-w-0 items-start gap-3.5">
                     <PersonAvatar name={c.name} initials={c.initials} />
                     <div className="min-w-0">
@@ -467,7 +473,7 @@ export function RecommendedCandidatesCard({ cards, total }: { cards: Recommended
                       </div>
                     </div>
                   </div>
-                  <div className="min-w-0 space-y-4 @min-[960px]:contents">
+                  <div className="min-w-0 space-y-3 @min-[960px]:contents">
                     <SkillsCell c={c} />
                     <ExperienceCell c={c} />
                   </div>

@@ -107,7 +107,7 @@ const checkboxCell: CSSProperties = { display: "flex", alignItems: "flex-end", p
 const noteText: CSSProperties = { fontFamily: f.sans, fontSize: textSize.sm, color: t.inkFaint, margin: 0 };
 const requiredStar: CSSProperties = { color: t.indigo };
 const errorText: CSSProperties = { fontFamily: f.sans, fontSize: textSize.base, color: t.errorInk, margin: 0 };
-const cardStyle: CSSProperties = { background: t.white, borderRadius: 12, border: `1px solid ${t.line}`, overflow: "clip" };
+const cardStyle: CSSProperties = { background: t.white, borderRadius: 16, border: `1px solid ${t.line}`, overflow: "clip" };
 const actionRow: CSSProperties = { display: "flex", alignItems: "center", gap: 12, flexShrink: 0 };
 const cardHeader: CSSProperties = { position: "sticky", top: 0, zIndex: 20, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", columnGap: 28, rowGap: 10, padding: "14px 20px", background: t.white, borderBottom: `1px solid ${t.line}` };
 const formTitle: CSSProperties = { outline: "none", fontFamily: f.sans, fontSize: 22, fontWeight: 700, color: t.coal, margin: 0, letterSpacing: "-0.01em", lineHeight: "28px" };
@@ -585,7 +585,7 @@ export function RequirementForm({
     <form onSubmit={handleSubmit} noValidate>
       <div style={cardStyle}>
         <div style={cardHeader}>
-          <h1 style={formTitle}>New job requirement</h1>
+          <h1 style={formTitle}>Post a job</h1>
           <h2 ref={stepHeadingRef} tabIndex={-1} className="sr-only">
             {STEP_LABELS[step]}
           </h2>

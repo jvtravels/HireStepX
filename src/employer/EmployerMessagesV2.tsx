@@ -65,13 +65,13 @@ function DialogError({ children, unlock }: { children: React.ReactNode; unlock: 
   return (
     <p role="alert" style={{ margin: 0, padding: "8px 10px", borderRadius: 8, background: t.error100, border: `1px solid ${t.errorLine}`, color: t.errorInk, fontFamily: f.sans, fontSize: 13, lineHeight: 1.5 }}>
       {children}{" "}
-      {unlock && <Link href="/employer/requirements" style={{ color: t.errorInk, fontWeight: 600, textDecoration: "underline" }}>Go to shortlists</Link>}
+      {unlock && <Link href="/employer/jobs" style={{ color: t.errorInk, fontWeight: 600, textDecoration: "underline" }}>Go to shortlists</Link>}
     </p>
   );
 }
 
 /* Same border + radius as the employer page cards (EmployerShell). MessagingLayout draws no outer border of its own. */
-const shellBorder: CSSProperties = { border: `1px solid ${t.line}`, borderRadius: 12 };
+const shellBorder: CSSProperties = { border: `1px solid ${t.line}`, borderRadius: 16 };
 
 export default function EmployerMessagesV2() {
   const router = useRouter();
@@ -404,7 +404,7 @@ export default function EmployerMessagesV2() {
           Once you unlock a candidate and send a message, it&apos;ll show up here.
         </p>
         <Button asChild size="lg" className="pointer-coarse:h-11 px-4">
-          <Link href="/employer/requirements">Review your shortlists</Link>
+          <Link href="/employer/jobs">Review your shortlists</Link>
         </Button>
       </div>,
     );

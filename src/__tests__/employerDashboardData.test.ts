@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildFunnel, sortJobs, buildInsights, buildRecommendedCards, experienceFit, experienceAsk, pipelineStage, isDashboardData, jobHealth, buildNextAction, type DashboardJobPipeline, type EmployerDashboardData } from "../employer/dashboardData";
+import { buildFunnel, sortJobs, buildInsights, buildRecommendedCards, experienceFit, experienceAsk, pipelineStage, isDashboardData, jobHealth, jobsNeedingAttentionFirst, buildNextAction, type DashboardJobPipeline, type EmployerDashboardData } from "../employer/dashboardData";
 import type { RequirementSummary } from "../employer/mockData";
 
 const NOW = Date.parse("2026-10-15T12:00:00Z");
@@ -72,6 +72,14 @@ describe("jobHealth", () => {
   it("flags a job with no strong matches", () => {
     expect(jobHealth(job("1"), undefined, NOW)?.label).toBe("No strong matches yet");
   });
+  it("says no candidates yet, not weak, when nobody was evaluated", () => {
+    const j = job("1");
+    j.aiScreening.evaluated = 0;
+    expect(jobHealth(j, undefined, NOW)?.label).toBe("No candidates yet");
+  });
+  it("stays quiet while the stored stage is still AI matching", () => {
+    expect(jobHealth(job("1", { stage: "ai_matching" }), undefined, NOW)).toBeNull();
+  });
   it("flags a job idle for over 14 days", () => {
     const p: DashboardJobPipeline = { requirementId: "1", interviewing: 0, hired: 0, lastUpdatedAt: new Date(NOW - 20 * DAY).toISOString() };
     expect(jobHealth(job("1", {}, strong), p, NOW)?.label).toBe("Quiet for 20 days");
@@ -101,6 +109,14 @@ describe("buildNextAction", () => {
   it("suggests posting a job only when the account can create one", () => {
     expect(buildNextAction([], [], 0, NOW, true)?.href).toBe("/employer/requirements/new");
     expect(buildNextAction([], [], 0, NOW, false)).toBeNull();
+  });
+  it("deep-links to the top candidate when one is known", () => {
+    const a = buildNextAction([job("1", {}, strong)], [], 2, NOW, true, { requirementId: "r9", matchId: "m9" });
+    expect(a?.href).toBe("/employer/requirements/r9/candidates/m9");
+    expect(a?.cta).toBe("Review top candidate");
+  });
+  it("does not call a still-matching job weak", () => {
+    expect(buildNextAction([job("1", { stage: "ai_matching" })], [], 0, NOW, true)).toBeNull();
   });
   it("returns null when nothing needs doing", () => {
     expect(buildNextAction([job("1", {}, strong)], [], 0, NOW, true)).toBeNull();
@@ -202,5 +218,14 @@ describe("buildInsights", () => {
   });
   it("is empty for an account with nothing to say", () => {
     expect(buildInsights([], [], NOW)).toEqual([]);
+  });
+});
+
+describe("jobsNeedingAttentionFirst", () => {
+  it("puts jobs with strong matches first without mutating the input", () => {
+    const a = job("a"), b = job("b", {}, [cand("x1", []), cand("x2", [])]), c = job("c", {}, [cand("y1", [])]);
+    const jobs = [a, b, c];
+    expect(jobsNeedingAttentionFirst(jobs).map((j) => j.id)).toEqual(["b", "c", "a"]);
+    expect(jobs.map((j) => j.id)).toEqual(["a", "b", "c"]);
   });
 });

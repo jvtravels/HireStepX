@@ -52,26 +52,15 @@ const navItems: ShellNavItem[] = [
   { id: "jobs", label: "Jobs", path: "/employer/jobs", icon: <BriefcaseIcon size={18} aria-hidden="true" /> },
 ];
 
-/* Candidate pages each own their body card (DashboardHome's grid,
-   DashboardJobs' table shell). Employer routes that render a card
-   themselves are listed here; every other employer page is wrapped in the
-   same white bordered card so the body reads identically across sides.
-   /employer (its own maxWidth:1280 grid) and /employer/settings (its own
-   narrower Card) both own their layout already — wrapping either in the
-   fallback double-cards the page and, for the dashboard, caps it at the
-   same 1280 the fallback itself uses, just with less usable width inside. */
-const SELF_CARDED_ROUTES = ["/employer", "/employer/jobs", "/employer/requirements/new", "/employer/settings", "/employer/messages"];
+/* Every console page sits in one white, bordered, 16px-radius main container,
+   the same one the candidate dashboard draws (DashboardHome). Pages that are
+   themselves a single full-bleed card (a table shell, the settings stack, the
+   messages split pane, the requirement form) are listed here so they are not
+   double-carded; the shell wraps everything else. */
+const SELF_CARDED_ROUTES = ["/employer/jobs", "/employer/requirements/new", "/employer/settings", "/employer/messages"];
 
-/* Every requirement-scoped page (detail, edit, candidate detail, outcome
-   feedback, compare) renders its own header/Card layout designed to fill
-   the full main-content width. Wrapping any of them in the generic
-   fallback card too produces a nested double-card look AND visibly caps
-   the page at maxWidth:1280 instead of the width the page itself uses. */
 function isSelfCardedRoute(pathname: string): boolean {
-  return (
-    SELF_CARDED_ROUTES.includes(pathname) ||
-    /^\/employer\/requirements\/[^/]+(\/edit|\/outcome|\/compare|\/candidates\/[^/]+)?$/.test(pathname)
-  );
+  return SELF_CARDED_ROUTES.includes(pathname) || /^\/employer\/requirements\/[^/]+\/edit$/.test(pathname);
 }
 
 /* Last-known "this user's company is approved" marker. On a refresh the
@@ -283,10 +272,7 @@ export default function EmployerShell({ children }: { children: React.ReactNode 
         banners={<VerificationBanner />}
       >
         {isSelfCardedRoute(pathname ?? "") ? pageBody : (
-          <div style={{
-            width: "100%", maxWidth: 1280, margin: "0 auto", boxSizing: "border-box",
-            background: t.white, border: `1px solid ${t.line}`, borderRadius: 12, padding: 24,
-          }}>
+          <div className="mb-16 box-border flex min-h-full w-full min-w-0 flex-none flex-col rounded-2xl border border-hx-line bg-white p-4">
             {pageBody}
           </div>
         )}

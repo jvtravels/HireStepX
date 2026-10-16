@@ -166,7 +166,7 @@ export default function EmployerJobsPage() {
   const postIcon = <PlusIcon size={16} strokeWidth={2.5} aria-hidden="true" />;
 
   const shell = (body: React.ReactNode, filters?: React.ReactNode) => (
-    <div style={{ background: t.white, display: "flex", flexDirection: "column", flex: 1, minHeight: 0, borderRadius: 12, border: `1px solid ${t.line}`, overflow: "hidden" }}>
+    <div style={{ background: t.white, display: "flex", flexDirection: "column", flex: 1, minHeight: 0, borderRadius: 16, border: `1px solid ${t.line}`, overflow: "hidden" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: compact ? "14px 16px" : "16px 20px", borderBottom: `1px solid ${t.line}`, flexWrap: "wrap", gap: 12 }}>
         <div style={{ flexShrink: 0 }}>
           <h1 style={{ fontFamily: f.sans, fontSize: 26, fontWeight: 700, color: t.coal, margin: 0, letterSpacing: "-0.01em", lineHeight: "32px" }}>Jobs</h1>
@@ -185,7 +185,7 @@ export default function EmployerJobsPage() {
         <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap", justifyContent: compact ? "stretch" : "flex-end", flex: compact ? "1 1 100%" : 1, minWidth: 0 }}>
           {filters}
           {!suspended && (
-            <PrimaryLink href="/employer/requirements/new" icon={postIcon} full={compact}>Post a requirement</PrimaryLink>
+            <PrimaryLink href="/employer/requirements/new" icon={postIcon} full={compact}>Post a job</PrimaryLink>
           )}
         </div>
       </div>

@@ -77,7 +77,7 @@ export default function MessageComposer({
             You can&apos;t message {counterpartName} until you unlock their profile. Your draft is kept.
           </div>
           <Button asChild size="lg" className="pointer-coarse:h-11 px-4">
-            <Link href="/employer/requirements">Unlock a candidate</Link>
+            <Link href="/employer/jobs">Unlock a candidate</Link>
           </Button>
         </div>
       )}

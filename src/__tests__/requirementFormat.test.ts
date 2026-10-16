@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { closedSummary, practisedLabel, previewText, timeAgoLabel, whereLabel } from "../../app/(employer)/employer/requirements/[id]/_components/requirementFormat";
+import { budgetLabel, closedSummary, practisedLabel, previewText, timeAgoLabel, whereLabel } from "../../app/(employer)/employer/requirements/[id]/_components/requirementFormat";
 
 const NOW = new Date("2026-10-15T12:00:00").getTime();
 
@@ -88,5 +88,15 @@ describe("whereLabel", () => {
     expect(whereLabel("Pune", null)).toBe("Pune");
     expect(whereLabel(null, "Remote")).toBe("Remote");
     expect(whereLabel("", null)).toBeNull();
+  });
+});
+
+describe("budgetLabel", () => {
+  const req = (over: object) => ({ budgetMin: null, budgetMax: null, salaryType: "per-annum", ...over }) as Parameters<typeof budgetLabel>[0];
+  it("shows lakhs for normal per-annum budgets", () => {
+    expect(budgetLabel(req({ budgetMin: 12, budgetMax: 18 }))).toBe("₹12–18 LPA");
+  });
+  it("does not label raw rupee amounts as LPA", () => {
+    expect(budgetLabel(req({ budgetMin: 1800000, budgetMax: 2800000 }))).toBe("₹18,00,000–28,00,000/year");
   });
 });

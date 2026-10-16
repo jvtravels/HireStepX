@@ -170,8 +170,8 @@ function EmployerDashboard() {
   );
   const canCreate = !suspended && !atJobLimit;
   const nextAction = useMemo(
-    () => (dashboard ? buildNextAction(openRequirements, dashboard.upcomingInterviews, dashboard.totals.awaitingReview, now, canCreate) : null),
-    [openRequirements, dashboard, now, canCreate],
+    () => (dashboard ? buildNextAction(openRequirements, dashboard.upcomingInterviews, dashboard.totals.awaitingReview, now, canCreate, recommendedCards[0] ?? null) : null),
+    [openRequirements, dashboard, now, canCreate, recommendedCards],
   );
 
   const onboardingSteps: ChecklistStep[] = [
@@ -180,7 +180,7 @@ function EmployerDashboard() {
       body: "Tell us the role, location, and notice-period preference — we'll start matching candidates against it.",
       done: requirements.length > 0,
       href: "/employer/requirements/new",
-      cta: "Post a requirement",
+      cta: "Post a job",
     },
     {
       label: "Review your first AI match",
@@ -203,7 +203,7 @@ function EmployerDashboard() {
   const showOnboardingChecklist = !suspended && statsReady && requirements.length === 0;
 
   return (
-    <div className="mx-stagger" style={{ display: "flex", flexDirection: "column", gap: 20, width: "100%", minWidth: 0 }}>
+    <div className="mx-stagger" style={{ display: "flex", flexDirection: "column", gap: 16, width: "100%", minWidth: 0 }}>
       <DashboardHeader companyName={companyName} range={range} onRangeChange={setRange} jobs={openRequirements} recommended={recommendedCards} />
 
       {suspended && (

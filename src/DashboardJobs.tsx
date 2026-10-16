@@ -395,7 +395,7 @@ export default function DashboardJobs() {
   );
 
   const shell = (body: React.ReactNode, withFilters = false) => (
-    <div style={{ background: t.white, display: "flex", flexDirection: "column", flex: 1, minHeight: 0, borderRadius: 12, border: `1px solid ${t.line}`, overflow: "hidden" }}>
+    <div style={{ background: t.white, display: "flex", flexDirection: "column", flex: 1, minHeight: 0, borderRadius: 16, border: `1px solid ${t.line}`, overflow: "hidden" }}>
       {renderHeading(withFilters)}
       {body}
     </div>

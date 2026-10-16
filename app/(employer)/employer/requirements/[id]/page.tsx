@@ -307,11 +307,11 @@ export default function RequirementDetailPage() {
         retrying={loading}
       >
         <Link
-          href="/employer/requirements"
+          href="/employer/jobs"
           className="inline-flex items-center rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 pointer-coarse:min-h-11"
           style={{ fontFamily: f.sans, fontSize: textSize.md, fontWeight: 600, color: t.indigo, outlineColor: t.indigo }}
         >
-          Back to requirements
+          Back to jobs
         </Link>
       </ErrorRetry>
     );

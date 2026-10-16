@@ -98,6 +98,15 @@ export function closedSummary(r: Pick<Requirement, "status" | "archiveReason" | 
 export function budgetLabel(req: Requirement): string | null {
   const { budgetMin, budgetMax, salaryType } = req;
   if (budgetMin == null && budgetMax == null) return null;
+  /* The server caps per-annum budgets at 1000 lakhs, so a larger value is a raw
+     rupee amount saved before that validation; show it as rupees, not "LPA". */
+  const rawRupees = (salaryType === "per-annum" || salaryType == null) && Math.max(budgetMin ?? 0, budgetMax ?? 0) > 1000;
+  if (rawRupees) {
+    const fmtRaw = (n: number) => `₹${formatNumber(n)}`;
+    if (budgetMin != null && budgetMax != null) return `${fmtRaw(budgetMin)}–${formatNumber(budgetMax)}/year`;
+    if (budgetMin != null) return `${fmtRaw(budgetMin)}+/year`;
+    return `Up to ${fmtRaw(budgetMax as number)}/year`;
+  }
   if (salaryType === "per-annum" || salaryType == null) {
     if (budgetMin != null && budgetMax != null) return `₹${budgetMin}–${budgetMax} LPA`;
     if (budgetMin != null) return `₹${budgetMin}+ LPA`;

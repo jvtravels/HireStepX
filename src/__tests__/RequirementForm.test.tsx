@@ -36,7 +36,7 @@ describe("RequirementForm (create)", () => {
 
   it("titles the create page and keeps the header inside the form card", () => {
     setup();
-    const title = screen.getByRole("heading", { level: 1, name: "New job requirement" });
+    const title = screen.getByRole("heading", { level: 1, name: "Post a job" });
     const card = title.closest("form")?.firstElementChild;
     expect(card).toContainElement(title);
     expect(card).toContainElement(screen.getByRole("button", { name: "Continue" }));
