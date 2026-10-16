@@ -31,6 +31,9 @@ function classify(err: EmployerApiError): { notice?: ActionNotice; unavailable?:
   return { toast: err.error || "Couldn't update this candidate — please try again" };
 }
 
+const CLEAN_SCOPE = { unavailable: false, declined: false, notice: null as ActionNotice | null };
+type CandidateScope = { id: string } & typeof CLEAN_SCOPE;
+
 export function useCandidateDetail(requirementId: string, matchId: string) {
   const { fetchRequirementDetail, updateCandidateStatusResult, fetchCandidateEvidence } = useEmployerData();
   const { toast } = useToast();
@@ -38,11 +41,18 @@ export function useCandidateDetail(requirementId: string, matchId: string) {
   const [requirement, setRequirement] = useState<Requirement | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
-  const [unavailable, setUnavailable] = useState(false);
-  const [declinedLocally, setDeclinedLocally] = useState(false);
-  const [notice, setNotice] = useState<ActionNotice | null>(null);
+  // Per-candidate outcomes are scoped to the match id, so stepping to the next
+  // candidate starts clean instead of inheriting the last one's notice or decline.
+  const [scope, setScope] = useState<CandidateScope>({ id: matchId, ...CLEAN_SCOPE });
+  const local = scope.id === matchId ? scope : { id: matchId, ...CLEAN_SCOPE };
+  const { unavailable, declined: declinedLocally, notice } = local;
+  const patchScope = useCallback(
+    (p: Partial<typeof CLEAN_SCOPE>) => setScope((prev) => ({ ...(prev.id === matchId ? prev : { id: matchId, ...CLEAN_SCOPE }), ...p })),
+    [matchId],
+  );
 
   const [evidence, setEvidence] = useState<CandidateEvidence | null>(null);
+  const [evidenceId, setEvidenceId] = useState<string | null>(null);
   const [evidenceLoading, setEvidenceLoading] = useState(false);
   const [evidenceFailed, setEvidenceFailed] = useState(false);
   const [evidenceNonce, setEvidenceNonce] = useState(0);
@@ -79,6 +89,7 @@ export function useCandidateDetail(requirementId: string, matchId: string) {
     fetchCandidateEvidence(candidateId).then((e) => {
       if (!active) return;
       setEvidence(e);
+      setEvidenceId(candidateId);
       setEvidenceFailed(e === null);
       setEvidenceLoading(false);
     });
@@ -88,7 +99,9 @@ export function useCandidateDetail(requirementId: string, matchId: string) {
   }, [candidateId, unlockedFlag, evidenceNonce, fetchCandidateEvidence]);
 
   const reloadEvidence = useCallback(() => setEvidenceNonce((n) => n + 1), []);
-  const clearNotice = useCallback(() => setNotice(null), []);
+  const clearNotice = useCallback(() => patchScope({ notice: null }), [patchScope]);
+  // Until the new candidate's evidence lands, show loading rather than the previous candidate's answers.
+  const evidenceStale = candidateId != null && evidenceId !== candidateId;
 
   const changeStatus = async (change: StatusChange): Promise<boolean> => {
     if (!candidate) return false;
@@ -100,7 +113,7 @@ export function useCandidateDetail(requirementId: string, matchId: string) {
     const patch = (p: Partial<typeof candidate>) =>
       setRequirement((prev) => (prev ? { ...prev, candidates: prev.candidates.map((c) => (c.id !== candidate.id ? c : { ...c, ...p })) } : prev));
 
-    setNotice(null);
+    patchScope({ notice: null });
     patch({
       candidateStatus: change.status,
       candidateStatusNote: change.note || previous.candidateStatusNote,
@@ -115,11 +128,8 @@ export function useCandidateDetail(requirementId: string, matchId: string) {
 
     patch(previous);
     const outcome = classify(res.error);
-    if (outcome.notice) {
-      setNotice(outcome.notice);
-      if (outcome.notice.kind === "declined") setDeclinedLocally(true);
-    }
-    if (outcome.unavailable) setUnavailable(true);
+    if (outcome.notice) patchScope({ notice: outcome.notice, ...(outcome.notice.kind === "declined" && { declined: true }) });
+    if (outcome.unavailable) patchScope({ unavailable: true });
     if (outcome.toast) toast(outcome.toast, "error");
     return false;
   };
@@ -133,9 +143,9 @@ export function useCandidateDetail(requirementId: string, matchId: string) {
     declinedLocally,
     reload: load,
     refresh,
-    evidence,
-    evidenceLoading,
-    evidenceFailed,
+    evidence: evidenceStale ? null : evidence,
+    evidenceLoading: evidenceLoading || evidenceStale,
+    evidenceFailed: evidenceStale ? false : evidenceFailed,
     reloadEvidence,
     notice,
     clearNotice,

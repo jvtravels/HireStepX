@@ -1,17 +1,17 @@
 import { useState } from "react";
-import { ActivityIcon, CheckIcon, FileSearchIcon, MinusIcon, TargetIcon, UserRoundIcon, XIcon } from "lucide-react";
+import { ActivityIcon, CheckIcon, FileSearchIcon, MessageSquareQuoteIcon, MinusIcon, SparklesIcon, TargetIcon, TrendingUpIcon, UserRoundIcon, XIcon } from "lucide-react";
 import { cn } from "cn";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { CandidateEvidence, Requirement } from "@/employer/EmployerDataContext";
 import type { Candidate } from "@/employer/mockData";
-import { OutlineCta } from "@/employer/_atoms";
-import { InfoTip, KeyValueList, KeyValueRow, Panel, PanelButton, Stat, StatGrid } from "@/employer/_panelParts";
+import { Badge, OutlineCta } from "@/employer/_atoms";
+import { InfoTip, KeyValueList, KeyValueRow, MeterRow, Panel, PanelButton, Stat, StatGrid } from "@/employer/_panelParts";
 import { InlineNotice } from "@/employer/_requirementAtoms";
 import { ChipList, IconList, MutedText } from "./parts";
 import { ItemRequest, type RequestUi } from "./RequestPopover";
 import { RequestsPanel } from "./RequestsPanel";
 import { RoleMismatchNotice, hasRoleMismatch } from "./RoleMismatchNotice";
-import { PROVENANCE, READINESS_LABEL, averageTenureMonths, buildResumeInsights, buildRoleFit, employerCapabilities, evidenceAverage, formatSessionDate, formatTenure, formatYears, summarizeFit, type FitStatus, type ResumeInsights } from "./helpers";
+import { PROVENANCE, READINESS_LABEL, averageTenureMonths, buildResumeInsights, buildRoleFit, employerCapabilities, evidenceAverage, formatSessionDate, formatTenure, formatYears, groupSkillsByDepth, skillChipLabel, summarizeFit, type FitStatus, type ResumeInsights } from "./helpers";
 
 export type EvidenceState = { evidence: CandidateEvidence | null; loading: boolean; failed: boolean; onRetry: () => void };
 
@@ -60,7 +60,7 @@ function MatchPanel({ candidate, requirement, matched, unmatched, evidence, requ
   const caption = [
     fit.gaps.length > 0 && `Gap: ${fit.gaps.join(", ")}.`,
     fit.close.length > 0 && `Close: ${fit.close.join(", ")}.`,
-    candidate.matchScore < 100 && "The score also weighs practice results and recent activity.",
+    candidate.matchScore < 100 && !candidate.matchBreakdown && "The score also weighs practice results and recent activity.",
     analysisClear && "No concerns flagged on the resume.",
   ].filter(Boolean).join(" ");
   return (
@@ -87,6 +87,19 @@ function MatchPanel({ candidate, requirement, matched, unmatched, evidence, requ
             )}
           </div>
         </div>
+        {candidate.matchBreakdown && (
+          <div className="@container grid gap-3 border-t border-hx-line pt-4">
+            <p className="m-0 flex items-center gap-1 text-[13px] font-medium text-hx-coal">
+              What feeds the score
+              <InfoTip label="About the score inputs">Overlap between this resume and the posting. Practice results and recent activity are weighed on top, so these three do not add up to the score.</InfoTip>
+            </p>
+            <div className="grid gap-x-8 gap-y-3.5 @xl:grid-cols-3">
+              <MeterRow label="Role overlap" value={candidate.matchBreakdown.roleMatch} tone={candidate.matchBreakdown.roleMatch >= 70 ? "success" : "indigo"} />
+              <MeterRow label="Skill overlap" value={candidate.matchBreakdown.skillMatch} tone={candidate.matchBreakdown.skillMatch >= 70 ? "success" : "indigo"} />
+              <MeterRow label="Location fit" value={candidate.matchBreakdown.locationMatch} tone={candidate.matchBreakdown.locationMatch >= 70 ? "success" : "indigo"} />
+            </div>
+          </div>
+        )}
         {rows.length > 0 && (
           <div className="border-t border-hx-line pt-2">
             <ul aria-label="Criteria compared with the posting" className="m-0 flex list-none flex-col p-0">
@@ -200,6 +213,11 @@ function PracticeSnapshot({ candidate, state, onOpenPractice, requirementTitle, 
   const verified = employerCapabilities(evidence?.verifiedCapabilities ?? []);
   const verifiedCount = verified.filter((c) => c.verified).length;
   const last = evidence?.sessionDate ? formatSessionDate(evidence.sessionDate) : "";
+  const topSkills = [...(evidence?.skills ?? [])].sort((a, b) => b.score - a.score).slice(0, 4);
+  const trend = evidence?.sessionTrend ?? [];
+  const trendLine = trend.length > 1
+    ? `Latest ${trend[trend.length - 1].score}, best ${Math.max(...trend.map((t) => t.score))}, ${trend[trend.length - 1].score - trend[0].score >= 0 ? "+" : ""}${trend[trend.length - 1].score - trend[0].score} since first session`
+    : "";
   const action = (
     <div className="flex items-center gap-3">
       {hasEvidence && <PanelButton onClick={onOpenPractice}>See every answer and score</PanelButton>}
@@ -226,6 +244,19 @@ function PracticeSnapshot({ candidate, state, onOpenPractice, requirementTitle, 
               {avg != null && <Stat label="Avg skill score" hint="out of 100">{avg}</Stat>}
               {verified.length > 0 && <Stat label="Verified skills" hint={`of ${verified.length} checked`}>{verifiedCount}</Stat>}
             </StatGrid>
+            {topSkills.length > 0 && (
+              <div className="mt-5 grid gap-3 border-t border-hx-line pt-4">
+                <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                  <h3 className="m-0 text-[13px] font-semibold text-hx-coal">Top skill scores</h3>
+                  {trendLine && <p className="m-0 text-[12px] text-hx-ink-soft tabular-nums">{trendLine}</p>}
+                </div>
+                <div className="grid gap-x-8 gap-y-3.5 @xl:grid-cols-2">
+                  {topSkills.map((sk) => (
+                    <MeterRow key={sk.name} label={sk.name} value={sk.score} tone={sk.score >= 70 ? "success" : "indigo"} />
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         ) : evidence && hasRoleMismatch(evidence) ? (
           <RoleMismatchNotice evidence={evidence} candidate={candidate} requirementTitle={requirementTitle} requestUi={requestUi} />
@@ -233,6 +264,68 @@ function PracticeSnapshot({ candidate, state, onOpenPractice, requirementTitle, 
           <MutedText>No graded practice interviews yet, so this match reflects the resume only.</MutedText>
         )}
       </EvidenceStatus>
+    </Panel>
+  );
+}
+
+function StandoutPanel({ evidence, onOpenPractice }: { evidence: CandidateEvidence | null; onOpenPractice: () => void }) {
+  const quotes = (evidence?.quotes ?? []).filter((q) => q.quote.trim());
+  const picked = [...quotes.filter((q) => q.kind === "win").slice(0, 2), ...quotes.filter((q) => q.kind === "redFlag").slice(0, 1)];
+  if (picked.length === 0) return null;
+  return (
+    <Panel id="standout-heading" title="Standout answers" icon={<MessageSquareQuoteIcon size={15} />} action={<PanelButton onClick={onOpenPractice}>All answers</PanelButton>}>
+      <ul aria-label="Quoted moments from practice interviews" className="m-0 flex list-none flex-col p-0">
+        {picked.map((q, i) => (
+          <li key={`${q.kind}-${i}`} className="grid gap-1.5 border-b border-hx-line py-3 first:pt-0 last:border-b-0 last:pb-0">
+            <div className="flex items-start gap-2 text-[13px] font-medium text-hx-coal">
+              <Badge tone={q.kind === "redFlag" ? "error" : "success"}>{q.kind === "redFlag" ? "Flag" : "Win"}</Badge>
+              <span className="min-w-0 [overflow-wrap:anywhere]">{q.text}</span>
+            </div>
+            <p className="m-0 text-[13px] leading-relaxed text-hx-ink-soft italic [overflow-wrap:anywhere]">&ldquo;{q.quote}&rdquo;</p>
+          </li>
+        ))}
+      </ul>
+    </Panel>
+  );
+}
+
+function HighlightsPanel({ candidate }: { candidate: Candidate }) {
+  const r = candidate.resume;
+  const achievements = (r?.keyAchievements ?? []).filter((a) => a.trim());
+  const ordered = [...achievements.filter((a) => /\d/.test(a)), ...achievements.filter((a) => !/\d/.test(a))].slice(0, 3);
+  const growth = (r?.promotionSignals ?? []).filter((p) => p.trim()).slice(0, 1);
+  const items = [...ordered, ...growth];
+  if (items.length === 0) return null;
+  return (
+    <Panel id="highlights-heading" title="Career highlights" icon={<SparklesIcon size={15} />}>
+      <IconList label="Career highlights" items={items} icon={TrendingUpIcon} iconClassName="size-4 text-hx-success" />
+    </Panel>
+  );
+}
+
+function SkillsPanel({ candidate, onOpenResume }: { candidate: Candidate; onOpenResume: () => void }) {
+  const detailed = candidate.resume?.skillsDetailed ?? [];
+  const groups = groupSkillsByDepth(detailed).slice(0, 2).map((g) => ({ label: g.label, items: g.skills.slice(0, 8).map(skillChipLabel), more: Math.max(0, g.skills.length - 8) }));
+  const fallback = detailed.length === 0 ? candidate.skills.slice(0, 12) : [];
+  if (groups.length === 0 && fallback.length === 0) return null;
+  const industries = (candidate.resume?.industries ?? []).slice(0, 4);
+  return (
+    <Panel id="skills-overview-heading" title="Skills" action={<PanelButton onClick={onOpenResume}>All skills</PanelButton>}>
+      <div className="grid gap-4">
+        {groups.map((g) => (
+          <div key={g.label} className="grid gap-2">
+            <h3 className="m-0 text-[12px] font-medium text-hx-ink-soft">{g.label}{g.more > 0 ? `, ${g.more} more` : ""}</h3>
+            <ChipList label={g.label} items={g.items} />
+          </div>
+        ))}
+        {fallback.length > 0 && <ChipList label="Skills" items={fallback} />}
+        {industries.length > 0 && (
+          <div className="grid gap-2 border-t border-hx-line pt-4">
+            <h3 className="m-0 text-[12px] font-medium text-hx-ink-soft">Industries</h3>
+            <ChipList label="Industries" items={industries} />
+          </div>
+        )}
+      </div>
     </Panel>
   );
 }
@@ -315,10 +408,13 @@ export function OverviewTab({
       <div className="flex min-w-0 flex-col gap-4">
         <MatchPanel candidate={candidate} requirement={requirement} matched={matched} unmatched={unmatched} evidence={state.evidence} requestUi={requestUi} analysisClear={analysisClear} />
         <PracticeSnapshot candidate={candidate} state={state} onOpenPractice={onOpenPractice} requirementTitle={requirement.title} requestUi={requestUi} />
+        <StandoutPanel evidence={state.evidence} onOpenPractice={onOpenPractice} />
         <RequestsPanel state={requestUi.state} disabled={requestUi.disabled} />
       </div>
       <div className="flex min-w-0 flex-col gap-4">
         <ProfilePanel candidate={candidate} onOpenResume={onOpenResume} />
+        <HighlightsPanel candidate={candidate} />
+        <SkillsPanel candidate={candidate} onOpenResume={onOpenResume} />
         <AnalysisPanel candidate={candidate} insights={insights} requestUi={requestUi} />
       </div>
     </div>

@@ -1,6 +1,7 @@
 import type { Candidate, CandidateStatus } from "@/employer/mockData";
 import type { Requirement, CandidateEvidence, EvidenceDelivery, EvidenceQuestion } from "@/employer/EmployerDataContext";
 import { candidateSkillFit } from "@/employer/_jobDetailHelpers";
+import { CANDIDATE_STATUS_LABEL, matchBand } from "@/employer/_atoms";
 
 /* Pure helpers for the candidate detail page. Everything here derives from
    fields the API actually returns — no synthesized or seeded values. */
@@ -345,4 +346,53 @@ export function skillChipLabel(s: Pick<DetailedSkill, "name" | "yearsUsed">): st
 
 export function groupSkillsByDepth(skills: DetailedSkill[]): Array<{ label: string; skills: DetailedSkill[] }> {
   return DEPTH_ORDER.map(({ depth, label }) => ({ label, skills: skills.filter((s) => s.depth === depth) })).filter((g) => g.skills.length > 0);
+}
+
+/* ── Shortlist navigation, rejection reasons and the shareable summary ── */
+
+/** Best match first, ties keep the API order, so previous/next walks the same ranking the shortlist opens with. */
+export function rankCandidates(candidates: Candidate[]): Candidate[] {
+  return candidates
+    .map((c, i) => ({ c, i }))
+    .sort((a, b) => b.c.matchScore - a.c.matchScore || a.i - b.i)
+    .map((x) => x.c);
+}
+
+export interface ShortlistPosition { position: number; total: number; prev: Candidate | null; next: Candidate | null }
+
+export function shortlistPosition(ranked: Candidate[], id: string): ShortlistPosition | null {
+  const i = ranked.findIndex((c) => c.id === id);
+  if (i < 0) return null;
+  return { position: i + 1, total: ranked.length, prev: ranked[i - 1] ?? null, next: ranked[i + 1] ?? null };
+}
+
+export const REJECT_REASONS = ["Skills gap", "Not enough experience", "Too senior", "Location", "Salary expectations", "Notice period", "Communication", "Role mismatch"] as const;
+
+/** Reasons first, then the free text, in one string for the existing `note` field. */
+export function composeRejectNote(reasons: readonly string[], text: string): string | undefined {
+  const parts = [reasons.length > 0 ? `Reasons: ${reasons.join(", ")}.` : "", text.trim()].filter(Boolean);
+  return parts.length > 0 ? parts.join(" ") : undefined;
+}
+
+/** Plain-text brief for pasting into chat or email. Built only from what is visible on the page,
+ *  so a locked candidate stays anonymous and no contact details leave the screen. */
+export function buildCandidateSummary(candidate: Candidate, requirement: Requirement, matched: string[], evidence: CandidateEvidence | null, url: string): string {
+  const rows = buildRoleFit(candidate, requirement, matched, evidence);
+  const fit = summarizeFit(rows);
+  const resume = candidate.resume;
+  const average = evidenceAverage(evidence);
+  const missing = requirement.skills.filter((s) => !matched.includes(s));
+  const lines = [
+    `${maskedName(candidate)} for ${requirement.title}`,
+    `Match: ${candidate.matchScore} out of 100 (${matchBand(candidate.matchScore)})${fit.total > 0 ? `, meets ${fit.meets} of ${fit.total} criteria` : ""}`,
+    `Stage: ${CANDIDATE_STATUS_LABEL[candidate.candidateStatus]}`,
+    resume?.yearsExperience != null && `Experience: ${formatYears(resume.yearsExperience)}${resume.seniorityLevel ? `, ${resume.seniorityLevel}` : ""}`,
+    candidate.city && candidate.city !== "Not specified" && `Location: ${candidate.city}`,
+    matched.length > 0 && `Matched skills: ${matched.join(", ")}`,
+    missing.length > 0 && `Missing skills: ${missing.join(", ")}`,
+    fit.gaps.length > 0 && `Gaps: ${fit.gaps.join(", ")}`,
+    candidate.sessionsCompleted > 0 && `Practice: ${candidate.sessionsCompleted} graded session${candidate.sessionsCompleted === 1 ? "" : "s"}${average != null ? `, average skill score ${average}` : ""}`,
+    url,
+  ];
+  return lines.filter(Boolean).join("\n");
 }

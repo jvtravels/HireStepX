@@ -8,9 +8,9 @@ import { canInviteToInterview } from "@/employer/InterviewInviteDialog";
 import { readCandidateResponse } from "@/employer/_candidateFields";
 import { DotLabel, InfoTip, MetaLine, type DotTone, type MetaPart } from "@/employer/_panelParts";
 import { PortfolioLinkIcon } from "@/portfolioLinkIcons";
-import { formatPaise, singleUnlockPrice } from "../../../../../../../../server-handlers/_unlock-pricing";
 import { HEADER_ACTION, candidateLinks, formatYears, initials, maskedName } from "./helpers";
 import { PipelineStepper } from "./CandidatePipeline";
+import { PrimaryCandidateAction } from "./PrimaryCandidateAction";
 import { RequestButton, RequestPopover } from "./RequestPopover";
 import type { CandidateRequestsState } from "./useCandidateRequests";
 import { ResumeDownload } from "./ResumeDownload";
@@ -121,14 +121,7 @@ export function CandidateHeader({
           <MatchSignal score={candidate.matchScore} />
           {resumeFileName && <ResumeDownload matchId={candidate.id} fileName={resumeFileName} className={HEADER_ACTION} />}
           {canReject && <Button type="button" variant="outline" onClick={onReject} disabled={suspended} className={cn("pointer-coarse:h-11", HEADER_ACTION)}>Reject</Button>}
-          {!candidate.unlocked && (
-            <Button type="button" onClick={onUnlock} disabled={suspended} className={cn("gap-1.5 pointer-coarse:h-11", HEADER_ACTION)}>
-              <LockIcon size={14} aria-hidden="true" />
-              Unlock for {formatPaise(singleUnlockPrice().amountPaise)}
-              <span className="sr-only"> to reveal identity and contact details and send an invite</span>
-            </Button>
-          )}
-          {canInvite && candidate.unlocked && <Button type="button" onClick={onInvite} disabled={inviteBlocked} className={cn("pointer-coarse:h-11", HEADER_ACTION)}>Send interview invite</Button>}
+          <PrimaryCandidateAction candidate={candidate} declined={declined} suspended={suspended} onUnlock={onUnlock} onInvite={onInvite} />
         </div>
       </div>
       <div className="mt-3 flex flex-wrap items-center justify-between gap-x-6 gap-y-2">

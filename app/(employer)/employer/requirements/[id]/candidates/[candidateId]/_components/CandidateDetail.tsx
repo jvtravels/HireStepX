@@ -1,15 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import StatusTabs from "@/components/StatusTabs";
 import { useEmployerData } from "@/employer/EmployerDataContext";
 import { useEmployerBreadcrumb } from "@/employer/EmployerShell";
+import { useToast } from "@/Toast";
 import { useEmployerAccess } from "@/employer/_useEmployerAccess";
 import { ErrorRetry, EmptyNote, LinkCta, PageSkeleton, SuspendedBanner } from "@/employer/_requirementAtoms";
 import UnlockDialog from "../../../_components/UnlockDialog";
 import { CandidateDialogsHost } from "./CandidateDialogsHost";
 import { CandidateHeader } from "./CandidateHeader";
-import { maskedName, matchedSkillCount } from "./helpers";
+import { buildCandidateSummary, dedupeQuestions, maskedName, matchedSkillCount, rankCandidates, shortlistPosition } from "./helpers";
+import { CandidateNav } from "./CandidateNav";
+import { PrimaryCandidateAction } from "./PrimaryCandidateAction";
+import { useCandidateShortcuts } from "./useCandidateShortcuts";
 import { ActionNoticeAlert } from "./Notices";
 import { OverviewTab } from "./OverviewTab";
 import { PracticeTab } from "./PracticeTab";
@@ -19,15 +24,28 @@ import { useCandidateRequests } from "./useCandidateRequests";
 import type { RequestUi } from "./RequestPopover";
 
 type CandidateTabKey = "overview" | "practice" | "resume";
-const TABS: ReadonlyArray<{ key: CandidateTabKey; label: string }> = [
-  { key: "overview", label: "Overview" },
-  { key: "practice", label: "Evidence" },
-  { key: "resume", label: "Resume" },
-];
+const TAB_ORDER: CandidateTabKey[] = ["overview", "practice", "resume"];
+const TAB_HASH: Record<CandidateTabKey, string> = { overview: "overview", practice: "evidence", resume: "resume" };
+
+/** True once the element has scrolled up past the sticky bar, so the bar can take over the header's job. */
+function useScrolledPast(ref: React.RefObject<HTMLElement | null>, active: boolean): boolean {
+  const [past, setPast] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!active || !el || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver(([entry]) => setPast(!entry.isIntersecting && entry.boundingClientRect.bottom < 64), { rootMargin: "-56px 0px 0px 0px" });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [ref, active]);
+  return past;
+}
 
 export default function CandidateDetail({ requirementId, matchId }: { requirementId: string; matchId: string }) {
   const { suspended } = useEmployerData();
   const d = useCandidateDetail(requirementId, matchId);
+  const router = useRouter();
+  const { toast } = useToast();
+  const headerRef = useRef<HTMLDivElement | null>(null);
   const [tab, setTab] = useState<CandidateTabKey>("overview");
   const [dialog, setDialog] = useState<"invite" | "reject" | null>(null);
   const [unlockOpen, setUnlockOpen] = useState(false);
@@ -36,6 +54,31 @@ export default function CandidateDetail({ requirementId, matchId }: { requiremen
 
   const { requirement, candidate } = d;
   const shortlistHref = `/employer/requirements/${requirementId}`;
+  const ready = !!candidate && !d.unavailable;
+
+  // A link with #evidence or #resume opens on that tab.
+  useEffect(() => {
+    const hash = window.location.hash.slice(1);
+    const key = TAB_ORDER.find((k) => TAB_HASH[k] === hash);
+    if (key) setTab(key);
+  }, []);
+  const selectTab = useCallback((next: CandidateTabKey) => {
+    setTab(next);
+    const { pathname, search } = window.location;
+    window.history.replaceState(null, "", next === "overview" ? `${pathname}${search}` : `${pathname}${search}#${TAB_HASH[next]}`);
+  }, []);
+
+  const ranked = useMemo(() => rankCandidates(requirement?.candidates ?? []), [requirement]);
+  const shortlist = useMemo(() => shortlistPosition(ranked, matchId), [ranked, matchId]);
+  const hrefFor = useCallback(
+    (c: { id: string }) => `${shortlistHref}/candidates/${c.id}${tab === "overview" ? "" : `#${TAB_HASH[tab]}`}`,
+    [shortlistHref, tab],
+  );
+  const goNext = useCallback(() => { if (shortlist?.next) router.push(hrefFor(shortlist.next)); }, [shortlist, hrefFor, router]);
+  const goPrev = useCallback(() => { if (shortlist?.prev) router.push(hrefFor(shortlist.prev)); }, [shortlist, hrefFor, router]);
+  const goTab = useCallback((i: number) => selectTab(TAB_ORDER[i]), [selectTab]);
+  useCandidateShortcuts({ onNext: goNext, onPrev: goPrev, onTab: goTab }, ready && !dialog && !unlockOpen);
+  const condensed = useScrolledPast(headerRef, ready);
 
   useEmployerBreadcrumb(
     requirement && candidate && !d.unavailable
@@ -63,6 +106,21 @@ export default function CandidateDetail({ requirementId, matchId }: { requiremen
     );
   }
 
+  const answerCount = dedupeQuestions(d.evidence?.questions ?? []).length;
+  const tabs = [
+    { key: "overview" as const, label: "Overview" },
+    { key: "practice" as const, label: "Evidence", count: answerCount > 0 ? answerCount : undefined },
+    { key: "resume" as const, label: "Resume" },
+  ];
+  const copy = async (text: string, done: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast(done, "success");
+    } catch {
+      toast("Couldn't copy to the clipboard", "error");
+    }
+  };
+  const shareUrl = () => `${window.location.origin}${hrefFor(candidate)}`;
   const evidenceState = { evidence: d.evidence, loading: d.evidenceLoading, failed: d.evidenceFailed, onRetry: d.reloadEvidence };
   const matched = matchedSkillCount(requirement.skills, candidate);
   const unmatched = requirement.skills.filter((s) => !matched.includes(s));
@@ -100,6 +158,31 @@ export default function CandidateDetail({ requirementId, matchId }: { requiremen
       />
 
       <div className="flex min-w-0 flex-col">
+        {shortlist && (
+          <CandidateNav
+            candidate={candidate}
+            shortlist={shortlist}
+            hrefFor={hrefFor}
+            others={ranked.filter((c) => c.id !== candidate.id)}
+            onCompare={(otherId) => router.push(`${shortlistHref}/compare?a=${candidate.id}&b=${otherId}`)}
+            onCopyLink={() => void copy(shareUrl(), "Link copied")}
+            onCopySummary={() => void copy(buildCandidateSummary(candidate, requirement, matched, d.evidence, shareUrl()), "Summary copied")}
+            condensed={condensed}
+            action={
+              <PrimaryCandidateAction
+                candidate={candidate}
+                declined={d.declinedLocally}
+                suspended={suspended}
+                onUnlock={openUnlock}
+                onInvite={() => {
+                  d.clearNotice();
+                  setDialog("invite");
+                }}
+              />
+            }
+          />
+        )}
+        <div ref={headerRef}>
         <CandidateHeader
           candidate={candidate}
           declined={d.declinedLocally}
@@ -116,11 +199,12 @@ export default function CandidateDetail({ requirementId, matchId }: { requiremen
             setDialog("reject");
           }}
         />
+        </div>
 
         <section aria-labelledby="candidate-sections-heading" className="mt-5 flex min-w-0 flex-col">
           <h2 id="candidate-sections-heading" className="sr-only">Candidate details</h2>
           <div className="mb-4 flex flex-wrap items-center gap-x-5 gap-y-3">
-            <StatusTabs tabs={TABS} value={tab} onChange={setTab} label="Candidate sections" idPrefix="candtab" panelId="candtab-panel" className="shrink-0" />
+            <StatusTabs tabs={tabs} value={tab} onChange={selectTab} label="Candidate sections" idPrefix="candtab" panelId="candtab-panel" className="shrink-0" />
           </div>
           <div id="candtab-panel" role="tabpanel" aria-labelledby={`candtab-tab-${tab}`}>
             {tab === "overview" && (
@@ -130,8 +214,8 @@ export default function CandidateDetail({ requirementId, matchId }: { requiremen
                 matched={matched}
                 unmatched={unmatched}
                 state={evidenceState}
-                onOpenPractice={() => setTab("practice")}
-                onOpenResume={() => setTab("resume")}
+                onOpenPractice={() => selectTab("practice")}
+                onOpenResume={() => selectTab("resume")}
                 requestUi={requestUi}
               />
             )}
