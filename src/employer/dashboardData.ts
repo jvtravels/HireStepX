@@ -1,5 +1,6 @@
 import type { RequirementSummary, RequirementStage } from "./mockData";
 import { skillKey } from "../skillNormalize";
+import { STRONG_MATCH_THRESHOLD } from "../../server-handlers/_requirement-match-helpers";
 
 /* Client shape of GET /api/employer-dashboard plus the pure view logic the
    dashboard sections share (insights, job status, interview slot labels). */
@@ -78,7 +79,10 @@ export function jobHealth(
   const last = pipeline?.lastUpdatedAt ?? job.createdAt;
   const idleDays = Math.floor((now - Date.parse(last)) / 86_400_000);
   if (job.aiScreening.topMatches === 0) {
-    return { tone: "warning", label: job.aiScreening.evaluated > 0 ? "No strong matches yet" : "No candidates yet" };
+    const { evaluated, scoreHigh } = job.aiScreening;
+    if (evaluated === 0) return { tone: "warning", label: "No candidates yet" };
+    const best = scoreHigh === null ? "" : `Best score ${Math.round(scoreHigh)}. `;
+    return { tone: "warning", label: `${best}Strong starts at ${STRONG_MATCH_THRESHOLD}` };
   }
   if (idleDays > STALE_DAYS) return { tone: "warning", label: `Quiet for ${idleDays} days` };
   return null;
