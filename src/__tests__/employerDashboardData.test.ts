@@ -229,3 +229,12 @@ describe("jobsNeedingAttentionFirst", () => {
     expect(jobs.map((j) => j.id)).toEqual(["a", "b", "c"]);
   });
 });
+
+describe("buildRecommendedCards skill matching", () => {
+  it("treats spelling variants of a skill as the same skill", () => {
+    const j = job("r1", { skills: ["React.js", "Postgres", "Go"] }, [cand("aaaaaa", ["React.Js", "PostgreSQL"])]);
+    const [card] = buildRecommendedCards([j], null, NOW);
+    expect(card.matchedSkills).toEqual(["React.js", "Postgres"]);
+    expect(card.missingSkills).toEqual(["Go"]);
+  });
+});

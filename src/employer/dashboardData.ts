@@ -1,4 +1,5 @@
 import type { RequirementSummary, RequirementStage } from "./mockData";
+import { skillKey } from "../skillNormalize";
 
 /* Client shape of GET /api/employer-dashboard plus the pure view logic the
    dashboard sections share (insights, job status, interview slot labels). */
@@ -216,8 +217,8 @@ export function buildRecommendedCards(
 
   return ordered.slice(0, limit).map(({ id, createdAt, score }) => {
     const { job, c } = detail.get(id)!;
-    const have = new Set(c.skills.map((s) => s.toLowerCase()));
-    const matched = job.skills.filter((s) => have.has(s.toLowerCase()));
+    const have = new Set(c.skills.map(skillKey));
+    const matched = job.skills.filter((s) => have.has(skillKey(s)));
     return {
       matchId: id,
       requirementId: job.id,
@@ -225,7 +226,7 @@ export function buildRecommendedCards(
       initials: c.initials,
       roleTitle: job.title,
       matchedSkills: job.skills.length > 0 ? matched : c.skills.slice(0, 4),
-      missingSkills: job.skills.filter((s) => !have.has(s.toLowerCase())),
+      missingSkills: job.skills.filter((s) => !have.has(skillKey(s))),
       requiredCount: job.skills.length,
       yearsExperience: c.yearsExperience,
       traits: c.traits ?? [],
