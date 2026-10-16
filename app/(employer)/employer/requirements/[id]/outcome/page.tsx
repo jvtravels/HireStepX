@@ -115,7 +115,7 @@ export default function OutcomeFeedbackPage() {
 
   if (!requirement) {
     return (
-      <ErrorRetry title="Couldn't load this requirement" message="We couldn't reach HireStepX, or this requirement no longer exists." onRetry={() => load()}>
+      <ErrorRetry title="Couldn't load this job" message="We couldn't reach HireStepX, or this job no longer exists." onRetry={() => load()}>
         {backLink}
       </ErrorRetry>
     );

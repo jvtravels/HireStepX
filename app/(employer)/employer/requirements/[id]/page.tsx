@@ -292,15 +292,15 @@ export default function RequirementDetailPage() {
     setInsightId(null);
   };
 
-  if (loading && !requirement) return <PageSkeleton label="Loading requirement" />;
+  if (loading && !requirement) return <PageSkeleton label="Loading job" />;
 
   if (!requirement) {
     return (
       <ErrorRetry
-        title="Couldn't open this requirement"
+        title="Couldn't open this job"
         message={
           loadFailed
-            ? "It may have been deleted, or we couldn't reach HireStepX. Try again, or go back to your requirements."
+            ? "It may have been deleted, or we couldn't reach HireStepX. Try again, or go back to your jobs."
             : "Something went wrong loading this page."
         }
         onRetry={load}

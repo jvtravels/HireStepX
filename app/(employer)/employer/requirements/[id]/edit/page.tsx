@@ -9,7 +9,7 @@ import { tokens as t, fonts as f, textSize } from "@/auth/_tokens";
 import { ErrorRetry, PageSkeleton, SuspendedBanner } from "@/employer/_requirementAtoms";
 import { useEmployerAccess } from "@/employer/_useEmployerAccess";
 
-const SUSPENDED_SUBMIT_ERROR = "Your employer account is suspended, so requirements can't be edited. Contact support@hirestepx.com.";
+const SUSPENDED_SUBMIT_ERROR = "Your employer account is suspended, so jobs can't be edited. Contact support@hirestepx.com.";
 
 export default function EditRequirementPage() {
   const { id } = useParams<{ id: string }>();
@@ -50,13 +50,13 @@ export default function EditRequirementPage() {
     return true;
   };
 
-  if (loading) return <PageSkeleton label="Loading requirement" />;
+  if (loading) return <PageSkeleton label="Loading job" />;
 
   if (!requirement) {
     return (
       <ErrorRetry
-        title="Couldn't open this requirement"
-        message="It may have been deleted, or we couldn't reach HireStepX. Try again, or go back to your requirements."
+        title="Couldn't open this job"
+        message="It may have been deleted, or we couldn't reach HireStepX. Try again, or go back to your jobs."
         onRetry={() => load()}
       >
         <Link

@@ -121,7 +121,7 @@ export function ArchiveDialog({
     const ok = await archiveRequirement(requirement.id, { archiveReason: reason.trim() || undefined, archiveDisposition: disposition });
     setSaving(false);
     if (!ok) {
-      setError("Couldn't archive this requirement. Check your connection and try again. If your account is suspended, archiving is turned off.");
+      setError("Couldn't archive this job. Check your connection and try again. If your account is suspended, archiving is turned off.");
       return;
     }
     setReason("");
@@ -171,7 +171,7 @@ export function ArchiveDialog({
         <DialogFooter>
           <OutlineCta onClick={() => onOpenChange(false)} disabled={saving}>Cancel</OutlineCta>
           <Button type="button" variant="destructive" onClick={submit} disabled={saving} className="pointer-coarse:h-11">
-            {saving ? "Archiving…" : "Archive requirement"}
+            {saving ? "Archiving…" : "Archive job"}
           </Button>
         </DialogFooter>
       </DialogContent>

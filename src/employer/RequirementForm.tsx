@@ -85,7 +85,7 @@ const EMPLOYMENT_TYPES: { value: EmploymentType; label: string }[] = [
 
 export type { RequirementFormValues } from "./mockData";
 
-/* Shared by the "post a new requirement" and "edit a requirement" pages.
+/* Shared by the "post a new job" and "edit a job" pages.
    Create walks a 3-step wizard (Role basics, Requirements and pay, Candidate
    targeting); edit renders the same three sections on one flat page with a
    top Cancel / Save changes bar. Validation is inline and on demand: nothing
@@ -290,7 +290,7 @@ export function RequirementForm({
       setSubmitting(false);
       // onSubmit already called setSubmitError with the server's specific
       // message when it had one; only fall back to a generic message here.
-      setSubmitError((prev) => prev ?? (isCreate ? "Couldn't create this requirement. Please try again." : "Couldn't save changes. Please try again."));
+      setSubmitError((prev) => prev ?? (isCreate ? "Couldn't create this job. Please try again." : "Couldn't save changes. Please try again."));
     }
   };
 

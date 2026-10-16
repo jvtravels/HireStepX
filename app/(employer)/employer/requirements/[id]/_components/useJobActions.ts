@@ -46,10 +46,10 @@ export function useJobActions(requirement: Requirement | null, onPatch: (patch: 
     const ok = await reopenRequirement(requirement.id);
     setReopenSaving(false);
     if (!ok) {
-      setMessage({ tone: "error", text: "Couldn't reopen this requirement. Please try again." });
+      setMessage({ tone: "error", text: "Couldn't reopen this job. Please try again." });
       return;
     }
-    setMessage({ tone: "success", text: "Requirement reopened. Re-matching candidates now." });
+    setMessage({ tone: "success", text: "Job reopened. Re-matching candidates now." });
     onReload();
   };
 

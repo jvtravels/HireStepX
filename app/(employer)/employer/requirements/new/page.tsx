@@ -7,7 +7,7 @@ import { RequirementForm, RequirementFormValues } from "@/employer/RequirementFo
 import { SuspendedBanner } from "@/employer/_requirementAtoms";
 import { useEmployerAccess } from "@/employer/_useEmployerAccess";
 
-const SUSPENDED_SUBMIT_ERROR = "Your employer account is suspended, so new requirements can't be posted. Contact support@hirestepx.com.";
+const SUSPENDED_SUBMIT_ERROR = "Your employer account is suspended, so new jobs can't be posted. Contact support@hirestepx.com.";
 
 export default function PostRequirementPage() {
   const { addRequirement } = useEmployerData();
