@@ -3,13 +3,14 @@
 import { useEmployerData } from "@/employer/EmployerDataContext";
 import { tokens as t, fonts as f } from "@/auth/_tokens";
 import { PageSkeleton, ErrorPanel } from "@/employer/_consoleParts";
+import BillingHistorySection from "@/employer/BillingHistorySection";
 import CompanyProfileForm from "@/employer/CompanyProfileForm";
 import { PageHeader, FlatSection, SoundsSection, EmailPreferencesSection } from "@/settingsSections";
 
 /* /employer/settings — edit the company profile submitted during
    onboarding. Saving re-runs the same POST /api/employer-profile upsert
    onboarding uses, which re-derives the tier on the server. Billing/GSTIN fields are
-   deliberately absent: no server endpoint accepts them yet. */
+   deliberately absent: no server endpoint accepts them yet. Billing history is read-only. */
 export default function EmployerSettingsPage() {
   const {
     companyName, companyWebsite, companyLogoUrl, companyStatus, companyStatusLoading, companyStatusError,
@@ -30,7 +31,7 @@ export default function EmployerSettingsPage() {
   return (
     <div style={{ width: "100%" }}>
       <div style={{ background: t.white, border: `1px solid ${t.line}`, borderRadius: 16, overflow: "hidden" }}>
-        <PageHeader title="Settings" desc="Update your company profile and notification sounds." />
+        <PageHeader title="Settings" desc="Update your company profile, review your purchases and set notification sounds." />
 
         <FlatSection title="Company profile">
           <div style={{ maxWidth: 480 }}>
@@ -55,6 +56,10 @@ export default function EmployerSettingsPage() {
 
         <FlatSection title="Email preferences">
           <EmailPreferencesSection audience="employer" />
+        </FlatSection>
+
+        <FlatSection title="Billing history">
+          <BillingHistorySection />
         </FlatSection>
 
         <FlatSection title="Sounds" last>
