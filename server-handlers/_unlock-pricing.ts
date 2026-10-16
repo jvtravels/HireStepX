@@ -49,3 +49,19 @@ export function batchIndexForRank(rankIndex: number): number {
 export function formatPaise(paise: number): string {
   return paise % 100 === 0 ? `₹${paise / 100}` : `₹${(paise / 100).toFixed(2)}`;
 }
+
+export interface UnlockRateNote { perCandidate: string; savings: string | null; batchHint: string | null }
+
+/** Per-candidate rate and saving shown in the unlock dialog. A batch charges
+    ₹29.90 a head against ₹59 singly, which the flat total alone doesn't reveal. */
+export function unlockRateNote(count: number, amountPaise: number): UnlockRateNote {
+  if (count <= 1) {
+    return { perCandidate: formatPaise(amountPaise), savings: null, batchHint: `Unlocking ${UNLOCK_BUNDLE_SIZE} at once costs ${formatPaise(PER_CANDIDATE_BATCH_PAISE)} each.` };
+  }
+  const saved = UNLOCK_SINGLE_PRICE_PAISE * count - amountPaise;
+  return {
+    perCandidate: formatPaise(Math.round(amountPaise / count)),
+    savings: saved > 0 ? `You save ${formatPaise(saved)} against unlocking one at a time.` : null,
+    batchHint: null,
+  };
+}

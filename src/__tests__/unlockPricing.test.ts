@@ -3,6 +3,7 @@ import {
   singleUnlockPrice,
   batchUnlockPrice,
   batchIndexForRank,
+  unlockRateNote,
   UNLOCK_BUNDLE_SIZE,
   UNLOCK_BATCH_PRICE_PAISE,
   UNLOCK_SINGLE_PRICE_PAISE,
@@ -38,5 +39,27 @@ describe("batchIndexForRank", () => {
     expect(batchIndexForRank(UNLOCK_BUNDLE_SIZE)).toBe(1);
     expect(batchIndexForRank(UNLOCK_BUNDLE_SIZE * 2 - 1)).toBe(1);
     expect(batchIndexForRank(UNLOCK_BUNDLE_SIZE * 2)).toBe(2);
+  });
+});
+
+describe("unlockRateNote", () => {
+  it("shows the per-head batch rate and the saving for a full batch", () => {
+    const note = unlockRateNote(UNLOCK_BUNDLE_SIZE, UNLOCK_BATCH_PRICE_PAISE);
+    expect(note.perCandidate).toBe("₹29.90");
+    expect(note.savings).toBe("You save ₹291 against unlocking one at a time.");
+    expect(note.batchHint).toBeNull();
+  });
+
+  it("prorates a partial batch", () => {
+    const note = unlockRateNote(6, batchUnlockPrice(6).amountPaise);
+    expect(note.perCandidate).toBe("₹29.90");
+    expect(note.savings).toContain("₹174.60");
+  });
+
+  it("points a single unlock at the batch rate", () => {
+    const note = unlockRateNote(1, UNLOCK_SINGLE_PRICE_PAISE);
+    expect(note.perCandidate).toBe("₹59");
+    expect(note.savings).toBeNull();
+    expect(note.batchHint).toBe("Unlocking 10 at once costs ₹29.90 each.");
   });
 });

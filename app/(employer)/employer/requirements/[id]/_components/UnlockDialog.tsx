@@ -7,7 +7,7 @@ import { OutlineCta, PrimaryCta } from "@/employer/_atoms";
 import { IdentityHiddenBadge, InlineNotice } from "@/employer/_requirementAtoms";
 import type { UnlockedCandidate } from "@/employer/_requirementCalls";
 import type { EmployerAccess } from "@/employer/_useEmployerAccess";
-import { formatPaise, singleUnlockPrice } from "../../../../../../server-handlers/_unlock-pricing";
+import { formatPaise, singleUnlockPrice, unlockRateNote } from "../../../../../../server-handlers/_unlock-pricing";
 import { useUnlockCheckout, type UnlockTarget } from "./useUnlockCheckout";
 
 /** The single page-level unlock confirmation, for both one candidate and a
@@ -31,6 +31,7 @@ export default function UnlockDialog({
 
   const amountPaise = target?.mode === "batch" ? target.amountPaise : singleUnlockPrice().amountPaise;
   const priceText = formatPaise(amountPaise);
+  const rate = unlockRateNote(target?.mode === "batch" ? target.count : 1, amountPaise);
   const title =
     target?.mode === "batch"
       ? `Unlock ${target.count} candidate${target.count === 1 ? "" : "s"} for ${priceText}?`
@@ -64,6 +65,10 @@ export default function UnlockDialog({
             <IdentityHiddenBadge compact />
             <span>until payment is confirmed.</span>
           </div>
+          <p className="mx-fade m-0 rounded-[10px] bg-hx-row px-3 py-2 text-[13px] leading-normal text-hx-coal">
+            <strong className="tabular-nums">{rate.perCandidate} per candidate.</strong>{" "}
+            {rate.savings ?? rate.batchHint}
+          </p>
           <p style={{ margin: 0, fontSize: textSize.sm, lineHeight: 1.5 }}>
             {priceText} is the amount charged; GST applies as set out in the{" "}
             <a href="/terms#employers" target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "underline" }}>employer terms</a>.
