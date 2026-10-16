@@ -9,6 +9,24 @@ export const metadata: Metadata = {
   title: "Hire from HireStepX's practicing talent roster",
   description:
     "Post a requirement and get an AI-matched shortlist of candidates who've been practicing on HireStepX — with real interview-performance signal, not just a resume.",
+  alternates: { canonical: "/employers" },
+  openGraph: {
+    title: "Hire from HireStepX's practicing talent roster",
+    description:
+      "Post a requirement and get an AI-matched shortlist of candidates scored on real interview performance, not just a resume.",
+    url: "https://hirestepx.com/employers",
+    type: "website",
+    siteName: "HireStepX",
+    locale: "en_IN",
+    images: [{ url: "https://hirestepx.com/opengraph-image", width: 1200, height: 630, alt: "HireStepX for employers" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Hire from HireStepX's practicing talent roster",
+    description:
+      "Post a requirement and get an AI-matched shortlist of candidates scored on real interview performance.",
+    images: ["https://hirestepx.com/opengraph-image"],
+  },
 };
 
 export default function EmployersLandingPage() {

@@ -27,6 +27,7 @@ import { patchMatchUnlocked } from "./_unlock-apply";
 import { notify as defaultNotify, type NotifyInput } from "./_notify";
 import { razorpayBasicAuth } from "./_razorpay-auth";
 import { slog } from "./_shared";
+import { captureServerEvent } from "./_posthog";
 
 export type UnlockOrderStatus =
   | "created" | "paid" | "fulfilled" | "partial" | "refunded" | "disputed" | "expired" | "failed";
@@ -429,6 +430,15 @@ export async function fulfillUnlockOrder(p: FulfillParams): Promise<FulfillResul
 
   const firstFulfilment = ledger.state === "inserted";
   if (firstFulfilment) {
+    // Here rather than in the verify handler: the webhook or reconciler can be
+    // the first to fulfil an order, and only the ledger-insert winner gets here.
+    void captureServerEvent("employer_unlock_paid", order.employer_id, {
+      requirementId,
+      candidatesUnlocked: unlockedRows.length,
+      candidatesFailed: failed.length,
+      amountPaise: order.amount,
+      mode: order.mode,
+    });
     const n = unlockedRows.length;
     const invoice = ledger.invoiceNo ? ` Invoice ${ledger.invoiceNo}.` : "";
     const partialNote = failed.length > 0

@@ -40,6 +40,7 @@ import {
   type SessionRow,
 } from "./_employer-candidate-evidence-helpers";
 import { notify } from "./_notify";
+import { captureServerEvent } from "./_posthog";
 import { emailShell, title as emailTitle, para, button, escapeHtml } from "./_email-theme";
 import { isSuppressed, marketingEmailParts, preferenceDepsFromEnv } from "./_unsubscribe";
 import { loadEmployerMatchAccess, loadAuthIdentity, DENIED_STATUS } from "./_entitlements";
@@ -172,6 +173,12 @@ export default async function handler(req: Request): Promise<Response> {
     }
     const { match, unlocked } = decision.access;
     const candidateUserId = match.candidate_user_id;
+
+    void captureServerEvent("employer_candidate_viewed", auth.userId, {
+      requirementId: match.requirement_id,
+      matchId,
+      unlocked,
+    }, req);
 
     if (await claimProfileView(SUPABASE_URL, serviceHeaders(), matchId, new Date().toISOString())) {
       await Promise.all([

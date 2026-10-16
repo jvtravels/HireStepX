@@ -43,6 +43,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const staticEntries: MetadataRoute.Sitemap = [
     { url: `${baseUrl}/`, lastModified: now, changeFrequency: "weekly", priority: 1.0 },
     { url: `${baseUrl}/pricing`, lastModified: now, changeFrequency: "monthly", priority: 0.9 },
+    { url: `${baseUrl}/employers`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
     { url: `${baseUrl}/how-it-works`, lastModified: now, changeFrequency: "monthly", priority: 0.85 },
     /* Pillar pages — high topical authority, link to all company/focus trees */
     { url: `${baseUrl}/ai-mock-interview`, lastModified: now, changeFrequency: "monthly", priority: 0.93 },
