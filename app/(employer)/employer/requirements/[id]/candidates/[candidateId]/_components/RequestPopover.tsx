@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState, type ReactNode } from "react";
+import { useId, useState, type ComponentProps, type ReactNode } from "react";
 import { PlusIcon } from "lucide-react";
 import { cn } from "cn";
 import type { Candidate } from "@/employer/mockData";
@@ -243,9 +243,10 @@ export function RequestPopover({
 }
 
 /** Header trigger: the one general entry point. */
-export function RequestButton({ pendingCount }: { pendingCount: number }) {
+export function RequestButton({ pendingCount, ...triggerProps }: { pendingCount: number } & ComponentProps<"button">) {
   return (
     <button
+      {...triggerProps}
       type="button"
       className="inline-flex h-7 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-full border border-hx-line bg-white px-2.5 text-[12px] font-medium text-hx-ink-soft transition-colors hover:bg-hx-indigo-100 hover:text-hx-indigo focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hx-indigo disabled:cursor-not-allowed disabled:opacity-50 pointer-coarse:h-11 pointer-coarse:px-4"
     >
@@ -257,9 +258,10 @@ export function RequestButton({ pendingCount }: { pendingCount: number }) {
 }
 
 /** Small per-item trigger used beside a missing skill, weak answer or concern. */
-export function InlineRequestTrigger({ label, requested }: { label: string; requested: boolean }) {
+export function InlineRequestTrigger({ label, requested, ...triggerProps }: { label: string; requested: boolean } & ComponentProps<"button">) {
   return (
     <button
+      {...triggerProps}
       type="button"
       className="cursor-pointer border-0 bg-transparent p-0 text-[12px] font-medium text-hx-indigo underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hx-indigo pointer-coarse:min-h-11"
     >

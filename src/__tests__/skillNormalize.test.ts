@@ -35,4 +35,13 @@ describe("matchRequiredSkills", () => {
   it("does not match a skill inside a longer word", () => {
     expect(matchRequiredSkills(["Go"], [], "Worked on mongodb and good practice")).toEqual([]);
   });
+
+  it("counts a specific SQL database as the generic SQL skill", () => {
+    expect(matchRequiredSkills(["SQL"], ["PostgreSQL", "Python"])).toEqual(["SQL"]);
+    expect(matchRequiredSkills(["SQL"], ["MySQL"])).toEqual(["SQL"]);
+  });
+
+  it("does not count SQL as a specific database", () => {
+    expect(matchRequiredSkills(["PostgreSQL"], ["SQL"])).toEqual([]);
+  });
 });

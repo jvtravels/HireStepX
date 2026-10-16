@@ -161,7 +161,7 @@ export function rankForReview(refs: RecommendedRef[]): RecommendedRef[] {
 }
 
 const STATUS_LABEL: Record<string, string> = {
-  shortlisted: "Shortlisted",
+  shortlisted: "To review",
   interview_invited: "Interview invited",
   interviewing: "Interviewing",
   hired: "Hired",

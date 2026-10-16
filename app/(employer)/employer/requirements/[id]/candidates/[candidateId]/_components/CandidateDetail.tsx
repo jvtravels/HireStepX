@@ -129,7 +129,7 @@ export default function CandidateDetail({ requirementId, matchId }: { requiremen
   const fit = summarizeFit(buildRoleFit(candidate, requirement, matched, d.evidence));
   const reopen = async () => {
     d.clearNotice();
-    if (await d.changeStatus({ status: "shortlisted" })) toast("Candidate reopened and moved back to the shortlist", "success");
+    if (await d.changeStatus({ status: "shortlisted" })) toast("Candidate reopened and moved back to review", "success");
   };
   const resumeFileName = candidate.unlocked ? (d.evidence?.resumeFile?.fileName ?? null) : null;
   const requestUi: RequestUi = {

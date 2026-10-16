@@ -56,7 +56,7 @@ const NEXT: Record<CandidateStatus, Array<keyof typeof OPTIONS>> = {
 };
 
 const STATUS_NAME: Record<CandidateStatus, string> = {
-  shortlisted: "Shortlisted",
+  shortlisted: "To review",
   interview_invited: "Interview invited",
   interviewing: "Interviewing",
   hired: "Hired",

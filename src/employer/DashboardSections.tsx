@@ -226,6 +226,7 @@ function JobMeta({ job, updatedAt }: { job: RequirementSummary; updatedAt: strin
 function JobStatusBadge({ job, pipeline }: { job: RequirementSummary; pipeline: DashboardJobPipeline | undefined }) {
   if (job.status === "failed") return <Badge tone="error">Needs retry</Badge>;
   const stage = pipelineStage(job, pipeline);
+  if ((stage === "ai_matching" || stage === "ready_for_review") && job.status === "zero") return <Badge tone="neutral">No matches yet</Badge>;
   return <Badge tone={STAGE_TONE[stage]}>{STAGE_LABEL[stage]}</Badge>;
 }
 
@@ -503,7 +504,7 @@ export function UpcomingInterviewsCard({ items }: { items: DashboardUpcomingInte
     <section aria-labelledby="upcoming-heading" className={CARD}>
       <CardHeader id="upcoming-heading" icon={<CalendarDaysIcon size={18} />} title="Upcoming interviews" action={<TextLink href="/employer/jobs">View all</TextLink>} />
       {items.length === 0 ? (
-        <EmptyState className={EMPTY} title="Nothing scheduled" description="Invite a shortlisted candidate to interview and it will show up here." />
+        <EmptyState className={EMPTY} title="Nothing scheduled" description="Invite a candidate to interview and it will show up here." />
       ) : (
         <ul className={`${LIST} mx-stagger flex flex-col gap-2.5`}>
           {items.map((i) => {

@@ -46,4 +46,10 @@ describe("StageCell", () => {
     render(<StageCell stage="ai_matching" hasEvaluatedCandidates={false} onChange={() => {}} />);
     expect(screen.getByText("AI Matching")).toBeTruthy();
   });
+
+  it("does not call a zero-match posting Ready for Review when its stored stage is stale", () => {
+    render(<StageCell stage="ready_for_review" hasEvaluatedCandidates={false} onChange={() => {}} matchedOnce />);
+    expect(screen.getByText("No matches yet")).toBeTruthy();
+    expect(screen.queryByText("Ready for Review")).toBeNull();
+  });
 });

@@ -20,6 +20,12 @@ const ALIASES: Record<string, string> = {
   "microsoft excel": "excel",
 };
 
+/* A generic skill a posting asks for is met by any specific member of its
+   family: "SQL" is what a PostgreSQL or MySQL engineer has. */
+const FAMILY_MEMBERS: Record<string, readonly string[]> = {
+  sql: ["postgresql", "mysql", "sql server", "sqlite", "mariadb", "plsql", "pl/sql", "t-sql", "tsql"],
+};
+
 /** One lowercase token (as produced by the matcher's tokenizer). */
 export function canonicalSkillToken(token: string): string {
   let t = token.toLowerCase().replace(/\.+$/, "");
@@ -57,6 +63,7 @@ export function matchRequiredSkills(required: string[], candidateSkills: string[
     const key = skillKey(req);
     if (!key) return false;
     if (have.has(key)) return true;
+    if (FAMILY_MEMBERS[key]?.some((member) => have.has(member))) return true;
     if (!text) return false;
     const variants = new Set([req.toLowerCase().trim(), key]);
     for (const v of variants) {

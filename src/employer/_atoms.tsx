@@ -340,7 +340,7 @@ export function SkillTag({ children }: { children: React.ReactNode }) {
  *  Mirrors CANDIDATE_STATUSES in
  *  server-handlers/_employer-candidate-status-helpers.ts. */
 export const CANDIDATE_STATUS_LABEL: Record<CandidateStatus, string> = {
-  shortlisted: "Shortlisted",
+  shortlisted: "To review",
   interview_invited: "Interview Invited",
   interviewing: "Interviewing",
   hired: "Hired",
@@ -462,8 +462,11 @@ export function StageCell({
   /** Matching finished with zero results, so the posting is idle rather than mid-run. */
   matchedOnce?: boolean;
 }) {
-  const { color, background } = BADGE_TONE[STAGE_TONE[stage]];
-  const StageIcon = STAGE_ICON[stage];
+  // A posting whose matching found nobody can still carry a stale
+  // ready_for_review stage; there is nothing to review, so say so.
+  const idleMatching = !hasEvaluatedCandidates && !!matchedOnce && (stage === "ai_matching" || stage === "ready_for_review");
+  const { color, background } = BADGE_TONE[idleMatching ? "neutral" : STAGE_TONE[stage]];
+  const StageIcon = STAGE_ICON[idleMatching ? "ai_matching" : stage];
   // The global CSS reduced-motion rule only reaches CSS animations; motion's
   // JS-driven springs/scales need the hook.
   const reduceMotion = useReducedMotion();
@@ -475,8 +478,6 @@ export function StageCell({
       </span>
     );
   }
-
-  const idleMatching = stage === "ai_matching" && !hasEvaluatedCandidates && !!matchedOnce;
 
   if (frozen || !hasEvaluatedCandidates) {
     return (

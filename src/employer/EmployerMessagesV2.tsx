@@ -52,7 +52,7 @@ const LIST_POLL_MS = 15000;
 const THREAD_POLL_MS = 6000;
 
 const STATUS_LABEL: Record<string, string> = {
-  shortlisted: "Shortlisted",
+  shortlisted: "To review",
   interview_invited: "Interview invited",
   interviewing: "Interviewing",
   hired: "Hired",

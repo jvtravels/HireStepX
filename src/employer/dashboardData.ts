@@ -1,5 +1,5 @@
 import type { RequirementSummary, RequirementStage } from "./mockData";
-import { skillKey } from "../skillNormalize";
+import { matchRequiredSkills } from "../skillNormalize";
 import { STRONG_MATCH_THRESHOLD } from "../../server-handlers/_requirement-match-helpers";
 
 /* Client shape of GET /api/employer-dashboard plus the pure view logic the
@@ -221,8 +221,8 @@ export function buildRecommendedCards(
 
   return ordered.slice(0, limit).map(({ id, createdAt, score }) => {
     const { job, c } = detail.get(id)!;
-    const have = new Set(c.skills.map(skillKey));
-    const matched = job.skills.filter((s) => have.has(skillKey(s)));
+    const matched = matchRequiredSkills(job.skills, c.skills);
+    const matchedSet = new Set(matched);
     return {
       matchId: id,
       requirementId: job.id,
@@ -230,7 +230,7 @@ export function buildRecommendedCards(
       initials: c.initials,
       roleTitle: job.title,
       matchedSkills: job.skills.length > 0 ? matched : c.skills.slice(0, 4),
-      missingSkills: job.skills.filter((s) => !have.has(skillKey(s))),
+      missingSkills: job.skills.filter((s) => !matchedSet.has(s)),
       requiredCount: job.skills.length,
       yearsExperience: c.yearsExperience,
       traits: c.traits ?? [],

@@ -27,7 +27,7 @@ export function PrimaryCandidateAction({
       <Button type="button" variant="outline" onClick={onReopen} disabled={suspended || declined} className={cn("gap-1.5 pointer-coarse:h-11", HEADER_ACTION)}>
         <RotateCcwIcon size={14} aria-hidden="true" />
         Reopen
-        <span className="sr-only"> and move back to the shortlist</span>
+        <span className="sr-only"> and move back to review</span>
       </Button>
     );
   }
