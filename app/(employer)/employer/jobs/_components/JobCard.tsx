@@ -40,7 +40,7 @@ export default function JobCard({ r, readOnly, onStage, actions }: { r: Requirem
       <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "14px 16px", marginTop: 14 }}>
         <div>
           <div style={label}>Stage</div>
-          <StageCell stage={r.stage} hasEvaluatedCandidates={r.aiScreening.evaluated > 0} onChange={onStage} frozen={isClosed || readOnly} />
+          <StageCell stage={r.stage} hasEvaluatedCandidates={r.aiScreening.evaluated > 0} onChange={onStage} frozen={isClosed || readOnly} closed={isClosed} matchedOnce={r.status === "zero"} />
         </div>
         <div>
           <div style={label}>Due date</div>

@@ -250,7 +250,7 @@ export default function JobsTable({
                       stage={r.stage}
                       hasEvaluatedCandidates={r.aiScreening.evaluated > 0}
                       onChange={(stage) => changeStage(r.id, stage)}
-                      frozen={isClosed || readOnly}
+                      frozen={isClosed || readOnly} closed={isClosed} matchedOnce={r.status === "zero"}
                     />
                   </TableCell>
                   <TableCell style={{ padding: "12px 20px", verticalAlign: "top", whiteSpace: "normal" }}>

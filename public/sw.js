@@ -2,7 +2,7 @@
 
 // Bump this string on intentional SW changes to force clients to swap in the new version
 // (Vercel doesn't substitute __BUILD_TS__, so we version manually.)
-const SW_VERSION = "v5-2026-10-10";
+const SW_VERSION = "v6-2026-10-17";
 const OFFLINE_ASSETS = ["/offline.html", "/offline.css", "/offline.js"];
 const CACHE_NAME = `hirestepx-${SW_VERSION}`;
 
@@ -86,6 +86,21 @@ self.addEventListener("notificationclick", (event) => {
  *     cache-first strategy. These are content-hashed by Next.js so staleness
  *     is a non-issue.
  */
+// One short retry first: a single dropped request (a deploy swapping, a cold
+// edge) shouldn't strand someone who is online on the offline page.
+async function fetchNavigation(request) {
+  try {
+    return await fetch(request);
+  } catch {
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    try {
+      return await fetch(request);
+    } catch {
+      return (await caches.match("/offline.html")) || Response.error();
+    }
+  }
+}
+
 self.addEventListener("fetch", (event) => {
   const { request } = event;
 
@@ -102,9 +117,7 @@ self.addEventListener("fetch", (event) => {
   if (request.mode === "navigate" || request.destination === "document") {
     // Network first, always. Only when the request itself fails do we show the offline page;
     // the HTML response is never written to the cache.
-    event.respondWith(
-      fetch(request).catch(async () => (await caches.match("/offline.html")) || Response.error()),
-    );
+    event.respondWith(fetchNavigation(request));
     return;
   }
 

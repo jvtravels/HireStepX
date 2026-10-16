@@ -184,6 +184,19 @@ export default function EmployerShell({ children }: { children: React.ReactNode 
   const [breadcrumbState, setBreadcrumbState] = useState<BreadcrumbState>(null);
   const breadcrumbExtra = breadcrumbState && breadcrumbState.pathname === pathname ? breadcrumbState.crumbs : undefined;
 
+  // Client pages can't export metadata, so the tab title follows the route: the
+  // deepest breadcrumb (job title, candidate name) or the section name.
+  const sectionTitle =
+    pathname === "/employer/settings" ? "Settings"
+    : pathname === "/employer/messages" ? "Messages"
+    : pathname === "/employer/requirements/new" ? "Post a job"
+    : pathname === "/employer/jobs" || pathname?.startsWith("/employer/requirements/") ? "Jobs"
+    : "Dashboard";
+  const pageTitle = breadcrumbExtra?.length ? breadcrumbExtra[breadcrumbExtra.length - 1].label : sectionTitle;
+  useEffect(() => {
+    document.title = `${pageTitle} · HireStepX`;
+  }, [pageTitle, pathname]);
+
   const handleLogout = async () => {
     await logout();
     router.replace("/login");

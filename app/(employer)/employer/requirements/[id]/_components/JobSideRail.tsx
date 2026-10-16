@@ -118,7 +118,7 @@ export default function JobSideRail({
           />
           <KeyValueRow label="Hiring stage">
             <span title={suspended ? "Stage changes are turned off while your account is suspended." : STAGE_HINT[r.stage]} className="inline-flex">
-              <StageCell stage={r.stage} hasEvaluatedCandidates={r.candidates.length > 0} onChange={onStageChange} frozen={readOnly || suspended} />
+              <StageCell stage={r.stage} hasEvaluatedCandidates={r.candidates.length > 0} onChange={onStageChange} frozen={readOnly || suspended} closed={readOnly} matchedOnce={r.status === "zero"} />
             </span>
           </KeyValueRow>
         </KeyValueList>

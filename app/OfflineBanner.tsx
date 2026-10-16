@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import { useConnectionState } from "@/connectionMonitor";
 
 /**
@@ -10,6 +11,7 @@ import { useConnectionState } from "@/connectionMonitor";
  */
 export function OfflineBanner() {
   const { status } = useConnectionState();
+  const employer = (usePathname() ?? "").startsWith("/employer");
   const [showBack, setShowBack] = useState(false);
   const prev = useRef(status);
 
@@ -29,6 +31,24 @@ export function OfflineBanner() {
 
   const isBack = status === "online";
   const degraded = status === "degraded";
+
+  // The console has no interview answers to sync, and a top banner would sit
+  // on its header, so it gets a bottom pill that says what actually happens.
+  if (employer) {
+    return (
+      <div
+        role="alert"
+        className="fixed bottom-4 left-1/2 z-[9999] w-max max-w-[calc(100vw-32px)] -translate-x-1/2 rounded-full bg-hx-coal px-4 py-2 text-center text-[13px] font-medium leading-snug text-white shadow-lg"
+      >
+        {isBack
+          ? "Back online"
+          : degraded
+            ? "Your connection is unstable. Some actions may be slow."
+            : "You’re offline. Changes won’t be saved until you’re back."}
+      </div>
+    );
+  }
+
   return (
     <div
       role="alert"

@@ -450,17 +450,33 @@ export function StageCell({
   hasEvaluatedCandidates,
   onChange,
   frozen,
+  closed,
+  matchedOnce,
 }: {
   stage: RequirementStage;
   hasEvaluatedCandidates: boolean;
   onChange: (stage: RequirementStage) => void;
   frozen?: boolean;
+  /** The posting is closed: its stored stage is stale, so show "Closed" instead of it. */
+  closed?: boolean;
+  /** Matching finished with zero results, so the posting is idle rather than mid-run. */
+  matchedOnce?: boolean;
 }) {
   const { color, background } = BADGE_TONE[STAGE_TONE[stage]];
   const StageIcon = STAGE_ICON[stage];
   // The global CSS reduced-motion rule only reaches CSS animations; motion's
   // JS-driven springs/scales need the hook.
   const reduceMotion = useReducedMotion();
+
+  if (closed) {
+    return (
+      <span className="inline-flex items-center whitespace-nowrap rounded-full bg-hx-soft px-2 py-[3px] text-[13px] font-semibold text-hx-ink-soft">
+        Closed
+      </span>
+    );
+  }
+
+  const idleMatching = stage === "ai_matching" && !hasEvaluatedCandidates && !!matchedOnce;
 
   if (frozen || !hasEvaluatedCandidates) {
     return (
@@ -482,10 +498,10 @@ export function StageCell({
             transition={{ duration: reduceMotion ? 0 : 0.22, ease: [0.16, 1, 0.3, 1] }}
             style={{ display: "inline-flex" }}
           >
-            <StageIcon size={11} className={!frozen && stage === "ai_matching" ? "animate-spin" : undefined} aria-hidden="true" />
+            <StageIcon size={11} className={!frozen && !idleMatching && stage === "ai_matching" ? "animate-spin" : undefined} aria-hidden="true" />
           </motion.span>
         </AnimatePresence>
-        {STAGE_LABEL[stage]}
+        {idleMatching ? "No matches yet" : STAGE_LABEL[stage]}
       </motion.span>
     );
   }

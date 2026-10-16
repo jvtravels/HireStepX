@@ -209,7 +209,7 @@ function EmployerDashboard() {
 
   return (
     <div className="mx-stagger" style={{ display: "flex", flexDirection: "column", gap: 16, width: "100%", minWidth: 0 }}>
-      {canCreate && (
+      {canCreate && statsReady && (
         <EmployerHeaderAction>
           <Button asChild size="sm" className="h-9 gap-1.5">
             <Link href="/employer/requirements/new" aria-label="Post a job">
