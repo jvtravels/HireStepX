@@ -4,7 +4,7 @@ import { LockIcon } from "lucide-react";
 import { tokens as t, fonts as f, textSize } from "@/auth/_tokens";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { OutlineCta, PrimaryCta } from "@/employer/_atoms";
-import { IdentityHiddenBadge, InlineNotice } from "@/employer/_requirementAtoms";
+import { InlineNotice } from "@/employer/_requirementAtoms";
 import type { UnlockedCandidate } from "@/employer/_requirementCalls";
 import type { EmployerAccess } from "@/employer/_useEmployerAccess";
 import { formatPaise, singleUnlockPrice, unlockRateNote } from "../../../../../../server-handlers/_unlock-pricing";
@@ -61,7 +61,6 @@ export default function UnlockDialog({
           </DialogDescription>
         </DialogHeader>
         <div style={{ display: "grid", gap: 10, fontFamily: f.sans, fontSize: textSize.base, color: t.inkFaint }}>
-          <div><IdentityHiddenBadge compact /></div>
           <p className="mx-fade m-0 rounded-[10px] bg-hx-row px-3 py-2 text-[13px] leading-normal text-hx-coal">
             <strong className="tabular-nums">{rate.perCandidate} per candidate.</strong>{" "}
             {rate.savings ?? rate.batchHint}
