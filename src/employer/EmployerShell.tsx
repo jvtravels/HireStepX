@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "../AuthContext";
@@ -43,6 +44,16 @@ export function useEmployerBreadcrumb(crumbs: BreadcrumbCrumb[] | null) {
     setState(crumbs ? { pathname: pathname ?? "", crumbs } : null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key, pathname]);
+}
+
+const EmployerHeaderSlotContext = React.createContext<HTMLElement | null>(null);
+
+/* Renders its children in the shell's top bar, left of the messages icon.
+   The page owns the data that decides whether the action shows (e.g. job
+   limits), so it portals in rather than the shell guessing. */
+export function EmployerHeaderAction({ children }: { children: React.ReactNode }) {
+  const slot = React.useContext(EmployerHeaderSlotContext);
+  return slot ? createPortal(children, slot) : null;
 }
 
 /* The console renders the exact same AppShellFrame as the candidate
@@ -169,6 +180,7 @@ export default function EmployerShell({ children }: { children: React.ReactNode 
     writeConsoleHint(user.id, companyStatus === "approved" ? companyName : null);
   }, [user?.id, companyStatus, companyStatusLoading, companyStatusError, companyName]);
 
+  const [headerSlot, setHeaderSlot] = useState<HTMLElement | null>(null);
   const [breadcrumbState, setBreadcrumbState] = useState<BreadcrumbState>(null);
   const breadcrumbExtra = breadcrumbState && breadcrumbState.pathname === pathname ? breadcrumbState.crumbs : undefined;
 
@@ -242,6 +254,7 @@ export default function EmployerShell({ children }: { children: React.ReactNode 
 
   return (
     <EmployerBreadcrumbContext.Provider value={setBreadcrumbState}>
+    <EmployerHeaderSlotContext.Provider value={headerSlot}>
       <AppShellFrame
         homeHref="/employer"
         navAriaLabel="Employer navigation"
@@ -269,6 +282,7 @@ export default function EmployerShell({ children }: { children: React.ReactNode 
         isMobile={isMobile}
         mainId="employer-main"
         pageKey={pathname}
+        headerActionsRef={setHeaderSlot}
         banners={<VerificationBanner />}
       >
         {isSelfCardedRoute(pathname ?? "") ? pageBody : (
@@ -277,6 +291,7 @@ export default function EmployerShell({ children }: { children: React.ReactNode 
           </div>
         )}
       </AppShellFrame>
+    </EmployerHeaderSlotContext.Provider>
     </EmployerBreadcrumbContext.Provider>
   );
 }

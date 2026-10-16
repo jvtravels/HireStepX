@@ -1,6 +1,10 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import Link from "next/link";
+import { PlusIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { EmployerHeaderAction } from "@/employer/EmployerShell";
 import { useEmployerData } from "@/employer/EmployerDataContext";
 import { tokens as t, fonts as f } from "@/auth/_tokens";
 import { Card as AtomCard, Eyebrow, EmployerIcon } from "@/employer/_atoms";
@@ -205,6 +209,16 @@ function EmployerDashboard() {
 
   return (
     <div className="mx-stagger" style={{ display: "flex", flexDirection: "column", gap: 16, width: "100%", minWidth: 0 }}>
+      {canCreate && (
+        <EmployerHeaderAction>
+          <Button asChild size="sm" className="h-9 gap-1.5">
+            <Link href="/employer/requirements/new" aria-label="Post a job">
+              <PlusIcon size={14} aria-hidden="true" />
+              <span className="max-sm:hidden">Post a job</span>
+            </Link>
+          </Button>
+        </EmployerHeaderAction>
+      )}
       <DashboardHeader companyName={companyName} range={range} onRangeChange={setRange} jobs={openRequirements} recommended={recommendedCards} />
 
       {suspended && (
@@ -228,7 +242,7 @@ function EmployerDashboard() {
           <DashboardFunnel data={dashboard} recommendedTotal={recommendedTotal} range={range} busy={refreshing} />
           <div aria-busy={refreshing} className="mx-busy grid grid-cols-1 gap-5 min-[1100px]:grid-cols-[minmax(0,1fr)_minmax(300px,380px)]">
             <div style={{ display: "flex", flexDirection: "column", gap: 20, minWidth: 0 }}>
-              <ActiveJobsCard jobs={openRequirements} pipeline={dashboard?.jobs ?? null} canCreate={canCreate} now={now} rowActions={rowActions} />
+              <ActiveJobsCard jobs={openRequirements} pipeline={dashboard?.jobs ?? null} now={now} rowActions={rowActions} />
               <RecommendedCandidatesCard cards={recommendedCards} total={dashboard?.totals.awaitingReview ?? recommendedCards.length} />
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 20, minWidth: 0 }}>

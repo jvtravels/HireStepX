@@ -10,11 +10,10 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, type CSSProperties, type ReactNode } from "react";
-import { BriefcaseIcon, UsersIcon, CalendarDaysIcon, CircleCheckIcon, LightbulbIcon, ClockIcon, TrendingUpIcon, ArrowDownIcon, ArrowUpIcon, ChevronsUpDownIcon, SearchXIcon, ArrowRightIcon, PlusIcon, SparklesIcon, UserIcon } from "lucide-react";
+import { BriefcaseIcon, UsersIcon, CalendarDaysIcon, CircleCheckIcon, LightbulbIcon, ClockIcon, TrendingUpIcon, ArrowDownIcon, ArrowUpIcon, ChevronsUpDownIcon, SearchXIcon, ArrowRightIcon, SparklesIcon, UserIcon } from "lucide-react";
 import { hoursOrDaysAgo } from "@/hiringMatchFormat";
 import AnimatedNumber from "@/AnimatedNumber";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -233,11 +232,10 @@ function JobStatusBadge({ job, pipeline }: { job: RequirementSummary; pipeline: 
 const JOBS_SHOWN = 5;
 
 export function ActiveJobsCard({
-  jobs, pipeline, canCreate, now, rowActions,
+  jobs, pipeline, now, rowActions,
 }: {
   jobs: RequirementSummary[];
   pipeline: DashboardJobPipeline[] | null;
-  canCreate: boolean;
   now: number;
   rowActions: (job: RequirementSummary) => ReactNode;
 }) {
@@ -266,14 +264,7 @@ export function ActiveJobsCard({
         icon={<BriefcaseIcon size={18} />}
         title="Active Jobs"
         action={
-          <div className="flex items-center gap-3.5">
-            <TextLink href="/employer/jobs">View all jobs</TextLink>
-            {canCreate && (
-              <Button asChild size="sm" className="h-9 gap-1.5">
-                <Link href="/employer/requirements/new"><PlusIcon size={14} aria-hidden="true" />Post a job</Link>
-              </Button>
-            )}
-          </div>
+          <TextLink href="/employer/jobs">View all jobs</TextLink>
         }
       />
       {shown.length === 0 ? (

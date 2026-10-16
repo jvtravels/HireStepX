@@ -102,6 +102,8 @@ interface AppShellFrameProps {
   mainId: string;
   /** Changing this re-runs the page-enter animation. */
   pageKey?: string | null;
+  /** Receives the empty header slot (left of the messages icon) so a page can portal actions into it. */
+  headerActionsRef?: (el: HTMLDivElement | null) => void;
   /** Rendered at the top of the scrolling body (alerts/banners). */
   banners?: React.ReactNode;
   /** Rendered inside the provider after the main inset (modals, toasts, palette). */
@@ -112,7 +114,7 @@ interface AppShellFrameProps {
 export default function AppShellFrame({
   homeHref, navAriaLabel, navItems, activeId, onNavigate, onNavHover,
   sidebarFooterExtra, account, accountMenuItems, onLogout, messaging, audience,
-  breadcrumbRoot, pageLabel, pageLabelPath, extraCrumbs, isMobile, mainId, pageKey, banners, overlays, children,
+  breadcrumbRoot, pageLabel, pageLabelPath, extraCrumbs, isMobile, mainId, pageKey, headerActionsRef, banners, overlays, children,
 }: AppShellFrameProps) {
   const initial = (account.name || "?")[0].toUpperCase();
 
@@ -334,6 +336,7 @@ export default function AppShellFrame({
               })}
             </BreadcrumbList>
           </Breadcrumb>
+          <div ref={headerActionsRef} className="contents" />
           <MessagesBell onNavigate={onNavigate} fetchConversations={messaging.fetchConversations} basePath={messaging.basePath} />
           <NotificationBell onNavigate={onNavigate} audience={audience} />
         </header>
