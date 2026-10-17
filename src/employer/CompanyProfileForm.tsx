@@ -15,6 +15,7 @@ import {
   splitLogoDataUrl,
 } from "@/employer/_companyProfileHelpers";
 
+const legendStyle: React.CSSProperties = { fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.coal, padding: 0, marginBottom: 12 };
 const inputStyle: React.CSSProperties = {
   width: "100%",
   padding: "12px 14px",
@@ -27,6 +28,8 @@ const inputStyle: React.CSSProperties = {
   color: t.coal,
   boxSizing: "border-box",
 };
+const gstinStyle: React.CSSProperties = { ...inputStyle, fontFamily: f.mono, letterSpacing: "0.04em" };
+const gstinErrorStyle: React.CSSProperties = { ...gstinStyle, borderColor: t.error };
 
 /* The one company-profile form, used by first-run onboarding and by Settings.
    Both POST the same upsert, so they share validation, the logo picker and the
@@ -210,8 +213,8 @@ export default function CompanyProfileForm({
         )}
       </div>
 
-      <fieldset style={{ border: 0, padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 18 }}>
-        <legend style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.coal, padding: 0, marginBottom: 12 }}>
+      <fieldset className="m-0 flex flex-col gap-[18px] border-0 p-0">
+        <legend style={legendStyle}>
           GST invoice details (optional)
         </legend>
         <div>
@@ -229,7 +232,7 @@ export default function CompanyProfileForm({
             aria-invalid={gstinError ? true : undefined}
             aria-describedby={`${gstinId}-${gstinError ? "err" : "help"}`}
             placeholder="27AAPFU0939F1ZV"
-            style={{ ...inputStyle, borderColor: gstinError ? t.error : t.line, fontFamily: f.mono, letterSpacing: "0.04em" }}
+            style={gstinError ? gstinErrorStyle : gstinStyle}
           />
           {gstinError ? (
             <HelpText id={`${gstinId}-err`} tone="error">{gstinError}</HelpText>
