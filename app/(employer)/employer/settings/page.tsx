@@ -1,21 +1,49 @@
 "use client";
 
+import { useState } from "react";
+import { useAuth } from "@/AuthContext";
+import { useToast } from "@/Toast";
+import { authHeaders } from "@/supabase";
 import { useEmployerData } from "@/employer/EmployerDataContext";
 import { tokens as t, fonts as f } from "@/auth/_tokens";
 import { PageSkeleton, ErrorPanel } from "@/employer/_consoleParts";
 import BillingHistorySection from "@/employer/BillingHistorySection";
 import CompanyProfileForm from "@/employer/CompanyProfileForm";
-import { PageHeader, FlatSection, SoundsSection, EmailPreferencesSection } from "@/settingsSections";
+import { PageHeader, FlatSection, SoundsSection, EmailPreferencesSection, AccountSection, DangerZoneSection } from "@/settingsSections";
 
 /* /employer/settings — edit the company profile submitted during
    onboarding. Saving re-runs the same POST /api/employer-profile upsert
    onboarding uses, which re-derives the tier on the server. Billing/GSTIN fields are
-   deliberately absent: no server endpoint accepts them yet. Billing history is read-only. */
+   deliberately absent: no server endpoint accepts them yet. Billing history is read-only.
+   Password reset and account deletion reuse the candidate settings sections; the
+   erasure pipeline already clears employer rows and anonymises retained payments. */
 export default function EmployerSettingsPage() {
   const {
     companyName, companyWebsite, companyLogoUrl, companyStatus, companyStatusLoading, companyStatusError,
     refreshCompanyStatus, suspended,
   } = useEmployerData();
+  const { user, logout, resetPassword } = useAuth();
+  const { toast } = useToast();
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleteEmailInput, setDeleteEmailInput] = useState("");
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteMsg, setDeleteMsg] = useState("");
+
+  const handlePasswordReset = async () => {
+    if (!user?.email) return;
+    setResetLoading(true);
+    const result = await resetPassword(user.email);
+    setResetLoading(false);
+    if (result.success) {
+      setResetSent(true);
+      toast("Password reset email sent", "success");
+      setTimeout(() => setResetSent(false), 10000);
+    } else {
+      toast(result.error || "Couldn't send the reset email", "error");
+    }
+  };
 
   if (companyStatusLoading) return <PageSkeleton label="Loading settings" />;
   if (companyStatusError && companyStatus === "none") {
@@ -31,7 +59,7 @@ export default function EmployerSettingsPage() {
   return (
     <div style={{ width: "100%" }}>
       <div style={{ background: t.white, border: `1px solid ${t.line}`, borderRadius: 16, overflow: "hidden" }}>
-        <PageHeader title="Settings" desc="Update your company profile, review your purchases and set notification sounds." />
+        <PageHeader title="Settings" desc="Update your company profile, manage your account security, review your purchases and set notification sounds." />
 
         <FlatSection title="Company profile">
           <div style={{ maxWidth: 480 }}>
@@ -62,8 +90,28 @@ export default function EmployerSettingsPage() {
           <BillingHistorySection />
         </FlatSection>
 
-        <FlatSection title="Sounds" last>
+        <FlatSection title="Sounds">
           <SoundsSection />
+        </FlatSection>
+
+        <FlatSection title="Account">
+          <AccountSection
+            resetLoading={resetLoading} resetSent={resetSent}
+            handlePasswordReset={handlePasswordReset}
+            isOAuthOnly={user?.signedInVia === "google"}
+          />
+        </FlatSection>
+
+        <FlatSection title="Danger zone" last>
+          <DangerZoneSection
+            authUser={user}
+            confirmDelete={confirmDelete} setConfirmDelete={setConfirmDelete}
+            deleteEmailInput={deleteEmailInput} setDeleteEmailInput={setDeleteEmailInput}
+            deleteLoading={deleteLoading} setDeleteLoading={setDeleteLoading}
+            deleteMsg={deleteMsg} setDeleteMsg={setDeleteMsg}
+            onLogout={() => { void logout(); }} showToast={(msg) => toast(msg, "success")}
+            authHeaders={authHeaders}
+          />
         </FlatSection>
       </div>
     </div>
