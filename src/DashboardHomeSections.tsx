@@ -423,7 +423,7 @@ const UNLOCK_CARDS = [
   { title: "Interview Readiness", description: "A single score tracking how ready you are for your target role, updated after every session." },
   { title: "Resume Strength", description: "An AI-scored breakdown of your resume with specific, actionable improvements." },
   { title: "Evidence Capabilities", description: "Verified proof of the skills you've demonstrated across your practice sessions." },
-  { title: "Employer Interest", description: "See which employers have shortlisted or unlocked your profile for open roles." },
+  { title: "Employer Interest", description: "See which open roles match your profile and which employers have unlocked it." },
 ];
 
 export function UnlockTeaserGrid() {

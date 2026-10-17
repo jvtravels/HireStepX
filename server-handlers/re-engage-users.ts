@@ -102,8 +102,8 @@ function buildEmail(
     const subject = `Employers are checking you out, ${user.name?.split(" ")[0] || "there"} — here's how to stand out`;
     const hero =
       employerInterest.count === 1
-        ? `Hi ${name}, an employer has shortlisted you for ${interestedRole}. Your profile is thin on evidence though, just ${b(`${user.practice_timestamps?.length ?? 0} session${(user.practice_timestamps?.length ?? 0) === 1 ? "" : "s"}`)} so far. A few more mock interviews sharpen the skill scores and sample answers employers see on your profile.`
-        : `Hi ${name}, ${employerInterest.count} employers have shortlisted you, including one for ${interestedRole}. Your profile is thin on evidence though, just ${b(`${user.practice_timestamps?.length ?? 0} session${(user.practice_timestamps?.length ?? 0) === 1 ? "" : "s"}`)} so far. A few more mock interviews sharpen the skill scores and sample answers employers see on your profile.`;
+        ? `Hi ${name}, an employer is considering you for ${interestedRole}. Your profile is thin on evidence though, just ${b(`${user.practice_timestamps?.length ?? 0} session${(user.practice_timestamps?.length ?? 0) === 1 ? "" : "s"}`)} so far. A few more mock interviews sharpen the skill scores and sample answers employers see on your profile.`
+        : `Hi ${name}, ${employerInterest.count} employers are considering you, including one for ${interestedRole}. Your profile is thin on evidence though, just ${b(`${user.practice_timestamps?.length ?? 0} session${(user.practice_timestamps?.length ?? 0) === 1 ? "" : "s"}`)} so far. A few more mock interviews sharpen the skill scores and sample answers employers see on your profile.`;
     const footerLine = "More sessions, stronger evidence, better odds of an interview invite.";
     const html = emailShell({
       footer,
@@ -321,7 +321,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Employer-interest signal: candidates any cron pass might otherwise send
     // a generic "come back" email to, but who actually have an employer
-    // actively considering them right now (shortlisted/invited/interviewing).
+    // actively considering them right now. Auto-matched rows sit at the default
+    // "shortlisted" status without anyone having looked, so only rows the
+    // employer paid to unlock or moved to interview count as interest.
     // Fetched for the whole candidate pool up front — cheap, one query — and
     // combined with a low session count below to pick a more motivating,
     // specific tier over the generic day1/day3/day7 copy.
@@ -330,7 +332,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       try {
         const ids = candidates.map(c => c.id).map(id => encodeURIComponent(id)).join(",");
         const interestRes = await fetch(
-          `${SUPABASE_URL}/rest/v1/requirement_matches?candidate_user_id=in.(${ids})&candidate_status=in.(shortlisted,interview_invited,interviewing)` +
+          `${SUPABASE_URL}/rest/v1/requirement_matches?candidate_user_id=in.(${ids})&or=(unlocked.eq.true,candidate_status.in.(interview_invited,interviewing))` +
             `&select=candidate_user_id,employer_requirements(title)&limit=2000`,
           {
             headers: {

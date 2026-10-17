@@ -3,7 +3,7 @@
 /* Dashboard "Employer Interest" card — the candidate-facing half of the
    employer talent-roster feature. A 4-up grid of the most recent matches
    (role, company, employment type, relative time) behind an indigo "N
-   Invites" pill, driven by the real shortlisted/recent counts. Fetches
+   Matches" pill, driven by the real shortlisted/recent counts. Fetches
    /api/candidate-hiring-activity. */
 
 import { useRouter } from "next/navigation";
@@ -62,7 +62,7 @@ export default function HiringActivityCard() {
             fontFamily: f.sans, fontSize: textSize.sm, fontWeight: 600, color: t.indigo,
             background: t.indigo100, padding: "3px 10px", borderRadius: 999,
           }}>
-            {shortlisted} {shortlisted === 1 ? "Invite" : "Invites"}
+            {shortlisted} {shortlisted === 1 ? "Match" : "Matches"}
           </span>
         </div>
         <Button

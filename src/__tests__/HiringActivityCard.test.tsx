@@ -63,7 +63,7 @@ describe("HiringActivityCard", () => {
     ) as unknown as typeof fetch;
     render(<HiringActivityCard />);
     await waitFor(() => expect(screen.getByText("Backend Engineer")).toBeInTheDocument());
-    expect(screen.getByText("2 Invites")).toBeInTheDocument();
+    expect(screen.getByText("2 Matches")).toBeInTheDocument();
     expect(screen.getByText(/Acme Corp/)).toBeInTheDocument();
     expect(screen.getByText(/Full-time/)).toBeInTheDocument();
     expect(screen.getByText("SDE II")).toBeInTheDocument();
@@ -83,7 +83,7 @@ describe("HiringActivityCard", () => {
       }),
     ) as unknown as typeof fetch;
     render(<HiringActivityCard />);
-    await waitFor(() => expect(screen.getByText("1 Invite")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText("1 Match")).toBeInTheDocument());
     expect(screen.getByText("Role 0")).toBeInTheDocument();
     expect(screen.getByText("Role 3")).toBeInTheDocument();
     expect(screen.queryByText("Role 4")).not.toBeInTheDocument();

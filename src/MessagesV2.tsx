@@ -59,7 +59,7 @@ const THREAD_POLL_MS = 6000;
  *  different audience) rather than importing an employer-only module into
  *  candidate code. */
 const STATUS_LABEL: Record<string, string> = {
-  shortlisted: "Shortlisted",
+  shortlisted: "In review",
   interview_invited: "Interview invited",
   interviewing: "Interviewing",
   hired: "Hired",
