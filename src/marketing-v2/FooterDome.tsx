@@ -32,7 +32,7 @@ const COMPANY_LINKS: Array<[string, string]> = [
   ["About", "/about"],
   ["Methodology", "/methodology"],
   ["Contact", "/contact"],
-  ["How it works", "/how-it-works"],
+  ["For employers", "/employers"],
   ["Blog", "/blog"],
 ];
 

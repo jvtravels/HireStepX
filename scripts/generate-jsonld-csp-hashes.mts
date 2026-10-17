@@ -24,6 +24,7 @@ import { getAllCitySlugs } from "../data/city-pages";
 import { buildInterviewPrepCityJsonLd } from "../app/(marketing)/interview-prep/[city]/_jsonld";
 import { buildAboutJsonLd } from "../app/(marketing)/about/_jsonld";
 import { buildContactJsonLd } from "../app/(marketing)/contact/_jsonld";
+import { buildEmployersJsonLd } from "../app/(marketing)/employers/_jsonld";
 import { buildEnglishInterviewPracticeJsonLd } from "../app/(marketing)/english-interview-practice/_jsonld";
 import { buildForStudentsJsonLd } from "../app/(marketing)/for-students/_jsonld";
 import { buildGrievanceJsonLd } from "../app/(marketing)/grievance/_jsonld";
@@ -99,6 +100,7 @@ for (const slug of getAllCitySlugs()) {
 const staticRoutes: Record<string, { __html: string }[]> = {
   "/about": buildAboutJsonLd(),
   "/contact": buildContactJsonLd(),
+  "/employers": buildEmployersJsonLd(),
   "/english-interview-practice": buildEnglishInterviewPracticeJsonLd(),
   "/for-students": buildForStudentsJsonLd(),
   "/grievance": buildGrievanceJsonLd(),

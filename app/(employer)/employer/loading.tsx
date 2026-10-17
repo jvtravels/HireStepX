@@ -1,5 +1,5 @@
-import LoadingScreen from "@/_LoadingScreen";
+import { PageSkeleton } from "@/employer/_consoleParts";
 
 export default function EmployerLoading() {
-  return <LoadingScreen fullScreen={false} message="Loading…" />;
+  return <PageSkeleton label="Loading your workspace" />;
 }

@@ -1,109 +1,218 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { tokens as t, fonts as f } from "@/auth/_tokens";
+import type { CSSProperties } from "react";
 import { NavV2, MobileStickyCTA } from "@/marketing-v2/HomepageV2";
 import { FooterDome } from "@/marketing-v2/FooterDome";
 import { editorialCSS, DarkBand, ctaPrimaryStyle } from "@/marketing-v2/_editorial";
+import { formatPaise, UNLOCK_BATCH_PRICE_PAISE, UNLOCK_BUNDLE_SIZE, UNLOCK_SINGLE_PRICE_PAISE } from "../../../server-handlers/_unlock-pricing";
+import {
+  CREDIT_BACK_SENTENCE,
+  GST_STATEMENT,
+  HIDDEN_BEFORE_UNLOCK,
+  PAY_AS_YOU_GO_SENTENCE,
+  REVEALED_ON_UNLOCK,
+  VISIBLE_BEFORE_UNLOCK,
+  proratedRemainderSentence,
+} from "@/employer/_employerOffer";
+import { FAQ_ENTRIES, SCORING_STEPS } from "./_content";
+import { buildEmployersJsonLd } from "./_jsonld";
+import { employersCSS } from "./_styles";
 
+const PRICE_LINE = `${formatPaise(UNLOCK_BATCH_PRICE_PAISE)} for ${UNLOCK_BUNDLE_SIZE} candidates or ${formatPaise(UNLOCK_SINGLE_PRICE_PAISE)} for one`;
+const TITLE = "Post a job and hire candidates scored on real interview practice";
+const DESCRIPTION = `Post a job free and get an AI-matched shortlist of candidates who practise on HireStepX, scored on their own interview-practice sessions. Pay only to unlock contact details: ${PRICE_LINE}. No subscription.`;
+const SHARE_IMAGE = "https://hirestepx.com/opengraph-image";
+
+/* Reuses the site-wide share card (/opengraph-image); a per-route card would
+   collide with the root convention, see questions/[slug]/opengraph-image.tsx. */
 export const metadata: Metadata = {
-  title: "Hire from HireStepX's practicing talent roster",
-  description:
-    "Post a requirement and get an AI-matched shortlist of candidates who've been practicing on HireStepX — with real interview-performance signal, not just a resume.",
+  title: TITLE,
+  description: DESCRIPTION,
   alternates: { canonical: "/employers" },
   openGraph: {
-    title: "Hire from HireStepX's practicing talent roster",
-    description:
-      "Post a requirement and get an AI-matched shortlist of candidates scored on real interview performance, not just a resume.",
+    title: TITLE,
+    description: DESCRIPTION,
     url: "https://hirestepx.com/employers",
     type: "website",
     siteName: "HireStepX",
     locale: "en_IN",
-    images: [{ url: "https://hirestepx.com/opengraph-image", width: 1200, height: 630, alt: "HireStepX for employers" }],
+    images: [{ url: SHARE_IMAGE, width: 1200, height: 630, alt: "HireStepX" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Hire from HireStepX's practicing talent roster",
-    description:
-      "Post a requirement and get an AI-matched shortlist of candidates scored on real interview performance.",
-    images: ["https://hirestepx.com/opengraph-image"],
+    title: TITLE,
+    description: DESCRIPTION,
+    images: [SHARE_IMAGE],
   },
 };
+
+const bar = (pct: number): CSSProperties => ({ width: `${pct}%` });
+
+const SAMPLE_BARS: ReadonlyArray<{ label: string; pct: number }> = [
+  { label: "Role", pct: 90 },
+  { label: "Skills", pct: 78 },
+  { label: "Location", pct: 100 },
+];
+
+const VALUE_CARDS: ReadonlyArray<{ title: string; body: string }> = [
+  { title: "AI-matched, not keyword-matched", body: "Candidates are ranked on how well their role and skills fit your job, plus the results of their own practice sessions: STAR structure, answer depth and readiness." },
+  { title: "Pay only to unlock a contact", body: `Browse match scores, skill breakdowns, practice evidence and resume detail for free. Unlock a batch of ${UNLOCK_BUNDLE_SIZE} for ${formatPaise(UNLOCK_BATCH_PRICE_PAISE)}, or one candidate for ${formatPaise(UNLOCK_SINGLE_PRICE_PAISE)}. Pay as you go, no subscription.` },
+  { title: "Fair to candidates too", body: "Candidates control whether employers can discover them, and can block or report an employer. Until you unlock a candidate you see their resume and practice evidence under \"Candidate #…\", without their name, contact details or links. Employers self-serve sign up and are placed in verification tiers." },
+];
 
 export default function EmployersLandingPage() {
   return (
     <>
       <style>{editorialCSS}</style>
+      <style>{employersCSS}</style>
+      {buildEmployersJsonLd().map((html, i) => (
+        <script key={i} type="application/ld+json" dangerouslySetInnerHTML={html} />
+      ))}
       <NavV2 />
-      <div style={{ background: t.cream, minHeight: "60vh" }}>
-      <section style={{ maxWidth: 880, margin: "0 auto", padding: "96px 24px 64px", textAlign: "center" }}>
-        <div
-          style={{
-            display: "inline-flex",
-            fontFamily: f.mono,
-            fontSize: 11,
-            letterSpacing: 1.2,
-            textTransform: "uppercase",
-            color: t.copper,
-            fontWeight: 600,
-            marginBottom: 16,
-          }}
-        >
-          For employers
-        </div>
-        <h1 style={{ fontFamily: f.serif, fontSize: 44, color: t.coal, margin: "0 0 16px", lineHeight: 1.15 }}>
-          Hire candidates who've already proven how they interview
-        </h1>
-        <p style={{ fontFamily: f.sans, fontSize: 17, color: t.inkSoft, maxWidth: 620, margin: "0 auto 32px", lineHeight: 1.6 }}>
-          Post a role. We match it against candidates actively practicing on HireStepX and hand you a shortlist
-          scored on real interview performance — STAR-rubric answers, not just keywords on a resume.
-        </p>
-        <Link
-          href="/login?next=/employer"
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 8,
-            padding: "14px 26px",
-            borderRadius: 8,
-            background: t.indigo,
-            color: t.white,
-            fontFamily: f.sans,
-            fontSize: 15,
-            fontWeight: 600,
-            textDecoration: "none",
-          }}
-        >
-          Get started
-        </Link>
-        <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkFaint, marginTop: 12 }}>
-          Free to post and free to browse your shortlist. Pay only when you unlock a candidate's contact details. See the <Link href="/terms#employers" style={{ color: "inherit", textDecoration: "underline" }}>employer terms</Link> and <Link href="/refund#employers" style={{ color: "inherit", textDecoration: "underline" }}>refund policy</Link>.
-        </p>
-      </section>
-
-      <section style={{ maxWidth: 960, margin: "0 auto", padding: "0 24px 96px", display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 24 }}>
-        {[
-          { title: "AI-matched, not keyword-matched", body: "Candidates are ranked on interview-performance signal — coherence, STAR structure, technical depth — scored across their real practice sessions." },
-          { title: "Pay only to unlock a contact", body: "Browse match scores, skill breakdowns, practice evidence and full resume details for free. Unlock a whole batch of 10 shortlisted candidates for ₹299, or a single candidate for ₹59 — no subscription, no upfront commitment." },
-          { title: "Fair to candidates too", body: "Candidates control whether employers can discover them, and can block or report an employer. Until you unlock a candidate you see their resume and practice evidence under \"Candidate #…\", without their name, contact details or links. Employers self-serve sign up and are placed in verification tiers." },
-        ].map((f2) => (
-          <div key={f2.title} style={{ background: t.white, border: `1px solid ${t.line}`, borderRadius: 16, padding: 24 }}>
-            <h3 style={{ fontFamily: f.sans, fontSize: 15, fontWeight: 700, color: t.coal, margin: "0 0 8px" }}>{f2.title}</h3>
-            <p style={{ fontFamily: f.sans, fontSize: 13.5, color: t.inkSoft, lineHeight: 1.6, margin: 0 }}>{f2.body}</p>
+      <div className="emp-page">
+        <section className="emp-hero">
+          <div className="emp-eyebrow">For employers</div>
+          <h1 className="emp-h1">Hire candidates who've already proven how they interview</h1>
+          <p className="emp-lede">
+            Post a job. We match it against candidates who practise on HireStepX and hand you a shortlist ranked on
+            skills fit and their own interview-practice results, not just keywords on a resume.
+          </p>
+          <div className="emp-actions">
+            <Link href="/signup?next=/employer" className="emp-btn emp-btn-primary">Post a job, free</Link>
+            <Link href="/login?next=/employer" className="emp-btn emp-btn-ghost">Sign in</Link>
           </div>
-        ))}
-      </section>
+          <p className="emp-fine">
+            Free to post and free to browse your shortlist. Pay only when you unlock a candidate's contact details. See the{" "}
+            <Link href="/terms#employers" className="emp-link">employer terms</Link> and{" "}
+            <Link href="/refund#employers" className="emp-link">refund policy</Link>.
+          </p>
+        </section>
 
-      <DarkBand eyebrow="Hiring, not hoping" title="Skip the resume pile," accent="hire on proof." videoSrc="/cta.mp4">
-        <p style={{ fontFamily: f.sans, fontSize: 16, color: t.creamMuted, lineHeight: 1.65, maxWidth: "38ch", margin: 0 }}>
-          Candidates on the roster have practiced on HireStepX and been scored on their own practice sessions (not independent assessments). Post a role and see who matches.
-        </p>
-        <Link href="/login?next=/employer" className="ed-cta" style={ctaPrimaryStyle("lg")}>
-          Post a role, free <span className="ed-cta-arrow" aria-hidden>→</span>
-        </Link>
-      </DarkBand>
+        <section className="emp-wrap">
+          <div className="emp-grid3">
+            {VALUE_CARDS.map((c) => (
+              <div key={c.title} className="emp-card">
+                <h3>{c.title}</h3>
+                <p>{c.body}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="emp-wrap" aria-labelledby="emp-locked">
+          <h2 className="emp-h2" id="emp-locked">What you see before and after you unlock</h2>
+          <p className="emp-sub">Everything that helps you judge fit is visible for free. You pay only to reach the person.</p>
+          <div className="emp-grid2">
+            <div className="emp-split">
+              <div className="emp-card">
+                <h3 className="emp-h3">Free, before unlocking</h3>
+                <ul className="emp-list">{VISIBLE_BEFORE_UNLOCK.map((s) => <li key={s}>{s}</li>)}</ul>
+              </div>
+              <div className="emp-card">
+                <h3 className="emp-h3">Hidden until you unlock</h3>
+                <ul className="emp-list emp-list-locked">{HIDDEN_BEFORE_UNLOCK.map((s) => <li key={s}>{s}</li>)}</ul>
+              </div>
+              <div className="emp-card">
+                <h3 className="emp-h3">Unlocking adds</h3>
+                <ul className="emp-list">{REVEALED_ON_UNLOCK.map((s) => <li key={s}>{s}</li>)}</ul>
+              </div>
+            </div>
+            <aside className="emp-sample" aria-label="Example candidate card">
+              <span className="emp-badge">Example</span>
+              <p className="emp-sample-note">Illustration with placeholder data. Not a real candidate.</p>
+              <div className="emp-sample-head">
+                <div>
+                  <div className="emp-sample-name">Candidate #7Q4K2M</div>
+                  <div className="emp-sample-role">Backend Developer · Pune</div>
+                </div>
+                <div className="emp-score">82<small>match score</small></div>
+              </div>
+              <div className="emp-bars">
+                {SAMPLE_BARS.map((b) => (
+                  <div key={b.label} className="emp-bar">
+                    <span>{b.label}</span>
+                    <span className="emp-bar-track"><span className="emp-bar-fill" style={bar(b.pct)} /></span>
+                    <span>{b.pct}</span>
+                  </div>
+                ))}
+              </div>
+              <ul className="emp-chips" aria-label="Skills">
+                <li>Node.js</li><li>PostgreSQL</li><li>REST APIs</li><li>Docker</li>
+              </ul>
+              <p className="emp-quote">"On my last project I cut API response time by moving the slowest queries behind a cache, then measured the result…"</p>
+              <div className="emp-locked-row"><span>Practice sessions</span><b>3 completed · Readiness: Hire</b></div>
+              <div className="emp-locked-row"><span>Name</span><b>Hidden until unlocked</b></div>
+              <div className="emp-locked-row"><span>Email, phone, LinkedIn</span><b>Hidden until unlocked</b></div>
+            </aside>
+          </div>
+        </section>
+
+        <section className="emp-wrap" aria-labelledby="emp-scoring">
+          <h2 className="emp-h2" id="emp-scoring">How a match is scored</h2>
+          <p className="emp-sub">A 0 to 100 score from three steps. Each step is something we compute, not a promise about the hire.</p>
+          <ol className="emp-steps">
+            {SCORING_STEPS.map((s) => (
+              <li key={s.title} className="emp-step">
+                <h3>{s.title}</h3>
+                <p>{s.body}</p>
+              </li>
+            ))}
+          </ol>
+          <p className="emp-caveat">
+            Practice scores come from candidates' own sessions on HireStepX. They are not independent or proctored assessments
+            and do not guarantee a hire.
+          </p>
+        </section>
+
+        <section className="emp-wrap" aria-labelledby="emp-billing">
+          <h2 className="emp-h2" id="emp-billing">How billing works</h2>
+          <p className="emp-sub">{PAY_AS_YOU_GO_SENTENCE}</p>
+          <div className="emp-grid2">
+            <div className="emp-card">
+              <h3>Batch of {UNLOCK_BUNDLE_SIZE}</h3>
+              <div className="emp-price">{formatPaise(UNLOCK_BATCH_PRICE_PAISE)} <small>for {UNLOCK_BUNDLE_SIZE} candidates</small></div>
+              <p>Unlock the next {UNLOCK_BUNDLE_SIZE} candidates in your ranked shortlist in one payment.</p>
+            </div>
+            <div className="emp-card">
+              <h3>Single candidate</h3>
+              <div className="emp-price">{formatPaise(UNLOCK_SINGLE_PRICE_PAISE)} <small>per candidate</small></div>
+              <p>Unlock just one profile when you only need that person.</p>
+            </div>
+          </div>
+          <div className="emp-billing">
+            <p><strong>Partial batches.</strong> {proratedRemainderSentence()}</p>
+            <p><strong>Credit back.</strong> {CREDIT_BACK_SENTENCE}</p>
+            <p><strong>GST.</strong> {GST_STATEMENT}</p>
+            <p>
+              Full details in the <Link href="/terms#employers" className="emp-link">employer terms</Link> and the{" "}
+              <Link href="/refund#employers" className="emp-link">refund policy</Link>.
+            </p>
+          </div>
+        </section>
+
+        <section className="emp-wrap" aria-labelledby="emp-faq">
+          <h2 className="emp-h2" id="emp-faq">Questions employers ask</h2>
+          <div className="emp-faq">
+            {FAQ_ENTRIES.map((e) => (
+              <details key={e.question}>
+                <summary>{e.question}</summary>
+                <p>{e.answer}</p>
+              </details>
+            ))}
+          </div>
+        </section>
+
+        <DarkBand eyebrow="Hiring, not hoping" title="Skip the resume pile," accent="hire on proof." videoSrc="/cta.mp4">
+          <p className="emp-dark-copy">
+            Candidates on HireStepX have practised and been scored on their own practice sessions (not independent assessments). Post a job and see who matches.
+          </p>
+          <Link href="/signup?next=/employer" className="ed-cta" style={ctaPrimaryStyle("lg")}>
+            Post a job, free <span className="ed-cta-arrow" aria-hidden>→</span>
+          </Link>
+        </DarkBand>
       </div>
       <FooterDome />
-      <MobileStickyCTA />
+      <MobileStickyCTA employer />
     </>
   );
 }

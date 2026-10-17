@@ -3734,7 +3734,7 @@ export default function HomepageV2() {
 }
 
 /* ─────────────────────────── MOBILE STICKY CTA ─────────────────────────── */
-export function MobileStickyCTA() {
+export function MobileStickyCTA({ employer = false }: { employer?: boolean } = {}) {
   return (
     <div
       className="mv2-mobile-cta"
@@ -3769,12 +3769,12 @@ export function MobileStickyCTA() {
         }}
       >
         <span style={{ fontFamily: fonts.serif, fontStyle: "italic", color: t.copper100 }}>
-          2 free sessions
+          {employer ? "Post a job, free" : "2 free sessions"}
         </span>{" "}
-        · No card needed
+        · {employer ? "Pay only to unlock" : "No card needed"}
       </span>
       <a
-        href="/signup"
+        href={employer ? "/signup?next=/employer" : "/signup"}
         className="mv2-sticky-btn"
         style={{
           fontFamily: fonts.sans,
@@ -3791,7 +3791,7 @@ export function MobileStickyCTA() {
           gap: 6,
         }}
       >
-        Start
+        {employer ? "Post" : "Start"}
         <span aria-hidden>→</span>
       </a>
     </div>

@@ -8,7 +8,7 @@ import { captureClientEvent } from "../posthogClient";
 import { CopyEmailLink } from "../_CopyEmailLink";
 import { referralTermsText } from "../referralShare";
 import { legalEntityLines } from "../../data/legal-entity";
-import { UNLOCK_BATCH_PRICE_PAISE, UNLOCK_BUNDLE_SIZE, UNLOCK_SINGLE_PRICE_PAISE } from "../../server-handlers/_unlock-pricing";
+import { CREDIT_BACK_SENTENCE, GST_STATEMENT, unlockFeeSentence } from "../employer/_employerOffer";
 import { Button } from "@/components/ui/button";
 
 /* ════════════════════════════════════════════════════════════════════
@@ -1763,17 +1763,6 @@ function LegalPage({
   );
 }
 
-const GST_STATEMENT =
-  "GST is added or included according to HireStepX's GST registration status at the time of purchase. Until we are registered we do not charge GST and receipts are not GST tax invoices; once registered, the price and tax shown at checkout will say so.";
-
-function rupeesFromPaise(paise: number): string {
-  return `₹${(paise / 100).toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
-}
-
-function unlockFeeSentence(): string {
-  return `Candidates are unlocked in batches of ${UNLOCK_BUNDLE_SIZE} for ${rupeesFromPaise(UNLOCK_BATCH_PRICE_PAISE)} (a smaller remainder is charged in proportion), or one at a time for ${rupeesFromPaise(UNLOCK_SINGLE_PRICE_PAISE)}.`;
-}
-
 const POLICY_UPDATED = "11 October 2026";
 
 function LegalEntityList() {
@@ -1887,7 +1876,7 @@ export function TermsV2() {
       <h2 id="employers">For employers</h2>
       <p>These terms apply to anyone who registers an employer account or pays to unlock a candidate.</p>
       <ul>
-        <li><strong>What an unlock buys.</strong> Access to one candidate's name, contact details, resume detail, and practice-answer excerpts, and the ability to message them through HireStepX. It is not a hire, a placement, or a guarantee that the candidate will respond.</li>
+        <li><strong>What an unlock buys.</strong> Access to one candidate's name, email, phone, LinkedIn, portfolio links and original resume file (where uploaded), and the ability to message them through HireStepX. Resume detail and practice-answer excerpts are visible before you unlock, with the candidate's name and contact details removed. It is not a hire, a placement, or a guarantee that the candidate will respond.</li>
         <li><strong>Fees.</strong> {unlockFeeSentence()} The price shown at checkout is the amount charged.</li>
         <li><strong>GST.</strong> {GST_STATEMENT}</li>
         <li><strong>Refunds.</strong> See the <a href="/refund#employers">employer section of the refund policy</a>. In short: if a candidate becomes unavailable after you pay, that portion is refunded; once a candidate's contact details have been delivered to you, the fee is not refundable except where the law requires.</li>
@@ -1926,6 +1915,7 @@ export function RefundPolicyV2() {
       <h2 id="employers">For employers: candidate unlocks</h2>
       <ul>
         <li><strong>Fees.</strong> {unlockFeeSentence()}</li>
+        <li><strong>Credit back.</strong> {CREDIT_BACK_SENTENCE}</li>
         <li><strong>Candidate unavailable after payment.</strong> If a candidate blocked you, turned employer visibility off, or was removed between your payment and the unlock, that candidate is not unlocked and you are refunded that candidate's share of the order (the order amount divided across the candidates in it). A full-batch order that unlocks none is refunded in full.</li>
         <li><strong>After delivery.</strong> Once a candidate's contact details have been delivered to you, that unlock is not refundable, except where the law requires or if we made an error (for example a duplicate charge).</li>
         <li><strong>Duplicate or failed payments.</strong> If you were charged twice or charged without an unlock, tell us the order ID and we will refund it.</li>

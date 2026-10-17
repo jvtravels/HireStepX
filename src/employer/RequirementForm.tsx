@@ -2,6 +2,8 @@
 
 import { useMaxWidth } from "../hooks/useMaxWidth";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useCallback, useEffect, useMemo, useRef, useState, Dispatch, SetStateAction, type CSSProperties, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { WorkMode, EmploymentType, Requirement, RequirementFormValues } from "./mockData";
@@ -137,6 +139,7 @@ export function RequirementForm({
   const [step, setStep] = useState<FormStep>(1);
   const [draft, setDraft] = useState<RequirementDraft>(() => initialDraft(initial));
   const [dirty, setDirty] = useState(false);
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
   const [touched, setTouched] = useState<ReadonlySet<FieldKey>>(new Set());
   const [attempted, setAttempted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -242,7 +245,10 @@ export function RequirementForm({
 
   const leave = () => {
     // A create draft is already saved on this device; an edit has nothing saved.
-    if (!isCreate && dirty && !window.confirm("Discard your changes to this requirement?")) return;
+    if (!isCreate && dirty) {
+      setConfirmDiscard(true);
+      return;
+    }
     router.back();
   };
 
@@ -324,6 +330,7 @@ export function RequirementForm({
       <div>
         <FieldLabel>Work mode</FieldLabel>
         <SegmentedControl ariaLabel="Work mode" options={WORK_MODES} value={draft.workMode} onChange={(v) => set("workMode", v)} />
+        <HelpText id="rf-workmode-help" live={false}>Remote roles ignore candidate location when matching.</HelpText>
       </div>
       </div>
 
@@ -428,13 +435,13 @@ export function RequirementForm({
       <div style={cell(1, 320)}>
         <FieldLabel htmlFor="rf-resp">Responsibilities</FieldLabel>
         <textarea id="rf-resp" aria-describedby="rf-resp-count" value={draft.responsibilities} onChange={(e) => set("responsibilities", e.target.value)} rows={4} maxLength={MAX_LONG_TEXT_LENGTH} placeholder="What will this person own day to day?" style={longTextStyle} />
-        <HelpText id="rf-resp-count" live={false}>{draft.responsibilities.length.toLocaleString("en-IN")} / {MAX_LONG_TEXT_LENGTH.toLocaleString("en-IN")}</HelpText>
+        <HelpText id="rf-resp-count" live={false}>{draft.responsibilities.length.toLocaleString("en-IN")} / {MAX_LONG_TEXT_LENGTH.toLocaleString("en-IN")}. Shown to candidates, not used for matching.</HelpText>
       </div>
 
       <div style={cell(1, 320)}>
         <FieldLabel htmlFor="rf-nice">Nice to have</FieldLabel>
         <textarea id="rf-nice" aria-describedby="rf-nice-count" value={draft.niceToHave} onChange={(e) => set("niceToHave", e.target.value)} rows={3} maxLength={MAX_LONG_TEXT_LENGTH} placeholder="Skills or experience that aren't required but would help" style={longTextStyle} />
-        <HelpText id="rf-nice-count" live={false}>{draft.niceToHave.length.toLocaleString("en-IN")} / {MAX_LONG_TEXT_LENGTH.toLocaleString("en-IN")}</HelpText>
+        <HelpText id="rf-nice-count" live={false}>{draft.niceToHave.length.toLocaleString("en-IN")} / {MAX_LONG_TEXT_LENGTH.toLocaleString("en-IN")}. Shown to candidates, not used for matching.</HelpText>
       </div>
       </div>
     </>
@@ -446,11 +453,13 @@ export function RequirementForm({
       <div style={cell(1, 320)}>
         <FieldLabel htmlFor="rf-colleges">Preferred colleges</FieldLabel>
         <TagAutocompleteInput id="rf-colleges" values={draft.preferredColleges} onChange={(v) => set("preferredColleges", v)} placeholder="IIT Bombay, BITS Pilani, Any NIT…" suggestions={COLLEGE_SUGGESTIONS} />
+        <HelpText id="rf-colleges-help" live={false}>Shown to candidates, not used for matching.</HelpText>
       </div>
 
       <div style={cell(1, 320)}>
         <FieldLabel htmlFor="rf-targets">Target companies</FieldLabel>
         <TagAutocompleteInput id="rf-targets" values={draft.targetCompanies} onChange={(v) => set("targetCompanies", v)} placeholder="Companies you'd like candidates to come from" suggestions={COMPANY_SUGGESTIONS} />
+        <HelpText id="rf-targets-help" live={false}>Shown to candidates, not used for matching.</HelpText>
       </div>
       </div>
 
@@ -460,11 +469,13 @@ export function RequirementForm({
           <select id="rf-notice" value={draft.noticePeriodPref} onChange={(e) => set("noticePeriodPref", e.target.value)} style={selectStyle}>
             {noticeOptions.map((o) => <option key={o} value={o}>{o}</option>)}
           </select>
+          <HelpText id="rf-notice-help" live={false}>Shown to candidates, not used for matching.</HelpText>
         </div>
 
         <div style={cell(2, 320)}>
           <FieldLabel htmlFor="rf-perks">Perks and benefits</FieldLabel>
           <TagInput id="rf-perks" values={draft.perksAndBenefits} onChange={(v) => set("perksAndBenefits", v)} placeholder="Health insurance, Flexible hours…" />
+          <HelpText id="rf-perks-help" live={false}>Shown to candidates, not used for matching.</HelpText>
         </div>
       </div>
 
@@ -473,7 +484,7 @@ export function RequirementForm({
           <AccordionTrigger className="items-center gap-3 px-1 py-3.5 hover:no-underline pointer-coarse:min-h-11 rf-accordion-trigger">
             <span className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
               <span style={advancedTitle}>Advanced matching</span>
-              <span style={advancedHint}>Optional. Sharpens who we shortlist.</span>
+              <span style={advancedHint}>Optional. Mostly shown to candidates; extra skills give a small nudge.</span>
             </span>
           </AccordionTrigger>
           <AccordionContent className="h-auto px-1">
@@ -482,27 +493,31 @@ export function RequirementForm({
             <div>
               <FieldLabel htmlFor="rf-industry">Preferred industry</FieldLabel>
               <AutocompleteInput id="rf-industry" value={draft.preferredIndustry} onChange={(v) => set("preferredIndustry", v)} placeholder="Fintech, SaaS, Ecommerce…" suggestions={INDUSTRY_SUGGESTIONS} />
+              <HelpText id="rf-industry-help" live={false}>Shown to candidates, not used for matching.</HelpText>
             </div>
             <div>
               <FieldLabel htmlFor="rf-domain">Preferred domain</FieldLabel>
               <AutocompleteInput id="rf-domain" value={draft.preferredDomain} onChange={(v) => set("preferredDomain", v)} placeholder="Payments, Growth, Platform…" suggestions={DOMAIN_SUGGESTIONS} />
+              <HelpText id="rf-domain-help" live={false}>Shown to candidates, not used for matching.</HelpText>
             </div>
           </div>
 
           <div>
             <FieldLabel htmlFor="rf-custom-skills">Other skills</FieldLabel>
             <TagInput id="rf-custom-skills" describedBy="rf-custom-skills-help" values={draft.customSkillSets} onChange={(v) => set("customSkillSets", v)} placeholder="Domain-specific or bespoke skills…" />
-            <HelpText id="rf-custom-skills-help" live={false}>For anything role-specific that doesn't fit the Required skills list.</HelpText>
+            <HelpText id="rf-custom-skills-help" live={false}>For anything role-specific that doesn't fit the Required skills list. Adds a small boost (up to 3 points) for candidates who already match the role.</HelpText>
           </div>
 
           <div style={grid2}>
             <div>
               <FieldLabel htmlFor="rf-schedule">Work schedule</FieldLabel>
               <input id="rf-schedule" value={draft.workSchedule} onChange={(e) => set("workSchedule", e.target.value)} placeholder="Mon–Fri, 9 AM–6 PM" autoComplete="off" style={inputStyle} />
+              <HelpText id="rf-schedule-help" live={false}>Shown to candidates, not used for matching.</HelpText>
             </div>
             <div>
               <FieldLabel htmlFor="rf-availability">Availability</FieldLabel>
               <input id="rf-availability" value={draft.availability} onChange={(e) => set("availability", e.target.value)} placeholder="Immediate, 2 weeks…" autoComplete="off" style={inputStyle} />
+              <HelpText id="rf-availability-help" live={false}>Shown to candidates, not used for matching.</HelpText>
             </div>
           </div>
 
@@ -510,9 +525,11 @@ export function RequirementForm({
             <div>
               <FieldLabel htmlFor="rf-relevant">Relevant experience</FieldLabel>
               <input id="rf-relevant" value={draft.relevantExperience} onChange={(e) => set("relevantExperience", e.target.value)} placeholder="3+ years in a similar role" autoComplete="off" style={inputStyle} />
+              <HelpText id="rf-relevant-help" live={false}>Shown to candidates, not used for matching.</HelpText>
             </div>
             <div style={checkboxCell}>
               <Checkbox label="Portfolio required" checked={draft.portfolioRequired} onChange={(v) => set("portfolioRequired", v)} />
+              <HelpText id="rf-portfolio-help" live={false}>Shown to candidates, not used for matching.</HelpText>
             </div>
           </div>
 
@@ -557,7 +574,7 @@ export function RequirementForm({
       <form onSubmit={handleSubmit} noValidate>
         <div style={cardStyle}>
           <div style={cardHeader}>
-            <h1 style={formTitle}>Edit job requirement</h1>
+            <h1 style={formTitle}>Edit job</h1>
             <div style={actionRow}>
               <OutlineCta size="sm" onClick={leave}>Cancel</OutlineCta>
               <PrimaryCta type="submit" disabled={submitting}>
@@ -577,6 +594,18 @@ export function RequirementForm({
             </p>
           </div>
         </div>
+        <Dialog open={confirmDiscard} onOpenChange={setConfirmDiscard}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Discard your changes?</DialogTitle>
+              <DialogDescription>Your edits to this job haven't been saved.</DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setConfirmDiscard(false)} className="pointer-coarse:h-11">Keep editing</Button>
+              <Button type="button" variant="destructive" onClick={() => router.back()} className="pointer-coarse:h-11">Discard changes</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </form>
     );
   }
