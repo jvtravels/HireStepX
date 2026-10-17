@@ -7,7 +7,6 @@ import {
   CalendarPlusIcon,
   CheckIcon,
   ChevronDownIcon,
-  FileTextIcon,
   LockIcon,
   MessageCircleIcon,
   MoreVerticalIcon,
@@ -182,6 +181,7 @@ export default function CandidateRow({
         : canMessage
           ? { label: "Message candidate", icon: SendIcon, disabled: suspended, onSelect: onMessage }
           : null;
+  const showMessageInMenu = canMessage && primary?.onSelect !== onMessage;
   const profileHref = `/employer/requirements/${requirementId}/candidates/${candidate.id}`;
   const router = useRouter();
 
@@ -347,28 +347,20 @@ export default function CandidateRow({
               <TooltipContent side="bottom">{primary.label}</TooltipContent>
             </Tooltip>
           )}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" aria-label={`Actions for ${name}`} className="size-8 text-hx-ink-soft pointer-coarse:size-11">
-                <MoreVerticalIcon size={16} aria-hidden="true" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              {!candidate.unlocked && !readOnly && (
-                <DropdownMenuItem disabled={suspended} onSelect={onUnlock}>
-                  <LockIcon className="size-4" aria-hidden="true" /> Unlock for {unlockPrice}
-                </DropdownMenuItem>
-              )}
-              <DropdownMenuItem onSelect={onViewEvidence}>
-                <FileTextIcon className="size-4" aria-hidden="true" /> View evidence report
-              </DropdownMenuItem>
-              {canMessage && (
+          {showMessageInMenu && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" aria-label={`Actions for ${name}`} className="size-8 text-hx-ink-soft pointer-coarse:size-11">
+                  <MoreVerticalIcon size={16} aria-hidden="true" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuItem disabled={suspended} onSelect={onMessage}>
                   <SendIcon className="size-4" aria-hidden="true" /> Message candidate
                 </DropdownMenuItem>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
       </TableCell>
     </TableRow>
