@@ -8,6 +8,10 @@ import {
   extractSkills,
   describeMatch,
   MIN_MATCH_SCORE_FLOOR,
+  STRONG_MATCH_THRESHOLD,
+  skillsSupportStrong,
+  countRequiredSkillsCovered,
+  capUnsupportedStrong,
   type CandidatePoolRow,
 } from "../../server-handlers/_requirement-match-helpers";
 
@@ -402,5 +406,50 @@ describe("describeMatch", () => {
     const candidate = { target_role: "Senior Frontend Engineer", resume_data: { skills: ["React"], location: "Bengaluru" } };
     const sentence = describeMatch(candidate, req, ["React", "Kubernetes"]);
     expect(sentence).not.toContain("Kubernetes");
+  });
+});
+
+describe("skills-overlap gate for the Strong tier", () => {
+  const four = ["React", "TypeScript", "GraphQL", "Node.js"];
+
+  it("counts a multi-word skill when at least half its tokens are present", () => {
+    const c = candidate({ target_role: "Designer", resume_data: { skills: ["Sales"] } });
+    expect(countRequiredSkillsCovered(c, ["B2B Sales"])).toBe(1);
+    expect(countRequiredSkillsCovered(c, ["B2B Marketing Automation"])).toBe(0);
+  });
+
+  it("rejects a candidate covering 1 of 4 listed skills", () => {
+    const c = candidate({ target_role: "Designer", resume_data: { skills: ["React"] } });
+    expect(skillsSupportStrong(c, four)).toBe(false);
+  });
+
+  it("accepts 2 covered skills, or half of a short list", () => {
+    const two = candidate({ target_role: "Designer", resume_data: { skills: ["React", "TypeScript"] } });
+    expect(skillsSupportStrong(two, four)).toBe(true);
+    const half = candidate({ target_role: "Designer", resume_data: { skills: ["React"] } });
+    expect(skillsSupportStrong(half, ["React", "Figma"])).toBe(true);
+  });
+
+  it("does not demand overlap when the requirement lists fewer than 2 skills", () => {
+    const c = candidate({ resume_data: { skills: [] } });
+    expect(skillsSupportStrong(c, undefined)).toBe(true);
+    expect(skillsSupportStrong(c, ["React"])).toBe(true);
+  });
+
+  it("caps an unsupported score just under Strong and leaves others alone", () => {
+    expect(capUnsupportedStrong(80, false)).toBe(STRONG_MATCH_THRESHOLD - 1);
+    expect(capUnsupportedStrong(30, false)).toBe(30);
+    expect(capUnsupportedStrong(80, true)).toBe(80);
+    expect(capUnsupportedStrong(80, undefined)).toBe(80);
+  });
+
+  it("keeps a role-perfect but 1-of-4-skills candidate out of Strong", () => {
+    const wide = { ...req, skills: four };
+    const thin = scoreCandidateMatch(candidate({ resume_data: { skills: ["React"], location: "Bengaluru" } }), wide);
+    expect(thin.skillsSupportStrong).toBe(false);
+    expect(thin.matchScore).toBeLessThan(STRONG_MATCH_THRESHOLD);
+    const full = scoreCandidateMatch(candidate({ resume_data: { skills: ["React", "TypeScript", "GraphQL"], location: "Bengaluru" } }), wide);
+    expect(full.skillsSupportStrong).toBe(true);
+    expect(full.matchScore).toBeGreaterThanOrEqual(STRONG_MATCH_THRESHOLD);
   });
 });

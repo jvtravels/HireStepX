@@ -30,7 +30,7 @@ const REQ_ID = "req-1";
 const REQ = {
   title: "Frontend Developer",
   location: "Bengaluru",
-  description: "Build accessible React user interfaces for our product.",
+  description: "Build accessible React user interfaces for our product. You will partner with product and design to ship dependable features for candidates and employers.",
   skills: ["React", "TypeScript"],
 };
 
@@ -49,6 +49,9 @@ interface Sim {
   poolFailAfterFirstPage?: boolean;
   poolFailImmediately?: boolean;
 }
+
+/* Strong matches need the candidate to cover the requirement's listed skills. */
+const SKILLED = { resume_data: { skills: ["React", "TypeScript"] } };
 
 const chef = (id: string): SimProfile => ({ id, name: "Chef", target_role: "Chef", employer_visibility: "masked" });
 
@@ -246,7 +249,7 @@ describe("runMatching — re-match cleanup", () => {
 describe("runMatching — notifications", () => {
   it("sends ONE awaited, count-only strong-match alert to the employer and never notifies candidates", async () => {
     const ids = ["a", "b", "c"];
-    const { calls } = makeSim({ profiles: ids.map((i) => dev(i, `Secret Name ${i}`)), sessions: ids.map((i) => graded(i, 90)) });
+    const { calls } = makeSim({ profiles: ids.map((i) => dev(i, `Secret Name ${i}`, SKILLED)), sessions: ids.map((i) => graded(i, 90)) });
 
     await runMatching(REQ_ID, REQ, OWNER);
 
@@ -270,7 +273,7 @@ describe("runMatching — notifications", () => {
 
   it("caps new-strong-match alerting to a single notification however many candidates arrive", async () => {
     const ids = Array.from({ length: 12 }, (_, i) => `c${i}`);
-    makeSim({ profiles: ids.map((i) => dev(i)), sessions: ids.map((i) => graded(i, 90)) });
+    makeSim({ profiles: ids.map((i) => dev(i, `Dev ${i}`, SKILLED)), sessions: ids.map((i) => graded(i, 90)) });
     await runMatching(REQ_ID, REQ, OWNER);
     expect(notify.mock.calls.filter((c) => (c[0] as { type: string }).type === "strong_match_found")).toHaveLength(1);
   });

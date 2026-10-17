@@ -91,6 +91,11 @@ export interface ScoredCandidate {
       Optional so existing test fixtures / call sites built before this field
       existed keep compiling; rankAndCap treats an absent value as true. */
   meetsQualityBar?: boolean;
+  /** False when the requirement lists 2+ skills and the candidate covers
+      fewer than 2 of them (and under half). Such a candidate can still be a
+      reviewable match but never a "strong" one: see capUnsupportedStrong.
+      Optional for the same fixture-compat reason as meetsQualityBar. */
+  skillsSupportStrong?: boolean;
 }
 
 /** Checks a candidate's readiness band + STAR completeness against a
@@ -216,6 +221,46 @@ export function hasMatchSignal(candidate: Pick<CandidatePoolRow, "target_role" |
   return !!(candidate.target_role && candidate.target_role.trim()) || candidate.resume_data != null;
 }
 
+/** Minimum covered required skills for a "strong" match, or this share of the list. */
+export const STRONG_MIN_SKILLS_COVERED = 2;
+export const STRONG_MIN_SKILLS_SHARE = 0.5;
+
+/** How many of the employer's listed skills the candidate's skills or target
+    role cover. A multi-word skill counts when at least half its tokens appear,
+    so "B2B Sales" is matched by "Sales" but not by an unrelated "B2B". */
+export function countRequiredSkillsCovered(
+  candidate: Pick<CandidatePoolRow, "target_role" | "resume_data">,
+  requiredSkills: string[],
+): number {
+  const have = new Set([
+    ...tokenize(candidate.target_role || ""),
+    ...extractSkills(candidate.resume_data).flatMap((s) => tokenize(s)),
+  ]);
+  let covered = 0;
+  for (const skill of requiredSkills) {
+    const tokens = tokenize(skill);
+    if (tokens.length === 0) continue;
+    if (tokens.filter((t) => have.has(t)).length / tokens.length >= 0.5) covered++;
+  }
+  return covered;
+}
+
+/** A requirement with fewer than 2 listed skills gives no basis to demand overlap. */
+export function skillsSupportStrong(
+  candidate: Pick<CandidatePoolRow, "target_role" | "resume_data">,
+  requiredSkills: string[] | undefined,
+): boolean {
+  const skills = (requiredSkills || []).filter((s) => s.trim());
+  if (skills.length < STRONG_MIN_SKILLS_COVERED) return true;
+  const covered = countRequiredSkillsCovered(candidate, skills);
+  return covered >= STRONG_MIN_SKILLS_COVERED || covered / skills.length >= STRONG_MIN_SKILLS_SHARE;
+}
+
+/** Keeps a candidate whose skills don't back a high score out of the Strong tier. */
+export function capUnsupportedStrong(score: number, supported: boolean | undefined): number {
+  return supported === false ? Math.min(score, STRONG_MATCH_THRESHOLD - 1) : score;
+}
+
 function fitInputs(candidate: Pick<CandidatePoolRow, "target_role" | "resume_data">, req: RequirementInput) {
   const reqTokens = new Set([
     ...tokenize(req.title, { stripStopwords: true }),
@@ -314,8 +359,10 @@ export function scoreCandidateMatch(candidate: CandidatePoolRow, req: Requiremen
      credit; the activity term is already naturally 0 for zero sessions. */
   const hasRosterEvidence = candidate.sessions_completed > 0;
   const rosterCredit = hasRelevance && hasRosterEvidence ? rosterScore * 0.2 + activityBoost * 10 : 0;
-  const matchScore = Math.round(
-    clamp(fitComponent * 70 + rosterCredit, 0, 100) * recencyPenalty * expFit,
+  const supportsStrong = skillsSupportStrong(candidate, req.skills);
+  const matchScore = capUnsupportedStrong(
+    Math.round(clamp(fitComponent * 70 + rosterCredit, 0, 100) * recencyPenalty * expFit),
+    supportsStrong,
   );
 
   const hasEvidence = candidate.resume_data != null || hasRosterEvidence;
@@ -327,6 +374,7 @@ export function scoreCandidateMatch(candidate: CandidatePoolRow, req: Requiremen
     hasRelevance,
     hasEvidence,
     meetsQualityBar: meetsQualityBar(candidate, req),
+    skillsSupportStrong: supportsStrong,
   };
 }
 

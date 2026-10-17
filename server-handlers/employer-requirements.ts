@@ -25,6 +25,7 @@ import {
   rankAndCap,
   STRONG_MATCH_THRESHOLD,
   MIN_MATCH_SCORE_FLOOR,
+  capUnsupportedStrong,
   extractSkills,
   type CandidatePoolRow,
   type RequirementInput,
@@ -87,6 +88,7 @@ import {
   candidateTraits,
   type RequirementRow,
   type AiScreeningSummary,
+  MIN_DESCRIPTION_LENGTH,
 } from "./_employer-requirements-helpers";
 
 declare const process: { env: Record<string, string | undefined> };
@@ -372,7 +374,7 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
   const location = locations.join(", ");
 
   if (!isValidRequirementInput(title, locations, description)) {
-    return new Response(JSON.stringify({ error: "title, at least one location, and a role description (min 20 characters) are required" }), { status: 400, headers });
+    return new Response(JSON.stringify({ error: `title, at least one location, and a role description (min ${MIN_DESCRIPTION_LENGTH} characters) are required` }), { status: 400, headers });
   }
   if (!isValidRange(experienceMin, experienceMax)) {
     return new Response(JSON.stringify({ error: "Minimum experience can't be greater than maximum experience" }), { status: 400, headers });
@@ -643,7 +645,7 @@ async function runMatchingInner(requirementId: string, req: RequirementInput, ow
   // candidate who just cleared that floor back below it (or vice versa).
   const blended = deterministicRanked.map((m) => ({
     ...m,
-    matchScore: blendScore(m.matchScore, llmScores.get(m.candidateId)),
+    matchScore: capUnsupportedStrong(blendScore(m.matchScore, llmScores.get(m.candidateId)), m.skillsSupportStrong),
   }));
   const ranked = blended.filter((m) => m.matchScore >= MIN_MATCH_SCORE_FLOOR);
   const droppedByFloorAfterBlend = blended.length - ranked.length;
