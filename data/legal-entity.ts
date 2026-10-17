@@ -9,6 +9,8 @@ export interface LegalEntity {
   phone: string;
   gstin: string;
   cin: string;
+  /** SAC for the unlock service, rendered on tax invoices only when the owner sets it. */
+  sac?: string;
 }
 
 function clean(v: string | undefined): string {
@@ -21,6 +23,7 @@ export const LEGAL_ENTITY: LegalEntity = {
   phone: clean(process.env.NEXT_PUBLIC_LEGAL_PHONE),
   gstin: clean(process.env.NEXT_PUBLIC_LEGAL_GSTIN),
   cin: clean(process.env.NEXT_PUBLIC_LEGAL_CIN),
+  sac: clean(process.env.NEXT_PUBLIC_LEGAL_SAC),
 };
 
 const LABELS: ReadonlyArray<readonly [keyof LegalEntity, string]> = [
@@ -33,7 +36,10 @@ const LABELS: ReadonlyArray<readonly [keyof LegalEntity, string]> = [
 
 /** Only the fields that are actually set, in display order. */
 export function legalEntityLines(entity: LegalEntity = LEGAL_ENTITY): Array<{ label: string; value: string }> {
-  return LABELS.filter(([key]) => entity[key] !== "").map(([key, label]) => ({ label, value: entity[key] }));
+  return LABELS.flatMap(([key, label]) => {
+    const value = entity[key];
+    return value ? [{ label, value }] : [];
+  });
 }
 
 /** Footer copyright holder: the legal entity when set, else the brand. */

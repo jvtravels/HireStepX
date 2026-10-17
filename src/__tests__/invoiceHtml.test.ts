@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { buildInvoiceHtml, isTaxInvoice, type InvoiceInput } from "../employer/_invoiceHtml";
+import {
+  buildInvoiceHtml, canIssueCreditNote, gstBreakup, GST_RATE_PERCENT, invoiceDocKind, isTaxInvoice,
+  purchaseAmountLabel, purchaseAmounts, splitInclusiveGst, type InvoiceInput,
+} from "../employer/_invoiceHtml";
+import { gstinStateCode } from "../../server-handlers/_gstin";
 
 const base: InvoiceInput = {
   invoiceNo: "HSX-2610-0007",
@@ -43,5 +47,154 @@ describe("invoice html", () => {
     expect(html).not.toContain("<script>alert(1)</script>");
     expect(html).toContain("&lt;script&gt;");
     expect(html).not.toContain("credit_123");
+  });
+});
+
+const MH = "27AABCT1332L1ZA"; // Maharashtra
+const KA = "29AAPFU0939F1ZV"; // Karnataka
+const taxSupplier = { name: "HireStepX Pvt Ltd", address: "Pune", gstin: MH };
+const taxBase: InvoiceInput = { ...base, supplier: taxSupplier, buyer: { ...base.buyer, gstin: MH }, cashPaise: 11800 };
+
+describe("GST split", () => {
+  it("uses an 18% rate constant", () => {
+    expect(GST_RATE_PERCENT).toBe(18);
+  });
+
+  it("taxable + tax equals the total for every paise amount 100..99999, with taxable the nearest paise", () => {
+    for (let total = 100; total <= 99999; total++) {
+      const { taxablePaise, taxPaise } = splitInclusiveGst(total);
+      expect(taxablePaise + taxPaise).toBe(total);
+      expect(Math.abs(taxablePaise * 118 - total * 100)).toBeLessThanOrEqual(59);
+      const g = gstBreakup(total, MH, MH);
+      expect(g.lines.reduce((n, l) => n + l.paise, 0)).toBe(taxPaise);
+      expect(g.lines).toHaveLength(2);
+      expect(Math.abs(g.lines[0].paise - g.lines[1].paise)).toBeLessThanOrEqual(1);
+    }
+  });
+
+  it("splits 11800 paise into 10000 + 1800", () => {
+    expect(splitInclusiveGst(11800)).toEqual({ taxablePaise: 10000, taxPaise: 1800 });
+  });
+
+  it("charges CGST+SGST within a state and IGST across states", () => {
+    expect(gstBreakup(11800, MH, MH).lines.map((l) => l.label)).toEqual(["CGST @ 9%", "SGST @ 9%"]);
+    const inter = gstBreakup(11800, MH, KA);
+    expect(inter.interState).toBe(true);
+    expect(inter.lines).toEqual([{ label: "IGST @ 18%", paise: 1800 }]);
+    expect(inter.placeOfSupply).toMatchObject({ code: "29", name: "Karnataka", basis: "buyer_gstin" });
+  });
+
+  it("defaults the place of supply to the supplier's state when the buyer has no GSTIN", () => {
+    const g = gstBreakup(11800, MH, "");
+    expect(g.interState).toBe(false);
+    expect(g.placeOfSupply).toMatchObject({ code: "27", basis: "supplier_state" });
+    expect(gstBreakup(11800, "XX", "").interState).toBe(true);
+  });
+
+  it("reads state codes only from known prefixes", () => {
+    expect(gstinStateCode(" 27aabct1332l1za ")).toBe("27");
+    expect(gstinStateCode("25AABCT1332L1ZA")).toBeNull();
+    expect(gstinStateCode(null)).toBeNull();
+  });
+});
+
+describe("tax invoice", () => {
+  it("shows taxable value, CGST/SGST, place of supply, buyer GSTIN and the job", () => {
+    const html = buildInvoiceHtml({ ...taxBase, jobTitle: "Backend Engineer", candidateNames: [] });
+    expect(html).toContain("Tax invoice");
+    expect(html).toContain("Taxable value");
+    expect(html).toContain("CGST @ 9%");
+    expect(html).toContain("SGST @ 9%");
+    expect(html).not.toContain("IGST");
+    expect(html).toContain("Place of supply: Maharashtra (27)");
+    expect(html).toContain("GSTIN: " + MH);
+    expect(html).toContain("1 contact unlock for the job Backend Engineer");
+    expect(html).not.toContain("SAC:");
+  });
+
+  it("uses IGST when the buyer is in another state", () => {
+    const html = buildInvoiceHtml({ ...taxBase, buyer: { ...taxBase.buyer, gstin: KA } });
+    expect(html).toContain("IGST @ 18%");
+    expect(html).not.toContain("CGST");
+    expect(html).toContain("Karnataka (29)");
+  });
+
+  it("renders the SAC only when configured", () => {
+    expect(buildInvoiceHtml({ ...taxBase, supplier: { ...taxSupplier, sac: "998599" } })).toContain("SAC: 998599");
+  });
+
+  it("taxes the full price and shows credit as a separate non-cash line", () => {
+    const html = buildInvoiceHtml({ ...taxBase, cashPaise: 9800, creditPaise: 2000 });
+    expect(html).toContain("₹100"); // taxable of 11800 total
+  });
+
+  it("never claims a tax breakup without a supplier GSTIN", () => {
+    const html = buildInvoiceHtml({ ...base, cashPaise: 11800 });
+    expect(html).toContain("Payment receipt");
+    for (const word of ["CGST", "SGST", "IGST", "Taxable value", "Place of supply", "inclusive of GST"]) expect(html).not.toContain(word);
+  });
+
+  it("escapes job titles", () => {
+    const html = buildInvoiceHtml({ ...taxBase, jobTitle: "<img src=x onerror=1>" });
+    expect(html).not.toContain("<img");
+    expect(html).toContain("&lt;img");
+  });
+});
+
+describe("credit note", () => {
+  const cn: InvoiceInput = { ...taxBase, document: "credit_note", refunded: true, refundedAt: "2026-10-09T10:00:00Z" };
+
+  it("is numbered CN-<invoice no>, references the original and negates the same breakup", () => {
+    const html = buildInvoiceHtml(cn);
+    expect(html).toContain("<h1>Credit note</h1>");
+    expect(html).toContain("No. CN-HSX-2610-0007");
+    expect(html).toContain("against tax invoice HSX-2610-0007 dated 5 October 2026");
+    expect(html).toContain("9 October 2026");
+    expect(html).toContain("CGST @ 9%");
+    expect(html).toMatch(/&minus;₹100/);
+    expect(html).toMatch(/&minus;₹118/);
+  });
+
+  it("is offered only for refunded cash purchases with a tax invoice", () => {
+    const p = { invoiceNo: "HSX-1", amount: 5900, refundedAt: "2026-10-09" };
+    expect(canIssueCreditNote(p, taxSupplier)).toBe(true);
+    expect(canIssueCreditNote({ ...p, refundedAt: null, orderStatus: "refunded" }, taxSupplier)).toBe(true);
+    expect(canIssueCreditNote({ ...p, refundedAt: null }, taxSupplier)).toBe(false);
+    expect(canIssueCreditNote({ ...p, amount: 0 }, taxSupplier)).toBe(false);
+    expect(canIssueCreditNote({ ...p, invoiceNo: null }, taxSupplier)).toBe(false);
+    expect(canIssueCreditNote(p, { ...taxSupplier, gstin: "" })).toBe(false);
+  });
+
+  it("points a refunded tax invoice at its credit note", () => {
+    expect(buildInvoiceHtml({ ...taxBase, refunded: true })).toContain("see credit note CN-HSX-2610-0007");
+  });
+});
+
+describe("credit-only purchases", () => {
+  const redemption: InvoiceInput = { ...taxBase, cashPaise: 0, creditPaise: 5900, orderId: "credit_1" };
+
+  it("is a credit redemption receipt without a document number", () => {
+    expect(invoiceDocKind(redemption)).toBe("credit_redemption");
+    const html = buildInvoiceHtml(redemption);
+    expect(html).toContain("Credit redemption");
+    expect(html).not.toContain("HSX-2610-0007");
+    expect(html).not.toContain("No. ");
+    expect(html).not.toContain("CGST");
+    expect(html).not.toContain("Tax invoice");
+  });
+
+  it("never becomes a credit note", () => {
+    expect(invoiceDocKind({ ...redemption, document: "credit_note" })).toBe("credit_redemption");
+  });
+});
+
+describe("one amount derivation for history and documents", () => {
+  it("totals cash + credit in both", () => {
+    const p = { amount: 3900, creditAppliedPaise: 2000 };
+    expect(purchaseAmounts(p)).toEqual({ cashPaise: 3900, creditPaise: 2000, totalPaise: 5900 });
+    expect(purchaseAmountLabel(p)).toContain("59");
+    expect(purchaseAmountLabel({ amount: 0, creditAppliedPaise: 5900 })).toContain("from credit");
+    expect(purchaseAmountLabel({ amount: 0 })).toBe("Complimentary");
+    expect(purchaseAmountLabel({ amount: 5900 })).toBe(purchaseAmountLabel({ amount: 5900, creditAppliedPaise: 0 }));
   });
 });

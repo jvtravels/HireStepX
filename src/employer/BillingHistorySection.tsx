@@ -5,7 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { OutlineCta } from "@/employer/_atoms";
 import { useEmployerData, type CreditSummary, type UnlockPurchase } from "@/employer/EmployerDataContext";
-import { openInvoice } from "@/employer/_invoiceHtml";
+import { canIssueCreditNote, isRefundedPurchase, openInvoice, purchaseAmountLabel, purchaseAmounts, type InvoiceInput } from "@/employer/_invoiceHtml";
 import { LEGAL_ENTITY } from "../../data/legal-entity";
 import { InlineNotice } from "@/employer/_requirementAtoms";
 import { formatPaise } from "../../server-handlers/_unlock-pricing";
@@ -16,15 +16,8 @@ function describe(p: UnlockPurchase): string {
   return p.matchIds.length > 1 ? `Batch of ${p.matchIds.length} candidates` : "Single candidate";
 }
 
-function amountLabel(p: UnlockPurchase): string {
-  const credit = p.creditAppliedPaise ?? 0;
-  if (p.amount === 0 && credit > 0) return `${formatPaise(credit)} credit`;
-  if (p.amount === 0) return "Complimentary";
-  return credit > 0 ? `${formatPaise(p.amount)} + ${formatPaise(credit)} credit` : formatPaise(p.amount);
-}
-
 export default function BillingHistorySection() {
-  const { fetchUnlockHistory, fetchCredit, companyName, companyGstin, companyBillingName } = useEmployerData();
+  const { fetchUnlockHistory, fetchCredit, companyName, companyGstin, companyBillingName, requirements } = useEmployerData();
   const [purchases, setPurchases] = useState<UnlockPurchase[] | null>(null);
   const [credit, setCredit] = useState<CreditSummary | null>(null);
   const [failed, setFailed] = useState(false);
@@ -74,18 +67,26 @@ export default function BillingHistorySection() {
       )}
     </div>
   ) : null;
-  const showInvoice = (p: UnlockPurchase) => openInvoice({
-    invoiceNo: p.invoiceNo ?? null,
-    createdAt: p.createdAt,
-    orderId: p.orderId ?? null,
-    candidateNames: p.candidates.map((c) => c.name).filter((n): n is string => !!n),
-    candidateCount: p.matchIds.length,
-    cashPaise: p.amount,
-    creditPaise: p.creditAppliedPaise ?? 0,
-    refunded: !!p.refundedAt,
-    supplier: { name: LEGAL_ENTITY.name, address: LEGAL_ENTITY.address, gstin: LEGAL_ENTITY.gstin },
-    buyer: { companyName, billingName: companyBillingName, gstin: companyGstin },
-  });
+  const supplier = { name: LEGAL_ENTITY.name, address: LEGAL_ENTITY.address, gstin: LEGAL_ENTITY.gstin, sac: LEGAL_ENTITY.sac };
+  const showDocument = (p: UnlockPurchase, document: InvoiceInput["document"]) => {
+    const { cashPaise, creditPaise } = purchaseAmounts(p);
+    openInvoice({
+      invoiceNo: p.invoiceNo ?? null,
+      createdAt: p.createdAt,
+      orderId: p.orderId ?? null,
+      candidateNames: p.candidates.map((c) => c.name).filter((n): n is string => !!n),
+      candidateCount: p.matchIds.length,
+      cashPaise,
+      creditPaise,
+      refunded: isRefundedPurchase(p),
+      refundedAt: p.refundedAt ?? null,
+      jobTitle: requirements.find((r) => r.id === p.requirementId)?.title ?? null,
+      document,
+      supplier,
+      buyer: { companyName, billingName: companyBillingName, gstin: companyGstin },
+    });
+  };
+  const linkClass = "cursor-pointer border-0 bg-transparent p-0 text-[13px] text-hx-ink-soft underline underline-offset-2 hover:text-hx-coal";
   if (purchases.length === 0) {
     return (
       <>
@@ -112,13 +113,18 @@ export default function BillingHistorySection() {
           <TableRow key={p.id}>
             <TableCell className="whitespace-nowrap tabular-nums">{new Date(p.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</TableCell>
             <TableCell className="max-w-[260px] truncate">{describe(p)}</TableCell>
-            <TableCell className="tabular-nums text-hx-ink-soft">{p.invoiceNo ?? "None"}</TableCell>
+            <TableCell className="tabular-nums text-hx-ink-soft">{purchaseAmounts(p).cashPaise === 0 ? "Credit redemption" : p.invoiceNo ?? "None"}</TableCell>
             <TableCell className="text-right tabular-nums">
-              {amountLabel(p)}
-              {p.refundedAt ? <span className="ml-1.5 text-hx-ink-soft">(refunded)</span> : null}
+              {purchaseAmountLabel(p)}
+              {isRefundedPurchase(p) ? <span className="ml-1.5 text-hx-ink-soft">(refunded)</span> : null}
             </TableCell>
             <TableCell className="whitespace-nowrap text-right">
-              {p.invoiceNo ? <button type="button" className="cursor-pointer border-0 bg-transparent p-0 text-[13px] text-hx-ink-soft underline underline-offset-2 hover:text-hx-coal" onClick={() => showInvoice(p)}>View invoice</button> : null}
+              {purchaseAmounts(p).totalPaise > 0 && (p.invoiceNo || purchaseAmounts(p).cashPaise === 0) ? (
+                <button type="button" className={linkClass} onClick={() => showDocument(p, "invoice")}>{purchaseAmounts(p).cashPaise === 0 || !LEGAL_ENTITY.gstin ? "View receipt" : "View invoice"}</button>
+              ) : null}
+              {canIssueCreditNote(p, supplier) ? (
+                <button type="button" className={`${linkClass} ml-3`} onClick={() => showDocument(p, "credit_note")}>Credit note</button>
+              ) : null}
             </TableCell>
           </TableRow>
         ))}
