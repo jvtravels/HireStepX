@@ -46,12 +46,23 @@ export const CRON_MAX_SILENCE_MS: Record<string, number> = {
   "cron-reconcile-unlock-orders": 25 * HOUR_MS,
   "cron-credit-no-response": 25 * HOUR_MS,
   "cron-rematch-requirements": 25 * HOUR_MS,
+  "send-employer-nudges": 25 * HOUR_MS,
+  "send-employer-winback": 25 * HOUR_MS,
 };
 
 const key = (name: string) => `cron_hb:${name}`;
 
 export async function recordCronSuccess(name: string, now = Date.now()): Promise<void> {
   await redisSetEx(key(name), HEARTBEAT_TTL_SEC, new Date(now).toISOString());
+}
+
+/** Records a heartbeat only for a run that finished without errors, so a cron
+    that "succeeds" with a 200 while half its work failed still goes stale and
+    alerts. Returns whether it recorded. */
+export async function recordCronResult(name: string, result: { errors?: number }, now = Date.now()): Promise<boolean> {
+  if ((result.errors ?? 0) > 0) return false;
+  await recordCronSuccess(name, now);
+  return true;
 }
 
 export interface CronHeartbeatAlert {

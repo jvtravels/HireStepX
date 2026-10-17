@@ -43,6 +43,30 @@ export interface HealthAlert {
   action: string;
 }
 
+/** Codes that mean money is owed or a scheduled job is dead; these lead the alert subject. */
+const ACTION_CODES: Readonly<Record<string, string>> = {
+  unlock_refund_due: "refund owed",
+  unlock_order_stuck_paid: "paid order stuck",
+  cron_stale: "cron stale",
+  employer_health_unreadable: "order check blind",
+};
+
+const actionBit = (code: string): string | undefined => (Object.prototype.hasOwnProperty.call(ACTION_CODES, code) ? ACTION_CODES[code] : undefined);
+
+export function isActionRequired(alerts: readonly HealthAlert[]): boolean {
+  return alerts.some((a) => actionBit(a.code) !== undefined);
+}
+
+/** Subject fragments for the action codes, deduped, in the order they appear. */
+export function actionSubjectBits(alerts: readonly HealthAlert[]): string[] {
+  const out: string[] = [];
+  for (const a of alerts) {
+    const bit = actionBit(a.code);
+    if (bit && !out.includes(bit)) out.push(bit);
+  }
+  return out;
+}
+
 export async function getHealthAlerts(): Promise<{ alerts: HealthAlert[]; checkedAt: string }> {
   const now = Date.now();
   const today = new Date(now).toISOString().slice(0, 10);

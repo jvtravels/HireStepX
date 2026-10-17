@@ -8,6 +8,7 @@
 
 import { fetchJSON, supa, ValidationError } from "./_admin-shared";
 import { slog } from "./_shared";
+import { readAllPages, readPage, type RestGet } from "./_paged-fetch";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const IN_CHUNK = 80;
@@ -128,24 +129,44 @@ async function patchEmployer(employerId: string, patch: Record<string, unknown>,
   return rows.length > 0;
 }
 
-export async function listEmployers() {
-  const employers = await fetchJSON<EmployerListRow>(
-    "employers?select=id,company_name,website,verification_tier,verified_at,suspended_at,suspended_reason,submitted_at&order=submitted_at.desc&limit=1000",
-  );
+/** A failed read yields no rows plus a named error, so the dashboard can warn
+    instead of showing an empty list or zero revenue as if it were real. */
+async function readSource<T>(name: string, errors: string[], truncated: string[], read: () => Promise<{ rows: T[]; truncated: boolean }>): Promise<T[]> {
+  try {
+    const r = await read();
+    if (r.truncated) truncated.push(name);
+    return r.rows;
+  } catch (err) {
+    slog.error("admin-employers: list read failed", { source: name, err: err instanceof Error ? err.message : String(err) });
+    errors.push(name);
+    return [];
+  }
+}
+
+export async function listEmployers(get: RestGet = supa) {
+  const readErrors: string[] = [];
+  const truncatedSources: string[] = [];
+  const employers = await readSource<EmployerListRow>("employers", readErrors, truncatedSources, () => readAllPages(
+    get,
+    "employers?select=id,company_name,website,verification_tier,verified_at,suspended_at,suspended_reason,submitted_at&order=submitted_at.desc,id.desc",
+    { maxRows: 20_000 },
+  ));
   const [openReports, payments] = await Promise.all([
-    fetchJSON<{ employer_id: string }>("employer_reports?status=eq.open&select=employer_id&limit=5000"),
-    fetchJSON<{ employer_id: string; amount: number | null; status: string | null }>("employer_unlock_payments?select=employer_id,amount,status&limit=10000"),
+    readSource<{ employer_id: string }>("reports", readErrors, truncatedSources, () => readAllPages(get, "employer_reports?status=eq.open&select=employer_id&order=id.asc", { maxRows: 20_000 })),
+    readSource<{ employer_id: string; amount: number | null; status: string | null }>("payments", readErrors, truncatedSources, () => readAllPages(get, "employer_unlock_payments?select=employer_id,amount,status&order=id.asc")),
   ]);
   const contacts = new Map<string, { name: string; email: string }>();
   const ids = employers.map((e) => encodeURIComponent(e.id));
   for (let i = 0; i < ids.length; i += IN_CHUNK) {
-    const rows = await fetchJSON<{ id: string; name: string | null; email: string }>(
-      `profiles?id=in.(${ids.slice(i, i + IN_CHUNK).join(",")})&select=id,name,email`,
-    );
-    for (const p of rows) contacts.set(p.id, { name: p.name || "(no name)", email: p.email });
+    try {
+      const rows = await readPage<{ id: string; name: string | null; email: string }>(get, `profiles?id=in.(${ids.slice(i, i + IN_CHUNK).join(",")})&select=id,name,email`);
+      for (const p of rows) contacts.set(p.id, { name: p.name || "(no name)", email: p.email });
+    } catch {
+      if (!readErrors.includes("contacts")) readErrors.push("contacts");
+    }
   }
   const rows = summarizeEmployers(employers, openReports, payments, contacts);
-  return { total: rows.length, rows };
+  return { total: rows.length, rows, degraded: readErrors.length > 0, readErrors, truncated: truncatedSources.length > 0, truncatedSources };
 }
 
 export async function setEmployerTier(employerId: unknown, tier: unknown) {

@@ -7,7 +7,8 @@
  * and the credit ledger all store paise). Days are bucketed in IST — that is
  * the calendar the founder reads revenue in. */
 
-import { fetchJSON, supa } from "./_admin-shared";
+import { supa } from "./_admin-shared";
+import { readAllPagesOrMissing, readPage, type RestGet } from "./_paged-fetch";
 
 const IST_OFFSET_MS = 330 * 60_000;
 const HOUR_MS = 3_600_000;
@@ -54,6 +55,13 @@ export interface EmployerFinancials {
   refundDue: { count: number; totalPaise: number; rows: RefundDueOrder[]; tracked: boolean };
   credit: { grantedPaise: number; spentPaise: number; outstandingPaise: number; ledgerAvailable: boolean };
   topEmployers: TopEmployer[];
+  /** True when any source failed to read: the numbers above are incomplete, not zero. */
+  degraded: boolean;
+  /** Which sources failed (payments / orders / credit ledger / employer names). */
+  readErrors: string[];
+  /** True when a source hit the row cap, so totals may undercount. */
+  truncated: boolean;
+  truncatedSources: string[];
 }
 
 export interface BuildInput {
@@ -63,6 +71,8 @@ export interface BuildInput {
   names: ReadonlyMap<string, string>;
   refundDueTracked: boolean;
   now: number;
+  readErrors?: readonly string[];
+  truncatedSources?: readonly string[];
 }
 
 export function istDate(ms: number): string {
@@ -140,6 +150,8 @@ export function rankTopEmployers(payments: readonly PaymentRow[], names: Readonl
 
 export function buildEmployerFinancials(input: BuildInput): EmployerFinancials {
   const { payments, orders, ledger, names, refundDueTracked, now } = input;
+  const readErrors = input.readErrors ?? [];
+  const truncatedSources = input.truncatedSources ?? [];
   const paid = payments.filter((p) => (p.amount ?? 0) > 0);
   const cutoff = now - 30 * DAY_MS;
 
@@ -164,47 +176,84 @@ export function buildEmployerFinancials(input: BuildInput): EmployerFinancials {
     refundDue: { count: due.length, totalPaise: due.reduce((s, o) => s + o.refundDuePaise, 0), rows: due.slice(0, LIST_CAP), tracked: refundDueTracked },
     credit: { ...ledgerTotals, ledgerAvailable: ledger !== null },
     topEmployers: rankTopEmployers(paid, names),
+    degraded: readErrors.length > 0,
+    readErrors: [...readErrors],
+    truncated: truncatedSources.length > 0,
+    truncatedSources: [...truncatedSources],
   };
 }
 
-/** Tolerant reader: null when the table/columns are not migrated yet. */
-async function tryRows<T>(path: string): Promise<T[] | null> {
-  try {
-    const res = await supa(path);
-    if (!res.ok) return null;
-    const data = await res.json();
-    return Array.isArray(data) ? (data as T[]) : null;
-  } catch {
-    return null;
-  }
-}
-
-async function loadNames(ids: readonly string[]): Promise<Map<string, string>> {
+async function loadNames(get: RestGet, ids: readonly string[]): Promise<Map<string, string>> {
   const names = new Map<string, string>();
   const enc = ids.map(encodeURIComponent);
   for (let i = 0; i < enc.length; i += IN_CHUNK) {
-    const rows = await fetchJSON<{ id: string; company_name: string | null }>(`employers?id=in.(${enc.slice(i, i + IN_CHUNK).join(",")})&select=id,company_name`);
+    const rows = await readPage<{ id: string; company_name: string | null }>(get, `employers?id=in.(${enc.slice(i, i + IN_CHUNK).join(",")})&select=id,company_name`);
     for (const r of rows) names.set(r.id, r.company_name || "(no name)");
   }
   return names;
 }
 
-export async function getEmployerFinancials(): Promise<EmployerFinancials> {
+interface Source<T> { rows: T[]; truncated: boolean; failed: boolean; missing: boolean }
+
+/** Never throws: a real read failure is reported as `failed` (the dashboard shows a
+    warning) and a not-yet-migrated table as `missing`; both yield no rows. */
+async function loadSource<T>(read: () => Promise<{ rows: T[]; truncated: boolean } | null>): Promise<Source<T>> {
+  try {
+    const r = await read();
+    return r ? { ...r, failed: false, missing: false } : { rows: [], truncated: false, failed: false, missing: true };
+  } catch {
+    return { rows: [], truncated: false, failed: true, missing: false };
+  }
+}
+
+export async function getEmployerFinancials(get: RestGet = supa): Promise<EmployerFinancials> {
   const now = Date.now();
   const orderCols = "razorpay_order_id,employer_id,status,amount,created_at,razorpay_payment_id";
-  const orderPath = (cols: string) => `employer_unlock_orders?select=${cols}&order=created_at.desc&limit=10000`;
-  const payPath = (cols: string) => `employer_unlock_payments?select=${cols}&order=created_at.desc&limit=10000`;
+  // Unique tiebreaker so offset paging is stable when rows share a created_at.
+  const orderPath = (cols: string) => `employer_unlock_orders?select=${cols}&order=created_at.desc,razorpay_order_id.desc`;
+  const payPath = (cols: string) => `employer_unlock_payments?select=${cols}&order=created_at.desc,id.desc`;
 
-  const [paymentsFull, ordersFull, ledger] = await Promise.all([
-    tryRows<PaymentRow>(payPath("employer_id,amount,created_at,refunded_at")),
-    tryRows<OrderRow>(orderPath(`${orderCols},refund_due_paise`)),
-    tryRows<LedgerRow>("employer_credit_ledger?select=employer_id,amount,kind&limit=50000"),
+  let refundColumn = false;
+  const [payments, orders, ledger] = await Promise.all([
+    // Fall back to the pre-refunded_at column set (missing schema only, never a real failure).
+    loadSource<PaymentRow>(async () =>
+      (await readAllPagesOrMissing<PaymentRow>(get, payPath("employer_id,amount,created_at,refunded_at")))
+      ?? (await readAllPagesOrMissing<PaymentRow>(get, payPath("employer_id,amount,created_at")))),
+    // refund_due_paise arrives with migration 0042.
+    loadSource<OrderRow>(async () => {
+      const full = await readAllPagesOrMissing<OrderRow>(get, orderPath(`${orderCols},refund_due_paise`));
+      if (full) { refundColumn = true; return full; }
+      return readAllPagesOrMissing<OrderRow>(get, orderPath(orderCols));
+    }),
+    loadSource<LedgerRow>(() => readAllPagesOrMissing<LedgerRow>(get, "employer_credit_ledger?select=employer_id,amount,kind&order=id.asc")),
   ]);
-  // Fall back to the pre-0042 / pre-refunded_at column sets.
-  const payments = paymentsFull ?? (await tryRows<PaymentRow>(payPath("employer_id,amount,created_at"))) ?? [];
-  const orders = ordersFull ?? (await tryRows<OrderRow>(orderPath(orderCols))) ?? [];
 
-  const topIds = rankTopEmployers(payments.filter((p) => (p.amount ?? 0) > 0), new Map()).map((t) => t.employerId);
-  const names = await loadNames(topIds);
-  return buildEmployerFinancials({ payments, orders, ledger, names, refundDueTracked: ordersFull !== null, now });
+  const readErrors: string[] = [];
+  const truncatedSources: string[] = [];
+  for (const [name, src] of [["payments", payments], ["orders", orders], ["credit ledger", ledger]] as const) {
+    if (src.failed) readErrors.push(name);
+    if (src.truncated) truncatedSources.push(name);
+  }
+
+  const topIds = rankTopEmployers(payments.rows.filter((p) => (p.amount ?? 0) > 0), new Map()).map((t) => t.employerId);
+  let names = new Map<string, string>();
+  try {
+    names = await loadNames(get, topIds);
+  } catch {
+    readErrors.push("employer names");
+  }
+
+  // Tracked = the refund column exists. After a failed read it is unknowable, so
+  // report true and let the degraded warning speak instead of "not migrated".
+  const refundDueTracked = orders.failed || refundColumn;
+  return buildEmployerFinancials({
+    payments: payments.rows,
+    orders: orders.rows,
+    ledger: ledger.missing || ledger.failed ? null : ledger.rows,
+    names,
+    refundDueTracked,
+    now,
+    readErrors,
+    truncatedSources,
+  });
 }

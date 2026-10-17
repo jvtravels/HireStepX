@@ -398,7 +398,8 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
         const identity = await loadAuthIdentity(SUPABASE_URL, serviceHeaders(), userId);
         if (identity.email) {
           const mail = buildEmployerWelcomeEmail(companyName);
-          await sendEmployerEmail({ to: identity.email, ...mail, idempotencyKey: `employer-welcome-${userId}` });
+          const sentWelcome = await sendEmployerEmail({ to: identity.email, ...mail, idempotencyKey: `employer-welcome-${userId}` });
+          if (sentWelcome) await captureServerEvent("employer_welcome_sent", userId, { tier }, req);
         }
       }
     };

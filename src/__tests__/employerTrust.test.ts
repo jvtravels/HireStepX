@@ -3,6 +3,9 @@ import {
   TIER_LIMITS,
   emailDomain,
   isFreeMailDomain,
+  isDisposableMailDomain,
+  FREE_MAIL_DOMAINS,
+  DISPOSABLE_MAIL_DOMAINS,
   websiteHost,
   isEmployerTier,
   deriveEmployerTier,
@@ -119,5 +122,45 @@ describe("deletion-pending marker", () => {
     expect(isDeletionPending({ suspended_at: "2026-10-01T00:00:00Z", suspended_reason: "reported by 3 candidates" })).toBe(false);
     expect(isDeletionPending({ suspended_at: null, suspended_reason: DELETION_PENDING_REASON })).toBe(false);
     expect(isDeletionPending(null)).toBe(false);
+  });
+});
+
+describe("expanded free-mail and disposable lists", () => {
+  const addedFree = [
+    "hey.com", "duck.com", "web.de", "mail.ru", "qq.com", "163.com", "126.com", "airtel.in", "rediffmail.com",
+    "outlook.co.uk", "outlook.com.au", "outlook.fr", "outlook.de", "hotmail.co.uk", "hotmail.com.au", "hotmail.fr", "hotmail.de",
+    "live.co.uk", "live.com.au", "live.fr", "live.de", "yahoo.fr", "yahoo.de", "yahoo.com.au", "yahoo.com.br", "yahoo.ca", "yahoo.co.jp",
+  ];
+  const addedDisposable = [
+    "mailinator.com", "guerrillamail.com", "10minutemail.com", "tempmail.com", "yopmail.com", "sharklasers.com", "trashmail.com",
+    "getnada.com", "maildrop.cc", "throwawaymail.com", "dispostable.com", "fakeinbox.com", "temp-mail.org",
+  ];
+
+  it.each(addedFree)("rejects free-mail domain %s", (d) => {
+    expect(isFreeMailDomain(d)).toBe(true);
+    expect(isDisposableMailDomain(d)).toBe(false);
+  });
+
+  it.each(addedDisposable)("rejects disposable domain %s", (d) => {
+    expect(isFreeMailDomain(d)).toBe(true);
+    expect(isDisposableMailDomain(d)).toBe(true);
+  });
+
+  it("never lets a free-mail or disposable address reach email_verified, even with a matching website", () => {
+    for (const d of [...addedFree, ...addedDisposable]) {
+      expect(deriveEmployerTier({ storedTier: "basic", email: `hr@${d}`, emailConfirmed: true, website: `https://${d}` })).toBe("basic");
+    }
+  });
+
+  it("accepts plausible company domains", () => {
+    for (const d of ["acme.com", "acme.co.in", "hirestepx.com", "tcs.com", "startup.io", "mail.acme.com"]) {
+      expect(isFreeMailDomain(d)).toBe(false);
+    }
+    expect(deriveEmployerTier({ storedTier: "basic", email: "hr@acme.co.in", emailConfirmed: true, website: "acme.co.in" })).toBe("verified");
+  });
+
+  it("keeps the two lists disjoint and lowercase", () => {
+    for (const d of DISPOSABLE_MAIL_DOMAINS) expect(FREE_MAIL_DOMAINS.has(d)).toBe(false);
+    for (const d of [...FREE_MAIL_DOMAINS, ...DISPOSABLE_MAIL_DOMAINS]) expect(d).toBe(d.toLowerCase());
   });
 });

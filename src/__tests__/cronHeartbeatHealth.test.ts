@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
-import { evaluateCronHeartbeats, CRON_MAX_SILENCE_MS } from "../../server-handlers/_cron-heartbeat";
+import { describe, it, expect, vi, afterEach } from "vitest";
+import { evaluateCronHeartbeats, recordCronResult, CRON_MAX_SILENCE_MS } from "../../server-handlers/_cron-heartbeat";
 import { evaluateUnlockOrders, type OpenOrderRow } from "../../server-handlers/_employer-health-signals";
 
 const NOW = Date.UTC(2026, 9, 17, 10, 0, 0);
@@ -27,9 +27,33 @@ describe("evaluateCronHeartbeats", () => {
     expect(alerts[0]).toMatchObject({ severity: "warning", code: "cron_heartbeat_missing" });
   });
 
-  it("covers all three employer crons with a 25h limit", () => {
-    expect(Object.keys(CRON_MAX_SILENCE_MS).sort()).toEqual(["cron-credit-no-response", "cron-reconcile-unlock-orders", "cron-rematch-requirements"]);
+  it("covers every employer cron with a 25h limit", () => {
+    expect(Object.keys(CRON_MAX_SILENCE_MS).sort()).toEqual(["cron-credit-no-response", "cron-reconcile-unlock-orders", "cron-rematch-requirements", "send-employer-nudges", "send-employer-winback"]);
     for (const ms of Object.values(CRON_MAX_SILENCE_MS)) expect(ms).toBe(25 * HOUR);
+  });
+});
+
+describe("recordCronResult", () => {
+  afterEach(() => { vi.unstubAllGlobals(); delete process.env.UPSTASH_REDIS_REST_URL; delete process.env.UPSTASH_REDIS_REST_TOKEN; });
+
+  it("records a heartbeat only for an error-free run", async () => {
+    process.env.UPSTASH_REDIS_REST_URL = "https://redis.test";
+    process.env.UPSTASH_REDIS_REST_TOKEN = "t";
+    const f = vi.fn(async () => ({ ok: true, json: async () => ({}) }));
+    vi.stubGlobal("fetch", f);
+    expect(await recordCronResult("send-employer-nudges", { errors: 0 }, NOW)).toBe(true);
+    expect(await recordCronResult("send-employer-nudges", {}, NOW)).toBe(true);
+    expect(f).toHaveBeenCalledTimes(2);
+    expect(String((f.mock.calls[0] as unknown[])[1] && ((f.mock.calls[0] as unknown[])[1] as { body: string }).body)).toContain("cron_hb:send-employer-nudges");
+  });
+
+  it("skips the heartbeat when any error was counted, so the cron goes stale and alerts", async () => {
+    process.env.UPSTASH_REDIS_REST_URL = "https://redis.test";
+    process.env.UPSTASH_REDIS_REST_TOKEN = "t";
+    const f = vi.fn();
+    vi.stubGlobal("fetch", f);
+    expect(await recordCronResult("send-employer-nudges", { errors: 3 }, NOW)).toBe(false);
+    expect(f).not.toHaveBeenCalled();
   });
 });
 

@@ -92,6 +92,10 @@
     {
       "path": "/api/send-employer-nudges",
       "schedule": "30 6 * * *"
+    },
+    {
+      "path": "/api/send-employer-winback",
+      "schedule": "30 7 * * *"
     }
   ]
 }

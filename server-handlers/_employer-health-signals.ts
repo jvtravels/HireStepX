@@ -3,6 +3,7 @@
  * evaluators + one tolerant fetcher; all tolerate unapplied migrations. */
 
 import { getCronHeartbeatAlerts } from "./_cron-heartbeat";
+import { readAllPages, type RestGet } from "./_paged-fetch";
 
 declare const process: { env: Record<string, string | undefined> };
 
@@ -74,15 +75,16 @@ export function evaluateUnlockOrders(orders: readonly OpenOrderRow[], now: numbe
   return alerts;
 }
 
-async function fetchOrders(base: string, headers: Record<string, string>, select: string): Promise<OpenOrderRow[] | null> {
+/** Pages through every open order: a refund owed or a stuck paid order past the
+    first 1000 rows must still alert. Returns null on any real read failure. */
+async function fetchOrders(base: string, headers: Record<string, string>, select: string): Promise<{ rows: OpenOrderRow[]; truncated: boolean } | null> {
+  const get: RestGet = (path) => fetch(`${base}/rest/v1/${path}`, { headers, signal: AbortSignal.timeout(8000) });
   try {
-    const res = await fetch(
-      `${base}/rest/v1/employer_unlock_orders?status=in.(created,paid,failed,partial)&select=${select}&order=created_at.desc&limit=2000`,
-      { headers, signal: AbortSignal.timeout(8000) },
+    return await readAllPages<OpenOrderRow>(
+      get,
+      `employer_unlock_orders?status=in.(created,paid,failed,partial)&select=${select}&order=created_at.desc,razorpay_order_id.desc`,
+      { maxRows: 10_000 },
     );
-    if (!res.ok) return null;
-    const rows = await res.json();
-    return Array.isArray(rows) ? (rows as OpenOrderRow[]) : null;
   } catch {
     return null;
   }
@@ -97,7 +99,25 @@ export async function getEmployerHealthAlerts(now = Date.now()): Promise<Employe
     const base3 = "status,created_at,razorpay_payment_id";
     // refund_due_paise arrives with migration 0042; fall back without it.
     const orders = (await fetchOrders(base, headers, `${base3},refund_due_paise`)) ?? (await fetchOrders(base, headers, base3));
-    if (orders) alerts.push(...evaluateUnlockOrders(orders, now));
+    if (orders) {
+      alerts.push(...evaluateUnlockOrders(orders.rows, now));
+      if (orders.truncated) {
+        alerts.push({
+          severity: "warning",
+          code: "unlock_orders_truncated",
+          message: `More than ${orders.rows.length} unlock orders are open (created/paid/failed/partial); alert counts may undercount.`,
+          action: "Clear the backlog of stuck orders (run the reconcile cron) so the health check sees all of them.",
+        });
+      }
+    } else {
+      // Silence here would read as "no stuck orders, no refunds owed".
+      alerts.push({
+        severity: "critical",
+        code: "employer_health_unreadable",
+        message: "The unlock-order health check could not read employer_unlock_orders, so stuck orders and owed refunds are unchecked.",
+        action: "Check Supabase status and the service-role key, then re-run /api/uptime-check.",
+      });
+    }
   }
   alerts.push(...(await getCronHeartbeatAlerts(now)));
   return alerts;

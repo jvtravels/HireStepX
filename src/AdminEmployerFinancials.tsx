@@ -24,6 +24,7 @@ const heading: CSSProperties = { ...label, marginBottom: 12 };
 const labelSpaced: CSSProperties = { ...label, marginTop: 16 };
 
 const barStyle = (pct: number): CSSProperties => ({ width: "100%", height: `${Math.max(2, pct)}%`, background: c.sage, borderRadius: "3px 3px 0 0", opacity: 0.85 });
+const banner = (bad: boolean): CSSProperties => ({ margin: "0 0 16px", padding: "10px 14px", fontSize: 13, borderRadius: radius.lg, border: `1px solid ${bad ? c.ember : c.border}`, color: bad ? c.ember : c.chalk, background: c.obsidian });
 const warnStyle = (bad: boolean): CSSProperties => ({ ...big, color: bad ? c.ember : c.ivory });
 
 function inr(paise: number): string {
@@ -59,12 +60,25 @@ export default function AdminEmployerFinancials({ getToken, setToken }: Props) {
   if (!data) return <div style={card}><p style={note}>Loading employer financials…</p></div>;
 
   const { revenue, orders, stuckOrders, refundDue, credit, topEmployers } = data;
+  // Older cached payloads predate these fields.
+  const readErrors = data.readErrors ?? [];
+  const truncatedSources = data.truncatedSources ?? [];
   const maxDay = Math.max(...revenue.byDay.map((d) => d.paise), 1);
   const statusEntries = Object.entries(orders.byStatus).sort((a, b) => b[1] - a[1]);
 
   return (
     <div style={card}>
       <p style={heading}>Employers — pay-as-you-go unlocks</p>
+      {readErrors.length > 0 && (
+        <p role="alert" style={banner(true)}>
+          Could not read: {readErrors.join(", ")}. The figures below are incomplete, not zero. Reload, and check Supabase status if this persists.
+        </p>
+      )}
+      {truncatedSources.length > 0 && (
+        <p role="status" style={banner(false)}>
+          Row cap reached for {truncatedSources.join(", ")}. Totals may undercount; move these sums to a SQL aggregate.
+        </p>
+      )}
       <div style={row}>
         <div style={stat}>
           <p style={label}>Revenue (lifetime)</p>

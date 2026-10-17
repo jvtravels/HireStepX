@@ -8,7 +8,7 @@ export const config = { runtime: "nodejs" };
 
 import { slog, supabaseUrl, supabaseServiceHeaders } from "./_shared";
 import { sweepUnreachableCredits } from "./_employer-credit-sweep";
-import { recordCronSuccess } from "./_cron-heartbeat";
+import { recordCronResult } from "./_cron-heartbeat";
 
 declare const process: { env: Record<string, string | undefined> };
 
@@ -27,8 +27,10 @@ export default async function handler(req: Request): Promise<Response> {
   const t0 = Date.now();
   try {
     const summary = await sweepUnreachableCredits({ base, headers: supabaseServiceHeaders() });
-    await recordCronSuccess("cron-credit-no-response");
-    return jsonResponse({ ok: true, ...summary, duration_ms: Date.now() - t0 });
+    // The sweep throws on read failures; a future per-match `errors` count also blocks the heartbeat.
+    const errors = "errors" in summary && typeof summary.errors === "number" ? summary.errors : 0;
+    await recordCronResult("cron-credit-no-response", { errors });
+    return jsonResponse({ ok: errors === 0, ...summary, duration_ms: Date.now() - t0 }, errors === 0 ? 200 : 500);
   } catch (err) {
     slog.error("credit sweep failed", { code: "credit_sweep_failed", err: err instanceof Error ? err.message : String(err) });
     return jsonResponse({ error: "Sweep failed" }, 500);

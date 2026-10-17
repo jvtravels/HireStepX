@@ -1,6 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-vi.mock("../../server-handlers/_health-alerts", () => ({ getHealthAlerts: async () => ({ alerts: [], checkedAt: "t" }) }));
+vi.mock("../../server-handlers/_health-alerts", () => ({
+  getHealthAlerts: async () => ({ alerts: [], checkedAt: "t" }),
+  isActionRequired: () => false,
+  actionSubjectBits: () => [],
+}));
 
 const { default: handler } = await import("../../server-handlers/uptime-check");
 const call = (auth?: string) => handler(new Request("https://x.test/api/uptime-check", { headers: auth ? { authorization: auth } : {} }));

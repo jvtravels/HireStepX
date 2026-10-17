@@ -46,6 +46,19 @@ describe("employer-profile POST analytics + welcome email", () => {
     expect(captureServerEvent).toHaveBeenCalledWith("employer_profile_saved", "emp-1", expect.objectContaining({ first: true }), expect.anything());
     expect(sendEmployerEmail).toHaveBeenCalledTimes(1);
     expect(sendEmployerEmail).toHaveBeenCalledWith(expect.objectContaining({ to: "priya@acme.com", idempotencyKey: "employer-welcome-emp-1" }));
+    expect(captureServerEvent).toHaveBeenCalledWith("employer_welcome_sent", "emp-1", expect.not.objectContaining({ email: expect.anything() }), expect.anything());
+  });
+
+  it("emits employer_welcome_sent only when the welcome email was actually sent", async () => {
+    sendEmployerEmail.mockResolvedValue(false);
+    global.fetch = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => [] })
+      .mockResolvedValueOnce({ ok: true, json: async () => [row] })
+      .mockResolvedValue({ ok: true, json: async () => [] }) as unknown as typeof fetch;
+    await handler(post({ companyName: "Acme", website: "acme.com" }));
+    await flush();
+    expect(sendEmployerEmail).toHaveBeenCalledTimes(1);
+    expect(captureServerEvent).not.toHaveBeenCalledWith("employer_welcome_sent", expect.anything(), expect.anything(), expect.anything());
   });
 
   it("later save: captures first=false and sends no email", async () => {

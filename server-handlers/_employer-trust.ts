@@ -22,17 +22,31 @@ export const TIER_LIMITS: Record<EmployerTier, { unlocksPerDay: number; openRequ
 };
 
 /* Single shared list: the server (work_email_required gate, tier derivation)
- * and the onboarding pre-check both read it, so they can never disagree. */
-const FREE_MAIL_DOMAINS = new Set([
+ * and the onboarding pre-check both read it, so they can never disagree.
+ * Exported so tests can assert every entry is rejected. */
+export const FREE_MAIL_DOMAINS: ReadonlySet<string> = new Set([
   "gmail.com", "googlemail.com",
   "yahoo.com", "yahoo.in", "yahoo.co.in", "yahoo.co.uk", "ymail.com", "rocketmail.com",
-  "outlook.com", "outlook.in", "hotmail.com", "hotmail.co.in", "hotmail.in", "live.com", "live.in", "msn.com",
+  "yahoo.fr", "yahoo.de", "yahoo.es", "yahoo.it", "yahoo.ca", "yahoo.com.au", "yahoo.com.br", "yahoo.com.sg",
+  "yahoo.com.ph", "yahoo.com.hk", "yahoo.com.mx", "yahoo.com.ar", "yahoo.co.jp", "yahoo.co.id", "yahoo.co.nz", "yahoo.ie",
+  "outlook.com", "outlook.in", "outlook.co.uk", "outlook.com.au", "outlook.fr", "outlook.de",
+  "hotmail.com", "hotmail.co.in", "hotmail.in", "hotmail.co.uk", "hotmail.com.au", "hotmail.fr", "hotmail.de",
+  "live.com", "live.in", "live.co.uk", "live.com.au", "live.fr", "live.de", "msn.com",
   "icloud.com", "me.com", "mac.com", "aol.com",
   "proton.me", "protonmail.com", "pm.me", "tutanota.com", "tutamail.com", "tuta.io",
-  "rediff.com", "rediffmail.com", "sify.com", "bol-online.in", "in.com",
+  "rediff.com", "rediffmail.com", "sify.com", "bol-online.in", "in.com", "airtel.in",
+  "hey.com", "duck.com", "web.de", "mail.ru", "qq.com", "163.com", "126.com",
   "zoho.com", "zohomail.in", "zohomail.com", "yandex.com", "yandex.ru",
   "mail.com", "gmx.com", "gmx.net", "inbox.com", "fastmail.com",
-  "mailinator.com", "guerrillamail.com", "10minutemail.com", "tempmail.com", "yopmail.com",
+]);
+
+/* Throwaway inboxes: never a real company contact, whatever the website says. */
+export const DISPOSABLE_MAIL_DOMAINS: ReadonlySet<string> = new Set([
+  "mailinator.com", "guerrillamail.com", "guerrillamail.net", "guerrillamail.org", "guerrillamail.biz", "guerrillamail.de",
+  "guerrillamailblock.com", "sharklasers.com", "grr.la", "spam4.me",
+  "10minutemail.com", "10minutemail.net", "tempmail.com", "temp-mail.org", "temp-mail.io", "tempmail.net", "tempr.email",
+  "yopmail.com", "yopmail.fr", "yopmail.net", "trashmail.com", "trashmail.net", "getnada.com", "nada.email",
+  "maildrop.cc", "throwawaymail.com", "dispostable.com", "fakeinbox.com", "mailnesia.com", "mohmal.com", "emailondeck.com",
 ]);
 
 export function emailDomain(email: string | null | undefined): string {
@@ -42,8 +56,14 @@ export function emailDomain(email: string | null | undefined): string {
   return email.slice(at + 1).trim().toLowerCase();
 }
 
+export function isDisposableMailDomain(domain: string): boolean {
+  return DISPOSABLE_MAIL_DOMAINS.has(domain.trim().toLowerCase());
+}
+
+/** True for free-mail and disposable providers alike: neither proves a company. */
 export function isFreeMailDomain(domain: string): boolean {
-  return FREE_MAIL_DOMAINS.has(domain.trim().toLowerCase());
+  const d = domain.trim().toLowerCase();
+  return FREE_MAIL_DOMAINS.has(d) || DISPOSABLE_MAIL_DOMAINS.has(d);
 }
 
 /** Registrable-ish host of a website string ("https://www.acme.co.in/x" -> "acme.co.in"). */

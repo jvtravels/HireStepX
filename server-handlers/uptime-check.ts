@@ -12,7 +12,7 @@
 /* No logic here assumes any particular cadence. */
 /* Visible in Vercel Dashboard → Logs for alerting */
 
-import { getHealthAlerts } from "./_health-alerts";
+import { getHealthAlerts, isActionRequired, actionSubjectBits } from "./_health-alerts";
 
 export const config = { runtime: "edge" };
 
@@ -31,24 +31,37 @@ export default async function handler(req: Request): Promise<Response> {
     ? `https://${process.env.VERCEL_URL}`
     : "https://hirestepx.vercel.app";
 
-  async function sendAlertEmail(subject: string, text: string) {
+  // Returns false when the alert could not be delivered (no key, non-2xx, network
+  // error). The caller surfaces that as a 500 so the cron shows as failed instead
+  // of silently dropping the only notification the founder gets.
+  async function sendAlertEmail(subject: string, text: string): Promise<boolean> {
     const resendKey = process.env.RESEND_API_KEY;
-    if (!resendKey) return;
-    await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${resendKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: "HireStepX Alerts <alerts@hirestepx.com>",
-        to: ["support@hirestepx.com"],
-        subject,
-        text,
-      }),
-    }).catch((err) => {
-      console.error("Failed to send alert email:", err);
-    });
+    if (!resendKey) {
+      console.error(JSON.stringify({ level: "error", source: "uptime-check", code: "alert_email_unconfigured", timestamp: new Date().toISOString() }));
+      return false;
+    }
+    try {
+      const res = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${resendKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          from: "HireStepX Alerts <alerts@hirestepx.com>",
+          to: ["support@hirestepx.com"],
+          subject,
+          text,
+        }),
+        signal: AbortSignal.timeout(8000),
+      });
+      if (res.ok) return true;
+      console.error(JSON.stringify({ level: "error", source: "uptime-check", code: "alert_email_failed", httpStatus: res.status, timestamp: new Date().toISOString() }));
+      return false;
+    } catch (err) {
+      console.error(JSON.stringify({ level: "error", source: "uptime-check", code: "alert_email_failed", error: err instanceof Error ? err.message : String(err), timestamp: new Date().toISOString() }));
+      return false;
+    }
   }
 
   try {
@@ -94,16 +107,19 @@ export default async function handler(req: Request): Promise<Response> {
       const alertSummary = businessAlerts.map(a => `[${a.severity}] ${a.code}: ${a.message}`).join("\n") || "none";
       const subjectBits = [
         data.status !== "healthy" ? `services degraded (${degradedServices || "unknown"})` : null,
+        ...actionSubjectBits(businessAlerts),
         criticalBusinessAlerts.length > 0 ? `${criticalBusinessAlerts.length} critical signal(s)` : null,
       ].filter(Boolean).join(", ") || "health signals present";
 
-      await sendAlertEmail(
-        `[ALERT] HireStepX: ${subjectBits}`,
+      // Money owed or a dead cron should be unmissable in an inbox of daily alerts.
+      const action = isActionRequired(businessAlerts);
+      const delivered = await sendAlertEmail(
+        `${action ? "[ACTION] " : ""}[ALERT] HireStepX: ${subjectBits}`,
         `Health check at ${data.timestamp} returned status: ${data.status}\n\nServices:\n${JSON.stringify(services, null, 2)}\n\nBusiness health signals:\n${alertSummary}\n\nCheck: ${baseUrl}/api/health`,
       );
 
-      return new Response(JSON.stringify({ alert: true, ...data, businessAlerts }), {
-        status: data.status !== "healthy" ? 503 : 200,
+      return new Response(JSON.stringify({ alert: true, alertEmailSent: delivered, ...data, businessAlerts }), {
+        status: data.status !== "healthy" ? 503 : delivered ? 200 : 500,
         headers: { "Content-Type": "application/json" },
       });
     }
