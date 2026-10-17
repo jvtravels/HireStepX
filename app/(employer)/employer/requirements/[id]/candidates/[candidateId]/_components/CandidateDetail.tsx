@@ -11,7 +11,7 @@ import { ErrorRetry, EmptyNote, LinkCta, PageSkeleton, SuspendedBanner } from "@
 import UnlockDialog from "../../../_components/UnlockDialog";
 import { CandidateDialogsHost } from "./CandidateDialogsHost";
 import { CandidateHeader } from "./CandidateHeader";
-import { buildCandidateSummary, buildRoleFit, dedupeQuestions, maskedName, matchedSkillCount, rankCandidates, shortlistPosition, summarizeFit } from "./helpers";
+import { buildCandidateSummary, buildEvidenceSummary, buildRoleFit, dedupeQuestions, maskedName, matchedSkillCount, rankCandidates, shortlistPosition, summarizeFit } from "./helpers";
 import { CandidateNav } from "./CandidateNav";
 import { PrimaryCandidateAction } from "./PrimaryCandidateAction";
 import { useCandidateShortcuts } from "./useCandidateShortcuts";
@@ -197,6 +197,7 @@ export default function CandidateDetail({ requirementId, matchId }: { requiremen
           suspended={suspended}
           resumeFileName={resumeFileName}
           fit={fit}
+          summary={buildEvidenceSummary(candidate, requirement, matched)}
           onUnlock={openUnlock}
           requests={requests}
           onInvite={() => {

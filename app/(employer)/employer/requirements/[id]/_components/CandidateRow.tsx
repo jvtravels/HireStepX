@@ -30,6 +30,7 @@ import { DotLabel } from "@/employer/_panelParts";
 import type { Candidate, CandidateStatus } from "@/employer/mockData";
 import { nextCandidateStatuses } from "../../../../../../server-handlers/_employer-candidate-status-helpers";
 import { formatPaise, singleUnlockPrice } from "../../../../../../server-handlers/_unlock-pricing";
+import { skillChipSlots } from "./candidateTableModel";
 import { candidateDisplayName, candidateResponseOf, candidateSubtitle, canMessageCandidate, initials, interviewSubstep, practisedLabel } from "./requirementFormat";
 
 const STAGE_TONE: Record<CandidateStatus, string> = {
@@ -48,18 +49,19 @@ const SCORE_TEXT: Record<ScoreTone, string> = {
   error: "text-hx-error-ink",
 };
 
-const VISIBLE_GAPS = 2;
+const VISIBLE_CHIPS = 3;
 
-/* One cell for the whole skills story: the overall score, how many required
-   skills the candidate lists, and which are missing. Matched skills sit in a
-   tooltip so the row stays scannable. */
+const CHIP = "inline-flex min-w-0 max-w-24 items-center gap-1 rounded-full px-2 py-0.5 text-[12px] leading-4";
+
+/* One cell for the whole skills story: the overall score, then the required skills
+   as chips (filled when the resume has them, dashed and muted when it does not).
+   The tooltip lists every skill so the row stays scannable. */
 function SkillMatch({ score, matched, gaps }: { score: number; matched: string[]; gaps: string[] }) {
   const total = matched.length + gaps.length;
   const rounded = Math.round(score);
-  const shownGaps = gaps.slice(0, VISIBLE_GAPS);
-  const hiddenGaps = gaps.length - shownGaps.length;
+  const slots = skillChipSlots(matched, gaps, VISIBLE_CHIPS);
   return (
-    <div className="flex min-w-0 flex-col gap-0.5">
+    <div className="flex min-w-0 flex-col gap-1">
       <span className="text-[13px] text-hx-ink-soft tabular-nums">
         <span className={cn("text-[15px] font-semibold", SCORE_TEXT[scoreTone(rounded)])}>{rounded}</span>/100
       </span>
@@ -69,25 +71,32 @@ function SkillMatch({ score, matched, gaps }: { score: number; matched: string[]
             <button
               type="button"
               aria-label={`${matched.length} of ${total} required skills.${matched.length > 0 ? ` Has ${matched.join(", ")}.` : ""}${gaps.length > 0 ? ` Missing ${gaps.join(", ")}.` : ""}`}
-              className="w-fit cursor-default rounded-md border-0 bg-transparent p-0 text-left text-[13px] text-hx-coal focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hx-indigo pointer-coarse:min-h-11"
+              className="flex w-full min-w-0 cursor-default items-center gap-1 rounded-md border-0 bg-transparent p-0 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hx-indigo pointer-coarse:min-h-11"
             >
-              {matched.length} of {total} skills
+              {slots.matched.map((skill) => (
+                <span key={`has-${skill}`} aria-hidden="true" className={cn(CHIP, "bg-hx-indigo-100 text-hx-indigo")}>
+                  <CheckIcon size={10} strokeWidth={3} className="shrink-0" />
+                  <span className="truncate">{skill}</span>
+                </span>
+              ))}
+              {slots.gaps.map((skill) => (
+                <span key={`miss-${skill}`} aria-hidden="true" className={cn(CHIP, "border border-dashed border-hx-line bg-white text-hx-ink-soft")}>
+                  <span className="truncate">{skill}</span>
+                </span>
+              ))}
+              {slots.hidden > 0 && (
+                <span aria-hidden="true" className="shrink-0 text-[12px] text-hx-ink-soft tabular-nums">
+                  +{slots.hidden}
+                </span>
+              )}
             </button>
           </TooltipTrigger>
           <TooltipContent side="bottom" className="max-w-64">
+            <div>{matched.length} of {total} required skills</div>
             {matched.length > 0 && <div>Has: {matched.join(", ")}</div>}
             {gaps.length > 0 && <div>Missing: {gaps.join(", ")}</div>}
           </TooltipContent>
         </Tooltip>
-      )}
-      {gaps.length > 0 && (
-        <span className="flex min-w-0 items-center gap-1.5 text-[12px] text-hx-ink-soft">
-          <span aria-hidden="true" className="size-1.5 shrink-0 rounded-full bg-hx-warning" />
-          <span className="truncate">
-            Missing {shownGaps.join(", ")}
-            {hiddenGaps > 0 ? ` +${hiddenGaps}` : ""}
-          </span>
-        </span>
       )}
     </div>
   );

@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { LockIcon, RefreshCwIcon, SearchIcon, XIcon } from "lucide-react";
+import { ArrowUpDownIcon, DownloadIcon, LockIcon, RefreshCwIcon, SearchIcon, XIcon } from "lucide-react";
 import { tokens as t, fonts as f, textSize } from "@/auth/_tokens";
 import { useEmployerData, type Requirement } from "@/employer/EmployerDataContext";
 import { useEmployerBreadcrumb } from "@/employer/EmployerShell";
@@ -26,6 +26,7 @@ import { SearchWithSuggestions } from "@/components/SearchWithSuggestions";
 import { type Sort } from "@/components/SortableHead";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { formatPaise } from "../../../../../server-handlers/_unlock-pricing";
+import { candidatesToCsv, csvFileName, downloadCsv, exportableCandidates } from "./_components/candidateCsv";
 import CandidatesFilters from "./_components/CandidatesFilters";
 import CandidatesTable from "./_components/CandidatesTable";
 import EvidenceDialog from "./_components/EvidenceDialog";
@@ -41,6 +42,7 @@ import {
   CONTACT_FILTER_OPTIONS,
   DEFAULT_SORT,
   compareCandidates,
+  describeSort,
   filterCandidates,
   type ContactFilter,
   type SortColumn,
@@ -226,6 +228,14 @@ export default function RequirementDetailPage() {
   const pageSafe = Math.min(page, totalPages);
   const pageRows = filteredSorted.slice((pageSafe - 1) * rowsPerPage, pageSafe * rowsPerPage);
 
+  const sortInfo = describeSort(sort);
+  const unlockedCount = useMemo(() => exportableCandidates(candidates).length, [candidates]);
+  const exportUnlocked = () => {
+    if (!requirement || unlockedCount === 0) return;
+    downloadCsv(csvFileName(requirement.title), candidatesToCsv(candidates, requirement.skills));
+    toast(`Exported ${unlockedCount} unlocked candidate${unlockedCount === 1 ? "" : "s"}`, "success");
+  };
+
   const patchCandidates = useCallback((apply: (c: Candidate) => Candidate) => {
     localChanges.current += 1;
     setRequirement((prev) => (prev ? { ...prev, candidates: prev.candidates.map(apply) } : prev));
@@ -394,6 +404,16 @@ export default function RequirementDetailPage() {
                     locationOptions={locationOptions}
                     activeCount={activeFilterCount}
                   />
+                  <button
+                    type="button"
+                    onClick={() => setSort((s) => ({ ...s, direction: s.direction === "asc" ? "desc" : "asc" }))}
+                    aria-label={`Sorted by ${sortInfo.name}, ${sortInfo.order}. Reverse the order`}
+                    className="inline-flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-full border border-hx-line bg-white px-3 text-[13px] text-hx-coal transition-colors duration-150 hover:bg-hx-row focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hx-indigo motion-reduce:transition-none pointer-coarse:min-h-11"
+                  >
+                    <ArrowUpDownIcon size={13} aria-hidden="true" className="text-hx-ink-soft" />
+                    <span className="text-hx-ink-soft min-[1280px]:max-[1439px]:hidden">Sorted by</span>
+                    <span className="font-medium">{sortInfo.name}</span>
+                  </button>
                   {hasActiveFilters && (
                     <Button type="button" variant="link" onClick={clearFilters} className="h-auto shrink-0 text-[14px] font-semibold pointer-coarse:min-h-11">
                       Clear<span className="min-[1280px]:max-[1439px]:hidden"> filters</span>
@@ -436,6 +456,25 @@ export default function RequirementDetailPage() {
                               ? ` ${nextLockedBatch.lockedRemaining - nextLockedBatch.count} more stay locked further down; unlock those from their rows.`
                               : ""
                           } Names and contact details stay hidden until you pay.`}
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+                {hasList && unlockedCount > 0 && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={exportUnlocked}
+                        aria-label={`Export ${unlockedCount} unlocked candidate${unlockedCount === 1 ? "" : "s"} as CSV`}
+                        className="shrink-0 rounded-lg pointer-coarse:size-11"
+                      >
+                        <DownloadIcon size={13} aria-hidden="true" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="max-w-64">
+                      Export {unlockedCount} unlocked candidate{unlockedCount === 1 ? "" : "s"} as CSV. Locked candidates stay out of the file.
                     </TooltipContent>
                   </Tooltip>
                 )}

@@ -24,6 +24,30 @@ export const COLUMN_LABEL: Record<SortColumn, string> = {
   pipeline: "Stage",
 };
 
+const SORT_PILL: Record<SortColumn, { name: string; asc: string; desc: string }> = {
+  name: { name: "Name", asc: "A to Z", desc: "Z to A" },
+  match: { name: "Match score", asc: "low to high", desc: "high to low" },
+  interview: { name: "Interview score", asc: "low to high", desc: "high to low" },
+  pipeline: { name: "Stage", asc: "earliest first", desc: "latest first" },
+};
+
+/** What the toolbar pill says about the current sort, e.g. `{ name: "Match score", order: "high to low" }`. */
+export function describeSort(sort: Sort<SortColumn>): { name: string; order: string } {
+  const label = SORT_PILL[sort.column];
+  return { name: label.name, order: label[sort.direction] };
+}
+
+/** Which skill chips fit in a row: matched first, but one slot is always kept for a gap so a miss never hides. */
+export function skillChipSlots(matched: string[], gaps: string[], max = 3): { matched: string[]; gaps: string[]; hidden: number } {
+  const gapSlots = gaps.length > 0 ? Math.min(gaps.length, Math.max(1, max - matched.length)) : 0;
+  const matchedSlots = Math.min(matched.length, max - gapSlots);
+  return {
+    matched: matched.slice(0, matchedSlots),
+    gaps: gaps.slice(0, gapSlots),
+    hidden: matched.length + gaps.length - matchedSlots - gapSlots,
+  };
+}
+
 /* Funnel order, not alphabetical: "hired" sorts ahead of "interviewing" ahead
    of "shortlisted". Rejected/declined outcomes sort last. */
 const PIPELINE_RANK: Record<Candidate["candidateStatus"], number> = {

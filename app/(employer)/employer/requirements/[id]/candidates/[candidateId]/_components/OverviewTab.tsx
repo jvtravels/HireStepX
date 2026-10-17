@@ -12,7 +12,7 @@ import { ChipList, IconList, MutedText } from "./parts";
 import { ItemRequest, type RequestUi } from "./RequestPopover";
 import { RequestsPanel } from "./RequestsPanel";
 import { RoleMismatchNotice, hasRoleMismatch } from "./RoleMismatchNotice";
-import { PROVENANCE, displaySkillName, READINESS_LABEL, averageTenureMonths, buildResumeInsights, buildRoleFit, employerCapabilities, evidenceAverage, fitHeadline, formatSessionDate, formatTenure, formatYears, groupSkillsByDepth, skillChipLabel, summarizeFit, type FitStatus, type ResumeInsights } from "./helpers";
+import { PROVENANCE, displaySkillName, READINESS_LABEL, averageTenureMonths, buildResumeInsights, buildRoleFit, candidateSignal, employerCapabilities, evidenceAverage, fitHeadline, formatSessionDate, formatTenure, formatYears, groupSkillsByDepth, skillChipLabel, sortFitRows, summarizeFit, type FitStatus, type ResumeInsights } from "./helpers";
 
 export type EvidenceState = { evidence: CandidateEvidence | null; loading: boolean; failed: boolean; onRetry: () => void };
 
@@ -38,7 +38,7 @@ export function EvidenceStatus({ state, children }: { state: EvidenceState; chil
 }
 
 const FIT_MARK: Record<FitStatus, { icon: typeof CheckIcon; label: string; cls: string }> = {
-  meets: { icon: CheckIcon, label: "Meets", cls: "bg-hx-success-100 text-hx-success-ink" },
+  meets: { icon: CheckIcon, label: "Strength", cls: "bg-hx-success-100 text-hx-success-ink" },
   partial: { icon: MinusIcon, label: "Close", cls: "bg-hx-warning-100 text-hx-warning-ink" },
   gap: { icon: XIcon, label: "Gap", cls: "bg-hx-error-100 text-hx-error-ink" },
 };
@@ -46,18 +46,21 @@ const FIT_MARK: Record<FitStatus, { icon: typeof CheckIcon; label: string; cls: 
 function FitMark({ status }: { status: FitStatus }) {
   const { icon: Icon, label, cls } = FIT_MARK[status];
   return (
-    <span title={label} className={cn("inline-flex size-5 shrink-0 items-center justify-center rounded-full", cls)}>
-      <Icon size={12} strokeWidth={2.5} aria-hidden="true" />
-      <span className="sr-only">{label}</span>
+    <span className={cn("inline-flex h-5 shrink-0 items-center gap-1 rounded-full px-2 text-[12px] font-medium", cls)}>
+      <Icon size={11} strokeWidth={2.5} aria-hidden="true" />
+      {label}
     </span>
   );
 }
 
+const SIGNAL_TONE = { strong: "success", promising: "info", fair: "warning", low: "neutral" } as const;
+
 const SEGMENT_CLS: Record<FitStatus, string> = { meets: "bg-hx-success", partial: "bg-hx-warning", gap: "bg-hx-error" };
 
 function MatchPanel({ candidate, requirement, matched, unmatched, evidence, requestUi, analysisClear }: { candidate: Candidate; requirement: Requirement; matched: string[]; unmatched: string[]; evidence: CandidateEvidence | null; requestUi: RequestUi; analysisClear: boolean }) {
-  const rows = buildRoleFit(candidate, requirement, matched, evidence);
+  const rows = sortFitRows(buildRoleFit(candidate, requirement, matched, evidence));
   const fit = summarizeFit(rows);
+  const signal = candidateSignal(candidate.matchScore, fit);
   const caption = [
     fit.gaps.length > 0 && `Gap: ${fit.gaps.join(", ")}.`,
     fit.close.length > 0 && `Close: ${fit.close.join(", ")}.`,
@@ -65,7 +68,7 @@ function MatchPanel({ candidate, requirement, matched, unmatched, evidence, requ
     analysisClear && "No concerns flagged on the resume.",
   ].filter(Boolean).join(" ");
   return (
-    <Panel id="match-heading" title="Fit for this role" icon={<TargetIcon size={15} />}>
+    <Panel id="match-heading" title="Fit for this role" icon={<TargetIcon size={15} />} action={<Badge tone={SIGNAL_TONE[signal.key]}>{signal.label}</Badge>}>
       <div className="grid gap-5">
         <div className="@container">
           <div className="grid gap-5 @xl:grid-cols-[auto_minmax(0,1fr)] @xl:items-center @xl:gap-10">
@@ -119,6 +122,7 @@ function MatchPanel({ candidate, requirement, matched, unmatched, evidence, requ
                       <FitMark status={row.status} />
                     </div>
                   </div>
+                  <p className="m-0 text-[13px] text-hx-ink-soft">{row.reason}</p>
                   {row.id === "skills" && (matched.length > 0 || unmatched.length > 0) && (
                     <div className="grid gap-2">
                       <div className="flex flex-wrap gap-1.5">

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { averageTenureMonths, buildResumeInsights, buildRoleFit, cleanQuestionText, dedupeQuestions, describeDelivery, employerCapabilities, formatTenure, formatYears, matchedSkillCount, groupSkillsByDepth, noticeDays, skillChipLabel, summarizeFit, summarizeQuestions } from "../../app/(employer)/employer/requirements/[id]/candidates/[candidateId]/_components/helpers";
+import { averageTenureMonths, buildEvidenceSummary, buildResumeInsights, buildRoleFit, cleanQuestionText, dedupeQuestions, describeDelivery, employerCapabilities, formatTenure, formatYears, matchedSkillCount, groupSkillsByDepth, noticeDays, skillChipLabel, sortFitRows, summarizeFit, summarizeQuestions } from "../../app/(employer)/employer/requirements/[id]/candidates/[candidateId]/_components/helpers";
 import type { CandidateEvidence, EvidenceQuestion } from "../employer/EmployerDataContext";
 import type { Candidate, Requirement } from "../employer/mockData";
 
@@ -216,9 +216,9 @@ describe("cleanQuestionText", () => {
 describe("summarizeFit", () => {
   it("counts met criteria and names gaps and near misses", () => {
     const rows = [
-      { id: "skills", label: "Required skills", asked: "3 listed", has: "3 of 3", status: "meets" as const },
-      { id: "experience", label: "Experience", asked: "5+ years", has: "4 years", status: "partial" as const },
-      { id: "location", label: "Location", asked: "Pune", has: "Delhi", status: "gap" as const },
+      { id: "skills", label: "Required skills", asked: "3 listed", has: "3 of 3", status: "meets" as const, reason: "" },
+      { id: "experience", label: "Experience", asked: "5+ years", has: "4 years", status: "partial" as const, reason: "" },
+      { id: "location", label: "Location", asked: "Pune", has: "Delhi", status: "gap" as const, reason: "" },
     ];
     expect(summarizeFit(rows)).toEqual({ meets: 1, total: 3, gaps: ["Location"], close: ["Experience"] });
   });
@@ -235,5 +235,52 @@ describe("displaySkillName", () => {
     expect(displaySkillName("Node.JS")).toBe("Node.js");
     expect(displaySkillName("Python")).toBe("Python");
     expect(displaySkillName("Asp.Net")).toBe("Asp.Net");
+  });
+});
+
+describe("fit row reasons and order", () => {
+  const req = { skills: ["Figma", "Python", "SQL", "R"], experienceMin: 4, experienceMax: 8, locations: ["Pune"], workMode: "onsite", noticePeriodPref: "Up to 30 days", minReadinessBand: null, minStarCompleteness: null } as unknown as Requirement;
+
+  it("gives every row a plain sentence that names the facts", () => {
+    const rows = buildRoleFit(candidate({ unlocked: true, city: "Delhi" }, { yearsExperience: 2, noticePeriod: "30 days" }), req, ["Figma", "Python"], null);
+    const reason = Object.fromEntries(rows.map((r) => [r.id, r.reason]));
+    expect(reason.skills).toBe("Has 2 of 4; missing SQL, R.");
+    expect(reason.experience).toBe("2 years short of the 4 years asked.");
+    expect(reason.location).toBe("Based in Delhi; the role is hiring in Pune.");
+    expect(reason.notice).toBe("Can join within the notice asked.");
+  });
+
+  it("lists strengths before near-misses before gaps, keeping order within a group", () => {
+    const rows = [
+      { id: "a", label: "A", asked: "", has: "", status: "gap" as const, reason: "" },
+      { id: "b", label: "B", asked: "", has: "", status: "meets" as const, reason: "" },
+      { id: "c", label: "C", asked: "", has: "", status: "partial" as const, reason: "" },
+      { id: "d", label: "D", asked: "", has: "", status: "meets" as const, reason: "" },
+    ];
+    expect(sortFitRows(rows).map((r) => r.id)).toEqual(["b", "d", "c", "a"]);
+    expect(rows[0].id).toBe("a");
+  });
+});
+
+describe("buildEvidenceSummary", () => {
+  const req = { skills: ["Figma", "Python", "SQL", "R"] };
+
+  it("joins only the facts the profile holds", () => {
+    const c = candidate({ rosterScore: 78.4, sessionsCompleted: 3, city: "Delhi" }, { noticePeriod: "30 days" });
+    expect(buildEvidenceSummary(c, req, ["Figma", "Python", "SQL"])).toBe("Interview score 78 across 3 practice interviews, 3 of 4 required skills, Delhi, 30-day notice.");
+  });
+
+  it("skips the interview clause without graded sessions and the city when unknown", () => {
+    const c = candidate({ rosterScore: 50, sessionsCompleted: 0, city: "Not specified" }, { noticePeriod: "Immediate" });
+    expect(buildEvidenceSummary(c, req, [])).toBe("0 of 4 required skills, Immediate joiner.");
+  });
+
+  it("uses singular wording and months for long notice", () => {
+    const c = candidate({ rosterScore: 60, sessionsCompleted: 1, city: "Pune" }, { noticePeriod: "2 months" });
+    expect(buildEvidenceSummary(c, { skills: [] }, [])).toBe("Interview score 60 across 1 practice interview, Pune, 2-month notice.");
+  });
+
+  it("is null when nothing is known", () => {
+    expect(buildEvidenceSummary(candidate({ sessionsCompleted: 0, city: "Not specified" }, { noticePeriod: null }), { skills: [] }, [])).toBeNull();
   });
 });

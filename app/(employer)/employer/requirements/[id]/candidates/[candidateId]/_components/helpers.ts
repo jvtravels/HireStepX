@@ -1,6 +1,6 @@
 import type { Candidate, CandidateStatus } from "@/employer/mockData";
 import type { Requirement, CandidateEvidence, EvidenceDelivery, EvidenceQuestion } from "@/employer/EmployerDataContext";
-import { candidateSkillFit } from "@/employer/_jobDetailHelpers";
+import { availabilityOf, candidateSkillFit, interviewScore } from "@/employer/_jobDetailHelpers";
 import { CANDIDATE_STATUS_LABEL, matchBand } from "@/employer/_atoms";
 import type { DotTone } from "@/employer/_panelParts";
 
@@ -142,7 +142,18 @@ export function buildResumeInsights(candidate: Candidate, unmatched: string[]): 
 export const HEADER_ACTION = "text-[13px] font-semibold";
 
 export type FitStatus = "meets" | "partial" | "gap";
-export interface FitRow { id: string; label: string; asked: string; has: string; status: FitStatus }
+export interface FitRow { id: string; label: string; asked: string; has: string; status: FitStatus; reason: string }
+
+export const FIT_RANK: Record<FitStatus, number> = { meets: 0, partial: 1, gap: 2 };
+
+/** Strengths first, then near-misses, then gaps; rows with the same status keep their order. */
+export function sortFitRows(rows: FitRow[]): FitRow[] {
+  return [...rows].sort((a, b) => FIT_RANK[a.status] - FIT_RANK[b.status]);
+}
+
+function plural(n: number, one: string, many = `${one}s`): string {
+  return `${n} ${n === 1 ? one : many}`;
+}
 
 const BAND_RANK = { leanHire: 1, hire: 2, strongHire: 3 } as const;
 
@@ -173,7 +184,13 @@ export function buildRoleFit(candidate: Candidate, requirement: Requirement, mat
   const asked = requirement.skills.length;
   if (asked > 0) {
     const ratio = matched.length / asked;
-    rows.push({ id: "skills", label: "Required skills", asked: `${asked} listed`, has: `${matched.length} of ${asked}`, status: ratio === 1 ? "meets" : ratio >= 0.5 ? "partial" : "gap" });
+    const missing = requirement.skills.filter((s) => !matched.includes(s));
+    const reason = ratio === 1
+      ? `Has all ${asked} required skills.`
+      : matched.length === 0
+        ? `None of the ${asked} required skills appear on the resume.`
+        : `Has ${matched.length} of ${asked}; missing ${missing.slice(0, 3).join(", ")}${missing.length > 3 ? ` and ${missing.length - 3} more` : ""}.`;
+    rows.push({ id: "skills", label: "Required skills", asked: `${asked} listed`, has: `${matched.length} of ${asked}`, status: ratio === 1 ? "meets" : ratio >= 0.5 ? "partial" : "gap", reason });
   }
 
   const { experienceMin: min, experienceMax: max } = requirement;
@@ -182,19 +199,30 @@ export function buildRoleFit(candidate: Candidate, requirement: Requirement, mat
     const below = min != null && y < min;
     const above = max != null && y > max;
     const status: FitStatus = !below && !above ? "meets" : (below && y >= min - 1) || (above && y <= max + 2) ? "partial" : "gap";
-    rows.push({ id: "experience", label: "Experience", asked: experienceAsk(min, max), has: formatYears(y), status });
+    const reason = below
+      ? `${formatYears(min - y)} short of the ${formatYears(min)} asked.`
+      : above
+        ? `${formatYears(y - max)} above the ${formatYears(max)} ceiling.`
+        : `${formatYears(y)} sits inside the range asked.`;
+    rows.push({ id: "experience", label: "Experience", asked: experienceAsk(min, max), has: formatYears(y), status, reason });
   }
 
   const hasCity = !!candidate.city && candidate.city !== "Not specified";
   if (hasCity && (requirement.workMode === "remote" || requirement.locations.length > 0)) {
     const inCity = requirement.locations.some((l) => l.toLowerCase().includes(candidate.city.toLowerCase()) || candidate.city.toLowerCase().includes(l.toLowerCase()));
     const remote = requirement.workMode === "remote";
+    const reason = remote
+      ? "The role is remote, so location does not limit them."
+      : inCity
+        ? `Based in ${candidate.city}, where the role is hiring.`
+        : `Based in ${candidate.city}; the role is hiring in ${requirement.locations.slice(0, 2).join(" or ")}.`;
     rows.push({
       id: "location",
       label: "Location",
       asked: remote ? "Remote" : requirement.locations.slice(0, 2).join(", "),
       has: candidate.city,
       status: remote || inCity ? "meets" : "gap",
+      reason,
     });
   }
 
@@ -206,20 +234,26 @@ export function buildRoleFit(candidate: Candidate, requirement: Requirement, mat
     })();
     const days = noticeDays(r.noticePeriod);
     if (limit != null && days != null) {
-      rows.push({ id: "notice", label: "Notice period", asked: pref, has: r.noticePeriod, status: days <= limit ? "meets" : days <= limit + 30 ? "partial" : "gap" });
+      const status: FitStatus = days <= limit ? "meets" : days <= limit + 30 ? "partial" : "gap";
+      const reason = status === "meets" ? "Can join within the notice asked." : status === "partial" ? "Notice runs a little past what was asked." : "Notice runs well past what was asked.";
+      rows.push({ id: "notice", label: "Notice period", asked: pref, has: r.noticePeriod, status, reason });
     }
   }
 
   if (requirement.minReadinessBand && evidence?.readiness) {
     const got = BAND_RANK[evidence.readiness.band];
     const want = BAND_RANK[requirement.minReadinessBand];
-    rows.push({ id: "readiness", label: "Interview readiness", asked: `${READINESS_LABEL[requirement.minReadinessBand]} or better`, has: READINESS_LABEL[evidence.readiness.band], status: got >= want ? "meets" : got === want - 1 ? "partial" : "gap" });
+    const status: FitStatus = got >= want ? "meets" : got === want - 1 ? "partial" : "gap";
+    const reason = status === "meets" ? "Practice interviews reach the readiness level asked." : status === "partial" ? "One readiness level below what was asked." : "Practice interviews fall well below the readiness asked.";
+    rows.push({ id: "readiness", label: "Interview readiness", asked: `${READINESS_LABEL[requirement.minReadinessBand]} or better`, has: READINESS_LABEL[evidence.readiness.band], status, reason });
   }
 
   if (requirement.minStarCompleteness != null && evidence?.starCompleteness) {
     const pct = evidence.starCompleteness.pct;
     const want = requirement.minStarCompleteness;
-    rows.push({ id: "star", label: "STAR coverage", asked: `${want}%+`, has: `${pct}%`, status: pct >= want ? "meets" : pct >= want - 15 ? "partial" : "gap" });
+    const status: FitStatus = pct >= want ? "meets" : pct >= want - 15 ? "partial" : "gap";
+    const reason = status === "meets" ? "Answers cover the STAR structure as asked." : status === "partial" ? "Answers are close to the STAR coverage asked." : "Answers often skip parts of the STAR structure.";
+    rows.push({ id: "star", label: "STAR coverage", asked: `${want}%+`, has: `${pct}%`, status, reason });
   }
 
   return rows;
@@ -405,6 +439,28 @@ export function composeRejectNote(reasons: readonly string[], text: string): str
 
 /** Plain-text brief for pasting into chat or email. Built only from what is visible on the page,
  *  so a locked candidate stays anonymous and no contact details leave the screen. */
+/** Notice period in the employer's terms ("30-day notice", "Immediate joiner"); null when we can't read it. */
+function noticePhrase(noticePeriod: string | null | undefined): string | null {
+  if (!noticePeriod) return null;
+  if (availabilityOf(noticePeriod).label === "Immediate") return "Immediate joiner";
+  const days = noticeDays(noticePeriod);
+  if (days == null || days <= 0) return null;
+  return days % 30 === 0 && days >= 60 ? `${days / 30}-month notice` : `${days}-day notice`;
+}
+
+/** One line of facts for the top of the candidate page. Built from stored fields only, so it never
+ *  states anything the data does not hold; parts we have no data for are left out. */
+export function buildEvidenceSummary(candidate: Candidate, requirement: Pick<Requirement, "skills">, matched: string[]): string | null {
+  const parts: string[] = [];
+  const score = interviewScore(candidate);
+  if (score != null) parts.push(`Interview score ${score} across ${plural(candidate.sessionsCompleted, "practice interview")}`);
+  if (requirement.skills.length > 0) parts.push(`${matched.length} of ${requirement.skills.length} required skills`);
+  if (candidate.city && candidate.city !== "Not specified") parts.push(candidate.city);
+  const notice = noticePhrase(candidate.resume?.noticePeriod);
+  if (notice) parts.push(notice);
+  return parts.length > 0 ? `${parts.join(", ")}.` : null;
+}
+
 export function buildCandidateSummary(candidate: Candidate, requirement: Requirement, matched: string[], evidence: CandidateEvidence | null, url: string): string {
   const rows = buildRoleFit(candidate, requirement, matched, evidence);
   const fit = summarizeFit(rows);

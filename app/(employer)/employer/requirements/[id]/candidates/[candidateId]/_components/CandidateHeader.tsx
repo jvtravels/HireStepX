@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { BriefcaseIcon, ClockIcon, ExternalLinkIcon, LockIcon, MailIcon, MapPinIcon, PhoneIcon } from "lucide-react";
+import { BriefcaseIcon, ClockIcon, ExternalLinkIcon, LockIcon, MailIcon, PhoneIcon } from "lucide-react";
 import { cn } from "cn";
 import type { Candidate } from "@/employer/mockData";
 import { Button } from "@/components/ui/button";
@@ -55,6 +55,7 @@ export function CandidateHeader({
   suspended,
   resumeFileName,
   fit,
+  summary,
   onUnlock,
   onInvite,
   onReject,
@@ -66,6 +67,7 @@ export function CandidateHeader({
   suspended: boolean;
   resumeFileName: string | null;
   fit: FitSummary;
+  summary: string | null;
   onUnlock: () => void;
   onInvite: () => void;
   onReject: () => void;
@@ -75,7 +77,6 @@ export function CandidateHeader({
   const resume = candidate.resume;
   const displayName = maskedName(candidate);
   const response = declined ? "declined" : readCandidateResponse(candidate);
-  const hasCity = !!candidate.city && candidate.city !== "Not specified";
   const links = candidate.unlocked ? candidateLinks(candidate) : [];
   const canInvite = canInviteToInterview(candidate.candidateStatus);
   const canReject = !["hired", "rejected", "not_a_fit"].includes(candidate.candidateStatus);
@@ -89,7 +90,6 @@ export function CandidateHeader({
   const meta: MetaPart[] = [];
   if (candidate.targetRole) meta.push({ icon: BriefcaseIcon, text: candidate.targetRole });
   if (resume?.yearsExperience != null) meta.push({ icon: BriefcaseIcon, text: `${formatYears(resume.yearsExperience)} experience${resume.seniorityLevel ? `, ${resume.seniorityLevel}` : ""}` });
-  if (hasCity) meta.push({ icon: MapPinIcon, text: candidate.city });
   if (candidate.lastActiveDaysAgo >= 0) meta.push({ icon: ClockIcon, text: `Active ${candidate.lastActiveDaysAgo === 0 ? "today" : `${candidate.lastActiveDaysAgo}d ago`}` });
 
   const requestControl = requests.available ? (
@@ -126,6 +126,7 @@ export function CandidateHeader({
         <MetaLine parts={meta} className="text-[13px] text-hx-ink-soft" />
         <PipelineStepper status={candidate.candidateStatus} />
       </div>
+      {summary && <p className="m-0 mt-3 max-w-[75ch] text-[14px] leading-snug font-medium text-hx-coal">{summary}</p>}
       {blockedReason && <p className="m-0 mt-3 text-right text-[12px] text-hx-ink-soft">{blockedReason}</p>}
 
       <div className="mt-4 min-w-0 border-t border-hx-line pt-4">
