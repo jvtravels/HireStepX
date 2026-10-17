@@ -48,6 +48,8 @@ export function TablePaginationFooter({
   onPageChange: (page: number) => void;
 }) {
   const plural = (n: number) => (n === 1 ? entityLabel : entityLabelPlural ?? `${entityLabel}s`);
+  // Everything fits on the smallest page size, so paging controls would only be noise.
+  const singlePage = filteredCount <= Math.min(...rowsPerPageOptions);
   return (
     <div style={{ flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 20px", borderTop: `1px solid ${T.line}`, flexWrap: "wrap", gap: 12 }}>
       <span style={{ fontFamily: F.sans, fontSize: 13, color: T.inkFaint }}>
@@ -55,7 +57,7 @@ export function TablePaginationFooter({
           ? `${totalCount} ${plural(totalCount)} total`
           : `Showing ${filteredCount} of ${totalCount} ${plural(totalCount)}`}
       </span>
-      <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: "8px 16px", minWidth: 0, maxWidth: "100%" }}>
+      {!singlePage && <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: "8px 16px", minWidth: 0, maxWidth: "100%" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <span style={{ fontFamily: F.sans, fontSize: 13, color: T.inkFaint }}>Rows per page</span>
           <Select value={String(rowsPerPage)} onValueChange={(v) => onRowsPerPageChange(Number(v))}>
@@ -91,7 +93,7 @@ export function TablePaginationFooter({
             </Button>
           </div>
         </div>
-      </div>
+      </div>}
     </div>
   );
 }

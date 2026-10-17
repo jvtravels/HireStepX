@@ -241,7 +241,7 @@ export default function EmployerJobsPage() {
         label="Search jobs"
         value={search}
         onChange={setSearch}
-        placeholder="Search by job title, location, or skill"
+        placeholder={compact ? "Search jobs" : "Search by job title, location, or skill"}
         storageKey={RECENT_SEARCHES_KEY}
         suggestedFilters={suggestedFilters}
         style={compact ? { flex: "1 1 160px", minWidth: 0 } : { flex: "1 1 240px", minWidth: 200, maxWidth: "50%" }}
