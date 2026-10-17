@@ -195,6 +195,7 @@ export default function EmployerShell({ children }: { children: React.ReactNode 
     : pathname?.endsWith("/outcome") ? "Hiring outcome"
     : pathname === "/employer/jobs" || pathname?.startsWith("/employer/requirements/") ? "Jobs"
     : "Dashboard";
+  const leafCrumbs = !breadcrumbExtra?.length && ["Post a job", "Compare candidates", "Edit job", "Hiring outcome"].includes(sectionTitle) ? [{ label: sectionTitle }] : undefined;
   const pageTitle = breadcrumbExtra?.length ? breadcrumbExtra[breadcrumbExtra.length - 1].label : sectionTitle;
   useEffect(() => {
     document.title = `${pageTitle} · HireStepX`;
@@ -294,7 +295,7 @@ export default function EmployerShell({ children }: { children: React.ReactNode 
         breadcrumbRoot={{ label: displayName || "HireStepX", path: "/employer" }}
         pageLabel={isSettingsRoute ? "Settings" : isMessagesRoute ? "Messages" : activeItem.label}
         pageLabelPath={activeItem.path}
-        extraCrumbs={breadcrumbExtra}
+        extraCrumbs={breadcrumbExtra ?? leafCrumbs}
         isMobile={isMobile}
         mainId="employer-main"
         pageKey={pathname}

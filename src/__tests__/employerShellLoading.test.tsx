@@ -16,7 +16,8 @@ vi.mock("../AuthContext", () => ({
 }));
 vi.mock("../hooks/use-mobile", () => ({ useIsMobile: () => false }));
 vi.mock("../AppShellFrame", () => ({
-  default: ({ children }: { children: React.ReactNode }) => React.createElement("div", { "data-testid": "console-frame" }, children),
+  default: ({ children, extraCrumbs }: { children: React.ReactNode; extraCrumbs?: { label: string }[] }) =>
+    React.createElement("div", { "data-testid": "console-frame", "data-crumbs": (extraCrumbs ?? []).map((c) => c.label).join(">") }, children),
 }));
 vi.mock("../employer/VerificationBanner", () => ({ default: () => null }));
 
@@ -93,5 +94,12 @@ describe("EmployerShell tab title", () => {
     data = { companyStatus: "approved", companyStatusLoading: false, companyStatusError: false };
     render(<EmployerShell><p>Page</p></EmployerShell>);
     expect(document.title).toBe(`${title} · HireStepX`);
+  });
+
+  it("adds a leaf crumb on the post-a-job page so the header names the page", () => {
+    pathname = "/employer/requirements/new";
+    data = { companyStatus: "approved", companyStatusLoading: false, companyStatusError: false };
+    render(<EmployerShell><p>Page</p></EmployerShell>);
+    expect(screen.getByTestId("console-frame").getAttribute("data-crumbs")).toBe("Post a job");
   });
 });
