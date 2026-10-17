@@ -302,11 +302,13 @@ export default function EmployerShell({ children }: { children: React.ReactNode 
         headerActionsRef={setHeaderSlot}
         banners={<VerificationBanner />}
       >
-        {isSelfCardedRoute(pathname ?? "") ? pageBody : (
-          <div className="mb-16 box-border flex min-h-full w-full min-w-0 flex-none flex-col rounded-2xl border border-hx-line bg-white p-4">
-            {pageBody}
-          </div>
-        )}
+        <div className={isMessagesRoute ? "flex min-h-0 w-full min-w-0 flex-1 flex-col" : "mx-auto flex min-h-0 w-full max-w-[1360px] min-w-0 flex-1 flex-col"}>
+          {isSelfCardedRoute(pathname ?? "") ? pageBody : (
+            <div className="mb-16 box-border flex min-h-full w-full min-w-0 flex-none flex-col rounded-2xl border border-hx-line bg-white p-4">
+              {pageBody}
+            </div>
+          )}
+        </div>
       </AppShellFrame>
     </EmployerHeaderSlotContext.Provider>
     </EmployerBreadcrumbContext.Provider>

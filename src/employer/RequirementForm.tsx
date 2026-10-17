@@ -546,7 +546,7 @@ export function RequirementForm({
     </p>
   );
 
-  const bodyPadding: CSSProperties = { padding: "24px clamp(16px, 5vw, 104px)", display: "flex", flexDirection: "column", gap: 26 };
+  const bodyPadding: CSSProperties = { width: "100%", maxWidth: 1056, margin: "0 auto", boxSizing: "border-box", padding: "24px 28px", display: "flex", flexDirection: "column", gap: 26 };
   const section = (title: string | undefined, children: ReactNode) => <FormSection title={title}>{children}</FormSection>;
   const submitErrorEl = submitError && (
     <p role="alert" style={errorText}>{submitError}</p>

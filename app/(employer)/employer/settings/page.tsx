@@ -57,7 +57,7 @@ export default function EmployerSettingsPage() {
   }
 
   return (
-    <div style={{ width: "100%" }}>
+    <div style={{ width: "100%", maxWidth: 960, margin: "0 auto" }}>
       <div style={{ background: t.white, border: `1px solid ${t.line}`, borderRadius: 16, overflow: "hidden" }}>
         <PageHeader title="Settings" desc="Update your company profile, manage your account security, review your purchases and set notification sounds." />
 

@@ -177,7 +177,7 @@ export function PageHeader({ title, desc }: { title: string; desc: string }) {
 
 export function FlatSection({ title, children, last }: { title: string; children: React.ReactNode; last?: boolean }) {
   return (
-    <div style={{ padding: "24px clamp(16px, 5vw, 104px)", borderBottom: last ? "none" : `1px solid ${c.border}` }}>
+    <div style={{ padding: "24px 28px", borderBottom: last ? "none" : `1px solid ${c.border}` }}>
       <h2 style={{ fontFamily: font.ui, fontSize: 16, fontWeight: 600, color: c.ink, margin: "0 0 18px" }}>{title}</h2>
       {children}
     </div>

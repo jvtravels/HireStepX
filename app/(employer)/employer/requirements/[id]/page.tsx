@@ -339,7 +339,7 @@ export default function RequirementDetailPage() {
         </div>
       )}
 
-      <div className="grid min-w-0 gap-5 min-[1440px]:grid-cols-[minmax(0,1fr)_300px]">
+      <div className="grid min-w-0 gap-5 min-[1440px]:grid-cols-[minmax(0,1fr)_320px]">
       <JobHeader
         requirement={requirement}
         suspended={suspended}
