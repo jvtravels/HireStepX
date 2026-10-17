@@ -20,7 +20,7 @@ import {
 } from "./_requirement-match-helpers";
 import { extractResumeDetail, type ResumeDetail } from "./_resume-detail-helpers";
 import {
-  extractReadinessForecast,
+  extractReadinessBand,
   extractStarCompleteness,
   latestSessionByUser,
   roleMatches,
@@ -201,7 +201,7 @@ export function computeTrustedSessionStats(rows: GradedSessionRow[]): TrustedSes
   // the employer evidence panel uses; rows without report_json (not fetched
   // unless the requirement sets a bar) simply contribute nothing.
   for (const [uid, row] of latestSessionByUser(graded)) {
-    const readiness = extractReadinessForecast(row.report_json);
+    const readiness = extractReadinessBand(row.report_json);
     if (readiness) readinessBand.set(uid, readiness.band);
     const star = extractStarCompleteness(row.report_json);
     if (star) starPct.set(uid, star.pct);

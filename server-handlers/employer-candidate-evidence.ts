@@ -26,7 +26,7 @@ import { withAuthAndRateLimit, corsHeaders, withRequestId, slog } from "./_share
 import {
   extractEvidenceSkills,
   extractEvidenceQuotes,
-  extractReadinessForecast,
+  extractReadinessBand,
   extractStarCompleteness,
   extractSessionTrend,
   extractQuestionBreakdown,
@@ -239,7 +239,7 @@ export default async function handler(req: Request): Promise<Response> {
         quotes: latest ? scrubQuotes(extractEvidenceQuotes(latest.report_json)) : [],
         unlocked,
         roleFit,
-        readiness: latest ? extractReadinessForecast(latest.report_json) : null,
+        readiness: latest ? extractReadinessBand(latest.report_json) : null,
         starCompleteness: latest ? extractStarCompleteness(latest.report_json) : null,
         sessionDate: latest?.created_at ?? null,
         questions: latest ? scrubQuestions(extractQuestionBreakdown(latest.report_json, true)) : [],

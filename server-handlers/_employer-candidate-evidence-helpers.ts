@@ -98,20 +98,27 @@ export interface EvidenceReadiness {
   confidence: "low" | "medium" | "high";
 }
 
-/** Narrows report_json.readiness (see ReadinessForecast in
- *  evaluate-session.ts) to the band + confidence an employer card needs —
- *  drops estimatedHours/estimatedSessions/rationale, which are candidate-
- *  facing coaching detail with no meaning in an employer's shortlist. */
-export function extractReadinessForecast(reportJson: unknown): EvidenceReadiness | null {
+/** The band the candidate's latest session actually scored in, with the
+ *  report's own score confidence. Deliberately NOT report_json.readiness: that
+ *  block's targetBand is the next band UP the candidate is practising toward
+ *  ("~30 hours to reach Hire"), so reading it as their level showed a
+ *  Lean-hire candidate as "Hire" and let them clear a "Hire or better" bar.
+ *  Sessions below Lean hire have no band to show, so they return null. */
+export function extractReadinessBand(reportJson: unknown): EvidenceReadiness | null {
   if (!reportJson || typeof reportJson !== "object") return null;
-  const readiness = (reportJson as { readiness?: unknown }).readiness;
-  if (!readiness || typeof readiness !== "object") return null;
-  const band = (readiness as { targetBand?: unknown }).targetBand;
-  const confidence = (readiness as { confidence?: unknown }).confidence;
+  const report = reportJson as { band?: unknown; overallScore?: unknown; scoreConfidence?: unknown; calibration?: { bands?: Partial<Record<ReadinessBand, unknown>> } };
+  let band: unknown = report.band;
+  if (typeof band !== "string") {
+    const score = report.overallScore;
+    const bands = report.calibration?.bands;
+    if (typeof score !== "number" || !bands) return null;
+    band = READINESS_BANDS.find((b) => typeof bands[b] === "number" && score >= (bands[b] as number));
+  }
   if (typeof band !== "string" || !READINESS_BANDS.includes(band as ReadinessBand)) return null;
+  const conf = report.scoreConfidence;
   return {
     band: band as ReadinessBand,
-    confidence: confidence === "low" || confidence === "medium" || confidence === "high" ? confidence : "low",
+    confidence: typeof conf === "number" ? (conf >= 0.85 ? "high" : conf >= 0.7 ? "medium" : "low") : "low",
   };
 }
 

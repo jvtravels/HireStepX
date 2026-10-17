@@ -21,7 +21,7 @@ export interface CandidatePoolRow {
       re-deriving it here, since _resume-detail-helpers.ts already owns
       that parsing. */
   years_experience?: number | null;
-  /** Band + STAR-completeness %% from extractReadinessForecast/
+  /** Band + STAR-completeness %% from extractReadinessBand/
       extractStarCompleteness (_employer-candidate-evidence-helpers.ts)
       against the candidate's latest practice session. null/undefined when
       no session has been evaluated yet — treated as "unknown", never as

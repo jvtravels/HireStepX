@@ -27,7 +27,7 @@ function ReadinessPanel({ evidence, sessions }: { evidence: CandidateEvidence; s
       </p>
       <KeyValueList>
         {readiness && (
-          <KeyValueRow label="Forecast">
+          <KeyValueRow label="Latest band">
             {READINESS_LABEL[readiness.band]} <span className="font-normal text-hx-ink-soft">({readiness.confidence} confidence)</span>
           </KeyValueRow>
         )}
@@ -42,7 +42,7 @@ function ReadinessPanel({ evidence, sessions }: { evidence: CandidateEvidence; s
           </KeyValueRow>
         )}
       </KeyValueList>
-      {readiness && <p className="m-0 mt-3.5 text-[12px] text-hx-ink-soft">The forecast looks at the whole latest session. It is not an average of the answer scores above.</p>}
+      {readiness && <p className="m-0 mt-3.5 text-[12px] text-hx-ink-soft">The band reflects the whole latest session. It is not an average of the answer scores above.</p>}
     </Panel>
   );
 }

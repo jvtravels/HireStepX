@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import {
   extractEvidenceSkills,
+  extractReadinessBand,
   extractSessionTrend,
   extractQuestionBreakdown,
   extractDeliveryMetrics,
@@ -394,5 +395,34 @@ describe("selectSessionsForRole", () => {
     expect(selectSessionsForRole([], "Product Designer").fit.status).toBe("none");
     const negotiationOnly = row({ type: "salary-negotiation", target_role: "Software Engineer" });
     expect(selectSessionsForRole([negotiationOnly], "Product Designer").fit.status).toBe("none");
+  });
+});
+
+describe("extractReadinessBand", () => {
+  it("reports the band the session scored in, not the band the forecast aims for", () => {
+    const report = { band: "leanHire", scoreConfidence: 0.9, readiness: { targetBand: "hire", confidence: "high" } };
+    expect(extractReadinessBand(report)).toEqual({ band: "leanHire", confidence: "high" });
+  });
+
+  it("buckets score confidence the same way the session report does", () => {
+    expect(extractReadinessBand({ band: "hire", scoreConfidence: 0.75 })?.confidence).toBe("medium");
+    expect(extractReadinessBand({ band: "hire", scoreConfidence: 0.5 })?.confidence).toBe("low");
+    expect(extractReadinessBand({ band: "hire" })?.confidence).toBe("low");
+  });
+
+  it("returns null below Lean hire so no readiness is claimed", () => {
+    expect(extractReadinessBand({ band: "noHire", readiness: { targetBand: "leanHire" } })).toBeNull();
+    expect(extractReadinessBand({ band: "strongNoHire" })).toBeNull();
+  });
+
+  it("derives the band from the score and calibration on older reports without one", () => {
+    const bands = { strongHire: 85, hire: 70, leanHire: 55, noHire: 40 };
+    expect(extractReadinessBand({ overallScore: 72, calibration: { bands } })?.band).toBe("hire");
+    expect(extractReadinessBand({ overallScore: 30, calibration: { bands } })).toBeNull();
+  });
+
+  it("ignores reports it cannot read", () => {
+    expect(extractReadinessBand(null)).toBeNull();
+    expect(extractReadinessBand({ readiness: { targetBand: "hire" } })).toBeNull();
   });
 });
