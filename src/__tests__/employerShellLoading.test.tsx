@@ -3,9 +3,10 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import React from "react";
 import EmployerShell from "../employer/EmployerShell";
 
+let pathname = "/employer/jobs";
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
-  usePathname: () => "/employer/jobs",
+  usePathname: () => pathname,
 }));
 vi.mock("next/link", () => ({
   default: ({ children, href, ...props }: { children: React.ReactNode; href: string }) => React.createElement("a", { href, ...props }, children),
@@ -29,6 +30,7 @@ beforeEach(() => {
   window.localStorage.clear();
   refreshCompanyStatus.mockClear();
   data = { companyStatus: "none", companyStatusLoading: false, companyStatusError: false };
+  pathname = "/employer/jobs";
 });
 
 describe("EmployerShell first paint", () => {
@@ -77,5 +79,19 @@ describe("EmployerShell first paint", () => {
     data = { companyStatus: "none", companyStatusLoading: false, companyStatusError: false };
     render(<EmployerShell><p>Onboarding</p></EmployerShell>);
     expect(window.localStorage.getItem("hsx_employer_console")).toBeNull();
+  });
+});
+
+describe("EmployerShell tab title", () => {
+  it.each([
+    ["/employer/requirements/r1/compare", "Compare candidates"],
+    ["/employer/requirements/r1/edit", "Edit job"],
+    ["/employer/requirements/r1/outcome", "Hiring outcome"],
+    ["/employer/requirements/r1", "Jobs"],
+  ])("titles %s as %s", (path, title) => {
+    pathname = path;
+    data = { companyStatus: "approved", companyStatusLoading: false, companyStatusError: false };
+    render(<EmployerShell><p>Page</p></EmployerShell>);
+    expect(document.title).toBe(`${title} · HireStepX`);
   });
 });

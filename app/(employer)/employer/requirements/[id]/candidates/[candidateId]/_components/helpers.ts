@@ -341,7 +341,7 @@ export interface QuestionSummary { count: number; avg: number; strong: number; w
 export function summarizeQuestions(questions: EvidenceQuestion[]): QuestionSummary | null {
   const answered = questions.filter((q) => q.verdict !== "skipped");
   if (answered.length === 0) return null;
-  const withStar = answered.filter((q) => q.star);
+  const withStar = answered.filter((q) => q.star && q.difficulty !== "warmup");
   return {
     count: answered.length,
     avg: Math.round(answered.reduce((n, q) => n + q.score, 0) / answered.length),

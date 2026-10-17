@@ -190,6 +190,9 @@ export default function EmployerShell({ children }: { children: React.ReactNode 
     pathname === "/employer/settings" ? "Settings"
     : pathname === "/employer/messages" ? "Messages"
     : pathname === "/employer/requirements/new" ? "Post a job"
+    : pathname?.endsWith("/compare") ? "Compare candidates"
+    : pathname?.endsWith("/edit") ? "Edit job"
+    : pathname?.endsWith("/outcome") ? "Hiring outcome"
     : pathname === "/employer/jobs" || pathname?.startsWith("/employer/requirements/") ? "Jobs"
     : "Dashboard";
   const pageTitle = breadcrumbExtra?.length ? breadcrumbExtra[breadcrumbExtra.length - 1].label : sectionTitle;

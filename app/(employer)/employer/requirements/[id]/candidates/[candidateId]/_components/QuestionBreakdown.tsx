@@ -59,8 +59,8 @@ function QuestionRow({ q, n, candidate, requestUi }: { q: EvidenceQuestion; n: n
       </div>
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 pl-7.5 text-[12px] text-hx-ink-soft">
         {q.difficulty && <span>{DIFFICULTY_LABEL[q.difficulty]} question</span>}
-        {q.star && <StarMarks star={q.star} />}
-        {q.length && <span>{LENGTH_LABEL[q.length.verdict]}, {q.length.wordCount} words</span>}
+        {q.star && q.difficulty !== "warmup" && <StarMarks star={q.star} />}
+        {q.length && <span>{LENGTH_LABEL[q.length.verdict]}, {q.length.wordCount} {q.length.wordCount === 1 ? "word" : "words"}</span>}
       </div>
     </div>
   );

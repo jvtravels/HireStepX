@@ -295,7 +295,7 @@ export default function AppShellFrame({
           <Separator orientation="vertical" style={{ height: 16, alignSelf: "center", flexShrink: 0 }} />
           <Breadcrumb style={{ flex: 1, minWidth: 0 }}>
             <BreadcrumbList style={{ fontFamily: F.sans, fontSize: 13, flexWrap: "nowrap", overflow: "hidden", alignItems: "center" }}>
-              {/* Root crumb is dropped on narrow phones so the current page label keeps the room. */}
+              {/* On narrow phones only the current (last) crumb is shown; the ancestors are reachable via the sidebar and browser back. */}
               <BreadcrumbItem className="h-5 shrink-0 overflow-hidden whitespace-nowrap max-[480px]:hidden">
                 <BreadcrumbLink onClick={() => onNavigate(breadcrumbRoot.path)} style={{ color: c.inkSoft, cursor: "pointer", display: "flex", alignItems: "center" }}>
                   {breadcrumbRoot.label}
@@ -303,7 +303,7 @@ export default function AppShellFrame({
               </BreadcrumbItem>
               <BreadcrumbSeparator className="max-[480px]:hidden" />
               {extraCrumbs && extraCrumbs.length > 0 ? (
-                <BreadcrumbItem className="h-5 min-w-0 shrink-[3] overflow-hidden whitespace-nowrap">
+                <BreadcrumbItem className="h-5 min-w-0 shrink-[3] overflow-hidden whitespace-nowrap max-[480px]:hidden">
                   <BreadcrumbLink onClick={() => onNavigate(pageLabelPath ?? breadcrumbRoot.path)} style={{ color: c.inkSoft, cursor: "pointer", display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     {pageLabel}
                   </BreadcrumbLink>
@@ -319,8 +319,8 @@ export default function AppShellFrame({
                 const isLast = i === extraCrumbs.length - 1;
                 return (
                   <Fragment key={`${crumb.label}-${i}`}>
-                    <BreadcrumbSeparator />
-                    <BreadcrumbItem className={isLast || !crumb.path ? "h-5 min-w-0 overflow-hidden whitespace-nowrap" : "h-5 min-w-0 shrink-[3] overflow-hidden whitespace-nowrap"}>
+                    <BreadcrumbSeparator className="max-[480px]:hidden" />
+                    <BreadcrumbItem className={isLast || !crumb.path ? "h-5 min-w-0 overflow-hidden whitespace-nowrap" : "h-5 min-w-0 shrink-[3] overflow-hidden whitespace-nowrap max-[480px]:hidden"}>
                       {isLast || !crumb.path ? (
                         <BreadcrumbPage style={{ fontSize: 13, fontWeight: 600, color: c.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>
                           {crumb.label}

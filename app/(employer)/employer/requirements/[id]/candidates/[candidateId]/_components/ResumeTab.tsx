@@ -145,8 +145,8 @@ export function ResumeTab({ candidate }: { candidate: Candidate }) {
             key: "strengths",
             weight: 2 + strengths.length * 2,
             node: (
-              <Panel id="strengths-heading" title="Interview strengths">
-                <IconList label="Interview strengths" items={strengths} icon={TrendingUpIcon} iconClassName="size-4 text-hx-success" />
+              <Panel id="strengths-heading" title="Strengths predicted from resume">
+                <IconList label="Strengths predicted from resume" items={strengths} icon={TrendingUpIcon} iconClassName="size-4 text-hx-success" />
               </Panel>
             ),
           },
