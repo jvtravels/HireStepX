@@ -141,6 +141,18 @@ async function reconcileOne(order: UnlockOrderRow, p: ReconcileParams, f: typeof
   }
 }
 
+async function sweepQuery(p: ReconcileParams, f: typeof fetch, cutoff: string, order: string, limit: number): Promise<UnlockOrderRow[]> {
+  const res = await f(
+    `${p.supabaseUrl}/rest/v1/employer_unlock_orders?status=in.(created,paid)&created_at=lt.${encodeURIComponent(cutoff)}` +
+      `&select=${ORDER_SELECT}&order=${order}&limit=${limit}`,
+    { headers: p.headers },
+  );
+  if (!res.ok) throw new Error(`order sweep query failed (${res.status})`);
+  const rows = (await res.json().catch(() => null)) as UnlockOrderRow[] | null;
+  if (!Array.isArray(rows)) throw new Error("order sweep returned a non-array body");
+  return rows;
+}
+
 export async function reconcileUnlockOrders(p: ReconcileParams): Promise<ReconcileSummary> {
   const f = p.fetchImpl ?? fetch;
   const now = (p.now ?? (() => new Date()))();
@@ -148,14 +160,19 @@ export async function reconcileUnlockOrders(p: ReconcileParams): Promise<Reconci
   const cutoff = new Date(now.getTime() - STALE_AFTER_MS).toISOString();
   const limit = Math.max(1, Math.min(p.batchSize ?? DEFAULT_BATCH, 200));
 
-  const res = await f(
-    `${p.supabaseUrl}/rest/v1/employer_unlock_orders?status=in.(created,paid)&created_at=lt.${encodeURIComponent(cutoff)}` +
-      `&select=${ORDER_SELECT}&order=created_at.asc&limit=${limit}`,
-    { headers: p.headers },
-  );
-  if (!res.ok) throw new Error(`order sweep query failed (${res.status})`);
-  const orders = (await res.json().catch(() => null)) as UnlockOrderRow[] | null;
-  if (!Array.isArray(orders)) throw new Error("order sweep returned a non-array body");
+  // Oldest-first alone starves new orders behind a backlog of orders that keep erroring
+  // (they stay 'created'/'paid' and are always first in line). Take the oldest slice for
+  // the backlog and the newest slice so a fresh paid-but-unfulfilled order is always reached.
+  const newestCount = limit >= 5 ? Math.max(1, Math.floor(limit / 5)) : 0;
+  const oldest = await sweepQuery(p, f, cutoff, "created_at.asc", limit - newestCount);
+  const newest = newestCount > 0 ? await sweepQuery(p, f, cutoff, "created_at.desc", newestCount) : [];
+  const seen = new Set<string>();
+  const orders: UnlockOrderRow[] = [];
+  for (const o of [...oldest, ...newest]) {
+    if (seen.has(o.razorpay_order_id)) continue;
+    seen.add(o.razorpay_order_id);
+    orders.push(o);
+  }
 
   summary.scanned = orders.length;
   for (let i = 0; i < orders.length; i += CONCURRENCY) {

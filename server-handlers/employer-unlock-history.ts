@@ -12,12 +12,19 @@
  * Each purchase also carries invoiceNo, refundedAt, orderId/orderStatus and the
  * employer's gstin/billingName (all nullable, additive), plus creditAppliedPaise
  * (the part of the price paid from account credit; amount is the cash part).
+ *
+ * invoiceSnapshot (migration 0045) is the frozen supplier/buyer/tax data written
+ * at fulfilment; the client renders documents from it so a later profile or env
+ * change cannot rewrite them. null for older rows (the client falls back to the
+ * live gstin/billingName). partialRefundPaise/partialRefundAt back the credit
+ * note for a partial refund.
  */
 
 export const config = { runtime: "edge" };
 
 import { withAuthAndRateLimit, corsHeaders, withRequestId, slog } from "./_shared";
 import { creditSpentOnOrders } from "./_employer-credit";
+import { parseInvoiceSnapshot } from "./_unlock-tax";
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
@@ -58,18 +65,15 @@ export default async function handler(req: Request): Promise<Response> {
 
   try {
     const baseUrl = `${SUPABASE_URL}/rest/v1/employer_unlock_payments?employer_id=eq.${encodeURIComponent(auth.userId)}`;
-    // Invoice/refund columns arrive with migration 0032; fall back to the
-    // original column set so the list still loads on a database that hasn't
-    // applied it yet.
-    let res = await fetch(
-      `${baseUrl}&select=id,match_id,match_ids,amount,currency,created_at,razorpay_order_id,invoice_no,refunded_at,requirement_id&order=created_at.desc&limit=100`,
-      { headers: serviceHeaders() },
-    );
-    if (!res.ok) {
-      res = await fetch(
-        `${baseUrl}&select=id,match_id,match_ids,amount,currency,created_at&order=created_at.desc&limit=100`,
-        { headers: serviceHeaders() },
-      );
+    // Invoice/refund columns arrive with migration 0032 and the snapshot /
+    // partial-refund columns with 0045; fall back one level at a time so the
+    // list still loads on a database that hasn't applied them yet.
+    const core = "id,match_id,match_ids,amount,currency,created_at";
+    const withInvoice = `${core},razorpay_order_id,invoice_no,refunded_at,requirement_id`;
+    const selects = [`${withInvoice},invoice_snapshot,partial_refund_paise,partial_refund_at`, withInvoice, core];
+    let res = await fetch(`${baseUrl}&select=${selects[0]}&order=created_at.desc&limit=100`, { headers: serviceHeaders() });
+    for (let i = 1; !res.ok && i < selects.length; i++) {
+      res = await fetch(`${baseUrl}&select=${selects[i]}&order=created_at.desc&limit=100`, { headers: serviceHeaders() });
     }
     if (!res.ok) {
       // Include the PostgREST body: a missing column (unapplied migration)
@@ -88,6 +92,9 @@ export default async function handler(req: Request): Promise<Response> {
       invoice_no?: string | null;
       refunded_at?: string | null;
       requirement_id?: string | null;
+      invoice_snapshot?: unknown;
+      partial_refund_paise?: number | null;
+      partial_refund_at?: string | null;
     }>;
 
     // Snapshotted at unlock time (supabase-migrations/0026) so a candidate
@@ -173,6 +180,9 @@ export default async function handler(req: Request): Promise<Response> {
         orderId: r.razorpay_order_id ?? null,
         orderStatus: (r.razorpay_order_id && statusByOrderId.get(r.razorpay_order_id)) || null,
         creditAppliedPaise: (r.razorpay_order_id && creditByOrderId.get(r.razorpay_order_id)) || 0,
+        invoiceSnapshot: parseInvoiceSnapshot(r.invoice_snapshot),
+        partialRefundPaise: r.partial_refund_paise ?? 0,
+        partialRefundAt: r.partial_refund_at ?? null,
         gstin,
         billingName,
         candidates: matchIds.map((id) => {

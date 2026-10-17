@@ -38,8 +38,12 @@ export interface FakeLedger {
   razorpay_order_id: string;
   employer_id: string;
   amount: number;
-  invoice_no: string;
+  invoice_no: string | null;
   refunded_at: string | null;
+  /** Migration 0045 columns. */
+  invoice_snapshot?: unknown;
+  partial_refund_paise?: number | null;
+  partial_refund_at?: string | null;
   match_id?: string;
   match_ids?: string[];
 }
@@ -75,13 +79,22 @@ export class FakeUnlockDb {
   calls: Array<{ method: string; url: string }> = [];
   /** Return true to make a request fail with a 500. */
   failWhen: ((method: string, url: string) => boolean) | null = null;
-  private invoiceSeq = 0;
+  /** Employer billing identity served from `employers` (what the invoice snapshot freezes). */
+  employers = new Map<string, { company_name: string; billing_name: string; gstin: string }>();
+  /** true = migration 0045 applied: the invoice_no default is gone, assign_unlock_invoice_no exists and the
+   *  snapshot / partial-refund columns exist. false = the pre-0045 schema, where the column default numbers
+   *  every inserted row and the new columns / RPC answer like PostgREST does for unknown ones. */
+  applied0045 = false;
+  /** Sequence values handed out, so a test can assert none was burned. */
+  invoiceSeq = 0;
 
   seed(o: { orders?: FakeOrder[]; matches?: FakeMatch[] }) {
     for (const x of o.orders ?? []) this.orders.set(x.razorpay_order_id, { ...x });
     for (const m of o.matches ?? []) this.matches.set(m.id, { ...m });
     return this;
   }
+
+  private nextInvoiceNo() { return `HSX-2610-${String(++this.invoiceSeq).padStart(6, "0")}`; }
 
   handles(url: string) { return url.startsWith(SUPABASE); }
 
@@ -109,7 +122,8 @@ export class FakeUnlockDb {
       if (lt && q.get("created_at")?.startsWith("lt.")) rows = rows.filter((r) => r.created_at < lt);
       if (q.get("employer_id")) rows = rows.filter((r) => r.employer_id === eq(q.get("employer_id")));
       if (method === "GET") {
-        rows.sort((a, b) => a.created_at.localeCompare(b.created_at));
+        const dir = q.get("order") === "created_at.desc" ? -1 : 1;
+        rows.sort((a, b) => dir * a.created_at.localeCompare(b.created_at));
         return json(rows.slice(0, Number(q.get("limit") || 1000)));
       }
       if (method === "PATCH") {
@@ -126,15 +140,37 @@ export class FakeUnlockDb {
     if (table === "employer_unlock_payments") {
       if (method === "POST") {
         if (this.ledger.some((l) => l.razorpay_payment_id === body.razorpay_payment_id)) return json({ code: "23505" }, 409);
-        const row: FakeLedger = { ...body, invoice_no: `HSX-2610-${String(++this.invoiceSeq).padStart(6, "0")}`, refunded_at: null };
+        const row: FakeLedger = { ...body, invoice_no: this.applied0045 ? null : this.nextInvoiceNo(), refunded_at: null };
         this.ledger.push(row);
         return json([row], 201);
       }
       const pid = eq(q.get("razorpay_payment_id"));
       let rows = this.ledger.filter((l) => !pid || l.razorpay_payment_id === pid);
       if (q.get("refunded_at") === "is.null") rows = rows.filter((l) => !l.refunded_at);
-      if (method === "PATCH") { for (const r of rows) Object.assign(r, body); return json(null, 204); }
+      if (q.get("invoice_snapshot") === "is.null") rows = rows.filter((l) => l.invoice_snapshot == null);
+      const or = q.get("or")?.match(/^\(partial_refund_paise\.is\.null,partial_refund_paise\.lt\.(\d+)\)$/);
+      if (or) rows = rows.filter((l) => l.partial_refund_paise == null || l.partial_refund_paise < Number(or[1]));
+      if (method === "PATCH") {
+        const usesNewColumn = body && ("invoice_snapshot" in body || "partial_refund_paise" in body);
+        if (usesNewColumn && !this.applied0045) return json({ code: "PGRST204", message: "Could not find the column in the schema cache" }, 400);
+        for (const r of rows) Object.assign(r, body);
+        return json(null, 204);
+      }
       return json(rows);
+    }
+
+    if (table === "rpc/assign_unlock_invoice_no") {
+      if (!this.applied0045) return json({ code: "PGRST202", message: "function not found" }, 404);
+      const row = this.ledger.find((l) => l.razorpay_payment_id === body.p_payment_id && l.amount > 0);
+      if (!row) return json(null);
+      if (!row.invoice_no) row.invoice_no = this.nextInvoiceNo();
+      return json(row.invoice_no);
+    }
+
+    if (table === "employers") {
+      const id = eq(q.get("id"));
+      const e = id ? this.employers.get(id) : undefined;
+      return json(e ? [e] : []);
     }
 
     if (table === "requirement_matches") {
@@ -155,7 +191,7 @@ export class FakeUnlockDb {
   };
 }
 
-export interface FakeRzpPayment { id: string; status: string; amount: number; order_id: string; refund_status?: string | null }
+export interface FakeRzpPayment { id: string; status: string; amount: number; order_id: string; refund_status?: string | null; amount_refunded?: number }
 
 export function fakeRazorpay(cfg: { orders?: Record<string, { amount: number; notes?: Record<string, unknown> }>; payments?: FakeRzpPayment[]; down?: boolean }) {
   return async (input: RequestInfo | URL): Promise<Response> => {

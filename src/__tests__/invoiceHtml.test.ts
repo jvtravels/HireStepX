@@ -147,7 +147,7 @@ describe("credit note", () => {
   it("is numbered CN-<invoice no>, references the original and negates the same breakup", () => {
     const html = buildInvoiceHtml(cn);
     expect(html).toContain("<h1>Credit note</h1>");
-    expect(html).toContain("No. CN-HSX-2610-0007");
+    expect(html).toContain("No. CN-2610-0007");
     expect(html).toContain("against tax invoice HSX-2610-0007 dated 5 October 2026");
     expect(html).toContain("9 October 2026");
     expect(html).toContain("CGST @ 9%");
@@ -166,7 +166,7 @@ describe("credit note", () => {
   });
 
   it("points a refunded tax invoice at its credit note", () => {
-    expect(buildInvoiceHtml({ ...taxBase, refunded: true })).toContain("see credit note CN-HSX-2610-0007");
+    expect(buildInvoiceHtml({ ...taxBase, refunded: true })).toContain("see credit note CN-2610-0007");
   });
 });
 

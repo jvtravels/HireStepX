@@ -1,10 +1,11 @@
 /* Emailed receipt for a completed employer unlock purchase. Non-blocking and
  * best-effort: it runs only for the call that recorded the payment ledger row
  * (so once per payment), never throws, and a missing Resend key / address just
- * skips it. Until a supplier GSTIN is configured the email says plainly that it
+ * skips it. Until a supplier GSTIN (NEXT_PUBLIC_LEGAL_GSTIN) is configured the email says plainly that it
  * is a receipt and not a GST tax invoice, matching the in-app document. */
 
 import { slog } from "./_shared";
+import { readLegalEntity } from "../data/legal-entity";
 import { emailShell, title, para, b, dataCard, mono, button, escapeHtml } from "./_email-theme";
 
 declare const process: { env: Record<string, string | undefined> };
@@ -25,8 +26,9 @@ function rupees(paise: number): string {
   return `₹${(paise / 100).toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
 }
 
+/** Same source as the in-app invoice (data/legal-entity.ts), so the email and the document cannot disagree. */
 export function hasSupplierGstin(): boolean {
-  return (process.env.SUPPLIER_GSTIN || process.env.NEXT_PUBLIC_SUPPLIER_GSTIN || "").trim().length > 0;
+  return readLegalEntity().gstin.length > 0;
 }
 
 export function buildReceiptEmail(r: UnlockReceipt, opts: { company: string | null; appUrl: string; taxInvoice: boolean }): { subject: string; html: string } {

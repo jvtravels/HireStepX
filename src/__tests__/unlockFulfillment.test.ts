@@ -200,17 +200,25 @@ describe("fulfillUnlockOrder — refusals and failure handling", () => {
 
 describe("razorpay reads", () => {
   it("toCapturedPayment parses entities and rejects malformed ones", () => {
-    expect(toCapturedPayment({ id: "pay_1", status: "captured", amount: 5900, order_id: "order_1" })).toEqual(PAY);
+    expect(toCapturedPayment({ id: "pay_1", status: "captured", amount: 5900, order_id: "order_1" })).toEqual({ ...PAY, refundStatus: null, amountRefunded: 0 });
+    expect(toCapturedPayment({ id: "pay_1", status: "captured", amount: 5900, refund_status: "full", amount_refunded: 5900 })).toMatchObject({ refundStatus: "full", amountRefunded: 5900 });
     expect(toCapturedPayment({ id: "pay_1" })).toBeNull();
     expect(toCapturedPayment(null)).toBeNull();
   });
 
-  it("findCapturedPaymentForOrder ignores fully refunded payments and surfaces Razorpay errors", async () => {
+  it("findCapturedPaymentForOrder prefers a live capture, still returns a fully refunded one (so the refund guard closes the order), and surfaces Razorpay errors", async () => {
     const f = fakeRazorpay({ payments: [
       { id: "pay_a", status: "captured", amount: 5900, order_id: "order_1", refund_status: "full" },
       { id: "pay_b", status: "failed", amount: 5900, order_id: "order_1" },
     ] }) as unknown as typeof fetch;
-    expect(await findCapturedPaymentForOrder("order_1", "k", "s", f)).toBeNull();
+    expect(await findCapturedPaymentForOrder("order_1", "k", "s", f)).toMatchObject({ id: "pay_a", refundStatus: "full" });
+    const live = fakeRazorpay({ payments: [
+      { id: "pay_a", status: "captured", amount: 5900, order_id: "order_1", refund_status: "full", amount_refunded: 5900 },
+      { id: "pay_c", status: "captured", amount: 5900, order_id: "order_1" },
+    ] }) as unknown as typeof fetch;
+    expect(await findCapturedPaymentForOrder("order_1", "k", "s", live)).toMatchObject({ id: "pay_c" });
+    const none = fakeRazorpay({ payments: [{ id: "pay_b", status: "failed", amount: 5900, order_id: "order_1" }] }) as unknown as typeof fetch;
+    expect(await findCapturedPaymentForOrder("order_1", "k", "s", none)).toBeNull();
     const down = fakeRazorpay({ down: true }) as unknown as typeof fetch;
     expect(await findCapturedPaymentForOrder("order_1", "k", "s", down)).toBe("error");
   });

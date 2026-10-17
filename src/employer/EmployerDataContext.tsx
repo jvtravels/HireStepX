@@ -6,6 +6,7 @@ import { apiFetch } from "@/apiClient";
 import type { CandidateRequestDto, CreateRequestBody } from "./_candidateRequestTypes";
 import { captureClientEvent } from "@/posthogClient";
 import { isDashboardData, type EmployerDashboardData, type DashboardRange } from "./dashboardData";
+import type { InvoiceSnapshot } from "../../server-handlers/_unlock-tax";
 import { RequirementSummary, Requirement, Candidate, RequirementStage, RequirementFormValues, CandidateStatus, ArchiveDisposition } from "./mockData";
 
 /* Real backend layer for the employer console — see server-handlers/
@@ -155,6 +156,11 @@ export interface UnlockPurchase {
   creditAppliedPaise?: number;
   gstin?: string | null;
   billingName?: string | null;
+  /** Frozen invoice data from fulfilment (migration 0045); null/absent on legacy rows. */
+  invoiceSnapshot?: InvoiceSnapshot | null;
+  /** Cumulative paise refunded when the payment was only partly refunded. */
+  partialRefundPaise?: number;
+  partialRefundAt?: string | null;
 }
 
 export interface CreditEvent {

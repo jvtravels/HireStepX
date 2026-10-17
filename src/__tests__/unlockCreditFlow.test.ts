@@ -112,12 +112,11 @@ beforeEach(() => {
   vi.mocked(slog.error).mockClear();
   vi.mocked(slog.warn).mockClear();
   delete process.env.RESEND_API_KEY;
-  delete process.env.SUPPLIER_GSTIN;
-  delete process.env.NEXT_PUBLIC_SUPPLIER_GSTIN;
+  delete process.env.NEXT_PUBLIC_LEGAL_GSTIN;
 });
 afterEach(() => {
   delete process.env.RESEND_API_KEY;
-  delete process.env.SUPPLIER_GSTIN;
+  delete process.env.NEXT_PUBLIC_LEGAL_GSTIN;
 });
 
 const spentRow = (ref: string, amount: number): LedgerRow => ({ employer_id: "emp-1", amount: -amount, kind: "spend", order_ref: ref, created_at: "2026-10-09T00:00:00Z" });
@@ -235,8 +234,8 @@ describe("receipt email on fulfilment", () => {
     expect(mail.headers["Idempotency-Key"]).toBe("unlock-receipt-pay_1");
   });
 
-  it("calls it a tax invoice once SUPPLIER_GSTIN is configured", async () => {
-    process.env.SUPPLIER_GSTIN = "29ABCDE1234F1Z5";
+  it("calls it a tax invoice once NEXT_PUBLIC_LEGAL_GSTIN is configured", async () => {
+    process.env.NEXT_PUBLIC_LEGAL_GSTIN = "29ABCDE1234F1Z5";
     db.seed({ orders: [order()], matches: [match("m1")] });
     await fulfil();
     await vi.waitFor(() => expect(credit.resend).toHaveLength(1));
@@ -274,7 +273,7 @@ describe("receipt email on fulfilment", () => {
     expect(buildReceiptEmail(base, { company: "Acme", appUrl: "https://x", taxInvoice: false }).html).toContain("Account credit applied");
     expect(buildReceiptEmail({ ...base, creditPaise: 0 }, { company: null, appUrl: "https://x", taxInvoice: false }).html).not.toContain("Account credit applied");
     expect(hasSupplierGstin()).toBe(false);
-    process.env.NEXT_PUBLIC_SUPPLIER_GSTIN = "29ABCDE1234F1Z5";
+    process.env.NEXT_PUBLIC_LEGAL_GSTIN = "29ABCDE1234F1Z5";
     expect(hasSupplierGstin()).toBe(true);
   });
 });

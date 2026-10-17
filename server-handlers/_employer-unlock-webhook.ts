@@ -13,6 +13,9 @@
  *                                      refunded_at, relock the matches THIS
  *                                      order unlocked; credit the order generated is
  *                                      clawed back and credit spent on it released
+ *                                      A partial refund leaves the order untouched and records
+ *                                      partial_refund_paise on the ledger row (migration 0045) so
+ *                                      the employer can download a credit note for it.
  *   payment.dispute.*               -> order 'disputed' + slog.error; no
  *                                      automatic relock (support decides). A LOST
  *                                      dispute claws back the credit the order
@@ -111,6 +114,26 @@ async function relockOrderMatches(
   return core.ok;
 }
 
+/** Raises partial_refund_paise to the cumulative refunded amount (never lowers it, so the
+ *  refund.created + refund.processed pair is a no-op the second time). "unsupported" when
+ *  migration 0045 is unapplied: the refund is then only logged for manual review. */
+async function recordPartialRefund(
+  supabaseUrl: string, headers: Record<string, string>, paymentId: string, refundedPaise: number, f: typeof fetch, now: Date,
+): Promise<"recorded" | "unsupported" | "error"> {
+  const res = await f(
+    `${supabaseUrl}/rest/v1/employer_unlock_payments?razorpay_payment_id=eq.${encodeURIComponent(paymentId)}` +
+      `&or=(partial_refund_paise.is.null,partial_refund_paise.lt.${refundedPaise})`,
+    {
+      method: "PATCH",
+      headers: { ...headers, "Content-Type": "application/json", Prefer: "return=minimal" },
+      body: JSON.stringify({ partial_refund_paise: refundedPaise, partial_refund_at: now.toISOString() }),
+    },
+  );
+  if (res.ok) return "recorded";
+  const text = await res.text().catch(() => "");
+  return res.status === 400 && /PGRST204|42703|column/i.test(text) ? "unsupported" : "error";
+}
+
 async function stampLedgerRefunded(
   supabaseUrl: string, headers: Record<string, string>, paymentId: string, f: typeof fetch, now: Date,
 ): Promise<boolean> {
@@ -189,12 +212,18 @@ export async function handleEmployerUnlockWebhook(p: UnlockWebhookParams): Promi
     if (order === "error") return retry("order lookup failed");
     if (!order) return { handled: false };
 
+    // The payment entity carries the running total, so the refund that completes a series of
+    // partial refunds is recognised as the full refund it is.
+    const paidEntity = event?.payload?.payment?.entity;
     const refundAmount = typeof refund?.amount === "number" ? refund.amount : 0;
-    if (refundAmount < order.amount) {
+    const refundedTotal = Math.max(refundAmount, typeof paidEntity?.amount_refunded === "number" ? paidEntity.amount_refunded : 0);
+    if (refundedTotal < order.amount) {
+      const recorded = await recordPartialRefund(p.supabaseUrl, p.headers, paymentId, refundedTotal, f, now);
+      if (recorded === "error") return retry("partial refund record failed");
       slog.warn("partial refund on employer unlock order — matches left unlocked, manual review", {
-        code: "unlock_partial_refund", orderId: order.razorpay_order_id, paymentId, refundAmount, orderAmount: order.amount,
+        code: "unlock_partial_refund", orderId: order.razorpay_order_id, paymentId, refundAmount, refundedTotal, orderAmount: order.amount, recordedOnLedger: recorded === "recorded",
       });
-      return done({ received: true, unlock_refund: "partial_ignored" });
+      return done({ received: true, unlock_refund: "partial_ignored", creditNote: recorded === "recorded" });
     }
 
     // Relock + ledger first, status last: a failure in between is retried and

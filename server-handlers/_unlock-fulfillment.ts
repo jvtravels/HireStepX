@@ -17,6 +17,17 @@
  * Any failure between 1 and 4 leaves the order in 'paid', which the
  * reconciler retries — a captured payment is never silently dropped.
  *
+ * A payment Razorpay has already fully refunded never fulfils an order, on any
+ * path (verify, webhook, reconciler): an unfulfilled order is closed as
+ * 'refunded' and its held credit released; a fulfilled one is left to the
+ * refund webhook (relock + clawback).
+ *
+ * Invoice numbers are assigned here, once a cash purchase actually unlocked
+ * someone (assign_unlock_invoice_no, migration 0045), and the invoice-relevant
+ * fields are frozen onto the ledger row (invoice_snapshot) so a later profile
+ * or env change cannot rewrite a past invoice. Both degrade to the old
+ * behaviour while 0045 is unapplied.
+ *
  * A match is NOT unlocked when the candidate blocked the employer or turned
  * employer visibility off between order creation and fulfilment; the order
  * becomes 'partial', the failed ids are returned/logged, and their full share
@@ -35,8 +46,10 @@ import { notify as defaultNotify, type NotifyInput } from "./_notify";
 import { razorpayBasicAuth } from "./_razorpay-auth";
 import { slog } from "./_shared";
 import { captureServerEvent } from "./_posthog";
-import { returnCreditForUnavailable, ensureCreditSpent } from "./_employer-credit";
+import { returnCreditForUnavailable, ensureCreditSpent, clawbackOrderCredit } from "./_employer-credit";
 import { sendUnlockReceiptEmail } from "./_unlock-receipt-email";
+import { buildInvoiceSnapshot } from "./_unlock-tax";
+import { readLegalEntity } from "../data/legal-entity";
 
 export type UnlockOrderStatus =
   | "created" | "paid" | "fulfilled" | "partial" | "refunded" | "disputed" | "expired" | "failed";
@@ -67,6 +80,10 @@ export interface CapturedPayment {
   status: string;
   amount: number;
   orderId?: string | null;
+  /** Razorpay's refund_status: null | "partial" | "full". */
+  refundStatus?: string | null;
+  /** Paise already refunded (amount_refunded). */
+  amountRefunded?: number;
 }
 
 export interface FailedMatch {
@@ -114,15 +131,21 @@ function isRecord(v: unknown): v is Record<string, unknown> {
 /** Parses a Razorpay payment entity (webhook payload or REST response). */
 export function toCapturedPayment(entity: unknown): CapturedPayment | null {
   if (!isRecord(entity)) return null;
-  const { id, status, amount, order_id } = entity;
+  const { id, status, amount, order_id, refund_status, amount_refunded } = entity;
   if (typeof id !== "string" || typeof status !== "string" || typeof amount !== "number") return null;
-  return { id, status, amount, orderId: typeof order_id === "string" ? order_id : null };
+  return {
+    id, status, amount,
+    orderId: typeof order_id === "string" ? order_id : null,
+    refundStatus: typeof refund_status === "string" ? refund_status : null,
+    amountRefunded: typeof amount_refunded === "number" ? amount_refunded : 0,
+  };
 }
 
-/** Razorpay marks fully refunded payments with refund_status "full" — those
- *  must never fulfil an order. */
-function isFullyRefunded(entity: unknown): boolean {
-  return isRecord(entity) && entity.refund_status === "full";
+/** Razorpay keeps a fully refunded payment's status as "captured" and only
+ *  flips refund_status to "full" (amount_refunded reaches amount), so status
+ *  alone cannot tell a refunded payment from a live one. */
+export function isFullyRefundedPayment(p: CapturedPayment): boolean {
+  return p.refundStatus === "full" || (p.amount > 0 && (p.amountRefunded ?? 0) >= p.amount);
 }
 
 /* ── Razorpay reads ── */
@@ -164,18 +187,24 @@ export async function fetchRazorpayOrder(
   return { amount: data.amount, notes: isRecord(data.notes) ? data.notes : {} };
 }
 
-/** The captured, not-fully-refunded payment on an order, if any. "error" when
- *  Razorpay could not be reached so callers retry instead of expiring. */
+/** The captured payment on an order, if any. A live (not fully refunded) capture wins; a
+ *  fully refunded one is still returned so the caller hands it to fulfillUnlockOrder, whose
+ *  refund guard closes the order as refunded instead of letting it expire or fulfil.
+ *  "error" when Razorpay could not be reached so callers retry instead of expiring. */
 export async function findCapturedPaymentForOrder(
   orderId: string, keyId: string, keySecret: string, fetchImpl: typeof fetch = fetch,
 ): Promise<CapturedPayment | null | "error"> {
   const data = await razorpayGet(`/orders/${encodeURIComponent(orderId)}/payments`, keyId, keySecret, fetchImpl);
   if (!isRecord(data) || !Array.isArray(data.items)) return "error";
+  let refunded: CapturedPayment | null = null;
   for (const item of data.items) {
     const p = toCapturedPayment(item);
-    if (p && p.status === "captured" && !isFullyRefunded(item)) return { ...p, orderId: p.orderId ?? orderId };
+    if (!p || p.status !== "captured") continue;
+    const withOrder = { ...p, orderId: p.orderId ?? orderId };
+    if (!isFullyRefundedPayment(p)) return withOrder;
+    refunded ??= withOrder;
   }
-  return null;
+  return refunded;
 }
 
 /* ── Supabase reads ── */
@@ -346,6 +375,7 @@ export async function fulfillUnlockOrder(p: FulfillParams): Promise<FulfillResul
     return { kind: "error", code: "amount_mismatch", message: "payment amount does not match the order" };
   }
   if (order.status === "refunded" || order.status === "disputed") return { kind: order.status, order };
+  if (isFullyRefundedPayment(p.payment)) return closeRefundedPayment(p, order, f, now());
 
   const alreadyDone = order.status === "fulfilled" || order.status === "partial";
   if (order.razorpay_payment_id && order.razorpay_payment_id !== p.payment.id && order.status !== "created"
@@ -367,13 +397,17 @@ export async function fulfillUnlockOrder(p: FulfillParams): Promise<FulfillResul
     const failed: FailedMatch[] = order.match_ids
       .filter((id) => !byId.get(id)?.unlocked)
       .map((matchId) => ({ matchId, reason: byId.has(matchId) ? "candidate_opted_out" : "gone" }));
+    let replayInvoiceNo = await invoiceFor(p.supabaseUrl, p.headers, p.payment.id, f);
+    if (!replayInvoiceNo && order.amount > 0 && unlockedRows.length > 0) {
+      replayInvoiceNo = await assignInvoiceNo(p.supabaseUrl, p.headers, p.payment.id, f);
+    }
     return {
       kind: order.status === "partial" ? "partial" : "fulfilled",
       order, requirementId,
       unlockedMatchIds: unlockedRows.map((m) => m.id),
       failed,
       candidates: unlockedRows.map(candidateOf),
-      invoiceNo: await invoiceFor(p.supabaseUrl, p.headers, p.payment.id, f),
+      invoiceNo: replayInvoiceNo,
       firstFulfilment: false,
       refundDueEstimatePaise: refundShare(order, failed.length),
       returnedCreditPaise: 0,
@@ -464,6 +498,16 @@ export async function fulfillUnlockOrder(p: FulfillParams): Promise<FulfillResul
     status: kind, fulfilled_at: unlockedAt, razorpay_payment_id: p.payment.id,
   }, f);
 
+  // Only a cash purchase that really unlocked someone is a tax invoice: no number for credit-only rows,
+  // 409 replays or an order where every candidate turned out to be unavailable.
+  let invoiceNo = ledger.invoiceNo;
+  if (order.amount > 0 && unlockedRows.length > 0) {
+    if (!invoiceNo) invoiceNo = await assignInvoiceNo(p.supabaseUrl, p.headers, p.payment.id, f);
+    await writeInvoiceSnapshot({
+      supabaseUrl: p.supabaseUrl, headers: p.headers, order, paymentId: p.payment.id, creditPaise: creditApplied, now: now(), f,
+    });
+  }
+
   const refundDueEstimatePaise = refundShare(order, failed.length);
   let returnedPaise = 0;
   if (failed.length > 0) {
@@ -499,7 +543,7 @@ export async function fulfillUnlockOrder(p: FulfillParams): Promise<FulfillResul
       mode: order.mode,
     });
     const n = unlockedRows.length;
-    const invoice = ledger.invoiceNo ? ` Invoice ${ledger.invoiceNo}.` : "";
+    const invoice = invoiceNo ? ` Invoice ${invoiceNo}.` : "";
     const creditOnly = order.amount === 0;
     const partialNote = failed.length > 0
       ? creditOnly
@@ -524,7 +568,7 @@ export async function fulfillUnlockOrder(p: FulfillParams): Promise<FulfillResul
         supabaseUrl: p.supabaseUrl, headers: p.headers, fetchImpl: f,
         receipt: {
           employerId: order.employer_id, orderId: order.razorpay_order_id, paymentId: p.payment.id,
-          amountPaise: order.amount, creditPaise: creditApplied, candidates: n, invoiceNo: ledger.invoiceNo,
+          amountPaise: order.amount, creditPaise: creditApplied, candidates: n, invoiceNo,
         },
       });
     }
@@ -535,7 +579,7 @@ export async function fulfillUnlockOrder(p: FulfillParams): Promise<FulfillResul
     unlockedMatchIds: unlockedRows.map((m) => m.id),
     failed,
     candidates: unlockedRows.map(candidateOf),
-    invoiceNo: ledger.invoiceNo,
+    invoiceNo,
     firstFulfilment,
     refundDueEstimatePaise,
     returnedCreditPaise: returnedPaise,
@@ -556,6 +600,86 @@ async function invoiceFor(
   } catch {
     return null;
   }
+}
+
+const isMissingColumn = (status: number, text: string) =>
+  status === 400 && /PGRST204|42703|column/i.test(text);
+
+/** Assigns the tax-invoice number for a cash purchase that unlocked someone.
+ *  The RPC is idempotent (only fills a null invoice_no), so a lost race returns
+ *  null and we read the winner's number. null when migration 0045 is unapplied
+ *  (the column default numbered the row at insert instead). */
+async function assignInvoiceNo(
+  supabaseUrl: string, headers: Record<string, string>, paymentId: string, f: typeof fetch,
+): Promise<string | null> {
+  try {
+    const res = await f(`${supabaseUrl}/rest/v1/rpc/assign_unlock_invoice_no`, {
+      method: "POST",
+      headers: { ...headers, "Content-Type": "application/json" },
+      body: JSON.stringify({ p_payment_id: paymentId }),
+    });
+    if (res.ok) {
+      const v: unknown = await res.json().catch(() => null);
+      return typeof v === "string" && v ? v : await invoiceFor(supabaseUrl, headers, paymentId, f);
+    }
+    if (res.status !== 404) slog.warn("unlock invoice number assignment failed", { code: "unlock_invoice_assign_failed", paymentId, status: res.status });
+  } catch { /* the number is retried on the next fulfilment pass */ }
+  return null;
+}
+
+/** Freezes supplier, buyer, tax rate and the tax breakup onto the ledger row. Best effort and
+ *  write-once (only fills a null snapshot); rows without one render from live values. */
+async function writeInvoiceSnapshot(p: {
+  supabaseUrl: string; headers: Record<string, string>; order: UnlockOrderRow; paymentId: string;
+  creditPaise: number; now: Date; f: typeof fetch;
+}): Promise<void> {
+  try {
+    const empRes = await p.f(
+      `${p.supabaseUrl}/rest/v1/employers?id=eq.${encodeURIComponent(p.order.employer_id)}&select=company_name,billing_name,gstin`,
+      { headers: p.headers },
+    );
+    if (!empRes.ok) return;
+    const rows = (await empRes.json().catch(() => null)) as Array<{ company_name?: string | null; billing_name?: string | null; gstin?: string | null }> | null;
+    if (!Array.isArray(rows) || !rows[0]) return;
+    const snapshot = buildInvoiceSnapshot({
+      supplier: readLegalEntity(),
+      buyer: { companyName: rows[0].company_name ?? "", billingName: rows[0].billing_name ?? "", gstin: rows[0].gstin ?? "" },
+      cashPaise: p.order.amount, creditPaise: p.creditPaise, now: p.now,
+    });
+    const res = await p.f(
+      `${p.supabaseUrl}/rest/v1/employer_unlock_payments?razorpay_payment_id=eq.${encodeURIComponent(p.paymentId)}&invoice_snapshot=is.null`,
+      {
+        method: "PATCH",
+        headers: { ...p.headers, "Content-Type": "application/json", Prefer: "return=minimal" },
+        body: JSON.stringify({ invoice_snapshot: snapshot }),
+      },
+    );
+    if (!res.ok && !isMissingColumn(res.status, await res.text().catch(() => ""))) {
+      slog.warn("unlock invoice snapshot write failed", { code: "unlock_invoice_snapshot_failed", paymentId: p.paymentId, status: res.status });
+    }
+  } catch { /* the document falls back to live values */ }
+}
+
+/** A payment Razorpay already refunded in full must not grant anything. An order that
+ *  was never fulfilled is closed as refunded and its held credit released (same
+ *  clawback the refund webhook uses). A fulfilled/partial order is left to the refund
+ *  webhook, which owns the relock and the credit clawback. */
+async function closeRefundedPayment(
+  p: FulfillParams, order: UnlockOrderRow, f: typeof fetch, now: Date,
+): Promise<FulfillResult> {
+  if (order.status === "fulfilled" || order.status === "partial") return { kind: "refunded", order };
+  const clawback = await clawbackOrderCredit({
+    base: p.supabaseUrl, headers: p.headers, order, reason: "payment_refunded", releaseSpent: true, fetchImpl: f,
+  });
+  if (!clawback.ok) return { kind: "error", code: "db_error", message: "credit release failed" };
+  const ok = await patchOrder(p.supabaseUrl, p.headers, order.razorpay_order_id, "created,paid,expired,failed", {
+    status: "refunded", razorpay_payment_id: p.payment.id, paid_at: now.toISOString(),
+  }, f);
+  if (!ok) return { kind: "error", code: "db_error", message: "order status update failed" };
+  slog.warn("captured unlock payment was already fully refunded — order closed without unlocking", {
+    code: "unlock_payment_already_refunded", orderId: order.razorpay_order_id, paymentId: p.payment.id,
+  });
+  return { kind: "refunded", order: { ...order, status: "refunded" } };
 }
 
 /** Orders created before employer_unlock_orders existed (in flight at deploy

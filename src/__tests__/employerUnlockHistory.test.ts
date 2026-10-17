@@ -59,6 +59,9 @@ describe("employer-unlock-history handler", () => {
         orderId: null,
         orderStatus: null,
         creditAppliedPaise: 0,
+        invoiceSnapshot: null,
+        partialRefundPaise: 0,
+        partialRefundAt: null,
         gstin: null,
         billingName: null,
         candidates: [{ matchId: "m1", name: "Priya Sharma", email: "priya@example.com" }],
@@ -99,6 +102,9 @@ describe("employer-unlock-history handler", () => {
         orderId: null,
         orderStatus: null,
         creditAppliedPaise: 0,
+        invoiceSnapshot: null,
+        partialRefundPaise: 0,
+        partialRefundAt: null,
         gstin: null,
         billingName: null,
         candidates: [{ matchId: "m1", name: null, email: null }],
@@ -133,6 +139,47 @@ describe("employer-unlock-history handler", () => {
       creditAppliedPaise: 2000,
       gstin: "29ABCDE1234F1Z5",
       billingName: "Acme Pvt Ltd",
+    });
+  });
+
+  describe("invoice snapshot and partial refund (migration 0045)", () => {
+    const snapshot = {
+      v: 1,
+      supplier: { name: "HireStepX Pvt Ltd", address: "Bengaluru", gstin: "29ABCDE1234F1Z5", sac: "998439" },
+      buyer: { name: "Acme Pvt Ltd", gstin: "27ABCDE1234F1Z5" },
+      ratePercent: 18, cashPaise: 5900, creditPaise: 0,
+      breakup: { taxablePaise: 5000, taxPaise: 900, interState: true, lines: [{ label: "IGST @ 18%", paise: 900 }], placeOfSupply: { code: "27", name: "Maharashtra", basis: "buyer_gstin" } },
+      takenAt: "2026-10-01T00:00:00.000Z",
+    };
+    const row = { id: "p1", match_id: "m1", match_ids: null, amount: 5900, currency: "INR", created_at: "2026-10-01T00:00:00Z", razorpay_order_id: "order_1", invoice_no: "HSX-2610-000001", refunded_at: null, requirement_id: null };
+
+    it("returns the stored snapshot and partial refund, and drops a malformed snapshot", async () => {
+      global.fetch = vi.fn()
+        .mockResolvedValueOnce({ ok: true, json: async () => [
+          { ...row, invoice_snapshot: snapshot, partial_refund_paise: 2000, partial_refund_at: "2026-10-03T00:00:00Z" },
+          { ...row, id: "p2", invoice_snapshot: { v: 1, supplier: "nope" } },
+        ] })
+        .mockResolvedValueOnce({ ok: true, json: async () => [] });
+      const body = await (await handler(req())).json();
+      expect(body.purchases[0].invoiceSnapshot).toEqual(snapshot);
+      expect(body.purchases[0].partialRefundPaise).toBe(2000);
+      expect(body.purchases[0].partialRefundAt).toBe("2026-10-03T00:00:00Z");
+      expect(body.purchases[1].invoiceSnapshot).toBeNull();
+      expect(body.purchases[1].partialRefundPaise).toBe(0);
+    });
+
+    it("falls back to the 0032 column set when 0045 is not applied, leaving the snapshot null", async () => {
+      const fetchMock = vi.fn()
+        .mockResolvedValueOnce({ ok: false, status: 400, json: async () => ({ code: "42703" }) })
+        .mockResolvedValueOnce({ ok: true, json: async () => [row] })
+        .mockResolvedValueOnce({ ok: true, json: async () => [] });
+      global.fetch = fetchMock;
+      const res = await handler(req());
+      const body = await res.json();
+      expect(res.status).toBe(200);
+      expect(String(fetchMock.mock.calls[0][0])).toContain("invoice_snapshot");
+      expect(String(fetchMock.mock.calls[1][0])).not.toContain("invoice_snapshot");
+      expect(body.purchases[0]).toMatchObject({ invoiceNo: "HSX-2610-000001", invoiceSnapshot: null, partialRefundPaise: 0 });
     });
   });
 

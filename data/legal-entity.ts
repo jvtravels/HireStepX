@@ -17,14 +17,20 @@ function clean(v: string | undefined): string {
   return (v ?? "").trim();
 }
 
-export const LEGAL_ENTITY: LegalEntity = {
-  name: clean(process.env.NEXT_PUBLIC_LEGAL_ENTITY_NAME),
-  address: clean(process.env.NEXT_PUBLIC_LEGAL_ADDRESS),
-  phone: clean(process.env.NEXT_PUBLIC_LEGAL_PHONE),
-  gstin: clean(process.env.NEXT_PUBLIC_LEGAL_GSTIN),
-  cin: clean(process.env.NEXT_PUBLIC_LEGAL_CIN),
-  sac: clean(process.env.NEXT_PUBLIC_LEGAL_SAC),
-};
+/** Re-reads the env on every call, for server code (fulfilment, receipt email)
+ *  that must agree with the in-app documents without depending on import order. */
+export function readLegalEntity(): LegalEntity {
+  return {
+    name: clean(process.env.NEXT_PUBLIC_LEGAL_ENTITY_NAME),
+    address: clean(process.env.NEXT_PUBLIC_LEGAL_ADDRESS),
+    phone: clean(process.env.NEXT_PUBLIC_LEGAL_PHONE),
+    gstin: clean(process.env.NEXT_PUBLIC_LEGAL_GSTIN),
+    cin: clean(process.env.NEXT_PUBLIC_LEGAL_CIN),
+    sac: clean(process.env.NEXT_PUBLIC_LEGAL_SAC),
+  };
+}
+
+export const LEGAL_ENTITY: LegalEntity = readLegalEntity();
 
 const LABELS: ReadonlyArray<readonly [keyof LegalEntity, string]> = [
   ["name", "Operated by"],

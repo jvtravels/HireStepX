@@ -41,7 +41,9 @@ export default async function handler(req: Request): Promise<Response> {
       razorpayKeySecret: keySecret,
     });
     if (summary.errors > 0) slog.warn("unlock reconcile finished with errors", { code: "unlock_reconcile_errors", ...summary });
-    await recordCronSuccess("cron-reconcile-unlock-orders");
+    // A run that left orders in error is not healthy: skipping the heartbeat lets the
+    // staleness alert fire if it keeps happening. The summary is still returned.
+    if (summary.errors === 0) await recordCronSuccess("cron-reconcile-unlock-orders");
     return jsonResponse({ ok: true, ...summary, duration_ms: Date.now() - t0 });
   } catch (err) {
     slog.error("unlock reconcile failed", { code: "unlock_reconcile_failed", err: err instanceof Error ? err.message : String(err) });

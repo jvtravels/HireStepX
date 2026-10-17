@@ -10,6 +10,7 @@ vi.mock("../../server-handlers/_shared", () => ({
 const { reconcileUnlockOrders, STALE_AFTER_MS, EXPIRE_AFTER_MS } = await import("../../server-handlers/_employer-unlock-reconcile");
 const cron = (await import("../../server-handlers/cron-reconcile-unlock-orders")).default;
 const { slog } = await import("../../server-handlers/_shared");
+const heartbeat = await import("../../server-handlers/_cron-heartbeat");
 
 const NOW = new Date("2026-10-10T12:00:00.000Z");
 const ago = (ms: number) => new Date(NOW.getTime() - ms).toISOString();
@@ -127,6 +128,28 @@ describe("reconcileUnlockOrders", () => {
     expect(get?.url).toContain("order=created_at.asc");
   });
 
+  it("sweeps fairly: with a backlog of old orders it still reaches the newest stale ones (oldest 40 + newest 10 of 50)", async () => {
+    const orders = Array.from({ length: 80 }, (_, i) =>
+      order({ razorpay_order_id: `order_${String(i).padStart(2, "0")}`, id: `r${i}`, match_ids: [`m${i}`], created_at: ago((100 - i) * MIN) }));
+    db.seed({ orders, matches: [match("m0"), match("m79")] });
+    const s = await sweep({ payments: [pay("order_00", "pay_a"), pay("order_79", "pay_b")] });
+    expect(s.scanned).toBe(50);
+    const urls = db.calls.filter((c) => c.method === "GET" && c.url.includes("status=in.(created,paid)")).map((c) => c.url);
+    expect(urls).toHaveLength(2);
+    expect(urls[0]).toContain("order=created_at.asc");
+    expect(urls[0]).toContain("limit=40");
+    expect(urls[1]).toContain("order=created_at.desc");
+    expect(urls[1]).toContain("limit=10");
+    // the newest stale order (79) is reached despite 70+ older ones ahead of it
+    expect(db.orders.get("order_79")?.status).toBe("fulfilled");
+    expect(db.orders.get("order_00")?.status).toBe("fulfilled");
+  });
+
+  it("does not scan an order twice when the oldest and newest slices overlap", async () => {
+    db.seed({ orders: Array.from({ length: 6 }, (_, i) => order({ razorpay_order_id: `order_${i}`, id: `r${i}`, match_ids: [`m${i}`], created_at: ago((10 - i) * HOUR) })) });
+    expect((await sweep({})).scanned).toBe(6);
+  });
+
   it("is idempotent: a second run over the same data fulfils nothing new", async () => {
     db.seed({ orders: [order({ created_at: ago(HOUR) })], matches: [match("m1")] });
     await sweep({ payments: [pay("order_1")] });
@@ -173,6 +196,31 @@ describe("cron-reconcile-unlock-orders handler", () => {
     spy.mockRestore();
     expect(res.status).toBe(200);
     expect(await res.json()).toMatchObject({ ok: true, scanned: 0, fulfilled: 0 });
+  });
+
+  it("records the heartbeat only when the sweep finished without errors, and still returns the summary", async () => {
+    process.env.CRON_SECRET = "s3cret";
+    process.env.RAZORPAY_KEY_ID = "k";
+    process.env.RAZORPAY_KEY_SECRET = "s";
+    const beat = vi.spyOn(heartbeat, "recordCronSuccess").mockResolvedValue(undefined);
+    const stale = new Date(Date.now() - 2 * HOUR).toISOString();
+    const row = { id: "r1", razorpay_order_id: "order_1", employer_id: "emp-1", requirement_id: null, mode: "single", match_ids: ["m1"], amount: 5900, currency: "INR", status: "created", razorpay_payment_id: null, created_at: stale, paid_at: null, fulfilled_at: null };
+    // Razorpay unreachable -> the order counts as an error
+    const failing = vi.spyOn(globalThis, "fetch").mockImplementation((async (input: RequestInfo | URL) => {
+      if (String(input).includes("api.razorpay.com")) throw new Error("down");
+      return new Response(JSON.stringify(String(input).includes("employer_unlock_orders?status=in") ? [row] : []), { status: 200 });
+    }) as typeof fetch);
+    const bad = await cron(req("Bearer s3cret"));
+    expect(bad.status).toBe(200);
+    expect(await bad.json()).toMatchObject({ ok: true, errors: 1 });
+    expect(beat).not.toHaveBeenCalled();
+    failing.mockRestore();
+
+    const ok = vi.spyOn(globalThis, "fetch").mockImplementation((async () => new Response("[]", { status: 200 })) as typeof fetch);
+    expect((await cron(req("Bearer s3cret"))).status).toBe(200);
+    ok.mockRestore();
+    expect(beat).toHaveBeenCalledWith("cron-reconcile-unlock-orders");
+    beat.mockRestore();
   });
 
   it("returns 500 when the sweep query fails", async () => {

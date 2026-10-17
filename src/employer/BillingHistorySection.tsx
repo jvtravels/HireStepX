@@ -5,7 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { OutlineCta } from "@/employer/_atoms";
 import { useEmployerData, type CreditSummary, type UnlockPurchase } from "@/employer/EmployerDataContext";
-import { canIssueCreditNote, isRefundedPurchase, openInvoice, purchaseAmountLabel, purchaseAmounts, type InvoiceInput } from "@/employer/_invoiceHtml";
+import { canIssueCreditNote, isPartiallyRefundedPurchase, isRefundedPurchase, openInvoice, purchaseAmountLabel, purchaseAmounts, type InvoiceInput } from "@/employer/_invoiceHtml";
 import { LEGAL_ENTITY } from "../../data/legal-entity";
 import { InlineNotice } from "@/employer/_requirementAtoms";
 import { formatPaise } from "../../server-handlers/_unlock-pricing";
@@ -67,7 +67,9 @@ export default function BillingHistorySection() {
       )}
     </div>
   ) : null;
-  const supplier = { name: LEGAL_ENTITY.name, address: LEGAL_ENTITY.address, gstin: LEGAL_ENTITY.gstin, sac: LEGAL_ENTITY.sac };
+  const liveSupplier = { name: LEGAL_ENTITY.name, address: LEGAL_ENTITY.address, gstin: LEGAL_ENTITY.gstin, sac: LEGAL_ENTITY.sac };
+  // A purchase with a snapshot is judged and rendered by the supplier it was issued under, not today's env.
+  const supplierFor = (p: UnlockPurchase) => p.invoiceSnapshot?.supplier ?? liveSupplier;
   const showDocument = (p: UnlockPurchase, document: InvoiceInput["document"]) => {
     const { cashPaise, creditPaise } = purchaseAmounts(p);
     openInvoice({
@@ -82,7 +84,9 @@ export default function BillingHistorySection() {
       refundedAt: p.refundedAt ?? null,
       jobTitle: requirements.find((r) => r.id === p.requirementId)?.title ?? null,
       document,
-      supplier,
+      partialRefundPaise: p.partialRefundPaise ?? 0,
+      snapshot: p.invoiceSnapshot ?? null,
+      supplier: liveSupplier,
       buyer: { companyName, billingName: companyBillingName, gstin: companyGstin },
     });
   };
@@ -116,13 +120,13 @@ export default function BillingHistorySection() {
             <TableCell className="tabular-nums text-hx-ink-soft">{purchaseAmounts(p).cashPaise === 0 ? "Credit redemption" : p.invoiceNo ?? "None"}</TableCell>
             <TableCell className="text-right tabular-nums">
               {purchaseAmountLabel(p)}
-              {isRefundedPurchase(p) ? <span className="ml-1.5 text-hx-ink-soft">(refunded)</span> : null}
+              {isRefundedPurchase(p) ? <span className="ml-1.5 text-hx-ink-soft">(refunded)</span> : isPartiallyRefundedPurchase(p) ? <span className="ml-1.5 text-hx-ink-soft">(partially refunded)</span> : null}
             </TableCell>
             <TableCell className="whitespace-nowrap text-right">
               {purchaseAmounts(p).totalPaise > 0 && (p.invoiceNo || purchaseAmounts(p).cashPaise === 0) ? (
-                <button type="button" className={linkClass} onClick={() => showDocument(p, "invoice")}>{purchaseAmounts(p).cashPaise === 0 || !LEGAL_ENTITY.gstin ? "View receipt" : "View invoice"}</button>
+                <button type="button" className={linkClass} onClick={() => showDocument(p, "invoice")}>{purchaseAmounts(p).cashPaise === 0 || !supplierFor(p).gstin ? "View receipt" : "View invoice"}</button>
               ) : null}
-              {canIssueCreditNote(p, supplier) ? (
+              {canIssueCreditNote(p, supplierFor(p)) ? (
                 <button type="button" className={`${linkClass} ml-3`} onClick={() => showDocument(p, "credit_note")}>Credit note</button>
               ) : null}
             </TableCell>

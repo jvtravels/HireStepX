@@ -278,6 +278,25 @@ describe("employer-verify-unlock-payment — order ownership & state", () => {
     expect(db.matches.get("m1")?.unlocked).toBe(false);
   });
 
+  it("409 order_refunded and no unlock for a payment Razorpay already refunded in full (status stays captured)", async () => {
+    payments = [capturedPayment({ refund_status: "full", amount_refunded: 5900 })];
+    const res = mockRes();
+    await handler(mockReq(validBody()), res);
+    expect(res.statusCode).toBe(409);
+    expect(res.body).toMatchObject({ code: "order_refunded" });
+    expect(db.matches.get("m1")?.unlocked).toBe(false);
+    expect(db.ledger).toHaveLength(0);
+    expect(db.orders.get(ORDER_ID)?.status).toBe("refunded");
+  });
+
+  it("a partially refunded payment still unlocks", async () => {
+    payments = [capturedPayment({ refund_status: "partial", amount_refunded: 1000 })];
+    const res = mockRes();
+    await handler(mockReq(validBody()), res);
+    expect(res.statusCode).toBe(200);
+    expect(db.matches.get("m1")?.unlocked).toBe(true);
+  });
+
   it("still unlocks when the requirement was closed after the order was created", async () => {
     // Fulfilment has no requirement-status gate: a captured payment is honoured.
     const res = mockRes();
