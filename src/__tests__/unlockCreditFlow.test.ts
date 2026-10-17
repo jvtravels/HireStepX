@@ -1,0 +1,400 @@
+/* Money/credit integration across the unlock payment path: credit verified at
+ * fulfilment (incl. late payments), the partial cash share returned as credit,
+ * clawback on refunds/disputes, the receipt email, and the reconciler's credit
+ * release. A stateful credit-ledger fake sits in front of FakeUnlockDb. */
+
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { FakeUnlockDb, HEADERS, SUPABASE, match, order, type FakeOrder } from "./unlockTestUtils";
+import type { NotifyInput } from "../../server-handlers/_notify";
+
+vi.mock("../../server-handlers/_shared", () => ({
+  slog: { error: vi.fn(), warn: vi.fn(), info: vi.fn() },
+  supabaseUrl: () => "https://example.supabase.co",
+  supabaseServiceHeaders: () => ({ apikey: "service-key", Authorization: "Bearer service-key" }),
+}));
+const captureServerEvent = vi.fn();
+vi.mock("../../server-handlers/_posthog", () => ({ captureServerEvent: (...a: unknown[]) => captureServerEvent(...a) }));
+
+const { fulfillUnlockOrder } = await import("../../server-handlers/_unlock-fulfillment");
+const { handleEmployerUnlockWebhook } = await import("../../server-handlers/_employer-unlock-webhook");
+const { reconcileUnlockOrders } = await import("../../server-handlers/_employer-unlock-reconcile");
+const { buildReceiptEmail, hasSupplierGstin } = await import("../../server-handlers/_unlock-receipt-email");
+const { slog } = await import("../../server-handlers/_shared");
+
+interface LedgerRow {
+  employer_id: string; amount: number; kind: string; reason?: string | null; match_id?: string | null; order_ref?: string | null; created_at: string;
+}
+const json = (body: unknown, status = 200) => (status === 204 ? new Response(null, { status }) : new Response(JSON.stringify(body), { status }));
+
+/** employer_credit_ledger + spend RPC with the real unique indexes (refund per match, one row per kind+ref, one adjustment per ref). */
+class FakeCredit {
+  rows: LedgerRow[] = [];
+  /** Simulates migration 0042 not applied: clawback/conversion hit the old check constraint. */
+  oldConstraint = false;
+  resend: Array<{ headers: Record<string, string>; body: { to: string[]; subject: string; html: string } }> = [];
+  emailOnFile: string | null = "boss@acme.test";
+
+  balance(employer = "emp-1") { return this.rows.filter((r) => r.employer_id === employer).reduce((s, r) => s + r.amount, 0); }
+  ofKind(kind: string) { return this.rows.filter((r) => r.kind === kind); }
+
+  wrap(db: FakeUnlockDb): typeof fetch {
+    return (async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+      const url = String(input);
+      const method = (init?.method || "GET").toUpperCase();
+      if (url.startsWith("https://api.resend.com/")) {
+        this.resend.push({ headers: (init?.headers ?? {}) as Record<string, string>, body: JSON.parse(String(init?.body)) });
+        return json({ id: "em_1" });
+      }
+      if (!url.startsWith(SUPABASE)) return json({}, 404);
+      const u = new URL(url);
+      const path = u.pathname;
+      const q = u.searchParams;
+      if (path.endsWith("/rpc/spend_employer_credit")) {
+        const b = JSON.parse(String(init?.body)) as { p_employer: string; p_amount: number; p_order_ref: string };
+        const prior = this.rows.find((r) => r.kind === "spend" && r.order_ref === b.p_order_ref);
+        if (prior) return json(-prior.amount);
+        if (this.balance(b.p_employer) < b.p_amount) return json(0);
+        this.rows.push({ employer_id: b.p_employer, amount: -b.p_amount, kind: "spend", order_ref: b.p_order_ref, created_at: new Date().toISOString() });
+        return json(b.p_amount);
+      }
+      if (path.endsWith("/rest/v1/employer_credit_ledger")) {
+        if (method === "POST") {
+          const b = JSON.parse(String(init?.body)) as LedgerRow;
+          if (this.oldConstraint && (b.kind === "clawback" || b.kind === "conversion")) {
+            return new Response('new row violates check constraint "employer_credit_ledger_kind_check" 23514', { status: 400 });
+          }
+          const dup = this.rows.some((r) =>
+            (b.kind === "refund" && r.kind === "refund" && r.match_id === b.match_id) ||
+            (["spend", "release"].includes(b.kind) && r.kind === b.kind && r.order_ref === b.order_ref) ||
+            (["clawback", "conversion"].includes(b.kind) && ["clawback", "conversion"].includes(r.kind) && r.order_ref === b.order_ref));
+          if (dup) return json({ code: "23505" }, 409);
+          this.rows.push({ ...b, created_at: new Date().toISOString() });
+          return json(null, 201);
+        }
+        let rows = [...this.rows];
+        const emp = q.get("employer_id");
+        if (emp?.startsWith("eq.")) rows = rows.filter((r) => r.employer_id === emp.slice(3));
+        const kind = q.get("kind");
+        if (kind?.startsWith("in.(")) { const ks = kind.slice(4, -1).split(","); rows = rows.filter((r) => ks.includes(r.kind)); }
+        else if (kind?.startsWith("eq.")) rows = rows.filter((r) => r.kind === kind.slice(3));
+        const ref = q.get("order_ref");
+        if (ref?.startsWith("in.(")) { const refs = [...ref.matchAll(/"([^"]+)"/g)].map((m) => m[1]); rows = rows.filter((r) => r.order_ref && refs.includes(r.order_ref)); }
+        const mid = q.get("match_id");
+        if (mid?.startsWith("eq.")) rows = rows.filter((r) => r.match_id === mid.slice(3));
+        return json(rows);
+      }
+      if (path.endsWith("/rest/v1/profiles")) return json(this.emailOnFile ? [{ email: this.emailOnFile }] : []);
+      if (path.endsWith("/rest/v1/employers")) return json([{ company_name: "Acme" }]);
+      if (path.endsWith("/rest/v1/conversations")) return json([]);
+      if (path.endsWith("/rest/v1/employer_unlock_payments") && q.get("created_at")) return json([]);
+      return db.fetch(input, init);
+    }) as typeof fetch;
+  }
+}
+
+const PAY = { id: "pay_1", status: "captured", amount: 5900, orderId: "order_1" };
+const NOW = new Date("2026-10-10T09:00:00.000Z");
+type Partial3 = Partial<Parameters<typeof fulfillUnlockOrder>[0]>;
+
+let db: FakeUnlockDb;
+let credit: FakeCredit;
+let notifyImpl: ReturnType<typeof vi.fn<(i: NotifyInput) => Promise<void>>>;
+
+const creditOrder = (over: Partial<FakeOrder> & { credit_applied_paise?: number } = {}): FakeOrder => Object.assign(order(), over);
+const fulfil = (over: Partial3 = {}) =>
+  fulfillUnlockOrder({ supabaseUrl: SUPABASE, headers: HEADERS, razorpayOrderId: "order_1", payment: PAY, fetchImpl: credit.wrap(db), notifyImpl, now: () => NOW, ...over });
+
+beforeEach(() => {
+  db = new FakeUnlockDb();
+  credit = new FakeCredit();
+  notifyImpl = vi.fn(async () => {});
+  captureServerEvent.mockClear();
+  vi.mocked(slog.error).mockClear();
+  vi.mocked(slog.warn).mockClear();
+  delete process.env.RESEND_API_KEY;
+  delete process.env.SUPPLIER_GSTIN;
+  delete process.env.NEXT_PUBLIC_SUPPLIER_GSTIN;
+});
+afterEach(() => {
+  delete process.env.RESEND_API_KEY;
+  delete process.env.SUPPLIER_GSTIN;
+});
+
+const spentRow = (ref: string, amount: number): LedgerRow => ({ employer_id: "emp-1", amount: -amount, kind: "spend", order_ref: ref, created_at: "2026-10-09T00:00:00Z" });
+const releaseRow = (ref: string, amount: number): LedgerRow => ({ employer_id: "emp-1", amount, kind: "release", order_ref: ref, created_at: "2026-10-09T01:00:00Z" });
+const topUp = (amount: number): LedgerRow => ({ employer_id: "emp-1", amount, kind: "refund", reason: "declined", match_id: `seed-${amount}`, order_ref: "seed", created_at: "2026-10-01T00:00:00Z" });
+
+describe("fulfilment verifies the credit the order was priced with", () => {
+  it("passes through when the credit is still spent", async () => {
+    db.seed({ orders: [creditOrder({ amount: 3900, credit_applied_paise: 2000 })], matches: [match("m1")] });
+    credit.rows.push(spentRow("order_1", 2000));
+    const r = await fulfil({ payment: { ...PAY, amount: 3900 } });
+    expect(r.kind).toBe("fulfilled");
+    expect(credit.rows.filter((x) => x.kind === "spend")).toHaveLength(1);
+  });
+
+  it("re-spends credit the reconciler released before a late payment arrived (ref :late) and fulfils", async () => {
+    db.seed({ orders: [creditOrder({ status: "expired", amount: 3900, credit_applied_paise: 2000 })], matches: [match("m1")] });
+    credit.rows.push(topUp(5000), spentRow("order_1", 2000), releaseRow("order_1", 2000));
+    const r = await fulfil({ payment: { ...PAY, amount: 3900 } });
+    expect(r.kind).toBe("fulfilled");
+    expect(credit.rows.find((x) => x.kind === "spend" && x.order_ref === "order_1:late")?.amount).toBe(-2000);
+    expect(db.matches.get("m1")?.unlocked).toBe(true);
+  });
+
+  it("when the credit can no longer be covered the cash becomes credit and no candidate is exposed", async () => {
+    db.seed({ orders: [creditOrder({ status: "expired", amount: 3900, credit_applied_paise: 2000 })], matches: [match("m1")] });
+    credit.rows.push(spentRow("order_1", 2000), releaseRow("order_1", 2000));
+    const r = await fulfil({ payment: { ...PAY, amount: 3900 } });
+    expect(r).toMatchObject({ kind: "converted_to_credit", creditPaise: 3900 });
+    expect(db.matches.get("m1")?.unlocked).toBe(false);
+    expect(db.orders.get("order_1")?.status).toBe("refunded");
+    expect(credit.ofKind("conversion")).toEqual([expect.objectContaining({ amount: 3900, reason: "late_payment", order_ref: "order_1:convert" })]);
+    expect(credit.balance()).toBe(3900);
+    expect(notifyImpl).toHaveBeenCalledWith(expect.objectContaining({ type: "credit_refunded" }));
+    expect(captureServerEvent).toHaveBeenCalledWith("employer_unlock_failed", "emp-1", expect.objectContaining({ reason: "late_payment_credit_unavailable" }));
+  });
+
+  it("a replayed webhook for a converted order is a no-op (no second conversion)", async () => {
+    db.seed({ orders: [creditOrder({ status: "expired", amount: 3900, credit_applied_paise: 2000 })], matches: [match("m1")] });
+    credit.rows.push(spentRow("order_1", 2000), releaseRow("order_1", 2000));
+    await fulfil({ payment: { ...PAY, amount: 3900 } });
+    const again = await fulfil({ payment: { ...PAY, amount: 3900 } });
+    expect(again.kind).toBe("refunded");
+    expect(credit.ofKind("conversion")).toHaveLength(1);
+  });
+
+  it("asks for a retry (db_error) rather than fulfilling when the credit state cannot be read", async () => {
+    db.seed({ orders: [creditOrder({ amount: 3900, credit_applied_paise: 2000 })], matches: [match("m1")] });
+    const f = credit.wrap(db);
+    const flaky = ((input: RequestInfo | URL, init?: RequestInit) =>
+      String(input).includes("kind=in.(spend,release)") ? Promise.resolve(json({}, 500)) : f(input, init)) as typeof fetch;
+    const r = await fulfil({ payment: { ...PAY, amount: 3900 }, fetchImpl: flaky });
+    expect(r).toMatchObject({ kind: "error", code: "db_error" });
+    expect(db.matches.get("m1")?.unlocked).toBe(false);
+  });
+
+  it("does not block legacy orders that have no stored credit_applied_paise", async () => {
+    db.seed({ orders: [order({ amount: 3900 })], matches: [match("m1")] });
+    expect((await fulfil({ payment: { ...PAY, amount: 3900 } })).kind).toBe("fulfilled");
+  });
+});
+
+describe("partial fulfilment returns the cash share as credit", () => {
+  const seedPartial = () => db.seed({
+    orders: [order({ mode: "batch", match_ids: ["m1", "m2", "m3", "m4"], amount: 11960 })],
+    matches: [
+      match("m1"),
+      match("m2", { profiles: { name: "B", email: "b@x.com", employer_visibility: "off" } }),
+      match("m3"),
+    ],
+  });
+
+  it("credits every unavailable candidate's share, persists refund_due_paise and says so in the notification", async () => {
+    seedPartial();
+    db.blockedCandidates.add("cand-m3");
+    const r = await fulfil({ payment: { ...PAY, amount: 11960 } });
+    expect(r.kind).toBe("partial");
+    if (r.kind !== "partial") return;
+    expect(r.returnedCreditPaise).toBe(2990 * 3);
+    expect(credit.ofKind("refund").map((x) => [x.match_id, x.amount, x.reason])).toEqual([["m2", 2990, "unavailable"], ["m3", 2990, "unavailable"], ["m4", 2990, "unavailable"]]);
+    expect((db.orders.get("order_1") as FakeOrder & { refund_due_paise?: number }).refund_due_paise).toBe(8970);
+    expect(notifyImpl.mock.calls.find(([i]) => i.type === "unlock_confirmed")?.[0].body).toContain("added to your account credit");
+    expect(captureServerEvent).toHaveBeenCalledWith("employer_credit_granted", "emp-1", expect.objectContaining({ reason: "unavailable", amountPaise: 8970 }));
+  });
+
+  it("a replay does not credit twice", async () => {
+    seedPartial();
+    db.blockedCandidates.add("cand-m3");
+    await fulfil({ payment: { ...PAY, amount: 11960 } });
+    const again = await fulfil({ payment: { ...PAY, amount: 11960 } });
+    expect(again.kind === "partial" && again.returnedCreditPaise).toBe(0);
+    expect(credit.ofKind("refund")).toHaveLength(3);
+  });
+
+  it("falls back to the manual-refund wording when the ledger is unavailable", async () => {
+    seedPartial();
+    db.blockedCandidates.add("cand-m3");
+    const r = await fulfil({ payment: { ...PAY, amount: 11960 }, fetchImpl: db.fetch as typeof fetch });
+    expect(r.kind === "partial" && r.returnedCreditPaise).toBe(0);
+    expect(notifyImpl.mock.calls[0]?.[0].body).toContain("we will refund that portion");
+  });
+});
+
+describe("receipt email on fulfilment", () => {
+  beforeEach(() => { process.env.RESEND_API_KEY = "re_test"; });
+
+  it("sends one receipt that says it is not a GST tax invoice until a supplier GSTIN is set", async () => {
+    db.seed({ orders: [order()], matches: [match("m1")] });
+    await fulfil();
+    await vi.waitFor(() => expect(credit.resend).toHaveLength(1));
+    const mail = credit.resend[0];
+    expect(mail.body.to).toEqual(["boss@acme.test"]);
+    expect(mail.body.subject).toContain("receipt");
+    expect(mail.body.html).toContain("not a GST tax invoice");
+    expect(mail.headers["Idempotency-Key"]).toBe("unlock-receipt-pay_1");
+  });
+
+  it("calls it a tax invoice once SUPPLIER_GSTIN is configured", async () => {
+    process.env.SUPPLIER_GSTIN = "29ABCDE1234F1Z5";
+    db.seed({ orders: [order()], matches: [match("m1")] });
+    await fulfil();
+    await vi.waitFor(() => expect(credit.resend).toHaveLength(1));
+    expect(credit.resend[0].body.html).not.toContain("not a GST tax invoice");
+    expect(credit.resend[0].body.subject).toContain("tax invoice");
+  });
+
+  it("does not re-send on a replay, and not for credit-only orders or when nothing was unlocked", async () => {
+    db.seed({ orders: [order()], matches: [match("m1")] });
+    await fulfil();
+    await vi.waitFor(() => expect(credit.resend).toHaveLength(1));
+    await fulfil();
+    await new Promise((r) => setTimeout(r, 10));
+    expect(credit.resend).toHaveLength(1);
+
+    const zero = new FakeUnlockDb().seed({ orders: [order({ razorpay_order_id: "credit_1", amount: 0 })], matches: [match("m1")] });
+    await fulfillUnlockOrder({
+      supabaseUrl: SUPABASE, headers: HEADERS, razorpayOrderId: "credit_1", payment: { id: "credit_1", status: "captured", amount: 0, orderId: "credit_1" },
+      fetchImpl: credit.wrap(zero), notifyImpl, now: () => NOW,
+    });
+    await new Promise((r) => setTimeout(r, 10));
+    expect(credit.resend).toHaveLength(1);
+  });
+
+  it("never blocks fulfilment: a missing address or key just skips the email", async () => {
+    credit.emailOnFile = null;
+    db.seed({ orders: [order()], matches: [match("m1")] });
+    expect((await fulfil()).kind).toBe("fulfilled");
+    await new Promise((r) => setTimeout(r, 10));
+    expect(credit.resend).toHaveLength(0);
+  });
+
+  it("buildReceiptEmail shows credit applied only when there was some", () => {
+    const base = { employerId: "e", orderId: "o", paymentId: "p", amountPaise: 3900, creditPaise: 2000, candidates: 1, invoiceNo: "HSX-1" };
+    expect(buildReceiptEmail(base, { company: "Acme", appUrl: "https://x", taxInvoice: false }).html).toContain("Account credit applied");
+    expect(buildReceiptEmail({ ...base, creditPaise: 0 }, { company: null, appUrl: "https://x", taxInvoice: false }).html).not.toContain("Account credit applied");
+    expect(hasSupplierGstin()).toBe(false);
+    process.env.NEXT_PUBLIC_SUPPLIER_GSTIN = "29ABCDE1234F1Z5";
+    expect(hasSupplierGstin()).toBe(true);
+  });
+});
+
+describe("webhook: refunds and disputes claw back credit", () => {
+  const capturedEvent = {
+    payload: { payment: { entity: { id: "pay_1", status: "captured", amount: 5900, order_id: "order_1" } } },
+  };
+  const refundEvent = { payload: { refund: { entity: { id: "rfnd_1", payment_id: "pay_1", amount: 5900 } } } };
+  const disputeEvent = { payload: { dispute: { entity: { id: "disp_1", payment_id: "pay_1" } } } };
+  const hook = (eventType: string, event: unknown) =>
+    handleEmployerUnlockWebhook({
+      eventType, event: event as never, supabaseUrl: SUPABASE, headers: HEADERS, fetchImpl: credit.wrap(db), notifyImpl, now: () => NOW,
+    });
+
+  beforeEach(async () => {
+    db.seed({ orders: [order()], matches: [match("m1")] });
+    credit.rows.push(topUp(1000));
+    await hook("payment.captured", capturedEvent);
+    // the candidate then declined: credit landed and the match was relocked
+    credit.rows.push({ employer_id: "emp-1", amount: 5900, kind: "refund", reason: "declined", match_id: "m1", order_ref: "order_1", created_at: "2026-10-11T00:00:00Z" });
+    credit.rows.push(spentRow("order_1", 1000));
+  });
+
+  it("a full refund reverses the credit the order generated and releases credit spent on it", async () => {
+    const r = await hook("refund.processed", refundEvent);
+    expect(r).toMatchObject({ handled: true, status: 200, body: { creditClawedBackPaise: 5900 } });
+    expect(credit.ofKind("clawback")).toEqual([expect.objectContaining({ amount: -5900, reason: "payment_refunded", order_ref: "clawback:order_1:m1" })]);
+    expect(credit.ofKind("release")).toEqual([expect.objectContaining({ amount: 1000, order_ref: "order_1" })]);
+    expect(db.orders.get("order_1")?.status).toBe("refunded");
+    expect(captureServerEvent).toHaveBeenCalledWith("employer_credit_clawed_back", "emp-1", expect.objectContaining({ amountPaise: 5900, reason: "payment_refunded" }));
+  });
+
+  it("refund.created then refund.processed claws back once", async () => {
+    await hook("refund.created", refundEvent);
+    await hook("refund.processed", refundEvent);
+    expect(credit.ofKind("clawback")).toHaveLength(1);
+    expect(credit.ofKind("release")).toHaveLength(1);
+  });
+
+  it("the balance may go negative (documented debt) when the credit was already spent", async () => {
+    credit.rows.push(spentRow("order_other", 5900));
+    await hook("refund.processed", refundEvent);
+    expect(credit.balance()).toBeLessThan(0);
+  });
+
+  it("asks for redelivery and leaves the order un-refunded when the clawback write fails", async () => {
+    const f = credit.wrap(db);
+    const r = await handleEmployerUnlockWebhook({
+      eventType: "refund.processed", event: refundEvent as never, supabaseUrl: SUPABASE, headers: HEADERS, notifyImpl, now: () => NOW,
+      fetchImpl: ((input: RequestInfo | URL, init?: RequestInit) =>
+        (init?.method === "POST" && String(input).includes("employer_credit_ledger") && String(init.body).includes('"clawback"')
+          ? Promise.resolve(json({}, 500))
+          : f(input, init))) as typeof fetch,
+    });
+    expect(r).toMatchObject({ status: 500, retry: true });
+    expect(db.orders.get("order_1")?.status).not.toBe("refunded");
+  });
+
+  it("with migration 0042 unapplied the refund still completes and logs a manual-reversal error", async () => {
+    credit.oldConstraint = true;
+    const r = await hook("refund.processed", refundEvent);
+    expect(r).toMatchObject({ status: 200 });
+    expect(slog.error).toHaveBeenCalledWith(expect.stringContaining("migration 0042"), expect.anything());
+  });
+
+  it("a partial refund claws back nothing", async () => {
+    await hook("refund.processed", { payload: { refund: { entity: { id: "r", payment_id: "pay_1", amount: 1000 } } } });
+    expect(credit.ofKind("clawback")).toHaveLength(0);
+  });
+
+  it("dispute.created freezes nothing; dispute.lost claws back credit but keeps credit spent on the order", async () => {
+    await hook("payment.dispute.created", disputeEvent);
+    expect(credit.ofKind("clawback")).toHaveLength(0);
+    const r = await hook("payment.dispute.lost", disputeEvent);
+    expect(r).toMatchObject({ status: 200 });
+    expect(credit.ofKind("clawback")).toEqual([expect.objectContaining({ amount: -5900, reason: "payment_disputed" })]);
+    expect(credit.ofKind("release")).toHaveLength(0);
+  });
+
+  it("dispute.won claws back nothing", async () => {
+    await hook("payment.dispute.created", disputeEvent);
+    await hook("payment.dispute.won", disputeEvent);
+    expect(credit.ofKind("clawback")).toHaveLength(0);
+  });
+
+  it("a late capture that converted to credit answers 200 with the credit amount", async () => {
+    db = new FakeUnlockDb().seed({ orders: [creditOrder({ status: "expired", amount: 5900, credit_applied_paise: 2000 })], matches: [match("m1")] });
+    credit = new FakeCredit();
+    credit.rows.push(spentRow("order_1", 2000), releaseRow("order_1", 2000));
+    const r = await hook("payment.captured", capturedEvent);
+    expect(r).toMatchObject({ handled: true, status: 200, body: { unlock: "converted_to_credit", creditPaise: 5900 } });
+  });
+});
+
+describe("reconciler credit handling", () => {
+  const sweep = () =>
+    reconcileUnlockOrders({
+      supabaseUrl: SUPABASE, headers: HEADERS, razorpayKeyId: "k", razorpayKeySecret: "s",
+      fetchImpl: ((input: RequestInfo | URL, init?: RequestInit) =>
+        (String(input).includes("api.razorpay.com") ? Promise.resolve(json({ items: [] })) : credit.wrap(db)(input, init))) as typeof fetch,
+      notifyImpl, now: () => new Date("2026-10-12T12:00:00.000Z"),
+    });
+
+  it("expiring an unpaid cash order releases its credit and emits employer_unlock_abandoned", async () => {
+    db.seed({ orders: [order({ created_at: "2026-10-10T08:00:00.000Z", amount: 3900 })] });
+    credit.rows.push(topUp(2000), spentRow("order_1", 2000));
+    const s = await sweep();
+    expect(s.expired).toBe(1);
+    expect(credit.ofKind("release")).toEqual([expect.objectContaining({ amount: 2000, order_ref: "order_1" })]);
+    expect(captureServerEvent).toHaveBeenCalledWith("employer_unlock_abandoned", "emp-1", expect.objectContaining({ orderId: "order_1" }));
+  });
+
+  it("releases credit still attached to a recently failed order, once", async () => {
+    db.seed({ orders: [order({ status: "failed", amount: 3900 })] });
+    credit.rows.push(topUp(2000), spentRow("order_1", 2000));
+    const first = await sweep();
+    expect(first.creditSwept).toBe(1);
+    await sweep();
+    expect(credit.ofKind("release")).toHaveLength(1);
+    expect(credit.balance()).toBe(2000);
+  });
+});

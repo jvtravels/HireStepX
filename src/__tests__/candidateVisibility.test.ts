@@ -147,6 +147,14 @@ describe("POST /api/candidate-visibility", () => {
     expect(db.calls.some((c) => c.method === "DELETE")).toBe(false);
   });
 
+  it("switching back on never re-grants a contact that was relocked for credit", async () => {
+    const db = fakeDb({ visibility: "off" });
+    await handler(req("POST", { visibility: "masked" }));
+    const matchWrites = db.calls.filter((c) => c.url.includes("/rest/v1/requirement_matches") && c.method !== "GET");
+    expect(matchWrites).toEqual([]);
+    expect(db.calls.some((c) => c.url.includes("employer_credit_ledger"))).toBe(false);
+  });
+
   it("reverts the profile and 500s when the consent log cannot be written", async () => {
     const db = fakeDb({ visibility: "masked", logFails: true });
     const res = await handler(req("POST", { visibility: "off" }));

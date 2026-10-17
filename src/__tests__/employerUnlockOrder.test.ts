@@ -91,6 +91,33 @@ describe("insertUnlockOrder", () => {
     expect(db.orders.get("order_x")).toMatchObject({ status: "created", amount: 5900, match_ids: ["m1"] });
   });
 
+  it("stores credit_applied_paise when credit was applied", async () => {
+    const db = new FakeUnlockDb();
+    await insertUnlockOrder(SUPABASE, HEADERS, { ...row, amount: 3900, creditAppliedPaise: 2000 }, db.fetch as typeof fetch);
+    expect((db.orders.get("order_x") as unknown as Record<string, unknown>).credit_applied_paise).toBe(2000);
+  });
+
+  it("retries without credit_applied_paise when migration 0042's column is absent (400)", async () => {
+    const bodies: Array<Record<string, unknown>> = [];
+    const f = vi.fn(async (_url: RequestInfo | URL, init?: RequestInit) => {
+      const b = JSON.parse(String(init?.body)) as Record<string, unknown>;
+      bodies.push(b);
+      return "credit_applied_paise" in b
+        ? new Response('{"code":"PGRST204"}', { status: 400 })
+        : new Response(JSON.stringify([order({ razorpay_order_id: "order_x" })]), { status: 201 });
+    });
+    const r = await insertUnlockOrder(SUPABASE, HEADERS, { ...row, amount: 3900, creditAppliedPaise: 2000 }, f as unknown as typeof fetch);
+    expect(r.kind).toBe("inserted");
+    expect(bodies).toHaveLength(2);
+    expect(bodies[1]).not.toHaveProperty("credit_applied_paise");
+  });
+
+  it("never sends credit_applied_paise for a plain cash order", async () => {
+    const f = vi.fn(async (_u: RequestInfo | URL, init?: RequestInit) => new Response(JSON.stringify([order()]), { status: 201, headers: { "x-body": String(init?.body) } }));
+    await insertUnlockOrder(SUPABASE, HEADERS, row, f as unknown as typeof fetch);
+    expect(String((f.mock.calls[0][1] as RequestInit).body)).not.toContain("credit_applied_paise");
+  });
+
   it("on a 409 (unique open-single index) returns the winner's order for reuse", async () => {
     const winner = order({ razorpay_order_id: "order_winner", match_ids: ["m1"] });
     const f = vi.fn(async (url: RequestInfo | URL, init?: RequestInit) => {

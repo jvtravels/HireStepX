@@ -1,6 +1,6 @@
 /* Vercel Edge Function — Employer credit balance
  *
- * GET /api/employer-credit → { balancePaise, events }
+ * GET /api/employer-credit → { balancePaise, owedPaise, events }
  * Credit is the in-platform balance created when a paid candidate can't be
  * reached (see _employer-credit.ts). Before migration 0041 is applied this
  * answers a zero balance with no events rather than an error.
@@ -40,6 +40,9 @@ export default async function handler(req: Request): Promise<Response> {
   const service = { apikey: SUPABASE_SERVICE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_KEY}` };
   const rows = await loadCreditRows(SUPABASE_URL, service, pre.auth.userId);
   const list = rows ?? [];
-  const balancePaise = list.reduce((s, r) => s + r.amount, 0);
-  return new Response(JSON.stringify({ balancePaise, events: toCreditEvents(list).slice(0, 50) }), { status: 200, headers });
+  const net = list.reduce((s, r) => s + r.amount, 0);
+  // A clawback after the credit was spent leaves a debt: show 0 spendable and the amount still owed.
+  const balancePaise = Math.max(0, net);
+  const owedPaise = Math.max(0, -net);
+  return new Response(JSON.stringify({ balancePaise, owedPaise, events: toCreditEvents(list).slice(0, 50) }), { status: 200, headers });
 }

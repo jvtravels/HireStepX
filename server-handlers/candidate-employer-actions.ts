@@ -161,7 +161,9 @@ export async function doReport(
     slog.warn("candidate-employer-actions: report count lookup failed", { employerId });
   }
 
-  await creditBlockedCandidate(base, employerId, userId, f);
+  // No credit on a report: a report is also the lever for a "report the employer and
+  // get your money back" loop, and a reported employer is the one the platform may
+  // suspend. Credit is for plain blocks only (and still skips employers who messaged).
   return { ok: true, blocked: true, reported: true, alreadyReported };
 }
 
@@ -174,6 +176,11 @@ export async function doRespond(
 ): Promise<Done<{ response: CandidateResponse; respondedAt: string | null; changed: boolean }> | Failure> {
   const previous = match.candidate_response ?? "none";
   if (previous === response) return { ok: true, response, respondedAt: null, changed: false };
+  // Once the employer has moved on to an interview or an offer, flipping the
+  // response would rewrite history the employer already acted on.
+  if (match.candidate_status === "interviewing" || match.candidate_status === "hired") {
+    return { ok: false, status: 409, error: "This application has already moved to interviews, so your response can no longer be changed. Message the employer instead." };
+  }
 
   const respondedAt = new Date().toISOString();
   // Candidate-scoped PATCH (belt and braces on top of the ownership check above).

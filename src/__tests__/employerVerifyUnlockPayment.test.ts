@@ -412,3 +412,26 @@ describe("employer-verify-unlock-payment — partial fulfilment", () => {
     expect(db.ledger).toHaveLength(1);
   });
 });
+
+describe("employer-verify-unlock-payment — late payment on a credit order", () => {
+  it("answers 409 order_converted_to_credit when the released credit can no longer be re-spent", async () => {
+    db = new FakeUnlockDb().seed({
+      orders: [order({ razorpay_order_id: ORDER_ID, status: "expired", amount: 3900, credit_applied_paise: 2000 } as Partial<ReturnType<typeof order>>)],
+      matches: [match("m1")],
+    });
+    payments = [capturedPayment({ amount: 3900 })];
+    const inner = global.fetch;
+    const json = (b: unknown, status = 200) => new Response(JSON.stringify(b), { status });
+    global.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.includes("/rpc/spend_employer_credit")) return json(0);
+      if (url.includes("/rest/v1/employer_credit_ledger")) return init?.method === "POST" ? json(null, 201) : json([]);
+      return inner(input, init);
+    }) as unknown as typeof fetch;
+    const res = mockRes();
+    await handler(mockReq(validBody()), res);
+    expect(res.statusCode).toBe(409);
+    expect(res.body).toMatchObject({ code: "order_converted_to_credit", creditPaise: 3900 });
+    expect(db.matches.get("m1")?.unlocked).toBe(false);
+  });
+});

@@ -90,6 +90,8 @@ interface World {
   matchLookupStatus: number;
   creditBalance: number | null; // null = ledger unavailable (migration 0041 unapplied)
   creditSpend: (amount: number) => number; // what spend_employer_credit returns
+  spendHttpStatus: number; // non-200 simulates a lost/failed RPC response
+  spentRows: Array<{ amount: number; order_ref: string }>; // spend/release rows the ledger already holds
 }
 let world: World;
 let calls: Array<{ method: string; url: string; body: unknown }>;
@@ -164,9 +166,15 @@ function routedFetch() {
       return json({ id: world.razorpay.id, amount: body.amount, currency: "INR" });
     }
     if (url.includes("employer_credit_ledger?") && method === "GET") {
+      if (url.includes("kind=in.(spend,release)")) return json(world.spentRows);
       return world.creditBalance == null ? json({ code: "PGRST205" }, 404) : json([{ amount: world.creditBalance }]);
     }
-    if (url.endsWith("/rpc/spend_employer_credit")) return json(world.creditSpend((body as { p_amount: number }).p_amount));
+    if (url.endsWith("/rpc/spend_employer_credit")) {
+      if (world.spendHttpStatus !== 200) return json({ message: "boom" }, world.spendHttpStatus);
+      return json(world.creditSpend((body as { p_amount: number }).p_amount));
+    }
+    if (url.endsWith("/rest/v1/employer_credit_ledger") && method === "POST") return new Response(null, { status: 201 });
+    if (url.includes("employer_unlock_orders?razorpay_order_id=eq.") && method === "PATCH") return new Response(null, { status: 204 });
     return json({ message: `unrouted ${method} ${url}` }, 404);
   });
 }
@@ -192,7 +200,7 @@ beforeEach(() => {
     authOk: true, email: "boss@acme.com", emailConfirmed: true, website: "https://acme.com", storedTier: null,
     suspendedAt: null, reqStatus: "open", ownerId: EMP, matches: [{ id: M1 }], blockedCandidates: new Set(),
     openOrders: [], unlocked24h: 0, razorpay: { ok: true, status: 200, id: "order_new" }, insertStatus: 201, matchLookupStatus: 200,
-    creditBalance: null, creditSpend: (a) => a,
+    creditBalance: null, creditSpend: (a) => a, spendHttpStatus: 200, spentRows: [],
   };
   global.fetch = routedFetch() as unknown as typeof fetch;
 });
@@ -625,5 +633,49 @@ describe("employer-create-unlock-order — account credit", () => {
     expect(res.statusCode).toBe(200);
     expect(razorpayCall()?.body).toMatchObject({ amount: 5900 });
     expect(spendCall()).toBeUndefined();
+  });
+
+  it("persists credit_applied_paise on the order so fulfilment can verify the spend", async () => {
+    world.creditBalance = 2000;
+    await handler(mockReq({ mode: "single", matchId: M1 }), mockRes());
+    expect(orderInsert()?.body).toMatchObject({ amount: 3900, credit_applied_paise: 2000 });
+  });
+
+  it("omits credit_applied_paise for a plain cash order", async () => {
+    world.creditBalance = 0;
+    await handler(mockReq({ mode: "single", matchId: M1 }), mockRes());
+    expect(orderInsert()?.body).not.toHaveProperty("credit_applied_paise");
+  });
+
+  it("closes the order as failed and releases any credit that did get taken when the balance changed", async () => {
+    world.creditBalance = 2000;
+    world.creditSpend = () => 0;
+    world.spentRows = [{ amount: -2000, order_ref: "order_new" }];
+    const res = mockRes();
+    await handler(mockReq({ mode: "single", matchId: M1 }), res);
+    expect(res.statusCode).toBe(409);
+    const failedPatch = calls.find((c) => c.method === "PATCH" && c.url.includes("employer_unlock_orders?razorpay_order_id=eq.order_new"));
+    expect(failedPatch?.body).toMatchObject({ status: "failed" });
+    const release = calls.find((c) => c.method === "POST" && c.url.endsWith("/rest/v1/employer_credit_ledger"));
+    expect(release?.body).toMatchObject({ kind: "release", amount: 2000, order_ref: "order_new" });
+  });
+
+  it("503s (not credit_changed) when the spend RPC errors and the ledger shows no spend, failing the order", async () => {
+    world.creditBalance = 2000;
+    world.spendHttpStatus = 500;
+    const res = mockRes();
+    await handler(mockReq({ mode: "single", matchId: M1 }), res);
+    expect(res.statusCode).toBe(503);
+    expect(calls.some((c) => c.method === "PATCH" && c.url.includes("employer_unlock_orders") && (c.body as { status?: string })?.status === "failed")).toBe(true);
+  });
+
+  it("trusts a spend that committed even though the RPC response was lost", async () => {
+    world.creditBalance = 2000;
+    world.spendHttpStatus = 502;
+    world.spentRows = [{ amount: -2000, order_ref: "order_new" }];
+    const res = mockRes();
+    await handler(mockReq({ mode: "single", matchId: M1 }), res);
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({ orderId: "order_new", creditAppliedPaise: 2000 });
   });
 });

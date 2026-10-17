@@ -26,7 +26,7 @@ const RID = "22222222-2222-4222-8222-222222222222";
 type Call = { url: string; method: string; body?: string };
 
 function fakeDb(o: {
-  owner?: string; response?: string; employerSuspended?: boolean; reporters?: string[];
+  owner?: string; response?: string; status?: string; employerSuspended?: boolean; reporters?: string[];
   duplicateReport?: boolean; matchMissing?: boolean; blockFails?: boolean; unlocked?: boolean; requestGone?: boolean;
 } = {}) {
   const calls: Call[] = [];
@@ -38,7 +38,7 @@ function fakeDb(o: {
     if (u.includes("/rest/v1/requirement_matches") && method === "GET") {
       if (o.matchMissing) return res([]);
       return res([{
-        id: MATCH, requirement_id: REQ, candidate_user_id: o.owner ?? UID, candidate_status: "shortlisted", candidate_response: o.response ?? "none", unlocked: o.unlocked ?? false,
+        id: MATCH, requirement_id: REQ, candidate_user_id: o.owner ?? UID, candidate_status: o.status ?? "shortlisted", candidate_response: o.response ?? "none", unlocked: o.unlocked ?? false,
         employer_requirements: { employer_id: EMP, title: "SRE", employers: { suspended_at: o.employerSuspended ? "2026-10-01" : null } },
       }]);
     }
@@ -187,6 +187,22 @@ describe("respond", () => {
     expect(ev).toMatchObject({ from_status: "candidate_interested", to_status: "candidate_declined" });
   });
 
+  it("refuses to change the response once the employer is interviewing or has hired", async () => {
+    for (const status of ["interviewing", "hired"]) {
+      const calls = fakeDb({ response: "interested", status });
+      const res = await handler(post({ action: "respond", matchId: MATCH, response: "declined" }));
+      expect(res.status).toBe(409);
+      expect(calls.some((c) => c.method !== "GET")).toBe(false);
+    }
+    expect(notify).not.toHaveBeenCalled();
+  });
+
+  it("still lets a response change while the match is only invited", async () => {
+    fakeDb({ response: "interested", status: "interview_invited" });
+    const res = await handler(post({ action: "respond", matchId: MATCH, response: "declined" }));
+    expect(res.status).toBe(200);
+  });
+
   it("is a no-op (no write, no event, no notification) when the response is unchanged", async () => {
     const calls = fakeDb({ response: "declined" });
     const res = await handler(post({ action: "respond", matchId: MATCH, response: "declined" }));
@@ -233,5 +249,44 @@ describe("resolve_request", () => {
     fakeDb({ unlocked: true });
     const res = await handler(post({ action: "resolve_request", matchId: MATCH, requestId: RID, resolution: "fulfilled", note: "mail me a@b.com" }));
     expect(res.status).toBe(200);
+  });
+});
+
+describe("credit triggers: block credits, report does not", () => {
+  /** Layers a paid order and a ledger onto fakeDb so a credit would be visible if one were written. */
+  function withPaidOrder(unlocked = true) {
+    const calls = fakeDb({ unlocked });
+    const inner = global.fetch;
+    global.fetch = vi.fn(async (url: string, init?: RequestInit) => {
+      const u = String(url);
+      const method = init?.method ?? "GET";
+      const res = (body: unknown, status = 200) => ({ ok: status < 400, status, json: async () => body, text: async () => "" }) as unknown as Response;
+      if (u.includes("/rest/v1/employer_unlock_orders")) {
+        calls.push({ url: u, method });
+        return res([{ razorpay_order_id: "order_1", employer_id: EMP, amount: 5900, match_ids: [MATCH] }]);
+      }
+      if (u.includes("/rest/v1/employer_credit_ledger")) {
+        calls.push({ url: u, method, body: init?.body as string | undefined });
+        return method === "POST" ? res(null, 201) : res([]);
+      }
+      return inner(url, init);
+    }) as unknown as typeof fetch;
+    return calls;
+  }
+  const ledgerInserts = (calls: Call[]) => calls.filter((c) => c.method === "POST" && c.url.includes("employer_credit_ledger"));
+
+  it("a block credits the unlock back and relocks the contact", async () => {
+    const calls = withPaidOrder();
+    await handler(post({ action: "block", matchId: MATCH }));
+    expect(ledgerInserts(calls).map((c) => JSON.parse(c.body!))).toEqual([expect.objectContaining({ kind: "refund", reason: "blocked", match_id: MATCH, amount: 5900 })]);
+    expect(calls.some((c) => c.method === "PATCH" && c.url.includes("requirement_matches") && c.body?.includes('"unlocked":false'))).toBe(true);
+  });
+
+  it("a report never credits, so reports cannot be used to farm credit", async () => {
+    const calls = withPaidOrder();
+    const res = await handler(post({ action: "report", matchId: MATCH, reason: "spam" }));
+    expect(res.status).toBe(200);
+    expect(ledgerInserts(calls)).toHaveLength(0);
+    expect(calls.some((c) => c.url.includes("employer_unlock_orders"))).toBe(false);
   });
 });

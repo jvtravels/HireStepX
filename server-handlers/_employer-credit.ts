@@ -3,10 +3,20 @@
  * When a candidate an employer paid for turns out to be unreachable (declines,
  * withdraws, blocks the company, or never answers an interview invite) the
  * unlock price of that candidate is credited back, once, and applied to the
- * employer's next unlock. It is NOT a Razorpay cash refund and it does NOT
- * relock the candidate (the employer keeps what they unlocked).
+ * employer's next unlock. It is NOT a Razorpay cash refund. The match is
+ * RELOCKED when the credit lands: money back means the contact is no longer
+ * the employer's, so a candidate can't be both refunded and still reachable.
+ * (A candidate who later turns visibility back on stays locked until the
+ * employer pays again; one refund per match, ever, via the unique index.)
  *
  * Money model: employer_credit_ledger holds signed paise rows; balance = sum.
+ * Kinds: refund (+), spend (-), release (+, an unfinished order's spend coming
+ * back), clawback (-, credit reversed because the Razorpay payment behind it
+ * was refunded or lost in a dispute), conversion (+, a captured payment that
+ * could not fulfil its order, kept as credit). A clawback can land after the
+ * credit was already spent, so the balance MAY GO NEGATIVE: that is a debt the
+ * employer works off, spending is blocked until the sum is positive again and
+ * the UI shows a clamped balance. Clawbacks are never skipped to avoid it.
  * Pure rules (eligibility, share value, how much credit to apply) live at the
  * top of this file; the I/O below uses plain PostgREST fetches so it runs on
  * both the edge (candidate handlers) and Node (cron, order creation). Every
@@ -16,8 +26,16 @@
 
 import { slog } from "./_shared";
 import { notify as defaultNotify, type NotifyInput } from "./_notify";
+import { captureServerEvent } from "./_posthog";
 
-export type CreditReason = "declined" | "withdrew" | "blocked" | "no_response" | "unavailable";
+export type CreditReason =
+  | "declined" | "withdrew" | "blocked" | "no_response" | "unavailable"
+  | "payment_refunded" | "payment_disputed" | "late_payment";
+/** Reasons where the candidate acted after the employer may already have engaged:
+ *  an employer who messaged them got what the unlock pays for. */
+const MESSAGE_SKIP_REASONS: ReadonlySet<string> = new Set(["declined", "withdrew", "blocked"]);
+/** Suffix of the ledger ref for credit re-spent on an order paid after it expired. */
+const LATE_SUFFIX = ":late";
 
 /** Days an interview invite may go unanswered before the unlock is credited back. */
 export const NO_RESPONSE_DAYS = 14;
@@ -43,13 +61,18 @@ export function creditReasonLabel(reason: CreditReason | string | null | undefin
     case "blocked": return "Candidate blocked your company";
     case "no_response": return `No reply within ${NO_RESPONSE_DAYS} days`;
     case "unavailable": return "Candidate unavailable at unlock";
+    case "payment_refunded": return "Payment refunded";
+    case "payment_disputed": return "Payment disputed";
+    case "late_payment": return "Late payment kept as credit";
     default: return "Credit";
   }
 }
 
+export type CreditKind = "refund" | "spend" | "release" | "clawback" | "conversion";
+
 export interface CreditRow {
   amount: number;
-  kind: "refund" | "spend" | "release";
+  kind: CreditKind;
   reason: CreditReason | null;
   match_id: string | null;
   order_ref: string | null;
@@ -83,38 +106,50 @@ export async function creditBalance(base: string, headers: Headers, employerId: 
   }
 }
 
-/** Atomically spends credit for `orderRef`. Returns paise spent (0 when the balance no longer covers it). */
-export async function spendCredit(
+export type SpendOutcome = { spent: number; outcome: "spent" | "insufficient" | "error" };
+
+/** Atomically spends credit for `orderRef` (idempotent per ref in the RPC).
+ *  A transport/HTTP failure is not trusted: the RPC may have committed before
+ *  the response was lost, so the ledger is re-read for an existing spend row
+ *  before this reports failure. */
+export async function spendCreditDetailed(
   base: string, headers: Headers, employerId: string, amountPaise: number, orderRef: string, f: typeof fetch = fetch,
-): Promise<number> {
-  if (amountPaise <= 0) return 0;
+): Promise<SpendOutcome> {
+  if (amountPaise <= 0) return { spent: 0, outcome: "insufficient" };
   try {
     const res = await f(`${base}/rest/v1/rpc/spend_employer_credit`, {
       method: "POST",
       headers: { ...headers, "Content-Type": "application/json" },
       body: JSON.stringify({ p_employer: employerId, p_amount: amountPaise, p_order_ref: orderRef }),
     });
-    if (!res.ok) {
-      slog.error("credit spend failed", { status: res.status, orderRef });
-      return 0;
+    if (res.ok) {
+      const n = await res.json().catch(() => 0);
+      const spent = typeof n === "number" && n > 0 ? n : 0;
+      return { spent, outcome: spent > 0 ? "spent" : "insufficient" };
     }
-    const n = await res.json().catch(() => 0);
-    return typeof n === "number" && n > 0 ? n : 0;
-  } catch {
-    return 0;
-  }
+    slog.error("credit spend failed", { status: res.status, orderRef });
+  } catch { /* fall through to the ledger re-check */ }
+  const existing = (await creditSpentOnOrders(base, headers, employerId, [orderRef], f))?.get(orderRef) ?? 0;
+  return existing > 0 ? { spent: existing, outcome: "spent" } : { spent: 0, outcome: "error" };
 }
 
-/** Net credit spent per order (spend minus anything already released), in paise. null on a read failure. */
-export async function creditSpentOnOrders(
-  base: string, headers: Headers, employerId: string, orderRefs: string[], f: typeof fetch = fetch,
+/** Paise spent (0 on insufficient balance or failure). Callers that must tell those apart use spendCreditDetailed. */
+export async function spendCredit(
+  base: string, headers: Headers, employerId: string, amountPaise: number, orderRef: string, f: typeof fetch = fetch,
+): Promise<number> {
+  return (await spendCreditDetailed(base, headers, employerId, amountPaise, orderRef, f)).spent;
+}
+
+/** Net credit spent per physical ledger ref (spend minus anything released). null on a read failure. */
+async function ledgerSpentByRef(
+  base: string, headers: Headers, employerId: string, refs: string[], f: typeof fetch,
 ): Promise<Map<string, number> | null> {
   const out = new Map<string, number>();
-  if (orderRefs.length === 0) return out;
+  if (refs.length === 0) return out;
   try {
-    const refs = orderRefs.map((r) => encodeURIComponent(`"${r}"`)).join(",");
+    const list = refs.map((r) => encodeURIComponent(`"${r}"`)).join(",");
     const res = await f(
-      `${base}/rest/v1/employer_credit_ledger?employer_id=eq.${encodeURIComponent(employerId)}&kind=in.(spend,release)&order_ref=in.(${refs})&select=amount,order_ref`,
+      `${base}/rest/v1/employer_credit_ledger?employer_id=eq.${encodeURIComponent(employerId)}&kind=in.(spend,release)&order_ref=in.(${list})&select=amount,order_ref`,
       { headers },
     );
     if (!res.ok) return isMissing(res.status, await res.text().catch(() => "")) ? out : null;
@@ -127,22 +162,210 @@ export async function creditSpentOnOrders(
   }
 }
 
-/** Returns credit spent on an order that never completed. Idempotent (one release per order). */
+/** Net credit spent per order, in paise, folding in credit re-spent after the
+ *  order expired (`<ref>:late`). null on a read failure. */
+export async function creditSpentOnOrders(
+  base: string, headers: Headers, employerId: string, orderRefs: string[], f: typeof fetch = fetch,
+): Promise<Map<string, number> | null> {
+  if (orderRefs.length === 0) return new Map();
+  const physical = await ledgerSpentByRef(base, headers, employerId, orderRefs.flatMap((r) => [r, `${r}${LATE_SUFFIX}`]), f);
+  if (!physical) return null;
+  const out = new Map<string, number>();
+  for (const ref of orderRefs) {
+    const net = (physical.get(ref) ?? 0) + (physical.get(`${ref}${LATE_SUFFIX}`) ?? 0);
+    if (physical.has(ref) || physical.has(`${ref}${LATE_SUFFIX}`)) out.set(ref, net);
+  }
+  return out;
+}
+
+/** Returns credit spent on an order that never completed. Idempotent: one
+ *  release per physical spend (the original and the late re-spend each get theirs). */
 export async function releaseCredit(
   base: string, headers: Headers, employerId: string, orderRef: string, f: typeof fetch = fetch,
 ): Promise<void> {
   try {
-    const spent = (await creditSpentOnOrders(base, headers, employerId, [orderRef], f))?.get(orderRef) ?? 0;
-    if (spent <= 0) return;
-    const res = await f(`${base}/rest/v1/employer_credit_ledger`, {
-      method: "POST",
-      headers: { ...headers, "Content-Type": "application/json", Prefer: "return=minimal" },
-      body: JSON.stringify({ employer_id: employerId, amount: spent, kind: "release", order_ref: orderRef }),
-    });
-    if (!res.ok && res.status !== 409) slog.error("credit release failed", { status: res.status, orderRef });
+    const refs = [orderRef, `${orderRef}${LATE_SUFFIX}`];
+    const physical = await ledgerSpentByRef(base, headers, employerId, refs, f);
+    if (!physical) return;
+    for (const ref of refs) {
+      const spent = physical.get(ref) ?? 0;
+      if (spent <= 0) continue;
+      const res = await f(`${base}/rest/v1/employer_credit_ledger`, {
+        method: "POST",
+        headers: { ...headers, "Content-Type": "application/json", Prefer: "return=minimal" },
+        body: JSON.stringify({ employer_id: employerId, amount: spent, kind: "release", order_ref: ref }),
+      });
+      if (!res.ok && res.status !== 409) slog.error("credit release failed", { status: res.status, orderRef: ref });
+    }
   } catch (err) {
     slog.error("credit release threw", { orderRef, err: err instanceof Error ? err.message : String(err) });
   }
+}
+
+/** The credit an order was priced with (migration 0042), null when unknown or the column is absent. */
+export async function loadOrderCreditApplied(
+  base: string, headers: Headers, orderRef: string, f: typeof fetch = fetch,
+): Promise<number | null> {
+  try {
+    const res = await f(
+      `${base}/rest/v1/employer_unlock_orders?razorpay_order_id=eq.${encodeURIComponent(orderRef)}&select=credit_applied_paise`,
+      { headers },
+    );
+    if (!res.ok) return null;
+    const rows = (await res.json().catch(() => null)) as Array<{ credit_applied_paise?: number | null }> | null;
+    const v = Array.isArray(rows) ? rows[0]?.credit_applied_paise : null;
+    return typeof v === "number" && Number.isInteger(v) && v >= 0 ? v : null;
+  } catch {
+    return null;
+  }
+}
+
+function rupees(paise: number): string {
+  return `₹${(paise / 100).toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
+}
+
+async function insertLedger(
+  base: string, headers: Headers, row: Record<string, unknown>, f: typeof fetch,
+): Promise<"inserted" | "duplicate" | "unsupported" | "error"> {
+  const ins = await f(`${base}/rest/v1/employer_credit_ledger`, {
+    method: "POST",
+    headers: { ...headers, "Content-Type": "application/json", Prefer: "return=minimal" },
+    body: JSON.stringify(row),
+  });
+  if (ins.ok) return "inserted";
+  if (ins.status === 409) return "duplicate";
+  const text = await ins.text().catch(() => "");
+  if (isMissing(ins.status, text)) return "unsupported";
+  // Migration 0042 (clawback/conversion kinds) not applied yet: a check-constraint violation.
+  if (ins.status === 400 && /23514|check constraint|violates/i.test(text)) return "unsupported";
+  slog.error("credit ledger insert failed", { status: ins.status, kind: row.kind });
+  return "error";
+}
+
+/* ── Clawback (payment refunded / lost in a dispute) ── */
+
+export interface ClawbackParams {
+  base: string;
+  headers: Headers;
+  order: { razorpay_order_id: string; employer_id: string; requirement_id?: string | null };
+  reason: "payment_refunded" | "payment_disputed";
+  /** Full cash refund: also give back the credit that was spent on the order. */
+  releaseSpent: boolean;
+  fetchImpl?: typeof fetch;
+}
+
+export interface ClawbackResult {
+  /** false when a write failed and the caller should let the event be redelivered. */
+  ok: boolean;
+  clawedBackPaise: number;
+  rows: number;
+}
+
+/** Reverses the credit an order generated (per-candidate refund rows, including
+ *  'unavailable' returns, and a late-payment conversion). Idempotent: every
+ *  clawback has its own synthetic ref under a unique index. */
+export async function clawbackOrderCredit(p: ClawbackParams): Promise<ClawbackResult> {
+  const f = p.fetchImpl ?? fetch;
+  const ref = p.order.razorpay_order_id;
+  const employerId = p.order.employer_id;
+  const result: ClawbackResult = { ok: true, clawedBackPaise: 0, rows: 0 };
+  try {
+    const res = await f(
+      `${p.base}/rest/v1/employer_credit_ledger?employer_id=eq.${encodeURIComponent(employerId)}` +
+        `&order_ref=in.(${encodeURIComponent(`"${ref}"`)},${encodeURIComponent(`"${ref}:convert"`)})&kind=in.(refund,conversion)&select=amount,match_id,order_ref`,
+      { headers: p.headers },
+    );
+    if (!res.ok) {
+      if (isMissing(res.status, await res.text().catch(() => ""))) return result;
+      return { ...result, ok: false };
+    }
+    const rows = (await res.json().catch(() => null)) as Array<{ amount: number; match_id: string | null }> | null;
+    if (!Array.isArray(rows)) return { ...result, ok: false };
+
+    for (const row of rows) {
+      if (!Number.isInteger(row.amount) || row.amount <= 0) continue;
+      const state = await insertLedger(p.base, p.headers, {
+        employer_id: employerId, amount: -row.amount, kind: "clawback", reason: p.reason,
+        match_id: row.match_id, order_ref: `clawback:${ref}:${row.match_id ?? "convert"}`,
+      }, f);
+      if (state === "inserted") { result.clawedBackPaise += row.amount; result.rows += 1; }
+      else if (state === "unsupported") {
+        slog.error("credit clawback skipped: migration 0042 not applied — reverse this credit manually", {
+          code: "credit_clawback_unsupported", orderId: ref, employerId, amountPaise: row.amount,
+        });
+      } else if (state === "error") result.ok = false;
+    }
+    if (p.releaseSpent) await releaseCredit(p.base, p.headers, employerId, ref, f);
+  } catch (err) {
+    slog.error("credit clawback threw", { orderId: ref, err: err instanceof Error ? err.message : String(err) });
+    return { ...result, ok: false };
+  }
+  if (result.rows > 0) {
+    slog.warn("employer credit clawed back", { code: "credit_clawed_back", orderId: ref, employerId, reason: p.reason, paise: result.clawedBackPaise });
+    void captureServerEvent("employer_credit_clawed_back", employerId, {
+      requirementId: p.order.requirement_id ?? null, orderId: ref, amountPaise: result.clawedBackPaise, reason: p.reason,
+    });
+  }
+  return result;
+}
+
+/* ── Late payment (order expired, credit released, then the cash arrived) ── */
+
+export type EnsureCreditResult =
+  | { state: "ok"; creditSpentPaise: number }
+  | { state: "converted"; creditPaise: number }
+  | { state: "error" };
+
+/** Before a captured cash payment fulfils its order, verifies the credit the
+ *  order was priced with is really spent. A reconciler-expired order released
+ *  that credit, so it is re-spent (ref `<order>:late`). If the balance can no
+ *  longer cover it, fulfilling would hand out candidates for less than the
+ *  price: instead the order is left unfulfilled and the cash payment is kept as
+ *  credit (conversion row) with any partial spend released, so the employer is
+ *  made whole and can unlock again. Orders without a stored credit_applied_paise
+ *  (legacy / migration unapplied) are not checked: deriving it from today's
+ *  price could wrongly block a legitimately paid order. */
+export async function ensureCreditSpent(p: {
+  base: string; headers: Headers;
+  order: { razorpay_order_id: string; employer_id: string; amount: number; requirement_id?: string | null };
+  fetchImpl?: typeof fetch;
+}): Promise<EnsureCreditResult> {
+  const f = p.fetchImpl ?? fetch;
+  const ref = p.order.razorpay_order_id;
+  const employerId = p.order.employer_id;
+  const intended = await loadOrderCreditApplied(p.base, p.headers, ref, f);
+  if (!intended) return { state: "ok", creditSpentPaise: 0 };
+
+  const spentMap = await creditSpentOnOrders(p.base, p.headers, employerId, [ref], f);
+  if (!spentMap) return { state: "error" };
+  const spent = spentMap.get(ref) ?? 0;
+  if (spent >= intended) return { state: "ok", creditSpentPaise: spent };
+
+  const late = await spendCreditDetailed(p.base, p.headers, employerId, intended - spent, `${ref}${LATE_SUFFIX}`, f);
+  if (late.outcome === "spent") {
+    void captureServerEvent("employer_credit_spent", employerId, { orderId: ref, amountPaise: late.spent, late: true });
+    return { state: "ok", creditSpentPaise: spent + late.spent };
+  }
+  if (late.outcome === "error") return { state: "error" };
+
+  if (p.order.amount <= 0) return { state: "error" };
+  const state = await insertLedger(p.base, p.headers, {
+    employer_id: employerId, amount: p.order.amount, kind: "conversion", reason: "late_payment", order_ref: `${ref}:convert`,
+  }, f);
+  if (state === "error" || state === "unsupported") {
+    slog.error("late unlock payment could not be fulfilled or converted to credit — manual refund needed", {
+      code: "unlock_late_payment_unresolved", orderId: ref, employerId, cashPaise: p.order.amount, creditShortfallPaise: intended - spent,
+    });
+    return { state: "error" };
+  }
+  await releaseCredit(p.base, p.headers, employerId, ref, f);
+  slog.error("late unlock payment converted to credit — credit it relied on is no longer available", {
+    code: "unlock_late_payment_converted", orderId: ref, employerId, cashPaise: p.order.amount, creditShortfallPaise: intended - spent,
+  });
+  void captureServerEvent("employer_credit_granted", employerId, {
+    requirementId: p.order.requirement_id ?? null, orderId: ref, amountPaise: p.order.amount, reason: "late_payment",
+  });
+  return { state: "converted", creditPaise: p.order.amount };
 }
 
 /* ── Refund as credit ── */
@@ -167,15 +390,97 @@ export interface RefundParams {
 
 export interface RefundResult {
   credited: Array<{ employerId: string; matchId: string; amountPaise: number }>;
+  /** Matches left uncredited because the employer already messaged the candidate. */
+  skippedEmployerMessaged?: string[];
 }
 
 function inList(ids: string[]): string {
   return ids.map(encodeURIComponent).join(",");
 }
 
+/** Takes the contact back: money returned means the employer no longer holds it. */
+export async function relockMatches(base: string, headers: Headers, matchIds: string[], f: typeof fetch = fetch): Promise<boolean> {
+  if (matchIds.length === 0) return true;
+  const url = `${base}/rest/v1/requirement_matches?id=in.(${inList(matchIds)})&unlocked=eq.true`;
+  const patchHeaders = { ...headers, "Content-Type": "application/json", Prefer: "return=minimal" };
+  try {
+    const full = await f(url, {
+      method: "PATCH", headers: patchHeaders,
+      body: JSON.stringify({ unlocked: false, unlocked_at: null, unlocked_candidate_name: null, unlocked_candidate_email: null }),
+    });
+    if (full.ok) return true;
+    // Snapshot columns may be missing on older schemas (migration 0026); the relock itself must still happen.
+    const core = await f(url, { method: "PATCH", headers: patchHeaders, body: JSON.stringify({ unlocked: false, unlocked_at: null }) });
+    return core.ok;
+  } catch {
+    return false;
+  }
+}
+
+/** Matches whose conversation holds a message from the employer. Tolerant: a read
+ *  problem yields "none messaged" so an outage can't withhold credit. */
+async function matchesEmployerMessaged(base: string, headers: Headers, matchIds: string[], f: typeof fetch): Promise<Set<string>> {
+  const messaged = new Set<string>();
+  if (matchIds.length === 0) return messaged;
+  try {
+    const convRes = await f(`${base}/rest/v1/conversations?match_id=in.(${inList(matchIds)})&select=id,match_id`, { headers });
+    if (!convRes.ok) return messaged;
+    const convs = (await convRes.json().catch(() => [])) as Array<{ id: string; match_id: string }>;
+    if (!Array.isArray(convs) || convs.length === 0) return messaged;
+    const msgRes = await f(
+      `${base}/rest/v1/conversation_messages?conversation_id=in.(${convs.map((c) => encodeURIComponent(c.id)).join(",")})&sender_role=eq.employer&select=conversation_id&limit=1000`,
+      { headers },
+    );
+    if (!msgRes.ok) return messaged;
+    const msgs = (await msgRes.json().catch(() => [])) as Array<{ conversation_id: string }>;
+    const convToMatch = new Map(convs.map((c) => [c.id, c.match_id]));
+    for (const m of Array.isArray(msgs) ? msgs : []) {
+      const matchId = convToMatch.get(m.conversation_id);
+      if (matchId) messaged.add(matchId);
+    }
+  } catch { /* tolerant */ }
+  return messaged;
+}
+
+const ABUSE_WINDOW_DAYS = 30;
+const ABUSE_MIN_REFUNDS = 3;
+const ABUSE_SHARE = 0.6;
+
+/** Soft abuse signal: an employer whose refund credit over 30 days exceeds 60%
+ *  of their cash spend (and has 3+ refunds). Credit is still granted — this only
+ *  slog.warns so support can look. Never throws. */
+export async function flagCreditAbuse(p: {
+  base: string; headers: Headers; employerId: string; now?: Date; fetchImpl?: typeof fetch;
+}): Promise<boolean> {
+  const f = p.fetchImpl ?? fetch;
+  const since = encodeURIComponent(new Date((p.now ?? new Date()).getTime() - ABUSE_WINDOW_DAYS * 86_400_000).toISOString());
+  const emp = encodeURIComponent(p.employerId);
+  try {
+    const [credRes, payRes] = await Promise.all([
+      f(`${p.base}/rest/v1/employer_credit_ledger?employer_id=eq.${emp}&kind=eq.refund&created_at=gte.${since}&select=amount&limit=1000`, { headers: p.headers }),
+      f(`${p.base}/rest/v1/employer_unlock_payments?employer_id=eq.${emp}&refunded_at=is.null&created_at=gte.${since}&select=amount&limit=1000`, { headers: p.headers }),
+    ]);
+    if (!credRes.ok || !payRes.ok) return false;
+    const cred = (await credRes.json().catch(() => null)) as Array<{ amount: number }> | null;
+    const pay = (await payRes.json().catch(() => null)) as Array<{ amount: number }> | null;
+    if (!Array.isArray(cred) || !Array.isArray(pay)) return false;
+    const credited = cred.reduce((n, r) => n + (r.amount || 0), 0);
+    const paid = pay.reduce((n, r) => n + (r.amount || 0), 0);
+    if (cred.length < ABUSE_MIN_REFUNDS || credited <= paid * ABUSE_SHARE) return false;
+    slog.warn("employer credit refunds exceed 60% of paid spend over 30 days — review for decline abuse", {
+      code: "employer_credit_abuse_flag", employerId: p.employerId, refunds: cred.length, creditedPaise: credited, paidPaise: paid,
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /** Credits back every refundable, paid, still-unresolved match in `matchIds`.
  *  Safe to call repeatedly from any trigger: eligibility is re-checked and the
- *  ledger's unique index on refunded matches makes the credit land once. */
+ *  ledger's unique index on refunded matches makes the credit land once. When
+ *  credit lands the match is relocked. Not applied for reports (see
+ *  candidate-employer-actions): only decline / withdraw / block / no-reply. */
 export async function creditRefundForMatches(p: RefundParams): Promise<RefundResult> {
   const f = p.fetchImpl ?? fetch;
   const notifyFn = p.notifyImpl ?? defaultNotify;
@@ -192,7 +497,16 @@ export async function creditRefundForMatches(p: RefundParams): Promise<RefundRes
     const matches = (await matchRes.json().catch(() => [])) as Array<{ id: string; candidate_status: string | null }>;
     const eligible = matches.filter((m) => isRefundableStatus(m.candidate_status));
     if (eligible.length === 0) return result;
-    const eligibleIds = eligible.map((m) => m.id);
+    let eligibleIds = eligible.map((m) => m.id);
+
+    if (MESSAGE_SKIP_REASONS.has(p.reason)) {
+      const messaged = await matchesEmployerMessaged(p.base, p.headers, eligibleIds, f);
+      if (messaged.size > 0) {
+        result.skippedEmployerMessaged = eligibleIds.filter((id) => messaged.has(id));
+        eligibleIds = eligibleIds.filter((id) => !messaged.has(id));
+        if (eligibleIds.length === 0) return result;
+      }
+    }
 
     const employerFilter = p.employerId ? `&employer_id=eq.${encodeURIComponent(p.employerId)}` : "";
     const orderRes = await f(
@@ -212,21 +526,30 @@ export async function creditRefundForMatches(p: RefundParams): Promise<RefundRes
       spentByEmployer.set(employerId, spent);
     }
 
+    const toRelock: string[] = [];
     for (const matchId of eligibleIds) {
       const order = orders.find((o) => o.match_ids.includes(matchId));
       if (!order) continue;
       const amountPaise = creditShare(order.amount, spentByEmployer.get(order.employer_id)?.get(order.razorpay_order_id) ?? 0, order.match_ids.length);
       if (amountPaise <= 0) continue;
 
-      const ins = await f(`${p.base}/rest/v1/employer_credit_ledger`, {
-        method: "POST",
-        headers: { ...p.headers, "Content-Type": "application/json", Prefer: "return=minimal" },
-        body: JSON.stringify({ employer_id: order.employer_id, amount: amountPaise, kind: "refund", reason: p.reason, match_id: matchId, order_ref: order.razorpay_order_id }),
-      });
-      if (ins.ok) result.credited.push({ employerId: order.employer_id, matchId, amountPaise });
-      else if (ins.status !== 409 && !isMissing(ins.status, await ins.text().catch(() => ""))) {
-        slog.error("credit refund insert failed", { status: ins.status, matchId });
+      const state = await insertLedger(p.base, p.headers, {
+        employer_id: order.employer_id, amount: amountPaise, kind: "refund", reason: p.reason, match_id: matchId, order_ref: order.razorpay_order_id,
+      }, f);
+      if (state === "inserted") {
+        result.credited.push({ employerId: order.employer_id, matchId, amountPaise });
+        toRelock.push(matchId);
+      } else if (state === "duplicate") {
+        // Credit already landed; finish a relock that a crash may have skipped, but only
+        // when the existing refund belongs to THIS order (a repurchased match is live again).
+        const prior = await f(`${p.base}/rest/v1/employer_credit_ledger?match_id=eq.${encodeURIComponent(matchId)}&kind=eq.refund&select=order_ref&limit=1`, { headers: p.headers });
+        const rows = prior.ok ? ((await prior.json().catch(() => [])) as Array<{ order_ref: string | null }>) : [];
+        if (Array.isArray(rows) && rows[0]?.order_ref === order.razorpay_order_id) toRelock.push(matchId);
       }
+    }
+
+    if (toRelock.length > 0 && !(await relockMatches(p.base, p.headers, toRelock, f))) {
+      slog.error("credit refunded but relock failed — will retry on the next trigger", { code: "credit_relock_failed", matchIds: toRelock });
     }
 
     const byEmployer = new Map<string, { total: number; count: number }>();
@@ -237,14 +560,16 @@ export async function creditRefundForMatches(p: RefundParams): Promise<RefundRes
       byEmployer.set(c.employerId, cur);
     }
     for (const [employerId, s] of byEmployer) {
+      void captureServerEvent("employer_credit_granted", employerId, { amountPaise: s.total, matches: s.count, reason: p.reason });
       void notifyFn({
         userId: employerId,
         type: "credit_refunded",
         title: "Credit added to your account",
-        body: `${s.count === 1 ? "A candidate you unlocked can't be reached" : `${s.count} candidates you unlocked can't be reached`} (${creditReasonLabel(p.reason).toLowerCase()}). ₹${(s.total / 100).toLocaleString("en-IN", { maximumFractionDigits: 2 })} was added as credit and applies to your next unlock.`,
+        body: `${s.count === 1 ? "A candidate you unlocked can't be reached" : `${s.count} candidates you unlocked can't be reached`} (${creditReasonLabel(p.reason).toLowerCase()}). ${rupees(s.total)} was added as credit and applies to your next unlock; their contact details are locked again.`,
         link: "/employer/settings",
         groupKey: `credit_refunded:${employerId}`,
       });
+      await flagCreditAbuse({ base: p.base, headers: p.headers, employerId, fetchImpl: f });
     }
   } catch (err) {
     slog.error("credit refund threw", { reason: p.reason, err: err instanceof Error ? err.message : String(err) });
@@ -252,27 +577,31 @@ export async function creditRefundForMatches(p: RefundParams): Promise<RefundRes
   return result;
 }
 
-/** Credit spent on a paid order comes straight back when some of its
- *  candidates could not be unlocked (the cash share stays with the existing
- *  refund-owed path). Idempotent: one refund row per match. */
+/** Candidates that could not be unlocked after payment: their full share of
+ *  what was paid on the order — CREDIT SPENT AND CASH — comes back as credit
+ *  automatically, so the cash share no longer depends on support reading a log
+ *  line. Idempotent: one refund row per match. Returns paise returned by this call. */
 export async function returnCreditForUnavailable(p: {
-  base: string; headers: Headers; employerId: string; orderRef: string; orderMatchCount: number; failedMatchIds: string[]; fetchImpl?: typeof fetch;
+  base: string; headers: Headers; employerId: string; orderRef: string; orderMatchCount: number; failedMatchIds: string[];
+  /** Cash paid on the order (employer_unlock_orders.amount). */
+  orderCashPaise?: number;
+  fetchImpl?: typeof fetch;
 }): Promise<number> {
   const f = p.fetchImpl ?? fetch;
   if (p.failedMatchIds.length === 0 || p.orderMatchCount <= 0) return 0;
   try {
     const spent = (await creditSpentOnOrders(p.base, p.headers, p.employerId, [p.orderRef], f))?.get(p.orderRef) ?? 0;
-    const share = creditShare(0, spent, p.orderMatchCount);
+    const share = creditShare(p.orderCashPaise ?? 0, spent, p.orderMatchCount);
     if (share <= 0) return 0;
     let returned = 0;
     for (const matchId of p.failedMatchIds) {
-      const ins = await f(`${p.base}/rest/v1/employer_credit_ledger`, {
-        method: "POST",
-        headers: { ...p.headers, "Content-Type": "application/json", Prefer: "return=minimal" },
-        body: JSON.stringify({ employer_id: p.employerId, amount: share, kind: "refund", reason: "unavailable", match_id: matchId, order_ref: p.orderRef }),
-      });
-      if (ins.ok) returned += share;
-      else if (ins.status !== 409) slog.error("credit return insert failed", { status: ins.status, matchId });
+      const state = await insertLedger(p.base, p.headers, {
+        employer_id: p.employerId, amount: share, kind: "refund", reason: "unavailable", match_id: matchId, order_ref: p.orderRef,
+      }, f);
+      if (state === "inserted") returned += share;
+    }
+    if (returned > 0) {
+      void captureServerEvent("employer_credit_granted", p.employerId, { orderId: p.orderRef, amountPaise: returned, matches: p.failedMatchIds.length, reason: "unavailable" });
     }
     return returned;
   } catch (err) {
@@ -319,7 +648,7 @@ export async function unlockedMatchIdsForCandidate(
 /* ── History ── */
 
 export interface CreditEvent {
-  kind: "refund" | "spend" | "release";
+  kind: CreditKind;
   amountPaise: number;
   reason: CreditReason | null;
   label: string;
@@ -331,7 +660,9 @@ export function toCreditEvents(rows: CreditRow[]): CreditEvent[] {
     kind: r.kind,
     amountPaise: r.amount,
     reason: r.reason,
-    label: r.kind === "refund" ? creditReasonLabel(r.reason) : r.kind === "spend" ? "Applied to an unlock" : "Returned: unlock not completed",
+    label: r.kind === "refund" || r.kind === "clawback" || r.kind === "conversion"
+      ? (r.kind === "clawback" ? "Reversed: " : "") + creditReasonLabel(r.reason)
+      : r.kind === "spend" ? "Applied to an unlock" : "Returned: unlock not completed",
     createdAt: r.created_at,
   }));
 }

@@ -106,23 +106,34 @@ export type InsertOrderResult =
 export async function insertUnlockOrder(
   supabaseUrl: string,
   headers: Record<string, string>,
-  row: { razorpayOrderId: string; employerId: string; requirementId: string; mode: "single" | "batch"; matchIds: string[]; amount: number; currency: string },
+  row: {
+    razorpayOrderId: string; employerId: string; requirementId: string; mode: "single" | "batch"; matchIds: string[]; amount: number; currency: string;
+    /** Credit the order was priced with (migration 0042); lets fulfilment verify it was really spent. */
+    creditAppliedPaise?: number;
+  },
   fetchImpl: typeof fetch = fetch,
 ): Promise<InsertOrderResult> {
-  const res = await fetchImpl(`${supabaseUrl}/rest/v1/employer_unlock_orders`, {
+  const base = {
+    razorpay_order_id: row.razorpayOrderId,
+    employer_id: row.employerId,
+    requirement_id: row.requirementId,
+    mode: row.mode,
+    match_ids: row.matchIds,
+    amount: row.amount,
+    currency: row.currency,
+    status: "created",
+  };
+  const post = (body: Record<string, unknown>) => fetchImpl(`${supabaseUrl}/rest/v1/employer_unlock_orders`, {
     method: "POST",
     headers: { ...headers, "Content-Type": "application/json", Prefer: "return=representation" },
-    body: JSON.stringify({
-      razorpay_order_id: row.razorpayOrderId,
-      employer_id: row.employerId,
-      requirement_id: row.requirementId,
-      mode: row.mode,
-      match_ids: row.matchIds,
-      amount: row.amount,
-      currency: row.currency,
-      status: "created",
-    }),
+    body: JSON.stringify(body),
   });
+  const withCredit = typeof row.creditAppliedPaise === "number" && row.creditAppliedPaise > 0;
+  let res = await post(withCredit ? { ...base, credit_applied_paise: row.creditAppliedPaise } : base);
+  if (withCredit && res.status === 400) {
+    // Migration 0042 not applied yet: the column is unknown. Insert without it (fulfilment then skips the credit assertion).
+    res = await post(base);
+  }
   if (res.ok) {
     const rows = (await res.json().catch(() => [])) as UnlockOrderRow[];
     if (Array.isArray(rows) && rows[0]) return { kind: "inserted", order: rows[0] };

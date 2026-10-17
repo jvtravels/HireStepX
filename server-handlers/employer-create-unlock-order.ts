@@ -46,7 +46,8 @@ import {
   releaseCreateLock,
 } from "./_employer-unlock-order";
 import type { UnlockOrderRow } from "./_unlock-fulfillment";
-import { creditBalance, spendCredit } from "./_employer-credit";
+import { creditBalance, spendCreditDetailed, releaseCredit } from "./_employer-credit";
+import { captureServerEvent } from "./_posthog";
 import { isCreditOrderRef, newCreditOrderRef, settleCreditOrder } from "./_employer-credit-unlock";
 
 const RAZORPAY_KEY_ID = (process.env.RAZORPAY_KEY_ID || "").trim();
@@ -109,12 +110,18 @@ async function creditOrderResponse(
   return { status: 500, body: { error: "The unlock could not be completed yet. It will be retried automatically." } };
 }
 
-async function markOrderFailed(supabaseUrl: string, headers: Record<string, string>, orderRef: string): Promise<void> {
+/** Closes an order whose credit could not be taken. Any credit that WAS taken (a spend whose
+ *  response was lost) is released, so a failed order never holds the employer's credit. */
+async function markOrderFailed(
+  supabaseUrl: string, headers: Record<string, string>, orderRef: string, employerId: string, reason: string,
+): Promise<void> {
+  void captureServerEvent("employer_unlock_failed", employerId, { orderId: orderRef, reason });
   await fetch(`${supabaseUrl}/rest/v1/employer_unlock_orders?razorpay_order_id=eq.${encodeURIComponent(orderRef)}&status=eq.created`, {
     method: "PATCH",
     headers: { ...headers, "Content-Type": "application/json", Prefer: "return=minimal" },
     body: JSON.stringify({ status: "failed", updated_at: new Date().toISOString() }),
   }).catch(() => null);
+  await releaseCredit(supabaseUrl, headers, employerId, orderRef);
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -357,7 +364,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (cashPaise === 0) {
       const inserted = await insertUnlockOrder(SUPABASE_URL, sh, {
         razorpayOrderId: newCreditOrderRef(), employerId, requirementId: orderRequirementId,
-        mode, matchIds: targetMatchIds, amount: 0, currency: "INR",
+        mode, matchIds: targetMatchIds, amount: 0, currency: "INR", creditAppliedPaise: price.amountPaise,
       });
       if (inserted.kind === "conflict" && inserted.order) {
         const done = isCreditOrderRef(inserted.order.razorpay_order_id)
@@ -369,11 +376,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         console.error("credit unlock order insert failed:", inserted.kind === "error" ? inserted.detail : "conflict without winner");
         return res.status(500).json({ error: "Could not start the unlock. Please try again." });
       }
-      const spent = await spendCredit(SUPABASE_URL, sh, employerId, price.amountPaise, inserted.order.razorpay_order_id);
-      if (spent === 0) {
-        await markOrderFailed(SUPABASE_URL, sh, inserted.order.razorpay_order_id);
-        return res.status(409).json({ error: "Your credit balance changed. Please review the price and try again.", code: "credit_changed" });
+      const spent = await spendCreditDetailed(SUPABASE_URL, sh, employerId, price.amountPaise, inserted.order.razorpay_order_id);
+      if (spent.outcome !== "spent") {
+        await markOrderFailed(SUPABASE_URL, sh, inserted.order.razorpay_order_id, employerId, spent.outcome === "error" ? "credit_spend_error" : "credit_changed");
+        return spent.outcome === "error"
+          ? res.status(503).json({ error: "Your credit could not be applied right now. Please try again shortly." })
+          : res.status(409).json({ error: "Your credit balance changed. Please review the price and try again.", code: "credit_changed" });
       }
+      void captureServerEvent("employer_credit_spent", employerId, { orderId: inserted.order.razorpay_order_id, amountPaise: spent.spent, creditOnly: true });
       const done = await creditOrderResponse(SUPABASE_URL, sh, inserted.order);
       return res.status(done.status).json(done.body);
     }
@@ -424,14 +434,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       matchIds: targetMatchIds,
       amount: order.amount,
       currency: order.currency || "INR",
+      creditAppliedPaise: creditPaise,
     });
     if (inserted.kind === "inserted") {
       if (creditPaise > 0) {
-        const spent = await spendCredit(SUPABASE_URL, sh, employerId, creditPaise, inserted.order.razorpay_order_id);
-        if (spent === 0) {
-          await markOrderFailed(SUPABASE_URL, sh, inserted.order.razorpay_order_id);
-          return res.status(409).json({ error: "Your credit balance changed. Please review the price and try again.", code: "credit_changed" });
+        const spent = await spendCreditDetailed(SUPABASE_URL, sh, employerId, creditPaise, inserted.order.razorpay_order_id);
+        if (spent.outcome !== "spent") {
+          await markOrderFailed(SUPABASE_URL, sh, inserted.order.razorpay_order_id, employerId, spent.outcome === "error" ? "credit_spend_error" : "credit_changed");
+          return spent.outcome === "error"
+            ? res.status(503).json({ error: "Your credit could not be applied right now. Please try again shortly." })
+            : res.status(409).json({ error: "Your credit balance changed. Please review the price and try again.", code: "credit_changed" });
         }
+        void captureServerEvent("employer_credit_spent", employerId, { orderId: inserted.order.razorpay_order_id, amountPaise: spent.spent, creditOnly: false });
       }
       return res.status(200).json(orderResponse(inserted.order));
     }

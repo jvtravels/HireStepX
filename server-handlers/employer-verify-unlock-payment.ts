@@ -187,7 +187,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             partial: true,
             failed: result.failed,
             refundDueEstimatePaise: result.refundDueEstimatePaise,
-            message: `Payment received. ${result.failed.length} of ${result.order.match_ids.length} candidate${result.order.match_ids.length === 1 ? "" : "s"} could not be unlocked (the candidate withdrew, blocked this account, or the job was edited). We will refund that portion; contact support@hirestepx.com with order id ${razorpay_order_id} if you do not hear from us.`,
+            message: `Payment received. ${result.failed.length} of ${result.order.match_ids.length} candidate${result.order.match_ids.length === 1 ? "" : "s"} could not be unlocked (the candidate withdrew, blocked this account, or the job was edited). ${result.returnedCreditPaise > 0 ? "The value of that portion was added to your account credit and applies to your next unlock" : "We will refund that portion"}; contact support@hirestepx.com with order id ${razorpay_order_id} if you do not see it.`,
           });
         }
         return res.status(200).json(base);
@@ -197,6 +197,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(409).json({
           error: result.kind === "refunded" ? "This payment has been refunded." : "This payment is under dispute.",
           code: `order_${result.kind}`,
+          orderId: razorpay_order_id,
+        });
+      case "converted_to_credit":
+        // A late payment whose credit could not be re-applied: nothing was unlocked, the cash is now account credit.
+        return res.status(409).json({
+          error: "Your payment arrived after this order expired, so it was added to your account credit instead. Unlock the candidates again to use it.",
+          code: "order_converted_to_credit",
+          creditPaise: result.creditPaise,
           orderId: razorpay_order_id,
         });
       case "not_found":

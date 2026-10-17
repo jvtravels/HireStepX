@@ -11,14 +11,20 @@
  *                                      browser verify endpoint + reconciler)
  *   refund.created / refund.processed -> full refund: order 'refunded', ledger
  *                                      refunded_at, relock the matches THIS
- *                                      order unlocked
+ *                                      order unlocked; credit the order generated is
+ *                                      clawed back and credit spent on it released
  *   payment.dispute.*               -> order 'disputed' + slog.error; no
- *                                      automatic relock (support decides)
+ *                                      automatic relock (support decides). A LOST
+ *                                      dispute claws back the credit the order
+ *                                      generated (the cash behind it is gone).
+ *                                      Between created and lost the order is only
+ *                                      marked disputed; credit isn't frozen.
  * Every step is idempotent so Razorpay retries are safe; `retry: true` tells
  * the caller to release its dedup key and answer 5xx so Razorpay redelivers.
  */
 
 import { slog } from "./_shared";
+import { clawbackOrderCredit } from "./_employer-credit";
 import {
   backfillLegacyUnlockOrder,
   fulfillUnlockOrder,
@@ -161,6 +167,8 @@ export async function handleEmployerUnlockWebhook(p: UnlockWebhookParams): Promi
       case "refunded":
       case "disputed":
         return done({ received: true, skipped: `unlock_order_${result.kind}` });
+      case "converted_to_credit":
+        return done({ received: true, unlock: "converted_to_credit", creditPaise: result.creditPaise });
       case "not_captured":
         return done({ received: true, skipped: "not_captured" });
       case "not_found":
@@ -193,6 +201,12 @@ export async function handleEmployerUnlockWebhook(p: UnlockWebhookParams): Promi
     // every step is a no-op the second time round.
     if (!(await relockOrderMatches(p.supabaseUrl, p.headers, order, f))) return retry("relock failed");
     if (!(await stampLedgerRefunded(p.supabaseUrl, p.headers, paymentId, f, now))) return retry("ledger update failed");
+    // Cash went back to the card, so credit minted from it (candidate-decline refunds, a late-payment
+    // conversion) is reversed and credit spent on the order is returned. May leave a negative balance.
+    const clawback = await clawbackOrderCredit({
+      base: p.supabaseUrl, headers: p.headers, order, reason: "payment_refunded", releaseSpent: true, fetchImpl: f,
+    });
+    if (!clawback.ok) return retry("credit clawback failed");
     if (order.status !== "refunded") {
       const ok = await setOrderStatus(p.supabaseUrl, p.headers, order.razorpay_order_id, "created,paid,fulfilled,partial,disputed,expired,failed", "refunded", f, now);
       if (!ok) return retry("order status update failed");
@@ -200,7 +214,7 @@ export async function handleEmployerUnlockWebhook(p: UnlockWebhookParams): Promi
     slog.warn("employer unlock order refunded — candidate contacts relocked", {
       code: "unlock_order_refunded", orderId: order.razorpay_order_id, paymentId, employerId: order.employer_id, matchCount: order.match_ids.length,
     });
-    return done({ received: true, unlock_refund: eventType, relocked: order.match_ids.length });
+    return done({ received: true, unlock_refund: eventType, relocked: order.match_ids.length, creditClawedBackPaise: clawback.clawedBackPaise });
   }
 
   /* ── disputes ── */
@@ -227,6 +241,16 @@ export async function handleEmployerUnlockWebhook(p: UnlockWebhookParams): Promi
         return retry("order status update failed");
       }
     }
+    let clawedBackPaise = 0;
+    if (eventType === "payment.dispute.lost") {
+      // The cash is gone: credit minted from this order has no money behind it. Spent credit stays
+      // spent (the employer keeps the contacts, which support may still relock).
+      const clawback = await clawbackOrderCredit({
+        base: p.supabaseUrl, headers: p.headers, order, reason: "payment_disputed", releaseSpent: false, fetchImpl: f,
+      });
+      if (!clawback.ok) return retry("credit clawback failed");
+      clawedBackPaise = clawback.clawedBackPaise;
+    }
     slog.error(
       eventType === "payment.dispute.created"
         ? "chargeback filed on employer unlock payment — review and decide on relock manually"
@@ -234,7 +258,7 @@ export async function handleEmployerUnlockWebhook(p: UnlockWebhookParams): Promi
       { code: eventType === "payment.dispute.created" ? "unlock_dispute_created" : "unlock_dispute_lost",
         orderId: order.razorpay_order_id, paymentId, employerId: order.employer_id, amount: order.amount },
     );
-    return done({ received: true, unlock_dispute: eventType });
+    return done({ received: true, unlock_dispute: eventType, creditClawedBackPaise: clawedBackPaise });
   }
 
   return { handled: false };

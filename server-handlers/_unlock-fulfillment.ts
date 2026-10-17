@@ -19,8 +19,15 @@
  *
  * A match is NOT unlocked when the candidate blocked the employer or turned
  * employer visibility off between order creation and fulfilment; the order
- * becomes 'partial', the failed ids are returned/logged and a proportional
- * refund estimate is reported for support/the refund path.
+ * becomes 'partial', the failed ids are returned/logged, and their full share
+ * (cash and credit) is returned automatically as account credit (also
+ * persisted as employer_unlock_orders.refund_due_paise when migration 0042 is
+ * applied), with an in-app notification.
+ *
+ * Before exposing anything, a cash order priced with credit has that credit
+ * verified (ensureCreditSpent). A payment that arrives after the order expired
+ * re-spends the released credit; if it can't, the order is NOT fulfilled and
+ * the cash is kept as credit instead (kind "converted_to_credit").
  */
 
 import { patchMatchUnlocked } from "./_unlock-apply";
@@ -28,7 +35,8 @@ import { notify as defaultNotify, type NotifyInput } from "./_notify";
 import { razorpayBasicAuth } from "./_razorpay-auth";
 import { slog } from "./_shared";
 import { captureServerEvent } from "./_posthog";
-import { returnCreditForUnavailable } from "./_employer-credit";
+import { returnCreditForUnavailable, ensureCreditSpent } from "./_employer-credit";
+import { sendUnlockReceiptEmail } from "./_unlock-receipt-email";
 
 export type UnlockOrderStatus =
   | "created" | "paid" | "fulfilled" | "partial" | "refunded" | "disputed" | "expired" | "failed";
@@ -85,8 +93,12 @@ export type FulfillResult =
       firstFulfilment: boolean;
       /** Paise owed back for the matches that could not be unlocked. */
       refundDueEstimatePaise: number;
+      /** Paise this call returned as account credit for the unavailable matches (0 on a replay or when the ledger is unavailable). */
+      returnedCreditPaise: number;
     }
   | { kind: "refunded" | "disputed"; order: UnlockOrderRow }
+  /** Late cash payment whose credit could no longer be re-spent: kept as account credit, nothing unlocked. */
+  | { kind: "converted_to_credit"; order: UnlockOrderRow; creditPaise: number }
   | { kind: "not_found" }
   | { kind: "not_captured"; paymentStatus: string }
   | { kind: "error"; code: "amount_mismatch" | "order_mismatch" | "forbidden" | "duplicate_payment" | "db_error"; message: string };
@@ -217,6 +229,10 @@ async function loadMatchesAndBlocks(
     for (const b of blocks) blockedCandidateIds.add(b.candidate_user_id);
   }
   return { matches, blockedCandidateIds };
+}
+
+function rupees(paise: number): string {
+  return `₹${(paise / 100).toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
 }
 
 function candidateOf(m: MatchRowLite): FulfilledCandidate {
@@ -360,7 +376,38 @@ export async function fulfillUnlockOrder(p: FulfillParams): Promise<FulfillResul
       invoiceNo: await invoiceFor(p.supabaseUrl, p.headers, p.payment.id, f),
       firstFulfilment: false,
       refundDueEstimatePaise: refundShare(order, failed.length),
+      returnedCreditPaise: 0,
     };
+  }
+
+  /* 0. a credit-priced cash order must really have had its credit spent. */
+  let creditApplied = 0;
+  if (order.amount > 0) {
+    const ensured = await ensureCreditSpent({
+      base: p.supabaseUrl, headers: p.headers,
+      order: { razorpay_order_id: order.razorpay_order_id, employer_id: order.employer_id, amount: order.amount, requirement_id: order.requirement_id },
+      fetchImpl: f,
+    });
+    if (ensured.state === "error") return { kind: "error", code: "db_error", message: "could not verify the credit applied to this order" };
+    if (ensured.state === "converted") {
+      // Record the capture and close the order so a webhook replay is a no-op ("refunded" short-circuits above).
+      await patchOrder(p.supabaseUrl, p.headers, order.razorpay_order_id, "created,expired,failed,paid", {
+        status: "refunded", razorpay_payment_id: p.payment.id, paid_at: now().toISOString(),
+      }, f);
+      void captureServerEvent("employer_unlock_failed", order.employer_id, {
+        requirementId: order.requirement_id, orderId: order.razorpay_order_id, reason: "late_payment_credit_unavailable", amountPaise: order.amount,
+      });
+      void notifyFn({
+        userId: order.employer_id,
+        type: "credit_refunded",
+        title: "Payment kept as credit",
+        body: `Your payment of ${rupees(order.amount)} arrived after the order expired and the credit it relied on was no longer available. It was added to your account credit instead; unlock the candidates again to use it.`,
+        link: "/employer/settings",
+        groupKey: `credit_refunded:${order.employer_id}`,
+      });
+      return { kind: "converted_to_credit", order, creditPaise: ensured.creditPaise };
+    }
+    creditApplied = ensured.creditSpentPaise;
   }
 
   /* 1. created|expired|failed -> paid. Losing this race is fine. */
@@ -418,18 +465,25 @@ export async function fulfillUnlockOrder(p: FulfillParams): Promise<FulfillResul
   }, f);
 
   const refundDueEstimatePaise = refundShare(order, failed.length);
+  let returnedPaise = 0;
   if (failed.length > 0) {
-    await returnCreditForUnavailable({
+    returnedPaise = await returnCreditForUnavailable({
       base: p.supabaseUrl, headers: p.headers, employerId: order.employer_id, orderRef: order.razorpay_order_id,
-      orderMatchCount: order.match_ids.length, failedMatchIds: failed.map((x) => x.matchId), fetchImpl: f,
+      orderMatchCount: order.match_ids.length, failedMatchIds: failed.map((x) => x.matchId),
+      orderCashPaise: order.amount, fetchImpl: f,
     });
-    slog.error("unlock order partially fulfilled — candidate(s) unavailable after payment; refund or credit owed", {
+    if (refundDueEstimatePaise > 0) {
+      // Best-effort: the column exists only once migration 0042 is applied. Records the cash share that went back as credit.
+      await patchOrder(p.supabaseUrl, p.headers, order.razorpay_order_id, "partial", { refund_due_paise: refundDueEstimatePaise }, f);
+    }
+    slog.error("unlock order partially fulfilled — candidate(s) unavailable after payment; cash share returned as credit", {
       code: "unlock_order_partial",
       orderId: order.razorpay_order_id,
       paymentId: p.payment.id,
       employerId: order.employer_id,
       failed,
       refundDueEstimatePaise,
+      returnedPaise,
     });
   }
 
@@ -450,7 +504,7 @@ export async function fulfillUnlockOrder(p: FulfillParams): Promise<FulfillResul
     const partialNote = failed.length > 0
       ? creditOnly
         ? ` ${failed.length} candidate${failed.length === 1 ? " is" : "s are"} no longer available; that credit was returned to your balance.`
-        : ` ${failed.length} candidate${failed.length === 1 ? " is" : "s are"} no longer available; we will refund that portion (order ${order.razorpay_order_id}).`
+        : ` ${failed.length} candidate${failed.length === 1 ? " is" : "s are"} no longer available; ${returnedPaise > 0 ? `${rupees(returnedPaise)} was added to your account credit` : "we will refund that portion"} (order ${order.razorpay_order_id}).`
       : "";
     void notifyFn({
       userId: order.employer_id,
@@ -459,12 +513,21 @@ export async function fulfillUnlockOrder(p: FulfillParams): Promise<FulfillResul
       body: n === 0
         ? creditOnly
           ? "The candidate is no longer available, so your credit was returned to your balance."
-          : `Payment received, but the candidate is no longer available. We will refund this payment (order ${order.razorpay_order_id}).`
+          : `Payment received, but the candidate is no longer available. ${returnedPaise > 0 ? `${rupees(returnedPaise)} was added to your account credit` : "We will refund this payment"} (order ${order.razorpay_order_id}).`
         : order.mode === "batch"
           ? `Payment confirmed — ${n} candidate contact${n === 1 ? "" : "s"} unlocked.${invoice}${partialNote}`
           : `Payment confirmed — the candidate's contact details are ready.${invoice}`,
       link: requirementId ? `/employer/requirements/${requirementId}` : undefined,
     });
+    if (!creditOnly && n > 0) {
+      void sendUnlockReceiptEmail({
+        supabaseUrl: p.supabaseUrl, headers: p.headers, fetchImpl: f,
+        receipt: {
+          employerId: order.employer_id, orderId: order.razorpay_order_id, paymentId: p.payment.id,
+          amountPaise: order.amount, creditPaise: creditApplied, candidates: n, invoiceNo: ledger.invoiceNo,
+        },
+      });
+    }
   }
 
   return {
@@ -475,6 +538,7 @@ export async function fulfillUnlockOrder(p: FulfillParams): Promise<FulfillResul
     invoiceNo: ledger.invoiceNo,
     firstFulfilment,
     refundDueEstimatePaise,
+    returnedCreditPaise: returnedPaise,
   };
 }
 

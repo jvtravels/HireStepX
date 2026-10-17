@@ -239,7 +239,9 @@ export async function applyVisibilityChange(opts: {
       slog.error("candidate-visibility: locked-match cleanup failed", { status: delRes?.status ?? 0 });
     }
     // Paid matches stay visible to the employer but the candidate is now
-    // unreachable, so what they paid for each one comes back as credit.
+    // unreachable, so what they paid for each one comes back as credit (the match
+    // is relocked, and an employer who already messaged them is not credited).
+    // Turning visibility back on later does NOT re-grant: one refund per match.
     const unlockedIds = await unlockedMatchIdsForCandidate(base, supabaseServiceHeaders(), opts.userId, f);
     await creditRefundForMatches({ base: base, headers: supabaseServiceHeaders(), matchIds: unlockedIds, reason: "withdrew", fetchImpl: f });
   }

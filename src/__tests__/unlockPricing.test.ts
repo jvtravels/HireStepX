@@ -63,3 +63,19 @@ describe("unlockRateNote", () => {
     expect(note.batchHint).toBe("Unlocking 10 at once costs ₹29.90 each.");
   });
 });
+
+describe("lone-leftover pricing (documented product decision)", () => {
+  /* A batch-mode order for a single leftover candidate is prorated to the batch
+   * per-head rate (₹29.90), which is HALF the ₹59 single-unlock price. Left as is
+   * on purpose: pricing is a product call, not a payments-correctness fix. This
+   * pins the behaviour so any change to it is deliberate and visible. */
+  it("a one-candidate batch order costs the per-head batch rate, below the single price", () => {
+    expect(batchUnlockPrice(1).amountPaise).toBe(2_990);
+    expect(batchUnlockPrice(1).amountPaise).toBeLessThan(singleUnlockPrice().amountPaise);
+  });
+
+  it("the flat batch price only applies to a full bucket", () => {
+    expect(batchUnlockPrice(UNLOCK_BUNDLE_SIZE).amountPaise).toBe(UNLOCK_BATCH_PRICE_PAISE);
+    expect(batchUnlockPrice(UNLOCK_BUNDLE_SIZE - 1).amountPaise).toBe(2_990 * (UNLOCK_BUNDLE_SIZE - 1));
+  });
+});
