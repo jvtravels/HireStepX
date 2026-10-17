@@ -14,6 +14,9 @@ export interface RematchableRequirement {
   stage: string;
   status: string;
   last_matched_at: string | null;
+  /** Stamped at the START of every matching attempt, success or not (migration
+      0044). Absent when the column is not applied yet. */
+  last_rematch_attempt_at?: string | null;
   /** YYYY-MM-DD; absent/null means no deadline. */
   due_date?: string | null;
 }
@@ -64,6 +67,47 @@ export function isOpenForRematch(r: Pick<RematchableRequirement, "stage" | "stat
  *  then caps at `limit` so one candidate signup can only ever trigger a
  *  bounded burst of re-scoring. Rotates fairly across calls: each run picks
  *  up whichever requirements have gone longest without a pass. */
+/** Columns the sweeps read; the attempt column is optional because it ships in
+    its own migration. */
+export const REMATCH_SELECT =
+  "id,employer_id,title,location,description,skills,experience_min,experience_max,min_readiness_band,min_star_completeness,employment_type,duration_weeks,hours_per_week,custom_skill_sets,work_mode,due_date,stage,status,last_matched_at,employers!inner(suspended_at)";
+
+/** PostgREST query for the open-requirement backlog. Long-overdue and
+    suspended rows are filtered in SQL, and rows are ordered by the last
+    ATTEMPT first: ordering on last_matched_at alone left requirements that
+    keep failing (never stamped) as the stalest forever, so a capped read
+    never reached the live ones behind them. */
+export function buildRematchQuery(opts: { limit: number; withAttemptColumn: boolean; nowMs?: number }): string {
+  const cutoff = new Date((opts.nowMs ?? Date.now()) - OVERDUE_REMATCH_GRACE_DAYS * 86_400_000).toISOString().slice(0, 10);
+  const select = opts.withAttemptColumn ? REMATCH_SELECT.replace("last_matched_at,", "last_matched_at,last_rematch_attempt_at,") : REMATCH_SELECT;
+  const order = opts.withAttemptColumn
+    ? "last_rematch_attempt_at.asc.nullsfirst,last_matched_at.asc.nullsfirst"
+    : "last_matched_at.asc.nullsfirst";
+  return `employer_requirements?stage=in.(ai_matching,ready_for_review)&status=neq.closed` +
+    `&or=(due_date.is.null,due_date.gte.${cutoff})` +
+    `&select=${select}&employers.suspended_at=is.null&order=${order}&limit=${opts.limit}`;
+}
+
+/** Reads the backlog, falling back to the pre-0044 query when the attempt
+    column does not exist yet. Null when both reads fail. */
+export async function fetchRematchBacklog(params: {
+  supabaseUrl: string;
+  headers: Record<string, string>;
+  limit: number;
+  fetchImpl?: typeof fetch;
+}): Promise<Response | null> {
+  const f = params.fetchImpl ?? fetch;
+  for (const withAttemptColumn of [true, false]) {
+    const res = await f(`${params.supabaseUrl}/rest/v1/${buildRematchQuery({ limit: params.limit, withAttemptColumn })}`, { headers: params.headers });
+    if (res.ok) return res;
+  }
+  return null;
+}
+
+function attemptTime(r: RematchableRequirement): number {
+  return r.last_rematch_attempt_at ? new Date(r.last_rematch_attempt_at).getTime() : -Infinity;
+}
+
 export function pickRequirementsToRematch<T extends RematchableRequirement>(
   rows: T[],
   limit: number,
@@ -71,9 +115,11 @@ export function pickRequirementsToRematch<T extends RematchableRequirement>(
 ): T[] {
   const open = rows.filter((r) => isOpenForRematch(r) && !isLongOverdue(r.due_date, nowMs));
   const sorted = [...open].sort((a, b) => {
+    const byAttempt = attemptTime(a) === attemptTime(b) ? 0 : attemptTime(a) < attemptTime(b) ? -1 : 1;
+    if (byAttempt !== 0) return byAttempt;
     const at = a.last_matched_at ? new Date(a.last_matched_at).getTime() : -Infinity;
     const bt = b.last_matched_at ? new Date(b.last_matched_at).getTime() : -Infinity;
-    return at - bt;
+    return at === bt ? 0 : at < bt ? -1 : 1;
   });
   return sorted.slice(0, Math.max(0, limit));
 }

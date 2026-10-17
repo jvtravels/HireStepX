@@ -87,20 +87,37 @@ function isMissing(status: number, text: string): boolean {
 
 /* ── Balance, spend, release ── */
 
-/** Current balance in paise. null when the ledger is unavailable (callers treat that as no credit). */
+const BALANCE_PAGE = 1000;
+/** Ceiling on pages read (1M ledger rows); beyond it the balance is unknown, not truncated. */
+const BALANCE_MAX_PAGES = 1000;
+
+/** Current balance in paise. null when the ledger is unavailable (callers treat that as no credit).
+ *  Keyset-pages by id so every row is counted: an unordered capped read would
+ *  silently under- or over-state the balance once a ledger outgrows the cap. */
 export async function creditBalance(base: string, headers: Headers, employerId: string, f: typeof fetch = fetch): Promise<number | null> {
   try {
-    const res = await f(
-      `${base}/rest/v1/employer_credit_ledger?employer_id=eq.${encodeURIComponent(employerId)}&select=amount&limit=5000`,
-      { headers },
-    );
-    if (!res.ok) {
-      if (!isMissing(res.status, await res.text().catch(() => ""))) slog.error("credit balance read failed", { status: res.status });
-      return null;
+    let total = 0;
+    let cursor: string | null = null;
+    for (let page = 0; page < BALANCE_MAX_PAGES; page += 1) {
+      const res: Response = await f(
+        `${base}/rest/v1/employer_credit_ledger?employer_id=eq.${encodeURIComponent(employerId)}&select=id,amount&order=id.asc&limit=${BALANCE_PAGE}` +
+          (cursor !== null ? `&id=gt.${encodeURIComponent(cursor)}` : ""),
+        { headers },
+      );
+      if (!res.ok) {
+        if (!isMissing(res.status, await res.text().catch(() => ""))) slog.error("credit balance read failed", { status: res.status });
+        return null;
+      }
+      const rows = (await res.json().catch(() => null)) as Array<{ id?: string; amount: number }> | null;
+      if (!Array.isArray(rows)) return null;
+      for (const r of rows) total += Number.isInteger(r.amount) ? r.amount : 0;
+      if (rows.length < BALANCE_PAGE) return total;
+      const last = rows[rows.length - 1].id;
+      if (typeof last !== "string") return null;
+      cursor = last;
     }
-    const rows = (await res.json().catch(() => null)) as Array<{ amount: number }> | null;
-    if (!Array.isArray(rows)) return null;
-    return rows.reduce((s, r) => s + (Number.isInteger(r.amount) ? r.amount : 0), 0);
+    slog.error("credit balance exceeded page ceiling", { employerId });
+    return null;
   } catch {
     return null;
   }
@@ -417,28 +434,45 @@ export async function relockMatches(base: string, headers: Headers, matchIds: st
   }
 }
 
-/** Matches whose conversation holds a message from the employer. Tolerant: a read
- *  problem yields "none messaged" so an outage can't withhold credit. */
-async function matchesEmployerMessaged(base: string, headers: Headers, matchIds: string[], f: typeof fetch): Promise<Set<string>> {
+/** Matches whose conversation holds a message from the employer. null when the
+ *  read fails: the caller must then credit nothing, because crediting a match
+ *  the employer did reach would pay out for a candidate they are talking to. */
+async function matchesEmployerMessaged(base: string, headers: Headers, matchIds: string[], f: typeof fetch): Promise<Set<string> | null> {
   const messaged = new Set<string>();
   if (matchIds.length === 0) return messaged;
   try {
     const convRes = await f(`${base}/rest/v1/conversations?match_id=in.(${inList(matchIds)})&select=id,match_id`, { headers });
-    if (!convRes.ok) return messaged;
-    const convs = (await convRes.json().catch(() => [])) as Array<{ id: string; match_id: string }>;
-    if (!Array.isArray(convs) || convs.length === 0) return messaged;
+    if (!convRes.ok) {
+      slog.error("credit reachability read failed", { code: "credit_reachability_read_failed", stage: "conversations", status: convRes.status });
+      return null;
+    }
+    const convs = (await convRes.json().catch(() => null)) as Array<{ id: string; match_id: string }> | null;
+    if (!Array.isArray(convs)) return null;
+    if (convs.length === 0) return messaged;
     const msgRes = await f(
       `${base}/rest/v1/conversation_messages?conversation_id=in.(${convs.map((c) => encodeURIComponent(c.id)).join(",")})&sender_role=eq.employer&select=conversation_id&limit=1000`,
       { headers },
     );
-    if (!msgRes.ok) return messaged;
-    const msgs = (await msgRes.json().catch(() => [])) as Array<{ conversation_id: string }>;
+    if (!msgRes.ok) {
+      slog.error("credit reachability read failed", { code: "credit_reachability_read_failed", stage: "messages", status: msgRes.status });
+      return null;
+    }
+    const msgs = (await msgRes.json().catch(() => null)) as Array<{ conversation_id: string }> | null;
+    if (!Array.isArray(msgs)) return null;
+    if (msgs.length >= 1000) {
+      // A capped read could hide the employer's message; treat as unknown rather than reachable-or-not.
+      slog.error("credit reachability read truncated", { code: "credit_reachability_read_failed", stage: "messages_truncated" });
+      return null;
+    }
     const convToMatch = new Map(convs.map((c) => [c.id, c.match_id]));
-    for (const m of Array.isArray(msgs) ? msgs : []) {
+    for (const m of msgs) {
       const matchId = convToMatch.get(m.conversation_id);
       if (matchId) messaged.add(matchId);
     }
-  } catch { /* tolerant */ }
+  } catch (err) {
+    slog.error("credit reachability read threw", { code: "credit_reachability_read_failed", err: err instanceof Error ? err.message : String(err) });
+    return null;
+  }
   return messaged;
 }
 
@@ -501,6 +535,8 @@ export async function creditRefundForMatches(p: RefundParams): Promise<RefundRes
 
     if (MESSAGE_SKIP_REASONS.has(p.reason)) {
       const messaged = await matchesEmployerMessaged(p.base, p.headers, eligibleIds, f);
+      // Fail closed: the next trigger (or the daily sweep) retries once reads recover.
+      if (!messaged) return result;
       if (messaged.size > 0) {
         result.skippedEmployerMessaged = eligibleIds.filter((id) => messaged.has(id));
         eligibleIds = eligibleIds.filter((id) => !messaged.has(id));

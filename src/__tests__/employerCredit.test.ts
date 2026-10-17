@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 
 vi.mock("../../server-handlers/_shared", () => ({ slog: { error: vi.fn(), warn: vi.fn(), info: vi.fn() } }));
+import { slog } from "../../server-handlers/_shared";
 vi.mock("../../server-handlers/_notify", () => ({ notify: vi.fn() }));
 
 const {
@@ -44,6 +45,29 @@ describe("ledger i/o", () => {
   it("creditBalance sums signed rows and is null when the read fails", async () => {
     expect(await creditBalance(BASE, H, "e1", vi.fn().mockResolvedValue(ok([{ amount: 5_000 }, { amount: -2_000 }])) as never)).toBe(3_000);
     expect(await creditBalance(BASE, H, "e1", vi.fn().mockResolvedValue(ok({}, 404)) as never)).toBeNull();
+  });
+
+  it("creditBalance pages through a ledger larger than one page and counts every row", async () => {
+    const uuid = (n: number) => `00000000-0000-0000-0000-${String(n).padStart(12, "0")}`;
+    const all = Array.from({ length: 5_300 }, (_, i) => ({ id: uuid(i), amount: i % 2 === 0 ? 100 : -50 }));
+    const urls: string[] = [];
+    const f = vi.fn(async (url: string) => {
+      urls.push(url);
+      const after = /[?&]id=gt\.([^&]+)/.exec(url)?.[1];
+      const limit = Number(/limit=(\d+)/.exec(url)![1]);
+      const start = after ? all.findIndex((r) => r.id === decodeURIComponent(after)) + 1 : 0;
+      return ok(all.slice(start, start + limit));
+    });
+    const expected = all.reduce((n, r) => n + r.amount, 0);
+    expect(await creditBalance(BASE, H, "e1", f as never)).toBe(expected);
+    expect(urls.length).toBeGreaterThan(5);
+    expect(urls.every((u) => u.includes("order=id.asc"))).toBe(true);
+  });
+
+  it("creditBalance is null (not a partial sum) when a later page fails", async () => {
+    const full = Array.from({ length: 1_000 }, (_, i) => ({ id: `id-${String(i).padStart(4, "0")}`, amount: 10 }));
+    const f = vi.fn().mockResolvedValueOnce(ok(full)).mockResolvedValueOnce(ok({}, 500));
+    expect(await creditBalance(BASE, H, "e1", f as never)).toBeNull();
   });
 
   it("spendCredit returns what the RPC spent and 0 on failure or insufficient balance", async () => {
@@ -172,10 +196,35 @@ describe("creditRefundForMatches", () => {
     expect(r.credited).toHaveLength(1);
   });
 
-  it("an unreadable conversation lookup never withholds credit", async () => {
+  it("an unreadable conversation lookup fails closed: no credit, no relock, logged", async () => {
     const r0 = router(matchesRoute([{ id: "m1", candidate_status: "shortlisted" }]), ordersRoute([order]), (u) => (u.includes("/conversations?") ? ok({}, 500) : undefined));
     const r = await creditRefundForMatches({ base: BASE, headers: H, matchIds: ["m1"], reason: "declined", fetchImpl: r0.f as never, notifyImpl: vi.fn() });
-    expect(r.credited).toHaveLength(1);
+    expect(r.credited).toEqual([]);
+    expect(r0.ledgerPosts()).toHaveLength(0);
+    expect(relocks(r0.calls)).toHaveLength(0);
+    expect(vi.mocked(slog.error)).toHaveBeenCalledWith("credit reachability read failed", expect.objectContaining({ stage: "conversations" }));
+  });
+
+  it("an unreadable employer-message lookup fails closed too", async () => {
+    const r0 = router(
+      matchesRoute([{ id: "m1", candidate_status: "shortlisted" }]), ordersRoute([order]),
+      (u) => (u.includes("/conversations?") ? ok([{ id: "c1", match_id: "m1" }]) : undefined),
+      (u) => (u.includes("/conversation_messages?") ? ok({}, 503) : undefined),
+    );
+    const r = await creditRefundForMatches({ base: BASE, headers: H, matchIds: ["m1"], reason: "declined", fetchImpl: r0.f as never, notifyImpl: vi.fn() });
+    expect(r.credited).toEqual([]);
+    expect(r0.ledgerPosts()).toHaveLength(0);
+  });
+
+  it("a thrown reachability read fails closed", async () => {
+    const r0 = router(matchesRoute([{ id: "m1", candidate_status: "shortlisted" }]), ordersRoute([order]));
+    const f = vi.fn(async (u: string, init?: RequestInit) => {
+      if (u.includes("/conversations?")) throw new Error("network");
+      return r0.f(u, init as never);
+    });
+    const r = await creditRefundForMatches({ base: BASE, headers: H, matchIds: ["m1"], reason: "declined", fetchImpl: f as never, notifyImpl: vi.fn() });
+    expect(r.credited).toEqual([]);
+    expect(r0.ledgerPosts()).toHaveLength(0);
   });
 
   it("flags decline abuse (3+ refunds over 60% of paid spend) with a warning but still credits", async () => {
@@ -420,5 +469,31 @@ describe("sweepUnreachableCredits", () => {
     expect(summary).toMatchObject({ noResponseScanned: 2, skippedReachable: 1, creditedMatches: 1, creditedPaise: 5_900 });
     const silentQuery = calls.find((u) => u.includes("candidate_response=eq.none"))!;
     expect(decodeURIComponent(silentQuery)).toContain("candidate_status_updated_at=lt.2026-10-03T00:00:00.000Z");
+  });
+
+  it("fails closed when the reply lookup errors: no-reply credit is skipped and logged, declined credit still ran", async () => {
+    const f = vi.fn(async (url: string) => {
+      if (url.includes("candidate_response=eq.declined")) return ok([]);
+      if (url.includes("candidate_response=eq.none")) return ok([{ id: "a" }, { id: "b" }]);
+      if (url.includes("/conversations?")) return ok({}, 500);
+      return ok(null, 201);
+    });
+    const summary = await sweepUnreachableCredits({ base: BASE, headers: H, fetchImpl: f as never, notifyImpl: vi.fn(), now: () => new Date("2026-10-17T00:00:00Z") });
+    expect(summary).toMatchObject({ noResponseScanned: 2, skippedUnverified: 2, creditedMatches: 0, creditedPaise: 0 });
+    expect(f.mock.calls.some(([u]) => String(u).includes("/employer_credit_ledger"))).toBe(false);
+    expect(vi.mocked(slog.error)).toHaveBeenCalledWith(expect.stringContaining("reply lookup failed"), expect.objectContaining({ code: "credit_sweep_reachability_failed" }));
+  });
+
+  it("treats a truncated reply read as unknown rather than crediting", async () => {
+    const f = vi.fn(async (url: string) => {
+      if (url.includes("candidate_response=eq.declined")) return ok([]);
+      if (url.includes("candidate_response=eq.none")) return ok([{ id: "a" }]);
+      if (url.includes("/conversations?")) return ok([{ id: "c1", match_id: "a" }]);
+      if (url.includes("/conversation_messages?")) return ok(Array.from({ length: 1_000 }, () => ({ conversation_id: "other" })));
+      return ok(null, 201);
+    });
+    const summary = await sweepUnreachableCredits({ base: BASE, headers: H, fetchImpl: f as never, notifyImpl: vi.fn(), now: () => new Date("2026-10-17T00:00:00Z") });
+    expect(summary.skippedUnverified).toBe(1);
+    expect(summary.creditedMatches).toBe(0);
   });
 });

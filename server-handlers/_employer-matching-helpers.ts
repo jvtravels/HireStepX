@@ -287,6 +287,58 @@ export async function fetchKeyset<T extends Record<string, unknown>>(params: {
   }
 }
 
+export type ContactWithheldReason = "withdrew" | "declined";
+
+/** Whether an unlocked match's contact details may still leave the server.
+ *  Paying for an unlock buys a snapshot of the resume, not a standing right to
+ *  reach someone who has since pulled employer visibility or declined contact.
+ *  (A candidate who blocked the employer never reaches this point: the ranked
+ *  list drops them entirely.) */
+export function contactWithheldReason(m: {
+  unlocked: boolean;
+  candidateWithdrew: boolean;
+  candidateResponse: string | null;
+}): ContactWithheldReason | null {
+  if (!m.unlocked) return null;
+  if (m.candidateWithdrew) return "withdrew";
+  if (m.candidateResponse === "declined") return "declined";
+  return null;
+}
+
+/** uuid-shaped keyset start point that changes every day and per requirement.
+ *  A fixed id-ascending scan with a MAX_POOL_SCAN cap means that once the pool
+ *  outgrows the cap, the same highest-id profiles are never evaluated for any
+ *  requirement. Rotating where the scan starts spreads that blind spot across
+ *  the pool over successive runs. */
+export function rotatedScanStart(seed: string, now: Date = new Date()): string {
+  const input = `${seed}:${now.toISOString().slice(0, 10)}`;
+  let h = 0x811c9dc5;
+  for (let i = 0; i < input.length; i++) {
+    h ^= input.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return `${h.toString(16).padStart(8, "0")}-0000-0000-0000-000000000000`;
+}
+
+/** fetchKeyset starting after `startKey` and wrapping round to the keys at or
+ *  before it, sharing one row cap and deadline across both legs. */
+export async function fetchKeysetRotated<T extends Record<string, unknown>>(
+  params: Parameters<typeof fetchKeyset<T>>[0] & { startKey: string },
+): Promise<KeysetResult<T>> {
+  const { startKey, ...rest } = params;
+  const maxRows = rest.maxRows ?? MAX_POOL_SCAN;
+  const k = encodeURIComponent(startKey);
+  const first = await fetchKeyset<T>({ ...rest, maxRows, baseUrl: `${rest.baseUrl}&${rest.keyField}=gt.${k}` });
+  if (first.truncated) return first;
+  const second = await fetchKeyset<T>({ ...rest, maxRows: maxRows - first.seen, baseUrl: `${rest.baseUrl}&${rest.keyField}=lte.${k}` });
+  return {
+    rows: [...first.rows, ...second.rows],
+    truncated: second.truncated,
+    failed: second.failed,
+    seen: first.seen + second.seen,
+  };
+}
+
 /** Candidate ids that blocked this employer. A candidate-scoped table, so it
  *  is bounded by how many people actually blocked them. Returns null on a
  *  failed read so callers fail closed instead of matching blocked people. */

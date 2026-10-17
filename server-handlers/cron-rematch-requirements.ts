@@ -25,7 +25,7 @@
 export const config = { runtime: "nodejs" };
 
 import { runMatching, SUSPENDED_MATCHING_STATUS } from "./employer-requirements";
-import { pickRequirementsToRematch, type OpenRequirementForRematch } from "./_incremental-rematch-helpers";
+import { pickRequirementsToRematch, fetchRematchBacklog, type OpenRequirementForRematch } from "./_incremental-rematch-helpers";
 import { canStartBatch } from "./_employer-matching-helpers";
 import { isSuspended } from "./_employer-trust";
 import { slog } from "./_shared";
@@ -73,16 +73,17 @@ export default async function handler(req: Request): Promise<Response> {
 
   const t0 = Date.now();
   // Suspended employers are excluded in the query (inner-join embed) AND again
-  // below; stalest first so a capped/timed-out run resumes where it left off.
-  // pickRequirementsToRematch also skips requirements whose due date passed
-  // more than 30 days ago (abandoned, never archived).
-  const res = await fetch(
-    `${SUPABASE_URL}/rest/v1/employer_requirements?stage=in.(ai_matching,ready_for_review)&status=neq.closed` +
-      `&select=id,employer_id,title,location,description,skills,experience_min,experience_max,min_readiness_band,min_star_completeness,employment_type,duration_weeks,hours_per_week,custom_skill_sets,work_mode,due_date,stage,status,last_matched_at,employers!inner(suspended_at)` +
-      `&employers.suspended_at=is.null&order=last_matched_at.asc.nullsfirst&limit=${MAX_OPEN_REQUIREMENTS_READ}`,
-    { headers: { ...serviceHeaders(), Prefer: "count=exact" } },
-  );
-  if (!res.ok) {
+  // below; least-recently-attempted first so a capped/timed-out run resumes
+  // where it left off and a requirement that keeps failing can't pin the front
+  // of the queue. Requirements whose due date passed more than 30 days ago
+  // (abandoned, never archived) are filtered out in the query itself so they
+  // can't fill the read cap ahead of live ones.
+  const res = await fetchRematchBacklog({
+    supabaseUrl: SUPABASE_URL,
+    headers: { ...serviceHeaders(), Prefer: "count=exact" },
+    limit: MAX_OPEN_REQUIREMENTS_READ,
+  });
+  if (!res) {
     return jsonResponse({ error: "Failed to load open requirements" }, 502);
   }
   const allRows = (await res.json().catch(() => [])) as CronRow[];
@@ -96,6 +97,9 @@ export default async function handler(req: Request): Promise<Response> {
   let attempted = 0;
   let budgetExhausted = false;
   let slowestBatchMs = 0;
+  // A failed pass can leave the requirement at its previous (ready) status, so
+  // the returned status alone no longer identifies a failure.
+  const failedIds = new Set<string>();
   for (let i = 0; i < due.length; i += BATCH_SIZE) {
     if (!canStartBatch(Date.now() - t0, CRON_TIME_BUDGET_MS, slowestBatchMs)) {
       budgetExhausted = true;
@@ -126,7 +130,7 @@ export default async function handler(req: Request): Promise<Response> {
             workMode: r.work_mode,
           },
           r.employer_id,
-          { timeoutMs: CRON_MATCH_TIMEOUT_MS },
+          { timeoutMs: CRON_MATCH_TIMEOUT_MS, onFailure: () => { failedIds.add(r.id); } },
         ).catch((err: unknown) => {
           slog.error("cron rematch requirement threw", { code: "cron_rematch_requirement_failed", requirementId: r.id, error: (err instanceof Error ? err.message : String(err)).slice(0, 200) });
           return "failed";
@@ -134,8 +138,8 @@ export default async function handler(req: Request): Promise<Response> {
       ),
     );
     attempted += batch.length;
-    for (const status of statuses) {
-      if (status === "failed") failed += 1;
+    for (const [idx, status] of statuses.entries()) {
+      if (status === "failed" || failedIds.has(batch[idx].id)) failed += 1;
       else if (status === SUSPENDED_MATCHING_STATUS) skippedSuspended += 1;
       else matched += 1;
     }

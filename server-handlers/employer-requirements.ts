@@ -35,7 +35,7 @@ import { llmRerankCandidates, blendScore } from "./_requirement-match-llm";
 import { notify } from "./_notify";
 import { emailShell, title as emailTitle, para, button, dataCard, escapeHtml } from "./_email-theme";
 import { isSuppressed, marketingEmailParts, preferenceDepsFromEnv } from "./_unsubscribe";
-import { pickRequirementsToRematch, type OpenRequirementForRematch } from "./_incremental-rematch-helpers";
+import { pickRequirementsToRematch, fetchRematchBacklog, type OpenRequirementForRematch } from "./_incremental-rematch-helpers";
 import { isSuspended } from "./_employer-trust";
 import {
   MAX_POOL_SCAN,
@@ -44,6 +44,8 @@ import {
   chunk,
   inList,
   fetchKeyset,
+  fetchKeysetRotated,
+  rotatedScanStart,
   loadBlockedCandidateIds,
   loadOptedOutCandidateIds,
   loadHiredElsewhere,
@@ -156,7 +158,7 @@ async function sendStrongMatchEmail(opts: {
       const res = await fetch("https://api.resend.com/emails", {
         method: "POST",
         headers: { Authorization: `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ from: FROM_EMAIL, to: [email], subject: "New strong match found — HireStepX", html, ...parts.resend }),
+        body: JSON.stringify({ from: FROM_EMAIL, to: [email], subject: "New strong match found | HireStepX", html, ...parts.resend }),
         signal: controller.signal,
       });
       if (!res.ok) {
@@ -530,6 +532,64 @@ export interface RunMatchingOptions {
   /** Overall wall-clock budget for this run. Interactive callers keep the
    *  edge-safe default; the node cron passes a larger one. */
   timeoutMs?: number;
+  /** Called when the pass threw or timed out, even if the requirement kept its
+   *  previous status because a usable shortlist already existed. */
+  onFailure?: (err: Error) => void;
+}
+
+// Flipped once a PATCH proves migration 0044 is not applied, so each later run
+// skips the doomed write instead of paying a 400 round trip.
+let attemptColumnMissing = false;
+
+/** Stamps the attempt time before matching starts. Best-effort and tolerant of
+ *  the unapplied-migration case: it only feeds the sweeps' fair ordering. */
+async function markRematchAttempt(requirementId: string): Promise<void> {
+  if (attemptColumnMissing) return;
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}`, {
+    method: "PATCH",
+    headers: { ...serviceHeaders(), "Content-Type": "application/json", Prefer: "return=minimal" },
+    body: JSON.stringify({ last_rematch_attempt_at: new Date().toISOString() }),
+  }).catch(() => null);
+  if (res && res.status === 400) attemptColumnMissing = true;
+}
+
+/** Status for a failed pass. A shortlist that is already on file is still
+ *  valid (every write in the pass is upsert-then-cleanup), so flipping the
+ *  requirement to "failed" would hide good candidates over a transient error,
+ *  especially one from the nightly cron. Only a requirement with no shortlist
+ *  (or an unreadable one) is marked failed. */
+async function settleFailedRun(requirementId: string): Promise<string> {
+  const headers = serviceHeaders();
+  const base = `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}`;
+  const scoresRes = await fetch(
+    `${SUPABASE_URL}/rest/v1/requirement_matches?requirement_id=eq.${encodeURIComponent(requirementId)}&select=match_score&limit=1000`,
+    { headers },
+  ).catch(() => null);
+  const scores = scoresRes?.ok ? ((await scoresRes.json().catch(() => null)) as Array<{ match_score: number }> | null) : null;
+  if (Array.isArray(scores) && scores.length > 0) {
+    const restored = classifyRequirementStatus(scores.map((m) => ({ matchScore: m.match_score })));
+    // Only a requirement stuck mid-run ("generating") or already "failed" needs
+    // its status put back; ready/partial ones are left exactly as they were.
+    const res = await fetch(`${base}&status=in.(generating,failed)`, {
+      method: "PATCH",
+      headers: { ...headers, "Content-Type": "application/json", Prefer: "return=representation" },
+      body: JSON.stringify({ status: restored }),
+    }).catch(() => null);
+    const touched = res?.ok ? await res.json().catch(() => []) : [];
+    if (Array.isArray(touched) && touched.length > 0) return restored;
+    // Nothing was in a transient state: report the status it already has.
+    const cur = await fetch(`${base}&select=status`, { headers }).catch(() => null);
+    const rows = cur?.ok ? ((await cur.json().catch(() => [])) as Array<{ status: string }>) : [];
+    return rows[0]?.status ?? restored;
+  }
+  // status=neq.closed: an employer who archived the requirement while this
+  // pass was running must not see it reopened as "failed".
+  await fetch(`${base}&status=neq.closed`, {
+    method: "PATCH",
+    headers: { ...headers, "Content-Type": "application/json", Prefer: "return=minimal" },
+    body: JSON.stringify({ status: "failed" }),
+  }).catch(() => {});
+  return "failed";
 }
 
 /** Returned instead of a requirement status when the owner is suspended:
@@ -554,14 +614,8 @@ export async function runMatching(requirementId: string, req: RequirementInput, 
     controller.abort();
     const msg = err instanceof Error ? err.message : String(err);
     slog.error("employer-requirements matching threw", { code: "employer_requirements_matching_failed", error: msg.slice(0, 200), requirementId });
-    // status=neq.closed: an employer who archived the requirement while this
-    // pass was running must not see it reopened as "failed".
-    await fetch(`${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&status=neq.closed`, {
-      method: "PATCH",
-      headers: { ...serviceHeaders(), "Content-Type": "application/json", Prefer: "return=minimal" },
-      body: JSON.stringify({ status: "failed" }),
-    }).catch(() => {});
-    return "failed";
+    opts.onFailure?.(err instanceof Error ? err : new Error(msg));
+    return await settleFailedRun(requirementId);
   } finally {
     if (timer) clearTimeout(timer);
   }
@@ -601,6 +655,9 @@ async function runMatchingInner(requirementId: string, req: RequirementInput, ow
   const employerRows = (await employerRes.json().catch(() => [])) as Array<{ id: string; suspended_at?: string | null }>;
   if (isSuspended(employerRows[0])) return SUSPENDED_MATCHING_STATUS;
 
+  // After the suspension check so a suspended employer's run stays write-free.
+  await markRematchAttempt(requirementId);
+
   const existingRead = await fetchKeyset<ExistingMatchRow & Record<string, unknown>>({
     baseUrl: `${SUPABASE_URL}/rest/v1/requirement_matches?requirement_id=eq.${encodeURIComponent(requirementId)}&select=id,candidate_user_id,match_score,unlocked,candidate_status,candidate_status_note,interview_scheduled_at`,
     headers, keyField: "id", pageSize: 1000, maxRows: 5000,
@@ -637,7 +694,10 @@ async function runMatchingInner(requirementId: string, req: RequirementInput, ow
   // only profiles that are eligible AND clear the role/skill relevance floor,
   // so session reads below touch a small subset instead of the whole table.
   const relevant: PoolProfile[] = [];
-  const scan = await fetchKeyset<PoolProfile & Record<string, unknown>>({
+  // Rotated start (see rotatedScanStart): a fixed id order starves every
+  // profile past the MAX_POOL_SCAN cap once the pool grows beyond it.
+  const scan = await fetchKeysetRotated<PoolProfile & Record<string, unknown>>({
+    startKey: rotatedScanStart(requirementId),
     baseUrl:
       `${SUPABASE_URL}/rest/v1/profiles?id=neq.${encodeURIComponent(ownerUserId)}&employer_visibility=neq.off` +
       `&select=id,name,target_role,industry,resume_data,practice_timestamps,employer_visibility`,
@@ -826,16 +886,11 @@ async function runMatchingInBatches(
 
 export async function rematchOpenRequirementsForNewResume(): Promise<void> {
   try {
-    // Least-recently-matched first, suspended employers excluded server-side
-    // (and again below, defensively), capped so one resume save can't read an
-    // unbounded backlog.
-    const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/employer_requirements?stage=in.(ai_matching,ready_for_review)&status=neq.closed` +
-        `&select=id,employer_id,title,location,description,skills,experience_min,experience_max,min_readiness_band,min_star_completeness,employment_type,duration_weeks,hours_per_week,custom_skill_sets,work_mode,due_date,stage,status,last_matched_at,employers!inner(suspended_at)` +
-        `&employers.suspended_at=is.null&order=last_matched_at.asc.nullsfirst&limit=100`,
-      { headers: serviceHeaders() },
-    );
-    if (!res.ok) return;
+    // Least-recently-attempted first, suspended employers and long-overdue
+    // requirements excluded server-side (and again below, defensively), capped
+    // so one resume save can't read an unbounded backlog.
+    const res = await fetchRematchBacklog({ supabaseUrl: SUPABASE_URL, headers: serviceHeaders(), limit: 100 });
+    if (!res) return;
     const rows = ((await res.json().catch(() => [])) as Array<OpenRequirementForRematch & { employers?: { suspended_at?: string | null } | null }>)
       .filter((r) => !isSuspended(r.employers));
     const due = pickRequirementsToRematch(rows, MAX_INCREMENTAL_REQUIREMENTS);

@@ -13,11 +13,12 @@ export function csvCell(value: string | number | null | undefined): string {
 }
 
 /** Only candidates whose contact the employer still holds are exported. A locked one was never paid for; a
-    refunded unlock (credit returned because they couldn't be reached) or a candidate who withdrew from
-    employer contact is no longer one, even though `unlocked` stays true. The server doesn't return their
-    contact either, so leaving the row out is the honest answer rather than a half-empty line. */
+    refunded unlock (credit returned because they couldn't be reached) or a candidate who withdrew from or declined
+    employer contact is no longer one, even though `unlocked` stays true. The server withholds their email, phone and
+    links too (contactWithheld), so leaving the row out is the honest answer rather than a half-empty line. */
 export function exportableCandidates(candidates: Candidate[]): Candidate[] {
-  return candidates.filter((c) => c.unlocked && c.creditRefunded !== true && c.candidateWithdrew !== true);
+  return candidates.filter((c) =>
+    c.unlocked && c.creditRefunded !== true && c.candidateWithdrew !== true && c.contactWithheld !== true && c.candidateResponse !== "declined");
 }
 
 export function candidatesToCsv(candidates: Candidate[], requiredSkills: string[]): string {

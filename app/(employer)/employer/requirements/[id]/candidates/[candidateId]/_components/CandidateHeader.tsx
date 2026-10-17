@@ -49,6 +49,17 @@ function NoContact() {
   );
 }
 
+function ContactUnavailable({ reason }: { reason: "withdrew" | "declined" | null }) {
+  return (
+    <p className="m-0 inline-flex items-center gap-2 text-[13px] text-hx-ink-soft">
+      <LockIcon size={15} aria-hidden="true" className="shrink-0" />
+      {reason === "declined"
+        ? "This candidate declined contact, so their email, phone and links are no longer available."
+        : "This candidate withdrew from employer contact, so their email, phone and links are no longer available."}
+    </p>
+  );
+}
+
 export function CandidateHeader({
   candidate,
   declined,
@@ -79,7 +90,9 @@ export function CandidateHeader({
   const withdrew = candidate.candidateWithdrew === true;
   const serverResponse = readCandidateResponse(candidate);
   const response = withdrew ? serverResponse : declined ? "declined" : serverResponse;
-  const links = candidate.unlocked ? candidateLinks(candidate) : [];
+  const contactWithheld = candidate.unlocked && (candidate.contactWithheld === true || withdrew || serverResponse === "declined");
+  const withheldReason = candidate.contactWithheldReason ?? (withdrew ? "withdrew" : "declined");
+  const links = candidate.unlocked && !contactWithheld ? candidateLinks(candidate) : [];
   const canInvite = canInviteToInterview(candidate.candidateStatus);
   const canReject = !["hired", "rejected", "not_a_fit"].includes(candidate.candidateStatus);
   const inviteBlocked = suspended || declined;
@@ -135,7 +148,9 @@ export function CandidateHeader({
       {blockedReason && <p className="m-0 mt-3 text-right text-[12px] text-hx-ink-soft">{blockedReason}</p>}
 
       <div className="mt-4 min-w-0 border-t border-hx-line pt-4">
-        {candidate.unlocked ? (
+        {contactWithheld ? (
+          <ContactUnavailable reason={withheldReason} />
+        ) : candidate.unlocked ? (
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
             {candidate.contact?.email && <ContactLink icon={MailIcon} label="Email" href={`mailto:${candidate.contact.email}`}>{candidate.contact.email}</ContactLink>}
             {candidate.contact?.phone && <ContactLink icon={PhoneIcon} label="Phone" href={`tel:${candidate.contact.phone}`}>{candidate.contact.phone}</ContactLink>}

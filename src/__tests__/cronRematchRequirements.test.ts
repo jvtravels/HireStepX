@@ -58,7 +58,8 @@ describe("cron-rematch-requirements", () => {
     const url = String((f.mock.calls[0] as unknown[])[0]);
     expect(url).toContain("employers!inner(suspended_at)");
     expect(url).toContain("employers.suspended_at=is.null");
-    expect(url).toContain("order=last_matched_at.asc.nullsfirst");
+    expect(url).toContain("order=last_rematch_attempt_at.asc.nullsfirst,last_matched_at.asc.nullsfirst");
+    expect(url).toContain("or=(due_date.is.null,due_date.gte.");
     expect(runMatching).toHaveBeenCalledTimes(1);
     expect(runMatching.mock.calls[0][0]).toBe("req-1");
     expect((await res.json()).processed).toBe(1);
@@ -67,7 +68,7 @@ describe("cron-rematch-requirements", () => {
   it("passes the longer cron timeout to each match", async () => {
     installFetch([row(1)]);
     await call();
-    expect(runMatching.mock.calls[0][3]).toEqual({ timeoutMs: CRON_MATCH_TIMEOUT_MS });
+    expect(runMatching.mock.calls[0][3]).toEqual({ timeoutMs: CRON_MATCH_TIMEOUT_MS, onFailure: expect.any(Function) });
   });
 
   it("isolates a requirement that throws and still processes the rest", async () => {
@@ -125,6 +126,34 @@ describe("cron-rematch-requirements", () => {
     expect(body.processed).toBeLessThan(20);
     expect(body.processed + body.deferred).toBe(20);
     expect(body.processed).toBeGreaterThan(0);
+  });
+
+  it("counts a pass that failed but kept its ready status via onFailure", async () => {
+    installFetch([row(1), row(2)]);
+    runMatching.mockImplementation(async (id: string, _r: unknown, _o: unknown, opts: { onFailure?: () => void }) => {
+      if (id === "req-1") opts.onFailure?.();
+      return "ready";
+    });
+    const body = await (await call()).json();
+    expect(body).toMatchObject({ processed: 2, failed: 1, matched: 1 });
+  });
+
+  it("falls back to the legacy ordering when migration 0044's attempt column is missing", async () => {
+    const fetchMock = vi.fn(async (input: unknown) => {
+      const url = String(input);
+      const withColumn = url.includes("last_rematch_attempt_at");
+      return {
+        ok: !withColumn, status: withColumn ? 400 : 200,
+        headers: { get: () => null },
+        json: async () => (withColumn ? {} : [row(1)]),
+        text: async () => "column does not exist",
+      };
+    });
+    global.fetch = fetchMock as unknown as typeof fetch;
+    const body = await (await call()).json();
+    expect(body.processed).toBe(1);
+    expect(String(fetchMock.mock.calls[1][0])).toContain("order=last_matched_at.asc.nullsfirst");
+    expect(String(fetchMock.mock.calls[1][0])).not.toContain("last_rematch_attempt_at");
   });
 
   it("returns 502 when the open-requirement read fails", async () => {

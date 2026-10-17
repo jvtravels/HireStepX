@@ -11,6 +11,9 @@ import {
   keepSessionsForRole,
   computeTrustedSessionStats,
   fetchKeyset,
+  fetchKeysetRotated,
+  rotatedScanStart,
+  contactWithheldReason,
   loadBlockedCandidateIds,
   loadOptedOutCandidateIds,
   loadEvidenceFlags,
@@ -202,6 +205,67 @@ describe("fetchKeyset", () => {
     expect(seen).toEqual(["a"]);
     expect(r.rows).toEqual([]);
     expect(r.seen).toBe(1);
+  });
+});
+
+describe("rotatedScanStart / fetchKeysetRotated", () => {
+  const UUID = /^[0-9a-f]{8}-0000-0000-0000-000000000000$/;
+  it("is a uuid-shaped, deterministic start that moves by day and by requirement", () => {
+    const d1 = new Date("2026-10-17T05:00:00Z");
+    const d1b = new Date("2026-10-17T23:00:00Z");
+    const d2 = new Date("2026-10-18T05:00:00Z");
+    expect(rotatedScanStart("req-1", d1)).toMatch(UUID);
+    expect(rotatedScanStart("req-1", d1)).toBe(rotatedScanStart("req-1", d1b));
+    expect(rotatedScanStart("req-1", d1)).not.toBe(rotatedScanStart("req-1", d2));
+    expect(rotatedScanStart("req-1", d1)).not.toBe(rotatedScanStart("req-2", d1));
+  });
+
+  it("over successive days starts at many different points, so no id range is permanently last", () => {
+    const starts = new Set(Array.from({ length: 30 }, (_, i) => rotatedScanStart("req-1", new Date(Date.UTC(2026, 9, 1 + i))).slice(0, 2)));
+    expect(starts.size).toBeGreaterThan(10);
+  });
+
+  it("scans after the start key then wraps to the keys at or before it, sharing one row cap", async () => {
+    const pageOf = (ids: string[]) => ({ ok: true, json: async () => ids.map((id) => ({ id })) });
+    const f = vi.fn().mockResolvedValueOnce(pageOf(["m", "n"])).mockResolvedValueOnce(pageOf(["a"]));
+    const r = await fetchKeysetRotated<{ id: string }>({
+      baseUrl: "https://x/rest/v1/t?select=id", headers: H, keyField: "id", pageSize: 5, maxRows: 10, startKey: "k", fetchImpl: f as unknown as typeof fetch,
+    });
+    expect(String(f.mock.calls[0][0])).toContain("id=gt.k");
+    expect(String(f.mock.calls[1][0])).toContain("id=lte.k");
+    expect(String(f.mock.calls[1][0])).toContain("limit=5");
+    expect(r.rows.map((x) => x.id)).toEqual(["m", "n", "a"]);
+    expect(r.truncated).toBe(false);
+    expect(r.seen).toBe(3);
+  });
+
+  it("does not wrap once the first leg alone hit the cap", async () => {
+    const f = vi.fn().mockResolvedValue({ ok: true, json: async () => [{ id: "m" }, { id: "n" }] });
+    const r = await fetchKeysetRotated<{ id: string }>({
+      baseUrl: "https://x?select=id", headers: H, keyField: "id", pageSize: 2, maxRows: 2, startKey: "k", fetchImpl: f as unknown as typeof fetch,
+    });
+    expect(r.truncated).toBe(true);
+    expect(f).toHaveBeenCalledTimes(1);
+  });
+
+  it("surfaces a failure on the wrap leg", async () => {
+    const f = vi.fn().mockResolvedValueOnce({ ok: true, json: async () => [{ id: "m" }] }).mockResolvedValueOnce({ ok: false, json: async () => [] });
+    const r = await fetchKeysetRotated<{ id: string }>({ baseUrl: "https://x?select=id", headers: H, keyField: "id", pageSize: 5, startKey: "k", fetchImpl: f as unknown as typeof fetch });
+    expect(r.failed).toBe(true);
+    expect(r.rows.map((x) => x.id)).toEqual(["m"]);
+  });
+});
+
+describe("contactWithheldReason", () => {
+  it("withholds for a candidate who withdrew or declined, only once unlocked", () => {
+    expect(contactWithheldReason({ unlocked: true, candidateWithdrew: true, candidateResponse: null })).toBe("withdrew");
+    expect(contactWithheldReason({ unlocked: true, candidateWithdrew: false, candidateResponse: "declined" })).toBe("declined");
+    expect(contactWithheldReason({ unlocked: true, candidateWithdrew: true, candidateResponse: "declined" })).toBe("withdrew");
+    expect(contactWithheldReason({ unlocked: false, candidateWithdrew: true, candidateResponse: "declined" })).toBeNull();
+  });
+  it("does not withhold for an ordinary or accepted candidate", () => {
+    expect(contactWithheldReason({ unlocked: true, candidateWithdrew: false, candidateResponse: null })).toBeNull();
+    expect(contactWithheldReason({ unlocked: true, candidateWithdrew: false, candidateResponse: "accepted" })).toBeNull();
   });
 });
 

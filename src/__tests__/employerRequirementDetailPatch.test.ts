@@ -317,6 +317,23 @@ describe("employer-requirement-detail PATCH — suspension and tier limits", () 
     expect(patchCall(fetchMock)).toBeUndefined();
   });
 
+  it("reopen reads and passes the requirement's Other skills and work mode to the re-match", async () => {
+    const closed = { ...EXISTING_ROW, status: "closed", custom_skill_sets: ["GraphQL"], work_mode: "remote" };
+    const fetchMock = routedFetch({ existing: closed, patched: { id: "req-1", status: "generating" } });
+    global.fetch = fetchMock as unknown as typeof fetch;
+    runMatching.mockResolvedValue("ready");
+
+    const res = await handler(patchReq({ action: "reopen" }));
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({ status: "ready" });
+    const lookup = fetchMock.mock.calls.find((c) => String(c[0]).includes("select=id,status,title"));
+    expect(String(lookup![0])).toContain("custom_skill_sets");
+    expect(String(lookup![0])).toContain("work_mode");
+    expect(runMatching).toHaveBeenCalledTimes(1);
+    expect(runMatching.mock.calls[0][1]).toMatchObject({ customSkills: ["GraphQL"], workMode: "remote", title: "UI/UX Designer" });
+  });
+
   it("archive still works for a suspended employer", async () => {
     const existing = { ...EXISTING_ROW, employers: { suspended_at: "2026-05-01T00:00:00Z" } };
     const fetchMock = routedFetch({ existing, patched: { id: "req-1", status: "closed" } });

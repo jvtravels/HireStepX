@@ -19,6 +19,12 @@ vi.mock("../../server-handlers/employer-requirements", () => ({
   logRequirementActivity: vi.fn(),
 }));
 
+const explainSpy = vi.fn();
+vi.mock("../../server-handlers/_requirement-match-helpers", async (orig) => {
+  const actual = await orig<typeof import("../../server-handlers/_requirement-match-helpers")>();
+  return { ...actual, explainMatch: (...a: Parameters<typeof actual.explainMatch>) => { explainSpy(...a); return actual.explainMatch(...a); } };
+});
+
 const { default: handler } = await import("../../server-handlers/employer-requirement-detail");
 
 const EMPLOYER = "emp-1";
@@ -33,7 +39,7 @@ const REQ_ROW = {
   min_star_completeness: null, matched_pool_size: 0, created_at: "2026-09-01T00:00:00Z", last_matched_at: null,
 };
 
-interface SimMatch { id: string; candidate_user_id: string; match_score: number; unlocked?: boolean; candidate_status?: string; status_updated_at?: string }
+interface SimMatch { id: string; candidate_user_id: string; match_score: number; unlocked?: boolean; candidate_status?: string; status_updated_at?: string; candidate_response?: string }
 interface Sim {
   matches: SimMatch[];
   blocks?: string[];
@@ -66,7 +72,7 @@ function install(sim: Sim) {
       return json(sim.matches.map((m) => ({
         id: m.id, candidate_user_id: m.candidate_user_id, match_score: m.match_score, roster_score: m.match_score,
         unlocked: !!m.unlocked, unlocked_at: m.unlocked ? "2026-09-02T00:00:00Z" : null,
-        candidate_status: m.candidate_status ?? "shortlisted", candidate_status_note: null, interview_scheduled_at: null,
+        candidate_status: m.candidate_status ?? "shortlisted", candidate_response: m.candidate_response ?? "none", candidate_status_note: null, interview_scheduled_at: null,
         candidate_status_updated_at: m.status_updated_at ?? null, created_at: "2026-09-01T00:00:00Z",
       })));
     }
@@ -176,6 +182,58 @@ describe("GET employer-requirement-detail — consent", () => {
     expect(body.candidates).toHaveLength(1);
     expect(body.candidates[0].id).toBe(m(2).id);
     expect(body.candidates[0].candidateWithdrew).toBe(true);
+  });
+
+  it("withholds email, phone, links and resume file for a paid candidate who withdrew, and says so", async () => {
+    install({ matches: [m(1, { unlocked: true })], optedOut: ["cand-1"], withFile: ["cand-1"] });
+    const { body } = await get();
+    const c = body.candidates[0];
+    expect(c.unlocked).toBe(true);
+    expect(c.contactWithheld).toBe(true);
+    expect(c.contactWithheldReason).toBe("withdrew");
+    expect(c.contact).toBeUndefined();
+    expect(c.portfolioLinks).toEqual([]);
+    expect(c.hasResumeFile).toBe(false);
+    expect(c.resume).toMatchObject({ phone: null, linkedin: null });
+    const raw = JSON.stringify(c);
+    expect(raw).not.toContain("98765");
+    expect(raw).not.toContain("github.com/priya");
+  });
+
+  it("withholds contact for a paid candidate who declined, and says so", async () => {
+    install({ matches: [m(1, { unlocked: true, candidate_response: "declined" })], withFile: ["cand-1"] });
+    const { body } = await get();
+    const c = body.candidates[0];
+    expect(c.contactWithheld).toBe(true);
+    expect(c.contactWithheldReason).toBe("declined");
+    expect(c.contact).toBeUndefined();
+    expect(c.portfolioLinks).toEqual([]);
+    expect(c.hasResumeFile).toBe(false);
+    expect(c.resume).toMatchObject({ phone: null, linkedin: null });
+  });
+
+  it("keeps contact for a reachable paid candidate and sets no withheld flag", async () => {
+    install({ matches: [m(1, { unlocked: true })], withFile: ["cand-1"] });
+    const { body } = await get();
+    const c = body.candidates[0];
+    expect(c.contactWithheld).toBe(false);
+    expect(c.contactWithheldReason).toBeNull();
+    expect(c.contact).toMatchObject({ email: EMAIL });
+    expect(c.hasResumeFile).toBe(true);
+  });
+
+  it("scores the fit explanation with the requirement's Other skills and work mode", async () => {
+    explainSpy.mockClear();
+    install({ matches: [m(1)] });
+    const realFetch = global.fetch;
+    global.fetch = vi.fn(async (input: string, init?: RequestInit) => {
+      if (String(input).includes("/rest/v1/employer_requirements?")) {
+        return { ok: true, status: 200, json: async () => [{ ...REQ_ROW, custom_skill_sets: ["GraphQL"], work_mode: "remote" }], text: async () => "" } as Response;
+      }
+      return realFetch(input, init);
+    }) as unknown as typeof fetch;
+    await get();
+    expect(explainSpy.mock.calls[0][1]).toMatchObject({ customSkills: ["GraphQL"], workMode: "remote" });
   });
 
   it("drops a stale locked row with no evidence (no resume, no graded session)", async () => {

@@ -101,6 +101,15 @@ describe("exportableCandidates after unlock", () => {
     expect(csv.split("\r\n")).toHaveLength(2);
   });
 
+  it("leaves out a candidate whose contact the server withheld, and one who declined", () => {
+    const withheld = candidate({ id: "m-5", name: "Withheld Person", contactWithheld: true, contactWithheldReason: "declined", contact: { email: "withheld@example.com" } });
+    const declined = candidate({ id: "m-6", name: "Declined Person", candidateResponse: "declined", contact: { email: "declined@example.com" } });
+    expect(exportableCandidates([candidate(), withheld, declined]).map((c) => c.id)).toEqual(["m-1"]);
+    const csv = candidatesToCsv([candidate(), withheld, declined], []);
+    expect(csv).not.toContain("withheld@example.com");
+    expect(csv).not.toContain("declined@example.com");
+  });
+
   it("keeps the formula guard on the rows that are exported", () => {
     const csv = candidatesToCsv([candidate({ name: "=HYPERLINK(\"http://x\")" })], []);
     expect(csv).toContain("\"'=HYPERLINK(\"\"http://x\"\")\"");

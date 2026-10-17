@@ -364,7 +364,7 @@ export function RequirementForm({
           <div>
             <FieldLabel htmlFor="rf-weeks">Duration (weeks)</FieldLabel>
             <NumberField id="rf-weeks" value={draft.durationWeeks} onChange={(v) => set("durationWeeks", v)} onBlur={() => touch("durationWeeks")} maxDigits={3} placeholder="12" invalid={!!shown("durationWeeks")} describedBy={describe("durationWeeks", "rf-weeks-help")} style={inputStyle} />
-            <HelpText id="rf-weeks-help" live={false}>Shown to candidates alongside the pay rate.</HelpText>
+            <HelpText id="rf-weeks-help" live={false}>Used to judge contract fit when ranking candidates. Not shown to candidates.</HelpText>
             {fieldError("durationWeeks")}
           </div>
           <div>
@@ -453,13 +453,13 @@ export function RequirementForm({
       <div style={cell(1, 320)}>
         <FieldLabel htmlFor="rf-colleges">Preferred colleges</FieldLabel>
         <TagAutocompleteInput id="rf-colleges" values={draft.preferredColleges} onChange={(v) => set("preferredColleges", v)} placeholder="IIT Bombay, BITS Pilani, Any NIT…" suggestions={COLLEGE_SUGGESTIONS} />
-        <HelpText id="rf-colleges-help" live={false}>Shown to candidates, not used for matching.</HelpText>
+        <HelpText id="rf-colleges-help" live={false}>Saved on this job for your reference. Not shown to candidates or used for matching.</HelpText>
       </div>
 
       <div style={cell(1, 320)}>
         <FieldLabel htmlFor="rf-targets">Target companies</FieldLabel>
         <TagAutocompleteInput id="rf-targets" values={draft.targetCompanies} onChange={(v) => set("targetCompanies", v)} placeholder="Companies you'd like candidates to come from" suggestions={COMPANY_SUGGESTIONS} />
-        <HelpText id="rf-targets-help" live={false}>Shown to candidates, not used for matching.</HelpText>
+        <HelpText id="rf-targets-help" live={false}>Saved on this job for your reference. Not shown to candidates or used for matching.</HelpText>
       </div>
       </div>
 
@@ -484,7 +484,7 @@ export function RequirementForm({
           <AccordionTrigger className="items-center gap-3 px-1 py-3.5 hover:no-underline pointer-coarse:min-h-11 rf-accordion-trigger">
             <span className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
               <span style={advancedTitle}>Advanced matching</span>
-              <span style={advancedHint}>Optional. Mostly shown to candidates; extra skills give a small nudge.</span>
+              <span style={advancedHint}>Optional. Industry is shown to candidates; the rest is saved for your reference. Extra skills give a small nudge.</span>
             </span>
           </AccordionTrigger>
           <AccordionContent className="h-auto px-1">
@@ -498,7 +498,7 @@ export function RequirementForm({
             <div>
               <FieldLabel htmlFor="rf-domain">Preferred domain</FieldLabel>
               <AutocompleteInput id="rf-domain" value={draft.preferredDomain} onChange={(v) => set("preferredDomain", v)} placeholder="Payments, Growth, Platform…" suggestions={DOMAIN_SUGGESTIONS} />
-              <HelpText id="rf-domain-help" live={false}>Shown to candidates, not used for matching.</HelpText>
+              <HelpText id="rf-domain-help" live={false}>Saved on this job for your reference. Not shown to candidates or used for matching.</HelpText>
             </div>
           </div>
 
@@ -512,12 +512,12 @@ export function RequirementForm({
             <div>
               <FieldLabel htmlFor="rf-schedule">Work schedule</FieldLabel>
               <input id="rf-schedule" value={draft.workSchedule} onChange={(e) => set("workSchedule", e.target.value)} placeholder="Mon–Fri, 9 AM–6 PM" autoComplete="off" style={inputStyle} />
-              <HelpText id="rf-schedule-help" live={false}>Shown to candidates, not used for matching.</HelpText>
+              <HelpText id="rf-schedule-help" live={false}>Saved on this job for your reference. Not shown to candidates or used for matching.</HelpText>
             </div>
             <div>
               <FieldLabel htmlFor="rf-availability">Availability</FieldLabel>
               <input id="rf-availability" value={draft.availability} onChange={(e) => set("availability", e.target.value)} placeholder="Immediate, 2 weeks…" autoComplete="off" style={inputStyle} />
-              <HelpText id="rf-availability-help" live={false}>Shown to candidates, not used for matching.</HelpText>
+              <HelpText id="rf-availability-help" live={false}>Saved on this job for your reference. Not shown to candidates or used for matching.</HelpText>
             </div>
           </div>
 
@@ -525,11 +525,11 @@ export function RequirementForm({
             <div>
               <FieldLabel htmlFor="rf-relevant">Relevant experience</FieldLabel>
               <input id="rf-relevant" value={draft.relevantExperience} onChange={(e) => set("relevantExperience", e.target.value)} placeholder="3+ years in a similar role" autoComplete="off" style={inputStyle} />
-              <HelpText id="rf-relevant-help" live={false}>Shown to candidates, not used for matching.</HelpText>
+              <HelpText id="rf-relevant-help" live={false}>Saved on this job for your reference. Not shown to candidates or used for matching.</HelpText>
             </div>
             <div style={checkboxCell}>
               <Checkbox label="Portfolio required" checked={draft.portfolioRequired} onChange={(v) => set("portfolioRequired", v)} />
-              <HelpText id="rf-portfolio-help" live={false}>Shown to candidates, not used for matching.</HelpText>
+              <HelpText id="rf-portfolio-help" live={false}>Saved on this job for your reference. Not shown to candidates or used for matching.</HelpText>
             </div>
           </div>
 

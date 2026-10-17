@@ -49,6 +49,8 @@ interface Sim {
   sessions?: Array<{ user_id: string; score: number; graded: boolean }>;
   poolFailAfterFirstPage?: boolean;
   poolFailImmediately?: boolean;
+  /** Status the requirement row holds when a failed pass settles it. */
+  currentStatus?: string;
 }
 
 /* Strong matches need the candidate to cover the requirement's listed skills. */
@@ -91,7 +93,12 @@ function makeSim(sim: Sim) {
       })));
     }
     if (url.includes("/rest/v1/employer_requirements?")) {
-      if (method === "PATCH") { calls.patches.push({ url, body: JSON.parse(String(init?.body)) }); return json(url.includes("stage=eq.ai_matching") ? [{ id: REQ_ID }] : []); }
+      if (method === "PATCH") {
+        calls.patches.push({ url, body: JSON.parse(String(init?.body)) });
+        if (url.includes("status=in.(generating,failed)")) return json(sim.currentStatus && ["generating", "failed"].includes(sim.currentStatus) ? [{ id: REQ_ID }] : []);
+        return json(url.includes("stage=eq.ai_matching") ? [{ id: REQ_ID }] : []);
+      }
+      if (url.includes("select=status")) return json(sim.currentStatus ? [{ status: sim.currentStatus }] : []);
     }
     return json([]);
   });
@@ -161,7 +168,7 @@ describe("runMatching — pool selection", () => {
   });
 
   it("fails (rather than reporting an empty pool) when the pool can't be read at all", async () => {
-    const { calls } = makeSim({ poolFailImmediately: true, profiles: [chef("old")], matches: [{ id: "m-old", candidate_user_id: "old", match_score: 60, unlocked: false }] });
+    const { calls } = makeSim({ poolFailImmediately: true, profiles: [chef("old")] });
     const status = await runMatching(REQ_ID, REQ, OWNER);
     expect(status).toBe("failed");
     expect(calls.deletes).toHaveLength(0);
@@ -293,6 +300,61 @@ describe("runMatching — failure and timeout", () => {
     const failedPatch = calls.patches.find((p) => p.body.status === "failed");
     expect(failedPatch).toBeDefined();
     expect(failedPatch!.url).toContain("status=neq.closed");
+  });
+
+  const strongMatch = (n: number): SimMatch => ({ id: `m${n}`, candidate_user_id: `c${n}`, match_score: 85, unlocked: false });
+
+  it("a failed pass keeps a ready requirement ready when a usable shortlist exists, and still reports the failure", async () => {
+    const { calls } = makeSim({
+      poolFailImmediately: true, currentStatus: "ready", profiles: [dev("c1"), dev("c2"), dev("c3")],
+      matches: [strongMatch(1), strongMatch(2), strongMatch(3)],
+    });
+    const onFailure = vi.fn();
+    expect(await runMatching(REQ_ID, REQ, OWNER, { onFailure })).toBe("ready");
+    expect(calls.patches.some((p) => p.body.status === "failed")).toBe(false);
+    expect(onFailure).toHaveBeenCalledTimes(1);
+    expect(calls.deletes).toHaveLength(0);
+  });
+
+  it("a failed pass restores a requirement stuck in generating from the shortlist on file", async () => {
+    const { calls } = makeSim({
+      poolFailImmediately: true, currentStatus: "generating", profiles: [dev("a")],
+      matches: [strongMatch(1), strongMatch(2), strongMatch(3)],
+    });
+    expect(await runMatching(REQ_ID, REQ, OWNER)).toBe("ready");
+    const restore = calls.patches.find((p) => p.body.status === "ready");
+    expect(restore).toBeDefined();
+    expect(restore!.url).toContain("status=in.(generating,failed)");
+  });
+
+  it("a failed pass with only a weak shortlist keeps the partial status it classifies to", async () => {
+    makeSim({
+      poolFailImmediately: true, currentStatus: "generating", profiles: [dev("a")],
+      matches: [{ id: "m1", candidate_user_id: "c1", match_score: 60, unlocked: false }],
+    });
+    expect(await runMatching(REQ_ID, REQ, OWNER)).toBe("partial");
+  });
+
+  it("a failed pass with no shortlist is still marked failed", async () => {
+    const { calls } = makeSim({ poolFailImmediately: true, currentStatus: "generating", profiles: [dev("a")] });
+    expect(await runMatching(REQ_ID, REQ, OWNER)).toBe("failed");
+    expect(calls.patches.some((p) => p.body.status === "failed")).toBe(true);
+  });
+
+  it("stamps the rematch attempt before scanning, and tolerates the column being absent", async () => {
+    const { calls, fetchMock } = makeSim({ profiles: [dev("a")], sessions: [graded("a", 90)] });
+    await runMatching(REQ_ID, REQ, OWNER);
+    const stamp = calls.patches.find((p) => "last_rematch_attempt_at" in p.body);
+    expect(stamp).toBeDefined();
+    expect(typeof stamp!.body.last_rematch_attempt_at).toBe("string");
+
+    // Migration 0044 unapplied: PostgREST answers 400 and the pass carries on.
+    const inner = fetchMock.getMockImplementation()!;
+    fetchMock.mockImplementation(async (input: string, init?: RequestInit) => {
+      if (init?.method === "PATCH" && String(init.body).includes("last_rematch_attempt_at")) return { ok: false, status: 400, json: async () => ({}), text: async () => "column does not exist" };
+      return inner(input, init);
+    });
+    expect(await runMatching(REQ_ID, REQ, OWNER)).not.toBe("failed");
   });
 
   it("after a timeout the abandoned pass writes nothing further", async () => {

@@ -57,6 +57,7 @@ import {
   chunk,
   inList,
   LOCKED_MASKED_FIELDS,
+  contactWithheldReason,
   type Allowance,
   type EmployerGateRow,
 } from "./_employer-matching-helpers";
@@ -297,16 +298,26 @@ export default async function handler(req: Request): Promise<Response> {
       const resumeDetail = extractResumeDetail(profile?.resume_data);
       const matchBreakdown = explainMatch(
         { target_role: profile?.target_role ?? null, resume_data: profile?.resume_data ?? null },
-        { title: requirement.title, location: requirement.location, description: requirement.description || "", skills: requirement.skills ?? [] },
+        {
+          title: requirement.title, location: requirement.location, description: requirement.description || "",
+          skills: requirement.skills ?? [], customSkills: requirement.custom_skill_sets ?? [], workMode: requirement.work_mode,
+        },
       );
 
       const unlocked = m.unlocked;
+      const candidateWithdrew = unlocked && optedOut.has(m.candidate_user_id);
+      const candidateResponse = responseKnown ? (m.candidate_response ?? "none") : null;
+      const withheldReason = contactWithheldReason({ unlocked, candidateWithdrew, candidateResponse });
+      const reachable = unlocked && !withheldReason;
       /* Name and contact details must never leave the server for a Locked
          match; masking only in the client is cosmetic. The resume itself
          (employers, schools, history) is visible either way. */
       const name = unlocked ? profile?.name || "Candidate" : maskedCandidateName(m.id);
+      // The resume body stays (it is the paid snapshot) but its own phone,
+      // LinkedIn and any email/number/link written into its free text are
+      // contact details too, so they go with the rest.
       const resume = unlocked
-        ? resumeDetail
+        ? reachable ? resumeDetail : scrubLockedResume({ ...resumeDetail, phone: null, linkedin: null })
         : scrubLockedResume(redactResumeDetailForLock(resumeDetail, profile?.name || ""));
 
       return {
@@ -321,23 +332,28 @@ export default async function handler(req: Request): Promise<Response> {
         lastActiveDaysAgo,
         skills: extractSkills(profile?.resume_data).slice(0, 8),
         unlocked,
-        contact: unlocked && profile ? { email: profile.email, phone: resumeDetail.phone || undefined } : undefined,
+        contact: reachable && profile ? { email: profile.email, phone: resumeDetail.phone || undefined } : undefined,
         /* A personal site/GitHub link lets an employer identify or reach a
            candidate outside HireStepX without paying to unlock, so it's
-           withheld entirely — not just scrubbed — for a locked match. */
-        portfolioLinks: unlocked ? extractPortfolioLinks(profile?.portfolio_links) : [],
-        hasResumeFile: unlocked && withResumeFile.has(m.candidate_user_id),
+           withheld entirely, not just scrubbed, for a locked match and for a
+           candidate who withdrew or declined contact after being unlocked. */
+        portfolioLinks: reachable ? extractPortfolioLinks(profile?.portfolio_links) : [],
+        hasResumeFile: reachable && withResumeFile.has(m.candidate_user_id),
         resume,
         candidateStatus: m.candidate_status,
         candidateStatusNote: m.candidate_status_note,
-        candidateResponse: responseKnown ? (m.candidate_response ?? "none") : null,
+        candidateResponse,
         interviewScheduledAt: m.interview_scheduled_at,
         creditRefunded: refundedMatchIds.has(m.id),
         waitingSince: later(later(m.candidate_status_updated_at, m.unlocked_at), m.created_at),
         // Additive: what was withheld for a locked match, and whether a paid
         // candidate has since withdrawn employer visibility.
         maskedFields: unlocked ? [] : [...LOCKED_MASKED_FIELDS],
-        candidateWithdrew: unlocked && optedOut.has(m.candidate_user_id),
+        candidateWithdrew,
+        // Set when a paid match's email, phone and links were held back; the UI
+        // shows an explicit "no longer reachable" state instead of empty contact.
+        contactWithheld: withheldReason !== null,
+        contactWithheldReason: withheldReason,
       };
     });
 
@@ -417,10 +433,10 @@ async function handleStatusAction(
 ): Promise<Response> {
   try {
     const existingRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&employer_id=eq.${encodeURIComponent(userId)}&select=id,status,title,location,description,skills,experience_min,experience_max,min_readiness_band,min_star_completeness,employment_type,duration_weeks,hours_per_week,${EMPLOYER_EMBED}`,
+      `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&employer_id=eq.${encodeURIComponent(userId)}&select=id,status,title,location,description,skills,custom_skill_sets,work_mode,experience_min,experience_max,min_readiness_band,min_star_completeness,employment_type,duration_weeks,hours_per_week,${EMPLOYER_EMBED}`,
       { headers: serviceHeaders() },
     );
-    const existingRows = (await existingRes.json().catch(() => [])) as Array<{ id: string; employers?: EmployerEmbed; status: string; title: string; location: string; description: string | null; skills: string[] | null; experience_min: number | null; experience_max: number | null; min_readiness_band: string | null; min_star_completeness: number | null; employment_type: string | null; duration_weeks: number | null; hours_per_week: number | null }>;
+    const existingRows = (await existingRes.json().catch(() => [])) as Array<{ id: string; employers?: EmployerEmbed; status: string; title: string; location: string; description: string | null; skills: string[] | null; custom_skill_sets: string[] | null; work_mode: string | null; experience_min: number | null; experience_max: number | null; min_readiness_band: string | null; min_star_completeness: number | null; employment_type: string | null; duration_weeks: number | null; hours_per_week: number | null }>;
     if (!existingRes.ok || !existingRows[0]) {
       return new Response(JSON.stringify({ error: "Requirement not found" }), { status: 404, headers });
     }
@@ -509,6 +525,8 @@ async function handleStatusAction(
           employmentType: current.employment_type,
           durationWeeks: current.duration_weeks,
           hoursPerWeek: current.hours_per_week,
+          customSkills: current.custom_skill_sets ?? [],
+          workMode: current.work_mode,
         },
         userId,
       );

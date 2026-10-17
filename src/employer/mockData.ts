@@ -83,6 +83,9 @@ export interface Candidate {
   candidateResponse?: "none" | "interested" | "declined" | null;
   /** True once the candidate switched employer visibility off after the unlock. */
   candidateWithdrew?: boolean;
+  /** True when the server held back email, phone and links because the candidate withdrew or declined after the unlock. */
+  contactWithheld?: boolean;
+  contactWithheldReason?: "withdrew" | "declined" | null;
   /** True once this paid unlock was refunded as account credit. */
   creditRefunded?: boolean;
   interviewScheduledAt: string | null;
