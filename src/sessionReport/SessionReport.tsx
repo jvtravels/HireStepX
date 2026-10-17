@@ -43,6 +43,7 @@ import { getInterviewerName } from "../InterviewComponents";
 import { t, f } from "./tokens";
 import { Button } from "@/components/ui/button";
 import LoadingScreen from "../_LoadingScreen";
+import { CopyEmailLink } from "../_CopyEmailLink";
 import ReportProgress from "./ReportProgress";
 import { useEvalStage } from "../useEvalStage";
 import { evalStageMessage } from "../_eval-progress";
@@ -282,17 +283,21 @@ export function ErrorShell({
       </Button>
       <div style={{ maxWidth: 560, margin: hasPreliminary ? "40px auto 0" : "80px auto 0", textAlign: "center" }}>
         <h1 style={{ fontFamily: f.serif, fontSize: 28, color: t.coal, margin: "0 0 12px", fontWeight: 400 }}>
-          {hasPreliminary ? "Your session is saved" : "Couldn’t generate your report"}
+          {hasPreliminary ? "Your session is saved" : "Your report is almost ready"}
         </h1>
         <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft, margin: "0 0 24px", lineHeight: 1.55 }}>
           {hasPreliminary
-            ? "We captured your full interview — but it isn’t scored yet. The coached report (model answers, STAR breakdowns and skill tracking) needs our AI scoring service, which is busy right now. Your transcript is safe; generate it in a moment for your real evaluation."
+            ? "We captured your full interview — but it isn’t scored yet. Your coached report (model answers, STAR breakdowns and skill tracking) just needs one more try. Tap the button below to build it now. Your transcript is safe."
             : message}
         </p>
         {hasQualitativeNotes && preliminary && <PreliminaryCard p={preliminary} />}
         <Button type="button" size="lg" onClick={onRetry}>
-          {hasPreliminary ? "Generate full report" : "Try again"}
+          {hasPreliminary ? "Generate full report" : "Build my report"}
         </Button>
+        <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, margin: "20px 0 0", lineHeight: 1.55 }}>
+          Still stuck? Email <CopyEmailLink email="support@hirestepx.com">support@hirestepx.com</CopyEmailLink> and we will build it for you.
+          Your session does not count against you.
+        </p>
       </div>
     </div>
   );
@@ -587,15 +592,13 @@ export const SessionReport = memo(function SessionReport({
         }
         return;
       }
-      const looksTransient = isTransient(raw);
-      const msg = looksTransient
-        ? "Our scoring service is taking longer than usual. Please try again in a moment — your transcript is safe and nothing was lost."
-        : raw;
+      // Never surface raw/technical errors: always a next step + reassurance.
+      const msg = "Your report is taking a little longer to build. Tap the button below to try again. Your transcript is safe and nothing was lost.";
       if (!cancelled) {
         track("report_llm_failed", {
           sessionId: session.id,
           latencyMs: Date.now() - t0,
-          error: msg.slice(0, 120),
+          error: raw.slice(0, 120),
           view: "main",
           retries: MAX_ATTEMPTS,
           silent: silentRefresh ? "yes" : "no",
@@ -1193,7 +1196,7 @@ export const SessionReport = memo(function SessionReport({
   }
   if (!viewData) {
     // Defensive — should be unreachable since loading covers null reports.
-    return <ErrorShell message="No report available." onRetry={onRetry} onBack={onBack} backLabel={backLabel} />;
+    return <ErrorShell message="Your report is not ready yet. Tap the button below to build it." onRetry={onRetry} onBack={onBack} backLabel={backLabel} />;
   }
 
   return (

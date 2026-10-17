@@ -354,7 +354,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                   >
                     Sessions used
                   </p>
-                  <span style={{ fontFamily: font.mono, fontSize: 12,
+                  <span title="A session counts as soon as you start it, even if you leave before finishing." style={{ fontFamily: font.mono, fontSize: 12,
                     color: showExhaustedAlarm ? c.ember : isLow ? c.ember : c.inkSoft,
                     opacity: showExhaustedAlarm ? 0.75 : 1, fontWeight: showExhaustedAlarm ? 600 : 400 }}>
                     {planUsed} of {planTotal}
