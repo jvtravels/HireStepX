@@ -2,6 +2,8 @@
 
 import type { ReactNode } from "react";
 import {
+  ActivityIcon,
+  CalendarClockIcon,
   CheckCircle2Icon,
   CodeXmlIcon,
   FileCheckIcon,
@@ -30,6 +32,8 @@ const INSIGHT_ICON: Record<string, LucideIcon> = {
   interview: MicIcon,
   portfolio: CodeXmlIcon,
   immediate: ZapIcon,
+  overdue: CalendarClockIcon,
+  recent: ActivityIcon,
 };
 
 function InsightPill({ insight, active, onSelect }: { insight: JobInsight; active: boolean; onSelect: () => void }) {

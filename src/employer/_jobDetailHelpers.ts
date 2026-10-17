@@ -304,7 +304,20 @@ export type InsightFilter =
   | { kind: "gap"; skill: string }
   | { kind: "interview" }
   | { kind: "portfolio" }
-  | { kind: "immediate" };
+  | { kind: "immediate" }
+  | { kind: "overdue" }
+  | { kind: "recent" };
+
+/** Practiced this recently counts as actively preparing, so an invite is likely to land. */
+export const RECENT_ACTIVITY_DAYS = 3;
+
+/** An interview whose date has passed while the candidate is still at an interview stage: the employer owes an outcome. */
+export function interviewOverdue(c: Candidate, now = Date.now()): boolean {
+  if (c.candidateStatus !== "interview_invited" && c.candidateStatus !== "interviewing") return false;
+  if (!c.interviewScheduledAt) return false;
+  const at = new Date(c.interviewScheduledAt).getTime();
+  return !Number.isNaN(at) && at < now;
+}
 
 export interface JobInsight {
   id: string;
@@ -313,7 +326,7 @@ export interface JobInsight {
   filter: InsightFilter;
 }
 
-export function matchesInsight(c: Candidate, f: InsightFilter): boolean {
+export function matchesInsight(c: Candidate, f: InsightFilter, now = Date.now()): boolean {
   switch (f.kind) {
     case "all-must":
       return candidateSkillFit(c, f.skills).gaps.length === 0;
@@ -325,14 +338,24 @@ export function matchesInsight(c: Candidate, f: InsightFilter): boolean {
       return (c.portfolioLinks?.length ?? 0) > 0;
     case "immediate":
       return availabilityOf(c.resume?.noticePeriod).label === "Immediate";
+    case "overdue":
+      return interviewOverdue(c, now);
+    case "recent":
+      return c.candidateStatus === "shortlisted" && c.lastActiveDaysAgo >= 0 && c.lastActiveDaysAgo <= RECENT_ACTIVITY_DAYS;
   }
 }
 
 /** Plain-language observations, emitted only when the data supports them. */
-export function jobInsights(r: Pick<Requirement, "skills" | "portfolioRequired" | "candidates">): JobInsight[] {
+export function jobInsights(r: Pick<Requirement, "skills" | "portfolioRequired" | "candidates">, now = Date.now()): JobInsight[] {
   const out: JobInsight[] = [];
   const list = r.candidates;
   if (list.length === 0) return out;
+
+  /* Things the employer owes someone come first; the 4-item cap drops the descriptive ones. */
+  const overdue = list.filter((c) => interviewOverdue(c, now)).length;
+  if (overdue > 0) {
+    out.push({ id: "overdue", text: `${overdue} ${overdue === 1 ? "interview is" : "interviews are"} past the scheduled date. Record the outcome.`, label: "Interview date passed", filter: { kind: "overdue" } });
+  }
 
   const must = dedupe(r.skills);
   if (must.length > 0) {
@@ -360,6 +383,11 @@ export function jobInsights(r: Pick<Requirement, "skills" | "portfolioRequired" 
   const proven = list.filter((c) => matchesInsight(c, { kind: "interview" })).length;
   if (proven > 0) {
     out.push({ id: "interview", text: `${proven} ${proven === 1 ? "candidate scores" : "candidates score"} 70 or higher in HireStepX mock interviews.`, label: "Interview score 70+", filter: { kind: "interview" } });
+  }
+
+  const recent = list.filter((c) => matchesInsight(c, { kind: "recent" })).length;
+  if (recent > 0) {
+    out.push({ id: "recent", text: `${recent} ${recent === 1 ? "candidate" : "candidates"} to review practiced in the last ${RECENT_ACTIVITY_DAYS} days.`, label: `Practiced in the last ${RECENT_ACTIVITY_DAYS} days`, filter: { kind: "recent" } });
   }
 
   const withLinks = list.filter((c) => matchesInsight(c, { kind: "portfolio" })).length;

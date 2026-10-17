@@ -12,7 +12,7 @@ import { ChipList, IconList, MutedText } from "./parts";
 import { ItemRequest, type RequestUi } from "./RequestPopover";
 import { RequestsPanel } from "./RequestsPanel";
 import { RoleMismatchNotice, hasRoleMismatch } from "./RoleMismatchNotice";
-import { PROVENANCE, displaySkillName, READINESS_LABEL, averageTenureMonths, buildResumeInsights, buildRoleFit, candidateSignal, employerCapabilities, evidenceAverage, fitHeadline, formatSessionDate, formatTenure, formatYears, groupSkillsByDepth, skillChipLabel, sortFitRows, summarizeFit, type FitStatus, type ResumeInsights } from "./helpers";
+import { PROVENANCE, displaySkillName, FIT_SOURCE_LABEL, READINESS_LABEL, averageTenureMonths, buildResumeInsights, buildRoleFit, candidateSignal, employerCapabilities, evidenceAverage, fitHeadline, formatSessionDate, formatTenure, formatYears, groupSkillsByDepth, skillChipLabel, sortFitRows, summarizeFit, type FitStatus, type ResumeInsights } from "./helpers";
 
 export type EvidenceState = { evidence: CandidateEvidence | null; loading: boolean; failed: boolean; onRetry: () => void };
 
@@ -122,7 +122,7 @@ function MatchPanel({ candidate, requirement, matched, unmatched, evidence, requ
                       <FitMark status={row.status} />
                     </div>
                   </div>
-                  <p className="m-0 text-[13px] text-hx-ink-soft">{row.reason}</p>
+                  <p className="m-0 text-[13px] text-hx-ink-soft">{row.reason} <span>{FIT_SOURCE_LABEL[row.source]}.</span></p>
                   {row.id === "skills" && (matched.length > 0 || unmatched.length > 0) && (
                     <div className="grid gap-2">
                       <div className="flex flex-wrap gap-1.5">

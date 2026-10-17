@@ -216,9 +216,9 @@ describe("cleanQuestionText", () => {
 describe("summarizeFit", () => {
   it("counts met criteria and names gaps and near misses", () => {
     const rows = [
-      { id: "skills", label: "Required skills", asked: "3 listed", has: "3 of 3", status: "meets" as const, reason: "" },
-      { id: "experience", label: "Experience", asked: "5+ years", has: "4 years", status: "partial" as const, reason: "" },
-      { id: "location", label: "Location", asked: "Pune", has: "Delhi", status: "gap" as const, reason: "" },
+      { id: "skills", label: "Required skills", asked: "3 listed", has: "3 of 3", status: "meets" as const, reason: "", source: "resume" as const },
+      { id: "experience", label: "Experience", asked: "5+ years", has: "4 years", status: "partial" as const, reason: "", source: "resume" as const },
+      { id: "location", label: "Location", asked: "Pune", has: "Delhi", status: "gap" as const, reason: "", source: "resume" as const },
     ];
     expect(summarizeFit(rows)).toEqual({ meets: 1, total: 3, gaps: ["Location"], close: ["Experience"] });
   });
@@ -252,10 +252,10 @@ describe("fit row reasons and order", () => {
 
   it("lists strengths before near-misses before gaps, keeping order within a group", () => {
     const rows = [
-      { id: "a", label: "A", asked: "", has: "", status: "gap" as const, reason: "" },
-      { id: "b", label: "B", asked: "", has: "", status: "meets" as const, reason: "" },
-      { id: "c", label: "C", asked: "", has: "", status: "partial" as const, reason: "" },
-      { id: "d", label: "D", asked: "", has: "", status: "meets" as const, reason: "" },
+      { id: "a", label: "A", asked: "", has: "", status: "gap" as const, reason: "", source: "resume" as const },
+      { id: "b", label: "B", asked: "", has: "", status: "meets" as const, reason: "", source: "resume" as const },
+      { id: "c", label: "C", asked: "", has: "", status: "partial" as const, reason: "", source: "resume" as const },
+      { id: "d", label: "D", asked: "", has: "", status: "meets" as const, reason: "", source: "resume" as const },
     ];
     expect(sortFitRows(rows).map((r) => r.id)).toEqual(["b", "d", "c", "a"]);
     expect(rows[0].id).toBe("a");

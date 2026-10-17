@@ -142,7 +142,15 @@ export function buildResumeInsights(candidate: Candidate, unmatched: string[]): 
 export const HEADER_ACTION = "text-[13px] font-semibold";
 
 export type FitStatus = "meets" | "partial" | "gap";
-export interface FitRow { id: string; label: string; asked: string; has: string; status: FitStatus; reason: string }
+export type FitSource = "resume" | "profile" | "practice";
+export interface FitRow { id: string; label: string; asked: string; has: string; status: FitStatus; reason: string; source: FitSource }
+
+/** Where the candidate-side value came from, so an employer can tell a self-reported resume line from a graded one. */
+export const FIT_SOURCE_LABEL: Record<FitSource, string> = {
+  resume: "From the resume",
+  profile: "From the candidate profile",
+  practice: "From graded practice interviews",
+};
 
 export const FIT_RANK: Record<FitStatus, number> = { meets: 0, partial: 1, gap: 2 };
 
@@ -190,7 +198,7 @@ export function buildRoleFit(candidate: Candidate, requirement: Requirement, mat
       : matched.length === 0
         ? `None of the ${asked} required skills appear on the resume.`
         : `Has ${matched.length} of ${asked}; missing ${missing.slice(0, 3).join(", ")}${missing.length > 3 ? ` and ${missing.length - 3} more` : ""}.`;
-    rows.push({ id: "skills", label: "Required skills", asked: `${asked} listed`, has: `${matched.length} of ${asked}`, status: ratio === 1 ? "meets" : ratio >= 0.5 ? "partial" : "gap", reason });
+    rows.push({ id: "skills", label: "Required skills", asked: `${asked} listed`, has: `${matched.length} of ${asked}`, status: ratio === 1 ? "meets" : ratio >= 0.5 ? "partial" : "gap", reason, source: "resume" });
   }
 
   const { experienceMin: min, experienceMax: max } = requirement;
@@ -204,7 +212,7 @@ export function buildRoleFit(candidate: Candidate, requirement: Requirement, mat
       : above
         ? `${formatYears(y - max)} above the ${formatYears(max)} ceiling.`
         : `${formatYears(y)} sits inside the range asked.`;
-    rows.push({ id: "experience", label: "Experience", asked: experienceAsk(min, max), has: formatYears(y), status, reason });
+    rows.push({ id: "experience", label: "Experience", asked: experienceAsk(min, max), has: formatYears(y), status, reason, source: "resume" });
   }
 
   const hasCity = !!candidate.city && candidate.city !== "Not specified";
@@ -223,6 +231,7 @@ export function buildRoleFit(candidate: Candidate, requirement: Requirement, mat
       has: candidate.city,
       status: remote || inCity ? "meets" : "gap",
       reason,
+      source: "profile",
     });
   }
 
@@ -236,7 +245,7 @@ export function buildRoleFit(candidate: Candidate, requirement: Requirement, mat
     if (limit != null && days != null) {
       const status: FitStatus = days <= limit ? "meets" : days <= limit + 30 ? "partial" : "gap";
       const reason = status === "meets" ? "Can join within the notice asked." : status === "partial" ? "Notice runs a little past what was asked." : "Notice runs well past what was asked.";
-      rows.push({ id: "notice", label: "Notice period", asked: pref, has: r.noticePeriod, status, reason });
+      rows.push({ id: "notice", label: "Notice period", asked: pref, has: r.noticePeriod, status, reason, source: "resume" });
     }
   }
 
@@ -245,7 +254,7 @@ export function buildRoleFit(candidate: Candidate, requirement: Requirement, mat
     const want = BAND_RANK[requirement.minReadinessBand];
     const status: FitStatus = got >= want ? "meets" : got === want - 1 ? "partial" : "gap";
     const reason = status === "meets" ? "Practice interviews reach the readiness level asked." : status === "partial" ? "One readiness level below what was asked." : "Practice interviews fall well below the readiness asked.";
-    rows.push({ id: "readiness", label: "Interview readiness", asked: `${READINESS_LABEL[requirement.minReadinessBand]} or better`, has: READINESS_LABEL[evidence.readiness.band], status, reason });
+    rows.push({ id: "readiness", label: "Interview readiness", asked: `${READINESS_LABEL[requirement.minReadinessBand]} or better`, has: READINESS_LABEL[evidence.readiness.band], status, reason, source: "practice" });
   }
 
   if (requirement.minStarCompleteness != null && evidence?.starCompleteness) {
@@ -253,7 +262,7 @@ export function buildRoleFit(candidate: Candidate, requirement: Requirement, mat
     const want = requirement.minStarCompleteness;
     const status: FitStatus = pct >= want ? "meets" : pct >= want - 15 ? "partial" : "gap";
     const reason = status === "meets" ? "Answers cover the STAR structure as asked." : status === "partial" ? "Answers are close to the STAR coverage asked." : "Answers often skip parts of the STAR structure.";
-    rows.push({ id: "star", label: "STAR coverage", asked: `${want}%+`, has: `${pct}%`, status, reason });
+    rows.push({ id: "star", label: "STAR coverage", asked: `${want}%+`, has: `${pct}%`, status, reason, source: "practice" });
   }
 
   return rows;
