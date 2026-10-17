@@ -41,32 +41,14 @@ export function isMaskedName(name: string): boolean {
   return MASKED_NAME.test(name.trim());
 }
 
-/** A candidate's name with the "identity hidden" treatment when it is the
- *  anonymous placeholder. `masked` overrides detection (e.g. a locked match
- *  whose name field is not in placeholder form). */
 export function MaskedIdentity({
   name,
-  masked,
   as: Heading = "span",
   nameStyle,
-  hideBadge = false,
 }: {
   name: string;
-  masked?: boolean;
   as?: "span" | "h1" | "h2" | "h3";
   nameStyle?: React.CSSProperties;
-  hideBadge?: boolean;
 }) {
-  const isMasked = masked ?? isMaskedName(name);
-  return (
-    <span style={{ display: "inline-flex", alignItems: "center", flexWrap: "wrap", gap: 8, minWidth: 0 }}>
-      <Heading style={{ margin: 0, fontFamily: f.sans, fontWeight: 600, color: t.coal, overflowWrap: "anywhere", ...nameStyle }}>{name}</Heading>
-      {isMasked && !hideBadge && (
-        <Pill tone="neutral">
-          <EmployerIcon.Lock />
-          Identity hidden until unlock
-        </Pill>
-      )}
-    </span>
-  );
+  return <Heading style={{ margin: 0, fontFamily: f.sans, fontWeight: 600, color: t.coal, overflowWrap: "anywhere", ...nameStyle }}>{name}</Heading>;
 }

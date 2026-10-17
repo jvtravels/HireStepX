@@ -11,7 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { useEmployerData, type ConversationMessage } from "@/employer/EmployerDataContext";
 import { OutlineCta, PrimaryCta } from "@/employer/_atoms";
-import { IdentityHiddenBadge, InlineNotice } from "@/employer/_requirementAtoms";
+import { InlineNotice } from "@/employer/_requirementAtoms";
 import { failureMessage, getMessages, postFlagMessage, postMessage } from "@/employer/_requirementCalls";
 
 const MESSAGE_POLL_MS = 6000;
@@ -168,11 +168,6 @@ export default function MessagesDialog({
         <DialogHeader>
           <DialogTitle>Message {displayName}</DialogTitle>
           <DialogDescription id="messages-dialog-desc">{description}</DialogDescription>
-          {!unlocked && (
-            <div>
-              <IdentityHiddenBadge compact />
-            </div>
-          )}
         </DialogHeader>
 
         <div

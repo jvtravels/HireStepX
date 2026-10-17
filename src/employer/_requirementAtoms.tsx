@@ -2,46 +2,17 @@
 
 /* Shared building blocks for the employer requirement surfaces (detail,
    compare, outcome, edit, new). Kept separate from _atoms.tsx so the
-   requirement pages can share trust/state primitives — masked-identity badge,
+   requirement pages can share trust/state primitives —
    inline notices, suspended banner, skeletons, retry panel — without growing
    the general atom file. */
 
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { AlertTriangleIcon, CheckCircle2Icon, InfoIcon, LockIcon, ShieldAlertIcon, RefreshCwIcon } from "lucide-react";
+import { AlertTriangleIcon, CheckCircle2Icon, InfoIcon, ShieldAlertIcon, RefreshCwIcon } from "lucide-react";
 import { tokens as t, fonts as f, textSize } from "@/auth/_tokens";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, OutlineCta } from "@/employer/_atoms";
-
-/* ── Masked identity ── */
-
-/** Pre-unlock identity marker. Always renders the same words so a candidate
-    reads as "hidden" identically in the table, evidence dialog, compare view
-    and outcome page. */
-export function IdentityHiddenBadge({ compact = false }: { compact?: boolean }) {
-  return (
-    <span
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 4,
-        padding: compact ? "2px 8px" : "4px 10px",
-        borderRadius: 999,
-        background: t.creamSoft,
-        color: t.inkFaint,
-        border: `1px solid ${t.line}`,
-        fontFamily: f.sans,
-        fontSize: textSize.sm,
-        fontWeight: 600,
-        whiteSpace: "nowrap",
-      }}
-    >
-      <LockIcon size={11} aria-hidden="true" />
-      Identity hidden until unlock
-    </span>
-  );
-}
 
 /* ── Inline notices ── */
 

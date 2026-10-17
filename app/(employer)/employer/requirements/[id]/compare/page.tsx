@@ -9,7 +9,7 @@ import { useEmployerData, type Requirement } from "@/employer/EmployerDataContex
 import type { Candidate } from "@/employer/mockData";
 import { tokens as t, fonts as f, textSize } from "@/auth/_tokens";
 import { Card, CandidateStatusChip, Eyebrow, ScoreChip, SkillTag } from "@/employer/_atoms";
-import { EmptyNote, ErrorRetry, IdentityHiddenBadge, LinkCta, PageSkeleton } from "@/employer/_requirementAtoms";
+import { EmptyNote, ErrorRetry, LinkCta, PageSkeleton } from "@/employer/_requirementAtoms";
 import { candidateDisplayName } from "../_components/requirementFormat";
 import { displaySkillName } from "../candidates/[candidateId]/_components/helpers";
 
@@ -45,11 +45,6 @@ function NameCell({ candidate }: { candidate: Candidate }) {
   return (
     <>
       <div style={{ fontFamily: f.sans, fontSize: textSize.lg, fontWeight: 700, color: t.coal }}>{candidateDisplayName(candidate)}</div>
-      {!candidate.unlocked && (
-        <div style={{ marginTop: 6 }}>
-          <IdentityHiddenBadge compact />
-        </div>
-      )}
     </>
   );
 }

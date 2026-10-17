@@ -279,7 +279,7 @@ export function ActiveJobsCard({
                   {sortHead("title", "Job Title", false)}
                   <TableHead className={TH}>Status</TableHead>
                   <TableHead className={`${TH} text-center`}>Evaluated</TableHead>
-                  {sortHead("recommended", "Recommended", true)}
+                  {sortHead("recommended", "Strong matches", true)}
                   {sortHead("interviewing", "Interviewing", true)}
                   {sortHead("hired", "Hired", true)}
                   <TableHead className={`${TH} w-12`}><span className="sr-only">Actions</span></TableHead>
@@ -320,7 +320,7 @@ export function ActiveJobsCard({
               const health = jobHealth(j, p, now);
               const stats: Array<[string, string | number]> = [
                 ["Evaluated", j.aiScreening.evaluated],
-                ["Recommended", j.aiScreening.topMatches],
+                ["Strong matches", j.aiScreening.topMatches],
                 ["Interviewing", p ? p.interviewing : "–"],
                 ["Hired", p ? p.hired : "–"],
               ];

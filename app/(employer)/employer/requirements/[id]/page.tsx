@@ -558,7 +558,6 @@ export default function RequirementDetailPage() {
                 <EvidenceDialog
                   matchId={evidenceCandidate?.id ?? null}
                   displayName={evidenceCandidate ? candidateDisplayName(evidenceCandidate) : "Candidate"}
-                  unlocked={evidenceCandidate?.unlocked ?? false}
                   onClose={() => setEvidenceId(null)}
                 />
                 <InterviewInviteDialog

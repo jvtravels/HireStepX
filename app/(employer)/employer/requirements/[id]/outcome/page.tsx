@@ -21,7 +21,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, Eyebrow, PrimaryCta } from "@/employer/_atoms";
-import { EmptyNote, ErrorRetry, IdentityHiddenBadge, InlineNotice, LinkCta, PageSkeleton, SuspendedBanner } from "@/employer/_requirementAtoms";
+import { EmptyNote, ErrorRetry, InlineNotice, LinkCta, PageSkeleton, SuspendedBanner } from "@/employer/_requirementAtoms";
 import { failureMessage, setCandidateStatus } from "@/employer/_requirementCalls";
 import { useEmployerAccess } from "@/employer/_useEmployerAccess";
 import { candidateDisplayName, candidateResponseOf } from "../_components/requirementFormat";
@@ -185,10 +185,7 @@ export default function OutcomeFeedbackPage() {
       )}
       <Eyebrow tone="indigo">Outcome feedback</Eyebrow>
       <h1 style={{ fontFamily: f.sans, fontSize: "clamp(22px, 6vw, 26px)", color: t.coal, margin: "8px 0 4px", overflowWrap: "anywhere" }}>How did it go with {name}?</h1>
-      <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", margin: "0 0 20px" }}>
-        <p style={{ fontFamily: f.sans, fontSize: textSize.md, color: t.inkSoft, margin: 0, overflowWrap: "anywhere" }}>{requirement.title}</p>
-        {!candidate.unlocked && <IdentityHiddenBadge compact />}
-      </div>
+      <p style={{ fontFamily: f.sans, fontSize: textSize.md, color: t.inkSoft, margin: "0 0 20px", overflowWrap: "anywhere" }}>{requirement.title}</p>
 
       <Card aria-label="Record an outcome">
         {declined && (

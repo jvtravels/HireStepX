@@ -432,7 +432,7 @@ export default function EmployerMessagesV2() {
       <ThreadHeader
         name={activeName}
         masked={activeMasked}
-        title={<MaskedIdentity as="h2" name={activeName} masked={activeMasked} nameStyle={{ fontSize: 15 }} />}
+        title={<MaskedIdentity as="h2" name={activeName} nameStyle={{ fontSize: 15 }} />}
         subtitle={`${active.roleTitle}${context?.companyName ? ` · ${context.companyName}` : ""}`}
         headingRef={threadHeadingRef}
         badges={
@@ -521,7 +521,7 @@ export default function EmployerMessagesV2() {
           active ? (
             <ContextRail
               facts={[
-                { label: "Candidate", value: <MaskedIdentity name={activeName} masked={activeMasked} nameStyle={{ fontSize: 13 }} /> },
+                { label: "Candidate", value: <MaskedIdentity name={activeName} nameStyle={{ fontSize: 13 }} /> },
                 { label: "Role", value: active.roleTitle },
                 { label: "Status", value: STATUS_LABEL[active.candidateStatus] || active.candidateStatus },
                 ...(active.matchScore != null ? [{ label: "Match", value: <ScoreChip score={active.matchScore} /> }] : []),

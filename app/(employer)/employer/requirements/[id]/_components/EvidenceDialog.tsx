@@ -5,7 +5,7 @@ import { tokens as t, fonts as f, textSize } from "@/auth/_tokens";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { OutlineCta } from "@/employer/_atoms";
-import { IdentityHiddenBadge, InlineNotice } from "@/employer/_requirementAtoms";
+import { InlineNotice } from "@/employer/_requirementAtoms";
 import { failureMessage, getEvidence, type EvidenceResponse } from "@/employer/_requirementCalls";
 
 function EvidenceBody({ evidence }: { evidence: EvidenceResponse }) {
@@ -49,12 +49,10 @@ function EvidenceBody({ evidence }: { evidence: EvidenceResponse }) {
 export default function EvidenceDialog({
   matchId,
   displayName,
-  unlocked,
   onClose,
 }: {
   matchId: string | null;
   displayName: string;
-  unlocked: boolean;
   onClose: () => void;
 }) {
   const [evidence, setEvidence] = useState<EvidenceResponse | null>(null);
@@ -89,11 +87,6 @@ export default function EvidenceDialog({
           <DialogDescription id="evidence-dialog-desc">
             Per-skill scores from this candidate&apos;s most recent completed practice session.
           </DialogDescription>
-          {!unlocked && (
-            <div>
-              <IdentityHiddenBadge compact />
-            </div>
-          )}
         </DialogHeader>
         <div role="status" aria-live="polite" aria-busy={loading}>
           {loading && (
