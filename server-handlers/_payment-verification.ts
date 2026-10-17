@@ -9,13 +9,14 @@
 
 import { createHmac, timingSafeEqual } from "crypto";
 import { computeProratedDays } from "./_proration-helpers";
+import { SOLD_PLAN_AMOUNT } from "../data/plans";
 
 /* Active, purchasable plans. Annual SKUs were removed from the product; legacy
  * yearly subscriptions are still credited correctly on upgrade because
  * _proration-helpers keeps the yearly amounts/durations for its measured-date
  * math. "single" is a one-off credit top-up (free tier), not a term plan. */
 export const PLAN_TIER: Record<string, string> = { single: "free", weekly: "starter" };
-export const PLAN_AMOUNT: Record<string, number> = { single: 900, weekly: 3900 };
+export const PLAN_AMOUNT: Record<string, number> = SOLD_PLAN_AMOUNT;
 export const PLAN_LABEL: Record<string, string> = { single: "Per Session (₹9)", weekly: "Interview Sprint Pack (₹39 · 5 sessions · 30 days)" };
 
 /** Subscription term length, in days, for the NEW plan. "single" has no term

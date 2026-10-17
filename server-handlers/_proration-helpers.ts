@@ -8,10 +8,8 @@
  * actual start/end dates and the price from (tier, isYearly).
  */
 
-export const PLAN_AMOUNT_PAISE: Record<string, number> = {
-  weekly: 3900, // Sprint Pack ₹39
-  "yearly-starter": 203900,
-};
+import { PLAN_AMOUNT_PAISE } from "../data/plans";
+export { PLAN_AMOUNT_PAISE };
 
 export const PLAN_DAYS: Record<string, number> = {
   weekly: 30, // Sprint Pack 30-day validity
@@ -67,7 +65,7 @@ export function computeProratedDays(args: {
   newPlan: string;
 }): number {
   const { nowMs, currentStartMs, currentEndMs, currentTier, newPlan } = args;
-  const newPlanAmount = PLAN_AMOUNT_PAISE[newPlan];
+  const newPlanAmount = (PLAN_AMOUNT_PAISE as Record<string, number>)[newPlan];
   const newPlanDays = PLAN_DAYS[newPlan];
   if (!newPlanAmount || !newPlanDays) return 0;
   const measured = measuredDurationDays(currentStartMs, currentEndMs);

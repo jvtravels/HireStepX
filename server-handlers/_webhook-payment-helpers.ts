@@ -14,7 +14,8 @@
  */
 
 export const WEBHOOK_PLAN_TIER: Record<string, string> = { single: "free", weekly: "starter" };
-export const WEBHOOK_PLAN_AMOUNT: Record<string, number> = { single: 900, weekly: 3900 }; // weekly = Sprint Pack ₹39
+import { SOLD_PLAN_AMOUNT } from "../data/plans";
+export const WEBHOOK_PLAN_AMOUNT: Record<string, number> = SOLD_PLAN_AMOUNT;
 /** Term length in days for the tier plans. "single" has no term (credits). */
 export const WEBHOOK_PLAN_DURATION: Record<string, number> = { weekly: 30 }; // weekly = Sprint Pack 30-day validity
 

@@ -5,16 +5,13 @@ export const config = { runtime: "edge" };
 
 import { handleCorsPreflightOrMethod, corsHeaders, verifyAuth, unauthorizedResponse, validateOrigin, withRequestId, isRateLimited, rateLimitResponse, getClientIp } from "./_shared";
 import { checkPromoValidity, computeDiscountAmount } from "./_promo";
+import { SOLD_PLAN_AMOUNT } from "../data/plans";
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 
-// Preview-only amounts — must match _payment-verification.ts's PLAN_AMOUNT
-// (the source of truth used when the charge actually happens). That file
-// pulls in node:crypto and is Node-serverless only, so it can't be imported
-// from this edge handler; keep this copy in sync by hand.
-const PLAN_AMOUNT: Record<string, number> = { single: 900, weekly: 3900 };
+const PLAN_AMOUNT = SOLD_PLAN_AMOUNT;
 
 export default async function handler(req: Request): Promise<Response> {
   const earlyResponse = handleCorsPreflightOrMethod(req);

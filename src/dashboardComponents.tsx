@@ -9,6 +9,7 @@ import type { DashboardSession } from "./dashboardTypes";
 import { FREE_SESSION_LIMIT, STARTER_WEEKLY_LIMIT, SINGLE_SESSION_PRICE } from "./dashboardData";
 import { SectionErrorBoundary } from "./ErrorBoundary";
 import { Button } from "@/components/ui/button";
+import { PLAN_AMOUNT_PAISE, formatRupees } from "../data/plans";
 
 // Cream/indigo/copper results report — ported from the `interview-result`
 // Tempo canvas. Lazy-loaded to keep the dashboard hero bundle slim.
@@ -110,8 +111,8 @@ export function DataLoadingSkeleton() {
 /* ─── Upgrade Modal ─── */
 const PLANS_ALL = [
   { id: "free",    tier: "free",    name: "Free",        price: "\u20B90",   unit: "forever",   sub: "Try before you pay a rupee",         cta: "Start free",       features: [`${FREE_SESSION_LIMIT} mock sessions`, "Behavioural rounds + basic STAR score", "Email report", "Saved report for 7 days", "No credit card required"],                                                                                               featured: false },
-  { id: "single",  tier: "free",    name: "Per session", price: "\u20B99",   unit: "/ session", sub: "One mock, zero commitment",           cta: "Buy one session",  features: ["1 mock session", "Voice in & out, all round types", "Full STAR score + report", "Credit never expires"],                                                                                                                                       featured: false },
-  { id: "weekly",  tier: "starter", name: "Sprint Pack", price: "\u20B939",  compareAt: "\u20B945", unit: "/ 5 sessions", sub: "Prep for your next interview",     cta: "Get Sprint Pack",  features: [`${STARTER_WEEKLY_LIMIT} sessions \u00B7 30-day validity`, "Voice in & out, all round types", "Company-specific rounds", "Skill-decay tracking", "90-day report history"],                                                                                                featured: true },
+  { id: "single",  tier: "free",    name: "Per session", price: formatRupees(PLAN_AMOUNT_PAISE.single),   unit: "/ session", sub: "One mock, zero commitment",           cta: "Buy one session",  features: ["1 mock session", "Voice in & out, all round types", "Full STAR score + report", "Credit never expires"],                                                                                                                                       featured: false },
+  { id: "weekly",  tier: "starter", name: "Sprint Pack", price: formatRupees(PLAN_AMOUNT_PAISE.weekly),  compareAt: "\u20B945", unit: "/ 5 sessions", sub: "Prep for your next interview",     cta: "Get Sprint Pack",  features: [`${STARTER_WEEKLY_LIMIT} sessions \u00B7 30-day validity`, "Voice in & out, all round types", "Company-specific rounds", "Skill-decay tracking", "90-day report history"],                                                                                                featured: true },
 ];
 
 // Rank used to determine if a plan card is "below" the user's current subscription.

@@ -12,6 +12,7 @@ import { emailShell, title, para, b, button, dataCard } from "./_email-theme";
 import { grantSessionCredits, revokeSessionCredits } from "./_session-credits";
 import { resolveCapturedPayment } from "./_webhook-payment-helpers";
 import { notify } from "./_notify";
+import { PLAN_AMOUNT_PAISE } from "../data/plans";
 
 
 const RAZORPAY_WEBHOOK_SECRET = (process.env.RAZORPAY_WEBHOOK_SECRET || "").trim();
@@ -23,7 +24,7 @@ const APP_URL = (process.env.APP_URL || "https://hirestepx.vercel.app").replace(
 
 const PLAN_DURATION: Record<string, number> = { weekly: 30 }; // weekly = Sprint Pack 30-day validity
 const PLAN_TIER: Record<string, string> = { weekly: "starter" };
-const PLAN_AMOUNT: Record<string, number> = { weekly: 3900 }; // weekly = Sprint Pack ₹39
+const PLAN_AMOUNT: Record<string, number> = { weekly: PLAN_AMOUNT_PAISE.weekly };
 
 const UPSTASH_URL = (process.env.UPSTASH_REDIS_REST_URL || "").trim();
 const UPSTASH_TOKEN = (process.env.UPSTASH_REDIS_REST_TOKEN || "").trim();
@@ -427,7 +428,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               razorpay_order_id: payment?.order_id || "",
               plan: plan || "weekly",
               tier,
-              amount: payment?.amount || PLAN_AMOUNT[plan] || 3900,
+              amount: payment?.amount || PLAN_AMOUNT[plan] || PLAN_AMOUNT_PAISE.weekly,
               currency: "INR",
               status: "completed",
               subscription_start: now.toISOString(),

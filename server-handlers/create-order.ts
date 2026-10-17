@@ -5,6 +5,7 @@ import { withNodeAuthAndRateLimit, supabaseUrl, slog } from "./_shared";
 import { captureServerEvent } from "./_posthog";
 import { razorpayBasicAuth } from "./_razorpay-auth";
 import { checkPromoValidity, computeDiscountAmount } from "./_promo";
+import { PLAN_AMOUNT_PAISE } from "../data/plans";
 
 const RAZORPAY_KEY_ID = (process.env.RAZORPAY_KEY_ID || "").trim();
 const SUPABASE_SERVICE_ROLE_KEY = (process.env.SUPABASE_SERVICE_ROLE_KEY || "").trim();
@@ -16,8 +17,8 @@ const UPSTASH_TOKEN = (process.env.UPSTASH_REDIS_REST_TOKEN || "").trim();
 const INTENT_KEY_TTL_SEC = 86_400;
 
 const PRICE_MAP: Record<string, { amount: number; name: string; description: string }> = {
-  single:           { amount: 900,    name: "HireStepX Single Session",   description: "Single mock interview session — ₹9" },
-  weekly:           { amount: 3900,   name: "HireStepX Sprint Pack",      description: "Interview Sprint Pack — ₹39 · 5 sessions · 30-day validity" },
+  single:           { amount: PLAN_AMOUNT_PAISE.single,    name: "HireStepX Single Session",   description: "Single mock interview session — ₹9" },
+  weekly:           { amount: PLAN_AMOUNT_PAISE.weekly,   name: "HireStepX Sprint Pack",      description: "Interview Sprint Pack — ₹39 · 5 sessions · 30-day validity" },
 };
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
