@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
+import { useEmployerBreadcrumb } from "@/employer/EmployerShell";
 import { useEmployerData, Requirement } from "@/employer/EmployerDataContext";
 import { RequirementForm, RequirementFormValues } from "@/employer/RequirementForm";
 import { tokens as t, fonts as f, textSize } from "@/auth/_tokens";
@@ -35,6 +36,8 @@ export default function EditRequirementPage() {
   }, [id, fetchRequirementDetail]);
 
   useEffect(() => load(), [load]);
+
+  useEmployerBreadcrumb(requirement ? [{ label: requirement.title, path: `/employer/requirements/${id}` }, { label: "Edit job" }] : null);
 
   const handleSubmit = async (values: RequirementFormValues) => {
     if (access.suspended) {

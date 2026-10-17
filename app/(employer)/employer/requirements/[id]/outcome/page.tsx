@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
+import { useEmployerBreadcrumb } from "@/employer/EmployerShell";
 import { useEmployerData, type Requirement } from "@/employer/EmployerDataContext";
 import type { Candidate, CandidateStatus } from "@/employer/mockData";
 import { tokens as t, fonts as f, textSize } from "@/auth/_tokens";
@@ -103,6 +104,8 @@ export default function OutcomeFeedbackPage() {
   }, [fetchRequirementDetail, params.id]);
 
   useEffect(() => load(), [load]);
+
+  useEmployerBreadcrumb(requirement ? [{ label: requirement.title, path: `/employer/requirements/${params.id}` }, { label: "Hiring outcome" }] : null);
 
   const backHref = `/employer/requirements/${params.id}`;
   const backLink = (

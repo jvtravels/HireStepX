@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, type ReactNode } from "react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { ArrowLeftIcon } from "lucide-react";
+import { useEmployerBreadcrumb } from "@/employer/EmployerShell";
 import { useEmployerData, type Requirement } from "@/employer/EmployerDataContext";
 import type { Candidate } from "@/employer/mockData";
 import { tokens as t, fonts as f, textSize } from "@/auth/_tokens";
@@ -149,6 +150,8 @@ export default function ComparePage() {
   }, [fetchRequirementDetail, params.id]);
 
   useEffect(() => load(), [load]);
+
+  useEmployerBreadcrumb(requirement ? [{ label: requirement.title, path: `/employer/requirements/${params.id}` }, { label: "Compare candidates" }] : null);
 
   const aId = searchParams.get("a");
   const bId = searchParams.get("b");
