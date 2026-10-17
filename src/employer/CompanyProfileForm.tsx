@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { isValidGstin, normalizeGstin } from "../../server-handlers/_gstin";
 import { tokens as t, fonts as f } from "@/auth/_tokens";
 import { useEmployerData } from "@/employer/EmployerDataContext";
@@ -44,6 +44,8 @@ export default function CompanyProfileForm({
   idPrefix,
   websiteHelp,
   onSaved,
+  disabled = false,
+  onDirtyChange,
 }: {
   initialName?: string;
   initialWebsite?: string;
@@ -53,6 +55,10 @@ export default function CompanyProfileForm({
   idPrefix: string;
   websiteHelp?: string;
   onSaved?: () => void;
+  /** Suspended or deletion-pending accounts: the server rejects the save, so don't offer it. */
+  disabled?: boolean;
+  /** Reports whether there are unsaved edits, so the host page can warn before leaving. */
+  onDirtyChange?: (dirty: boolean) => void;
 }) {
   const { submitCompanyProfileResult, companyGstin, companyBillingName } = useEmployerData();
   const [companyName, setCompanyName] = useState(initialName);
@@ -70,7 +76,22 @@ export default function CompanyProfileForm({
   const [saved, setSaved] = useState(false);
   const [websiteServerError, setWebsiteServerError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
+  const [removeLogo, setRemoveLogo] = useState(false);
+  const [baseline, setBaseline] = useState({ name: initialName, website: initialWebsite, gstin: companyGstin, billingName: companyBillingName });
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const dirty = companyName !== baseline.name || website !== baseline.website || gstin !== baseline.gstin
+    || billingName !== baseline.billingName || logoDataUrl !== null || removeLogo;
+  useEffect(() => { onDirtyChange?.(dirty); }, [dirty, onDirtyChange]);
+  // Leaving the page unmounts the form; make sure the host's guard doesn't outlive it.
+  useEffect(() => () => { onDirtyChange?.(false); }, [onDirtyChange]);
+
+  // "Saved." is a confirmation, not a permanent status line.
+  useEffect(() => {
+    if (!saved) return;
+    const timer = setTimeout(() => setSaved(false), 4000);
+    return () => clearTimeout(timer);
+  }, [saved]);
 
   const nameValid = companyName.trim().length > 1;
   const websiteValid = isPlausibleWebsite(website);
@@ -84,7 +105,7 @@ export default function CompanyProfileForm({
   const nameId = `${idPrefix}-name`;
   const websiteId = `${idPrefix}-website`;
   const logoHelpId = `${idPrefix}-logo-help`;
-  const logoSrc = logoDataUrl ?? initialLogoUrl;
+  const logoSrc = removeLogo ? null : logoDataUrl ?? initialLogoUrl;
 
   const handleLogoChange = async (file: File | undefined) => {
     setLogoError(null);
@@ -100,15 +121,26 @@ export default function CompanyProfileForm({
     try {
       setLogoDataUrl(await readFileAsDataUrl(file));
       setLogoName(file.name);
+      setRemoveLogo(false);
       setSaved(false);
     } catch {
       setLogoError("Couldn't read that file. Try a different image.");
     }
   };
 
+  const handleRemoveLogo = () => {
+    setLogoDataUrl(null);
+    setLogoName(null);
+    setLogoError(null);
+    if (fileRef.current) fileRef.current.value = "";
+    // Only a logo the server already holds needs a delete request; a just-picked one is simply dropped.
+    if (initialLogoUrl) setRemoveLogo(true);
+    setSaved(false);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (saving) return;
+    if (saving || disabled) return;
     setNameTouched(true);
     setWebsiteTouched(true);
     setGstinTouched(true);
@@ -118,14 +150,24 @@ export default function CompanyProfileForm({
     setGstinServerError(null);
     setSaved(false);
     setSaving(true);
-    const res = await submitCompanyProfileResult({ companyName: companyName.trim(), website: website.trim(), gstin: normalizeGstin(gstin), billingName: billingName.trim(), ...splitLogoDataUrl(logoDataUrl) });
+    const res = await submitCompanyProfileResult({ companyName: companyName.trim(), website: website.trim(), gstin: normalizeGstin(gstin), billingName: billingName.trim(), ...splitLogoDataUrl(logoDataUrl), ...(removeLogo && !logoDataUrl ? { removeLogo: true } : {}) });
     setSaving(false);
     if (res.ok) {
       setSaved(true);
+      setBaseline({ name: companyName, website, gstin, billingName });
+      setLogoDataUrl(null);
+      setLogoName(null);
+      setRemoveLogo(false);
       onSaved?.();
       return;
     }
-    if (res.error.code === "invalid_gstin") setGstinServerError(res.error.error);
+    if (res.error.code === "work_email_required") {
+      setFormError("Employer accounts need a work email. Sign out and create your account with your company email address.");
+    } else if (res.error.code === "account_deletion_pending") {
+      setFormError("Your account is scheduled for deletion. Restore it with the Restore account button at the top of the page, then save again.");
+    } else if (res.error.code === "account_suspended") {
+      setFormError("Your account is suspended, so your company profile can't be changed. Contact support@hirestepx.com.");
+    } else if (res.error.code === "invalid_gstin") setGstinServerError(res.error.error);
     else if (/website/i.test(res.error.error)) setWebsiteServerError(res.error.error);
     else setFormError(res.error.error);
   };
@@ -145,6 +187,7 @@ export default function CompanyProfileForm({
           aria-invalid={nameError ? true : undefined}
           aria-describedby={nameError ? `${nameId}-err` : undefined}
           placeholder="Acme Technologies Pvt Ltd"
+          disabled={disabled}
           style={{ ...inputStyle, borderColor: nameError ? t.error : t.line }}
         />
         {nameError && <HelpText id={`${nameId}-err`} tone="error">{nameError}</HelpText>}
@@ -167,6 +210,7 @@ export default function CompanyProfileForm({
           aria-invalid={websiteError ? true : undefined}
           aria-describedby={`${websiteId}-${websiteError ? "err" : "help"}`}
           placeholder="acme.com"
+          disabled={disabled}
           style={{ ...inputStyle, borderColor: websiteError ? t.error : t.line }}
         />
         {websiteError ? (
@@ -191,9 +235,14 @@ export default function CompanyProfileForm({
               <span aria-hidden="true" style={{ color: t.inkFaint }}><EmployerIcon.Building /></span>
             )}
           </div>
-          <OutlineCta size="sm" onClick={() => fileRef.current?.click()}>
+          <OutlineCta size="sm" disabled={disabled} onClick={() => fileRef.current?.click()}>
             {logoSrc ? "Change logo" : "Upload logo"}
           </OutlineCta>
+          {logoSrc && (
+            <OutlineCta size="sm" disabled={disabled} onClick={handleRemoveLogo}>
+              Remove logo
+            </OutlineCta>
+          )}
           <input
             ref={fileRef}
             type="file"
@@ -208,7 +257,7 @@ export default function CompanyProfileForm({
           <HelpText id={logoHelpId} tone="error">{logoError}</HelpText>
         ) : (
           <HelpText id={logoHelpId}>
-            {logoName ? `Selected: ${logoName}. ` : ""}PNG, JPG, or WEBP · up to {LOGO_MAX_MB} MB.
+            {removeLogo ? "The logo will be removed when you save. " : logoName ? `Selected: ${logoName}. ` : ""}PNG, JPG, or WEBP · up to {LOGO_MAX_MB} MB.
           </HelpText>
         )}
       </div>
@@ -232,6 +281,7 @@ export default function CompanyProfileForm({
             aria-invalid={gstinError ? true : undefined}
             aria-describedby={`${gstinId}-${gstinError ? "err" : "help"}`}
             placeholder="27AAPFU0939F1ZV"
+            disabled={disabled}
             style={gstinError ? gstinErrorStyle : gstinStyle}
           />
           {gstinError ? (
@@ -250,6 +300,7 @@ export default function CompanyProfileForm({
             value={billingName}
             onChange={(e) => { setBillingName(e.target.value); setSaved(false); }}
             placeholder="Legal name as registered for GST"
+            disabled={disabled}
             style={inputStyle}
           />
           <HelpText>Leave blank to use your company name.</HelpText>
@@ -263,7 +314,7 @@ export default function CompanyProfileForm({
         {saved ? "Saved." : ""}
       </p>
 
-      <PrimaryCta full type="submit" loading={saving}>
+      <PrimaryCta full type="submit" loading={saving} disabled={disabled}>
         {saving ? busyLabel : submitLabel}
       </PrimaryCta>
     </form>

@@ -939,7 +939,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(403).json({ error: "Forbidden" });
   }
 
-  const { email, name, userId, action, honeypot, intent, ref, password } = req.body || {};
+  const { email, name, userId, action, honeypot, intent, ref, password, companyName, companyWebsite } = req.body || {};
 
   // Honeypot check: if the hidden field is filled, it's a bot
   if (honeypot) {
@@ -1031,7 +1031,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return handleSignupAttemptedExisting(req, res, normalizedEmail, name);
   }
   if (action === "create-account") {
-    return handleCreateAccount(req, res, normalizedEmail, name, password, ref);
+    return handleCreateAccount(req, res, normalizedEmail, name, password, ref, { companyName, companyWebsite });
   }
   return handleVerify(req, res, normalizedEmail, name, userId, ref);
 }
@@ -1046,6 +1046,7 @@ async function handleCreateAccount(
   name: unknown,
   password: unknown,
   ref: unknown,
+  company: { companyName?: unknown; companyWebsite?: unknown } = {},
 ) {
   const invalid = validateSignupFields(name, password);
   if (invalid || typeof name !== "string" || typeof password !== "string") {
@@ -1075,6 +1076,8 @@ async function handleCreateAccount(
       name,
       consentKey: CONSENT_METADATA_KEY,
       consentVersion: currentSignupConsent().version,
+      companyName: typeof company.companyName === "string" ? company.companyName : undefined,
+      companyWebsite: typeof company.companyWebsite === "string" ? company.companyWebsite : undefined,
     });
   } catch (err) {
     console.error("[create-account] admin createUser failed:", err instanceof Error ? err.message : "Unknown");

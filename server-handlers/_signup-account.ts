@@ -13,6 +13,20 @@ export interface CreateUserInput {
   name: string;
   consentKey: string;
   consentVersion: string;
+  /** Employer signup only: carried in user_metadata so an email confirmed on another
+   *  device (where the localStorage stash is absent) can still prefill onboarding. */
+  companyName?: string;
+  companyWebsite?: string;
+}
+
+export const PENDING_COMPANY_NAME_KEY = "pending_company_name";
+export const PENDING_COMPANY_WEBSITE_KEY = "pending_company_website";
+
+/** Trimmed and length-capped; anything that is not a non-empty string is dropped. */
+export function cleanPendingCompanyField(v: unknown, max: number): string | undefined {
+  if (typeof v !== "string") return undefined;
+  const t = v.trim().slice(0, max);
+  return t || undefined;
 }
 
 export function validateSignupFields(name: unknown, password: unknown): string | null {
@@ -53,6 +67,8 @@ export async function createUnconfirmedUser(
       user_metadata: {
         name: input.name.trim(),
         custom_email_verified: false,
+        ...(cleanPendingCompanyField(input.companyName, 120) ? { [PENDING_COMPANY_NAME_KEY]: cleanPendingCompanyField(input.companyName, 120) } : {}),
+        ...(cleanPendingCompanyField(input.companyWebsite, 200) ? { [PENDING_COMPANY_WEBSITE_KEY]: cleanPendingCompanyField(input.companyWebsite, 200) } : {}),
         ...(input.consentVersion ? { [input.consentKey]: input.consentVersion } : {}),
       },
     }),

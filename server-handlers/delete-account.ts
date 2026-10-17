@@ -10,6 +10,7 @@ import {
 import { captureServerEvent } from "./_posthog";
 import { eraseUserData, posthogConfigFromEnv, pseudonymousId, sha256Hex } from "./_erase-user";
 import { sendErasureEmail } from "./_erase-user-email";
+import { RESTORE_EMPLOYER_FILTER, deletionPendingPatch, restoreEmployerPatch } from "./_delete-account-helpers";
 
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const RESEND_API_KEY = (process.env.RESEND_API_KEY || "").trim();
@@ -108,6 +109,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           body: JSON.stringify({ deleted_at: null }),
         });
         if (!restoreRes.ok) return res.status(500).json({ error: "Failed to restore account" });
+        // Lift only the block the soft delete placed on an employer row; an admin or
+        // report-threshold suspension carries a different reason and stays in force.
+        const unblock = await fetch(`${SUPABASE_URL}/rest/v1/employers?id=eq.${encodedId}&${RESTORE_EMPLOYER_FILTER}`, {
+          method: "PATCH",
+          headers,
+          body: JSON.stringify(restoreEmployerPatch()),
+        });
+        if (!unblock.ok) {
+          // Leaving an employer blocked after a "successful" restore would strand them; surface it.
+          slog.error("delete-account: employer unblock failed on restore", { code: "delete_account_employer_unblock_failed", httpStatus: unblock.status });
+          return res.status(500).json({ error: "Failed to restore account" });
+        }
         return res.status(200).json({ success: true, restored: true });
       } catch (err) {
         slog.error("delete-account: restore failed", { error: err instanceof Error ? err.message : String(err) });
@@ -132,6 +145,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             return res.status(500).json({ error: "Failed to schedule account deletion" });
           }
         } else {
+          // An employer must stop being live NOW, not in 7 days: block them through the
+          // suspension gate every employer handler already enforces. No-op for candidates
+          // (no employers row) and for an already-suspended employer.
+          const block = await fetch(`${SUPABASE_URL}/rest/v1/employers?id=eq.${encodedId}&suspended_at=is.null`, {
+            method: "PATCH",
+            headers,
+            body: JSON.stringify(deletionPendingPatch(new Date().toISOString())),
+          });
+          if (!block.ok) {
+            slog.error("delete-account: employer block failed on soft delete", { code: "delete_account_employer_block_failed", httpStatus: block.status });
+            await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodedId}`, {
+              method: "PATCH", headers, body: JSON.stringify({ deleted_at: null }),
+            }).catch(() => null);
+            return res.status(500).json({ error: "Failed to schedule account deletion" });
+          }
           const deletionDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
           return res.status(200).json({
             success: true,

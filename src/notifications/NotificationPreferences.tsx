@@ -6,6 +6,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { apiFetch } from "../apiClient";
 import { CATEGORY_LABELS, DEFAULT_PREFS, categoriesForAudience, type Audience, type Category, type NotificationPrefs } from "./registry";
 
+/* The shared registry copy is written from the candidate's side ("roles you are in"). */
+const EMPLOYER_DESCRIPTIONS: Partial<Record<Category, string>> = {
+  messages: "Candidate replies and new conversations",
+  applications: "Answers to your candidate requests",
+  billing: "Payment receipts, unlocks and refunds",
+};
+
 export default function NotificationPreferences({ audience }: { audience: Audience }) {
   const [prefs, setPrefs] = useState<NotificationPrefs | null>(null);
   const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
@@ -50,7 +57,7 @@ export default function NotificationPreferences({ audience }: { audience: Audien
               <li key={c} className="flex items-center justify-between gap-4 px-4 py-3">
                 <div className="min-w-0">
                   <label htmlFor={id} className="block text-sm font-medium text-foreground">{CATEGORY_LABELS[c].label}</label>
-                  <p className="m-0 text-[13px] text-muted-foreground">{CATEGORY_LABELS[c].description}</p>
+                  <p className="m-0 text-[13px] text-muted-foreground">{(audience === "employer" && EMPLOYER_DESCRIPTIONS[c]) || CATEGORY_LABELS[c].description}</p>
                 </div>
                 <Switch id={id} checked={prefs.inApp[c] !== false} onCheckedChange={(on) => toggle(c, on)} />
               </li>

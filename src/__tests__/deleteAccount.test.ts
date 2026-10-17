@@ -470,3 +470,49 @@ describe("delete-account — candidate-agency + employer data", () => {
     expect(res.body).toMatchObject({ success: true, partial: true, retainedFinancialRecords: true });
   });
 });
+
+describe("delete-account — employer block and restore", () => {
+  it("blocks the employer row at soft delete without overwriting an existing suspension", async () => {
+    const fetchMock = fullSuccessFetch();
+    global.fetch = fetchMock as unknown as typeof fetch;
+    const res = mockRes();
+    await handler(mockReq({ password: "correct" }), res);
+    expect(res.statusCode).toBe(200);
+    const call = fetchMock.mock.calls.find(([u]) => String(u).includes("/rest/v1/employers?") && String(u).includes("suspended_at=is.null"));
+    expect(call).toBeDefined();
+    expect(JSON.parse((call![1] as RequestInit).body as string)).toMatchObject({ suspended_reason: "account_deletion_pending" });
+  });
+
+  it("reverts the schedule and 500s when the employer block fails", async () => {
+    const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
+      const u = String(url);
+      if (u.includes("/rest/v1/employers")) return { ok: false, status: 500 } as Response;
+      void init;
+      return { ok: true, json: async () => [] } as unknown as Response;
+    });
+    global.fetch = fetchMock as unknown as typeof fetch;
+    const res = mockRes();
+    await handler(mockReq({ password: "correct" }), res);
+    expect(res.statusCode).toBe(500);
+    const revert = fetchMock.mock.calls.find(([u, i]) => String(u).includes("/rest/v1/profiles") && (i as RequestInit)?.body && JSON.parse((i as RequestInit).body as string).deleted_at === null);
+    expect(revert).toBeDefined();
+  });
+
+  it("restore lifts only the deletion-pending block", async () => {
+    const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) => ({ ok: true }) as Response);
+    global.fetch = fetchMock as unknown as typeof fetch;
+    const res = mockRes();
+    await handler(mockReq({ restore: true }), res);
+    expect(res.statusCode).toBe(200);
+    const call = fetchMock.mock.calls.find(([u]) => String(u).includes("/rest/v1/employers?"));
+    expect(String(call![0])).toContain("suspended_reason=eq.account_deletion_pending");
+    expect(JSON.parse((call![1] as RequestInit).body as string)).toEqual({ suspended_at: null, suspended_reason: null });
+  });
+
+  it("500s when the employer unblock fails", async () => {
+    global.fetch = vi.fn(async (url: string) => (String(url).includes("/rest/v1/employers") ? { ok: false, status: 500 } : { ok: true })) as unknown as typeof fetch;
+    const res = mockRes();
+    await handler(mockReq({ restore: true }), res);
+    expect(res.statusCode).toBe(500);
+  });
+});

@@ -20,6 +20,8 @@ import { TablePaginationFooter } from "@/components/TablePaginationFooter";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { PlusIcon, XIcon } from "lucide-react";
 import { PortfolioLinkIcon, formatPortfolioUrl } from "./portfolioLinkIcons";
+import { clearAppOwnedStorage } from "./_appStorage";
+import EmployerDeletionNotice, { type EmployerDeletionFacts } from "./employer/EmployerDeletionNotice";
 
 
 /* Local token aliases — same shape as the shared `T` object so JSX
@@ -66,6 +68,7 @@ export const icons = {
   account: <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
   interview: <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>,
   plan: <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>,
+  download: <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>,
 };
 
 export function Divider() {
@@ -667,6 +670,8 @@ export interface DangerZoneSectionProps {
   onLogout: () => void;
   showToast: (msg: string) => void;
   authHeaders: () => Promise<Record<string, string>>;
+  /** Employer accounts only: swaps in the employer-specific erase/retain copy and warnings. */
+  employer?: EmployerDeletionFacts;
 }
 
 const subHeaderHint: React.CSSProperties = { fontFamily: font.ui, fontSize: 12, color: c.inkSoft, marginTop: 4, lineHeight: 1.5 };
@@ -1005,7 +1010,7 @@ export const DangerZoneSection = memo(function DangerZoneSection(props: DangerZo
   const {
     authUser, confirmDelete, setConfirmDelete,
     deleteEmailInput, setDeleteEmailInput, deleteLoading, setDeleteLoading, deleteMsg, setDeleteMsg,
-    onLogout, showToast, authHeaders: getAuthHeaders,
+    onLogout, showToast, authHeaders: getAuthHeaders, employer,
   } = props;
 
   const isOAuthOnlyUser = authUser?.signedInVia === "google";
@@ -1025,7 +1030,8 @@ export const DangerZoneSection = memo(function DangerZoneSection(props: DangerZo
       if (res.ok || res.status === 207) {
         const data = await res.json().catch(() => ({}));
         if (data.scheduled) showToast("Account scheduled for deletion. Log in within 7 days to cancel.");
-        localStorage.clear();
+        else if (employer && data.retainedFinancialRecords) showToast("Account deleted. Payment records are kept, anonymised, for tax.");
+        clearAppOwnedStorage(localStorage);
         onLogout();
       } else {
         const d = await res.json().catch(() => ({}));
@@ -1048,7 +1054,7 @@ export const DangerZoneSection = memo(function DangerZoneSection(props: DangerZo
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
           <div style={{ minWidth: 0, flex: 1 }}>
             <div style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: c.ember, marginBottom: 2 }}>Delete account</div>
-            <div style={subHeaderHint}>Removes your account and all data. A 7-day grace period lets you cancel by logging in.</div>
+            <div style={subHeaderHint}>{employer ? "Removes your company account, jobs and conversations. Payment records are kept for tax. A 7-day grace period lets you cancel by logging in." : "Removes your account and all data. A 7-day grace period lets you cancel by logging in."}</div>
           </div>
           <Button type="button" variant="destructive" size="sm"
             onClick={() => { setConfirmDelete(true); setDeleteEmailInput(""); setDeletePasswordInput(""); setDeleteMsg(""); }}
@@ -1070,6 +1076,7 @@ export const DangerZoneSection = memo(function DangerZoneSection(props: DangerZo
             {isOAuthOnlyUser ? " to confirm" : " and re-enter your password to confirm"}.
             Reversible for 7 days after submit.
           </div>
+          {employer && <EmployerDeletionNotice facts={employer} />}
           <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 12 }}>
             <input type="email" value={deleteEmailInput}
               onChange={(e) => setDeleteEmailInput(e.target.value)}

@@ -1,15 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/AuthContext";
 import { useToast } from "@/Toast";
 import { authHeaders } from "@/supabase";
+import { apiFetch } from "@/apiClient";
 import { useEmployerData } from "@/employer/EmployerDataContext";
 import { tokens as t, fonts as f } from "@/auth/_tokens";
 import { PageSkeleton, ErrorPanel } from "@/employer/_consoleParts";
 import BillingHistorySection from "@/employer/BillingHistorySection";
 import CompanyProfileForm from "@/employer/CompanyProfileForm";
-import { PageHeader, FlatSection, SoundsSection, EmailPreferencesSection, AccountSection, DangerZoneSection } from "@/settingsSections";
+import NotificationPreferences from "@/notifications/NotificationPreferences";
+import { Badge, OutlineCta } from "@/employer/_atoms";
+import {
+  describeLimits, exportBody, exportFilename, exportIsIncomplete, openJobCount, tierPresentation,
+} from "@/employer/_accountHelpers";
+import { PageHeader, FlatSection, ActionRow, SoundsSection, EmailPreferencesSection, AccountSection, DangerZoneSection, icons } from "@/settingsSections";
 
 /* /employer/settings — edit the company profile submitted during
    onboarding. Saving re-runs the same POST /api/employer-profile upsert
@@ -20,7 +26,7 @@ import { PageHeader, FlatSection, SoundsSection, EmailPreferencesSection, Accoun
 export default function EmployerSettingsPage() {
   const {
     companyName, companyWebsite, companyLogoUrl, companyStatus, companyStatusLoading, companyStatusError,
-    refreshCompanyStatus, suspended,
+    refreshCompanyStatus, suspended, deletionPending, verificationTier, limits, requirements, fetchCredit,
   } = useEmployerData();
   const { user, logout, resetPassword } = useAuth();
   const { toast } = useToast();
@@ -30,6 +36,54 @@ export default function EmployerSettingsPage() {
   const [deleteEmailInput, setDeleteEmailInput] = useState("");
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteMsg, setDeleteMsg] = useState("");
+  const [dirty, setDirty] = useState(false);
+  const [creditPaise, setCreditPaise] = useState<number | null>(null);
+  const [exporting, setExporting] = useState(false);
+  const [exportNote, setExportNote] = useState("");
+
+  // Warn before a refresh/close throws away unsaved company details.
+  useEffect(() => {
+    if (!dirty) return;
+    const warn = (e: BeforeUnloadEvent) => { e.preventDefault(); };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [dirty]);
+
+  // The deletion warning quotes the unspent credit, so read it before the owner opens that panel.
+  useEffect(() => {
+    let live = true;
+    void fetchCredit().then((c) => { if (live && c) setCreditPaise(c.balancePaise); });
+    return () => { live = false; };
+  }, [fetchCredit]);
+
+  const handleDownloadData = async () => {
+    if (exporting) return;
+    setExporting(true);
+    setExportNote("");
+    const res = await apiFetch<unknown>("/api/export-user-data", {});
+    setExporting(false);
+    if (!res.ok || res.data === null) {
+      toast(res.status === 429 ? "You can download your data a few times an hour. Try again shortly." : res.error || "Couldn't prepare your data", "error");
+      return;
+    }
+    const url = URL.createObjectURL(new Blob([exportBody(res.data)], { type: "application/json" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = exportFilename(res.headers);
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    if (exportIsIncomplete(res.headers)) {
+      setExportNote("Some of your data could not be loaded, so this file is incomplete. Download again in a few minutes for the full copy.");
+    } else {
+      toast("Your data is downloading", "success");
+    }
+  };
+
+  const onDirtyChange = useCallback((v: boolean) => setDirty(v), []);
+  const formLocked = suspended || deletionPending;
+  const tierInfo = tierPresentation(verificationTier);
 
   const handlePasswordReset = async () => {
     if (!user?.email) return;
@@ -63,9 +117,11 @@ export default function EmployerSettingsPage() {
 
         <FlatSection title="Company profile">
           <div style={{ maxWidth: 480 }}>
-            {suspended && (
+            {formLocked && (
               <p role="status" style={{ fontFamily: f.sans, fontSize: 13, color: t.errorInk, margin: "0 0 16px", lineHeight: 1.5 }}>
-                Your account is suspended, so changes can&apos;t be saved right now.
+                {deletionPending
+                  ? "Your account is scheduled for deletion, so changes can't be saved. Restore it with the button at the top of the page."
+                  : "Your account is suspended, so changes can't be saved right now."}
               </p>
             )}
             {/* Keyed so the form re-seeds when the profile arrives or a save
@@ -78,12 +134,29 @@ export default function EmployerSettingsPage() {
               initialLogoUrl={companyLogoUrl}
               submitLabel="Save changes"
               busyLabel="Saving…"
+              disabled={formLocked}
+              onDirtyChange={onDirtyChange}
             />
+          </div>
+        </FlatSection>
+
+        <FlatSection title="Verification and limits">
+          <div className="flex max-w-[480px] flex-col gap-2 text-[13px] leading-relaxed text-foreground">
+            <p className="m-0 flex flex-wrap items-center gap-2">
+              <span className="font-semibold">Current tier</span>
+              {tierInfo.verifiedBadge ? <Badge tone="success">Verified</Badge> : <Badge tone="neutral">{tierInfo.label}</Badge>}
+            </p>
+            <p className="m-0 text-muted-foreground">Your limits: {describeLimits(limits)}.</p>
+            {tierInfo.nextStep && <p className="m-0 text-muted-foreground">{tierInfo.nextStep}</p>}
           </div>
         </FlatSection>
 
         <FlatSection title="Email preferences">
           <EmailPreferencesSection audience="employer" />
+        </FlatSection>
+
+        <FlatSection title="Notifications">
+          <NotificationPreferences audience="employer" />
         </FlatSection>
 
         <FlatSection title="Billing history">
@@ -102,6 +175,17 @@ export default function EmployerSettingsPage() {
           />
         </FlatSection>
 
+        <FlatSection title="Your data">
+          <ActionRow
+            last
+            icon={icons.download}
+            title="Download my data"
+            desc="A JSON copy of your company profile, jobs, conversations and payment records."
+            action={<OutlineCta size="sm" onClick={() => { void handleDownloadData(); }} loading={exporting} disabled={exporting}>{exporting ? "Preparing…" : "Download"}</OutlineCta>}
+          />
+          {exportNote && <p role="status" className="m-0 mt-2 text-[13px] text-destructive">{exportNote}</p>}
+        </FlatSection>
+
         <FlatSection title="Danger zone" last>
           <DangerZoneSection
             authUser={user}
@@ -111,6 +195,7 @@ export default function EmployerSettingsPage() {
             deleteMsg={deleteMsg} setDeleteMsg={setDeleteMsg}
             onLogout={() => { void logout(); }} showToast={(msg) => toast(msg, "success")}
             authHeaders={authHeaders}
+            employer={{ openJobs: openJobCount(requirements), creditPaise }}
           />
         </FlatSection>
       </div>

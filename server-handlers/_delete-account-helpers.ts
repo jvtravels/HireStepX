@@ -19,6 +19,8 @@
  * be retained, so an employer with any payment/order rows is anonymised and
  * deactivated instead of hard-deleted. */
 
+import { DELETION_PENDING_REASON } from "./_employer-trust";
+
 export const CHAT_ATTACHMENT_BUCKET = "chat-attachments";
 export const EMPLOYER_LOGO_BUCKET = "employer-logos";
 
@@ -72,4 +74,18 @@ export function anonymisedEmployerPatch(now: string): Record<string, unknown> {
     suspended_at: now,
     suspended_reason: "account deleted by user",
   };
+}
+
+/** Soft delete: block the employer immediately instead of leaving it fully live for the
+ *  7-day grace window. Reuses the suspension gate (see isDeletionPending). The caller
+ *  filters on suspended_at=is.null so an existing admin/report suspension is never
+ *  overwritten (and therefore never lifted by a restore). */
+export function deletionPendingPatch(now: string): { suspended_at: string; suspended_reason: string } {
+  return { suspended_at: now, suspended_reason: DELETION_PENDING_REASON };
+}
+
+/** Restore: clears only the block deletionPendingPatch set (PostgREST filter + patch). */
+export const RESTORE_EMPLOYER_FILTER = `suspended_reason=eq.${DELETION_PENDING_REASON}`;
+export function restoreEmployerPatch(): { suspended_at: null; suspended_reason: null } {
+  return { suspended_at: null, suspended_reason: null };
 }

@@ -26,11 +26,14 @@
 
 export const config = { runtime: "edge" };
 
+import { after } from "next/server";
 import { withAuthAndRateLimit, corsHeaders, withRequestId, slog } from "./_shared";
+import { captureServerEvent } from "./_posthog";
+import { buildEmployerWelcomeEmail, sendEmployerEmail } from "./_employer-emails";
 import { base64ToBytes } from "./_resume-upload-helpers";
 import { loadAuthIdentity } from "./_entitlements";
 import { parseBillingNameInput, parseGstinInput } from "./_gstin";
-import { deriveEmployerTier, emailDomain, isEmployerTier, isFreeMailDomain, TIER_LIMITS, tierAtLeast, type EmployerTier } from "./_employer-trust";
+import { deriveEmployerTier, emailDomain, isDeletionPending, isEmployerTier, isFreeMailDomain, isSuspended, TIER_LIMITS, tierAtLeast, type EmployerTier } from "./_employer-trust";
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
@@ -61,6 +64,7 @@ interface EmployerRow {
   approved_at: string | null;
   verification_tier?: string | null;
   suspended_at?: string | null;
+  suspended_reason?: string | null;
   gstin?: string | null;
   billing_name?: string | null;
 }
@@ -72,6 +76,8 @@ interface SubmitBody {
   logoContentType?: unknown;
   gstin?: unknown;
   billingName?: unknown;
+  /** true clears the stored logo; ignored when a new logo is uploaded in the same call. */
+  removeLogo?: unknown;
 }
 
 function asString(v: unknown, max: number): string {
@@ -218,7 +224,7 @@ export default async function handler(req: Request): Promise<Response> {
   return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405, headers });
 }
 
-const EMPLOYER_COLUMNS = "id,company_name,website,logo_path,status,submitted_at,approved_at,verification_tier,suspended_at";
+const EMPLOYER_COLUMNS = "id,company_name,website,logo_path,status,submitted_at,approved_at,verification_tier,suspended_at,suspended_reason";
 
 async function fetchEmployer(userId: string): Promise<EmployerRow | null> {
   const read = (columns: string) =>
@@ -261,6 +267,7 @@ function profileResponse(row: EmployerRow, tier: EmployerTier) {
     verificationTier: tier,
     limits: TIER_LIMITS[tier],
     suspended: !!row.suspended_at,
+    deletionPending: isDeletionPending(row),
     gstin: row.gstin ?? null,
     billingName: row.billing_name ?? null,
   };
@@ -276,6 +283,19 @@ async function handleGet(userId: string, headers: Record<string, string>): Promi
     slog.error("employer-profile GET threw", { code: "employer_profile_get_unexpected_error", error: msg.slice(0, 200), userId });
     return new Response(JSON.stringify({ error: "Failed to load employer profile" }), { status: 500, headers });
   }
+}
+
+function renamed(oldName: string, newName: string): boolean {
+  return oldName.trim().toLowerCase() !== newName.trim().toLowerCase();
+}
+
+function suspendedProfileResponse(row: EmployerRow | null, headers: Record<string, string>): Response {
+  const deletion = isDeletionPending(row);
+  return new Response(JSON.stringify(
+    deletion
+      ? { error: "Your account is scheduled for deletion. Restore it to continue.", code: "account_deletion_pending" }
+      : { error: "Your account is suspended, so your company profile can't be changed. Contact support@hirestepx.com.", code: "account_suspended" },
+  ), { status: 403, headers });
 }
 
 async function handlePost(req: Request, userId: string, headers: Record<string, string>): Promise<Response> {
@@ -307,12 +327,18 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
   if (!billingName.ok) return new Response(JSON.stringify({ error: billingName.error, code: "invalid_billing_name" }), { status: 400, headers });
 
   try {
+    const existing = await fetchEmployer(userId);
+    // A suspended (or soft-deleted) employer can read but not change their profile.
+    // Checked before the logo upload so a rejected save never leaves an orphaned object.
+    if (isSuspended(existing)) {
+      return suspendedProfileResponse(existing, headers);
+    }
     const upload = await uploadLogoIfPresent(userId, body);
     if (upload.kind === "error") {
       return new Response(JSON.stringify({ error: upload.message, code: "logo_upload_failed" }), { status: 422, headers });
     }
     const uploadedLogoPath = upload.kind === "ok" ? upload.path : null;
-    const existing = await fetchEmployer(userId);
+    const removeLogo = body.removeLogo === true && !uploadedLogoPath;
     // New company accounts need a work email; existing employers are grandfathered.
     if (!existing) {
       const identity = await loadAuthIdentity(SUPABASE_URL, serviceHeaders(), userId);
@@ -322,7 +348,7 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
       }
     }
     if (!websiteProvided) website = existing?.website ?? "";
-    const logoPath = uploadedLogoPath ?? existing?.logo_path ?? null;
+    const logoPath = uploadedLogoPath ?? (removeLogo ? null : existing?.logo_path ?? null);
     const now = new Date().toISOString();
     const baseRow = {
       id: userId,
@@ -355,10 +381,30 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
     }
 
     if (uploadedLogoPath) await deleteLogoIfDifferent(userId, existing?.logo_path ?? null, uploadedLogoPath);
+    else if (removeLogo && existing?.logo_path) await deleteLogoIfDifferent(userId, existing.logo_path, "");
 
     const saved = (await upsertRes.json().catch(() => [])) as EmployerRow[];
     const row: EmployerRow = saved[0] ?? { ...(existing ?? { id: userId, status: "approved", submitted_at: now, approved_at: now, logo_path: logoPath }), company_name: companyName, website, logo_path: logoPath, ...(gstinProvided ? { gstin: gstin.value } : {}), ...(billingNameProvided ? { billing_name: billingName.value } : {}) };
-    return new Response(JSON.stringify(profileResponse(row, await resolveTier(row, userId))), { status: 200, headers });
+    const tier = await resolveTier(row, userId);
+    // Names are self-asserted and not verified against the sign-in domain, so a rename of an
+    // existing profile is a trust signal worth an audit trail (not a block: legal renames happen).
+    if (existing && renamed(existing.company_name, companyName)) {
+      slog.warn("employer-profile company renamed", { code: "employer_profile_company_renamed", userId, from: existing.company_name.slice(0, 200), to: companyName.slice(0, 200), tier });
+    }
+    // Analytics + welcome mail run after the response so they can never delay or fail the save.
+    const afterSave = async () => {
+      await captureServerEvent("employer_profile_saved", userId, { first: !existing, tier, has_logo: !!logoPath, has_website: !!website }, req);
+      if (!existing) {
+        const identity = await loadAuthIdentity(SUPABASE_URL, serviceHeaders(), userId);
+        if (identity.email) {
+          const mail = buildEmployerWelcomeEmail(companyName);
+          await sendEmployerEmail({ to: identity.email, ...mail, idempotencyKey: `employer-welcome-${userId}` });
+        }
+      }
+    };
+    const background = afterSave().catch(() => {});
+    try { after(background); } catch { /* outside a request scope (tests): already running */ }
+    return new Response(JSON.stringify(profileResponse(row, tier)), { status: 200, headers });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     slog.error("employer-profile POST threw", { code: "employer_profile_post_unexpected_error", error: msg.slice(0, 200), userId });

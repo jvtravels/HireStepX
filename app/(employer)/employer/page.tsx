@@ -2,10 +2,15 @@
 
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { PlusIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EmployerHeaderAction } from "@/employer/EmployerShell";
 import { useEmployerData } from "@/employer/EmployerDataContext";
+import { useAuth } from "@/AuthContext";
+import { emailDomain, isFreeMailDomain } from "../../../server-handlers/_employer-trust";
+import { tierLadder } from "@/employer/_accountHelpers";
+import { PAY_AS_YOU_GO_SENTENCE, CREDIT_BACK_SENTENCE, unlockFeeSentence } from "@/employer/_employerOffer";
 import { tokens as t, fonts as f } from "@/auth/_tokens";
 import { Card as AtomCard, Eyebrow, EmployerIcon } from "@/employer/_atoms";
 import { PrimaryLink, PageSkeleton, ErrorPanel, InlineAlert } from "@/employer/_consoleParts";
@@ -18,7 +23,69 @@ import {
 import { buildInsights, buildNextAction, buildRecommendedCards, type DashboardRange, type EmployerDashboardData } from "@/employer/dashboardData";
 import { useJobRowActions } from "./jobs/_components/useJobRowActions";
 
+/* A Google (or other) sign-in on a free-mail address can't create an employer account: the
+   server answers work_email_required. Say so up front instead of after they fill the form. */
+function WorkEmailRequired({ email }: { email: string }) {
+  const { logout } = useAuth();
+  const router = useRouter();
+  const [busy, setBusy] = useState(false);
+  return (
+    <div className="mx-auto w-full max-w-[560px]">
+      <AtomCard>
+        <div role="alert" className="flex flex-col gap-3 text-foreground">
+          <h1 className="m-0 text-2xl font-normal">Employer accounts need a work email</h1>
+          <p className="m-0 text-[15px] leading-relaxed text-muted-foreground">
+            You are signed in as <strong>{email}</strong>, which is a personal email address. We ask employers to sign up with a company
+            email so candidates can trust who is contacting them.
+          </p>
+          <div>
+            <Button
+              type="button"
+              disabled={busy}
+              onClick={() => {
+                setBusy(true);
+                void logout().then(() => router.push("/signup?next=/employer"));
+              }}
+            >
+              {busy ? "Signing out…" : "Sign out and use your work email"}
+            </Button>
+          </div>
+        </div>
+      </AtomCard>
+    </div>
+  );
+}
+
+/* What the product costs and what limits apply, before the employer commits. Prices come from
+   _unlock-pricing.ts via _employerOffer.ts, limits from TIER_LIMITS, so this can't drift. */
+function OnboardingCosts() {
+  return (
+    <section aria-labelledby="onboarding-costs" className="mt-10 flex flex-col gap-4 text-foreground">
+      <div className="text-center"><Eyebrow tone="indigo">What it costs</Eyebrow></div>
+      <h2 id="onboarding-costs" className="sr-only">What it costs</h2>
+      <p className="m-0 text-[13px] leading-relaxed text-muted-foreground">
+        Posting roles and seeing anonymised, scored shortlists is free. You pay only to unlock a candidate&apos;s name and contact details.
+        {" "}{unlockFeeSentence()} {PAY_AS_YOU_GO_SENTENCE}
+      </p>
+      <p className="m-0 text-[13px] leading-relaxed text-muted-foreground">{CREDIT_BACK_SENTENCE}</p>
+      <div>
+        <p className="m-0 mb-1 text-[13px] font-semibold">Limits by account tier</p>
+        <ul role="list" className="m-0 list-none p-0 text-[13px] leading-relaxed text-muted-foreground">
+          {tierLadder().map((row) => (
+            <li key={row.tier}><strong className="text-foreground">{row.label}:</strong> {row.limits}</li>
+          ))}
+        </ul>
+        <p className="m-0 mt-1 text-[13px] leading-relaxed text-muted-foreground">
+          Sign in with a company email, not Gmail or Yahoo, to start above Basic.
+        </p>
+      </div>
+    </section>
+  );
+}
+
 function CompanyOnboarding() {
+  const { user } = useAuth();
+  if (user?.email && isFreeMailDomain(emailDomain(user.email))) return <WorkEmailRequired email={user.email} />;
   return (
     <div style={{ width: "100%", maxWidth: 560, margin: "0 auto" }}>
       <div style={{ textAlign: "center", marginBottom: 28 }}>
@@ -26,12 +93,14 @@ function CompanyOnboarding() {
           Tell us about your company
         </h1>
         <p style={{ fontFamily: f.sans, fontSize: 15, color: t.inkSoft, margin: 0, lineHeight: 1.6 }}>
-          Add your company name and website to start posting roles. You can browse your shortlist right away.
+          Add your company name and website, then post a role. Your AI-matched shortlist is built once a role is posted.
         </p>
       </div>
       <AtomCard>
         <CompanyProfileForm
           idPrefix="onboarding"
+          initialName={user?.pendingCompanyName ?? ""}
+          initialWebsite={user?.pendingCompanyWebsite ?? ""}
           submitLabel="Create company profile"
           busyLabel="Setting up…"
           websiteHelp="Candidates see this on your jobs. Signing in with a work email on this domain raises your limits."
@@ -63,6 +132,7 @@ function CompanyOnboarding() {
           ))}
         </ol>
       </section>
+      <OnboardingCosts />
     </div>
   );
 }

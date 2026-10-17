@@ -7,7 +7,7 @@ import { useEmployerData } from "./EmployerDataContext";
 /* Suspended-account alert at the top of the console body (role="alert", not
    dismissible: the console is read-only). Everything else renders nothing. */
 export default function VerificationBanner() {
-  const { suspended, companyStatus } = useEmployerData();
+  const { suspended, deletionPending, companyStatus } = useEmployerData();
 
   if (companyStatus !== "approved") return null;
 
@@ -23,8 +23,17 @@ export default function VerificationBanner() {
       >
         <ShieldAlertIcon size={18} aria-hidden="true" style={{ flexShrink: 0, marginTop: 2 }} />
         <p style={{ margin: 0, flex: 1 }}>
-          <strong>Your account is suspended.</strong> You can still view your jobs and candidates, but unlocking,
-          messaging and posting are turned off. Contact support to restore access.
+          {deletionPending ? (
+            <>
+              <strong>Your account is scheduled for deletion.</strong> You can still view your jobs and candidates, but
+              unlocking, messaging and posting are turned off. Use the Restore account button at the top of the page to continue.
+            </>
+          ) : (
+            <>
+              <strong>Your account is suspended.</strong> You can still view your jobs and candidates, but unlocking,
+              messaging and posting are turned off. Contact support to restore access.
+            </>
+          )}
         </p>
       </div>
     );

@@ -8,6 +8,8 @@ import {
   deriveEmployerTier,
   tierAtLeast,
   isSuspended,
+  isDeletionPending,
+  DELETION_PENDING_REASON,
   shouldAutoSuspend,
   AUTO_SUSPEND_REPORT_THRESHOLD,
   maskedCandidateName,
@@ -92,5 +94,30 @@ describe("suspension", () => {
 describe("maskedCandidateName", () => {
   it("uses the first six characters of the match id", () => {
     expect(maskedCandidateName("abcdef12-3456")).toBe("Candidate #abcdef");
+  });
+});
+
+describe("free-mail list (shared by the server gate and the onboarding pre-check)", () => {
+  it.each([
+    "rediff.com", "rediffmail.com", "outlook.in", "zohomail.in", "zoho.com", "yandex.com", "proton.me",
+    "protonmail.com", "gmx.com", "mail.com", "icloud.com", "me.com", "live.in", "hotmail.co.in",
+    "yahoo.in", "yahoo.co.in", "ymail.com", "aol.com", "inbox.com", "sify.com", "bol-online.in",
+  ])("treats %s as free mail", (domain) => {
+    expect(isFreeMailDomain(domain)).toBe(true);
+  });
+  it("does not flag company domains", () => {
+    expect(isFreeMailDomain("acme.com")).toBe(false);
+    expect(isFreeMailDomain("gmail.acme.com")).toBe(false);
+  });
+});
+
+describe("deletion-pending marker", () => {
+  it("is a suspension carrying the deletion reason", () => {
+    expect(isDeletionPending({ suspended_at: "2026-10-01T00:00:00Z", suspended_reason: DELETION_PENDING_REASON })).toBe(true);
+  });
+  it("is not set for an admin suspension or an active account", () => {
+    expect(isDeletionPending({ suspended_at: "2026-10-01T00:00:00Z", suspended_reason: "reported by 3 candidates" })).toBe(false);
+    expect(isDeletionPending({ suspended_at: null, suspended_reason: DELETION_PENDING_REASON })).toBe(false);
+    expect(isDeletionPending(null)).toBe(false);
   });
 });

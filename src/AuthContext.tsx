@@ -345,6 +345,14 @@ async function applyPendingReferral(accessToken: string): Promise<void> {
   }
 }
 
+/** A stashed profile is worth keeping across a transient 4xx (429 rate limit, 401 from a
+ *  not-yet-settled session, 403 work_email_required the user may resolve by signing in
+ *  with another email). It is dropped only on a validation failure (400/422): the stashed
+ *  values themselves are bad and retrying on every sign-in would never succeed. */
+export function shouldDiscardPendingEmployerProfile(status: number): boolean {
+  return status === 400 || status === 422;
+}
+
 /** Apply a captured employer company profile now that we have an
  *  authenticated session — closes the "sign up as an employer" loop so a
  *  new employer lands straight on an already-approved /employer dashboard
@@ -359,7 +367,10 @@ async function applyPendingEmployerProfile(accessToken: string): Promise<void> {
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
       body: JSON.stringify(pending.website ? { companyName: pending.companyName, website: pending.website } : { companyName: pending.companyName }),
     });
-    if (res.ok || (res.status >= 400 && res.status < 500)) clearPendingEmployerProfile();
+    // Keep the stash on any failure that might clear up (409/423/429, a free-mail 403 the
+    // user can fix by switching accounts); drop it only once applied or when the server
+    // rejects the stashed values themselves.
+    if (res.ok || shouldDiscardPendingEmployerProfile(res.status)) clearPendingEmployerProfile();
   } catch {
     /* transient — keep the pending profile for the next SIGNED_IN */
   }
@@ -568,6 +579,10 @@ export interface User {
   referralCode?: string;
   emailVerified: boolean;
   deletedAt?: string | null;
+  /** Employer signup only: the company name/website typed at signup, kept in user_metadata
+   *  so onboarding can prefill after an email confirmed on a different device. */
+  pendingCompanyName?: string;
+  pendingCompanyWebsite?: string;
   /** Candidate-submitted proof-of-work links (GitHub, portfolio site, case
    *  studies, etc). Only what the candidate entered — never synthesized —
    *  surfaced to employers alongside practice-session evidence. */
@@ -579,7 +594,7 @@ export interface AuthContextType {
   isLoggedIn: boolean;
   loading: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  signup: (email: string, name: string, password: string, redirectPath?: string) => Promise<{ success: boolean; error?: string; userId?: string }>;
+  signup: (email: string, name: string, password: string, redirectPath?: string, employer?: { companyName: string; website?: string }) => Promise<{ success: boolean; error?: string; userId?: string }>;
   loginWithGoogle: (returnTo?: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   updateUser: (updates: Partial<User>) => Promise<void>;
@@ -590,6 +605,10 @@ export interface AuthContextType {
  *  `<AuthContext.Provider value={...}>` — the real AuthProvider performs
  *  live Supabase network calls unsuitable for canvas mode. */
 export const AuthContext = createContext<AuthContextType | null>(null);
+
+function metaString(v: unknown): string | undefined {
+  return typeof v === "string" && v.trim() ? v.trim() : undefined;
+}
 
 export function profileToUser(profile: Profile, session: Session): User {
   // Completion signals, strongest to weakest:
@@ -660,6 +679,8 @@ export function profileToUser(profile: Profile, session: Session): User {
       session.user.app_metadata?.provider === "google" ||
       session.user.app_metadata?.providers?.includes?.("google") === true,
     deletedAt: profile.deleted_at,
+    pendingCompanyName: metaString(session.user.user_metadata?.pending_company_name),
+    pendingCompanyWebsite: metaString(session.user.user_metadata?.pending_company_website),
     // OAuth provider — used by Settings to hide "Reset Password" for
     // Google-only users (they have no internal-app password to reset).
     // Checked against the linked-providers list, not the current
@@ -1290,7 +1311,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => { unsubscribe?.(); };
   }, []);
 
-  const signup = useCallback(async (email: string, name: string, password: string, _redirectPath?: string): Promise<{ success: boolean; error?: string; userId?: string }> => {
+  const signup = useCallback(async (email: string, name: string, password: string, _redirectPath?: string, employer?: { companyName: string; website?: string }): Promise<{ success: boolean; error?: string; userId?: string }> => {
     track("signup_started");
     if (!supabaseConfigured) {
       // localStorage fallback
@@ -1338,6 +1359,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             name,
             password,
             ref: readPendingReferralCode() || undefined,
+            ...(employer?.companyName.trim() ? { companyName: employer.companyName.trim(), companyWebsite: employer.website?.trim() || undefined } : {}),
           }),
         });
       } catch {
@@ -1883,9 +1905,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Restore handler for soft-deleted accounts
   const [restoring, setRestoring] = useState(false);
+  const [restoreFailed, setRestoreFailed] = useState(false);
   const restoreAccount = async () => {
     if (restoring) return;
     setRestoring(true);
+    setRestoreFailed(false);
     try {
       const client = await getSupabase();
       const { data: { session } } = await client.auth.getSession();
@@ -1900,6 +1924,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       window.location.reload();
     } catch (err) {
       console.error("[auth] Restore account failed:", err);
+      setRestoreFailed(true);
       setRestoring(false);
     }
   };
@@ -1934,7 +1959,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       {/* Soft-delete restore banner */}
       {user?.deletedAt && (
         <div role="alert" style={{
-          position: "fixed", top: 0, left: 0, right: 0, zIndex: 10001,
+          // Sticky (in flow), not fixed: a fixed bar sat on top of the employer shell header.
+          position: "sticky", top: 0, zIndex: 10001,
           padding: "12px 20px",
           background: "rgba(196,112,90,0.12)", borderBottom: "1px solid rgba(196,112,90,0.3)",
           backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)",
@@ -1959,6 +1985,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           >
             {restoring ? "Restoring..." : "Restore account"}
           </Button>
+          {restoreFailed && <span role="status" className="text-xs">Couldn&apos;t restore your account. Try again, or contact support@hirestepx.com.</span>}
         </div>
       )}
       {/* Session expiry banner with Refresh Now action */}

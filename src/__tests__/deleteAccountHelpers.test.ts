@@ -5,6 +5,9 @@ import {
   mustRetainEmployerFinancials,
   anonymisedAuthEmail,
   anonymisedEmployerPatch,
+  deletionPendingPatch,
+  restoreEmployerPatch,
+  RESTORE_EMPLOYER_FILTER,
 } from "../../server-handlers/_delete-account-helpers";
 
 describe("deleteSucceeded", () => {
@@ -53,5 +56,18 @@ describe("anonymisation", () => {
     expect(patch).toMatchObject({ company_name: "", website: "", logo_path: null, suspended_at: "2026-10-10T00:00:00Z" });
     expect(patch).not.toHaveProperty("gstin");
     expect(patch).not.toHaveProperty("billing_name");
+  });
+});
+
+describe("soft-delete employer block", () => {
+  it("stamps the suspension gate with the deletion-pending marker", () => {
+    expect(deletionPendingPatch("2026-10-17T00:00:00Z")).toEqual({
+      suspended_at: "2026-10-17T00:00:00Z",
+      suspended_reason: "account_deletion_pending",
+    });
+  });
+  it("restore lifts only its own marker", () => {
+    expect(RESTORE_EMPLOYER_FILTER).toBe("suspended_reason=eq.account_deletion_pending");
+    expect(restoreEmployerPatch()).toEqual({ suspended_at: null, suspended_reason: null });
   });
 });

@@ -354,6 +354,7 @@ export default function Signup() {
           isEmployerFlow ? companyName.trim() : name.trim(),
           password,
           isEmployerFlow ? "/employer" : undefined,
+          isEmployerFlow ? { companyName, website } : undefined,
         );
         if (!isMounted.current) return;
         if (!result.success) {

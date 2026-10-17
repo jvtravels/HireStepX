@@ -66,6 +66,19 @@ describe("createUnconfirmedUser", () => {
       consent_terms_privacy_version: "2026-01",
     });
   });
+  it("stores a pending employer company in user_metadata so another device can finish onboarding", async () => {
+    const fetchImpl = vi.fn(async () => jsonResponse(200, { id: "uid-1" }));
+    await createUnconfirmedUser({ ...input, companyName: "  Acme Pvt Ltd ", companyWebsite: "acme.com" }, fetchImpl as unknown as typeof fetch);
+    const sent = JSON.parse(String((fetchImpl.mock.calls[0] as unknown as [string, RequestInit])[1].body));
+    expect(sent.user_metadata).toMatchObject({ pending_company_name: "Acme Pvt Ltd", pending_company_website: "acme.com" });
+  });
+  it("caps and ignores bad pending company values", async () => {
+    const fetchImpl = vi.fn(async () => jsonResponse(200, { id: "uid-1" }));
+    await createUnconfirmedUser({ ...input, companyName: "x".repeat(500), companyWebsite: 42 as unknown as string }, fetchImpl as unknown as typeof fetch);
+    const sent = JSON.parse(String((fetchImpl.mock.calls[0] as unknown as [string, RequestInit])[1].body));
+    expect(sent.user_metadata.pending_company_name.length).toBeLessThanOrEqual(120);
+    expect(sent.user_metadata).not.toHaveProperty("pending_company_website");
+  });
   it("maps an already-registered email to kind exists", async () => {
     const fetchImpl = vi.fn(async () => jsonResponse(422, { error_code: "email_exists", msg: "exists" }));
     expect(await createUnconfirmedUser(input, fetchImpl as unknown as typeof fetch)).toEqual({ kind: "exists" });

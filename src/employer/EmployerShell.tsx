@@ -10,7 +10,6 @@ import { EmployerWordmark } from "./_atoms";
 import { useEmployerData } from "./EmployerDataContext";
 import VerificationBanner from "./VerificationBanner";
 import { ErrorPanel, PageSkeleton } from "./_consoleParts";
-import LoadingScreen from "../_LoadingScreen";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -211,7 +210,7 @@ export default function EmployerShell({ children }: { children: React.ReactNode 
      onboarding frame (no nav, content centered) before snapping to the console.
      Returning employers (hint present) get the console chrome + skeleton below;
      everyone else gets the neutral loader. */
-  if (companyStatusLoading && !isConsole) return <LoadingScreen message="Loading your workspace…" />;
+  if (companyStatusLoading && !isConsole) return <div className="mx-auto w-full max-w-3xl p-6"><PageSkeleton label="Loading your workspace" /></div>;
 
   if (!isConsole) {
     const gutter = isMobile ? 16 : 48;

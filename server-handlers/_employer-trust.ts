@@ -21,10 +21,17 @@ export const TIER_LIMITS: Record<EmployerTier, { unlocksPerDay: number; openRequ
   verified: { unlocksPerDay: 100, openRequirements: 50, rematchesPerHour: 40 },
 };
 
+/* Single shared list: the server (work_email_required gate, tier derivation)
+ * and the onboarding pre-check both read it, so they can never disagree. */
 const FREE_MAIL_DOMAINS = new Set([
-  "gmail.com", "googlemail.com", "yahoo.com", "yahoo.in", "yahoo.co.in", "ymail.com", "outlook.com",
-  "hotmail.com", "live.com", "msn.com", "icloud.com", "me.com", "aol.com", "proton.me", "protonmail.com",
-  "rediffmail.com", "mail.com", "gmx.com", "zoho.com", "yandex.com", "tutanota.com", "pm.me", "inbox.com",
+  "gmail.com", "googlemail.com",
+  "yahoo.com", "yahoo.in", "yahoo.co.in", "yahoo.co.uk", "ymail.com", "rocketmail.com",
+  "outlook.com", "outlook.in", "hotmail.com", "hotmail.co.in", "hotmail.in", "live.com", "live.in", "msn.com",
+  "icloud.com", "me.com", "mac.com", "aol.com",
+  "proton.me", "protonmail.com", "pm.me", "tutanota.com", "tutamail.com", "tuta.io",
+  "rediff.com", "rediffmail.com", "sify.com", "bol-online.in", "in.com",
+  "zoho.com", "zohomail.in", "zohomail.com", "yandex.com", "yandex.ru",
+  "mail.com", "gmx.com", "gmx.net", "inbox.com", "fastmail.com",
   "mailinator.com", "guerrillamail.com", "10minutemail.com", "tempmail.com", "yopmail.com",
 ]);
 
@@ -85,6 +92,16 @@ export function tierAtLeast(tier: EmployerTier, min: EmployerTier): boolean {
  *  keeps read access to their own data but cannot message, unlock or rematch. */
 export function isSuspended(employer: { suspended_at?: string | null } | null | undefined): boolean {
   return !!employer?.suspended_at;
+}
+
+/** employers.suspended_reason stamped by delete-account on a soft delete. A soft-deleted
+ *  employer reuses the suspension gate (every read/write/unlock/message path already
+ *  enforces suspended_at), and this marker is how restore lifts ONLY its own block
+ *  without un-suspending an account an admin or the report threshold suspended. */
+export const DELETION_PENDING_REASON = "account_deletion_pending";
+
+export function isDeletionPending(employer: { suspended_at?: string | null; suspended_reason?: string | null } | null | undefined): boolean {
+  return !!employer?.suspended_at && employer.suspended_reason === DELETION_PENDING_REASON;
 }
 
 export const AUTO_SUSPEND_REPORT_THRESHOLD = 3;
