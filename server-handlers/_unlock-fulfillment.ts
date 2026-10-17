@@ -28,6 +28,7 @@ import { notify as defaultNotify, type NotifyInput } from "./_notify";
 import { razorpayBasicAuth } from "./_razorpay-auth";
 import { slog } from "./_shared";
 import { captureServerEvent } from "./_posthog";
+import { returnCreditForUnavailable } from "./_employer-credit";
 
 export type UnlockOrderStatus =
   | "created" | "paid" | "fulfilled" | "partial" | "refunded" | "disputed" | "expired" | "failed";
@@ -418,6 +419,10 @@ export async function fulfillUnlockOrder(p: FulfillParams): Promise<FulfillResul
 
   const refundDueEstimatePaise = refundShare(order, failed.length);
   if (failed.length > 0) {
+    await returnCreditForUnavailable({
+      base: p.supabaseUrl, headers: p.headers, employerId: order.employer_id, orderRef: order.razorpay_order_id,
+      orderMatchCount: order.match_ids.length, failedMatchIds: failed.map((x) => x.matchId), fetchImpl: f,
+    });
     slog.error("unlock order partially fulfilled — candidate(s) unavailable after payment; refund or credit owed", {
       code: "unlock_order_partial",
       orderId: order.razorpay_order_id,
@@ -441,15 +446,20 @@ export async function fulfillUnlockOrder(p: FulfillParams): Promise<FulfillResul
     });
     const n = unlockedRows.length;
     const invoice = ledger.invoiceNo ? ` Invoice ${ledger.invoiceNo}.` : "";
+    const creditOnly = order.amount === 0;
     const partialNote = failed.length > 0
-      ? ` ${failed.length} candidate${failed.length === 1 ? " is" : "s are"} no longer available; we will refund that portion (order ${order.razorpay_order_id}).`
+      ? creditOnly
+        ? ` ${failed.length} candidate${failed.length === 1 ? " is" : "s are"} no longer available; that credit was returned to your balance.`
+        : ` ${failed.length} candidate${failed.length === 1 ? " is" : "s are"} no longer available; we will refund that portion (order ${order.razorpay_order_id}).`
       : "";
     void notifyFn({
       userId: order.employer_id,
       type: "unlock_confirmed",
       title: order.mode === "batch" ? "Candidate contacts unlocked" : "Candidate contact unlocked",
       body: n === 0
-        ? `Payment received, but the candidate is no longer available. We will refund this payment (order ${order.razorpay_order_id}).`
+        ? creditOnly
+          ? "The candidate is no longer available, so your credit was returned to your balance."
+          : `Payment received, but the candidate is no longer available. We will refund this payment (order ${order.razorpay_order_id}).`
         : order.mode === "batch"
           ? `Payment confirmed — ${n} candidate contact${n === 1 ? "" : "s"} unlocked.${invoice}${partialNote}`
           : `Payment confirmed — the candidate's contact details are ready.${invoice}`,

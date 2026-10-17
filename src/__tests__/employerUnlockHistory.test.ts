@@ -58,6 +58,7 @@ describe("employer-unlock-history handler", () => {
         requirementId: null,
         orderId: null,
         orderStatus: null,
+        creditAppliedPaise: 0,
         gstin: null,
         billingName: null,
         candidates: [{ matchId: "m1", name: "Priya Sharma", email: "priya@example.com" }],
@@ -97,6 +98,7 @@ describe("employer-unlock-history handler", () => {
         requirementId: null,
         orderId: null,
         orderStatus: null,
+        creditAppliedPaise: 0,
         gstin: null,
         billingName: null,
         candidates: [{ matchId: "m1", name: null, email: null }],
@@ -116,6 +118,7 @@ describe("employer-unlock-history handler", () => {
       })
       .mockResolvedValueOnce({ ok: true, json: async () => [{ id: "m1", unlocked_candidate_name: "Priya Sharma", unlocked_candidate_email: "priya@example.com" }] })
       .mockResolvedValueOnce({ ok: true, json: async () => [{ razorpay_order_id: "order_1", status: "paid" }] })
+      .mockResolvedValueOnce({ ok: true, json: async () => [{ amount: -2000, order_ref: "order_1" }] })
       .mockResolvedValueOnce({ ok: true, json: async () => [{ gstin: "29ABCDE1234F1Z5", billing_name: "Acme Pvt Ltd" }] });
 
     const res = await handler(req());
@@ -127,6 +130,7 @@ describe("employer-unlock-history handler", () => {
       refundedAt: "2026-10-02T00:00:00Z",
       orderId: "order_1",
       orderStatus: "paid",
+      creditAppliedPaise: 2000,
       gstin: "29ABCDE1234F1Z5",
       billingName: "Acme Pvt Ltd",
     });

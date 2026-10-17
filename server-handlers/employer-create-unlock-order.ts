@@ -28,7 +28,7 @@ import {
   supabaseServiceHeaders,
   verifyEmployerAuthToken,
 } from "./_shared";
-import { singleUnlockPrice, batchUnlockPrice, formatPaise } from "./_unlock-pricing";
+import { singleUnlockPrice, batchUnlockPrice, formatPaise, creditToApply } from "./_unlock-pricing";
 import { loadRankedVisibleMatches, nextUnlockBatchQuote } from "./_employer-matching-helpers";
 import { razorpayBasicAuth } from "./_razorpay-auth";
 import { loadEmployerMatchAccess, loadAuthIdentity, DENIED_STATUS } from "./_entitlements";
@@ -46,6 +46,8 @@ import {
   releaseCreateLock,
 } from "./_employer-unlock-order";
 import type { UnlockOrderRow } from "./_unlock-fulfillment";
+import { creditBalance, spendCredit } from "./_employer-credit";
+import { isCreditOrderRef, newCreditOrderRef, settleCreditOrder } from "./_employer-credit-unlock";
 
 const RAZORPAY_KEY_ID = (process.env.RAZORPAY_KEY_ID || "").trim();
 const RAZORPAY_KEY_SECRET = (process.env.RAZORPAY_KEY_SECRET || "").trim();
@@ -64,16 +66,55 @@ interface RequirementRow {
 }
 
 function orderResponse(order: Pick<UnlockOrderRow, "razorpay_order_id" | "amount" | "currency" | "mode" | "match_ids">, extra: Record<string, unknown> = {}) {
-  const label = order.mode === "single" ? singleUnlockPrice().label : batchUnlockPrice(order.match_ids.length).label;
+  const price = order.mode === "single" ? singleUnlockPrice() : batchUnlockPrice(order.match_ids.length);
   return {
     orderId: order.razorpay_order_id,
     amount: order.amount,
     currency: order.currency,
     keyId: RAZORPAY_KEY_ID,
-    name: label,
+    name: price.label,
     description: "Employer contact unlock — HireStepX",
+    creditAppliedPaise: Math.max(0, price.amountPaise - order.amount),
     ...extra,
   };
+}
+
+/** Finishes a credit-only order (new or retried) and shapes the response the
+ *  verify endpoint would have produced for a paid one. */
+async function creditOrderResponse(
+  supabaseUrl: string, headers: Record<string, string>, order: UnlockOrderRow,
+): Promise<{ status: number; body: Record<string, unknown> }> {
+  const settled = await settleCreditOrder({ supabaseUrl, headers, order, expectEmployerId: order.employer_id });
+  if (settled.kind === "fulfilled" || settled.kind === "partial") {
+    const candidates = settled.candidates.map((c) => ({ matchId: c.matchId, name: c.name || "Candidate", contact: { email: c.email || "" } }));
+    const creditAppliedPaise = (order.mode === "single" ? singleUnlockPrice() : batchUnlockPrice(order.match_ids.length)).amountPaise;
+    return {
+      status: 200,
+      body: {
+        ...orderResponse(order, { paidWithCredit: true }),
+        unlocked: true,
+        candidates,
+        orderStatus: settled.kind,
+        invoiceNo: settled.invoiceNo,
+        creditAppliedPaise,
+        ...(settled.kind === "partial"
+          ? { partial: true, failed: settled.failed, message: `${settled.failed.length} of ${order.match_ids.length} candidate${order.match_ids.length === 1 ? "" : "s"} could not be unlocked. The credit for them was returned to your balance.` }
+          : {}),
+      },
+    };
+  }
+  if (settled.kind === "no_credit") {
+    return { status: 409, body: { error: "Your credit balance changed. Please review the price and try again.", code: "credit_changed" } };
+  }
+  return { status: 500, body: { error: "The unlock could not be completed yet. It will be retried automatically." } };
+}
+
+async function markOrderFailed(supabaseUrl: string, headers: Record<string, string>, orderRef: string): Promise<void> {
+  await fetch(`${supabaseUrl}/rest/v1/employer_unlock_orders?razorpay_order_id=eq.${encodeURIComponent(orderRef)}&status=eq.created`, {
+    method: "PATCH",
+    headers: { ...headers, "Content-Type": "application/json", Prefer: "return=minimal" },
+    body: JSON.stringify({ status: "failed", updated_at: new Date().toISOString() }),
+  }).catch(() => null);
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -255,7 +296,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Retry / double-click / second tab: hand back the existing unpaid order.
     const reusable = findReusableOrder(openOrders, mode, targetMatchIds);
-    if (reusable) return res.status(200).json(orderResponse(reusable, { reused: true }));
+    if (reusable) {
+      if (isCreditOrderRef(reusable.razorpay_order_id)) {
+        const done = await creditOrderResponse(SUPABASE_URL, sh, reusable);
+        return res.status(done.status).json(done.body);
+      }
+      return res.status(200).json(orderResponse(reusable, { reused: true }));
+    }
 
     const overlapping = findOverlappingOrder(openOrders, targetMatchIds, nowMs);
     if (overlapping) {
@@ -289,6 +336,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const price = mode === "single" ? singleUnlockPrice() : batchUnlockPrice(targetMatchIds.length);
+    const balance = await creditBalance(SUPABASE_URL, sh, employerId);
+    const creditPaise = creditToApply(price.amountPaise, balance ?? 0);
+    const cashPaise = price.amountPaise - creditPaise;
 
     lockKey = `order:${employerId}:unlock:${mode}:${targetMatchIds.slice().sort().join(",")}`;
     const redis = { url: UPSTASH_URL, token: UPSTASH_TOKEN };
@@ -302,6 +352,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const hit = again && findReusableOrder(again, mode, targetMatchIds);
         if (hit) return res.status(200).json(orderResponse(hit, { reused: true }));
       }
+    }
+
+    if (cashPaise === 0) {
+      const inserted = await insertUnlockOrder(SUPABASE_URL, sh, {
+        razorpayOrderId: newCreditOrderRef(), employerId, requirementId: orderRequirementId,
+        mode, matchIds: targetMatchIds, amount: 0, currency: "INR",
+      });
+      if (inserted.kind === "conflict" && inserted.order) {
+        const done = isCreditOrderRef(inserted.order.razorpay_order_id)
+          ? await creditOrderResponse(SUPABASE_URL, sh, inserted.order)
+          : { status: 200, body: orderResponse(inserted.order, { reused: true }) };
+        return res.status(done.status).json(done.body);
+      }
+      if (inserted.kind !== "inserted") {
+        console.error("credit unlock order insert failed:", inserted.kind === "error" ? inserted.detail : "conflict without winner");
+        return res.status(500).json({ error: "Could not start the unlock. Please try again." });
+      }
+      const spent = await spendCredit(SUPABASE_URL, sh, employerId, price.amountPaise, inserted.order.razorpay_order_id);
+      if (spent === 0) {
+        await markOrderFailed(SUPABASE_URL, sh, inserted.order.razorpay_order_id);
+        return res.status(409).json({ error: "Your credit balance changed. Please review the price and try again.", code: "credit_changed" });
+      }
+      const done = await creditOrderResponse(SUPABASE_URL, sh, inserted.order);
+      return res.status(done.status).json(done.body);
     }
 
     const auth = razorpayBasicAuth(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET);
@@ -321,7 +395,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         method: "POST",
         headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/json" },
         signal: ac.signal,
-        body: JSON.stringify({ amount: price.amountPaise, currency: "INR", receipt, notes: orderNotes }),
+        body: JSON.stringify({ amount: cashPaise, currency: "INR", receipt, notes: orderNotes }),
       });
     } finally {
       clearTimeout(acTimer);
@@ -352,6 +426,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       currency: order.currency || "INR",
     });
     if (inserted.kind === "inserted") {
+      if (creditPaise > 0) {
+        const spent = await spendCredit(SUPABASE_URL, sh, employerId, creditPaise, inserted.order.razorpay_order_id);
+        if (spent === 0) {
+          await markOrderFailed(SUPABASE_URL, sh, inserted.order.razorpay_order_id);
+          return res.status(409).json({ error: "Your credit balance changed. Please review the price and try again.", code: "credit_changed" });
+        }
+      }
       return res.status(200).json(orderResponse(inserted.order));
     }
     if (inserted.kind === "conflict" && inserted.order) {

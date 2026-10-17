@@ -60,6 +60,11 @@ export interface UnlockOrder {
   keyId: string;
   name: string;
   description: string;
+  /** Paise of the unlock price covered by account credit; amount is the remaining cash charge. */
+  creditAppliedPaise?: number;
+  /** Credit covered the whole price: there is nothing to pay and the unlock is already done. */
+  paidWithCredit?: boolean;
+  candidates?: Array<{ matchId: string; name: string; contact: { email: string } }>;
 }
 
 /** A single capability's verification state — mirrors EvidenceCapability in
@@ -145,6 +150,23 @@ export interface UnlockPurchase {
   refundedAt?: string | null;
   requirementId?: string | null;
   status?: string;
+  orderId?: string | null;
+  /** Paise of this purchase paid from account credit (amount is the cash part). */
+  creditAppliedPaise?: number;
+  gstin?: string | null;
+  billingName?: string | null;
+}
+
+export interface CreditEvent {
+  kind: "refund" | "spend" | "release";
+  amountPaise: number;
+  label: string;
+  createdAt: string;
+}
+
+export interface CreditSummary {
+  balancePaise: number;
+  events: CreditEvent[];
 }
 
 /** One message in an employer<->candidate conversation thread. Mirrors
@@ -187,7 +209,7 @@ export interface ConversationContext {
   viewerRole: "employer" | "candidate";
 }
 
-interface ProfileFields { companyName: string; website: string; logoBase64?: string; logoContentType?: string }
+interface ProfileFields { companyName: string; website: string; logoBase64?: string; logoContentType?: string; gstin?: string; billingName?: string }
 type UnlockRequest = { mode: "single"; matchId: string } | { mode: "batch"; requirementId: string };
 type VerifyPayload = { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string };
 type VerifyResult = { candidates: Array<{ matchId: string; name: string; contact: { email: string } }> };
@@ -203,6 +225,9 @@ interface EmployerDataContextValue {
   companyLogoUrl: string | null;
   companyName: string;
   companyWebsite: string;
+  /** Buyer GSTIN / billing name printed on invoices; empty when not provided. */
+  companyGstin: string;
+  companyBillingName: string;
   verificationTier: EmployerTier;
   limits: EmployerLimits;
   /** Suspended employers can read but not act; the server rejects writes with 403. */
@@ -235,6 +260,7 @@ interface EmployerDataContextValue {
   fetchCandidateResumeUrl: (matchId: string) => Promise<{ url: string; fileName: string } | null>;
   fetchRequirementActivity: (id: string) => Promise<RequirementActivity[] | null>;
   fetchUnlockHistory: () => Promise<UnlockPurchase[] | null>;
+  fetchCredit: () => Promise<CreditSummary | null>;
   fetchDashboard: (range: DashboardRange) => Promise<EmployerDashboardData | null>;
   refreshRequirements: () => Promise<void>;
   listConversations: () => Promise<ConversationSummary[] | null>;
@@ -334,6 +360,8 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
   const [companyLogoUrl, setCompanyLogoUrl] = useState<string | null>(null);
   const [companyName, setCompanyName] = useState("");
   const [companyWebsite, setCompanyWebsite] = useState("");
+  const [companyGstin, setCompanyGstin] = useState("");
+  const [companyBillingName, setCompanyBillingName] = useState("");
   const [verificationTier, setVerificationTier] = useState<EmployerTier>("basic");
   const [limits, setLimits] = useState<EmployerLimits>(DEFAULT_TIER_LIMITS.basic);
   const [suspended, setSuspended] = useState(false);
@@ -355,6 +383,8 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
     setCompanyLogoUrl(typeof data.logoUrl === "string" ? data.logoUrl : null);
     setCompanyName(typeof data.companyName === "string" ? data.companyName : fallback?.companyName ?? "");
     setCompanyWebsite(typeof data.website === "string" ? data.website : fallback?.website ?? "");
+    setCompanyGstin(typeof data.gstin === "string" ? data.gstin : "");
+    setCompanyBillingName(typeof data.billingName === "string" ? data.billingName : "");
     setVerificationTier(tier);
     setLimits(parseLimits(data.limits, tier));
     setSuspended(data.suspended === true);
@@ -555,6 +585,12 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
     return res.data.purchases as UnlockPurchase[];
   }, []);
 
+  const fetchCredit = useCallback(async (): Promise<CreditSummary | null> => {
+    const res = await getWithRetry("/api/employer-credit");
+    if (!res || !res.ok || !isRecord(res.data) || typeof res.data.balancePaise !== "number") return null;
+    return { balancePaise: res.data.balancePaise, events: Array.isArray(res.data.events) ? (res.data.events as CreditEvent[]) : [] };
+  }, []);
+
   const fetchDashboard = useCallback(async (range: DashboardRange): Promise<EmployerDashboardData | null> => {
     const res = await getWithRetry(`/api/employer-dashboard?range=${range}`);
     if (!res || !res.ok || !isDashboardData(res.data)) return null;
@@ -631,6 +667,8 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
     companyLogoUrl,
     companyName,
     companyWebsite,
+    companyGstin,
+    companyBillingName,
     verificationTier,
     limits,
     suspended,
@@ -656,6 +694,7 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
     fetchCandidateResumeUrl,
     fetchRequirementActivity,
     fetchUnlockHistory,
+    fetchCredit,
     fetchDashboard,
     refreshRequirements,
     listConversations,
@@ -666,12 +705,12 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
     flagMessage,
     fetchMessageAttachmentUrl,
   }), [
-    companyStatus, companyStatusLoading, companyStatusError, companyLogoUrl, companyName, companyWebsite,
+    companyStatus, companyStatusLoading, companyStatusError, companyLogoUrl, companyName, companyWebsite, companyGstin, companyBillingName,
     verificationTier, limits, suspended, requirements, requirementsLoading, requirementsError,
     refreshCompanyStatus, submitCompanyProfile, submitCompanyProfileResult, addRequirement, updateRequirement,
     createUnlockOrder, createUnlockOrderResult, verifyUnlockPayment, fetchRequirementDetail, archiveRequirement,
     reopenRequirement, updateRequirementStage, updateCandidateStatus, updateCandidateStatusResult,
-    fetchCandidateRequests, createCandidateRequest, cancelCandidateRequest, fetchCandidateEvidence, fetchCandidateResumeUrl, fetchRequirementActivity, fetchUnlockHistory, fetchDashboard, refreshRequirements, listConversations,
+    fetchCandidateRequests, createCandidateRequest, cancelCandidateRequest, fetchCandidateEvidence, fetchCandidateResumeUrl, fetchRequirementActivity, fetchUnlockHistory, fetchCredit, fetchDashboard, refreshRequirements, listConversations,
     fetchMessages, sendMessage, sendMessageResult, uploadMessageAttachment, flagMessage, fetchMessageAttachmentUrl,
   ]);
 

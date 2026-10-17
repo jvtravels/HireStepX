@@ -67,3 +67,59 @@ describe("employer-profile POST work-email rule", () => {
     expect(res.status).toBe(200);
   });
 });
+
+describe("employer-profile POST billing identity", () => {
+  const upsertBodies = () => (global.fetch as ReturnType<typeof vi.fn>).mock.calls
+    .filter(([url]) => String(url).includes("on_conflict=id"))
+    .map(([, init]) => JSON.parse((init as { body: string }).body)[0]);
+
+  it("rejects a malformed GSTIN before touching the database", async () => {
+    loadAuthIdentity.mockResolvedValue({ email: "priya@acme.com", emailConfirmed: true });
+    global.fetch = vi.fn();
+    const res = await handler(post({ companyName: "Acme Pvt Ltd", website: "acme.com", gstin: "27AAPFU0939F1ZA" }));
+    expect(res.status).toBe(400);
+    expect((await res.json()).code).toBe("invalid_gstin");
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  it("normalises and stores GSTIN and billing name, and returns them", async () => {
+    loadAuthIdentity.mockResolvedValue({ email: "priya@acme.com", emailConfirmed: true });
+    global.fetch = vi.fn()
+      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => [existingRow] })
+      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => [{ ...existingRow, gstin: "27AAPFU0939F1ZV", billing_name: "Acme Pvt Ltd" }] })
+      .mockResolvedValue({ ok: true, status: 200, json: async () => [] });
+    const res = await handler(post({ companyName: "Acme", website: "acme.com", gstin: " 27aapfu0939f1zv ", billingName: " Acme  Pvt Ltd " }));
+    const body = await res.json();
+    expect(res.status).toBe(200);
+    expect(upsertBodies()[0]).toMatchObject({ gstin: "27AAPFU0939F1ZV", billing_name: "Acme Pvt Ltd" });
+    expect(body).toMatchObject({ gstin: "27AAPFU0939F1ZV", billingName: "Acme Pvt Ltd" });
+  });
+
+  it("leaves stored billing fields alone when the request omits them, and clears on empty", async () => {
+    loadAuthIdentity.mockResolvedValue({ email: "priya@acme.com", emailConfirmed: true });
+    global.fetch = vi.fn()
+      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => [existingRow] })
+      .mockResolvedValue({ ok: true, status: 200, json: async () => [existingRow] });
+    await handler(post({ companyName: "Acme", website: "acme.com" }));
+    expect(upsertBodies()[0]).not.toHaveProperty("gstin");
+
+    global.fetch = vi.fn()
+      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => [existingRow] })
+      .mockResolvedValue({ ok: true, status: 200, json: async () => [existingRow] });
+    await handler(post({ companyName: "Acme", website: "acme.com", gstin: "" }));
+    expect(upsertBodies()[0]).toMatchObject({ gstin: null });
+  });
+
+  it("still saves the profile when the billing columns are not migrated yet", async () => {
+    loadAuthIdentity.mockResolvedValue({ email: "priya@acme.com", emailConfirmed: true });
+    global.fetch = vi.fn()
+      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => [existingRow] })
+      .mockResolvedValueOnce({ ok: false, status: 400, text: async () => "column gstin does not exist", json: async () => ({}) })
+      .mockResolvedValue({ ok: true, status: 200, json: async () => [existingRow] });
+    const res = await handler(post({ companyName: "Acme", website: "acme.com", gstin: "27AAPFU0939F1ZV" }));
+    expect(res.status).toBe(200);
+    const bodies = upsertBodies();
+    expect(bodies[0]).toHaveProperty("gstin");
+    expect(bodies[1]).not.toHaveProperty("gstin");
+  });
+});

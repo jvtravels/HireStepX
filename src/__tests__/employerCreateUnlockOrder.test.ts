@@ -88,6 +88,8 @@ interface World {
   razorpay: { ok: boolean; status: number; id: string };
   insertStatus: number; // 201 ok, 409 conflict, 500
   matchLookupStatus: number;
+  creditBalance: number | null; // null = ledger unavailable (migration 0041 unapplied)
+  creditSpend: (amount: number) => number; // what spend_employer_credit returns
 }
 let world: World;
 let calls: Array<{ method: string; url: string; body: unknown }>;
@@ -161,6 +163,10 @@ function routedFetch() {
       if (!world.razorpay.ok) return json({ error: { description: "bad" } }, world.razorpay.status);
       return json({ id: world.razorpay.id, amount: body.amount, currency: "INR" });
     }
+    if (url.includes("employer_credit_ledger?") && method === "GET") {
+      return world.creditBalance == null ? json({ code: "PGRST205" }, 404) : json([{ amount: world.creditBalance }]);
+    }
+    if (url.endsWith("/rpc/spend_employer_credit")) return json(world.creditSpend((body as { p_amount: number }).p_amount));
     return json({ message: `unrouted ${method} ${url}` }, 404);
   });
 }
@@ -186,6 +192,7 @@ beforeEach(() => {
     authOk: true, email: "boss@acme.com", emailConfirmed: true, website: "https://acme.com", storedTier: null,
     suspendedAt: null, reqStatus: "open", ownerId: EMP, matches: [{ id: M1 }], blockedCandidates: new Set(),
     openOrders: [], unlocked24h: 0, razorpay: { ok: true, status: 200, id: "order_new" }, insertStatus: 201, matchLookupStatus: 200,
+    creditBalance: null, creditSpend: (a) => a,
   };
   global.fetch = routedFetch() as unknown as typeof fetch;
 });
@@ -557,5 +564,66 @@ describe("employer-create-unlock-order — batch mode", () => {
     expect(res.statusCode).toBe(200);
     expect(res.body).toMatchObject({ orderId: "order_batch_existing", reused: true, amount: 8970 });
     expect(razorpayCall()).toBeUndefined();
+  });
+});
+
+describe("employer-create-unlock-order — account credit", () => {
+  const spendCall = () => calls.find((c) => c.url.endsWith("/rpc/spend_employer_credit"));
+  const orderInsert = () => calls.find((c) => c.method === "POST" && c.url.endsWith("/rest/v1/employer_unlock_orders"));
+
+  it("charges the full price and never spends when the employer has no credit", async () => {
+    world.creditBalance = 0;
+    const res = mockRes();
+    await handler(mockReq({ mode: "single", matchId: M1 }), res);
+    expect(res.statusCode).toBe(200);
+    expect(razorpayCall()?.body).toMatchObject({ amount: 5900 });
+    expect(spendCall()).toBeUndefined();
+  });
+
+  it("charges only the cash remainder through Razorpay and spends the credit against that order", async () => {
+    world.creditBalance = 2000;
+    const res = mockRes();
+    await handler(mockReq({ mode: "single", matchId: M1 }), res);
+    expect(res.statusCode).toBe(200);
+    expect(razorpayCall()?.body).toMatchObject({ amount: 3900 });
+    expect(orderInsert()?.body).toMatchObject({ amount: 3900, razorpay_order_id: "order_new" });
+    expect(spendCall()?.body).toMatchObject({ p_employer: EMP, p_amount: 2000, p_order_ref: "order_new" });
+    expect(res.body).toMatchObject({ orderId: "order_new", amount: 3900, creditAppliedPaise: 2000 });
+  });
+
+  it("never leaves a cash remainder Razorpay cannot charge", async () => {
+    world.creditBalance = 5850;
+    const res = mockRes();
+    await handler(mockReq({ mode: "single", matchId: M1 }), res);
+    expect(razorpayCall()?.body).toMatchObject({ amount: 100 });
+    expect(spendCall()?.body).toMatchObject({ p_amount: 5800 });
+  });
+
+  it("409s credit_changed when the balance was spent elsewhere between quote and spend", async () => {
+    world.creditBalance = 2000;
+    world.creditSpend = () => 0;
+    const res = mockRes();
+    await handler(mockReq({ mode: "single", matchId: M1 }), res);
+    expect(res.statusCode).toBe(409);
+    expect(res.body).toMatchObject({ code: "credit_changed" });
+  });
+
+  it("a balance that covers the whole price skips Razorpay and records a zero-cash credit order", async () => {
+    world.creditBalance = 10_000;
+    const res = mockRes();
+    await handler(mockReq({ mode: "single", matchId: M1 }), res);
+    expect(razorpayCall()).toBeUndefined();
+    expect(orderInsert()?.body).toMatchObject({ amount: 0 });
+    expect(String((orderInsert()?.body as { razorpay_order_id: string }).razorpay_order_id)).toMatch(/^credit_/);
+    expect(spendCall()?.body).toMatchObject({ p_amount: 5900 });
+  });
+
+  it("falls back to a normal cash order when the credit ledger is unavailable", async () => {
+    world.creditBalance = null;
+    const res = mockRes();
+    await handler(mockReq({ mode: "single", matchId: M1 }), res);
+    expect(res.statusCode).toBe(200);
+    expect(razorpayCall()?.body).toMatchObject({ amount: 5900 });
+    expect(spendCall()).toBeUndefined();
   });
 });

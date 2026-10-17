@@ -10,12 +10,14 @@
  * candidate list.
  *
  * Each purchase also carries invoiceNo, refundedAt, orderId/orderStatus and the
- * employer's gstin/billingName (all nullable, additive).
+ * employer's gstin/billingName (all nullable, additive), plus creditAppliedPaise
+ * (the part of the price paid from account credit; amount is the cash part).
  */
 
 export const config = { runtime: "edge" };
 
 import { withAuthAndRateLimit, corsHeaders, withRequestId, slog } from "./_shared";
+import { creditSpentOnOrders } from "./_employer-credit";
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
@@ -139,6 +141,10 @@ export default async function handler(req: Request): Promise<Response> {
         }
       } catch { /* status is optional */ }
     }
+    // Credit applied to each purchase (migration 0041); soft-fails to none.
+    const creditByOrderId = orderIds.length > 0
+      ? (await creditSpentOnOrders(SUPABASE_URL, serviceHeaders(), auth.userId, orderIds)) ?? new Map<string, number>()
+      : new Map<string, number>();
     let gstin: string | null = null;
     let billingName: string | null = null;
     try {
@@ -166,6 +172,7 @@ export default async function handler(req: Request): Promise<Response> {
         requirementId: r.requirement_id ?? null,
         orderId: r.razorpay_order_id ?? null,
         orderStatus: (r.razorpay_order_id && statusByOrderId.get(r.razorpay_order_id)) || null,
+        creditAppliedPaise: (r.razorpay_order_id && creditByOrderId.get(r.razorpay_order_id)) || 0,
         gstin,
         billingName,
         candidates: matchIds.map((id) => {

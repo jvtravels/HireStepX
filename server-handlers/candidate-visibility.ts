@@ -36,6 +36,7 @@ import {
   type ConsentHistoryEntry,
   type EmployerVisibility,
 } from "./_candidate-consent-helpers";
+import { creditRefundForMatches, unlockedMatchIdsForCandidate } from "./_employer-credit";
 
 const HISTORY_LIMIT = 20;
 const THIRTY_DAYS_MS = 30 * 86400000;
@@ -237,6 +238,10 @@ export async function applyVisibilityChange(opts: {
       // also filters 'off' candidates, so stale locked rows are not employer-visible.
       slog.error("candidate-visibility: locked-match cleanup failed", { status: delRes?.status ?? 0 });
     }
+    // Paid matches stay visible to the employer but the candidate is now
+    // unreachable, so what they paid for each one comes back as credit.
+    const unlockedIds = await unlockedMatchIdsForCandidate(base, supabaseServiceHeaders(), opts.userId, f);
+    await creditRefundForMatches({ base: base, headers: supabaseServiceHeaders(), matchIds: unlockedIds, reason: "withdrew", fetchImpl: f });
   }
 
   if (!profile.noticeSeenAt) await markNoticeSeen(opts.userId, f);

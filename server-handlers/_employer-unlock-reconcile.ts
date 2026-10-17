@@ -19,6 +19,8 @@ import {
   ORDER_SELECT,
   type UnlockOrderRow,
 } from "./_unlock-fulfillment";
+import { releaseCredit } from "./_employer-credit";
+import { isCreditOrderRef, settleCreditOrder } from "./_employer-credit-unlock";
 import type { NotifyInput } from "./_notify";
 
 export const STALE_AFTER_MS = 10 * 60 * 1000;
@@ -52,7 +54,39 @@ export interface ReconcileParams {
 
 type Outcome = "fulfilled" | "partial" | "expired" | "pending" | "error" | "skipped";
 
+/** Credit-only orders have no Razorpay order: the credit ledger says whether
+ *  the employer actually paid. Spent -> finish the unlock; never spent -> the
+ *  request died before charging, so close it. */
+async function reconcileCreditOrder(order: UnlockOrderRow, p: ReconcileParams, f: typeof fetch, now: Date): Promise<Outcome> {
+  const settled = await settleCreditOrder({
+    supabaseUrl: p.supabaseUrl, headers: p.headers, order, fetchImpl: f, notifyImpl: p.notifyImpl, now: () => now,
+  });
+  switch (settled.kind) {
+    case "fulfilled": return "fulfilled";
+    case "partial": return "partial";
+    case "ledger_unavailable": return "error";
+    case "no_credit": {
+      try {
+        const res = await f(
+          `${p.supabaseUrl}/rest/v1/employer_unlock_orders?razorpay_order_id=eq.${encodeURIComponent(order.razorpay_order_id)}&status=eq.created`,
+          {
+            method: "PATCH",
+            headers: { ...p.headers, "Content-Type": "application/json", Prefer: "return=minimal" },
+            body: JSON.stringify({ status: "failed", updated_at: now.toISOString() }),
+          },
+        );
+        return res.ok ? "expired" : "error";
+      } catch {
+        return "error";
+      }
+    }
+    case "error": return settled.code === "db_error" ? "error" : "skipped";
+    default: return "skipped";
+  }
+}
+
 async function reconcileOne(order: UnlockOrderRow, p: ReconcileParams, f: typeof fetch, now: Date): Promise<Outcome> {
+  if (isCreditOrderRef(order.razorpay_order_id)) return reconcileCreditOrder(order, p, f, now);
   const found = await findCapturedPaymentForOrder(order.razorpay_order_id, p.razorpayKeyId, p.razorpayKeySecret, f);
   if (found === "error") return "error";
 
@@ -74,7 +108,9 @@ async function reconcileOne(order: UnlockOrderRow, p: ReconcileParams, f: typeof
           body: JSON.stringify({ status: "expired", updated_at: now.toISOString() }),
         },
       );
-      return res.ok ? "expired" : "error";
+      if (!res.ok) return "error";
+      await releaseCredit(p.supabaseUrl, p.headers, order.employer_id, order.razorpay_order_id, f);
+      return "expired";
     } catch {
       return "error";
     }

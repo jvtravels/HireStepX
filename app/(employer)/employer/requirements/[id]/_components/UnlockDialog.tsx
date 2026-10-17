@@ -1,13 +1,15 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { LockIcon } from "lucide-react";
 import { tokens as t, fonts as f, textSize } from "@/auth/_tokens";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { OutlineCta, PrimaryCta } from "@/employer/_atoms";
+import { useEmployerData } from "@/employer/EmployerDataContext";
 import { InlineNotice } from "@/employer/_requirementAtoms";
 import type { UnlockedCandidate } from "@/employer/_requirementCalls";
 import type { EmployerAccess } from "@/employer/_useEmployerAccess";
-import { formatPaise, singleUnlockPrice, unlockRateNote } from "../../../../../../server-handlers/_unlock-pricing";
+import { creditToApply, formatPaise, singleUnlockPrice, unlockRateNote } from "../../../../../../server-handlers/_unlock-pricing";
 import { useUnlockCheckout, type UnlockTarget } from "./useUnlockCheckout";
 
 /** The single page-level unlock confirmation, for both one candidate and a
@@ -29,7 +31,19 @@ export default function UnlockDialog({
     onUnlocked,
   });
 
+  const { fetchCredit } = useEmployerData();
+  const [balancePaise, setBalancePaise] = useState(0);
+  const open = target != null;
+  useEffect(() => {
+    if (!open) return;
+    let live = true;
+    void fetchCredit().then((c) => { if (live) setBalancePaise(c?.balancePaise ?? 0); });
+    return () => { live = false; };
+  }, [open, fetchCredit]);
+
   const amountPaise = target?.mode === "batch" ? target.amountPaise : singleUnlockPrice().amountPaise;
+  const creditPaise = creditToApply(amountPaise, balancePaise);
+  const cashPaise = amountPaise - creditPaise;
   const priceText = formatPaise(amountPaise);
   const rate = unlockRateNote(target?.mode === "batch" ? target.count : 1, amountPaise);
   const title =
@@ -68,9 +82,15 @@ export default function UnlockDialog({
           <p style={{ margin: 0, fontSize: textSize.sm, lineHeight: 1.5 }}>
             {priceText} is the amount charged; GST applies as set out in the{" "}
             <a href="/terms#employers" target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "underline" }}>employer terms</a>.
-            Unlocks are non-refundable once contact details are delivered, except where a candidate becomes unavailable or the law requires. See the{" "}
+            Unlocks are not refunded in cash once contact details are delivered. If a candidate declines, withdraws, blocks you, or doesn&apos;t answer an interview invite within 14 days, the price comes back automatically as credit toward your next unlock. See the{" "}
             <a href="/refund#employers" target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "underline" }}>refund policy</a>.
           </p>
+          {creditPaise > 0 && (
+            <p className="m-0 rounded-[10px] bg-hx-row px-3 py-2 text-[13px] leading-normal text-hx-coal">
+              <strong className="tabular-nums">{formatPaise(creditPaise)} account credit applied.</strong>{" "}
+              {cashPaise === 0 ? "Nothing to pay." : `${formatPaise(cashPaise)} left to pay.`}
+            </p>
+          )}
           {error && <InlineNotice tone="error">{error}</InlineNotice>}
         </div>
         <DialogFooter>
@@ -78,7 +98,7 @@ export default function UnlockDialog({
             Cancel
           </OutlineCta>
           <PrimaryCta onClick={confirm} loading={busy} icon={<LockIcon size={14} aria-hidden="true" />}>
-            {busy ? "Waiting for payment…" : `Pay ${priceText} and unlock`}
+            {cashPaise === 0 ? (busy ? "Unlocking…" : "Use credit and unlock") : busy ? "Waiting for payment…" : `Pay ${formatPaise(cashPaise)} and unlock`}
           </PrimaryCta>
         </DialogFooter>
       </DialogContent>

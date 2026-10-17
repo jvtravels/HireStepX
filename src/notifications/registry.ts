@@ -20,6 +20,7 @@ export const NOTIFICATION_TYPES = {
   candidate_request: { audience: "candidate", category: "applications", priority: "normal" },
   candidate_request_resolved: { audience: "employer", category: "applications", priority: "normal" },
   unlock_confirmed: { audience: "employer", category: "billing", priority: "normal" },
+  credit_refunded: { audience: "employer", category: "billing", priority: "normal" },
   matches_ready: { audience: "employer", category: "matches", priority: "normal" },
   strong_match_found: { audience: "employer", category: "matches", priority: "normal" },
   candidate_responded: { audience: "employer", category: "messages", priority: "normal" },

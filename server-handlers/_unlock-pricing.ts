@@ -65,3 +65,15 @@ export function unlockRateNote(count: number, amountPaise: number): UnlockRateNo
     batchHint: null,
   };
 }
+
+/** Razorpay's minimum order is ₹1; a card/UPI remainder below that cannot be charged. */
+export const MIN_CHARGE_PAISE = 100;
+
+/** How much of `pricePaise` to cover with account credit. Never leaves a cash
+ *  remainder Razorpay cannot charge: either the credit covers everything, or
+ *  at least MIN_CHARGE_PAISE stays payable. */
+export function creditToApply(pricePaise: number, balancePaise: number): number {
+  if (pricePaise <= 0 || balancePaise <= 0) return 0;
+  if (balancePaise >= pricePaise) return pricePaise;
+  return Math.max(0, Math.min(balancePaise, pricePaise - MIN_CHARGE_PAISE));
+}

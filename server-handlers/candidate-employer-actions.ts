@@ -16,6 +16,7 @@ export const config = { runtime: "edge" };
 
 import { withAuthAndRateLimit, corsHeaders, slog, supabaseUrl, supabaseServiceHeaders } from "./_shared";
 import { notify } from "./_notify";
+import { creditRefundForMatches, matchIdsForEmployerCandidate } from "./_employer-credit";
 import { maskedCandidateName } from "./_employer-trust";
 import { detectContactInfoFlag } from "./_messages-helpers";
 import {
@@ -90,9 +91,18 @@ async function upsertBlock(base: string, userId: string, employerId: string, f: 
   return !!res && res.ok;
 }
 
+/** A candidate who shuts the company out can no longer be reached, so whatever
+ *  the employer paid for them across all their requirements comes back as credit. */
+async function creditBlockedCandidate(base: string, employerId: string, userId: string, f: typeof fetch): Promise<void> {
+  const headers = supabaseServiceHeaders();
+  const matchIds = await matchIdsForEmployerCandidate(base, headers, employerId, userId, f);
+  await creditRefundForMatches({ base, headers, matchIds, reason: "blocked", employerId, fetchImpl: f });
+}
+
 export async function doBlock(base: string, match: MatchRow, userId: string, f: typeof fetch): Promise<Done<{ blocked: true }> | Failure> {
   const employerId = match.employer_requirements!.employer_id;
   if (!(await upsertBlock(base, userId, employerId, f))) return { ok: false, status: 500, error: "Could not block this employer" };
+  await creditBlockedCandidate(base, employerId, userId, f);
   return { ok: true, blocked: true };
 }
 
@@ -151,6 +161,7 @@ export async function doReport(
     slog.warn("candidate-employer-actions: report count lookup failed", { employerId });
   }
 
+  await creditBlockedCandidate(base, employerId, userId, f);
   return { ok: true, blocked: true, reported: true, alreadyReported };
 }
 
@@ -213,6 +224,10 @@ export async function doRespond(
     body: text.body,
     link: candidateDetailLink(match.requirement_id, match.id),
   });
+
+  if (response === "declined") {
+    await creditRefundForMatches({ base, headers: supabaseServiceHeaders(), matchIds: [match.id], reason: "declined", employerId, fetchImpl: f });
+  }
 
   return { ok: true, response, respondedAt, changed: true };
 }

@@ -83,6 +83,17 @@ export function useUnlockCheckout({
         return false;
       }
 
+      if (order.data.paidWithCredit) {
+        const done = order.data.candidates ?? [];
+        setBusy(false);
+        if (done.length === 0) {
+          setError("Your credit was applied but we couldn't confirm the unlock. Don't retry. Contact support@hirestepx.com.");
+          return false;
+        }
+        onUnlocked(done);
+        return true;
+      }
+
       try {
         await loadRazorpayScript();
       } catch {

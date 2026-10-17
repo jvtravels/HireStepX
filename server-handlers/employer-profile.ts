@@ -10,6 +10,9 @@
  *      logoContentType? } → upserts an approved employer row (fresh
  *      submission or resubmission after rejection). logoBase64 is optional;
  *      omitting it on a resubmission keeps any previously uploaded logo.
+ *      Optional gstin / billingName (printed on invoices): omitted keeps the
+ *      stored value, an empty string clears it, a malformed GSTIN is a 400.
+ *      Both tolerate migration 0032 being unapplied (columns skipped).
  *
  * Employers are a separate table keyed by auth.users id — see CLAUDE.md
  * scope note in app/(employer) and the schema comment in
@@ -26,6 +29,7 @@ export const config = { runtime: "edge" };
 import { withAuthAndRateLimit, corsHeaders, withRequestId, slog } from "./_shared";
 import { base64ToBytes } from "./_resume-upload-helpers";
 import { loadAuthIdentity } from "./_entitlements";
+import { parseBillingNameInput, parseGstinInput } from "./_gstin";
 import { deriveEmployerTier, emailDomain, isEmployerTier, isFreeMailDomain, TIER_LIMITS, tierAtLeast, type EmployerTier } from "./_employer-trust";
 
 declare const process: { env: Record<string, string | undefined> };
@@ -57,6 +61,8 @@ interface EmployerRow {
   approved_at: string | null;
   verification_tier?: string | null;
   suspended_at?: string | null;
+  gstin?: string | null;
+  billing_name?: string | null;
 }
 
 interface SubmitBody {
@@ -64,6 +70,8 @@ interface SubmitBody {
   website?: unknown;
   logoBase64?: unknown;
   logoContentType?: unknown;
+  gstin?: unknown;
+  billingName?: unknown;
 }
 
 function asString(v: unknown, max: number): string {
@@ -210,11 +218,14 @@ export default async function handler(req: Request): Promise<Response> {
   return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405, headers });
 }
 
+const EMPLOYER_COLUMNS = "id,company_name,website,logo_path,status,submitted_at,approved_at,verification_tier,suspended_at";
+
 async function fetchEmployer(userId: string): Promise<EmployerRow | null> {
-  const res = await fetch(
-    `${SUPABASE_URL}/rest/v1/employers?id=eq.${encodeURIComponent(userId)}&select=id,company_name,website,logo_path,status,submitted_at,approved_at,verification_tier,suspended_at`,
-    { headers: serviceHeaders() },
-  );
+  const read = (columns: string) =>
+    fetch(`${SUPABASE_URL}/rest/v1/employers?id=eq.${encodeURIComponent(userId)}&select=${columns}`, { headers: serviceHeaders() });
+  let res = await read(`${EMPLOYER_COLUMNS},gstin,billing_name`);
+  // 400 = billing columns not migrated yet: fall back so the profile still loads.
+  if (res.status === 400) res = await read(EMPLOYER_COLUMNS);
   if (!res.ok) throw new Error(`employer read failed: ${res.status}`);
   const rows = (await res.json().catch(() => [])) as EmployerRow[];
   return Array.isArray(rows) && rows[0] ? rows[0] : null;
@@ -250,6 +261,8 @@ function profileResponse(row: EmployerRow, tier: EmployerTier) {
     verificationTier: tier,
     limits: TIER_LIMITS[tier],
     suspended: !!row.suspended_at,
+    gstin: row.gstin ?? null,
+    billingName: row.billing_name ?? null,
   };
 }
 
@@ -286,6 +299,13 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
     return new Response(JSON.stringify({ error: "Enter a valid company website, e.g. acme.com" }), { status: 400, headers });
   }
 
+  const gstinProvided = body.gstin !== undefined;
+  const billingNameProvided = body.billingName !== undefined;
+  const gstin = parseGstinInput(body.gstin);
+  if (!gstin.ok) return new Response(JSON.stringify({ error: gstin.error, code: "invalid_gstin" }), { status: 400, headers });
+  const billingName = parseBillingNameInput(body.billingName);
+  if (!billingName.ok) return new Response(JSON.stringify({ error: billingName.error, code: "invalid_billing_name" }), { status: 400, headers });
+
   try {
     const upload = await uploadLogoIfPresent(userId, body);
     if (upload.kind === "error") {
@@ -304,19 +324,28 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
     if (!websiteProvided) website = existing?.website ?? "";
     const logoPath = uploadedLogoPath ?? existing?.logo_path ?? null;
     const now = new Date().toISOString();
-    const upsertRes = await fetch(`${SUPABASE_URL}/rest/v1/employers?on_conflict=id`, {
-      method: "POST",
-      headers: { ...serviceHeaders(), "Content-Type": "application/json", Prefer: "resolution=merge-duplicates,return=representation" },
-      body: JSON.stringify([{
-        id: userId,
-        company_name: companyName,
-        website,
-        logo_path: logoPath,
-        status: "approved",
-        submitted_at: now,
-        approved_at: existing?.approved_at ?? now,
-      }]),
-    });
+    const baseRow = {
+      id: userId,
+      company_name: companyName,
+      website,
+      logo_path: logoPath,
+      status: "approved",
+      submitted_at: now,
+      approved_at: existing?.approved_at ?? now,
+    };
+    const billingFields = {
+      ...(gstinProvided ? { gstin: gstin.value } : {}),
+      ...(billingNameProvided ? { billing_name: billingName.value } : {}),
+    };
+    const upsert = (row: Record<string, unknown>) =>
+      fetch(`${SUPABASE_URL}/rest/v1/employers?on_conflict=id`, {
+        method: "POST",
+        headers: { ...serviceHeaders(), "Content-Type": "application/json", Prefer: "resolution=merge-duplicates,return=representation" },
+        body: JSON.stringify([row]),
+      });
+    let upsertRes = await upsert({ ...baseRow, ...billingFields });
+    // Billing columns missing (migration 0032 unapplied): save the rest of the profile.
+    if (upsertRes.status === 400 && Object.keys(billingFields).length > 0) upsertRes = await upsert(baseRow);
 
     if (!upsertRes.ok) {
       const t = await upsertRes.text().catch(() => "");
@@ -328,7 +357,7 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
     if (uploadedLogoPath) await deleteLogoIfDifferent(userId, existing?.logo_path ?? null, uploadedLogoPath);
 
     const saved = (await upsertRes.json().catch(() => [])) as EmployerRow[];
-    const row: EmployerRow = saved[0] ?? { ...(existing ?? { id: userId, status: "approved", submitted_at: now, approved_at: now, logo_path: logoPath }), company_name: companyName, website, logo_path: logoPath };
+    const row: EmployerRow = saved[0] ?? { ...(existing ?? { id: userId, status: "approved", submitted_at: now, approved_at: now, logo_path: logoPath }), company_name: companyName, website, logo_path: logoPath, ...(gstinProvided ? { gstin: gstin.value } : {}), ...(billingNameProvided ? { billing_name: billingName.value } : {}) };
     return new Response(JSON.stringify(profileResponse(row, await resolveTier(row, userId))), { status: 200, headers });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);

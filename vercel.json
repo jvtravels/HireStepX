@@ -84,6 +84,10 @@
     {
       "path": "/api/cron-reconcile-unlock-orders",
       "schedule": "20 5 * * *"
+    },
+    {
+      "path": "/api/cron-credit-no-response",
+      "schedule": "40 5 * * *"
     }
   ]
 }

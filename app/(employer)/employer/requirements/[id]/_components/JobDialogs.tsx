@@ -13,8 +13,9 @@ import type { ArchiveDisposition } from "@/employer/mockData";
 import { InlineNotice } from "@/employer/_requirementAtoms";
 import { formatPaise } from "../../../../../../server-handlers/_unlock-pricing";
 
-function formatPrice(paise: number): string {
-  return paise === 0 ? "Complimentary" : formatPaise(paise);
+function formatPrice(paise: number, creditPaise = 0): string {
+  if (paise === 0) return creditPaise > 0 ? `${formatPaise(creditPaise)} credit` : "Complimentary";
+  return creditPaise > 0 ? `${formatPaise(paise)} + ${formatPaise(creditPaise)} credit` : formatPaise(paise);
 }
 
 export function UnlockHistoryDialog({
@@ -85,7 +86,7 @@ export function UnlockHistoryDialog({
                   <li key={p.id} className="flex flex-wrap items-center justify-between gap-3 border-b border-hx-line py-2">
                     <span className="min-w-0 text-[13px] text-hx-coal [overflow-wrap:anywhere]">{label}</span>
                     <span className="text-[13px] text-hx-ink-soft">
-                      {formatPrice(p.amount)}{p.refundedAt ? " (refunded)" : ""} · {new Date(p.createdAt).toLocaleDateString()}
+                      {formatPrice(p.amount, p.creditAppliedPaise)}{p.refundedAt ? " (refunded)" : ""} · {new Date(p.createdAt).toLocaleDateString()}
                     </span>
                   </li>
                 );

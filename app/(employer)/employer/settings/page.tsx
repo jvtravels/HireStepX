@@ -13,8 +13,8 @@ import { PageHeader, FlatSection, SoundsSection, EmailPreferencesSection, Accoun
 
 /* /employer/settings — edit the company profile submitted during
    onboarding. Saving re-runs the same POST /api/employer-profile upsert
-   onboarding uses, which re-derives the tier on the server. Billing/GSTIN fields are
-   deliberately absent: no server endpoint accepts them yet. Billing history is read-only.
+   onboarding uses, which re-derives the tier on the server. GSTIN and the invoice name are
+   part of that form; invoices are generated from billing history. Billing history is read-only.
    Password reset and account deletion reuse the candidate settings sections; the
    erasure pipeline already clears employer rows and anonymises retained payments. */
 export default function EmployerSettingsPage() {

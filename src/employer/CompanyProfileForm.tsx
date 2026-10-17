@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { isValidGstin, normalizeGstin } from "../../server-handlers/_gstin";
 import { tokens as t, fonts as f } from "@/auth/_tokens";
 import { useEmployerData } from "@/employer/EmployerDataContext";
 import { EmployerIcon, FieldLabel, HelpText, OutlineCta, PrimaryCta } from "@/employer/_atoms";
@@ -50,9 +51,13 @@ export default function CompanyProfileForm({
   websiteHelp?: string;
   onSaved?: () => void;
 }) {
-  const { submitCompanyProfileResult } = useEmployerData();
+  const { submitCompanyProfileResult, companyGstin, companyBillingName } = useEmployerData();
   const [companyName, setCompanyName] = useState(initialName);
   const [website, setWebsite] = useState(initialWebsite);
+  const [gstin, setGstin] = useState(companyGstin);
+  const [billingName, setBillingName] = useState(companyBillingName);
+  const [gstinTouched, setGstinTouched] = useState(false);
+  const [gstinServerError, setGstinServerError] = useState<string | null>(null);
   const [nameTouched, setNameTouched] = useState(false);
   const [websiteTouched, setWebsiteTouched] = useState(false);
   const [logoDataUrl, setLogoDataUrl] = useState<string | null>(null);
@@ -69,6 +74,10 @@ export default function CompanyProfileForm({
   const nameError = nameTouched && !nameValid ? "Enter your company name (at least 2 characters)." : null;
   const websiteError = websiteServerError ?? (websiteTouched && !websiteValid ? WEBSITE_FORMAT_MESSAGE : null);
 
+  const gstinValid = gstin.trim() === "" || isValidGstin(gstin);
+  const gstinError = gstinServerError ?? (gstinTouched && !gstinValid ? "That GSTIN doesn't look right. It is 15 characters, like 27AAPFU0939F1ZV." : null);
+  const gstinId = `${idPrefix}-gstin`;
+  const billingNameId = `${idPrefix}-billing-name`;
   const nameId = `${idPrefix}-name`;
   const websiteId = `${idPrefix}-website`;
   const logoHelpId = `${idPrefix}-logo-help`;
@@ -99,19 +108,22 @@ export default function CompanyProfileForm({
     if (saving) return;
     setNameTouched(true);
     setWebsiteTouched(true);
-    if (!nameValid || !websiteValid) return;
+    setGstinTouched(true);
+    if (!nameValid || !websiteValid || !gstinValid) return;
     setFormError(null);
     setWebsiteServerError(null);
+    setGstinServerError(null);
     setSaved(false);
     setSaving(true);
-    const res = await submitCompanyProfileResult({ companyName: companyName.trim(), website: website.trim(), ...splitLogoDataUrl(logoDataUrl) });
+    const res = await submitCompanyProfileResult({ companyName: companyName.trim(), website: website.trim(), gstin: normalizeGstin(gstin), billingName: billingName.trim(), ...splitLogoDataUrl(logoDataUrl) });
     setSaving(false);
     if (res.ok) {
       setSaved(true);
       onSaved?.();
       return;
     }
-    if (/website/i.test(res.error.error)) setWebsiteServerError(res.error.error);
+    if (res.error.code === "invalid_gstin") setGstinServerError(res.error.error);
+    else if (/website/i.test(res.error.error)) setWebsiteServerError(res.error.error);
     else setFormError(res.error.error);
   };
 
@@ -197,6 +209,49 @@ export default function CompanyProfileForm({
           </HelpText>
         )}
       </div>
+
+      <fieldset style={{ border: 0, padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 18 }}>
+        <legend style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.coal, padding: 0, marginBottom: 12 }}>
+          GST invoice details (optional)
+        </legend>
+        <div>
+          <FieldLabel htmlFor={gstinId}>GSTIN</FieldLabel>
+          <input
+            id={gstinId}
+            name="company-gstin"
+            autoComplete="off"
+            autoCapitalize="characters"
+            spellCheck={false}
+            maxLength={20}
+            value={gstin}
+            onChange={(e) => { setGstin(e.target.value.toUpperCase()); setGstinServerError(null); setSaved(false); }}
+            onBlur={() => setGstinTouched(true)}
+            aria-invalid={gstinError ? true : undefined}
+            aria-describedby={`${gstinId}-${gstinError ? "err" : "help"}`}
+            placeholder="27AAPFU0939F1ZV"
+            style={{ ...inputStyle, borderColor: gstinError ? t.error : t.line, fontFamily: f.mono, letterSpacing: "0.04em" }}
+          />
+          {gstinError ? (
+            <HelpText id={`${gstinId}-err`} tone="error">{gstinError}</HelpText>
+          ) : (
+            <HelpText id={`${gstinId}-help`}>Printed on every invoice so you can claim input tax credit. You can add it later in Settings.</HelpText>
+          )}
+        </div>
+        <div>
+          <FieldLabel htmlFor={billingNameId}>Name on invoices</FieldLabel>
+          <input
+            id={billingNameId}
+            name="company-billing-name"
+            autoComplete="organization"
+            maxLength={120}
+            value={billingName}
+            onChange={(e) => { setBillingName(e.target.value); setSaved(false); }}
+            placeholder="Legal name as registered for GST"
+            style={inputStyle}
+          />
+          <HelpText>Leave blank to use your company name.</HelpText>
+        </div>
+      </fieldset>
 
       {formError && (
         <p role="alert" style={{ fontFamily: f.sans, fontSize: 13, color: t.errorInk, margin: 0 }}>{formError}</p>
