@@ -123,4 +123,31 @@ describe("candidate-hiring-activity handler", () => {
     expect(res.status).toBe(500);
     expect(slogError).toHaveBeenCalled();
   });
+
+  it("drops matches whose employer is suspended or pending deletion, even when unlocked", async () => {
+    const mk = (id: string, unlocked: boolean, employers: Record<string, unknown>) => ({
+      id, unlocked, unlocked_at: unlocked ? "2026-08-01T00:00:00Z" : null, match_score: 80, created_at: "2026-07-01T00:00:00Z",
+      employer_requirements: { title: `Role ${id}`, location: "Pune", status: "ready", skills: [], employers },
+    });
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => [{ target_role: null, resume_data: null }] })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => [
+          mk("live", true, { company_name: "Live Co", suspended_at: null }),
+          mk("gone-unlocked", true, { company_name: "Gone Co", suspended_at: "2026-09-01T00:00:00Z" }),
+          mk("gone-matched", false, { company_name: "Gone Co 2", suspended_at: "2026-09-01T00:00:00Z" }),
+        ],
+      });
+    fetchMock.mockResolvedValue({ ok: true, json: async () => [] });
+    global.fetch = fetchMock as unknown as typeof fetch;
+
+    const body = await (await handler(req())).json();
+    expect(body.shortlistedCount).toBe(1);
+    expect(body.unlockedCount).toBe(1);
+    expect(body.recent.map((r: { id: string }) => r.id)).toEqual(["live"]);
+    expect(JSON.stringify(body)).not.toMatch(/Gone Co/);
+    const matchesUrl = String(fetchMock.mock.calls[1][0]);
+    expect(matchesUrl).toContain("suspended_at");
+  });
 });

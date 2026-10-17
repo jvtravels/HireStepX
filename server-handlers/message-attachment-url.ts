@@ -5,13 +5,18 @@
  * `chat-attachments` is a private bucket (unlike the public employer-logos
  * bucket) — chat files are never served by a public URL. This mints a
  * short-lived signed URL after confirming the caller is a party to the
- * message's conversation, same ownership check as flag-message.ts.
+ * message's conversation, same ownership check as flag-message.ts. An
+ * employer additionally passes the shared match-access gate (ownership,
+ * suspension, block, opt-out) plus the unlock/withdrew/declined rules, so a
+ * file a candidate attached can't be pulled without paying. Candidates keep
+ * access to their own thread's files.
  */
 
 export const config = { runtime: "edge" };
 
 import { withAuthAndRateLimit, corsHeaders, withRequestId, slog } from "./_shared";
-import { resolveRole, MESSAGE_ID_RE } from "./_messages-helpers";
+import { resolveRole, employerAttachmentBlock, MESSAGE_ID_RE, type MessageSenderRole } from "./_messages-helpers";
+import { loadEmployerMatchAccess, loadAuthIdentity, DENIED_STATUS } from "./_entitlements";
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
@@ -60,18 +65,46 @@ export default async function handler(req: Request): Promise<Response> {
   try {
     const msgRes = await fetch(
       `${SUPABASE_URL}/rest/v1/conversation_messages?id=eq.${encodeURIComponent(messageId)}` +
-        `&select=id,employer_id,candidate_user_id,attachment_path`,
+        `&select=id,employer_id,candidate_user_id,sender_role,attachment_path,conversations(match_id)`,
       { headers: serviceHeaders() },
     );
     const msgRows = (await msgRes.json().catch(() => [])) as Array<{
-      id: string; employer_id: string; candidate_user_id: string; attachment_path: string | null;
+      id: string; employer_id: string; candidate_user_id: string; sender_role: MessageSenderRole;
+      attachment_path: string | null; conversations: { match_id: string } | null;
     }>;
     if (!msgRes.ok || !msgRows[0]) {
       return new Response(JSON.stringify({ error: "Message not found" }), { status: 404, headers });
     }
     const message = msgRows[0];
-    if (!resolveRole(auth.userId, message.employer_id, message.candidate_user_id)) {
+    const role = resolveRole(auth.userId, message.employer_id, message.candidate_user_id);
+    if (!role) {
       return new Response(JSON.stringify({ error: "Not authorized for this conversation" }), { status: 403, headers });
+    }
+    if (role === "employer") {
+      const matchId = message.conversations?.match_id;
+      if (!matchId) {
+        return new Response(JSON.stringify({ error: "Message not found" }), { status: 404, headers });
+      }
+      const identity = await loadAuthIdentity(SUPABASE_URL, serviceHeaders(), auth.userId);
+      const decision = await loadEmployerMatchAccess({
+        supabaseUrl: SUPABASE_URL,
+        headers: serviceHeaders(),
+        employerId: auth.userId,
+        matchId,
+        authEmail: identity.email,
+        emailConfirmed: identity.emailConfirmed,
+      });
+      if (!decision.ok) {
+        if (decision.reason === "error") {
+          return new Response(JSON.stringify({ error: "Failed to load attachment" }), { status: 502, headers });
+        }
+        const d = DENIED_STATUS[decision.reason];
+        return new Response(JSON.stringify({ error: d.error }), { status: d.status, headers });
+      }
+      const block = employerAttachmentBlock(decision.access, message.sender_role);
+      if (block) {
+        return new Response(JSON.stringify({ error: block.error, code: block.code }), { status: block.status, headers });
+      }
     }
     if (!message.attachment_path) {
       return new Response(JSON.stringify({ error: "This message has no attachment" }), { status: 404, headers });

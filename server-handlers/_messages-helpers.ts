@@ -8,6 +8,9 @@
  * Indian formats (+91, 10-digit) as well as generic ones.
  */
 
+import { isSuspended } from "./_employer-trust";
+import type { EmployerMatchAccess, MatchAccessRow } from "./_entitlements";
+
 export type MessageRole = "employer" | "candidate";
 export type MessageSenderRole = MessageRole | "system";
 
@@ -38,6 +41,74 @@ export function asFlagNote(value: unknown): string | null {
 export function resolveRole(authUserId: string, employerId: string, candidateUserId: string): MessageRole | null {
   if (authUserId === employerId) return "employer";
   if (authUserId === candidateUserId) return "candidate";
+  return null;
+}
+
+/** A refusal to let someone write to / download from a thread, shaped for a
+ *  JSON Response: `{ error, code }` with `status`. */
+export interface ThreadBlock {
+  status: number;
+  error: string;
+  code: string;
+}
+
+/** Candidate statuses an employer has closed out; messaging them again is
+ *  unsolicited contact. "Reopen" puts a rejected candidate back on the
+ *  pipeline, which lifts this. */
+const EMPLOYER_CLOSED_OUT_STATUSES = new Set(["rejected", "not_a_fit"]);
+
+/** Why an employer may not send into this match's thread, or null when allowed.
+ *  History stays readable regardless; this only gates writes (messages and
+ *  attachment uploads). */
+export function employerSendBlock(match: MatchAccessRow, access: EmployerMatchAccess | null): ThreadBlock | null {
+  // Unpaid cold contact is exactly the spam vector the unlock fee exists to
+  // price in; the candidate's own interest also opens the thread.
+  if (!match.unlocked && match.candidate_response !== "interested") {
+    return { status: 402, error: "Unlock this candidate to message them.", code: "unlock_required" };
+  }
+  // A candidate who switched employer visibility off after a paid unlock
+  // closes NEW contact; the delivered history stays readable.
+  if (access?.candidateWithdrew) {
+    return { status: 409, error: "This candidate has withdrawn from employer contact, so you can no longer message them.", code: "candidate_withdrew" };
+  }
+  if (match.candidate_response === "declined") {
+    return { status: 409, error: "This candidate declined contact for this job.", code: "candidate_declined" };
+  }
+  if (match.employer_requirements?.status === "closed") {
+    return { status: 409, error: "This requirement is closed. Reopen it to message candidates.", code: "requirement_closed" };
+  }
+  if (EMPLOYER_CLOSED_OUT_STATUSES.has(match.candidate_status)) {
+    return { status: 409, error: "This candidate is no longer in the running for this role. Reopen them to send a message.", code: "candidate_not_active" };
+  }
+  return null;
+}
+
+/** Why a candidate may not send into this match's thread, or null when allowed.
+ *  A candidate can always reply on a closed requirement; only a suspended /
+ *  deleted employer is a dead end. */
+export function candidateSendBlock(match: MatchAccessRow): ThreadBlock | null {
+  if (isSuspended(match.employer_requirements?.employers)) {
+    return { status: 409, error: "This employer is no longer available on HireStepX, so you can't send new messages.", code: "employer_unavailable" };
+  }
+  return null;
+}
+
+/** Why an employer may not download an attachment from this match's thread.
+ *  Stricter than sending: a candidate-sent file (e.g. a resume) carries contact
+ *  details, so it needs a paid unlock, not just the candidate's interest. */
+export function employerAttachmentBlock(
+  access: EmployerMatchAccess,
+  senderRole: MessageSenderRole,
+): ThreadBlock | null {
+  if (access.candidateWithdrew) {
+    return { status: 409, error: "This candidate has withdrawn from employer contact.", code: "candidate_withdrew" };
+  }
+  if (access.match.candidate_response === "declined") {
+    return { status: 409, error: "This candidate declined contact for this job.", code: "candidate_declined" };
+  }
+  if (senderRole !== "employer" && !access.unlocked) {
+    return { status: 403, error: "Unlock this candidate to download their attachments", code: "unlock_required" };
+  }
   return null;
 }
 

@@ -30,6 +30,8 @@ import {
   isSelfConversation,
   redactContactInfo,
   messageBodyForViewer,
+  employerSendBlock,
+  candidateSendBlock,
   CONTACT_REDACTED_NOTICE,
   type MessageRole,
   type MessageSenderRole,
@@ -44,11 +46,13 @@ import {
   type EmployerMatchAccess,
   type MatchAccessRow,
 } from "./_entitlements";
-import { maskedCandidateName } from "./_employer-trust";
+import { maskedCandidateName, isSuspended } from "./_employer-trust";
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+
+const UNAVAILABLE_EMPLOYER_NAME = "Employer no longer available";
 
 function serviceHeaders(): Record<string, string> {
   return { apikey: SUPABASE_SERVICE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_KEY}` };
@@ -233,6 +237,9 @@ async function handleListConversations(headers: Record<string, string>, authUser
 
   const conversations = visible.map((row) => {
     const role: MessageRole = row.employer_id === authUserId ? "employer" : "candidate";
+    // A candidate keeps the thread history but never sees the identity of a
+    // suspended / deleted employer, and can't post into it (see POST).
+    const employerUnavailable = role === "candidate" && isSuspended(row.employer_requirements?.employers);
     const viewerLastReadAt = role === "employer" ? row.employer_last_read_at : row.candidate_last_read_at;
     return {
       matchId: row.match_id,
@@ -240,12 +247,13 @@ async function handleListConversations(headers: Record<string, string>, authUser
       role,
       counterpartName: role === "employer"
         ? (row.requirement_matches?.unlocked ? (row.profiles?.name || "Candidate") : maskedCandidateName(row.match_id))
-        : (row.employer_requirements?.employers?.company_name || "Employer"),
+        : (employerUnavailable ? UNAVAILABLE_EMPLOYER_NAME : row.employer_requirements?.employers?.company_name || "Employer"),
       // Independent of `role` on purpose: a candidate must never see a
       // person's name as the other party, even if `role` mis-resolves on a
       // malformed row (e.g. employer_id == candidate_user_id). The candidate
       // UI reads this field instead of counterpartName.
-      companyName: row.employer_requirements?.employers?.company_name || "Employer",
+      companyName: employerUnavailable ? UNAVAILABLE_EMPLOYER_NAME : row.employer_requirements?.employers?.company_name || "Employer",
+      employerUnavailable,
       roleTitle: row.employer_requirements?.title || "Role",
       lastMessageAt: row.last_message_at,
       unread: isConversationUnread(role, row.last_message_at, row.last_sender_role, viewerLastReadAt),
@@ -272,13 +280,16 @@ async function handleGet(req: Request, headers: Record<string, string>, auth: { 
   const { match, role } = resolved;
   const hideContact = role === "employer" && !match.unlocked;
 
+  const employerUnavailable = role === "candidate" && isSuspended(match.employer_requirements?.employers);
+
   // Pre-unlock the employer only ever knows the candidate as "Candidate #xxxxxx".
   const candidateName = role === "employer" && !match.unlocked
     ? maskedCandidateName(match.id)
     : (match.profiles?.name || "Candidate");
   const context = {
     roleTitle: match.employer_requirements?.title || "Role",
-    companyName: match.employer_requirements?.employers?.company_name || "Employer",
+    companyName: employerUnavailable ? UNAVAILABLE_EMPLOYER_NAME : match.employer_requirements?.employers?.company_name || "Employer",
+    employerUnavailable,
     candidateName,
     matchScore: match.match_score ?? null,
     candidateStatus: match.candidate_status || "shortlisted",
@@ -362,31 +373,13 @@ async function handlePost(req: Request, headers: Record<string, string>, auth: {
     return new Response(JSON.stringify({ error: "Invalid attachment" }), { status: 400, headers });
   }
 
-  // An employer only gets to open a conversation after paying to unlock the
-  // candidate, or once the candidate has expressed interest. Unpaid cold
-  // contact is exactly the spam vector the unlock fee exists to price in.
-  if (role === "employer" && !match.unlocked && match.candidate_response !== "interested") {
-    return new Response(
-      JSON.stringify({ error: "Unlock this candidate to message them.", code: "unlock_required" }),
-      { status: 402, headers },
-    );
-  }
-
-  // Product decision (see candidateWithdrew in _entitlements.ts): a candidate
-  // who switched employer visibility off after a paid unlock closes NEW
-  // contact. The thread already delivered stays readable (GET) because the
-  // employer paid for that history; only sending is refused.
-  if (role === "employer" && resolved.access?.candidateWithdrew) {
-    return new Response(
-      JSON.stringify({ error: "This candidate has withdrawn from employer contact, so you can no longer message them.", code: "candidate_withdrew" }),
-      { status: 409, headers },
-    );
-  }
-  if (role === "employer" && match.candidate_response === "declined") {
-    return new Response(
-      JSON.stringify({ error: "This candidate declined contact for this job.", code: "candidate_declined" }),
-      { status: 409, headers },
-    );
+  // Employer: unlock / candidate opt-out / declined / closed requirement /
+  // rejected candidate. Candidate: refused only when the employer is suspended
+  // or deleted (history stays readable via GET; replies on a closed requirement
+  // are still allowed).
+  const block = role === "employer" ? employerSendBlock(match, resolved.access) : candidateSendBlock(match);
+  if (block) {
+    return new Response(JSON.stringify({ error: block.error, code: block.code }), { status: block.status, headers });
   }
 
   const conversation = await findOrCreateConversation(match);

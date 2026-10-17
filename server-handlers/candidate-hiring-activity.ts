@@ -15,6 +15,7 @@ export const config = { runtime: "edge" };
 import { withAuthAndRateLimit, corsHeaders, withRequestId, slog } from "./_shared";
 import { describeMatch } from "./_requirement-match-helpers";
 import { asBoundedSalaryType } from "./_employer-requirements-helpers";
+import { isSuspended } from "./_employer-trust";
 import { requestHeadline, type CandidateRequestRow } from "./_candidate-request-helpers";
 
 declare const process: { env: Record<string, string | undefined> };
@@ -66,7 +67,7 @@ interface MatchRow {
     preferred_industry: string | null;
     due_date: string | null;
     employment_type: string | null;
-    employers: { company_name: string; logo_path: string | null; website: string | null } | null;
+    employers: { company_name: string; logo_path: string | null; website: string | null; suspended_at?: string | null } | null;
   } | null;
 }
 
@@ -109,17 +110,22 @@ export default async function handler(req: Request): Promise<Response> {
           `&select=id,unlocked,unlocked_at,match_score,created_at,` +
           `employer_requirements(title,location,locations,status,work_mode,salary_type,budget_min,budget_max,experience_min,experience_max,skills,` +
           `notice_period_pref,open_positions,description,responsibilities,nice_to_have,perks_and_benefits,preferred_industry,due_date,employment_type,` +
-          `employers(company_name,logo_path,website))` +
+          `employers(company_name,logo_path,website,suspended_at))` +
           `&order=created_at.desc`,
         { headers: serviceHeaders() },
       ),
     ]);
     if (!profileRes.ok) throw new Error(`profile read failed: ${profileRes.status}`);
     if (!matchesRes.ok) throw new Error(`matches read failed: ${matchesRes.status}`);
-    const [profileRows, matches] = (await Promise.all([
+    const [profileRows, allMatches] = (await Promise.all([
       profileRes.json().catch(() => []),
       matchesRes.json().catch(() => []),
     ])) as [Array<{ target_role: string | null; resume_data: unknown }>, MatchRow[]];
+    // Suspended and deletion-pending employers aren't hiring: drop them from the
+    // counts and the list so a candidate never sees (or is shown the identity
+    // of) an account that was removed. Their conversation history stays
+    // readable through the messages endpoints.
+    const matches = allMatches.filter((m) => !isSuspended(m.employer_requirements?.employers));
     const candidateProfile = { target_role: profileRows[0]?.target_role ?? null, resume_data: profileRows[0]?.resume_data ?? null };
 
     // A closed/failed requirement is no longer actually hiring — don't count or

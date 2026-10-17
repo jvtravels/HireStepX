@@ -19,7 +19,14 @@ export const config = { runtime: "edge" };
 
 import { withAuthAndRateLimit, corsHeaders, withRequestId, slog } from "./_shared";
 import { base64ToBytes } from "./_resume-upload-helpers";
-import { inferAttachmentExtension, resolveRole, MATCH_ID_RE } from "./_messages-helpers";
+import { inferAttachmentExtension, resolveRole, employerSendBlock, candidateSendBlock, MATCH_ID_RE } from "./_messages-helpers";
+import {
+  fetchMatchAccessRow,
+  isBlockedByCandidate,
+  decideEmployerMatchAccess,
+  loadAuthIdentity,
+  DENIED_STATUS,
+} from "./_entitlements";
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
@@ -86,21 +93,44 @@ export default async function handler(req: Request): Promise<Response> {
     return new Response(JSON.stringify({ error: "Unsupported file type. Allowed: PDF, DOC/DOCX, TXT, PNG, JPG, WEBP." }), { status: 415, headers });
   }
 
+  // Same gate as POST /api/messages: a file can only be uploaded into a thread
+  // its sender could also write to, so a locked/blocked/closed employer can't
+  // park files (or probe the bucket) in a thread they can't message.
   try {
-    const matchRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/requirement_matches?id=eq.${encodeURIComponent(matchId)}` +
-        `&select=id,candidate_user_id,employer_requirements(employer_id)`,
-      { headers: serviceHeaders() },
-    );
-    const matchRows = (await matchRes.json().catch(() => [])) as Array<{
-      id: string; candidate_user_id: string; employer_requirements: { employer_id: string } | null;
-    }>;
-    if (!matchRes.ok || !matchRows[0] || !matchRows[0].employer_requirements) {
+    const row = await fetchMatchAccessRow(SUPABASE_URL, serviceHeaders(), matchId);
+    if (row === "error") {
+      return new Response(JSON.stringify({ error: "Match lookup error" }), { status: 502, headers });
+    }
+    if (!row || !row.employer_requirements) {
       return new Response(JSON.stringify({ error: "Candidate match not found" }), { status: 404, headers });
     }
-    const role = resolveRole(auth.userId, matchRows[0].employer_requirements.employer_id, matchRows[0].candidate_user_id);
+    const employerId = row.employer_requirements.employer_id;
+    const role = resolveRole(auth.userId, employerId, row.candidate_user_id);
     if (!role) {
       return new Response(JSON.stringify({ error: "Not authorized for this conversation" }), { status: 403, headers });
+    }
+    let block;
+    if (role === "employer") {
+      const blocked = await isBlockedByCandidate(SUPABASE_URL, serviceHeaders(), row.candidate_user_id, employerId);
+      if (blocked === "error") {
+        return new Response(JSON.stringify({ error: "Match lookup error" }), { status: 502, headers });
+      }
+      const identity = await loadAuthIdentity(SUPABASE_URL, serviceHeaders(), auth.userId);
+      const decision = decideEmployerMatchAccess(row, auth.userId, {
+        blockedByCandidate: blocked,
+        authEmail: identity.email,
+        emailConfirmed: identity.emailConfirmed,
+      });
+      if (!decision.ok) {
+        const d = DENIED_STATUS[decision.reason];
+        return new Response(JSON.stringify({ error: d.error }), { status: d.status, headers });
+      }
+      block = employerSendBlock(row, decision.access);
+    } else {
+      block = candidateSendBlock(row);
+    }
+    if (block) {
+      return new Response(JSON.stringify({ error: block.error, code: block.code }), { status: block.status, headers });
     }
   } catch {
     return new Response(JSON.stringify({ error: "Match lookup error" }), { status: 502, headers });
