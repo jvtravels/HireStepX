@@ -17,7 +17,7 @@ export const SCORING_STEPS: readonly ScoringStep[] = [
     body: "We compare your job title, description and the skills you pick with each candidate's target role and resume skills. Location (or remote) and your experience range then adjust the score. Experience outside your range lowers the score; it never excludes anyone.",
   },
   {
-    title: "Verified practice sessions",
+    title: "Graded practice sessions",
     body: "A candidate who has completed practice interviews on HireStepX gets credit from their own session scores. A candidate with no sessions gets none, so unproven profiles do not outrank people who have practised. Candidates inactive for over 30 days are ranked lower.",
   },
   {
@@ -37,7 +37,7 @@ export const FAQ_ENTRIES: readonly FaqEntry[] = [
   {
     question: "How is a candidate scored, and what does \"scored on practice sessions\" mean?",
     answer:
-      "The score combines how well the candidate's role and skills fit your job with their results in practice interviews on HireStepX, which the AI evaluates against a STAR-style rubric. Those scores come from the candidate's own practice sessions on our platform. They are not proctored or independent assessments, so treat them as a signal to screen with, not a verdict.",
+      "The score combines how well the candidate's role and skills fit your job with, where they have completed any, their results in practice interviews on HireStepX, which the AI evaluates against a STAR-style rubric. Candidates with no sessions still appear if their role and skills fit, but get no practice credit. Those scores come from the candidate's own practice sessions on our platform. They are not proctored or independent assessments, so treat them as a signal to screen with, not a verdict.",
   },
   {
     question: "What does unlocking a candidate reveal?",

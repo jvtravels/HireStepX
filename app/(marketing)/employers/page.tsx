@@ -19,8 +19,8 @@ import { buildEmployersJsonLd } from "./_jsonld";
 import { employersCSS } from "./_styles";
 
 const PRICE_LINE = `${formatPaise(UNLOCK_BATCH_PRICE_PAISE)} for ${UNLOCK_BUNDLE_SIZE} candidates or ${formatPaise(UNLOCK_SINGLE_PRICE_PAISE)} for one`;
-const TITLE = "Post a job and hire candidates scored on real interview practice";
-const DESCRIPTION = `Post a job free and get an AI-matched shortlist of candidates who practise on HireStepX, scored on their own interview-practice sessions. Pay only to unlock contact details: ${PRICE_LINE}. No subscription.`;
+const TITLE = "Post a job and hire candidates matched on interview practice";
+const DESCRIPTION = `Post a job free and get an AI-matched shortlist of candidates who practise interviews on HireStepX, ranked on skills fit and, where they have them, their own graded practice sessions. Pay only to unlock contact details: ${PRICE_LINE}. No subscription.`;
 const SHARE_IMAGE = "https://hirestepx.com/opengraph-image";
 
 /* Reuses the site-wide share card (/opengraph-image); a per-route card would
@@ -55,7 +55,7 @@ const SAMPLE_BARS: ReadonlyArray<{ label: string; pct: number }> = [
 ];
 
 const VALUE_CARDS: ReadonlyArray<{ title: string; body: string }> = [
-  { title: "AI-matched, not keyword-matched", body: "Candidates are ranked on how well their role and skills fit your job, plus the results of their own practice sessions: STAR structure, answer depth and readiness." },
+  { title: "AI-matched, not keyword-matched", body: "Candidates are ranked on how well their role and skills fit your job, plus, where they have completed practice sessions, the results: STAR structure, answer depth and readiness." },
   { title: "Pay only to unlock a contact", body: `Browse match scores, skill breakdowns, practice evidence and resume detail for free. Unlock a batch of ${UNLOCK_BUNDLE_SIZE} for ${formatPaise(UNLOCK_BATCH_PRICE_PAISE)}, or one candidate for ${formatPaise(UNLOCK_SINGLE_PRICE_PAISE)}. Pay as you go, no subscription.` },
   { title: "Fair to candidates too", body: "Candidates control whether employers can discover them, and can block or report an employer. Until you unlock a candidate you see their resume and practice evidence under \"Candidate #…\", without their name, contact details or links. Employers self-serve sign up and are placed in verification tiers." },
 ];
@@ -72,10 +72,10 @@ export default function EmployersLandingPage() {
       <div className="emp-page">
         <section className="emp-hero">
           <div className="emp-eyebrow">For employers</div>
-          <h1 className="emp-h1">Hire candidates who've already proven how they interview</h1>
+          <h1 className="emp-h1">Hire candidates who practise how they interview</h1>
           <p className="emp-lede">
             Post a job. We match it against candidates who practise on HireStepX and hand you a shortlist ranked on
-            skills fit and their own interview-practice results, not just keywords on a resume.
+            skills fit and, where they have completed them, their own graded practice sessions, not just keywords on a resume.
           </p>
           <div className="emp-actions">
             <Link href="/signup?next=/employer" className="emp-btn emp-btn-primary">Post a job, free</Link>
@@ -88,7 +88,9 @@ export default function EmployersLandingPage() {
           </p>
         </section>
 
-        <section className="emp-wrap">
+        <section className="emp-wrap" aria-labelledby="emp-why">
+          <h2 className="emp-h2" id="emp-why">Why post a job on HireStepX</h2>
+          <p className="emp-sub">A ranked shortlist you can judge for free, and a fee only when you reach a person.</p>
           <div className="emp-grid3">
             {VALUE_CARDS.map((c) => (
               <div key={c.title} className="emp-card">
@@ -202,16 +204,16 @@ export default function EmployersLandingPage() {
           </div>
         </section>
 
-        <DarkBand eyebrow="Hiring, not hoping" title="Skip the resume pile," accent="hire on proof." videoSrc="/cta.mp4">
+        <DarkBand eyebrow="Hiring, not hoping" title="Skip the resume pile," accent="hire on practice." videoSrc="/cta.mp4">
           <p className="emp-dark-copy">
-            Candidates on HireStepX have practised and been scored on their own practice sessions (not independent assessments). Post a job and see who matches.
+            Candidates on HireStepX practise interviews, and completed sessions are graded by AI (self-run, not independent assessments). Post a job and see who matches.
           </p>
           <Link href="/signup?next=/employer" className="ed-cta" style={ctaPrimaryStyle("lg")}>
             Post a job, free <span className="ed-cta-arrow" aria-hidden>→</span>
           </Link>
         </DarkBand>
       </div>
-      <FooterDome />
+      <FooterDome employer />
       <MobileStickyCTA employer />
     </>
   );

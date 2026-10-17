@@ -21,7 +21,7 @@ export default function JobHistoryDialog({
       <DialogContent style={{ maxHeight: "85vh", overflowY: "auto" }}>
         <DialogHeader>
           <DialogTitle>History{target ? ` · ${target.title}` : ""}</DialogTitle>
-          <DialogDescription>Every status change and edit made to this requirement.</DialogDescription>
+          <DialogDescription>Every status change and edit made to this job.</DialogDescription>
         </DialogHeader>
         {loading ? (
           <div role="status" style={note}>Loading history…</div>

@@ -50,9 +50,9 @@ const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <noreply@hirestepx.com>"
 const APP_URL = (process.env.APP_URL || "https://hirestepx.vercel.app").replace(/\/$/, "");
 
 const STATUS_NOTIFICATION_TEXT: Record<string, { title: string; body: string }> = {
-  interview_invited: { title: "You've been invited to interview!", body: "An employer wants to move forward with you — check your dashboard for details." },
+  interview_invited: { title: "You've been invited to interview!", body: "An employer wants to move forward with you. Check your dashboard for details." },
   interviewing: { title: "Interview in progress", body: "An employer has marked your interview as in progress." },
-  hired: { title: "Congratulations — you got the offer!", body: "An employer has marked you as hired. Great work!" },
+  hired: { title: "Congratulations, you got the offer!", body: "An employer has marked you as hired. Great work!" },
   rejected: { title: "Application update", body: "An employer has made a decision on your application." },
   not_a_fit: { title: "Application update", body: "An employer has made a decision on your application." },
 };
@@ -102,7 +102,7 @@ async function sendInterviewInviteEmail(opts: {
       body:
         emailTitle("You're invited to", { accentWord: "interview" }) +
         para(`Hi ${firstName}, ${headline}`) +
-        (when ? para(`They've suggested ${b(when)} — check your dashboard to confirm or message them directly.`) : para("Check your dashboard for next steps and to message them directly.")) +
+        (when ? para(`They've suggested ${b(when)}. Check your dashboard to confirm or message them directly.`) : para("Check your dashboard for next steps and to message them directly.")) +
         button("View invite", link),
     });
 
@@ -112,7 +112,7 @@ async function sendInterviewInviteEmail(opts: {
       const res = await fetch("https://api.resend.com/emails", {
         method: "POST",
         headers: { Authorization: `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ from: FROM_EMAIL, to: [email], subject: `You've been invited to interview — ${opts.roleTitle}`, html }),
+        body: JSON.stringify({ from: FROM_EMAIL, to: [email], subject: `You've been invited to interview: ${opts.roleTitle}`, html }),
         signal: controller.signal,
       });
       if (!res.ok) {
@@ -234,7 +234,7 @@ export default async function handler(req: Request): Promise<Response> {
     // handleStatusAction's reject_remaining path in
     // employer-requirement-detail.ts). Reopening it is the only way back in.
     if (reqRows[0].status === "closed") {
-      return new Response(JSON.stringify({ error: "This requirement is closed" }), { status: 409, headers });
+      return new Response(JSON.stringify({ error: "This job is closed" }), { status: 409, headers });
     }
     // Guard against skipping stages, going backwards, or resurrecting a
     // terminal outcome (hired/rejected/not_a_fit/no_response) — the pipeline
@@ -279,7 +279,7 @@ export default async function handler(req: Request): Promise<Response> {
     const row = updated[0];
     if (!row) {
       return new Response(
-        JSON.stringify({ error: "This candidate's status was just changed by someone else — refresh and try again" }),
+        JSON.stringify({ error: "This candidate's status was just changed by someone else. Refresh and try again" }),
         { status: 409, headers },
       );
     }

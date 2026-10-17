@@ -64,7 +64,7 @@ function OnboardingCosts() {
       <div className="text-center"><Eyebrow tone="indigo">What it costs</Eyebrow></div>
       <h2 id="onboarding-costs" className="sr-only">What it costs</h2>
       <p className="m-0 text-[13px] leading-relaxed text-muted-foreground">
-        Posting roles and seeing anonymised, scored shortlists is free. You pay only to unlock a candidate&apos;s name and contact details.
+        Posting jobs and seeing anonymised, scored shortlists is free. You pay only to unlock a candidate&apos;s name and contact details.
         {" "}{unlockFeeSentence()} {PAY_AS_YOU_GO_SENTENCE}
       </p>
       <p className="m-0 text-[13px] leading-relaxed text-muted-foreground">{CREDIT_BACK_SENTENCE}</p>
@@ -93,7 +93,7 @@ function CompanyOnboarding() {
           Tell us about your company
         </h1>
         <p style={{ fontFamily: f.sans, fontSize: 15, color: t.inkSoft, margin: 0, lineHeight: 1.6 }}>
-          Add your company name and website, then post a role. Your AI-matched shortlist is built once a role is posted.
+          Add your company name and website, then post a job. Your AI-matched shortlist is built once a job is posted.
         </p>
       </div>
       <AtomCard>
@@ -114,7 +114,7 @@ function CompanyOnboarding() {
         <ol className="grid list-none grid-cols-1 gap-5 p-0 m-0 min-[480px]:grid-cols-2">
           {[
             { icon: <EmployerIcon.Check />, title: "You submit", body: "Company name and website. A logo helps candidates recognize you." },
-            { icon: <EmployerIcon.Arrow />, title: "You post roles", body: "Get an AI-matched shortlist, scored on real interview performance." },
+            { icon: <EmployerIcon.Arrow />, title: "You post jobs", body: "Get an AI-matched shortlist, with practice results where candidates have them." },
           ].map((step) => (
             <li key={step.title} style={{ textAlign: "center" }}>
               <div
@@ -252,7 +252,7 @@ function EmployerDashboard() {
   const onboardingSteps: ChecklistStep[] = [
     {
       label: "Post your first job",
-      body: "Tell us the role, location, and notice-period preference — we'll start matching candidates against it.",
+      body: "Tell us the role, location, and notice-period preference, and we'll start matching candidates against it.",
       done: requirements.length > 0,
       href: "/employer/requirements/new",
       cta: "Post a job",

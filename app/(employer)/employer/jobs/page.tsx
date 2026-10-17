@@ -138,10 +138,10 @@ export default function EmployerJobsPage() {
   if (departmentFilter) activeChips.push({ label: `Department: ${departmentFilter}`, remove: () => setDepartmentFilter("") });
   if (dueFilter.length > 0) activeChips.push({ label: `Due: ${dueFilter.join(", ")}`, remove: () => setDueFilter([]) });
   if (experienceFilter.min || experienceFilter.max) {
-    activeChips.push({ label: `Experience: ${experienceFilter.min || "0"}–${experienceFilter.max || "∞"} yrs`, remove: () => setExperienceFilter(EMPTY_RANGE) });
+    activeChips.push({ label: `Experience: ${experienceFilter.min || "0"} to ${experienceFilter.max || "∞"} yrs`, remove: () => setExperienceFilter(EMPTY_RANGE) });
   }
   if (salaryFilter.min || salaryFilter.max) {
-    activeChips.push({ label: `Salary: ${salaryFilter.min || "0"}–${salaryFilter.max || "∞"}`, remove: () => setSalaryFilter(EMPTY_RANGE) });
+    activeChips.push({ label: `Salary: ${salaryFilter.min || "0"} to ${salaryFilter.max || "∞"}`, remove: () => setSalaryFilter(EMPTY_RANGE) });
   }
 
   const onlySearchActive =
@@ -226,7 +226,7 @@ export default function EmployerJobsPage() {
         <div>
           <h2 style={{ fontFamily: f.sans, fontSize: 18, fontWeight: 700, color: t.coal, margin: 0, letterSpacing: "-0.01em" }}>No job listings yet</h2>
           <p style={{ ...emptyNote, margin: "6px auto 0" }}>
-            Post your first requirement and we&apos;ll score candidates who are actively practicing on HireStepX against it, usually in under a minute.
+            Post your first job and we&apos;ll score candidates who are actively practising on HireStepX against it, usually in under a minute.
           </p>
         </div>
         {!suspended && <PrimaryLink href="/employer/requirements/new" icon={postIcon}>Create your first listing</PrimaryLink>}

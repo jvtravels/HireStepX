@@ -109,7 +109,7 @@ export default function JobsTable({
                 width={175}
                 sort={sort}
                 onSortChange={setSort}
-                after={<HeadInfo label="About stage">Where this posting is in your hiring pipeline — move it forward as you review candidates and interview.</HeadInfo>}
+                after={<HeadInfo label="About stage">Where this job is in your hiring pipeline. Move it forward as you review candidates and interview.</HeadInfo>}
               >
                 Stage
               </SortableHead>
@@ -119,7 +119,7 @@ export default function JobsTable({
                 width={165}
                 sort={sort}
                 onSortChange={setSort}
-                after={<HeadInfo label="About AI Screening">How many candidates the AI has evaluated against this requirement, and the score range across them.</HeadInfo>}
+                after={<HeadInfo label="About AI Screening">How many candidates the AI has evaluated against this job, and the score range across them.</HeadInfo>}
               >
                 AI Screening
               </SortableHead>
@@ -136,7 +136,7 @@ export default function JobsTable({
               <TableHead className="jobs-col-strong" style={{ width: 135, fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.inkSoft }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                   Strong Match
-                  <HeadInfo label="About Strong Match">The best of the shortlist — candidates scoring highest against this requirement's evaluation criteria. Hover a candidate to see their experience and skills.</HeadInfo>
+                  <HeadInfo label="About Strong Match">The best of the shortlist: candidates scoring highest against this job's evaluation criteria. Hover a candidate to see their experience and skills.</HeadInfo>
                 </div>
               </TableHead>
               <SortableHead column="experience" columnLabel={COLUMN_LABEL.experience} width={140} sort={sort} onSortChange={setSort}>Experience</SortableHead>
@@ -241,7 +241,7 @@ export default function JobsTable({
                       {r.department ? (
                         <span style={{ fontFamily: f.sans, fontSize: textSize.md, fontWeight: 500, color: t.coal }}>{r.department}</span>
                       ) : (
-                        <span style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.inkSoft }}>—</span>
+                        <span style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.inkSoft }}>Not set</span>
                       )}
                     </TableCell>
                   )}
@@ -260,7 +260,7 @@ export default function JobsTable({
                         <Badge tone="brand">Finding candidates</Badge>
                       </div>
                     ) : r.aiScreening.evaluated === 0 ? (
-                      <span style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.inkSoft }}>—</span>
+                      <span style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.inkSoft }}>None yet</span>
                     ) : (
                       <>
                         <div style={{ display: "flex", alignItems: "center", gap: 5, fontFamily: f.sans, fontSize: textSize.md, fontWeight: 500, color: t.coal }}>
@@ -271,7 +271,7 @@ export default function JobsTable({
                         </div>
                         {r.aiScreening.scoreLow != null && r.aiScreening.scoreHigh != null && (
                           <div style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.inkSoft, marginTop: 1 }}>
-                            Score range {r.aiScreening.scoreLow}–{r.aiScreening.scoreHigh}%
+                            Score range {r.aiScreening.scoreLow} to {r.aiScreening.scoreHigh}%
                           </div>
                         )}
                       </>
@@ -279,7 +279,7 @@ export default function JobsTable({
                   </TableCell>
                   <TableCell style={{ padding: "12px 20px", verticalAlign: "top", whiteSpace: "normal" }}>
                     {r.aiScreening.evaluated === 0 ? (
-                      <span style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.inkSoft }}>—</span>
+                      <span style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.inkSoft }}>None yet</span>
                     ) : r.aiScreening.topMatches > 0 ? (
                       <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-start" }}>
                         <Badge tone="info">Top {r.aiScreening.topMatches}</Badge>

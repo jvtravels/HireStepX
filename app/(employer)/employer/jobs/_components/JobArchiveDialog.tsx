@@ -55,7 +55,7 @@ export default function JobArchiveDialog({
               <RadioGroup aria-labelledby="archive-disposition-label" value={disposition} onValueChange={(v) => onDispositionChange(v === "reject_remaining" ? "reject_remaining" : "keep_candidates")}>
                 <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
                   <RadioGroupItem value="keep_candidates" id="disposition-keep" style={{ marginTop: 2 }} />
-                  <Label htmlFor="disposition-keep" style={{ fontWeight: 400 }}>Keep candidate data — leave every candidate&apos;s status as-is</Label>
+                  <Label htmlFor="disposition-keep" style={{ fontWeight: 400 }}>Keep candidate data: leave every candidate&apos;s status as-is</Label>
                 </div>
                 <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
                   <RadioGroupItem value="reject_remaining" id="disposition-reject" aria-describedby="disposition-reject-help" style={{ marginTop: 2 }} />

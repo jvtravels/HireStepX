@@ -80,7 +80,7 @@ export default function EmployerMessagesV2() {
     const url = await fetchMessageAttachmentUrl(messageId);
     if (!url) {
       win?.close();
-      toast("Couldn't open attachment — please try again", "error");
+      toast("Couldn't open attachment. Please try again.", "error");
       return;
     }
     if (win) win.location.href = url;
@@ -251,7 +251,7 @@ export default function EmployerMessagesV2() {
       setUnlockBlocked(true);
       return;
     }
-    setComposerError(err.status === 403 || err.code === "suspended" ? "Your account is suspended. Contact support to restore access." : err.error || "Couldn't send message — please try again.");
+    setComposerError(err.status === 403 || err.code === "suspended" ? "Your account is suspended. Contact support to restore access." : err.error || "Couldn't send message. Please try again.");
   };
 
   const handleSend = async () => {
@@ -275,7 +275,7 @@ export default function EmployerMessagesV2() {
     if (!activeMatchId) return;
     setComposerError(null);
     if (file.size > ATTACHMENT_MAX_BYTES) {
-      setComposerError(`"${file.name}" is too large — attachments can be 8 MB at most.`);
+      setComposerError(`"${file.name}" is too large. Attachments can be 8 MB at most.`);
       return;
     }
     setAttaching(true);
@@ -294,7 +294,7 @@ export default function EmployerMessagesV2() {
     const uploaded = await uploadMessageAttachment(activeMatchId, { fileName: file.name, contentType: file.type, fileBase64 });
     if ("error" in uploaded) {
       setAttaching(false);
-      setComposerError(uploaded.error || `Couldn't upload "${file.name}" — please try again.`);
+      setComposerError(uploaded.error || `Couldn't upload "${file.name}". Please try again.`);
       return;
     }
     const sent = await sendMessageResult(activeMatchId, {
@@ -582,7 +582,7 @@ export default function EmployerMessagesV2() {
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Report this message</DialogTitle>
-                  <DialogDescription>Flags it for review — e.g. inappropriate content, spam, or off-platform contact info.</DialogDescription>
+                  <DialogDescription>Flags it for review, for example inappropriate content, spam, or off-platform contact info.</DialogDescription>
                 </DialogHeader>
                 <div style={{ display: "grid", gap: 8, padding: "4px 0" }}>
                   <Label htmlFor="msg-flag-reason">Reason</Label>

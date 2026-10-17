@@ -13,7 +13,7 @@
  * Replaces: FinalCTAFooterV2 (HomepageV2, MarketingPagesV2, BlogPage).
  */
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type CSSProperties } from "react";
 import { tokens as t, fonts } from "../auth/_tokens";
 import { openCookieSettings } from "../consent";
 import { copyrightHolder } from "../../data/legal-entity";
@@ -70,8 +70,22 @@ function CookieSettingsButton({ fontSize }: { fontSize: number }) {
   );
 }
 
+const HEADLINE_STYLE: CSSProperties = {
+  margin: 0,
+  fontFamily: fonts.serif,
+  fontSize: 36,
+  fontWeight: 400,
+  lineHeight: 1.2,
+  letterSpacing: "-0.005em",
+  color: t.coal,
+  textAlign: "center",
+  pointerEvents: "auto",
+  maxWidth: 560,
+};
+const HEADLINE_EM_STYLE: CSSProperties = { fontStyle: "italic", color: t.copper };
+
 /* ── Desktop dome footer (≥880px) ── */
-function FooterDomeDesktop() {
+function FooterDomeDesktop({ employer }: { employer: boolean }) {
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
@@ -200,37 +214,36 @@ function FooterDomeDesktop() {
         alignItems: "center",
         pointerEvents: "none",
       }}>
-        <h2 style={{
-          margin: 0,
-          fontFamily: fonts.serif,
-          fontSize: 36,
-          fontWeight: 400,
-          lineHeight: 1.2,
-          letterSpacing: "-0.005em",
-          color: t.coal,
-          textAlign: "center",
-          pointerEvents: "auto",
-          maxWidth: 560,
-        }}>
-          You've done the work.
-          <br />
-          <em style={{ fontStyle: "italic", color: t.copper }}>Now just talk it through.</em>
-        </h2>
-        <p style={{
-          margin: "18px 0 0",
-          maxWidth: 400,
-          fontFamily: fonts.sans,
-          fontSize: 14.5,
-          fontWeight: 400,
-          lineHeight: 1.68,
-          letterSpacing: "-0.004em",
-          color: t.inkSoft,
-          textAlign: "center",
-          pointerEvents: "auto",
-        }}>
-          Knowing the answer and saying it under pressure aren't the same thing.
-          We learned that the hard way too.
-        </p>
+        {employer ? (
+          /* The candidate-addressed headline is wrong for an employer reading
+             /employers, and a second h2 here would also break that page's outline. */
+          <p style={HEADLINE_STYLE}>
+            Hire from candidates who <em style={HEADLINE_EM_STYLE}>practise.</em>
+          </p>
+        ) : (
+          <>
+            <h2 style={HEADLINE_STYLE}>
+              You've done the work.
+              <br />
+              <em style={HEADLINE_EM_STYLE}>Now just talk it through.</em>
+            </h2>
+            <p style={{
+              margin: "18px 0 0",
+              maxWidth: 400,
+              fontFamily: fonts.sans,
+              fontSize: 14.5,
+              fontWeight: 400,
+              lineHeight: 1.68,
+              letterSpacing: "-0.004em",
+              color: t.inkSoft,
+              textAlign: "center",
+              pointerEvents: "auto",
+            }}>
+              Knowing the answer and saying it under pressure aren't the same thing.
+              We learned that the hard way too.
+            </p>
+          </>
+        )}
       </div>
 
       {/* Right column */}
@@ -387,14 +400,14 @@ function FooterDomeMobile() {
 }
 
 /* ── Public export — drop-in replacement for FinalCTAFooterV2 ── */
-export function FooterDome() {
+export function FooterDome({ employer = false }: { employer?: boolean } = {}) {
   return (
     <footer aria-label="Site footer">
       <style>{`
         @media (max-width: 999px) { .fd-desktop { display: none !important; } }
         @media (min-width: 1000px) { .fd-mobile  { display: none !important; } }
       `}</style>
-      <div className="fd-desktop"><FooterDomeDesktop /></div>
+      <div className="fd-desktop"><FooterDomeDesktop employer={employer} /></div>
       <div className="fd-mobile"><FooterDomeMobile /></div>
     </footer>
   );

@@ -14,7 +14,7 @@ export function GeneratingState({ stalled, onRetry }: { stalled: boolean; onRetr
         <p className="m-0 max-w-[460px] text-[15px] text-hx-ink-soft">
           {stalled
             ? "Your job is saved and matching is still running. You haven't been charged. Check again, or come back in a few minutes."
-            : "We're scoring active candidates against this requirement. This usually takes under a minute, and this page updates by itself."}
+            : "We're scoring active candidates against this job. This usually takes under a minute, and this page updates by itself."}
         </p>
         {stalled && (
           <Button type="button" variant="outline" onClick={onRetry} className="mt-1 gap-1.5 pointer-coarse:h-11">
@@ -33,13 +33,13 @@ export function ZeroMatchState({ canEdit, requirementId }: { canEdit: boolean; r
       action={
         canEdit ? (
           <LinkCta variant="outline" href={`/employer/requirements/${requirementId}/edit`}>
-            Edit this requirement
+            Edit this job
           </LinkCta>
         ) : undefined
       }
     >
-      No candidates currently practicing on HireStepX match this requirement closely enough to shortlist. Try widening the location or
-      notice period, or check back as more candidates practice this week. We re-run matching every night.
+      No candidates currently practising on HireStepX match this job closely enough to shortlist. Try widening the location or
+      notice period, or check back as more candidates practise this week. We re-run matching every night.
     </EmptyNote>
   );
 }
@@ -59,7 +59,7 @@ export function FailedState({ requirementId, canEdit }: { requirementId: string;
       }
     >
       Something went wrong generating this shortlist. You haven&apos;t been charged.{" "}
-      {canEdit ? "Saving this posting again will retry the match." : "Editing is turned off while your account is suspended."}
+      {canEdit ? "Saving this job again will retry the match." : "Editing is turned off while your account is suspended."}
     </EmptyNote>
   );
 }
