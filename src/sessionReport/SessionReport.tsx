@@ -11,7 +11,7 @@
    Loaded via `next/dynamic` from `dashboardComponents.tsx`. */
 
 "use client";
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import { track } from "@vercel/analytics";
 import { captureClientEvent } from "../posthogClient";
@@ -227,6 +227,8 @@ export function PreliminaryCard({ p }: { p: PreliminarySummary }) {
   );
 }
 
+const SUPPORT_NOTE_STYLE: CSSProperties = { fontFamily: f.sans, fontSize: 13, color: t.inkSoft, margin: "20px 0 0", lineHeight: 1.55 };
+
 export function ErrorShell({
   message,
   onRetry,
@@ -294,7 +296,7 @@ export function ErrorShell({
         <Button type="button" size="lg" onClick={onRetry}>
           {hasPreliminary ? "Generate full report" : "Build my report"}
         </Button>
-        <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, margin: "20px 0 0", lineHeight: 1.55 }}>
+        <p style={SUPPORT_NOTE_STYLE}>
           Still stuck? Email <CopyEmailLink email="support@hirestepx.com">support@hirestepx.com</CopyEmailLink> and we will build it for you.
           Your session does not count against you.
         </p>
