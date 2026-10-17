@@ -359,7 +359,7 @@ export default function RequirementDetailPage() {
             <h2 id="candidates-heading" className="sr-only">
               Candidates
             </h2>
-            <div ref={trackToolbarHeight} className="-mt-3 flex flex-wrap items-center gap-x-4 gap-y-3 bg-sidebar pt-3 pb-4 min-[1280px]:flex-nowrap md:sticky md:top-0 md:z-20">
+            <div ref={trackToolbarHeight} className="-mt-3 flex flex-wrap items-center gap-x-4 gap-y-3 bg-white pt-3 pb-4 min-[1280px]:flex-nowrap md:sticky md:top-0 md:z-20">
             {hasList && (
               <StatusTabs
                 tabs={tabs}
