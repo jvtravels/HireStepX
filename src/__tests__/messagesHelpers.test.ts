@@ -9,6 +9,9 @@ import {
   isConversationUnread,
   isSelfConversation,
   MAX_MESSAGE_BODY_LEN,
+  redactContactInfo,
+  messageBodyForViewer,
+  CONTACT_REDACTION_MARK,
 } from "../../server-handlers/_messages-helpers";
 
 describe("asMessageBody", () => {
@@ -126,5 +129,32 @@ describe("isSelfConversation", () => {
 
   it("allows distinct parties", () => {
     expect(isSelfConversation("u1", "u2")).toBe(false);
+  });
+});
+
+describe("redactContactInfo", () => {
+  it("masks emails and phone numbers and reports that it did", () => {
+    const r = redactContactInfo("Yes interested, mail me at asha@example.com or call 98765 43210");
+    expect(r.redacted).toBe(true);
+    expect(r.text).not.toContain("asha@example.com");
+    expect(r.text).not.toMatch(/98765/);
+    expect(r.text).toContain(CONTACT_REDACTION_MARK);
+  });
+
+  it("leaves a clean body and empty input untouched", () => {
+    expect(redactContactInfo("Happy to talk on Tuesday")).toEqual({ text: "Happy to talk on Tuesday", redacted: false });
+    expect(redactContactInfo("")).toEqual({ text: "", redacted: false });
+  });
+});
+
+describe("messageBodyForViewer", () => {
+  const body = "reach me at asha@example.com";
+  it("hides contact in a candidate message only while the employer is locked out", () => {
+    expect(messageBodyForViewer(body, "candidate", true)).not.toContain("asha@example.com");
+    expect(messageBodyForViewer(body, "candidate", false)).toBe(body);
+  });
+  it("does not rewrite the employer's own or system messages", () => {
+    expect(messageBodyForViewer(body, "employer", true)).toBe(body);
+    expect(messageBodyForViewer(body, "system", true)).toBe(body);
   });
 });

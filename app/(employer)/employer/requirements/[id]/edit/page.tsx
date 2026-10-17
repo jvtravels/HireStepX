@@ -25,7 +25,7 @@ export default function EditRequirementPage() {
   const load = useCallback(() => {
     let cancelled = false;
     setLoading(true);
-    fetchRequirementDetail(id).then((data) => {
+    fetchRequirementDetail(id, { firstPageOnly: true }).then((data) => {
       if (cancelled) return;
       setRequirement(data);
       setLoading(false);

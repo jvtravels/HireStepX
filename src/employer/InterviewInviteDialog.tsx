@@ -21,14 +21,16 @@ export function canInviteToInterview(status: CandidateStatus): boolean {
    endpoint returns so each failure says what to do next. */
 export function statusErrorCopy(err: { error: string; status?: number; code?: string }): string {
   if (err.code === "unlock_required" || err.status === 402) return "Unlock this candidate before changing their status.";
+  if (err.code === "candidate_withdrew") return "This candidate has withdrawn from employer contact, so you can't invite them.";
   if (err.status === 409) return "This candidate has declined contact, so their status can't be changed.";
   if (err.status === 404) return "This candidate is no longer available.";
   if (err.status === 403 || err.code === "suspended") return "Your account is suspended. Contact support to restore access.";
-  return err.error || "Couldn't update the candidate — please try again.";
+  return err.error || "Couldn't update the candidate. Please try again.";
 }
 
 export interface InviteValues {
-  note?: string;
+  /** Written to the candidate: it is posted in their conversation with the invite. */
+  message?: string;
   scheduledAt?: string;
 }
 
@@ -53,7 +55,7 @@ export default function InterviewInviteDialog({
   /** Extra context shown above the fields (e.g. an unlock-required banner). */
   notice?: ReactNode;
 }) {
-  const [note, setNote] = useState("");
+  const [message, setMessage] = useState("");
   const [date, setDate] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -66,10 +68,10 @@ export default function InterviewInviteDialog({
   const submit = async () => {
     setSubmitting(true);
     setError(null);
-    const res = await onSubmit({ note: note.trim() || undefined, scheduledAt: date || undefined });
+    const res = await onSubmit({ message: message.trim() || undefined, scheduledAt: date || undefined });
     setSubmitting(false);
     if (res.ok) {
-      setNote("");
+      setMessage("");
       setDate("");
       onOpenChange(false);
     } else if (res.message) {
@@ -91,8 +93,9 @@ export default function InterviewInviteDialog({
             <Input id="invite-scheduled-at" type="date" value={date} onClick={openDatePicker} onChange={(e) => setDate(e.target.value)} />
           </div>
           <div style={{ display: "grid", gap: 8 }}>
-            <Label htmlFor="invite-note">Note (optional)</Label>
-            <Textarea id="invite-note" rows={3} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Anything you want on record about this invite…" />
+            <Label htmlFor="invite-message">Message to candidate (optional)</Label>
+            <Textarea id="invite-message" rows={3} maxLength={1000} value={message} onChange={(e) => setMessage(e.target.value)} aria-describedby="invite-message-hint" placeholder="Venue, what to prepare, who they will meet…" />
+            <p id="invite-message-hint" className="m-0 text-xs text-muted-foreground">The candidate sees this with your invite.</p>
           </div>
           {error && (
             <p role="alert" style={{ margin: 0, padding: "8px 10px", borderRadius: 8, background: t.error100, border: `1px solid ${t.errorLine}`, color: t.errorInk, fontFamily: f.sans, fontSize: 13, lineHeight: 1.5 }}>

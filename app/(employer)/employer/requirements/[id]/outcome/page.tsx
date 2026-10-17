@@ -19,12 +19,14 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, Eyebrow, PrimaryCta } from "@/employer/_atoms";
+import { Card, Eyebrow, PrimaryCta, CANDIDATE_STATUS_LABEL } from "@/employer/_atoms";
 import { EmptyNote, ErrorRetry, InlineNotice, LinkCta, PageSkeleton, SuspendedBanner } from "@/employer/_requirementAtoms";
 import { failureMessage, setCandidateStatus } from "@/employer/_requirementCalls";
 import { useEmployerAccess } from "@/employer/_useEmployerAccess";
-import { candidateDisplayName, candidateResponseOf } from "../_components/requirementFormat";
+import { nextCandidateStatuses } from "../../../../../../server-handlers/_employer-candidate-status-helpers";
+import { candidateDisplayName, candidateResponseOf, isFinalStatus, isWithdrawn, reversibilityNote } from "../_components/requirementFormat";
 
 interface OutcomeOption {
   status: CandidateStatus;
@@ -32,38 +34,18 @@ interface OutcomeOption {
   hint: string;
   /** Needs the candidate unlocked first (the server answers 402 otherwise). */
   needsUnlock: boolean;
-  /** Terminal on the server: confirm before submitting. */
-  terminal: boolean;
 }
 
-const OPTIONS: Record<Exclude<CandidateStatus, "shortlisted">, OutcomeOption> = {
-  interview_invited: { status: "interview_invited", label: "Interview invited", hint: "You've asked them to interview.", needsUnlock: true, terminal: false },
-  interviewing: { status: "interviewing", label: "Interviewing", hint: "They're in your interview process.", needsUnlock: true, terminal: false },
-  hired: { status: "hired", label: "Hired", hint: "They accepted an offer.", needsUnlock: true, terminal: true },
-  rejected: { status: "rejected", label: "Rejected", hint: "You decided not to move forward.", needsUnlock: false, terminal: true },
-  not_a_fit: { status: "not_a_fit", label: "Not a fit", hint: "The match wasn't right for this role.", needsUnlock: false, terminal: true },
-  no_response: { status: "no_response", label: "No response", hint: "They didn't reply to you.", needsUnlock: false, terminal: true },
-};
-
-/** Mirrors the transition table enforced by employer-candidate-status. */
-const NEXT: Record<CandidateStatus, Array<keyof typeof OPTIONS>> = {
-  shortlisted: ["interview_invited", "rejected", "not_a_fit"],
-  interview_invited: ["interviewing", "rejected", "not_a_fit", "no_response"],
-  interviewing: ["hired", "rejected", "not_a_fit", "no_response"],
-  hired: [],
-  rejected: [],
-  not_a_fit: [],
-  no_response: [],
-};
-
-const STATUS_NAME: Record<CandidateStatus, string> = {
-  shortlisted: "To review",
-  interview_invited: "Interview invited",
-  interviewing: "Interviewing",
-  hired: "Hired",
-  rejected: "Rejected",
-  not_a_fit: "Not a fit",
-  no_response: "No response",
+/** Wording per target status. Which of these are offered, and which are final,
+ *  comes from the server transition table (nextCandidateStatuses), not from here. */
+const OPTIONS: Record<CandidateStatus, OutcomeOption> = {
+  shortlisted: { status: "shortlisted", label: "Reopen", hint: `Put them back in "${CANDIDATE_STATUS_LABEL.shortlisted}" so you can reconsider.`, needsUnlock: false },
+  interview_invited: { status: "interview_invited", label: CANDIDATE_STATUS_LABEL.interview_invited, hint: "You've asked them to interview.", needsUnlock: true },
+  interviewing: { status: "interviewing", label: CANDIDATE_STATUS_LABEL.interviewing, hint: "They're in your interview process.", needsUnlock: true },
+  hired: { status: "hired", label: CANDIDATE_STATUS_LABEL.hired, hint: "They accepted an offer.", needsUnlock: true },
+  rejected: { status: "rejected", label: CANDIDATE_STATUS_LABEL.rejected, hint: "You decided not to move forward. You can reopen this later.", needsUnlock: false },
+  not_a_fit: { status: "not_a_fit", label: CANDIDATE_STATUS_LABEL.not_a_fit, hint: "The match wasn't right for this job.", needsUnlock: false },
+  no_response: { status: "no_response", label: CANDIDATE_STATUS_LABEL.no_response, hint: "They didn't reply to you.", needsUnlock: false },
 };
 
 const OUTCOME_CSS = `
@@ -83,8 +65,10 @@ export default function OutcomeFeedbackPage() {
 
   const [requirement, setRequirement] = useState<Requirement | null>(null);
   const [loading, setLoading] = useState(true);
-  const [choice, setChoice] = useState<keyof typeof OPTIONS | "">("");
+  const [choice, setChoice] = useState<CandidateStatus | "">("");
   const [notes, setNotes] = useState("");
+  const [tellCandidate, setTellCandidate] = useState(false);
+  const [candidateMessage, setCandidateMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -128,7 +112,9 @@ export default function OutcomeFeedbackPage() {
   if (!candidate) {
     return (
       <EmptyNote title="Candidate not found" action={<LinkCta variant="outline" href={backHref}>Back to shortlist</LinkCta>}>
-        This candidate isn&apos;t on the shortlist for {requirement.title}. Open this page from a candidate on the shortlist.
+        {requirement.nextPage
+          ? `This candidate isn't among the ${requirement.candidates.length} loaded of ${requirement.total ?? requirement.candidates.length} for ${requirement.title}. Open this page from a candidate on the shortlist.`
+          : `This candidate isn't on the shortlist for ${requirement.title}. Open this page from a candidate on the shortlist.`}
       </EmptyNote>
     );
   }
@@ -136,16 +122,24 @@ export default function OutcomeFeedbackPage() {
   const current: CandidateStatus = candidate.candidateStatus ?? "shortlisted";
   const name = candidateDisplayName(candidate);
   const declined = candidateResponseOf(candidate) === "declined";
-  const available = NEXT[current];
+  const withdrew = isWithdrawn(candidate);
+  // A candidate who declined or withdrew can still be closed out, but never invited.
+  const available = nextCandidateStatuses(current).filter((s) => !((declined || withdrew) && s === "interview_invited"));
   const selected = choice ? OPTIONS[choice] : null;
-  const blocked = access.suspended || declined;
+  const blocked = access.suspended;
 
   const save = async () => {
     if (!selected) return;
     setConfirmOpen(false);
     setSubmitting(true);
     setError(null);
-    const result = await setCandidateStatus(candidate.id, { candidateStatus: selected.status, note: notes.trim() || undefined });
+    // `note` is private to the employer. `candidateMessage` is sent explicitly
+    // (empty when unchecked) so the server never mistakes the note for a message to the candidate.
+    const result = await setCandidateStatus(candidate.id, {
+      candidateStatus: selected.status,
+      note: notes.trim() || undefined,
+      candidateMessage: tellCandidate ? candidateMessage.trim() : "",
+    });
     setSubmitting(false);
     if (!result.ok) {
       setError(failureMessage("status", result, { tier: access.tier, limit: undefined }));
@@ -156,7 +150,7 @@ export default function OutcomeFeedbackPage() {
 
   const onSubmit = () => {
     if (!selected || blocked) return;
-    if (selected.terminal) setConfirmOpen(true);
+    if (isFinalStatus(selected.status)) setConfirmOpen(true);
     else void save();
   };
 
@@ -166,7 +160,7 @@ export default function OutcomeFeedbackPage() {
         <div role="status" aria-live="polite">
           <h1 style={{ fontFamily: f.sans, fontSize: textSize["2xl"], color: t.coal, margin: "0 0 8px" }}>Outcome saved</h1>
           <p style={{ fontFamily: f.sans, fontSize: textSize.md, color: t.inkSoft, margin: "0 0 20px", overflowWrap: "anywhere" }}>
-            {name} is now marked as {STATUS_NAME[savedStatus].toLowerCase()} for {requirement.title}. This helps us improve future shortlists.
+            {name} is now marked as {CANDIDATE_STATUS_LABEL[savedStatus].toLowerCase()} for {requirement.title}. {isFinalStatus(savedStatus) ? "" : reversibilityNote(savedStatus)}
           </p>
         </div>
         <style>{OUTCOME_CSS}</style>
@@ -188,19 +182,19 @@ export default function OutcomeFeedbackPage() {
       <p style={{ fontFamily: f.sans, fontSize: textSize.md, color: t.inkSoft, margin: "0 0 20px", overflowWrap: "anywhere" }}>{requirement.title}</p>
 
       <Card aria-label="Record an outcome">
-        {declined && (
+        {(declined || withdrew) && (
           <div style={{ marginBottom: 16 }}>
-            <InlineNotice tone="warning" title="This candidate declined">
-              They chose not to be contacted for this role, so their status can&apos;t be changed any further.
+            <InlineNotice tone="warning" title={withdrew ? "This candidate withdrew" : "This candidate declined"}>
+              {withdrew ? "They withdrew from employer contact" : "They chose not to be contacted for this job"}, so you can&apos;t invite them. You can still close them out.
             </InlineNotice>
           </div>
         )}
-        {!declined && available.length === 0 ? (
-          <InlineNotice tone="info" title={`Already ${STATUS_NAME[current].toLowerCase()}`}>
+        {available.length === 0 ? (
+          <InlineNotice tone="info" title={`Already ${CANDIDATE_STATUS_LABEL[current].toLowerCase()}`}>
             {name} is in a final status, so there is no further outcome to record.
           </InlineNotice>
         ) : (
-          !declined && (
+          (
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -209,14 +203,14 @@ export default function OutcomeFeedbackPage() {
               style={{ display: "flex", flexDirection: "column", gap: 18 }}
             >
               <p style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.inkSoft, margin: 0 }}>
-                Current status: <strong style={{ color: t.coal }}>{STATUS_NAME[current]}</strong>
+                Current status: <strong style={{ color: t.coal }}>{CANDIDATE_STATUS_LABEL[current]}</strong>
               </p>
               <fieldset style={{ border: 0, margin: 0, padding: 0, minWidth: 0 }}>
                 <legend style={{ fontFamily: f.sans, fontSize: textSize.base, fontWeight: 600, color: t.coal, marginBottom: 8, padding: 0 }}>
                   Outcome <span aria-hidden="true">*</span>
                   <span className="sr-only"> (required)</span>
                 </legend>
-                <RadioGroup value={choice} onValueChange={(v) => { setChoice(v as keyof typeof OPTIONS); setError(null); }} required aria-required="true" disabled={blocked}>
+                <RadioGroup value={choice} onValueChange={(v) => { setChoice(v as CandidateStatus); setError(null); }} required aria-required="true" disabled={blocked}>
                   {available.map((key) => {
                     const o = OPTIONS[key];
                     const locked = o.needsUnlock && !candidate.unlocked;
@@ -236,16 +230,42 @@ export default function OutcomeFeedbackPage() {
                 </RadioGroup>
               </fieldset>
               <div style={{ display: "grid", gap: 8 }}>
-                <Label htmlFor="outcome-notes">Notes (optional)</Label>
+                <Label htmlFor="outcome-notes">Private note (optional)</Label>
                 <Textarea
                   id="outcome-notes"
-                  rows={4}
+                  rows={3}
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   disabled={blocked}
-                  placeholder="Anything that would help us improve future shortlists?"
+                  placeholder="Why this outcome? Only your team can see this."
+                  aria-describedby="outcome-notes-hint"
                 />
+                <p id="outcome-notes-hint" className="m-0 text-xs text-muted-foreground">
+                  Internal only. The candidate never sees this note.
+                </p>
               </div>
+              {selected && selected.status !== "shortlisted" && (
+                <div style={{ display: "grid", gap: 8 }}>
+                  <label htmlFor="outcome-tell" className="flex cursor-pointer items-center gap-2 text-sm font-medium">
+                    <Checkbox id="outcome-tell" checked={tellCandidate} onCheckedChange={(v) => setTellCandidate(v === true)} disabled={blocked} />
+                    Also send a message to the candidate
+                  </label>
+                  {tellCandidate && (
+                    <>
+                      <Label htmlFor="outcome-message">Message to candidate</Label>
+                      <Textarea
+                        id="outcome-message"
+                        rows={3}
+                        maxLength={1000}
+                        value={candidateMessage}
+                        onChange={(e) => setCandidateMessage(e.target.value)}
+                        disabled={blocked}
+                        placeholder="The candidate will see this in their conversation with you."
+                      />
+                    </>
+                  )}
+                </div>
+              )}
               <div aria-live="polite">
                 {error && (
                   <InlineNotice tone="error" title="Couldn't save this outcome" live={false}>
@@ -265,7 +285,7 @@ export default function OutcomeFeedbackPage() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Mark {name} as {selected ? selected.label.toLowerCase() : "this outcome"}?</AlertDialogTitle>
-            <AlertDialogDescription>This is a final status. It can&apos;t be changed afterwards.</AlertDialogDescription>
+            <AlertDialogDescription>{selected ? reversibilityNote(selected.status) : ""}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>

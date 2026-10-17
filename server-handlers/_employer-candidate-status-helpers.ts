@@ -32,6 +32,64 @@ export function asCandidateStatusNote(v: unknown): string | null {
   return typeof v === "string" ? v.trim().slice(0, 2000) : null;
 }
 
+/** Validated read of the optional message the employer chose to show the
+ *  candidate. Distinct from `note`, which is a private internal note. */
+export function asCandidateMessage(v: unknown): string | null {
+  if (typeof v !== "string") return null;
+  const t = v.trim().slice(0, 1000);
+  return t.length > 0 ? t : null;
+}
+
+/** Splits what the employer typed into the two audiences.
+ *  - `privateNote`: employer-only (stored on the match, never posted to the
+ *    candidate thread or the candidate-visible event history).
+ *  - `candidateMessage`: shown to the candidate. It is only ever set by an
+ *    explicit `candidateMessage` field, with one exception: an interview
+ *    invite's `note` has always been the schedule note addressed to the
+ *    candidate, so an invite that sends only `note` keeps delivering it. */
+export function splitStatusNotes(
+  status: CandidateStatus,
+  rawNote: unknown,
+  rawCandidateMessage: unknown,
+): { privateNote: string | null; candidateMessage: string | null } {
+  const privateNote = asCandidateStatusNote(rawNote);
+  const explicit = asCandidateMessage(rawCandidateMessage);
+  if (explicit !== null) return { privateNote, candidateMessage: explicit };
+  if (status === "interview_invited" && rawCandidateMessage === undefined) {
+    return { privateNote, candidateMessage: privateNote && privateNote.length > 0 ? privateNote : null };
+  }
+  return { privateNote, candidateMessage: null };
+}
+
+/** The system message posted into the candidate-visible thread for a status
+ *  change. Only `candidateMessage` is ever quoted — never the private note.
+ *  Null for statuses with nothing worth announcing. */
+export function threadMessageFor(
+  candidateStatus: string,
+  candidateMessage: string | null,
+  interviewScheduledAt: string | null,
+): string | null {
+  const said = candidateMessage ? ` Message from the employer: "${candidateMessage}"` : "";
+  switch (candidateStatus) {
+    case "interview_invited": {
+      const when = interviewScheduledAt ? ` for ${new Date(interviewScheduledAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}` : "";
+      return `📅 Interview invite sent${when}.${said}`;
+    }
+    case "interviewing":
+      return `🗣️ Candidate marked as interviewing.${said}`;
+    case "hired":
+      return `🎉 Candidate marked as hired.${said}`;
+    case "rejected":
+      return `Application status updated: Rejected.${said}`;
+    case "not_a_fit":
+      return `Application status updated: Not a fit.${said}`;
+    case "no_response":
+      return `Application status updated: No response.${said}`;
+    default:
+      return null;
+  }
+}
+
 /** Validated read of an optional interview-scheduled-at timestamp: must be
  *  a value `Date` can parse. Returns null for anything else (including
  *  "not supplied"), so it stores as a real SQL NULL rather than a garbage

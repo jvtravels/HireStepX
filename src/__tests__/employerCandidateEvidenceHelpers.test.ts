@@ -357,6 +357,22 @@ describe("roleTokens / roleMatches", () => {
     expect(roleMatches("Engineering Manager", "Product Designer")).toBe("no");
   });
 
+  it("treats software-engineering disciplines as one role family for session credit", () => {
+    expect(roleMatches("Backend Developer", "Software Engineer")).toBe("yes");
+    expect(roleMatches("Software Developer", "Backend Engineer")).toBe("yes");
+    expect(roleMatches("SDE", "Backend Developer")).toBe("yes");
+    expect(roleMatches("Back-end Developer", "Software Engineer")).toBe("yes");
+    expect(roleMatches("UI Developer", "Frontend Engineer")).toBe("yes");
+    expect(roleMatches("Full Stack Developer", "Frontend Developer")).toBe("yes");
+  });
+
+  it("keeps unrelated or only-loosely-related roles apart", () => {
+    expect(roleMatches("Frontend Developer", "Backend Developer")).toBe("no");
+    expect(roleMatches("Data Analyst", "Business Analyst")).toBe("no");
+    expect(roleMatches("Data Engineer", "Software Engineer")).toBe("no");
+    expect(roleMatches("UI Designer", "Frontend Developer")).toBe("no");
+  });
+
   it("is unknown when either side has no usable role text", () => {
     expect(roleMatches("", "Software Engineer")).toBe("unknown");
     expect(roleMatches("Software Engineer", null)).toBe("unknown");

@@ -5,7 +5,7 @@ import type { ActionNotice } from "./useCandidateDetail";
 import type { CandidateStatus } from "@/employer/mockData";
 import { useToast } from "@/Toast";
 
-type ChangeStatus = (c: { status: CandidateStatus; note?: string; scheduledAt?: string }) => Promise<boolean>;
+type ChangeStatus = (c: { status: CandidateStatus; note?: string; candidateMessage?: string; scheduledAt?: string }) => Promise<boolean>;
 
 /** Wires the two dialogs to `changeStatus` and owns the success toasts, so the
  *  dialogs stay presentational and the page stays small. */
@@ -36,8 +36,8 @@ export function CandidateDialogsHost({
         notice={notice ? <ActionNoticeAlert notice={notice} shortlistHref={shortlistHref} /> : null}
         open={dialog === "invite"}
         onOpenChange={(o) => !o && onClose()}
-        onSubmit={async ({ note, scheduledAt }) => {
-          const ok = await changeStatus({ status: "interview_invited", note, scheduledAt });
+        onSubmit={async ({ message, scheduledAt }) => {
+          const ok = await changeStatus({ status: "interview_invited", candidateMessage: message, scheduledAt });
           if (ok) toast("Interview invite sent", "success");
           return { ok };
         }}
@@ -46,8 +46,8 @@ export function CandidateDialogsHost({
         {...common}
         open={dialog === "reject"}
         onOpenChange={(o) => !o && onClose()}
-        onSubmit={async ({ note }) => {
-          const ok = await changeStatus({ status: "rejected", note });
+        onSubmit={async ({ note, candidateMessage }) => {
+          const ok = await changeStatus({ status: "rejected", note, candidateMessage });
           if (ok) toast("Candidate marked as rejected", "success");
           return ok;
         }}

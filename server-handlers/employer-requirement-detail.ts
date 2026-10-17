@@ -52,6 +52,8 @@ import {
   maskedCandidateName,
   checkEmployerAllowance,
   suspendedAllowance,
+  requirementNeedsRematch,
+  NO_REMATCH_DETAIL,
   chunk,
   inList,
   LOCKED_MASKED_FIELDS,
@@ -196,13 +198,24 @@ export default async function handler(req: Request): Promise<Response> {
       id: string; candidate_user_id: string; match_score: number; roster_score: number; unlocked: boolean; unlocked_at: string | null;
       candidate_status: string; candidate_status_note: string | null; interview_scheduled_at: string | null;
       candidate_status_updated_at: string | null; created_at: string | null;
+      candidate_response?: string | null;
     };
     // Light columns only, keyset-paginated: the heavy profile/session reads
     // below run for the requested page, not the whole shortlist.
-    const matchesRead = await fetchKeyset<MatchRow & Record<string, unknown>>({
-      baseUrl: `${SUPABASE_URL}/rest/v1/requirement_matches?requirement_id=eq.${encodeURIComponent(requirementId)}&select=id,candidate_user_id,match_score,roster_score,unlocked,unlocked_at,candidate_status,candidate_status_note,interview_scheduled_at,candidate_status_updated_at,created_at`,
+    const MATCH_COLUMNS = "id,candidate_user_id,match_score,roster_score,unlocked,unlocked_at,candidate_status,candidate_status_note,interview_scheduled_at,candidate_status_updated_at,created_at";
+    const readMatches = (columns: string) => fetchKeyset<MatchRow & Record<string, unknown>>({
+      baseUrl: `${SUPABASE_URL}/rest/v1/requirement_matches?requirement_id=eq.${encodeURIComponent(requirementId)}&select=${columns}`,
       headers: serviceHeaders(), keyField: "id", pageSize: 1000, maxRows: 5000,
     });
+    // candidate_response ships in its own migration: if it is not applied yet
+    // the read fails, so retry without it and report the response as unknown
+    // (null) rather than failing the whole page.
+    let matchesRead = await readMatches(`${MATCH_COLUMNS},candidate_response`);
+    let responseKnown = true;
+    if (matchesRead.failed) {
+      responseKnown = false;
+      matchesRead = await readMatches(MATCH_COLUMNS);
+    }
     if (matchesRead.failed) throw new Error("matches read failed");
     const allMatches: MatchRow[] = matchesRead.rows;
 
@@ -261,6 +274,21 @@ export default async function handler(req: Request): Promise<Response> {
       for (const r of fileRows) if (r.resumes?.user_id) withResumeFile.add(r.resumes.user_id);
     }
 
+    /* Matches whose paid unlock was already refunded as account credit: the
+       employer got their money back, so the contact details stop being theirs
+       to export. Best-effort — the ledger is an optional table. */
+    const refundedMatchIds = new Set<string>();
+    const unlockedMatchIds = pageMatches.filter((m) => m.unlocked).map((m) => m.id);
+    for (const batch of chunk(unlockedMatchIds, 100)) {
+      const ledgerRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/employer_credit_ledger?employer_id=eq.${encodeURIComponent(auth.userId)}&kind=eq.refund&match_id=in.(${inList(batch)})&select=match_id`,
+        { headers: serviceHeaders() },
+      ).catch(() => null);
+      if (!ledgerRes || !ledgerRes.ok) continue;
+      const ledgerRows = (await ledgerRes.json().catch(() => [])) as Array<{ match_id: string | null }>;
+      for (const r of ledgerRows) if (r.match_id) refundedMatchIds.add(r.match_id);
+    }
+
     const candidates = pageMatches.map((m) => {
       const profile = profileById.get(m.candidate_user_id);
       const timestamps = Array.isArray(profile?.practice_timestamps) ? profile!.practice_timestamps : [];
@@ -302,7 +330,9 @@ export default async function handler(req: Request): Promise<Response> {
         resume,
         candidateStatus: m.candidate_status,
         candidateStatusNote: m.candidate_status_note,
+        candidateResponse: responseKnown ? (m.candidate_response ?? "none") : null,
         interviewScheduledAt: m.interview_scheduled_at,
+        creditRefunded: refundedMatchIds.has(m.id),
         waitingSince: later(later(m.candidate_status_updated_at, m.unlocked_at), m.created_at),
         // Additive: what was withheld for a locked match, and whether a paid
         // candidate has since withdrawn employer visibility.
@@ -673,7 +703,25 @@ async function handlePatch(req: Request, requirementId: string, userId: string, 
     // to "generating" and rerun full candidate matching — that resets a
     // pipeline stage the employer deliberately advanced past, for no
     // benefit (the pipeline no longer needs fresh candidates at that point).
-    const skipRematch = existing.stage === "interviewing" || existing.stage === "hired";
+    const stageFrozen = existing.stage === "interviewing" || existing.stage === "hired";
+    // Re-running matching also costs rematch budget and flips the status to
+    // "generating", so only do it when the edit changed something matching
+    // reads (or the last run never finished). A due-date extension, a perk,
+    // a budget fix or a department rename leaves every score as it was.
+    const needsRematch = !stageFrozen && requirementNeedsRematch(
+      {
+        title: existing.title, description: existing.description, skills: existing.skills,
+        customSkillSets: existing.custom_skill_sets, locations: existing.locations, workMode: existing.work_mode,
+        experienceMin: existing.experience_min, experienceMax: existing.experience_max,
+        minReadinessBand: existing.min_readiness_band, minStarCompleteness: existing.min_star_completeness,
+        employmentType: existing.employment_type,
+      },
+      {
+        title, description, skills, customSkillSets, locations, workMode, experienceMin, experienceMax,
+        minReadinessBand, minStarCompleteness, employmentType,
+      },
+      existing.status,
+    );
 
     if (!isValidRequirementInput(title, locations, description)) {
       return new Response(JSON.stringify({ error: `title, at least one location, and a role description (min ${MIN_DESCRIPTION_LENGTH} characters) are required` }), { status: 400, headers });
@@ -691,7 +739,7 @@ async function handlePatch(req: Request, requirementId: string, userId: string, 
     // Gates run before any write. Suspended = read-only even for a no-rematch
     // edit; otherwise an edit that re-runs matching spends rematch budget.
     if (isSuspendedEmployer(existing.employers)) return denyResponse(suspendedAllowance(), headers);
-    if (!skipRematch) {
+    if (needsRematch) {
       const allowance = await checkEmployerAllowance({
         supabaseUrl: SUPABASE_URL, headers: serviceHeaders(), employerId: userId, employer: existing.employers,
         needsOpenSlot: false, needsRematch: true,
@@ -699,12 +747,14 @@ async function handlePatch(req: Request, requirementId: string, userId: string, 
       if (!allowance.ok) return denyResponse(allowance, headers);
     }
 
-    const patchRes = await fetch(`${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}`, {
+    // status=neq.closed: an archive that landed since the read above wins
+    // instead of being overwritten by this edit.
+    const patchRes = await fetch(`${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&employer_id=eq.${encodeURIComponent(userId)}&status=neq.closed`, {
       method: "PATCH",
       headers: { ...serviceHeaders(), "Content-Type": "application/json", Prefer: "return=representation" },
       body: JSON.stringify({
         title, location, department, notice_period_pref: noticePeriodPref, description,
-        ...(skipRematch ? {} : { status: "generating" }),
+        ...(needsRematch ? { status: "generating" } : {}),
         experience_min: experienceMin, experience_max: experienceMax, due_date: dueDate,
         budget_min: budgetMin, budget_max: budgetMax,
         locations, open_positions: openPositions, work_mode: workMode, skills,
@@ -725,18 +775,21 @@ async function handlePatch(req: Request, requirementId: string, userId: string, 
     }
     const updated = (await patchRes.json()) as RequirementRow[];
     const requirement = updated[0];
+    if (!requirement) {
+      return new Response(JSON.stringify({ error: "Closed requirements can't be edited" }), { status: 409, headers });
+    }
 
-    const finalStatus = skipRematch
-      ? existing.status
-      : await runMatching(
+    const finalStatus = needsRematch
+      ? await runMatching(
           requirementId,
           {
             title, location, description, skills, experienceMin, experienceMax, minReadinessBand, minStarCompleteness,
-            employmentType, durationWeeks, hoursPerWeek,
+            employmentType, durationWeeks, hoursPerWeek, customSkills: customSkillSets, workMode,
           },
           userId,
-        );
-    await logRequirementActivity(requirementId, userId, "updated");
+        )
+      : existing.status;
+    await logRequirementActivity(requirementId, userId, "updated", needsRematch ? undefined : NO_REMATCH_DETAIL);
 
     return new Response(
       JSON.stringify({

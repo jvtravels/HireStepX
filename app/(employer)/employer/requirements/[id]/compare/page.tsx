@@ -103,7 +103,7 @@ const ROWS: CompareRow[] = [
         {c.interviewScheduledAt && (
           <div style={mutedText}>Interview {new Date(c.interviewScheduledAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}</div>
         )}
-        {c.candidateStatusNote && <div style={mutedText}>Note: {c.candidateStatusNote}</div>}
+        {c.candidateStatusNote && <div style={mutedText}>Private note: {c.candidateStatusNote}</div>}
       </>
     ),
   },

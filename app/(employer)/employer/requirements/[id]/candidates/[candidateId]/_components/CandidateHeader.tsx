@@ -76,7 +76,9 @@ export function CandidateHeader({
 }) {
   const resume = candidate.resume;
   const displayName = maskedName(candidate);
-  const response = declined ? "declined" : readCandidateResponse(candidate);
+  const withdrew = candidate.candidateWithdrew === true;
+  const serverResponse = readCandidateResponse(candidate);
+  const response = withdrew ? serverResponse : declined ? "declined" : serverResponse;
   const links = candidate.unlocked ? candidateLinks(candidate) : [];
   const canInvite = canInviteToInterview(candidate.candidateStatus);
   const canReject = !["hired", "rejected", "not_a_fit"].includes(candidate.candidateStatus);
@@ -84,7 +86,9 @@ export function CandidateHeader({
   const blockedReason = suspended
     ? "Actions are unavailable while your account is suspended."
     : declined && canInvite
-      ? "Invite is disabled because this candidate declined contact."
+      ? withdrew
+        ? "Invite is disabled because this candidate withdrew from employer contact."
+        : "Invite is disabled because this candidate declined contact."
       : null;
 
   const meta: MetaPart[] = [];
@@ -110,7 +114,8 @@ export function CandidateHeader({
               <h1 className="m-0 text-[clamp(22px,5vw,26px)] leading-tight font-bold tracking-[-0.02em] text-hx-coal [overflow-wrap:anywhere]">{displayName}</h1>
               <CandidateStatusChip status={candidate.candidateStatus} />
               {response === "interested" && <Badge tone="success">Candidate is interested</Badge>}
-              {response === "declined" && <Badge tone="error">Declined contact</Badge>}
+              {response === "declined" && !withdrew && <Badge tone="error">Declined contact</Badge>}
+              {withdrew && <Badge tone="error">Withdrew from employer contact</Badge>}
             </div>
           </div>
         </div>

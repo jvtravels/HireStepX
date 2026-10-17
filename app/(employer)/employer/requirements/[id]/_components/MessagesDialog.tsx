@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
-import { useEmployerData, type ConversationMessage } from "@/employer/EmployerDataContext";
+import { useEmployerData, type ConversationContext, type ConversationMessage } from "@/employer/EmployerDataContext";
 import { OutlineCta, PrimaryCta } from "@/employer/_atoms";
 import { InlineNotice } from "@/employer/_requirementAtoms";
 import { failureMessage, getMessages, postFlagMessage, postMessage } from "@/employer/_requirementCalls";
@@ -37,6 +37,7 @@ export default function MessagesDialog({
 }) {
   const { uploadMessageAttachment } = useEmployerData();
   const [messages, setMessages] = useState<ConversationMessage[]>([]);
+  const [context, setContext] = useState<ConversationContext | null>(null);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
@@ -57,6 +58,7 @@ export default function MessagesDialog({
     const res = await getMessages(id);
     if (res.ok) {
       setMessages(res.data.messages);
+      setContext(res.data.context);
       setLoadError(null);
     } else if (initial) {
       setLoadError(failureMessage("message", res));
@@ -67,6 +69,7 @@ export default function MessagesDialog({
   useEffect(() => {
     if (!matchId) return;
     setMessages([]);
+    setContext(null);
     setDraft("");
     setSendError(null);
     setReportingId(null);
@@ -81,7 +84,14 @@ export default function MessagesDialog({
     if (el) el.scrollTop = el.scrollHeight;
   }, [messages.length]);
 
-  const composerOff = suspended || sending || attaching;
+  // Earlier messages stay readable, but the server refuses new ones once the candidate withdrew or declined.
+  const closedReason = context?.candidateWithdrew
+    ? "This candidate has withdrawn from employer contact, so you can't send new messages. Earlier messages stay readable."
+    : context?.candidateResponse === "declined"
+      ? "This candidate declined contact for this job, so you can't send new messages."
+      : null;
+  const closed = closedReason != null;
+  const composerOff = suspended || closed || sending || attaching;
 
   const handleSend = async () => {
     const text = draft.trim();
@@ -101,7 +111,7 @@ export default function MessagesDialog({
   const handleAttach = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = "";
-    if (!file || !matchId || suspended) return;
+    if (!file || !matchId || suspended || closed) return;
     setSendError(null);
     if (file.size > MAX_ATTACHMENT_BYTES) {
       setSendError("That file is too large. The limit is 8 MB.");
@@ -188,7 +198,7 @@ export default function MessagesDialog({
               <Skeleton aria-hidden="true" style={{ height: 40, width: "45%", alignSelf: "flex-end" }} />
             </>
           )}
-          {!loading && !loadError && messages.length === 0 && (
+          {!loading && !loadError && messages.length === 0 && !closed && (
             <p style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.inkFaint, margin: 0 }}>No messages yet. Say hello below.</p>
           )}
           {messages.map((m) => {
@@ -212,6 +222,9 @@ export default function MessagesDialog({
                     <PaperclipIcon size={12} style={{ display: "inline", marginRight: 4 }} aria-hidden="true" />
                     {m.attachmentName || "Attachment"}
                   </div>
+                )}
+                {m.contactRedacted && (
+                  <p className="m-0 mt-1 text-[12px] text-hx-ink-soft">Contact details unlock after you unlock this candidate.</p>
                 )}
                 <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 8, marginTop: 4 }}>
                   <time dateTime={m.createdAt} style={{ fontFamily: f.sans, fontSize: textSize.sm, color: t.inkFaint }}>
@@ -284,6 +297,11 @@ export default function MessagesDialog({
               Messaging is turned off while your employer account is suspended.
             </InlineNotice>
           )}
+          {closedReason && (
+            <InlineNotice tone="warning" live={false}>
+              {closedReason}
+            </InlineNotice>
+          )}
           {sendError && <InlineNotice tone="error">{sendError}</InlineNotice>}
           <Label htmlFor="message-draft" className="sr-only">
             Message to {displayName}
@@ -294,7 +312,7 @@ export default function MessagesDialog({
             onChange={(e) => setDraft(e.target.value)}
             placeholder="Write a message…"
             rows={2}
-            disabled={suspended}
+            disabled={suspended || closed}
             aria-describedby="message-draft-hint"
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
@@ -312,7 +330,7 @@ export default function MessagesDialog({
                 id="message-attachment"
                 type="file"
                 onChange={handleAttach}
-                disabled={suspended || attaching || sending}
+                disabled={suspended || closed || attaching || sending}
                 className="peer sr-only"
               />
               <label

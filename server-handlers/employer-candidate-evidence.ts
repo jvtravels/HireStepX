@@ -171,7 +171,17 @@ export default async function handler(req: Request): Promise<Response> {
       const d = DENIED_STATUS[decision.reason];
       return new Response(JSON.stringify({ error: d.error }), { status: d.status, headers });
     }
-    const { match, unlocked } = decision.access;
+    const { match, unlocked, candidateWithdrew } = decision.access;
+    // A paid candidate who switched employer visibility off closes evidence
+    // (the snapshot already listed on the job stays; new practice data does
+    // not flow). Checked before the view event / candidate notification so a
+    // withdrawn candidate is never told someone looked.
+    if (candidateWithdrew) {
+      return new Response(
+        JSON.stringify({ error: "This candidate has withdrawn from employer contact, so their practice evidence is no longer available.", code: "candidate_withdrew" }),
+        { status: 409, headers },
+      );
+    }
     const candidateUserId = match.candidate_user_id;
 
     void captureServerEvent("employer_candidate_viewed", auth.userId, {

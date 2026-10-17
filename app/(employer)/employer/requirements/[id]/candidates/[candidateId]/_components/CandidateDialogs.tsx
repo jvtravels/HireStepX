@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -25,8 +26,10 @@ export function RejectDialog({
   notice,
   shortlistHref,
   onSubmit,
-}: Common & { onSubmit: (v: { note?: string }) => Promise<boolean> }) {
+}: Common & { onSubmit: (v: { note?: string; candidateMessage?: string }) => Promise<boolean> }) {
   const [note, setNote] = useState("");
+  const [tellCandidate, setTellCandidate] = useState(false);
+  const [candidateMessage, setCandidateMessage] = useState("");
   const [reasons, setReasons] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
@@ -34,12 +37,15 @@ export function RejectDialog({
 
   const submit = async () => {
     setSubmitting(true);
-    const ok = await onSubmit({ note: composeRejectNote(reasons, note) });
+    // The reasons and detail are an internal record; only the opt-in message below reaches the candidate.
+    const ok = await onSubmit({ note: composeRejectNote(reasons, note), candidateMessage: tellCandidate ? candidateMessage.trim() : "" });
     setSubmitting(false);
     if (ok) {
       onOpenChange(false);
       setNote("");
       setReasons([]);
+      setTellCandidate(false);
+      setCandidateMessage("");
     }
   };
 
@@ -48,12 +54,12 @@ export function RejectDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Reject this candidate?</DialogTitle>
-          <DialogDescription>Marks {displayName} as rejected for {requirementTitle}. This can't be undone from here.</DialogDescription>
+          <DialogDescription>Marks {displayName} as rejected for {requirementTitle}. You can reopen a rejected candidate later from the Stage menu.</DialogDescription>
         </DialogHeader>
         {notice && <ActionNoticeAlert notice={notice} shortlistHref={shortlistHref} />}
         <div className="grid gap-4 py-1">
           <fieldset className="m-0 grid gap-2 border-0 p-0">
-            <legend className="mb-2 p-0 text-sm font-medium text-hx-coal">Why? (optional, pick any)</legend>
+            <legend className="mb-2 p-0 text-sm font-medium text-hx-coal">Why? Private, your team only (optional)</legend>
             <div className="flex flex-wrap gap-1.5">
               {REJECT_REASONS.map((reason) => {
                 const on = reasons.includes(reason);
@@ -75,8 +81,20 @@ export function RejectDialog({
             </div>
           </fieldset>
           <div className="grid gap-2">
-            <Label htmlFor="reject-note">Add detail (optional)</Label>
-            <Textarea id="reject-note" rows={3} maxLength={1500} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Anything else you want on record about this decision…" />
+            <Label htmlFor="reject-note">Private note (optional)</Label>
+            <Textarea id="reject-note" rows={3} maxLength={1500} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Anything else you want on record. The candidate never sees this." />
+          </div>
+          <div className="grid gap-2">
+            <label htmlFor="reject-tell" className="flex cursor-pointer items-center gap-2 text-sm font-medium">
+              <Checkbox id="reject-tell" checked={tellCandidate} onCheckedChange={(v) => setTellCandidate(v === true)} />
+              Also send a message to the candidate
+            </label>
+            {tellCandidate && (
+              <>
+                <Label htmlFor="reject-message">Message to candidate</Label>
+                <Textarea id="reject-message" rows={3} maxLength={1000} value={candidateMessage} onChange={(e) => setCandidateMessage(e.target.value)} placeholder="The candidate will see this in their conversation with you." />
+              </>
+            )}
           </div>
         </div>
         <DialogFooter>

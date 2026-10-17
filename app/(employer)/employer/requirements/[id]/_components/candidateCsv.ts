@@ -12,9 +12,12 @@ export function csvCell(value: string | number | null | undefined): string {
   return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 }
 
-/** Only unlocked candidates are exported; a locked one has no name or contact the employer has paid for. */
+/** Only candidates whose contact the employer still holds are exported. A locked one was never paid for; a
+    refunded unlock (credit returned because they couldn't be reached) or a candidate who withdrew from
+    employer contact is no longer one, even though `unlocked` stays true. The server doesn't return their
+    contact either, so leaving the row out is the honest answer rather than a half-empty line. */
 export function exportableCandidates(candidates: Candidate[]): Candidate[] {
-  return candidates.filter((c) => c.unlocked);
+  return candidates.filter((c) => c.unlocked && c.creditRefunded !== true && c.candidateWithdrew !== true);
 }
 
 export function candidatesToCsv(candidates: Candidate[], requiredSkills: string[]): string {

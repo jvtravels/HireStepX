@@ -260,11 +260,42 @@ const ROLE_SYNONYM: Record<string, string[]> = {
 
 export function roleTokens(role: string | null | undefined): Set<string> {
   const out = new Set<string>();
-  for (const raw of (role ?? "").toLowerCase().split(/[^a-z0-9]+/)) {
+  // "Back-end" / "Full Stack" are one word in practice; without this "back end
+  // developer" and "backend developer" shared no discipline token at all.
+  const text = (role ?? "").toLowerCase()
+    .replace(/\bback[\s-]*end\b/g, "backend")
+    .replace(/\bfront[\s-]*end\b/g, "frontend")
+    .replace(/\bfull[\s-]*stack\b/g, "fullstack");
+  for (const raw of text.split(/[^a-z0-9]+/)) {
     if (!raw || ROLE_FILLER.has(raw)) continue;
     for (const t of ROLE_SYNONYM[raw] ?? [raw]) out.add(t);
   }
   return out;
+}
+
+/* Software-engineering disciplines people use interchangeably in titles:
+   "Backend Developer", "Software Engineer", "Software Developer" and "SDE"
+   describe the same job family; "Frontend" and "UI Developer" likewise. Each
+   key lists the other discipline words it may stand in for. Deliberately
+   narrow: "data analyst" and "business analyst" are NOT here (different
+   skills), nor is "data engineer" vs "software engineer". */
+const DISCIPLINE_COMPAT: Record<string, string[]> = {
+  software: ["backend", "frontend", "fullstack", "web", "ui"],
+  backend: ["software", "fullstack"],
+  frontend: ["software", "fullstack", "ui", "web"],
+  ui: ["frontend", "software", "web"],
+  web: ["frontend", "fullstack", "software", "ui"],
+  fullstack: ["software", "backend", "frontend", "web"],
+};
+
+function sameRoleFamily(a: Set<string>, b: Set<string>): boolean {
+  if (!a.has("engineer") || !b.has("engineer")) return false;
+  const da = [...a].filter((t) => t !== "engineer");
+  const db = [...b].filter((t) => t !== "engineer");
+  if (da.length === 0 || db.length === 0) return false;
+  const reaches = (from: string[], to: string[]) =>
+    from.every((t) => to.includes(t) || (DISCIPLINE_COMPAT[t] ?? []).some((c) => to.includes(c)));
+  return reaches(da, db) && reaches(db, da);
 }
 
 /** "yes" / "no", or "unknown" when either side has no usable role text, in which
@@ -276,7 +307,7 @@ export function roleMatches(sessionRole: string | null | undefined, requirementT
   const b = roleTokens(requirementTitle);
   if (a.size === 0 || b.size === 0) return "unknown";
   const subset = (x: Set<string>, y: Set<string>) => [...x].every((t) => y.has(t));
-  return subset(a, b) || subset(b, a) ? "yes" : "no";
+  return subset(a, b) || subset(b, a) || sameRoleFamily(a, b) ? "yes" : "no";
 }
 
 export interface RoleFit {

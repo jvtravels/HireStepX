@@ -92,6 +92,29 @@ export function detectContactInfoFlag(body: string): string | null {
   return null;
 }
 
+export const CONTACT_REDACTION_MARK = "[contact details hidden until unlock]";
+export const CONTACT_REDACTED_NOTICE = "Contact details unlock after you unlock this candidate.";
+
+/** Replaces emails, phone numbers and spelled-out digit runs with a visible
+ *  mark. Applied to message bodies an employer reads while the match is still
+ *  Locked: a candidate who shares a number in an "interested" reply must not
+ *  hand the employer the contact the unlock fee pays for. The stored body is
+ *  untouched, so the full text shows once the employer unlocks. */
+export function redactContactInfo(body: string): { text: string; redacted: boolean } {
+  if (!body) return { text: body, redacted: false };
+  const text = body
+    .replace(new RegExp(EMAIL_RE.source, "gi"), CONTACT_REDACTION_MARK)
+    .replace(new RegExp(PHONE_RE.source, "g"), CONTACT_REDACTION_MARK)
+    .replace(new RegExp(SPELLED_DIGIT_RE.source, "gi"), CONTACT_REDACTION_MARK);
+  return { text, redacted: text !== body };
+}
+
+/** What the viewer is shown for a stored message body: only an employer
+ *  reading a Locked match gets the candidate's contact text masked. */
+export function messageBodyForViewer(body: string, senderRole: MessageSenderRole, hideContact: boolean): string {
+  return hideContact && senderRole === "candidate" ? redactContactInfo(body).text : body;
+}
+
 const ALLOWED_ATTACHMENT_TYPES: Record<string, string> = {
   "application/pdf": "pdf",
   "application/msword": "doc",

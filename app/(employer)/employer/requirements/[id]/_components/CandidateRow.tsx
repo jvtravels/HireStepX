@@ -31,7 +31,7 @@ import type { Candidate, CandidateStatus } from "@/employer/mockData";
 import { nextCandidateStatuses } from "../../../../../../server-handlers/_employer-candidate-status-helpers";
 import { formatPaise, singleUnlockPrice } from "../../../../../../server-handlers/_unlock-pricing";
 import { skillChipSlots } from "./candidateTableModel";
-import { candidateDisplayName, candidateResponseOf, candidateSubtitle, canMessageCandidate, initials, interviewSubstep, practisedLabel } from "./requirementFormat";
+import { candidateDisplayName, candidateResponseOf, candidateSubtitle, canInviteCandidate, canMessageCandidate, initials, interviewSubstep, practisedLabel } from "./requirementFormat";
 
 const STAGE_TONE: Record<CandidateStatus, string> = {
   shortlisted: "bg-hx-indigo-100 text-hx-indigo",
@@ -113,7 +113,7 @@ interface PrimaryAction {
    closing outcomes after the separator; the order within each group follows the
    server transition table. */
 const MOVE_COPY: Record<CandidateStatus, { label: string; icon: LucideIcon; closes: boolean }> = {
-  shortlisted: { label: "Reopen", icon: RotateCcwIcon, closes: false },
+  shortlisted: { label: "Reopen (back to To review)", icon: RotateCcwIcon, closes: false },
   interview_invited: { label: "Invite to interview", icon: CalendarPlusIcon, closes: false },
   interviewing: { label: "Mark as interviewing", icon: UserRoundCheckIcon, closes: false },
   hired: { label: "Mark as hired", icon: CheckIcon, closes: true },
@@ -178,7 +178,8 @@ export default function CandidateRow({
     window.location.assign(file.url);
   };
   const practised = practisedLabel(candidate.lastActiveDaysAgo);
-  const moves = writeOff ? [] : nextCandidateStatuses(candidate.candidateStatus);
+  // The server refuses an invite for a candidate who declined or withdrew, so don't offer it.
+  const moves = writeOff ? [] : nextCandidateStatuses(candidate.candidateStatus).filter((m) => m !== "interview_invited" || canInviteCandidate(candidate));
   const forwardMoves = moves.filter((m) => !MOVE_COPY[m].closes);
   const closingMoves = moves.filter((m) => MOVE_COPY[m].closes);
   const canInvite = moves.includes("interview_invited");

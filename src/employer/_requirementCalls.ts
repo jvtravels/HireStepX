@@ -9,7 +9,7 @@
 
 import { apiFetch, type ApiResponse } from "@/apiClient";
 import { authHeaders } from "@/supabase";
-import type { CandidateEvidence, ConversationMessage, UnlockOrder } from "@/employer/EmployerDataContext";
+import type { CandidateEvidence, ConversationContext, ConversationMessage, UnlockOrder } from "@/employer/EmployerDataContext";
 import type { CandidateStatus } from "@/employer/mockData";
 import { TIER_LIMITS, isEmployerTier, type EmployerTier } from "../../server-handlers/_employer-trust";
 
@@ -89,8 +89,9 @@ export function verifyUnlockPayment(payload: {
 
 export function setCandidateStatus(
   matchId: string,
-  payload: { candidateStatus: CandidateStatus; note?: string; interviewScheduledAt?: string },
+  payload: { candidateStatus: CandidateStatus; note?: string; candidateMessage?: string; interviewScheduledAt?: string },
 ): Promise<CallResult<{ id: string; candidateStatus: string }>> {
+  // `note` stays private to the employer; only `candidateMessage` reaches the candidate.
   return apiFetch<{ id: string; candidateStatus: string }>(
     "/api/employer-candidate-status",
     { matchId, ...payload },
@@ -119,9 +120,9 @@ export function getEvidence(matchId: string): Promise<CallResult<EvidenceRespons
   return getJson<EvidenceResponse>(`/api/employer-candidate-evidence?matchId=${encodeURIComponent(matchId)}`);
 }
 
-export function getMessages(matchId: string): Promise<CallResult<{ messages: ConversationMessage[] }>> {
-  return getJson<{ messages?: ConversationMessage[] }>(`/api/messages?matchId=${encodeURIComponent(matchId)}`).then((r) =>
-    r.ok ? { ok: true as const, data: { messages: r.data.messages ?? [] } } : r,
+export function getMessages(matchId: string): Promise<CallResult<{ messages: ConversationMessage[]; context: ConversationContext | null }>> {
+  return getJson<{ messages?: ConversationMessage[]; context?: ConversationContext | null }>(`/api/messages?matchId=${encodeURIComponent(matchId)}`).then((r) =>
+    r.ok ? { ok: true as const, data: { messages: r.data.messages ?? [], context: r.data.context ?? null } } : r,
   );
 }
 
@@ -196,6 +197,10 @@ export function failureMessage(
   }
 
   if (f.status === 409) {
+    if (f.code === "candidate_withdrew") {
+      return "This candidate has withdrawn from employer contact, so evidence, messages and the resume are closed. Earlier messages stay readable.";
+    }
+    if (f.code === "candidate_declined") return "This candidate declined contact for this job, so you can't invite or message them.";
     if (action === "unlock") return f.message ?? "This candidate is already unlocked or an order is in progress. Refresh the page to see the latest.";
     return f.message ?? "This candidate has declined, or their status can't change that way. Refresh the page to see the latest.";
   }

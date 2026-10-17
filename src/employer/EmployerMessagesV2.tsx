@@ -27,7 +27,7 @@ import { tokens as t, fonts as f } from "../auth/_tokens";
 import { useEmployerData, type ConversationContext, type ConversationMessage, type ConversationSummary, type CandidateEvidence } from "./EmployerDataContext";
 import { useToast } from "../Toast";
 import { playUiSound } from "../uiSounds";
-import { OutlineCta, PrimaryCta, Pill, ScoreChip } from "./_atoms";
+import { OutlineCta, PrimaryCta, Pill, ScoreChip, CANDIDATE_STATUS_LABEL } from "./_atoms";
 import { MaskedIdentity, isMaskedName } from "./_atoms2";
 import InterviewInviteDialog, { canInviteToInterview, statusErrorCopy, type InviteResult, type InviteValues } from "./InterviewInviteDialog";
 import type { CandidateStatus } from "./mockData";
@@ -51,15 +51,8 @@ import {
 const LIST_POLL_MS = 15000;
 const THREAD_POLL_MS = 6000;
 
-const STATUS_LABEL: Record<string, string> = {
-  shortlisted: "To review",
-  interview_invited: "Interview invited",
-  interviewing: "Interviewing",
-  hired: "Hired",
-  rejected: "Rejected",
-  not_a_fit: "Not a fit",
-  no_response: "No response",
-};
+/* Wording comes from the shared CANDIDATE_STATUS_LABEL; unknown statuses fall back to the raw value. */
+const STATUS_LABEL: Record<string, string> = CANDIDATE_STATUS_LABEL;
 
 function DialogError({ children, unlock }: { children: React.ReactNode; unlock: boolean }) {
   return (
@@ -330,11 +323,12 @@ export default function EmployerMessagesV2() {
     setFlagReason("");
   };
 
-  const handleSendInvite = async ({ note, scheduledAt }: InviteValues): Promise<InviteResult> => {
+  const handleSendInvite = async ({ message, scheduledAt }: InviteValues): Promise<InviteResult> => {
     if (!activeMatchId) return { ok: false };
     const res = await updateCandidateStatusResult(activeMatchId, {
       candidateStatus: "interview_invited",
-      note,
+      // Always explicit (even empty) so the server never treats a private note as the candidate's message.
+      candidateMessage: message ?? "",
       interviewScheduledAt: scheduledAt,
     });
     if (!res.ok) return { ok: false, message: statusErrorCopy(res.error) };
@@ -348,7 +342,7 @@ export default function EmployerMessagesV2() {
     if (!activeMatchId) return;
     setRejectSubmitting(true);
     setRejectError(null);
-    const res = await updateCandidateStatusResult(activeMatchId, { candidateStatus: "rejected", note: rejectNote.trim() || undefined });
+    const res = await updateCandidateStatusResult(activeMatchId, { candidateStatus: "rejected", note: rejectNote.trim() || undefined, candidateMessage: "" });
     setRejectSubmitting(false);
     if (!res.ok) {
       setRejectError(statusErrorCopy(res.error));
@@ -425,6 +419,13 @@ export default function EmployerMessagesV2() {
   const activeName = active ? active.counterpartName : "";
   const activeMasked = active ? isMaskedName(context?.candidateName ?? active.counterpartName) : false;
   const composerBlock: ComposerBlock = suspended ? "suspended" : unlockBlocked ? "unlock" : null;
+  // The server refuses invites and new messages for a candidate who declined or withdrew; don't offer them.
+  const inviteClosed = context?.candidateWithdrew === true || context?.candidateResponse === "declined";
+  const closedNotice = context?.candidateWithdrew
+    ? "This candidate has withdrawn from employer contact. Earlier messages stay readable, but you can't send new ones."
+    : context?.candidateResponse === "declined"
+      ? "This candidate declined contact for this job, so you can't invite or message them."
+      : null;
   const suspendedTitle = suspended ? "Unavailable while your account is suspended" : undefined;
 
   const thread = active ? (
@@ -443,7 +444,7 @@ export default function EmployerMessagesV2() {
         }
         actions={
           <>
-            {canInviteToInterview(active.candidateStatus as CandidateStatus) && (
+            {canInviteToInterview(active.candidateStatus as CandidateStatus) && !inviteClosed && (
               <PrimaryCta size="sm" disabled={suspended} title={suspendedTitle} onClick={() => setInviteOpen(true)}>
                 Send Interview Invite
               </PrimaryCta>
@@ -476,6 +477,12 @@ export default function EmployerMessagesV2() {
         onOpenAttachment={openAttachment}
         onReport={setFlagMessageId}
       />
+      {context?.contactNotice && (
+        <p role="note" className="m-0 border-t border-border px-4 py-2 text-[12px] text-muted-foreground">{context.contactNotice}</p>
+      )}
+      {closedNotice && (
+        <p role="note" className="m-0 border-t border-border px-4 py-2 text-[12px] text-muted-foreground">{closedNotice}</p>
+      )}
       <Composer
         counterpartName={activeName}
         masked={activeMasked}
@@ -555,11 +562,11 @@ export default function EmployerMessagesV2() {
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Reject this candidate?</DialogTitle>
-                  <DialogDescription>Marks {activeName} as rejected for {active.roleTitle}. This can&apos;t be undone from here.</DialogDescription>
+                  <DialogDescription>Marks {activeName} as rejected for {active.roleTitle}. You can reopen a rejected candidate later from the Stage menu.</DialogDescription>
                 </DialogHeader>
                 <div style={{ display: "grid", gap: 8, padding: "4px 0" }}>
-                  <Label htmlFor="msg-reject-note">Reason (optional)</Label>
-                  <Textarea id="msg-reject-note" rows={3} value={rejectNote} onChange={(e) => setRejectNote(e.target.value)} placeholder="Anything you want on record about this decision…" />
+                  <Label htmlFor="msg-reject-note">Private note (optional)</Label>
+                  <Textarea id="msg-reject-note" rows={3} value={rejectNote} onChange={(e) => setRejectNote(e.target.value)} placeholder="Only your team sees this. The candidate is not told your reason." />
                   {rejectError && <DialogError unlock={rejectError.startsWith("Unlock")}>{rejectError}</DialogError>}
                 </div>
                 <DialogFooter>

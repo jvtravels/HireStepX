@@ -28,6 +28,9 @@ import {
   isConversationUnread,
   MATCH_ID_RE,
   isSelfConversation,
+  redactContactInfo,
+  messageBodyForViewer,
+  CONTACT_REDACTED_NOTICE,
   type MessageRole,
   type MessageSenderRole,
 } from "./_messages-helpers";
@@ -168,11 +171,16 @@ async function findOrCreateConversation(match: MatchRow): Promise<ConversationRo
   return null;
 }
 
-function toMessageShape(row: MessageRow) {
+/** `hideContact` is set for an employer reading a thread of a still-Locked
+ *  match: phone/email text in the candidate's messages is masked in what is
+ *  returned (never in storage). The employer's own text is left as written. */
+function toMessageShape(row: MessageRow, hideContact = false) {
+  const body = messageBodyForViewer(row.body, row.sender_role, hideContact);
   return {
     id: row.id,
     senderRole: row.sender_role,
-    body: row.body,
+    body,
+    contactRedacted: hideContact && body !== row.body,
     attachmentPath: row.attachment_path,
     attachmentName: row.attachment_name,
     attachmentMime: row.attachment_mime,
@@ -262,6 +270,7 @@ async function handleGet(req: Request, headers: Record<string, string>, auth: { 
   const resolved = await resolveMatchAndRole(headers, matchId, auth.userId);
   if (resolved instanceof Response) return resolved;
   const { match, role } = resolved;
+  const hideContact = role === "employer" && !match.unlocked;
 
   // Pre-unlock the employer only ever knows the candidate as "Candidate #xxxxxx".
   const candidateName = role === "employer" && !match.unlocked
@@ -273,6 +282,14 @@ async function handleGet(req: Request, headers: Record<string, string>, auth: { 
     candidateName,
     matchScore: match.match_score ?? null,
     candidateStatus: match.candidate_status || "shortlisted",
+    candidateResponse: match.candidate_response ?? null,
+    // True while an employer is reading a Locked match: contact text in the
+    // thread is masked and the UI explains why.
+    contactLocked: hideContact,
+    contactNotice: hideContact ? CONTACT_REDACTED_NOTICE : null,
+    // The candidate withdrew employer visibility after the unlock: history
+    // below stays readable, new messages are refused.
+    candidateWithdrew: resolved.access?.candidateWithdrew ?? false,
     interviewScheduledAt: match.interview_scheduled_at ?? null,
     viewerRole: role,
   };
@@ -308,7 +325,7 @@ async function handleGet(req: Request, headers: Record<string, string>, auth: { 
   return new Response(
     JSON.stringify({
       conversation: { id: conversation.id, matchId: conversation.match_id, lastMessageAt: conversation.last_message_at },
-      messages: msgRows.map(toMessageShape),
+      messages: msgRows.map((m) => toMessageShape(m, hideContact)),
       context,
     }),
     { status: 200, headers },
@@ -352,6 +369,23 @@ async function handlePost(req: Request, headers: Record<string, string>, auth: {
     return new Response(
       JSON.stringify({ error: "Unlock this candidate to message them.", code: "unlock_required" }),
       { status: 402, headers },
+    );
+  }
+
+  // Product decision (see candidateWithdrew in _entitlements.ts): a candidate
+  // who switched employer visibility off after a paid unlock closes NEW
+  // contact. The thread already delivered stays readable (GET) because the
+  // employer paid for that history; only sending is refused.
+  if (role === "employer" && resolved.access?.candidateWithdrew) {
+    return new Response(
+      JSON.stringify({ error: "This candidate has withdrawn from employer contact, so you can no longer message them.", code: "candidate_withdrew" }),
+      { status: 409, headers },
+    );
+  }
+  if (role === "employer" && match.candidate_response === "declined") {
+    return new Response(
+      JSON.stringify({ error: "This candidate declined contact for this job.", code: "candidate_declined" }),
+      { status: 409, headers },
     );
   }
 
@@ -418,7 +452,9 @@ async function handlePost(req: Request, headers: Record<string, string>, auth: {
     userId: recipientId,
     type: role === "employer" ? "new_message_candidate" : "new_message_employer",
     title: role === "employer" ? "New message from an employer" : "New message from a candidate",
-    body: text ? text.slice(0, 140) : "Sent an attachment.",
+    // A candidate's text can carry a phone/email; an employer whose match is
+    // still Locked must not get it through the notification either.
+    body: text ? (role === "candidate" && !match.unlocked ? redactContactInfo(text).text : text).slice(0, 140) : "Sent an attachment.",
     link: role === "employer" ? "/messages" : `/employer/requirements/${match.requirement_id}`,
     groupKey: `msg:${conversation.id}`,
     actionLabel: "Reply",

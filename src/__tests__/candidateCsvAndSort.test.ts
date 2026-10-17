@@ -89,3 +89,20 @@ describe("skillChipSlots", () => {
     expect(skillChipSlots([], [])).toEqual({ matched: [], gaps: [], hidden: 0 });
   });
 });
+
+describe("exportableCandidates after unlock", () => {
+  it("leaves out a refunded unlock and a candidate who withdrew, since their contact is no longer the employer's", () => {
+    const refunded = candidate({ id: "m-3", name: "Refunded Person", creditRefunded: true, contact: { email: "refunded@example.com" } });
+    const withdrew = candidate({ id: "m-4", name: "Withdrawn Person", candidateWithdrew: true, contact: { email: "withdrew@example.com" } });
+    expect(exportableCandidates([candidate(), refunded, withdrew]).map((c) => c.id)).toEqual(["m-1"]);
+    const csv = candidatesToCsv([candidate(), refunded, withdrew], []);
+    expect(csv).not.toContain("refunded@example.com");
+    expect(csv).not.toContain("withdrew@example.com");
+    expect(csv.split("\r\n")).toHaveLength(2);
+  });
+
+  it("keeps the formula guard on the rows that are exported", () => {
+    const csv = candidatesToCsv([candidate({ name: "=HYPERLINK(\"http://x\")" })], []);
+    expect(csv).toContain("\"'=HYPERLINK(\"\"http://x\"\")\"");
+  });
+});

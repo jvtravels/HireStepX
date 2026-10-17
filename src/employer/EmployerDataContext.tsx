@@ -180,6 +180,8 @@ export interface ConversationMessage {
   attachmentMime: string | null;
   flagged: boolean;
   createdAt: string;
+  /** True when the server hid a phone number or email in this body while the match is locked. */
+  contactRedacted?: boolean;
 }
 
 /** One row in the employer's conversation inbox. Mirrors the shape
@@ -207,13 +209,21 @@ export interface ConversationContext {
   candidateStatus: CandidateStatus;
   interviewScheduledAt: string | null;
   viewerRole: "employer" | "candidate";
+  /** The candidate's own reply to this employer ("interested" opens messaging pre-unlock). */
+  candidateResponse?: "none" | "interested" | "declined" | null;
+  /** True while the employer hasn't unlocked: candidate-written phone/email is masked in message bodies. */
+  contactLocked?: boolean;
+  contactNotice?: string | null;
+  candidateWithdrew?: boolean;
 }
 
-interface ProfileFields { companyName: string; website: string; logoBase64?: string; logoContentType?: string; gstin?: string; billingName?: string }
+interface ProfileFields { companyName: string; website: string; logoBase64?: string; logoContentType?: string; gstin?: string; billingName?: string; removeLogo?: boolean }
 type UnlockRequest = { mode: "single"; matchId: string } | { mode: "batch"; requirementId: string };
 type VerifyPayload = { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string };
 type VerifyResult = { candidates: Array<{ matchId: string; name: string; contact: { email: string } }> };
-type StatusPayload = { candidateStatus: CandidateStatus; note?: string; interviewScheduledAt?: string };
+/** `note` is the employer's PRIVATE note (never shown to the candidate).
+ *  `candidateMessage` is the optional message the candidate will see. */
+type StatusPayload = { candidateStatus: CandidateStatus; note?: string; candidateMessage?: string; interviewScheduledAt?: string };
 type MessagePayload = { body?: string; attachmentPath?: string; attachmentName?: string; attachmentMime?: string };
 
 interface EmployerDataContextValue {
@@ -232,6 +242,8 @@ interface EmployerDataContextValue {
   limits: EmployerLimits;
   /** Suspended employers can read but not act; the server rejects writes with 403. */
   suspended: boolean;
+  /** Part of `suspended`: the account is in its 7-day deletion grace period (restore by logging in again). */
+  deletionPending: boolean;
   requirements: RequirementSummary[];
   requirementsLoading: boolean;
   requirementsError: boolean;
@@ -246,7 +258,9 @@ interface EmployerDataContextValue {
   /** Same as createUnlockOrder but surfaces 429 {limit, tier}, 403 suspended etc. */
   createUnlockOrderResult: (request: UnlockRequest) => Promise<EmployerApiResult<UnlockOrder>>;
   verifyUnlockPayment: (payload: VerifyPayload) => Promise<VerifyResult | null>;
-  fetchRequirementDetail: (id: string) => Promise<Requirement | null>;
+  /** Loads the job with its whole shortlist (every page, capped at MAX_SHORTLIST_CANDIDATES);
+   *  pass `{ firstPageOnly: true }` when only job fields are needed. `total` is the true count. */
+  fetchRequirementDetail: (id: string, options?: { firstPageOnly?: boolean }) => Promise<Requirement | null>;
   archiveRequirement: (id: string, options?: { archiveReason?: string; archiveDisposition?: ArchiveDisposition }) => Promise<boolean>;
   reopenRequirement: (id: string) => Promise<boolean>;
   updateRequirementStage: (id: string, stage: RequirementStage) => Promise<boolean>;
@@ -282,6 +296,9 @@ export function useEmployerData() {
 
 /* ── Helpers ── */
 
+const SHORTLIST_PAGE_LIMIT = 100;
+/** Upper bound on candidates loaded into one job page; beyond it the page says "showing N of M". */
+export const MAX_SHORTLIST_CANDIDATES = 500;
 const RETRY_DELAYS_MS = [300, 900];
 const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
@@ -365,6 +382,7 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
   const [verificationTier, setVerificationTier] = useState<EmployerTier>("basic");
   const [limits, setLimits] = useState<EmployerLimits>(DEFAULT_TIER_LIMITS.basic);
   const [suspended, setSuspended] = useState(false);
+  const [deletionPending, setDeletionPending] = useState(false);
   const [requirements, setRequirements] = useState<RequirementSummary[]>([]);
   const [requirementsLoaded, setRequirementsLoaded] = useState(false);
   const [requirementsError, setRequirementsError] = useState(false);
@@ -388,6 +406,7 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
     setVerificationTier(tier);
     setLimits(parseLimits(data.limits, tier));
     setSuspended(data.suspended === true);
+    setDeletionPending(data.deletionPending === true);
   }, []);
 
   const refreshCompanyStatus = useCallback(async () => {
@@ -441,7 +460,7 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
       if (wasNew) captureClientEvent("employer_company_created", { has_logo: Boolean(fields.logoBase64), tier: tierRef.current });
       return { ok: true, data: null };
     }
-    return { ok: false, error: toApiError(res, "Couldn't save your company profile — please try again.") };
+    return { ok: false, error: toApiError(res, "Couldn't save your company profile. Please try again.") };
   }, [applyProfile]);
 
   const submitCompanyProfile = useCallback(async (fields: ProfileFields) => (await submitCompanyProfileResult(fields)).ok, [submitCompanyProfileResult]);
@@ -453,7 +472,7 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
       refreshRequirements();
       return { id: res.data.id };
     }
-    const err = toApiError(res, "Couldn't create this job — please try again.");
+    const err = toApiError(res, "Couldn't create this job. Please try again.");
     if (res.status === 403 && !err.code) err.code = "suspended";
     return err;
   }, [refreshRequirements]);
@@ -464,14 +483,14 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
       refreshRequirements();
       return { ok: true as const };
     }
-    return toApiError(res, "Couldn't save changes — please try again.");
+    return toApiError(res, "Couldn't save changes. Please try again.");
   }, [refreshRequirements]);
 
   const createUnlockOrderResult = useCallback(async (request: UnlockRequest): Promise<EmployerApiResult<UnlockOrder>> => {
     captureClientEvent("employer_unlock_started", { mode: request.mode, tier: tierRef.current });
     const res = await apiFetch<UnlockOrder>("/api/employer-create-unlock-order", request, { method: "POST" });
     if (res.ok && res.data) return { ok: true, data: res.data };
-    const err = toApiError(res, res.status === 403 ? SUSPENDED_MESSAGE : "Couldn't start payment — please try again.");
+    const err = toApiError(res, res.status === 403 ? SUSPENDED_MESSAGE : "Couldn't start payment. Please try again.");
     if (res.status === 429 && err.limit !== undefined) {
       captureClientEvent("employer_unlock_limit_hit", { mode: request.mode, limit: err.limit, tier: err.tier ?? tierRef.current });
     }
@@ -492,10 +511,24 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
     return null;
   }, []);
 
-  const fetchRequirementDetail = useCallback(async (id: string): Promise<Requirement | null> => {
-    const res = await getWithRetry(`/api/employer-requirement-detail?id=${encodeURIComponent(id)}`);
-    if (!res || !res.ok || !res.data) return null;
-    return res.data as Requirement;
+  const fetchRequirementDetail = useCallback(async (id: string, options?: { firstPageOnly?: boolean }): Promise<Requirement | null> => {
+    const base = `/api/employer-requirement-detail?id=${encodeURIComponent(id)}`;
+    const first = await getWithRetry(options?.firstPageOnly ? base : `${base}&page=1&limit=${SHORTLIST_PAGE_LIMIT}`);
+    if (!first || !first.ok || !first.data) return null;
+    const detail = first.data as Requirement;
+    if (options?.firstPageOnly) return detail;
+    // The server pages the shortlist (25 by default); follow nextPage so a job
+    // with more matches than one page shows all of them, up to a sane cap.
+    let candidates = detail.candidates;
+    let next = detail.nextPage ?? null;
+    while (next && candidates.length < MAX_SHORTLIST_CANDIDATES) {
+      const more = await getWithRetry(`${base}&page=${next}&limit=${SHORTLIST_PAGE_LIMIT}`);
+      if (!more || !more.ok || !isRecord(more.data) || !Array.isArray(more.data.candidates)) break;
+      const seen = new Set(candidates.map((c) => c.id));
+      candidates = candidates.concat((more.data.candidates as Candidate[]).filter((c) => !seen.has(c.id)));
+      next = typeof more.data.nextPage === "number" ? more.data.nextPage : null;
+    }
+    return { ...detail, candidates, nextPage: next };
   }, []);
 
   const archiveRequirement = useCallback(async (id: string, options?: { archiveReason?: string; archiveDisposition?: ArchiveDisposition }) => {
@@ -532,11 +565,11 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
   const updateCandidateStatusResult = useCallback(async (matchId: string, payload: StatusPayload): Promise<EmployerApiResult<null>> => {
     const res = await apiFetch<{ id: string; candidateStatus: string }>(
       "/api/employer-candidate-status",
-      { matchId, candidateStatus: payload.candidateStatus, note: payload.note, interviewScheduledAt: payload.interviewScheduledAt },
+      { matchId, candidateStatus: payload.candidateStatus, note: payload.note, candidateMessage: payload.candidateMessage, interviewScheduledAt: payload.interviewScheduledAt },
       { method: "PATCH" },
     );
     if (res.ok) return { ok: true, data: null };
-    const err = toApiError(res, res.status === 403 ? SUSPENDED_MESSAGE : "Couldn't update this candidate — please try again.");
+    const err = toApiError(res, res.status === 403 ? SUSPENDED_MESSAGE : "Couldn't update this candidate. Please try again.");
     if (res.status === 402 && !err.code) err.code = "unlock_required";
     return { ok: false, error: err };
   }, []);
@@ -619,7 +652,7 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
       { method: "POST" },
     );
     if (res.ok && res.data) return { ok: true, data: res.data.message };
-    const err = toApiError(res, res.status === 403 ? SUSPENDED_MESSAGE : "Couldn't send message — please try again.");
+    const err = toApiError(res, res.status === 403 ? SUSPENDED_MESSAGE : "Couldn't send message. Please try again.");
     if (res.status === 402 && !err.code) err.code = "unlock_required";
     return { ok: false, error: err };
   }, []);
@@ -672,6 +705,7 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
     verificationTier,
     limits,
     suspended,
+    deletionPending,
     requirements,
     requirementsLoading,
     requirementsError,
@@ -706,7 +740,7 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
     fetchMessageAttachmentUrl,
   }), [
     companyStatus, companyStatusLoading, companyStatusError, companyLogoUrl, companyName, companyWebsite, companyGstin, companyBillingName,
-    verificationTier, limits, suspended, requirements, requirementsLoading, requirementsError,
+    verificationTier, limits, suspended, deletionPending, requirements, requirementsLoading, requirementsError,
     refreshCompanyStatus, submitCompanyProfile, submitCompanyProfileResult, addRequirement, updateRequirement,
     createUnlockOrder, createUnlockOrderResult, verifyUnlockPayment, fetchRequirementDetail, archiveRequirement,
     reopenRequirement, updateRequirementStage, updateCandidateStatus, updateCandidateStatusResult,

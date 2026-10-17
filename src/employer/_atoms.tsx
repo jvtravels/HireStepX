@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { tokens as t, fonts as f, shadows, textSize } from "../auth/_tokens";
 import type { RequirementStage, CandidateStatus } from "./mockData";
-import { STRONG_MATCH_THRESHOLD } from "../../server-handlers/_requirement-match-helpers";
+import { STRONG_MATCH_THRESHOLD, FAIR_MATCH_SCORE, matchBandLabel } from "../../server-handlers/_requirement-match-helpers";
 import { STAGE_TRANSITIONS } from "../../server-handlers/_employer-requirements-helpers";
 
 /** Deterministic evenly-spaced sample, used to show a diverse slice of a
@@ -128,8 +128,8 @@ export function Pill({ children, tone = "neutral", filled = false }: { children:
    candidates with some genuine but partial overlap clustered 20-39, with a
    sharp drop into single digits below that for candidates with no real
    relevance — so 20 is "worth a look," not "strong." */
-export const FAIR_MATCH_THRESHOLD = 20;
-export { STRONG_MATCH_THRESHOLD };
+export const FAIR_MATCH_THRESHOLD = FAIR_MATCH_SCORE;
+export { STRONG_MATCH_THRESHOLD, matchBandLabel };
 
 export function matchBand(score: number): "strong" | "fair" | "low" {
   return score >= STRONG_MATCH_THRESHOLD ? "strong" : score >= FAIR_MATCH_THRESHOLD ? "fair" : "low";
@@ -141,7 +141,7 @@ export function ScoreChip({ score, label = "Match score" }: { score: number; lab
   return (
     <div
       role="img"
-      aria-label={`${label}: ${score} out of 100, ${band}`}
+      aria-label={`${label}: ${score} out of 100, ${matchBandLabel(score)} match`}
       style={{
         width: 44,
         height: 32,
@@ -341,7 +341,7 @@ export function SkillTag({ children }: { children: React.ReactNode }) {
  *  server-handlers/_employer-candidate-status-helpers.ts. */
 export const CANDIDATE_STATUS_LABEL: Record<CandidateStatus, string> = {
   shortlisted: "To review",
-  interview_invited: "Interview Invited",
+  interview_invited: "Interview invited",
   interviewing: "Interviewing",
   hired: "Hired",
   rejected: "Rejected",

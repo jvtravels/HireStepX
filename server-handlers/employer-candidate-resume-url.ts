@@ -77,6 +77,12 @@ export default async function handler(req: Request): Promise<Response> {
       return new Response(JSON.stringify({ error: "Unlock this candidate to download their resume" }), { status: 403, headers });
     }
 
+    // The resume file carries the candidate's contact details; once they have
+    // withdrawn employer visibility it closes with evidence and messaging.
+    if (decision.access.candidateWithdrew) {
+      return new Response(JSON.stringify({ error: "This candidate has withdrawn from employer contact.", code: "candidate_withdrew" }), { status: 409, headers });
+    }
+
     const candidateUserId = decision.access.match.candidate_user_id;
     const fileRes = await fetch(
       `${SUPABASE_URL}/rest/v1/resume_versions?select=file_name,file_path,resumes!inner(user_id)&resumes.user_id=eq.${encodeURIComponent(candidateUserId)}&file_path=not.is.null&order=created_at.desc&limit=1`,

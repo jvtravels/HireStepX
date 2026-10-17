@@ -47,7 +47,7 @@ import {
   type ContactFilter,
   type SortColumn,
 } from "./_components/candidateTableModel";
-import { candidateDisplayName, closedSummary } from "./_components/requirementFormat";
+import { candidateDisplayName, closedSummary, reversibilityNote } from "./_components/requirementFormat";
 import type { UnlockTarget } from "./_components/useUnlockCheckout";
 
 const CANDIDATES_RECENT_SEARCHES_KEY = "hirestepx-employer-candidates-recent-searches";
@@ -286,9 +286,10 @@ export default function RequirementDetailPage() {
     setPendingStage(null);
   };
 
-  const submitInvite = async ({ note, scheduledAt }: InviteValues): Promise<InviteResult> => {
+  const submitInvite = async ({ message, scheduledAt }: InviteValues): Promise<InviteResult> => {
     if (!inviteCandidate) return { ok: false };
-    const res = await updateCandidateStatusResult(inviteCandidate.id, { candidateStatus: "interview_invited", note, interviewScheduledAt: scheduledAt });
+    // candidateMessage is always explicit (even empty) so the server never reads a private note as a message to the candidate.
+    const res = await updateCandidateStatusResult(inviteCandidate.id, { candidateStatus: "interview_invited", candidateMessage: message ?? "", interviewScheduledAt: scheduledAt });
     if (!res.ok) return { ok: false, message: statusErrorCopy(res.error) };
     patchCandidates((c) => (c.id === inviteCandidate.id ? { ...c, candidateStatus: "interview_invited", interviewScheduledAt: scheduledAt ?? c.interviewScheduledAt } : c));
     toast("Interview invite sent", "success");
@@ -480,7 +481,7 @@ export default function RequirementDetailPage() {
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent side="bottom" className="max-w-64">
-                      Export {unlockedCount} unlocked candidate{unlockedCount === 1 ? "" : "s"} as CSV. Locked candidates stay out of the file.
+                      Export {unlockedCount} unlocked candidate{unlockedCount === 1 ? "" : "s"} as CSV. Locked, refunded and withdrawn candidates stay out of the file.
                     </TooltipContent>
                   </Tooltip>
                 )}
@@ -576,6 +577,13 @@ export default function RequirementDetailPage() {
                   )
                 ) : (
                   <>
+                  {(requirement.total ?? candidates.length) > candidates.length && (
+                    <div className="mb-3">
+                      <InlineNotice tone="info" live={false}>
+                        Showing {candidates.length} of {requirement.total} candidates. Narrow the shortlist with search and filters, or close out candidates you have already decided on.
+                      </InlineNotice>
+                    </div>
+                  )}
                   <CandidatesTable
                     rows={pageRows}
                     requirementId={requirement.id}
@@ -619,7 +627,7 @@ export default function RequirementDetailPage() {
                         {pendingStage ? `Mark ${pendingCandidate ? candidateDisplayName(pendingCandidate) : "this candidate"} as ${CANDIDATE_STATUS_LABEL[pendingStage.status]}?` : ""}
                       </AlertDialogTitle>
                       <AlertDialogDescription>
-                        This is a final outcome for this job and can't be undone from here. To add a note first, use Move with a note in the Stage menu.
+                        {pendingStage ? reversibilityNote(pendingStage.status) : ""} To add a private note first, use Move with a note in the Stage menu.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>

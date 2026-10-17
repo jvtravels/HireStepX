@@ -79,6 +79,12 @@ export interface Candidate {
   hasResumeFile?: boolean;
   candidateStatus: CandidateStatus;
   candidateStatusNote: string | null;
+  /** The candidate's own answer to contact: null when the server did not say. */
+  candidateResponse?: "none" | "interested" | "declined" | null;
+  /** True once the candidate switched employer visibility off after the unlock. */
+  candidateWithdrew?: boolean;
+  /** True once this paid unlock was refunded as account credit. */
+  creditRefunded?: boolean;
   interviewScheduledAt: string | null;
   /** When the candidate last changed state for this job: the newest of the status change, the unlock and the match itself. */
   waitingSince?: string | null;
@@ -201,6 +207,9 @@ export interface Requirement {
    *  indicator on the detail page. */
   lastMatchedAt: string | null;
   candidates: Candidate[];
+  /** Server pagination of `candidates`: `total` is the whole shortlist, `nextPage` is non-null while more remain unloaded. */
+  total?: number;
+  nextPage?: number | null;
   /** Server-computed next unlock batch (rank window, locked count, exact price). */
   nextUnlockBatch?: { start: number; end: number; count: number; amountPaise: number; lockedRemaining: number } | null;
   /** True size of the matched-candidate pool before the 20-candidate cap —

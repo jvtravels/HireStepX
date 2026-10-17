@@ -89,7 +89,7 @@ export function decideEmployerMatchAccess(
 export const DENIED_STATUS: Record<AccessDenied, { status: number; error: string }> = {
   not_found: { status: 404, error: "Candidate match not found" },
   forbidden: { status: 403, error: "Forbidden" },
-  suspended: { status: 403, error: "This employer account is suspended. Contact support@hirestepx.com." },
+  suspended: { status: 403, error: "This employer account is suspended or scheduled for deletion. If you scheduled deletion, restore your account to continue; otherwise contact support@hirestepx.com." },
   candidate_opted_out: { status: 404, error: "Candidate match not found" },
   blocked: { status: 404, error: "Candidate match not found" },
 };

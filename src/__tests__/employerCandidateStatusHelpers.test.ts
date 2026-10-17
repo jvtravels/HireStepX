@@ -2,6 +2,9 @@ import { describe, it, expect } from "vitest";
 import {
   asCandidateStatus,
   asCandidateStatusNote,
+  asCandidateMessage,
+  splitStatusNotes,
+  threadMessageFor,
   asInterviewScheduledAt,
   isValidCandidateStatusTransition,
   nextCandidateStatuses,
@@ -144,6 +147,46 @@ describe("nextCandidateStatuses", () => {
         if (from === to) continue;
         expect(nextCandidateStatuses(from).includes(to)).toBe(isValidCandidateStatusTransition(from, to));
       }
+    }
+  });
+});
+
+describe("candidate message vs private note", () => {
+  it("asCandidateMessage trims, caps and treats empty or non-strings as no message", () => {
+    expect(asCandidateMessage("  see you at 10  ")).toBe("see you at 10");
+    expect(asCandidateMessage("   ")).toBeNull();
+    expect(asCandidateMessage(undefined)).toBeNull();
+    expect(asCandidateMessage(42)).toBeNull();
+    expect(asCandidateMessage("x".repeat(2000))).toHaveLength(1000);
+  });
+
+  it("never sends the private note to the candidate on a reject", () => {
+    expect(splitStatusNotes("rejected", "salary too high", undefined)).toEqual({ privateNote: "salary too high", candidateMessage: null });
+    expect(splitStatusNotes("not_a_fit", "weak on system design", "")).toEqual({ privateNote: "weak on system design", candidateMessage: null });
+  });
+
+  it("delivers the explicit candidate message and keeps the note private", () => {
+    expect(splitStatusNotes("rejected", "internal", "Thanks for your time")).toEqual({ privateNote: "internal", candidateMessage: "Thanks for your time" });
+  });
+
+  it("keeps the legacy rule: an invite with only a note delivers it, but an explicit empty message does not", () => {
+    expect(splitStatusNotes("interview_invited", "Bring a laptop", undefined)).toEqual({ privateNote: "Bring a laptop", candidateMessage: "Bring a laptop" });
+    expect(splitStatusNotes("interview_invited", "internal only", "")).toEqual({ privateNote: "internal only", candidateMessage: null });
+  });
+
+  it("threadMessageFor quotes only the candidate message", () => {
+    const text = threadMessageFor("rejected", "Thanks for your time", null);
+    expect(text).toContain("Thanks for your time");
+    expect(threadMessageFor("rejected", null, null)).toBe("Application status updated: Rejected.");
+    expect(threadMessageFor("shortlisted", "hi", null)).toBeNull();
+  });
+});
+
+describe("transition table matches the reopen copy", () => {
+  it("lets a rejected candidate be reopened but nothing else leave a final status", () => {
+    expect(isValidCandidateStatusTransition("rejected", "shortlisted")).toBe(true);
+    for (const final of ["hired", "not_a_fit", "no_response"] as const) {
+      expect(nextCandidateStatuses(final)).toEqual([]);
     }
   });
 });

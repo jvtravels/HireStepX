@@ -1,7 +1,13 @@
 /* Vercel Edge Function — Employer Candidate Status
  *
  * PATCH /api/employer-candidate-status
- * { matchId: string, candidateStatus: CandidateStatus, note?: string, interviewScheduledAt?: string }
+ * { matchId: string, candidateStatus: CandidateStatus, note?: string,
+ *   candidateMessage?: string, interviewScheduledAt?: string }
+ *
+ * `note` is the employer's PRIVATE note (stored on the match, never shown to
+ * the candidate). `candidateMessage` is the optional text the candidate sees
+ * in the thread. An interview invite that sends only `note` keeps delivering
+ * it as the schedule note, which is what an invite is for.
  *
  * Moves one candidate (a requirement_matches row) through the per-candidate
  * hiring pipeline — shortlisted through hired/rejected — independent of the
@@ -24,8 +30,9 @@ export const config = { runtime: "edge" };
 import { withAuthAndRateLimit, corsHeaders, withRequestId, slog } from "./_shared";
 import {
   asCandidateStatus,
-  asCandidateStatusNote,
   asInterviewScheduledAt,
+  splitStatusNotes,
+  threadMessageFor,
   isValidCandidateStatusTransition,
   type RequirementMatchRow,
 } from "./_employer-candidate-status-helpers";
@@ -49,31 +56,6 @@ const STATUS_NOTIFICATION_TEXT: Record<string, { title: string; body: string }> 
   rejected: { title: "Application update", body: "An employer has made a decision on your application." },
   not_a_fit: { title: "Application update", body: "An employer has made a decision on your application." },
 };
-
-/** Composes the system-message body posted into the thread when a status
- *  change happens — the thread becomes the record of the hiring decision,
- *  not just a side notification. Returns null for statuses with nothing
- *  worth announcing in-thread (e.g. a same-status note-only update). */
-function systemMessageFor(candidateStatus: string, note: string | null, interviewScheduledAt: string | null): string | null {
-  switch (candidateStatus) {
-    case "interview_invited": {
-      const when = interviewScheduledAt ? ` for ${new Date(interviewScheduledAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}` : "";
-      return `📅 Interview invite sent${when}.${note ? ` "${note}"` : ""}`;
-    }
-    case "interviewing":
-      return "🗣️ Candidate marked as interviewing.";
-    case "hired":
-      return `🎉 Candidate marked as hired.${note ? ` "${note}"` : ""}`;
-    case "rejected":
-      return `Application status updated: Rejected.${note ? ` "${note}"` : ""}`;
-    case "not_a_fit":
-      return `Application status updated: Not a fit.${note ? ` "${note}"` : ""}`;
-    case "no_response":
-      return "Application status updated: No response.";
-    default:
-      return null;
-  }
-}
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
@@ -185,7 +167,7 @@ export default async function handler(req: Request): Promise<Response> {
     return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405, headers });
   }
 
-  let body: { matchId?: unknown; candidateStatus?: unknown; note?: unknown; interviewScheduledAt?: unknown };
+  let body: { matchId?: unknown; candidateStatus?: unknown; note?: unknown; candidateMessage?: unknown; interviewScheduledAt?: unknown };
   try {
     body = await req.json();
   } catch {
@@ -194,7 +176,6 @@ export default async function handler(req: Request): Promise<Response> {
 
   const matchId = typeof body.matchId === "string" ? body.matchId : "";
   const candidateStatus = asCandidateStatus(body.candidateStatus);
-  const note = asCandidateStatusNote(body.note);
   const interviewScheduledAt = asInterviewScheduledAt(body.interviewScheduledAt);
 
   if (!matchId) {
@@ -203,6 +184,9 @@ export default async function handler(req: Request): Promise<Response> {
   if (!candidateStatus) {
     return new Response(JSON.stringify({ error: "Invalid candidateStatus" }), { status: 400, headers });
   }
+  // `note` is the employer's private record; only `candidateMessage` (or an
+  // invite's schedule note) is ever shown to the candidate.
+  const { privateNote: note, candidateMessage } = splitStatusNotes(candidateStatus, body.note, body.candidateMessage);
 
   try {
     const identity = await loadAuthIdentity(SUPABASE_URL, serviceHeaders(), auth.userId);
@@ -239,7 +223,10 @@ export default async function handler(req: Request): Promise<Response> {
       );
     }
     if (candidateStatus === "interview_invited" && accessMatch.candidate_response === "declined") {
-      return new Response(JSON.stringify({ error: "This candidate has declined contact for this role." }), { status: 409, headers });
+      return new Response(JSON.stringify({ error: "This candidate has declined contact for this job.", code: "candidate_declined" }), { status: 409, headers });
+    }
+    if (candidateStatus === "interview_invited" && decision.access.candidateWithdrew) {
+      return new Response(JSON.stringify({ error: "This candidate has withdrawn from employer contact.", code: "candidate_withdrew" }), { status: 409, headers });
     }
 
     // A closed/archived requirement is done being worked — the "archive"
@@ -310,7 +297,9 @@ export default async function handler(req: Request): Promise<Response> {
         from_status: currentStatus,
         to_status: candidateStatus,
         actor: "employer",
-        note,
+        // The event history is candidate-readable (data export), so it only
+        // ever carries what the employer chose to say to the candidate.
+        note: candidateMessage,
       }),
     }).catch((err) => slog.warn("employer-candidate-status: event insert failed", { error: (err as Error).message }));
 
@@ -334,7 +323,7 @@ export default async function handler(req: Request): Promise<Response> {
       });
     }
 
-    const systemBody = systemMessageFor(candidateStatus, note, row.interview_scheduled_at ?? interviewScheduledAt);
+    const systemBody = threadMessageFor(candidateStatus, candidateMessage, row.interview_scheduled_at ?? interviewScheduledAt);
     if (systemBody) {
       await (async () => {
         const conversationId = await findOrCreateConversationId(SUPABASE_URL, serviceHeaders(), {

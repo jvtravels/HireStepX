@@ -84,7 +84,7 @@ export function previewText(text: string, max: number): { text: string; truncate
 /** One line describing how a closed job ended, from what archive stored. */
 export function closedSummary(r: Pick<Requirement, "status" | "archiveReason" | "archiveDisposition">): string | null {
   if (r.status !== "closed") return null;
-  const parts = ["This requirement is closed."];
+  const parts = ["This job is closed."];
   if (r.archiveReason?.trim()) parts.push(`Reason: ${r.archiveReason.trim().replace(/[.\s]+$/, "")}.`);
   if (r.archiveDisposition === "reject_remaining") parts.push("Open candidates were rejected when it closed.");
   else if (r.archiveDisposition === "keep_candidates") parts.push("Open candidates were kept as they were.");
@@ -152,22 +152,48 @@ export function candidateSubtitle(c: Candidate): string {
 
 export type CandidateResponse = "none" | "interested" | "declined";
 
-/** `candidateResponse` is an additive field on match rows that the shared
-    Candidate type does not declare yet, so it is read defensively. */
+/** `candidateResponse` comes from employer-requirement-detail (null when the
+    column isn't readable yet), so anything unexpected reads as "none". */
 export function candidateResponseOf(c: Candidate): CandidateResponse {
-  if ("candidateResponse" in c) {
-    const v = c.candidateResponse;
-    if (v === "interested" || v === "declined") return v;
-  }
-  return "none";
+  const v = c.candidateResponse;
+  return v === "interested" || v === "declined" ? v : "none";
+}
+
+/** A candidate who withdrew from employer contact is closed to evidence,
+    messages and resume downloads (the server answers 409 candidate_withdrew). */
+export function isWithdrawn(c: Candidate): boolean {
+  return c.candidateWithdrew === true;
 }
 
 /** In-platform messaging: always after unlock; before unlock only once the
-    candidate has said they're interested (the server enforces the same rule). */
+    candidate has said they're interested (the server enforces the same rule).
+    Never once the candidate declined or withdrew. */
 export function canMessageCandidate(c: Candidate): boolean {
   const response = candidateResponseOf(c);
-  if (response === "declined") return false;
+  if (response === "declined" || isWithdrawn(c)) return false;
   return c.unlocked || response === "interested";
+}
+
+/** Inviting needs an unlocked match, and the server refuses it for a candidate
+    who declined or withdrew. */
+export function canInviteCandidate(c: Candidate): boolean {
+  return candidateResponseOf(c) !== "declined" && !isWithdrawn(c);
+}
+
+/** Statuses with no way forward or back on the server (hired, not a fit, no
+    response). `rejected` is deliberately not final: it can be reopened. */
+export function isFinalStatus(status: Candidate["candidateStatus"]): boolean {
+  return status === "hired" || status === "not_a_fit" || status === "no_response";
+}
+
+/** One sentence on whether a status change can be walked back, used by every
+    confirm dialog so the copy can't drift from the server transition table. */
+export function reversibilityNote(status: Candidate["candidateStatus"]): string {
+  return status === "rejected"
+    ? "You can reopen a rejected candidate later from the Stage menu."
+    : isFinalStatus(status)
+      ? "This is a final status. It can't be changed afterwards."
+      : "You can keep moving them through the pipeline afterwards.";
 }
 
 /** Formats interview_scheduled_at as the pipeline substep under a status chip. */
@@ -183,8 +209,8 @@ export function interviewSubstep(c: Candidate): string | null {
   return `Interview ${dateLabel}`;
 }
 
-/** Statuses a candidate can still be rejected from (hired/rejected/not_a_fit/
-    no_response are terminal on the server). */
+/** Statuses a candidate can still be rejected from (the server only allows it
+    from shortlisted, interview invited and interviewing). */
 export function canReject(c: Candidate): boolean {
   return c.candidateStatus === "shortlisted" || c.candidateStatus === "interview_invited" || c.candidateStatus === "interviewing";
 }

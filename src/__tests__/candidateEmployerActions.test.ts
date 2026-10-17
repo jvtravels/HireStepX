@@ -203,6 +203,22 @@ describe("respond", () => {
     expect(res.status).toBe(200);
   });
 
+  it("refuses to change the response once the employer is interviewing or has hired", async () => {
+    for (const status of ["interviewing", "hired"]) {
+      const calls = fakeDb({ response: "interested", status });
+      const res = await handler(post({ action: "respond", matchId: MATCH, response: "declined" }));
+      expect(res.status).toBe(409);
+      expect(calls.some((c) => c.method !== "GET")).toBe(false);
+    }
+    expect(notify).not.toHaveBeenCalled();
+  });
+
+  it("still lets a response change while the match is only invited", async () => {
+    fakeDb({ response: "interested", status: "interview_invited" });
+    const res = await handler(post({ action: "respond", matchId: MATCH, response: "declined" }));
+    expect(res.status).toBe(200);
+  });
+
   it("is a no-op (no write, no event, no notification) when the response is unchanged", async () => {
     const calls = fakeDb({ response: "declined" });
     const res = await handler(post({ action: "respond", matchId: MATCH, response: "declined" }));

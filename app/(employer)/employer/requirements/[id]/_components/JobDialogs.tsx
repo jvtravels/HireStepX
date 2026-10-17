@@ -57,7 +57,7 @@ export function UnlockHistoryDialog({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Unlock history</DialogTitle>
-          <DialogDescription>Every contact unlock purchased against this requirement.</DialogDescription>
+          <DialogDescription>Every contact unlock purchased against this job.</DialogDescription>
         </DialogHeader>
         <div aria-live="polite" aria-busy={loading}>
           {loading ? (
@@ -76,7 +76,7 @@ export function UnlockHistoryDialog({
               Check your connection and try again.
             </InlineNotice>
           ) : relevant.length === 0 ? (
-            <HelpText>No unlocks purchased for this requirement yet.</HelpText>
+            <HelpText>No unlocks purchased for this job yet.</HelpText>
           ) : (
             <ul className="m-0 flex max-h-80 list-none flex-col overflow-y-auto p-0">
               {relevant.map((p) => {

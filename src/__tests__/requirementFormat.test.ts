@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { budgetLabel, closedSummary, practisedLabel, previewText, timeAgoLabel, whereLabel } from "../../app/(employer)/employer/requirements/[id]/_components/requirementFormat";
+import { budgetLabel, candidateResponseOf, canInviteCandidate, canMessageCandidate, closedSummary, isFinalStatus, practisedLabel, previewText, reversibilityNote, timeAgoLabel, whereLabel } from "../../app/(employer)/employer/requirements/[id]/_components/requirementFormat";
+import type { Candidate } from "../employer/mockData";
 
 const NOW = new Date("2026-10-15T12:00:00").getTime();
 
@@ -71,10 +72,10 @@ describe("closedSummary", () => {
 
   it("says how a closed job ended", () => {
     expect(closedSummary({ status: "closed", archiveReason: "Role filled.", archiveDisposition: "reject_remaining" })).toBe(
-      "This requirement is closed. Reason: Role filled. Open candidates were rejected when it closed. Candidate details are read-only.",
+      "This job is closed. Reason: Role filled. Open candidates were rejected when it closed. Candidate details are read-only.",
     );
     expect(closedSummary({ status: "closed", archiveReason: null, archiveDisposition: "keep_candidates" })).toContain("kept as they were");
-    expect(closedSummary({ status: "closed", archiveReason: null, archiveDisposition: null })).toBe("This requirement is closed. Candidate details are read-only.");
+    expect(closedSummary({ status: "closed", archiveReason: null, archiveDisposition: null })).toBe("This job is closed. Candidate details are read-only.");
   });
 });
 
@@ -98,5 +99,27 @@ describe("budgetLabel", () => {
   });
   it("does not label raw rupee amounts as LPA", () => {
     expect(budgetLabel(req({ budgetMin: 1800000, budgetMax: 2800000 }))).toBe("₹18,00,000–28,00,000/year");
+  });
+});
+
+describe("candidate gating helpers", () => {
+  const base = { candidateStatus: "shortlisted", unlocked: false } as Candidate;
+  it("blocks invite and message for declined and withdrawn candidates", () => {
+    expect(canInviteCandidate({ ...base, candidateResponse: "declined" })).toBe(false);
+    expect(canInviteCandidate({ ...base, candidateWithdrew: true })).toBe(false);
+    expect(canMessageCandidate({ ...base, unlocked: true, candidateResponse: "declined" })).toBe(false);
+    expect(canMessageCandidate({ ...base, unlocked: true, candidateWithdrew: true })).toBe(false);
+  });
+  it("allows messaging an interested candidate before unlock but not a silent one", () => {
+    expect(canMessageCandidate({ ...base, candidateResponse: "interested" })).toBe(true);
+    expect(canMessageCandidate({ ...base, candidateResponse: "none" })).toBe(false);
+    expect(candidateResponseOf({ ...base })).toBe("none");
+  });
+  it("treats rejected as reopenable, not final", () => {
+    expect(isFinalStatus("rejected")).toBe(false);
+    expect(isFinalStatus("hired")).toBe(true);
+    expect(reversibilityNote("rejected")).toMatch(/reopen/i);
+    expect(reversibilityNote("hired")).toMatch(/final/i);
+    expect(reversibilityNote("interviewing")).not.toMatch(/final|undone/i);
   });
 });
