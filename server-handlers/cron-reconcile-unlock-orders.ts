@@ -13,6 +13,7 @@ export const config = { runtime: "nodejs" };
 
 import { slog, supabaseUrl, supabaseServiceHeaders } from "./_shared";
 import { reconcileUnlockOrders } from "./_employer-unlock-reconcile";
+import { recordCronSuccess } from "./_cron-heartbeat";
 
 declare const process: { env: Record<string, string | undefined> };
 
@@ -40,6 +41,7 @@ export default async function handler(req: Request): Promise<Response> {
       razorpayKeySecret: keySecret,
     });
     if (summary.errors > 0) slog.warn("unlock reconcile finished with errors", { code: "unlock_reconcile_errors", ...summary });
+    await recordCronSuccess("cron-reconcile-unlock-orders");
     return jsonResponse({ ok: true, ...summary, duration_ms: Date.now() - t0 });
   } catch (err) {
     slog.error("unlock reconcile failed", { code: "unlock_reconcile_failed", err: err instanceof Error ? err.message : String(err) });

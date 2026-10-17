@@ -1888,6 +1888,8 @@ create table if not exists employer_unlock_payments (
 );
 
 create index if not exists idx_employer_unlock_payments_employer on employer_unlock_payments(employer_id, created_at desc);
+-- 0043: admin employer-financials scans payments by date across all employers.
+create index if not exists idx_employer_unlock_payments_created on employer_unlock_payments(created_at);
 
 -- Idempotent upgrade for existing installs created before the fix above:
 -- the FK was originally `on delete cascade`, which deleted payment records
@@ -2343,6 +2345,8 @@ create table if not exists public.employer_unlock_orders (
 create index if not exists idx_unlock_orders_employer on public.employer_unlock_orders(employer_id, created_at desc);
 create index if not exists idx_unlock_orders_open on public.employer_unlock_orders(status, created_at)
   where status in ('created', 'paid');
+-- 0043: health check + admin financials also read failed/partial orders.
+create index if not exists idx_unlock_orders_status_created on public.employer_unlock_orders(status, created_at);
 -- At most one open single-candidate order per (employer, match) — replaces
 -- the 90s Redis lock that failed open when Upstash was unavailable.
 create unique index if not exists uq_unlock_orders_open_single
@@ -2461,13 +2465,13 @@ create table if not exists public.employer_credit_ledger (
   id uuid primary key default gen_random_uuid(),
   employer_id uuid not null references public.employers(id) on delete cascade,
   amount integer not null check (amount <> 0),
-  kind text not null check (kind in ('refund', 'spend', 'release')),
-  reason text check (reason in ('declined', 'withdrew', 'blocked', 'no_response', 'unavailable')),
+  kind text not null check (kind in ('refund', 'spend', 'release', 'clawback', 'conversion')),
+  reason text check (reason in ('declined', 'withdrew', 'blocked', 'no_response', 'unavailable', 'payment_refunded', 'payment_disputed', 'late_payment')),
   match_id uuid,
   order_ref text,
   created_at timestamptz not null default now(),
   constraint employer_credit_ledger_sign check (
-    (kind = 'spend' and amount < 0) or (kind <> 'spend' and amount > 0)
+    (kind in ('spend', 'clawback') and amount < 0) or (kind not in ('spend', 'clawback') and amount > 0)
   )
 );
 
@@ -2482,6 +2486,13 @@ create unique index if not exists uq_employer_credit_release_order
   on public.employer_credit_ledger (order_ref) where kind = 'release';
 
 alter table public.employer_credit_ledger enable row level security; -- service-role only
+
+-- 0042: clawback/conversion adjustments are keyed by a synthetic order_ref and applied once.
+create unique index if not exists uq_employer_credit_adjustment_ref
+  on public.employer_credit_ledger (order_ref) where kind in ('clawback', 'conversion');
+alter table public.employer_unlock_orders
+  add column if not exists credit_applied_paise integer,
+  add column if not exists refund_due_paise integer;
 
 -- Atomically spends up to p_amount of credit for one order. Returns the amount
 -- actually spent: p_amount, or 0 when the balance no longer covers it. Locks

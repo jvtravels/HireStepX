@@ -207,12 +207,20 @@ export interface EmployerRow {
   submitted_at: string;
 }
 
+const EMPLOYER_PROFILE_CHUNK = 80;
+
 export async function getEmployers() {
-  const [employers, profiles] = await Promise.all([
-    fetchJSON<EmployerRow>("employers?select=id,company_name,website,submitted_at&order=submitted_at.desc&limit=1000"),
-    fetchJSON<{ id: string; name: string | null; email: string }>("profiles?select=id,name,email&limit=2000"),
-  ]);
-  const profileMap = new Map(profiles.map((p) => [p.id, { name: p.name || "(no name)", email: p.email }]));
+  const employers = await fetchJSON<EmployerRow>("employers?select=id,company_name,website,submitted_at&order=submitted_at.desc&limit=1000");
+  // Join by id, not "first 2000 profiles": once the profiles table outgrows
+  // that cap, employers beyond it showed as "(deleted user)".
+  const profileMap = new Map<string, { name: string; email: string }>();
+  const ids = employers.map((e) => encodeURIComponent(e.id));
+  for (let i = 0; i < ids.length; i += EMPLOYER_PROFILE_CHUNK) {
+    const rows = await fetchJSON<{ id: string; name: string | null; email: string }>(
+      `profiles?id=in.(${ids.slice(i, i + EMPLOYER_PROFILE_CHUNK).join(",")})&select=id,name,email`,
+    );
+    for (const p of rows) profileMap.set(p.id, { name: p.name || "(no name)", email: p.email });
+  }
 
   const rows = employers.map((e) => ({
     id: e.id,

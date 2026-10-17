@@ -2,6 +2,7 @@
  * daily uptime-check cron can push these signals via email instead of
  * them sitting poll-only behind the admin dashboard's "health" tab. */
 
+import { getEmployerHealthAlerts } from "./_employer-health-signals";
 import { RATES_LAST_VERIFIED_AT, RATE_STALENESS_THRESHOLD_DAYS, rateCardAgeDays, isRateCardStale } from "./_cost-helpers";
 
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
@@ -180,6 +181,13 @@ export async function getHealthAlerts(): Promise<{ alerts: HealthAlert[]; checke
       message: `LLM/TTS/STT rate card hasn't been reverified in ${ageDays} days (last verified ${RATES_LAST_VERIFIED_AT}). The admin cost dashboard and both Sarvam/Deepgram credit guardrails all read this same rate card.`,
       action: "Check current Groq/Sarvam/Deepgram list prices (or your negotiated invoice rate) against DEFAULT_COST_RATES in _cost-helpers.ts, update the rate + RATES_LAST_VERIFIED_AT together, and log an actual invoice total via the Cost tab's reconciliation form.",
     });
+  }
+
+  // ── Signal 6: employer unlock orders + cron heartbeats ──
+  try {
+    alerts.push(...(await getEmployerHealthAlerts(now)));
+  } catch (err) {
+    console.error("[health-alerts] employer signals failed:", err);
   }
 
   return {

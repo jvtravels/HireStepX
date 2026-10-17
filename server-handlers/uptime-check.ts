@@ -6,9 +6,9 @@
 /* poll-only behind the admin "health" tab. */
 /* Schedule lives in vercel.json — runs daily (the plan only permits */
 /* daily crons; sub-daily cadence is rejected at deploy time). For */
-/* minute-level uptime alerting — the gap that matters most during a fast */
-/* traffic surge — point an external monitor (UptimeRobot/BetterStack) at */
-/* /api/health; that is a dashboard signup, not something this cron can do. */
+/* sub-daily uptime alerting (this is NOT minute-level; it runs once a day), */
+/* point an external monitor (UptimeRobot/BetterStack) at /api/health; */
+/* that is a dashboard signup, not something this cron can do. */
 /* No logic here assumes any particular cadence. */
 /* Visible in Vercel Dashboard → Logs for alerting */
 
@@ -21,8 +21,9 @@ declare const process: { env: Record<string, string | undefined> };
 export default async function handler(req: Request): Promise<Response> {
   // Verify cron secret to prevent unauthorized triggers
   const authHeader = req.headers.get("authorization");
-  const cronSecret = process.env.CRON_SECRET;
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+  const cronSecret = (process.env.CRON_SECRET || "").trim();
+  // Fail closed: an unset secret must not leave this endpoint open.
+  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
     return new Response("Unauthorized", { status: 401 });
   }
 

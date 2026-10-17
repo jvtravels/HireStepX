@@ -7,6 +7,7 @@ import { getOverview, getUsers, getUserDetail, getSessionDetail, getSessions, ge
 import { getFinancials, getLLMUsage, getCostData, saveCostReconciliation } from "./_admin-financials";
 import { getSupportMessages, getMessaging, reviewMessageFlag, getReferrals, getEmployers, getPromoCodes, updateSupportStatus } from "./_admin-community";
 import { getHealthAlerts } from "./_health-alerts";
+import { getEmployerFinancials } from "./_admin-employer-financials";
 import { listEmployers, setEmployerTier, suspendEmployer, unsuspendEmployer, listEmployerReports, resolveEmployerReport } from "./_admin-employers";
 import { listUnlockRequirements, getUnlockMatches, adminUnlockCandidates } from "./_admin-unlock";
 import { razorpayBasicAuth } from "./_razorpay-auth";
@@ -50,6 +51,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           if (!body?.sessionId) throw new ValidationError("sessionId required");
           return getSessionDetail(body.sessionId);
         case "financials": return getFinancials();
+        case "employer-financials": return getEmployerFinancials();
         case "llm": return getLLMUsage();
         case "sessions": return getSessions();
         case "feedback": return getFeedback();

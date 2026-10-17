@@ -88,6 +88,10 @@
     {
       "path": "/api/cron-credit-no-response",
       "schedule": "40 5 * * *"
+    },
+    {
+      "path": "/api/send-employer-nudges",
+      "schedule": "30 6 * * *"
     }
   ]
 }

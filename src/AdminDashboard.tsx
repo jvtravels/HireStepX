@@ -8,6 +8,7 @@ import { Button } from "./components/ui/button";
 import { SearchWithSuggestions } from "./components/SearchWithSuggestions";
 import LoadingScreen from "./_LoadingScreen";
 import AdminUnlockPanel from "./AdminUnlockPanel";
+import AdminEmployerFinancials from "./AdminEmployerFinancials";
 
 /* ─── Token-based auth ─── */
 // Token lives in a React ref (memory only). The HttpOnly admin_token cookie is
@@ -2069,7 +2070,6 @@ export default function AdminDashboard() {
 
     return (
       <div>
-        {/* ── KPI Row ── */}
         <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginBottom: 24 }}>
           <div style={statCard}>
             <p style={labelStyle}>Total Revenue</p>
@@ -2119,7 +2119,7 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* ── 12-Month Revenue Chart ── */}
+        <AdminEmployerFinancials getToken={getToken} setToken={setToken} />
         <div style={{ ...card, marginBottom: 24 }}>
           <p style={{ ...labelStyle, marginBottom: 16 }}>Revenue — Last 12 Months</p>
           <div style={{ display: "flex", alignItems: "flex-end", gap: 4, height: 120, marginBottom: 8 }}>
