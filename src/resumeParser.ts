@@ -2,6 +2,7 @@
 /* Extracts plain text from PDF, DOCX, and TXT files client-side */
 
 import { yieldToMainThread } from "./_browser-api-guards";
+import { INDIAN_CITIES } from "./_indian-cities";
 
 /** Read a .txt file directly */
 function readTxt(file: File): Promise<string> {
@@ -300,44 +301,11 @@ function extractContact(text: string): Pick<ParsedResume, "name" | "email" | "ph
   const linkedinMatch = text.match(/linkedin\.com\/in\/[\w-]+/i);
 
   // Location: look for City, ST or City, State patterns
-  const locationMatch = text.match(/([A-Z][a-z]+(?:\s[A-Z][a-z]+)*,\s*[A-Z]{2})\b/) ||
-    text.match(/([A-Z][a-z]+(?:\s[A-Z][a-z]+)*,\s*[A-Z][a-z]+(?:\s[A-Z][a-z]+)*)/);
+  // [ \t] not \s: a newline must not let a job-title line merge into the location line.
+  const locationMatch = text.match(/([A-Z][a-z]+(?:[ \t][A-Z][a-z]+)*,[ \t]*[A-Z]{2})\b/) ||
+    text.match(/([A-Z][a-z]+(?:[ \t][A-Z][a-z]+)*,[ \t]*[A-Z][a-z]+(?:[ \t][A-Z][a-z]+)*)/);
 
   // Indian city detection fallback
-  const INDIAN_CITIES = new Set([
-    "bangalore", "bengaluru", "mumbai", "bombay", "delhi", "new delhi", "delhi ncr",
-    "gurgaon", "gurugram", "noida", "greater noida", "ghaziabad", "faridabad",
-    "hyderabad", "pune", "chennai", "madras", "kolkata", "calcutta",
-    "ahmedabad", "jaipur", "chandigarh", "mohali", "kochi", "cochin",
-    "thiruvananthapuram", "trivandrum", "lucknow", "indore", "coimbatore",
-    "nagpur", "visakhapatnam", "vizag", "bhubaneswar", "mysore", "mysuru",
-    "mangalore", "mangaluru", "vadodara", "baroda", "surat",
-    "bhopal", "patna", "ranchi", "dehradun", "raipur", "guwahati",
-    "agra", "varanasi", "amritsar", "jodhpur", "udaipur", "kanpur",
-    "allahabad", "prayagraj", "nashik", "aurangabad", "rajkot", "hubli",
-    "belgaum", "belagavi", "salem", "tiruchirappalli", "trichy", "madurai",
-    "vijayawada", "guntur", "warangal", "navi mumbai", "thane",
-    "pimpri-chinchwad", "gandhinagar", "shimla", "srinagar", "jammu",
-    "panaji", "imphal", "shillong", "aizawl", "kohima", "agartala",
-    "itanagar", "gangtok", "pondicherry", "puducherry",
-    "nellore", "tirupati", "kakinada", "rajahmundry",
-    "jalandhar", "ludhiana", "patiala", "bathinda",
-    "meerut", "aligarh", "bareilly", "moradabad",
-    "jamshedpur", "dhanbad", "bokaro",
-    "cuttack", "rourkela", "sambalpur",
-    "siliguri", "durgapur", "asansol",
-    "kozhikode", "calicut", "thrissur", "kollam",
-    "tiruvallur", "vellore", "erode", "tirunelveli",
-    "belgaum", "dharwad", "gulbarga", "kalaburagi",
-    "kolhapur", "solapur", "sangli", "satara",
-    /* OA-B49: Devanagari spellings for the major metros so a Hindi resume's
-     * location line ("मुंबई", "नई दिल्ली") is detected. toLowerCase() is a
-     * no-op on Devanagari, so the includes()/has() checks match as-is. */
-    "मुंबई", "मुम्बई", "दिल्ली", "नई दिल्ली", "बेंगलुरु", "बैंगलोर", "बंगलौर",
-    "हैदराबाद", "पुणे", "चेन्नई", "कोलकाता", "अहमदाबाद", "जयपुर", "चंडीगढ़",
-    "गुरुग्राम", "गुड़गांव", "नोएडा", "लखनऊ", "इंदौर", "नागपुर", "भोपाल",
-    "कोच्चि", "सूरत", "वडोदरा", "ठाणे", "नवी मुंबई", "पटना", "कानपुर",
-  ]);
 
   let resolvedLocation = locationMatch?.[1] || "";
 

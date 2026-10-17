@@ -5,6 +5,7 @@
    follow-up, not implemented here. */
 
 import { canonicalSkillToken } from "../src/skillNormalize";
+import { INDIAN_CITIES } from "../src/_indian-cities";
 
 export interface CandidatePoolRow {
   id: string;
@@ -205,10 +206,33 @@ export function extractSkills(resumeData: unknown): string[] {
   return Array.isArray(skills) ? skills.filter((s): s is string => typeof s === "string") : [];
 }
 
+const MAX_FREE_TEXT_LOCATION = 40;
+
+/* Stored locations come from resume parsing and sometimes carry a neighbouring
+   line ("Full Stack Developer Vikaspuri, New Delhi"). Reduce to the known city
+   so the candidates location filter lists one clean entry per city. */
+export function normalizeLocation(raw: string): string {
+  const text = raw.replace(/\s+/g, " ").trim();
+  if (!text) return "";
+  const lower = text.toLowerCase();
+  let best = "";
+  for (const city of INDIAN_CITIES) {
+    if (city.length <= best.length || !/^[a-z -]+$/.test(city)) continue;
+    const at = lower.indexOf(city);
+    if (at < 0) continue;
+    const before = lower[at - 1];
+    const after = lower[at + city.length];
+    if ((before && /[a-z]/.test(before)) || (after && /[a-z]/.test(after))) continue;
+    best = city;
+  }
+  if (best) return best.replace(/\b[a-z]/g, (c) => c.toUpperCase());
+  return text.length <= MAX_FREE_TEXT_LOCATION ? text : "";
+}
+
 export function extractResumeLocation(resumeData: unknown): string {
   if (!resumeData || typeof resumeData !== "object") return "";
   const loc = (resumeData as Record<string, unknown>).location;
-  return typeof loc === "string" ? loc : "";
+  return typeof loc === "string" ? normalizeLocation(loc) : "";
 }
 
 /** A profile with neither a target_role nor resume_data has nothing for

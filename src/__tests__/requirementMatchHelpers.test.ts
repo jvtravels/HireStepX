@@ -357,6 +357,20 @@ describe("extractResumeLocation", () => {
     expect(extractResumeLocation({ location: "Pune" })).toBe("Pune");
   });
 
+  it("reduces a location polluted by a neighbouring line to the known city", () => {
+    expect(extractResumeLocation({ location: "Full Stack Developer Vikaspuri, New Delhi" })).toBe("New Delhi");
+    expect(extractResumeLocation({ location: "Mumbai, Maharashtra" })).toBe("Mumbai");
+    expect(extractResumeLocation({ location: "Navi Mumbai" })).toBe("Navi Mumbai");
+  });
+
+  it("does not match a city name inside a longer word", () => {
+    expect(extractResumeLocation({ location: "Punekar Lane" })).toBe("Punekar Lane");
+  });
+
+  it("drops long free text that names no known city", () => {
+    expect(extractResumeLocation({ location: "Senior Software Engineer at a fast growing fintech startup" })).toBe("");
+  });
+
   it("returns empty string for missing or malformed resume_data", () => {
     expect(extractResumeLocation(null)).toBe("");
     expect(extractResumeLocation("not-an-object")).toBe("");

@@ -179,6 +179,11 @@ B.Tech Computer Science`;
       expect(result.name).toBe("राहुल शर्मा");
     });
 
+    it("does not merge a job-title line into the location line", () => {
+      const result = parseResumeData("Asha Rao\nasha@example.com\nFull Stack Developer\nVikaspuri, New Delhi\n\nSkills\nReact");
+      expect(result.location).not.toMatch(/Developer/);
+    });
+
     it("detects a Devanagari-spelled Indian city", () => {
       const result = parseResumeData(hindiResume);
       expect(result.location).toContain("मुंबई");
