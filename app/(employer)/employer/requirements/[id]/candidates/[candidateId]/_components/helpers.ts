@@ -438,14 +438,6 @@ export function shortlistPosition(ranked: Candidate[], id: string): ShortlistPos
   return { position: i + 1, total: ranked.length, prev: ranked[i - 1] ?? null, next: ranked[i + 1] ?? null };
 }
 
-export const REJECT_REASONS = ["Skills gap", "Not enough experience", "Too senior", "Location", "Salary expectations", "Notice period", "Communication", "Role mismatch"] as const;
-
-/** Reasons first, then the free text, in one string for the existing `note` field. */
-export function composeRejectNote(reasons: readonly string[], text: string): string | undefined {
-  const parts = [reasons.length > 0 ? `Reasons: ${reasons.join(", ")}.` : "", text.trim()].filter(Boolean);
-  return parts.length > 0 ? parts.join(" ") : undefined;
-}
-
 /** Plain-text brief for pasting into chat or email. Built only from what is visible on the page,
  *  so a locked candidate stays anonymous and no contact details leave the screen. */
 /** Notice period in the employer's terms ("30-day notice", "Immediate joiner"); null when we can't read it. */

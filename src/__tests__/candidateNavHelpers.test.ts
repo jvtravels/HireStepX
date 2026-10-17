@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import type { Candidate } from "@/employer/mockData";
-import { candidateSignal, composeRejectNote, fitHeadline, rankCandidates, shortlistPosition } from "../../app/(employer)/employer/requirements/[id]/candidates/[candidateId]/_components/helpers";
+import { candidateSignal, fitHeadline, rankCandidates, shortlistPosition } from "../../app/(employer)/employer/requirements/[id]/candidates/[candidateId]/_components/helpers";
+import { composeRejectNote } from "@/employer/_passReasons";
 
 const cand = (id: string, matchScore: number) => ({ id, matchScore }) as Candidate;
 

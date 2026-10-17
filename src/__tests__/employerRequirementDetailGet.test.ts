@@ -33,7 +33,7 @@ const REQ_ROW = {
   min_star_completeness: null, matched_pool_size: 0, created_at: "2026-09-01T00:00:00Z", last_matched_at: null,
 };
 
-interface SimMatch { id: string; candidate_user_id: string; match_score: number; unlocked?: boolean; candidate_status?: string }
+interface SimMatch { id: string; candidate_user_id: string; match_score: number; unlocked?: boolean; candidate_status?: string; status_updated_at?: string }
 interface Sim {
   matches: SimMatch[];
   blocks?: string[];
@@ -67,6 +67,7 @@ function install(sim: Sim) {
         id: m.id, candidate_user_id: m.candidate_user_id, match_score: m.match_score, roster_score: m.match_score,
         unlocked: !!m.unlocked, unlocked_at: m.unlocked ? "2026-09-02T00:00:00Z" : null,
         candidate_status: m.candidate_status ?? "shortlisted", candidate_status_note: null, interview_scheduled_at: null,
+        candidate_status_updated_at: m.status_updated_at ?? null, created_at: "2026-09-01T00:00:00Z",
       })));
     }
     if (url.includes("/rest/v1/employer_blocks?")) return sim.blocksFail ? json([], false) : json((sim.blocks ?? []).map((c) => ({ candidate_user_id: c })));
@@ -131,6 +132,15 @@ describe("GET employer-requirement-detail — masking", () => {
     expect(c.contact).toMatchObject({ email: EMAIL });
     expect(c.maskedFields).toEqual([]);
     expect(c.candidateWithdrew).toBe(false);
+  });
+
+  it("reports waitingSince as the newest of status update, unlock and match creation", async () => {
+    install({ matches: [m(1, { unlocked: true }), m(2, { unlocked: true, status_updated_at: "2026-09-10T00:00:00Z" }), m(3)] });
+    const { body } = await get();
+    const since = Object.fromEntries((body.candidates as Array<{ id: string; waitingSince: string | null }>).map((c) => [c.id, c.waitingSince]));
+    expect(Object.values(since)).toContain("2026-09-02T00:00:00Z");
+    expect(Object.values(since)).toContain("2026-09-10T00:00:00Z");
+    expect(Object.values(since)).toContain("2026-09-01T00:00:00Z");
   });
 });
 

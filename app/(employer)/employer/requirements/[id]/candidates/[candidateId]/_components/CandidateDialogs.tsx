@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "cn";
-import { REJECT_REASONS, composeRejectNote } from "./helpers";
+import { REJECT_REASONS, composeRejectNote } from "@/employer/_passReasons";
 import { ActionNoticeAlert } from "./Notices";
 import type { ActionNotice } from "./useCandidateDetail";
 

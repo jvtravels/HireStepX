@@ -39,6 +39,7 @@ export const config = { runtime: "edge" };
 import { withAuthAndRateLimit, corsHeaders, withRequestId, slog } from "./_shared";
 import { extractResumeLocation, explainMatch, extractSkills } from "./_requirement-match-helpers";
 import { extractResumeDetail, redactResumeDetailForLock } from "./_resume-detail-helpers";
+import { later } from "./_employer-dashboard-helpers";
 import { runMatching, logRequirementActivity } from "./employer-requirements";
 import {
   fetchKeyset,
@@ -194,11 +195,12 @@ export default async function handler(req: Request): Promise<Response> {
     type MatchRow = {
       id: string; candidate_user_id: string; match_score: number; roster_score: number; unlocked: boolean; unlocked_at: string | null;
       candidate_status: string; candidate_status_note: string | null; interview_scheduled_at: string | null;
+      candidate_status_updated_at: string | null; created_at: string | null;
     };
     // Light columns only, keyset-paginated: the heavy profile/session reads
     // below run for the requested page, not the whole shortlist.
     const matchesRead = await fetchKeyset<MatchRow & Record<string, unknown>>({
-      baseUrl: `${SUPABASE_URL}/rest/v1/requirement_matches?requirement_id=eq.${encodeURIComponent(requirementId)}&select=id,candidate_user_id,match_score,roster_score,unlocked,unlocked_at,candidate_status,candidate_status_note,interview_scheduled_at`,
+      baseUrl: `${SUPABASE_URL}/rest/v1/requirement_matches?requirement_id=eq.${encodeURIComponent(requirementId)}&select=id,candidate_user_id,match_score,roster_score,unlocked,unlocked_at,candidate_status,candidate_status_note,interview_scheduled_at,candidate_status_updated_at,created_at`,
       headers: serviceHeaders(), keyField: "id", pageSize: 1000, maxRows: 5000,
     });
     if (matchesRead.failed) throw new Error("matches read failed");
@@ -301,6 +303,7 @@ export default async function handler(req: Request): Promise<Response> {
         candidateStatus: m.candidate_status,
         candidateStatusNote: m.candidate_status_note,
         interviewScheduledAt: m.interview_scheduled_at,
+        waitingSince: later(later(m.candidate_status_updated_at, m.unlocked_at), m.created_at),
         // Additive: what was withheld for a locked match, and whether a paid
         // candidate has since withdrawn employer visibility.
         maskedFields: unlocked ? [] : [...LOCKED_MASKED_FIELDS],

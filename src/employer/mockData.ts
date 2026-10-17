@@ -80,6 +80,8 @@ export interface Candidate {
   candidateStatus: CandidateStatus;
   candidateStatusNote: string | null;
   interviewScheduledAt: string | null;
+  /** When the candidate last changed state for this job: the newest of the status change, the unlock and the match itself. */
+  waitingSince?: string | null;
 }
 
 export type RequirementStatus = "generating" | "ready" | "partial" | "zero" | "failed" | "closed";

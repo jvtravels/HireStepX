@@ -7,7 +7,9 @@ import {
   CheckCircle2Icon,
   CodeXmlIcon,
   FileCheckIcon,
+  HourglassIcon,
   MicIcon,
+  UserRoundXIcon,
   SlidersHorizontalIcon,
   UsersIcon,
   ZapIcon,
@@ -34,6 +36,8 @@ const INSIGHT_ICON: Record<string, LucideIcon> = {
   immediate: ZapIcon,
   overdue: CalendarClockIcon,
   recent: ActivityIcon,
+  waiting: HourglassIcon,
+  "pass-reason": UserRoundXIcon,
 };
 
 function InsightPill({ insight, active, onSelect }: { insight: JobInsight; active: boolean; onSelect: () => void }) {

@@ -64,7 +64,7 @@ export interface JobPipelineRow {
 
 const INTERVIEW_STATUSES = new Set(["interview_invited", "interviewing"]);
 
-function later(a: string | null, b: string | null): string | null {
+export function later(a: string | null, b: string | null): string | null {
   if (!a) return b;
   if (!b) return a;
   return Date.parse(a) >= Date.parse(b) ? a : b;

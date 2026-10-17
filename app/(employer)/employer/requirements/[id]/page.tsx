@@ -295,6 +295,12 @@ export default function RequirementDetailPage() {
     return { ok: true };
   };
 
+  /* An insight spans every stage, so a tab that hides its candidates would show an empty table. */
+  const selectInsight = (id: string | null) => {
+    setInsightId(id);
+    if (id) setTabChoice(null);
+  };
+
   const clearFilters = () => {
     setSearch("");
     setContactFilter("all");
@@ -359,7 +365,7 @@ export default function RequirementDetailPage() {
         onReload={load}
         expandedContent={hasRoleDetails(requirement) ? <JobOverview requirement={requirement} /> : null}
         requirementsSlot={hasKeyRequirements(requirement) ? <KeyRequirements requirement={requirement} /> : null}
-        insightsSlot={insights.length > 0 ? <JobInsights insights={insights} activeInsightId={activeInsight?.id ?? null} onSelectInsight={setInsightId} /> : null}
+        insightsSlot={insights.length > 0 ? <JobInsights insights={insights} activeInsightId={activeInsight?.id ?? null} onSelectInsight={selectInsight} /> : null}
       />
       <JobSideRail requirement={requirement} readOnly={readOnly} suspended={suspended} onStageChange={changeStage} />
       </div>

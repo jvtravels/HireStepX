@@ -5,6 +5,7 @@
 
 import type { Candidate, CandidateStatus, Requirement } from "./mockData";
 import { matchRequiredSkills } from "../skillNormalize";
+import { REJECT_REASONS, parseRejectReasons, type RejectReason } from "./_passReasons";
 
 const SKILL_ALIASES: Record<string, string> = {
   js: "javascript",
@@ -306,7 +307,9 @@ export type InsightFilter =
   | { kind: "portfolio" }
   | { kind: "immediate" }
   | { kind: "overdue" }
-  | { kind: "recent" };
+  | { kind: "recent" }
+  | { kind: "waiting" }
+  | { kind: "pass-reason"; reason: string };
 
 /** Practiced this recently counts as actively preparing, so an invite is likely to land. */
 export const RECENT_ACTIVITY_DAYS = 3;
@@ -317,6 +320,16 @@ export function interviewOverdue(c: Candidate, now = Date.now()): boolean {
   if (!c.interviewScheduledAt) return false;
   const at = new Date(c.interviewScheduledAt).getTime();
   return !Number.isNaN(at) && at < now;
+}
+
+/** An unlocked candidate still waiting for a decision this long means the employer paid and then stalled. */
+export const WAITING_DAYS = 5;
+
+export function waitingDays(c: Candidate, now = Date.now()): number | null {
+  if (!c.unlocked || c.candidateStatus !== "shortlisted" || !c.waitingSince) return null;
+  const since = new Date(c.waitingSince).getTime();
+  if (Number.isNaN(since)) return null;
+  return Math.floor((now - since) / 86_400_000);
 }
 
 export interface JobInsight {
@@ -342,7 +355,27 @@ export function matchesInsight(c: Candidate, f: InsightFilter, now = Date.now())
       return interviewOverdue(c, now);
     case "recent":
       return c.candidateStatus === "shortlisted" && c.lastActiveDaysAgo >= 0 && c.lastActiveDaysAgo <= RECENT_ACTIVITY_DAYS;
+    case "waiting":
+      return (waitingDays(c, now) ?? -1) >= WAITING_DAYS;
+    case "pass-reason":
+      return c.candidateStatus === "rejected" && parseRejectReasons(c.candidateStatusNote).some((r) => r === f.reason);
   }
+}
+
+/** Reasons given when passing on candidates, most common first (ties keep the dialog's order). */
+export function passReasonCounts(list: Candidate[]): { reasons: Array<[RejectReason, number]>; withReasons: number } {
+  const counts = new Map<RejectReason, number>();
+  let withReasons = 0;
+  for (const c of list) {
+    if (c.candidateStatus !== "rejected") continue;
+    const given = parseRejectReasons(c.candidateStatusNote);
+    if (given.length === 0) continue;
+    withReasons += 1;
+    for (const r of given) counts.set(r, (counts.get(r) ?? 0) + 1);
+  }
+  const order = (r: RejectReason) => REJECT_REASONS.indexOf(r);
+  const reasons = [...counts.entries()].sort((a, b) => b[1] - a[1] || order(a[0]) - order(b[0]));
+  return { reasons, withReasons };
 }
 
 /** Plain-language observations, emitted only when the data supports them. */
@@ -355,6 +388,11 @@ export function jobInsights(r: Pick<Requirement, "skills" | "portfolioRequired" 
   const overdue = list.filter((c) => interviewOverdue(c, now)).length;
   if (overdue > 0) {
     out.push({ id: "overdue", text: `${overdue} ${overdue === 1 ? "interview is" : "interviews are"} past the scheduled date. Record the outcome.`, label: "Interview date passed", filter: { kind: "overdue" } });
+  }
+
+  const waiting = list.filter((c) => matchesInsight(c, { kind: "waiting" }, now)).length;
+  if (waiting > 0) {
+    out.push({ id: "waiting", text: `${waiting} unlocked ${waiting === 1 ? "candidate has" : "candidates have"} had no update for ${WAITING_DAYS}+ days. Move them forward or close them.`, label: `No update for ${WAITING_DAYS}+ days`, filter: { kind: "waiting" } });
   }
 
   const must = dedupe(r.skills);
@@ -378,6 +416,17 @@ export function jobInsights(r: Pick<Requirement, "skills" | "portfolioRequired" 
     if (top && top[1] >= 2 && top[1] / list.length >= 0.4) {
       out.push({ id: "top-gap", text: `${top[0]} is the most common gap, missing for ${top[1]} candidates.`, label: `Missing ${top[0]}`, filter: { kind: "gap", skill: top[0] } });
     }
+  }
+
+  const passes = passReasonCounts(list);
+  const topPass = passes.reasons[0];
+  if (topPass && topPass[1] >= 2) {
+    out.push({
+      id: "pass-reason",
+      text: `${topPass[0]} is the top reason you passed, given for ${topPass[1]} of ${passes.withReasons} ${passes.withReasons === 1 ? "candidate" : "candidates"}.`,
+      label: `Passed: ${topPass[0].toLowerCase()}`,
+      filter: { kind: "pass-reason", reason: topPass[0] },
+    });
   }
 
   const proven = list.filter((c) => matchesInsight(c, { kind: "interview" })).length;
