@@ -78,7 +78,7 @@ export default function Composer({
         <p className="m-0 text-xs text-muted-foreground">This candidate isn&apos;t unlocked yet. If sending fails, unlock them first.</p>
       )}
 
-      <div className="rounded-xl border border-input bg-background transition-shadow focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/30 has-[textarea:disabled]:bg-muted/50">
+      <div className="@container rounded-xl border border-input bg-background transition-shadow focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/30 has-[textarea:disabled]:bg-muted/50">
         <label htmlFor={`${uid}-text`} className="sr-only">Message to {counterpartName}</label>
         <textarea
           ref={textRef}
@@ -150,18 +150,20 @@ export default function Composer({
               </ul>
             </PopoverContent>
           </Popover>
-          <span id={hintId} className="ml-auto hidden px-2 text-xs text-muted-foreground md:inline">
-            <kbd className="font-sans font-semibold">Enter</kbd> to send · <kbd className="font-sans font-semibold">Shift+Enter</kbd> new line
-          </span>
-          <Button
-            type="button"
-            size="sm"
-            onClick={onSend}
-            disabled={disabled || busy || !draft.trim()}
-            className="ml-auto gap-1.5 px-3 md:ml-0 pointer-coarse:h-11"
-          >
-            <SendIcon aria-hidden="true" className="size-4" /> {sending ? "Sending…" : "Send"}
-          </Button>
+          <div className="ml-auto flex shrink-0 items-center gap-2">
+            <span id={hintId} className="hidden px-2 text-xs whitespace-nowrap text-muted-foreground @xl:inline">
+              <kbd className="font-sans font-semibold">Enter</kbd> to send · <kbd className="font-sans font-semibold">Shift+Enter</kbd> new line
+            </span>
+            <Button
+              type="button"
+              size="sm"
+              onClick={onSend}
+              disabled={disabled || busy || !draft.trim()}
+              className="gap-1.5 px-3 pointer-coarse:h-11"
+            >
+              <SendIcon aria-hidden="true" className="size-4" /> {sending ? "Sending…" : "Send"}
+            </Button>
+          </div>
         </div>
       </div>
       <span role="status" className="sr-only">{sending ? "Sending message" : attaching ? "Uploading attachment" : ""}</span>
