@@ -90,7 +90,7 @@ export default async function handler(req: Request): Promise<Response> {
       return json({ error: "Add your company profile before importing a job description." }, 403, headers);
     }
     if (rows[0].suspended_at) {
-      return json({ error: "Your account is suspended, so imports are unavailable." }, 403, headers);
+      return json({ error: "Your account is suspended or scheduled for deletion, so imports are unavailable. Restore your account or contact support@hirestepx.com." }, 403, headers);
     }
   } catch (err) {
     slog.error("employer-parse-jd employer lookup failed", { error: err instanceof Error ? err.message.slice(0, 200) : String(err).slice(0, 200) });

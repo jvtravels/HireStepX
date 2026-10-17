@@ -30,6 +30,7 @@ import { daysSinceLastActive } from "./_employer-requirements-helpers";
 import { TIER_LIMITS, deriveEmployerTier, isSuspended, maskedCandidateName, type EmployerTier } from "./_employer-trust";
 import { loadAuthIdentity } from "./_entitlements";
 import { batchUnlockPrice, UNLOCK_BUNDLE_SIZE } from "./_unlock-pricing";
+import { slog } from "./_shared";
 
 type FetchImpl = typeof fetch;
 type Headers = Record<string, string>;
@@ -355,8 +356,32 @@ export async function loadHiredElsewhere(
   return out;
 }
 
+/** Pages fetched per candidate batch before we stop: 50 candidates x 5 pages
+ *  of 1000 is 100 sessions per candidate, far past what scoring can use. */
+export const SESSION_MAX_PAGES = 5;
+
+/* One page of one batch, retried once on a non-OK status or a thrown fetch.
+   null means both attempts failed. */
+async function fetchSessionPage(url: string, headers: Headers, fetchImpl: FetchImpl): Promise<GradedSessionRow[] | null> {
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const res = await fetchImpl(url, { headers });
+      if (!res.ok) continue;
+      const rows = (await res.json().catch(() => null)) as GradedSessionRow[] | null;
+      if (Array.isArray(rows)) return rows;
+    } catch {
+      /* fall through to the retry */
+    }
+  }
+  return null;
+}
+
 /** Graded sessions for `ids`, batched and newest-first. `withReports` also
- *  pulls report_json, needed only when the requirement sets a quality bar. */
+ *  pulls report_json, needed only when the requirement sets a quality bar.
+ *  A batch whose rows fill a page is paged on (a prolific candidate must not
+ *  silently lose the rest of their history), and a failed page is retried
+ *  once. Candidates in a batch that still fails are scored without session
+ *  evidence, so the count is logged rather than swallowed. */
 export async function loadGradedSessions(
   supabaseUrl: string,
   headers: Headers,
@@ -366,19 +391,23 @@ export async function loadGradedSessions(
 ): Promise<GradedSessionRow[]> {
   const select = `user_id,score,created_at,type,target_role,report_generated_at${withReports ? ",report_json" : ""}`;
   const out: GradedSessionRow[] = [];
+  let skippedCandidates = 0;
   for (const batch of chunk(ids, SESSION_BATCH)) {
-    try {
-      const res = await fetchImpl(
+    let failed = false;
+    for (let page = 0; page < SESSION_MAX_PAGES; page++) {
+      const rows = await fetchSessionPage(
         `${supabaseUrl}/rest/v1/sessions?user_id=in.(${inList(batch)})&report_generated_at=not.is.null` +
-          `&select=${select}&order=created_at.desc&limit=${SESSION_PAGE_LIMIT}`,
-        { headers },
+          `&select=${select}&order=created_at.desc,id.desc&limit=${SESSION_PAGE_LIMIT}&offset=${page * SESSION_PAGE_LIMIT}`,
+        headers, fetchImpl,
       );
-      if (!res.ok) continue;
-      const rows = (await res.json().catch(() => [])) as GradedSessionRow[];
-      if (Array.isArray(rows)) out.push(...rows);
-    } catch {
-      /* a failed batch just leaves those candidates without session evidence */
+      if (rows === null) { failed = true; break; }
+      out.push(...rows);
+      if (rows.length < SESSION_PAGE_LIMIT) break;
     }
+    if (failed) skippedCandidates += batch.length;
+  }
+  if (skippedCandidates > 0) {
+    slog.warn("loadGradedSessions: session batches failed, candidates scored without session evidence", { skippedCandidates, requested: ids.length });
   }
   return keepGradedSessions(out);
 }
@@ -487,7 +516,7 @@ export type Allowance =
   | { ok: false; status: number; body: Record<string, unknown>; retryAfterSeconds?: number };
 
 export const SUSPENDED_BODY = {
-  error: "This employer account is suspended. Contact support@hirestepx.com.",
+  error: "This employer account is suspended or scheduled for deletion. If you scheduled deletion, restore your account to continue; otherwise contact support@hirestepx.com.",
   code: "suspended",
 };
 
@@ -545,6 +574,80 @@ export function rematchLimitAllowance(tier: EmployerTier, recentCount: number): 
   };
 }
 
+/** Activity-row `detail` marking an edit that changed nothing matching reads,
+ *  so it spent no rematch and must not count against the hourly limit. */
+export const NO_REMATCH_DETAIL = "no_rematch";
+
+/** Re-check after the insert: the pre-insert count can't see a concurrent
+ *  create, so two simultaneous POSTs at the limit would both pass it. The
+ *  count here includes the row just inserted; over the limit means the caller
+ *  deletes that row and refuses. If two requests race, both can see the
+ *  overshoot and both back out — the safe side of the race. An unreadable
+ *  count is allowed through: the pre-insert gate already passed. */
+export async function recheckOpenRequirementLimit(p: {
+  supabaseUrl: string;
+  headers: Headers;
+  employerId: string;
+  tier: EmployerTier;
+  fetchImpl?: FetchImpl;
+}): Promise<Allowance> {
+  const f = p.fetchImpl ?? fetch;
+  const open = await countRows(
+    `${p.supabaseUrl}/rest/v1/employer_requirements?employer_id=eq.${encodeURIComponent(p.employerId)}&status=neq.closed&select=id`,
+    p.headers, f,
+  );
+  if (open === null) return { ok: true, tier: p.tier };
+  return openRequirementLimitAllowance(p.tier, Math.max(0, open - 1));
+}
+
+/** The fields runMatching actually reads. Anything else on a requirement
+ *  (department, budget, due date, perks, notice period, stage...) can change
+ *  without moving a single score. */
+export interface MatchingInputs {
+  title: string;
+  description: string | null | undefined;
+  skills: string[] | null | undefined;
+  customSkillSets: string[] | null | undefined;
+  locations: string[] | null | undefined;
+  workMode: string | null | undefined;
+  experienceMin: number | null | undefined;
+  experienceMax: number | null | undefined;
+  minReadinessBand: string | null | undefined;
+  minStarCompleteness: number | null | undefined;
+  employmentType: string | null | undefined;
+}
+
+function sameList(a: string[] | null | undefined, b: string[] | null | undefined): boolean {
+  const x = (a ?? []).map((v) => v.trim().toLowerCase());
+  const y = (b ?? []).map((v) => v.trim().toLowerCase());
+  return x.length === y.length && x.every((v, i) => v === y[i]);
+}
+
+/** True when an edit changes something matching reads, or the last run never
+ *  finished ("failed"/"generating"), in which case any save is a retry. Pure
+ *  so the PATCH handler stays thin and the rule is tested directly. */
+export function requirementNeedsRematch(
+  before: MatchingInputs,
+  after: MatchingInputs,
+  lastStatus?: string | null,
+): boolean {
+  if (lastStatus === "failed" || lastStatus === "generating") return true;
+  const text = (v: string | null | undefined) => (v ?? "").trim();
+  return (
+    text(before.title) !== text(after.title) ||
+    text(before.description) !== text(after.description) ||
+    !sameList(before.skills, after.skills) ||
+    !sameList(before.customSkillSets, after.customSkillSets) ||
+    !sameList(before.locations, after.locations) ||
+    (before.workMode ?? null) !== (after.workMode ?? null) ||
+    (before.experienceMin ?? null) !== (after.experienceMin ?? null) ||
+    (before.experienceMax ?? null) !== (after.experienceMax ?? null) ||
+    (before.minReadinessBand ?? null) !== (after.minReadinessBand ?? null) ||
+    (before.minStarCompleteness ?? null) !== (after.minStarCompleteness ?? null) ||
+    (before.employmentType ?? null) !== (after.employmentType ?? null)
+  );
+}
+
 /** One gate for every employer action that creates or re-runs matching.
  *  Counts come from the DB (open requirements; activity rows in the last
  *  hour) so it works across edge isolates — unlike the Upstash helpers it
@@ -587,7 +690,10 @@ export async function checkEmployerAllowance(p: {
     const since = new Date((p.nowMs ?? Date.now()) - REMATCH_WINDOW_MS).toISOString();
     const recent = await countRows(
       `${p.supabaseUrl}/rest/v1/employer_requirement_activity?employer_id=eq.${encodeURIComponent(p.employerId)}` +
-        `&action=in.(created,updated,reopened)&created_at=gte.${encodeURIComponent(since)}&select=id`,
+        `&action=in.(created,updated,reopened)&created_at=gte.${encodeURIComponent(since)}` +
+        // Edits that re-ran nothing are logged with NO_REMATCH_DETAIL. A bare
+        // detail=neq.x would also drop NULL rows (every older row), hence the or().
+        `&or=(detail.is.null,detail.neq.${NO_REMATCH_DETAIL})&select=id`,
       p.headers, f,
     );
     if (recent === null) return unavailable();

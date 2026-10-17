@@ -88,6 +88,23 @@ describe("cron-rematch-requirements", () => {
     expect(body).toMatchObject({ matched: 1, skipped_suspended: 1, failed: 0 });
   });
 
+  it("skips a requirement whose deadline passed long ago, but not a recently overdue one", async () => {
+    const day = 86_400_000;
+    installFetch([
+      row(1, { due_date: new Date(Date.now() - 200 * day).toISOString() }),
+      row(2, { due_date: new Date(Date.now() - 3 * day).toISOString() }),
+      row(3),
+    ]);
+    await call();
+    expect(runMatching.mock.calls.map((c) => c[0]).sort()).toEqual(["req-2", "req-3"]);
+  });
+
+  it("scores with the requirement's Other skills and work mode, like the interactive path", async () => {
+    installFetch([row(1, { custom_skill_sets: ["GraphQL"], work_mode: "remote" })]);
+    await call();
+    expect(runMatching.mock.calls[0][1]).toMatchObject({ customSkills: ["GraphQL"], workMode: "remote" });
+  });
+
   it("caps a run at 150 requirements and reports the backlog", async () => {
     installFetch(Array.from({ length: 300 }, (_, i) => row(i)), { total: 1200 });
     const body = await (await call()).json();

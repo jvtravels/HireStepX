@@ -179,7 +179,7 @@ describe("edit form → PATCH handler → stored columns", () => {
       const u = String(url);
       if (u.includes("/auth/v1/admin/users/")) return { ok: true, json: async () => ({ email: "boss@gmail.com", email_confirmed_at: "2026-01-01" }) };
       if (u.includes("/employer_requirement_activity")) return { ok: true, headers: { get: (h: string) => (h === "content-range" ? "0-0/0" : null) }, json: async () => [] };
-      if (u.includes("status=neq.closed")) return { ok: true, headers: { get: (h: string) => (h === "content-range" ? "0-0/0" : null) }, json: async () => [] };
+      if (init?.method !== "PATCH" && u.includes("status=neq.closed")) return { ok: true, headers: { get: (h: string) => (h === "content-range" ? "0-0/0" : null) }, json: async () => [] };
       if (init?.method === "PATCH") {
         written = JSON.parse(String(init.body));
         return { ok: true, json: async () => [{ ...toRow(STORED), ...written }] };
@@ -264,7 +264,7 @@ describe("expired deadline", () => {
     vi.stubGlobal("fetch", vi.fn(async (url: string, init?: RequestInit) => {
       const u = String(url);
       if (u.includes("/auth/v1/admin/users/")) return { ok: true, json: async () => ({ email: "boss@gmail.com", email_confirmed_at: "2026-01-01" }) };
-      if (u.includes("/employer_requirement_activity") || u.includes("status=neq.closed")) return { ok: true, headers: { get: (h: string) => (h === "content-range" ? "0-0/0" : null) }, json: async () => [] };
+      if (u.includes("/employer_requirement_activity") || (init?.method !== "PATCH" && u.includes("status=neq.closed"))) return { ok: true, headers: { get: (h: string) => (h === "content-range" ? "0-0/0" : null) }, json: async () => [] };
       if (init?.method === "PATCH") return { ok: true, json: async () => [{ ...row, ...JSON.parse(String(init.body)) }] };
       return { ok: true, json: async () => [row] };
     }));

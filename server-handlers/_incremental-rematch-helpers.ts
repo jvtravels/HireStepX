@@ -14,6 +14,8 @@ export interface RematchableRequirement {
   stage: string;
   status: string;
   last_matched_at: string | null;
+  /** YYYY-MM-DD; absent/null means no deadline. */
+  due_date?: string | null;
 }
 
 /** Minimal requirement shape both the incremental trigger
@@ -32,6 +34,20 @@ export interface OpenRequirementForRematch extends RematchableRequirement {
   employment_type: string | null;
   duration_weeks: number | null;
   hours_per_week: number | null;
+  custom_skill_sets?: string[] | null;
+  work_mode?: string | null;
+}
+
+/** A requirement whose deadline passed more than this long ago is almost
+ *  certainly abandoned (never archived); re-scoring the whole pool nightly
+ *  for it is wasted work. It stays open and editable, and a manual edit still
+ *  re-runs it. */
+export const OVERDUE_REMATCH_GRACE_DAYS = 30;
+
+export function isLongOverdue(dueDate: string | null | undefined, nowMs: number = Date.now()): boolean {
+  if (!dueDate) return false;
+  const due = new Date(dueDate).getTime();
+  return Number.isFinite(due) && nowMs - due > OVERDUE_REMATCH_GRACE_DAYS * 86_400_000;
 }
 
 /** Stages where fresh candidates are still worth surfacing. Once an employer
@@ -51,8 +67,9 @@ export function isOpenForRematch(r: Pick<RematchableRequirement, "stage" | "stat
 export function pickRequirementsToRematch<T extends RematchableRequirement>(
   rows: T[],
   limit: number,
+  nowMs: number = Date.now(),
 ): T[] {
-  const open = rows.filter(isOpenForRematch);
+  const open = rows.filter((r) => isOpenForRematch(r) && !isLongOverdue(r.due_date, nowMs));
   const sorted = [...open].sort((a, b) => {
     const at = a.last_matched_at ? new Date(a.last_matched_at).getTime() : -Infinity;
     const bt = b.last_matched_at ? new Date(b.last_matched_at).getTime() : -Infinity;

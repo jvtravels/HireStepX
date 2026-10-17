@@ -56,6 +56,12 @@ export interface RequirementInput {
   employmentType?: string | null;
   durationWeeks?: number | null;
   hoursPerWeek?: number | null;
+  /** The employer's "Other skills" (custom_skill_sets). Not part of the core
+      skill match: only a small soft boost (see CUSTOM_SKILL_BOOST_MAX) for a
+      candidate who is already relevant on role/skills. */
+  customSkills?: string[];
+  /** "remote" makes location neutral, same as writing Remote in the location. */
+  workMode?: string | null;
 }
 
 const READINESS_RANK: Record<"strongHire" | "hire" | "leanHire", number> = {
@@ -92,10 +98,13 @@ export interface ScoredCandidate {
       Optional so existing test fixtures / call sites built before this field
       existed keep compiling; rankAndCap treats an absent value as true. */
   meetsQualityBar?: boolean;
-  /** False when the requirement lists 2+ skills and the candidate covers
-      fewer than 2 of them (and under half). Such a candidate can still be a
-      reviewable match but never a "strong" one: see capUnsupportedStrong.
-      Optional for the same fixture-compat reason as meetsQualityBar. */
+  /** False when the candidate lacks the evidence a "strong" match needs: the
+      requirement's skills (or, with none listed, its title) are not covered
+      well enough, or there is neither a graded role-matched practice session
+      nor an overlap with the candidate's real resume skill list. Such a
+      candidate can still be a reviewable match but never a "strong" one: see
+      capUnsupportedStrong. Optional for the same fixture-compat reason as
+      meetsQualityBar. */
   skillsSupportStrong?: boolean;
 }
 
@@ -129,6 +138,13 @@ export interface MatchBreakdown {
   roleMatch: number;
   skillMatch: number;
   locationMatch: number;
+  /** 100 inside the requested experience band (±1y), 60 outside it; null when
+      no band was set or the resume carries no years. Absent unless the caller
+      supplied the candidate's years (see explainMatch). */
+  experienceMatch?: number | null;
+  /** Server-graded practice sessions for THIS role (what scoring credits),
+      not every graded session the candidate has ever done. */
+  verifiedSessions?: number;
 }
 
 /* Cheap suffix-stripping, not a real stemmer — just enough to fold common
@@ -184,16 +200,22 @@ function clamp(n: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, n));
 }
 
-/* Fraction of `candidateTokens` that also appears in `reqTokens` — i.e. how
-   much of the candidate's (small) role/skill vocabulary the job posting
-   covers. Dividing by reqTokens.size instead would crush this score for any
-   non-trivial job description, since a real JD's token count dwarfs a
-   candidate's target_role/skills token count almost by definition. */
+/* Fraction of the REQUIREMENT's tokens that the candidate covers (capped at
+   1 by construction). Normalising by the candidate's own token count let a
+   sparse profile ("Engineer") score 1.0 against anything containing that one
+   word while a thorough profile was diluted; dividing by the requirement's
+   tokens rewards actually covering what the employer asked for. Callers pass
+   only the title and the skills list as requirement tokens (never the whole
+   JD), so the denominator stays small and stable. */
+function intersectionHits(reqTokens: Set<string>, candidateTokens: Set<string>): number {
+  let hits = 0;
+  for (const t of reqTokens) if (candidateTokens.has(t)) hits++;
+  return hits;
+}
+
 function intersectionRatio(reqTokens: Set<string>, candidateTokens: Set<string>): number {
   if (reqTokens.size === 0 || candidateTokens.size === 0) return 0;
-  let hits = 0;
-  for (const t of candidateTokens) if (reqTokens.has(t)) hits++;
-  return hits / candidateTokens.size;
+  return Math.min(1, intersectionHits(reqTokens, candidateTokens) / reqTokens.size);
 }
 
 /* resumeData is a StoredResume (see src/resumeParser.ts): fallback-type
@@ -249,6 +271,39 @@ export function hasMatchSignal(candidate: Pick<CandidatePoolRow, "target_role" |
 export const STRONG_MIN_SKILLS_COVERED = 2;
 export const STRONG_MIN_SKILLS_SHARE = 0.5;
 
+/** True when the resume carries something a reviewer could actually read: a
+    skill list, an experience history, a summary or a years-of-experience
+    figure. A bare `{}` (a parse that produced nothing) is not evidence. */
+export function hasResumeContent(resumeData: unknown): boolean {
+  if (!resumeData || typeof resumeData !== "object") return false;
+  const r = resumeData as Record<string, unknown>;
+  if (extractSkills(resumeData).length > 0) return true;
+  if (Array.isArray(r.experience) && r.experience.length > 0) return true;
+  if (typeof r.summary === "string" && r.summary.trim()) return true;
+  return typeof r.yearsExperience === "number" && Number.isFinite(r.yearsExperience);
+}
+
+/* Token groups the employer asked for: one group per listed skill, or, when
+   no skills are listed, one group made of the title's content words. Every
+   "does the candidate cover what was asked" check runs against these, so a
+   requirement with 0 or 1 skills can no longer skip the check altogether. */
+function requiredSkillUnits(skills: string[] | undefined, title: string | undefined): string[][] {
+  const units = (skills || []).map((s) => tokenize(s)).filter((t) => t.length > 0);
+  if (units.length > 0) return units;
+  const titleTokens = tokenize(title || "", { stripStopwords: true });
+  return titleTokens.length > 0 ? [titleTokens] : [];
+}
+
+/* A multi-word unit counts when at least half its tokens appear, so
+   "B2B Sales" is matched by "Sales" but not by an unrelated "B2B". */
+function unitsCovered(have: Set<string>, units: string[][]): number {
+  let covered = 0;
+  for (const tokens of units) {
+    if (tokens.filter((t) => have.has(t)).length / tokens.length >= 0.5) covered++;
+  }
+  return covered;
+}
+
 /** How many of the employer's listed skills the candidate's skills or target
     role cover. A multi-word skill counts when at least half its tokens appear,
     so "B2B Sales" is matched by "Sales" but not by an unrelated "B2B". */
@@ -260,25 +315,49 @@ export function countRequiredSkillsCovered(
     ...tokenize(candidate.target_role || ""),
     ...extractSkills(candidate.resume_data).flatMap((s) => tokenize(s)),
   ]);
-  let covered = 0;
-  for (const skill of requiredSkills) {
-    const tokens = tokenize(skill);
-    if (tokens.length === 0) continue;
-    if (tokens.filter((t) => have.has(t)).length / tokens.length >= 0.5) covered++;
-  }
-  return covered;
+  return unitsCovered(have, requiredSkills.map((s) => tokenize(s)).filter((t) => t.length > 0));
 }
 
-/** A requirement with fewer than 2 listed skills gives no basis to demand overlap. */
+/** The skill gate for a "strong" match. It applies whatever the skill count:
+    2+ listed skills need 2 covered (or half the list); 1 listed skill must be
+    covered; with none listed the title's content words stand in for the
+    list. With nothing to check against at all (no skills, title only filler
+    words) the candidate cannot demonstrate overlap, so is never strong.
+    `title` is optional only for callers that predate it. */
 export function skillsSupportStrong(
   candidate: Pick<CandidatePoolRow, "target_role" | "resume_data">,
   requiredSkills: string[] | undefined,
+  title?: string,
 ): boolean {
-  const skills = (requiredSkills || []).filter((s) => s.trim());
-  if (skills.length < STRONG_MIN_SKILLS_COVERED) return true;
-  const covered = countRequiredSkillsCovered(candidate, skills);
-  return covered >= STRONG_MIN_SKILLS_COVERED || covered / skills.length >= STRONG_MIN_SKILLS_SHARE;
+  const units = requiredSkillUnits((requiredSkills || []).filter((s) => s.trim()), title);
+  if (units.length === 0) return false;
+  const have = new Set([
+    ...tokenize(candidate.target_role || ""),
+    ...extractSkills(candidate.resume_data).flatMap((s) => tokenize(s)),
+  ]);
+  const covered = unitsCovered(have, units);
+  return covered >= STRONG_MIN_SKILLS_COVERED || covered / units.length >= STRONG_MIN_SKILLS_SHARE;
 }
+
+/** Evidence a "strong" match must rest on that the candidate did not simply
+    write about themselves: a server-graded practice session for this role
+    (sessions_completed is role-matched and graded-only by construction, see
+    computeTrustedSessionStats), or an overlap between the requirement and the
+    skills in their parsed resume. target_role is self-declared free text, so
+    it never counts here, and the JD text is never the source of the tokens. */
+export function hasStrongEvidence(
+  candidate: Pick<CandidatePoolRow, "resume_data" | "sessions_completed">,
+  requiredSkills: string[] | undefined,
+  title?: string,
+): boolean {
+  if (candidate.sessions_completed > 0) return true;
+  const units = requiredSkillUnits((requiredSkills || []).filter((s) => s.trim()), title);
+  const resumeTokens = new Set(extractSkills(candidate.resume_data).flatMap((s) => tokenize(s)));
+  return unitsCovered(resumeTokens, units) >= 1;
+}
+
+/** Most a candidate can gain from covering the employer's "Other skills". */
+export const CUSTOM_SKILL_BOOST_MAX = 3;
 
 /** Keeps a candidate whose skills don't back a high score out of the Strong tier. */
 export function capUnsupportedStrong(score: number, supported: boolean | undefined): number {
@@ -286,25 +365,25 @@ export function capUnsupportedStrong(score: number, supported: boolean | undefin
 }
 
 function fitInputs(candidate: Pick<CandidatePoolRow, "target_role" | "resume_data">, req: RequirementInput) {
-  const reqTokens = new Set([
-    ...tokenize(req.title, { stripStopwords: true }),
-    ...tokenize(req.description, { stripStopwords: true }),
-  ]);
-  // The employer's structured skill picks are the single most reliable
-  // signal for skillOverlap — free-text title/description often omit them
-  // (a "Sales Executive" posting may never spell out "CRM" or "B2B Sales"
-  // in prose even though the employer picked those exact skill chips), so
-  // they're folded into the skill-matching token set on top of the prose.
-  const reqSkillTokens = new Set([...reqTokens, ...(req.skills || []).flatMap((s) => tokenize(s))]);
+  /* Requirement tokens come ONLY from the title and the employer's skill
+     picks, never the JD description. A pasted JD is hundreds of words of
+     boilerplate: folding it in made the denominator huge (or, before the
+     ratio was flipped, let any shared word like "business" count as skill
+     evidence). The skill chips are the reliable structured signal; the title
+     carries the role. */
+  const titleTokens = new Set(tokenize(req.title, { stripStopwords: true }));
+  const reqTokens = titleTokens;
+  const reqSkillTokens = new Set([...titleTokens, ...(req.skills || []).flatMap((s) => tokenize(s))]);
   const roleTokens = new Set(tokenize(candidate.target_role || ""));
   const skillTokens = new Set(extractSkills(candidate.resume_data).flatMap((s) => tokenize(s)));
 
   const roleOverlap = intersectionRatio(reqTokens, roleTokens);
   const skillOverlap = intersectionRatio(reqSkillTokens, skillTokens);
+  const skillHits = intersectionHits(reqSkillTokens, skillTokens);
 
   const reqLocation = req.location.toLowerCase();
   const candidateLocation = extractResumeLocation(candidate.resume_data).toLowerCase();
-  const isRemote = reqLocation.includes("remote");
+  const isRemote = reqLocation.includes("remote") || req.workMode === "remote";
   // 2026-10-04: lowered the "can't tell" default from 0.6 to 0.4 — missing
   // location data isn't positive signal and shouldn't read as closer to a
   // real match (1) than a real mismatch (0.35). See the fitComponent weight
@@ -317,7 +396,7 @@ function fitInputs(candidate: Pick<CandidatePoolRow, "target_role" | "resume_dat
     locationFit = reqLocTokens.some((t) => candidateLocation.includes(t)) ? 1 : 0.35;
   }
 
-  return { roleOverlap, skillOverlap, locationFit };
+  return { roleOverlap, skillOverlap, skillHits, locationFit };
 }
 
 /* A candidate outside the requirement's experience band isn't automatically
@@ -338,7 +417,7 @@ function experienceFit(yearsExperience: number | null | undefined, min: number |
     plus the candidate's lifetime roster score (session-performance based,
     independent of this specific requirement). */
 export function scoreCandidateMatch(candidate: CandidatePoolRow, req: RequirementInput): ScoredCandidate {
-  const { roleOverlap, skillOverlap, locationFit } = fitInputs(candidate, req);
+  const { roleOverlap, skillOverlap, skillHits, locationFit } = fitInputs(candidate, req);
 
   const rosterScore = Math.round(clamp(candidate.avg_score ?? 50, 0, 100));
   const activityBoost = clamp(candidate.sessions_completed, 0, 10) / 10;
@@ -371,7 +450,13 @@ export function scoreCandidateMatch(candidate: CandidatePoolRow, req: Requiremen
      profile whose skills include "Sales & Service" / "Strategy & Market
      Expansion" alongside "Business Transformation"). */
   const RELEVANCE_RATIO_FLOOR = 0.15;
-  const hasRelevance = roleOverlap >= RELEVANCE_RATIO_FLOOR || skillOverlap >= RELEVANCE_RATIO_FLOOR;
+  /* The ratio is now over the REQUIREMENT's tokens, so one coincidental word
+     out of a long skill list (the "b2b" case above, 1 of 6) would clear the
+     floor on its own. A skill-only match therefore needs two distinct hits,
+     or a single hit that is a real share (>= 1/3) of a short requirement. */
+  const SINGLE_HIT_MIN_SHARE = 1 / 3;
+  const skillRelevant = skillOverlap >= RELEVANCE_RATIO_FLOOR && (skillHits >= 2 || skillOverlap >= SINGLE_HIT_MIN_SHARE);
+  const hasRelevance = roleOverlap >= RELEVANCE_RATIO_FLOOR || skillRelevant;
   /* rosterScore defaults to 50 (candidate.avg_score ?? 50) for anyone with
      zero completed practice sessions — a "neutral, unknown" placeholder,
      not evidence of being an average performer. Crediting that default as
@@ -383,13 +468,25 @@ export function scoreCandidateMatch(candidate: CandidatePoolRow, req: Requiremen
      credit; the activity term is already naturally 0 for zero sessions. */
   const hasRosterEvidence = candidate.sessions_completed > 0;
   const rosterCredit = hasRelevance && hasRosterEvidence ? rosterScore * 0.2 + activityBoost * 10 : 0;
-  const supportsStrong = skillsSupportStrong(candidate, req.skills);
+  // "Strong" must rest on more than self-declared text: the skill gate applies
+  // at any skill count, and there must be a graded role-matched session or a
+  // real resume-skill overlap (see hasStrongEvidence).
+  const supportsStrong = skillsSupportStrong(candidate, req.skills, req.title) && hasStrongEvidence(candidate, req.skills, req.title);
+  /* Employer's "Other skills": at most CUSTOM_SKILL_BOOST_MAX points, and only
+     for a candidate who already clears the relevance floor, so it can break a
+     tie but never create a match. */
+  const customSkills = (req.customSkills || []).filter((s) => s.trim());
+  const customBoost = hasRelevance && customSkills.length > 0
+    ? CUSTOM_SKILL_BOOST_MAX * (countRequiredSkillsCovered(candidate, customSkills) / customSkills.length)
+    : 0;
   const matchScore = capUnsupportedStrong(
-    Math.round(clamp(fitComponent * 70 + rosterCredit, 0, 100) * recencyPenalty * expFit),
+    Math.round(clamp(fitComponent * 70 + rosterCredit + customBoost, 0, 100) * recencyPenalty * expFit),
     supportsStrong,
   );
 
-  const hasEvidence = candidate.resume_data != null || hasRosterEvidence;
+  // A bare `{}` resume is not evidence; a parsed resume with content, or a
+  // graded session, is.
+  const hasEvidence = hasResumeContent(candidate.resume_data) || hasRosterEvidence;
 
   return {
     candidateId: candidate.id,
@@ -402,15 +499,39 @@ export function scoreCandidateMatch(candidate: CandidatePoolRow, req: Requiremen
   };
 }
 
-/** Human-readable 0-100 read-outs of the same three inputs scoreCandidateMatch
-    weighs internally, for a "why this score" breakdown in the UI. */
-export function explainMatch(candidate: Pick<CandidatePoolRow, "target_role" | "resume_data">, req: RequirementInput): MatchBreakdown {
+/** Human-readable 0-100 read-outs of the inputs scoreCandidateMatch weighs
+    internally, for a "why this score" breakdown in the UI. `signals` carries
+    what only the caller knows (parsed years of experience, count of
+    role-matched graded sessions); without it those two fields are omitted
+    rather than guessed. */
+export function explainMatch(
+  candidate: Pick<CandidatePoolRow, "target_role" | "resume_data">,
+  req: RequirementInput,
+  signals: { yearsExperience?: number | null; verifiedSessions?: number } = {},
+): MatchBreakdown {
   const { roleOverlap, skillOverlap, locationFit } = fitInputs(candidate, req);
-  return {
+  const out: MatchBreakdown = {
     roleMatch: Math.round(clamp(roleOverlap, 0, 1) * 100),
     skillMatch: Math.round(clamp(skillOverlap, 0, 1) * 100),
     locationMatch: Math.round(clamp(locationFit, 0, 1) * 100),
   };
+  if (signals.yearsExperience !== undefined) {
+    const hasBand = req.experienceMin != null || req.experienceMax != null;
+    // null = no band set or experience unreadable, i.e. nothing to compare.
+    out.experienceMatch = signals.yearsExperience == null || !hasBand
+      ? null
+      : Math.round(experienceFit(signals.yearsExperience, req.experienceMin, req.experienceMax) * 100);
+  }
+  if (signals.verifiedSessions !== undefined) out.verifiedSessions = signals.verifiedSessions;
+  return out;
+}
+
+/** Strong / Good / Possible label for a match score, for display next to the
+    percentage. Thresholds are the shared STRONG_MATCH_THRESHOLD and
+    FAIR_MATCH_SCORE so the label can never disagree with the tier colour. */
+export const FAIR_MATCH_SCORE = 20;
+export function matchBandLabel(score: number): "Strong" | "Good" | "Possible" {
+  return score >= STRONG_MATCH_THRESHOLD ? "Strong" : score >= FAIR_MATCH_SCORE ? "Good" : "Possible";
 }
 
 /** Grounded "why this matched" sentence for the candidate-facing Jobs tab —

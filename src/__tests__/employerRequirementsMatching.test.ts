@@ -23,7 +23,8 @@ vi.mock("../../server-handlers/_requirement-match-llm", () => ({
 const notify = vi.fn();
 vi.mock("../../server-handlers/_notify", () => ({ notify: (...a: unknown[]) => notify(...a) }));
 
-const { runMatching } = await import("../../server-handlers/employer-requirements");
+const { runMatching, default: requirementsHandler } = await import("../../server-handlers/employer-requirements");
+const { withAuthAndRateLimit } = await import("../../server-handlers/_shared");
 
 const OWNER = "owner-1";
 const REQ_ID = "req-1";
@@ -282,5 +283,115 @@ describe("runMatching — notifications", () => {
     notify.mockRejectedValue(new Error("db down"));
     makeSim({ profiles: [dev("a")], sessions: [graded("a", 90)] });
     await expect(runMatching(REQ_ID, REQ, OWNER)).resolves.not.toBe("failed");
+  });
+});
+
+describe("runMatching — failure and timeout", () => {
+  it("the failed-status PATCH never touches a requirement the employer archived", async () => {
+    const { calls } = makeSim({ profiles: [dev("a")], poolFailImmediately: true });
+    expect(await runMatching(REQ_ID, REQ, OWNER)).toBe("failed");
+    const failedPatch = calls.patches.find((p) => p.body.status === "failed");
+    expect(failedPatch).toBeDefined();
+    expect(failedPatch!.url).toContain("status=neq.closed");
+  });
+
+  it("after a timeout the abandoned pass writes nothing further", async () => {
+    const { calls, fetchMock } = makeSim({ profiles: [dev("a")], sessions: [graded("a", 90)] });
+    const inner = fetchMock.getMockImplementation()!;
+    // The employer read hangs past the timeout; every later step would write.
+    fetchMock.mockImplementation(async (input: string, init?: RequestInit) => {
+      if (String(input).includes("/rest/v1/employers?")) await new Promise((r) => setTimeout(r, 120));
+      return inner(input, init);
+    });
+    const status = await runMatching(REQ_ID, REQ, OWNER, { timeoutMs: 20 });
+    expect(status).toBe("failed");
+    await new Promise((r) => setTimeout(r, 400));
+    expect(calls.upserts).toEqual([]);
+    expect(calls.patches.filter((p) => p.body.status && p.body.status !== "failed")).toEqual([]);
+    expect(notify).not.toHaveBeenCalled();
+  });
+});
+
+describe("runMatching — strong needs evidence beyond a self-declared role", () => {
+  it("a title-echo candidate with no graded session and no resume skills is not scored Strong", async () => {
+    const { calls } = makeSim({ profiles: [dev("echo", "Echo", { resume_data: { location: "Bengaluru" } }), dev("real", "Real", SKILLED)], sessions: [graded("real", 80)] });
+    await runMatching(REQ_ID, REQ, OWNER);
+    const scored = calls.upserts.flat() as Array<{ candidate_user_id: string; match_score: number }>;
+    const echo = scored.find((r) => r.candidate_user_id === "echo");
+    const real = scored.find((r) => r.candidate_user_id === "real");
+    if (echo) expect(echo.match_score).toBeLessThan(40);
+    expect(real!.match_score).toBeGreaterThanOrEqual(40);
+  });
+});
+
+describe("requirements handler — list truncation and the create race", () => {
+  const res = (body: unknown, extra: { ok?: boolean; contentRange?: string } = {}) => ({
+    ok: extra.ok ?? true,
+    status: extra.ok === false ? 500 : 200,
+    headers: { get: (n: string) => (n.toLowerCase() === "content-range" ? extra.contentRange ?? null : null) },
+    json: async () => body,
+    text: async () => "",
+  });
+
+  beforeEach(() => {
+    vi.mocked(withAuthAndRateLimit).mockResolvedValue({ auth: { userId: OWNER }, headers: {} } as never);
+  });
+
+  it("GET reports the true total and flags truncation when more rows exist than were returned", async () => {
+    global.fetch = vi.fn(async (input: string) => {
+      const url = String(input);
+      if (url.includes("/rest/v1/employer_requirements?")) {
+        expect(url).toContain("limit=500");
+        return res([{ id: "r1", title: "Dev", location: "Pune", status: "ready", stage: "ready_for_review", created_at: "2026-01-01" }], { contentRange: "0-0/612" });
+      }
+      return res([]);
+    }) as unknown as typeof fetch;
+
+    const out = await requirementsHandler(new Request("https://x.test/api/employer-requirements", { method: "GET" }));
+    const body = await out.json();
+    expect(out.status).toBe(200);
+    expect(body.total).toBe(612);
+    expect(body.truncated).toBe(true);
+    expect(body.requirements).toHaveLength(1);
+  });
+
+  it("GET is not truncated when the total matches what came back", async () => {
+    global.fetch = vi.fn(async (input: string) => (String(input).includes("/rest/v1/employer_requirements?")
+      ? res([{ id: "r1", title: "Dev", location: "Pune", status: "ready", stage: "ready_for_review", created_at: "2026-01-01" }], { contentRange: "0-0/1" })
+      : res([]))) as unknown as typeof fetch;
+    const body = await (await requirementsHandler(new Request("https://x.test/api/employer-requirements"))).json();
+    expect(body.truncated).toBe(false);
+    expect(body.total).toBe(1);
+  });
+
+  it("POST backs the new row out when a concurrent create pushed the employer over the limit", async () => {
+    let openCounts = 0;
+    const deletes: string[] = [];
+    const matchCalls: string[] = [];
+    global.fetch = vi.fn(async (input: string, init?: RequestInit) => {
+      const url = String(input);
+      const method = init?.method || "GET";
+      if (url.includes("/rest/v1/employers?")) return res([{ id: OWNER, website: null, suspended_at: null, verification_tier: "basic" }]);
+      if (url.includes("/auth/v1/admin/users/")) return res({ email: "x@gmail.com", email_confirmed_at: "2026-01-01" });
+      if (url.includes("employer_requirement_activity")) return res([], { contentRange: "0-0/0" });
+      if (url.includes("/rest/v1/employer_requirements?") && method === "GET") {
+        // 1st count (pre-insert gate): room left. 2nd (post-insert): over the basic cap.
+        return res([], { contentRange: ++openCounts === 1 ? "0-0/0" : "0-0/9" });
+      }
+      if (url.includes("/rest/v1/employer_requirements") && method === "POST") return res([{ id: "new-1", title: REQ.title, location: REQ.location }]);
+      if (url.includes("/rest/v1/employer_requirements?") && method === "DELETE") { deletes.push(url); return res([]); }
+      if (url.includes("requirement_matches") || url.includes("/rest/v1/profiles?")) matchCalls.push(url);
+      return res([]);
+    }) as unknown as typeof fetch;
+
+    const out = await requirementsHandler(new Request("https://x.test/api/employer-requirements", {
+      method: "POST",
+      body: JSON.stringify({ title: REQ.title, locations: ["Pune"], description: REQ.description, skills: REQ.skills }),
+    }));
+
+    expect(out.status).toBe(403);
+    expect(deletes).toHaveLength(1);
+    expect(deletes[0]).toContain("id=eq.new-1");
+    expect(matchCalls).toEqual([]);
   });
 });

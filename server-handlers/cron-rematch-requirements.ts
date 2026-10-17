@@ -29,6 +29,7 @@ import { pickRequirementsToRematch, type OpenRequirementForRematch } from "./_in
 import { canStartBatch } from "./_employer-matching-helpers";
 import { isSuspended } from "./_employer-trust";
 import { slog } from "./_shared";
+import { recordCronSuccess } from "./_cron-heartbeat";
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
@@ -73,9 +74,11 @@ export default async function handler(req: Request): Promise<Response> {
   const t0 = Date.now();
   // Suspended employers are excluded in the query (inner-join embed) AND again
   // below; stalest first so a capped/timed-out run resumes where it left off.
+  // pickRequirementsToRematch also skips requirements whose due date passed
+  // more than 30 days ago (abandoned, never archived).
   const res = await fetch(
     `${SUPABASE_URL}/rest/v1/employer_requirements?stage=in.(ai_matching,ready_for_review)&status=neq.closed` +
-      `&select=id,employer_id,title,location,description,skills,experience_min,experience_max,min_readiness_band,min_star_completeness,employment_type,duration_weeks,hours_per_week,stage,status,last_matched_at,employers!inner(suspended_at)` +
+      `&select=id,employer_id,title,location,description,skills,experience_min,experience_max,min_readiness_band,min_star_completeness,employment_type,duration_weeks,hours_per_week,custom_skill_sets,work_mode,due_date,stage,status,last_matched_at,employers!inner(suspended_at)` +
       `&employers.suspended_at=is.null&order=last_matched_at.asc.nullsfirst&limit=${MAX_OPEN_REQUIREMENTS_READ}`,
     { headers: { ...serviceHeaders(), Prefer: "count=exact" } },
   );
@@ -119,6 +122,8 @@ export default async function handler(req: Request): Promise<Response> {
             employmentType: r.employment_type,
             durationWeeks: r.duration_weeks,
             hoursPerWeek: r.hours_per_week,
+            customSkills: r.custom_skill_sets ?? [],
+            workMode: r.work_mode,
           },
           r.employer_id,
           { timeoutMs: CRON_MATCH_TIMEOUT_MS },
@@ -137,6 +142,7 @@ export default async function handler(req: Request): Promise<Response> {
     slowestBatchMs = Math.max(slowestBatchMs, Date.now() - batchStart);
   }
 
+  await recordCronSuccess("cron-rematch-requirements");
   return jsonResponse({
     ok: true,
     open_requirements: Number.isFinite(totalOpen) ? totalOpen : rows.length,

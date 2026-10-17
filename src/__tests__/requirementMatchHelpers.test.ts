@@ -12,6 +12,12 @@ import {
   skillsSupportStrong,
   countRequiredSkillsCovered,
   capUnsupportedStrong,
+  hasStrongEvidence,
+  hasResumeContent,
+  explainMatch,
+  matchBandLabel,
+  CUSTOM_SKILL_BOOST_MAX,
+  FAIR_MATCH_SCORE,
   type CandidatePoolRow,
 } from "../../server-handlers/_requirement-match-helpers";
 
@@ -85,17 +91,20 @@ describe("scoreCandidateMatch", () => {
     expect(result.matchScore).toBeGreaterThanOrEqual(60);
   });
 
-  it("credits skill overlap against the requirement's structured skills, not just title/description prose", () => {
+  it("credits skill overlap against the requirement's structured skills, not just title prose", () => {
+    // Scoring now measures coverage of what the employer asked for, so the
+    // comparison is between a candidate who covers the listed skills and one
+    // with the same role who covers none of them.
     const skillsReq = { title: "Sales Executive", location: "Mumbai", description: "Drive new business for our team.", skills: ["B2B Sales", "CRM", "Negotiation"] };
-    const matchingSkills = scoreCandidateMatch(
+    const covers = scoreCandidateMatch(
       candidate({ target_role: "Sales Executive", resume_data: { skills: ["B2B Sales", "CRM"], location: "Mumbai" } }),
       skillsReq,
     );
-    const noSkillsField = scoreCandidateMatch(
-      candidate({ target_role: "Sales Executive", resume_data: { skills: ["B2B Sales", "CRM"], location: "Mumbai" } }),
-      { ...skillsReq, skills: undefined },
+    const coversNone = scoreCandidateMatch(
+      candidate({ target_role: "Sales Executive", resume_data: { skills: ["Photoshop", "Illustration"], location: "Mumbai" } }),
+      skillsReq,
     );
-    expect(matchingSkills.matchScore).toBeGreaterThan(noSkillsField.matchScore);
+    expect(covers.matchScore).toBeGreaterThan(coversNone.matchScore);
   });
 
   it("gates roster/activity credit behind a minimum fit floor so an irrelevant candidate can't score well on activity alone", () => {
@@ -128,10 +137,13 @@ describe("scoreCandidateMatch", () => {
   });
 
   it("ranks a candidate with real (even modest) practice evidence above a same-fit candidate with none", () => {
+    // The JD description no longer feeds scoring, so the overlap both
+    // candidates are weighed on has to live in the structured skill list.
     const salesReq = {
       title: "Sales Executive",
       location: "Mumbai",
       description: "Drive new business across SMB and mid-market accounts, manage a CRM pipeline.",
+      skills: ["Customer Service", "CRM"],
     };
     // Mirrors the production case: neither candidate has a strong role/skill
     // match (weak, generic overlap only), but one has actually practiced.
@@ -230,9 +242,16 @@ describe("scoreCandidateMatch", () => {
     expect(result.matchScore).toBeGreaterThan(0);
   });
 
-  it("marks hasEvidence true when the candidate has resume data, even with zero sessions", () => {
-    const result = scoreCandidateMatch(candidate({ resume_data: { skills: [] }, sessions_completed: 0 }), req);
+  it("marks hasEvidence true when the candidate has a resume with content, even with zero sessions", () => {
+    const result = scoreCandidateMatch(candidate({ resume_data: { skills: ["React"] }, sessions_completed: 0 }), req);
     expect(result.hasEvidence).toBe(true);
+  });
+
+  it("does not count a bare or empty resume object as evidence", () => {
+    // Previously any non-null resume_data counted, so a parse that produced
+    // nothing still lifted a candidate into the "has evidence" bucket.
+    expect(scoreCandidateMatch(candidate({ resume_data: {}, sessions_completed: 0 }), req).hasEvidence).toBe(false);
+    expect(scoreCandidateMatch(candidate({ resume_data: { skills: [] }, sessions_completed: 0 }), req).hasEvidence).toBe(false);
   });
 
   it("marks hasEvidence true when the candidate has completed sessions, even with no resume", () => {
@@ -444,10 +463,18 @@ describe("skills-overlap gate for the Strong tier", () => {
     expect(skillsSupportStrong(half, ["React", "Figma"])).toBe(true);
   });
 
-  it("does not demand overlap when the requirement lists fewer than 2 skills", () => {
-    const c = candidate({ resume_data: { skills: [] } });
-    expect(skillsSupportStrong(c, undefined)).toBe(true);
-    expect(skillsSupportStrong(c, ["React"])).toBe(true);
+  it("applies the gate to short lists too: 0 or 1 listed skill no longer skips it", () => {
+    const empty = candidate({ target_role: "Frontend Engineer", resume_data: { skills: [] } });
+    // One listed skill must actually be covered.
+    expect(skillsSupportStrong(empty, ["React"])).toBe(false);
+    const react = candidate({ target_role: "Designer", resume_data: { skills: ["React"] } });
+    expect(skillsSupportStrong(react, ["React"])).toBe(true);
+    // No listed skills: the title's content words stand in for the list.
+    expect(skillsSupportStrong(empty, undefined, "Frontend Engineer")).toBe(true);
+    const unrelated = candidate({ target_role: "Product Designer", resume_data: { skills: ["Figma"] } });
+    expect(skillsSupportStrong(unrelated, undefined, "Backend Engineer")).toBe(false);
+    // Nothing to check against at all: never strong.
+    expect(skillsSupportStrong(empty, undefined)).toBe(false);
   });
 
   it("caps an unsupported score just under Strong and leaves others alone", () => {
@@ -465,5 +492,127 @@ describe("skills-overlap gate for the Strong tier", () => {
     const full = scoreCandidateMatch(candidate({ resume_data: { skills: ["React", "TypeScript", "GraphQL"], location: "Bengaluru" } }), wide);
     expect(full.skillsSupportStrong).toBe(true);
     expect(full.matchScore).toBeGreaterThanOrEqual(STRONG_MATCH_THRESHOLD);
+  });
+});
+
+describe("strong match needs more than self-declared data", () => {
+  const strongReq = { title: "Senior Frontend Engineer", location: "Bengaluru", description: "", skills: ["React", "TypeScript"] };
+
+  it("a title-echoing target_role with no sessions and no resume skills is not Strong", () => {
+    const echo = scoreCandidateMatch(
+      candidate({ sessions_completed: 0, avg_score: null, resume_data: { location: "Bengaluru" } }),
+      strongReq,
+    );
+    expect(echo.matchScore).toBeLessThan(STRONG_MATCH_THRESHOLD);
+  });
+
+  it("the same candidate becomes Strong once a graded session backs the role up", () => {
+    const base = { avg_score: 80, resume_data: { skills: ["React", "TypeScript"], location: "Bengaluru" } };
+    const without = scoreCandidateMatch(candidate({ ...base, sessions_completed: 0 }), strongReq);
+    const withSession = scoreCandidateMatch(candidate({ ...base, sessions_completed: 3 }), strongReq);
+    expect(withSession.matchScore).toBeGreaterThanOrEqual(STRONG_MATCH_THRESHOLD);
+    expect(withSession.matchScore).toBeGreaterThanOrEqual(without.matchScore);
+  });
+
+  it("hasStrongEvidence accepts graded sessions or resume-skill overlap, never target_role alone", () => {
+    expect(hasStrongEvidence({ resume_data: null, sessions_completed: 1 }, ["React"], "Frontend Engineer")).toBe(true);
+    expect(hasStrongEvidence({ resume_data: { skills: ["React"] }, sessions_completed: 0 }, ["React"], "Frontend Engineer")).toBe(true);
+    expect(hasStrongEvidence({ resume_data: { skills: ["Excel"] }, sessions_completed: 0 }, ["React"], "Frontend Engineer")).toBe(false);
+    expect(hasStrongEvidence({ resume_data: null, sessions_completed: 0 }, ["React"], "Frontend Engineer")).toBe(false);
+  });
+
+  it("a one-skill requirement still needs that skill covered to support Strong", () => {
+    expect(skillsSupportStrong({ target_role: "Designer", resume_data: { skills: ["Figma"] } }, ["React"], "Frontend Engineer")).toBe(false);
+    expect(skillsSupportStrong({ target_role: "Designer", resume_data: { skills: ["React"] } }, ["React"], "Frontend Engineer")).toBe(true);
+  });
+
+  it("with no skills and a filler-only title nobody can be Strong", () => {
+    expect(skillsSupportStrong({ target_role: "Engineer", resume_data: { skills: ["React"] } }, [], "The Role")).toBe(false);
+  });
+});
+
+describe("requirement tokens and ratio normalisation", () => {
+  it("a long pasted JD does not change the score (description is not a token source)", () => {
+    const short = scoreCandidateMatch(candidate(), { title: "Senior Frontend Engineer", location: "Bengaluru", description: "", skills: ["React"] });
+    const long = scoreCandidateMatch(candidate(), {
+      title: "Senior Frontend Engineer", location: "Bengaluru", skills: ["React"],
+      description: "We are a fast growing company with business impact, ownership, communication, teamwork and culture ".repeat(20),
+    });
+    expect(long.matchScore).toBe(short.matchScore);
+  });
+
+  it("a single coincidental token is not enough to clear the relevance floor", () => {
+    const r = scoreCandidateMatch(
+      candidate({ target_role: "Accountant", resume_data: { skills: ["Business"], location: "Bengaluru" }, sessions_completed: 0 }),
+      { title: "Business Development Manager", location: "Bengaluru", description: "", skills: ["Negotiation", "CRM", "Lead generation", "B2B Sales"] },
+    );
+    expect(r.matchScore).toBeLessThan(MIN_MATCH_SCORE_FLOOR);
+  });
+});
+
+describe("Other skills boost", () => {
+  const baseReq = { title: "Senior Frontend Engineer", location: "Bengaluru", description: "", skills: ["React", "TypeScript"] };
+
+  it("adds at most CUSTOM_SKILL_BOOST_MAX points to a relevant candidate", () => {
+    const c = candidate({ resume_data: { skills: ["React", "TypeScript", "GraphQL", "Storybook", "Jest", "Webpack"], location: "Bengaluru" }, sessions_completed: 1, avg_score: 40 });
+    const plain = scoreCandidateMatch(c, baseReq);
+    const boosted = scoreCandidateMatch(c, { ...baseReq, customSkills: ["GraphQL", "Storybook", "Jest", "Webpack"] });
+    expect(boosted.matchScore - plain.matchScore).toBeLessThanOrEqual(CUSTOM_SKILL_BOOST_MAX);
+    expect(boosted.matchScore).toBeGreaterThanOrEqual(plain.matchScore);
+  });
+
+  it("does not lift an irrelevant candidate", () => {
+    const c = candidate({ target_role: "Chef", resume_data: { skills: ["GraphQL"], location: "Bengaluru" }, sessions_completed: 0 });
+    const plain = scoreCandidateMatch(c, baseReq);
+    const boosted = scoreCandidateMatch(c, { ...baseReq, customSkills: ["GraphQL"] });
+    expect(boosted.matchScore).toBe(plain.matchScore);
+  });
+});
+
+describe("remote work mode", () => {
+  it("workMode=remote makes location neutral even when the location text names a city", () => {
+    const rq = { title: "Senior Frontend Engineer", location: "Pune", description: "", skills: ["React"], workMode: "remote" };
+    const far = scoreCandidateMatch(candidate({ resume_data: { skills: ["React"], location: "Chennai" } }), rq);
+    const near = scoreCandidateMatch(candidate({ resume_data: { skills: ["React"], location: "Pune" } }), rq);
+    expect(far.matchScore).toBe(near.matchScore);
+  });
+});
+
+describe("explainMatch signals", () => {
+  const rq = { title: "Senior Frontend Engineer", location: "Bengaluru", description: "", skills: ["React"], experienceMin: 3, experienceMax: 6 };
+
+  it("omits experience and sessions when the caller gives no signals", () => {
+    const b = explainMatch(candidate(), rq);
+    expect(b.experienceMatch).toBeUndefined();
+    expect(b.verifiedSessions).toBeUndefined();
+  });
+
+  it("scores experience inside the band at 100 and outside at 60", () => {
+    expect(explainMatch(candidate(), rq, { yearsExperience: 4 }).experienceMatch).toBe(100);
+    expect(explainMatch(candidate(), rq, { yearsExperience: 15 }).experienceMatch).toBe(60);
+  });
+
+  it("reports null when experience is unreadable or no band is set, and passes sessions through", () => {
+    expect(explainMatch(candidate(), rq, { yearsExperience: null }).experienceMatch).toBeNull();
+    expect(explainMatch(candidate(), { ...rq, experienceMin: null, experienceMax: null }, { yearsExperience: 4 }).experienceMatch).toBeNull();
+    expect(explainMatch(candidate(), rq, { verifiedSessions: 3 }).verifiedSessions).toBe(3);
+  });
+});
+
+describe("matchBandLabel / hasResumeContent", () => {
+  it("labels by the shared thresholds", () => {
+    expect(matchBandLabel(STRONG_MATCH_THRESHOLD)).toBe("Strong");
+    expect(matchBandLabel(STRONG_MATCH_THRESHOLD - 1)).toBe("Good");
+    expect(matchBandLabel(FAIR_MATCH_SCORE)).toBe("Good");
+    expect(matchBandLabel(FAIR_MATCH_SCORE - 1)).toBe("Possible");
+  });
+
+  it("treats an empty parse as no content", () => {
+    expect(hasResumeContent({})).toBe(false);
+    expect(hasResumeContent(null)).toBe(false);
+    expect(hasResumeContent({ summary: "  " })).toBe(false);
+    expect(hasResumeContent({ summary: "Ten years in sales" })).toBe(true);
+    expect(hasResumeContent({ experience: [{ title: "x" }] })).toBe(true);
+    expect(hasResumeContent({ yearsExperience: 4 })).toBe(true);
   });
 });

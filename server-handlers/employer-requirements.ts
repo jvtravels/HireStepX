@@ -59,6 +59,7 @@ import {
   selectNewStrongMatches,
   strongMatchAlertBody,
   checkEmployerAllowance,
+  recheckOpenRequirementLimit,
   maskStrongMatches,
   type ExistingMatchRow,
   type PoolProfile,
@@ -222,14 +223,20 @@ export default async function handler(req: Request): Promise<Response> {
   return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405, headers });
 }
 
+/** Most requirements one list response carries; `truncated` flags any beyond it. */
+const REQUIREMENTS_LIST_LIMIT = 500;
+
 async function handleGet(userId: string, headers: Record<string, string>): Promise<Response> {
   try {
     const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/employer_requirements?employer_id=eq.${encodeURIComponent(userId)}&select=id,title,location,notice_period_pref,status,stage,department,archive_reason,archive_disposition,experience_min,experience_max,due_date,budget_min,budget_max,locations,open_positions,work_mode,skills,employment_type,salary_type,duration_weeks,hours_per_week,min_readiness_band,min_star_completeness,matched_pool_size,created_at&order=created_at.desc&limit=500`,
-      { headers: serviceHeaders() },
+      `${SUPABASE_URL}/rest/v1/employer_requirements?employer_id=eq.${encodeURIComponent(userId)}&select=id,title,location,notice_period_pref,status,stage,department,archive_reason,archive_disposition,experience_min,experience_max,due_date,budget_min,budget_max,locations,open_positions,work_mode,skills,employment_type,salary_type,duration_weeks,hours_per_week,min_readiness_band,min_star_completeness,matched_pool_size,created_at&order=created_at.desc&limit=${REQUIREMENTS_LIST_LIMIT}`,
+      { headers: { ...serviceHeaders(), Prefer: "count=exact" } },
     );
     if (!res.ok) throw new Error(`requirements read failed: ${res.status}`);
     const rows = (await res.json().catch(() => [])) as RequirementRow[];
+    // The list is capped; without the total a 501st requirement just vanished.
+    const totalHeader = Number(res.headers.get("content-range")?.split("/")[1]);
+    const total = Number.isFinite(totalHeader) ? totalHeader : rows.length;
 
     const ids = rows.map((r) => r.id);
     let countsByRequirement = new Map<string, number>();
@@ -311,7 +318,7 @@ async function handleGet(userId: string, headers: Record<string, string>): Promi
 
     const requirements = buildRequirementsListResponse(rows, countsByRequirement, aiScreeningByRequirement);
 
-    return new Response(JSON.stringify({ requirements }), { status: 200, headers });
+    return new Response(JSON.stringify({ requirements, total, truncated: total > rows.length }), { status: 200, headers });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     slog.error("employer-requirements GET threw", { code: "employer_requirements_get_unexpected_error", error: msg.slice(0, 200), userId });
@@ -440,11 +447,21 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
     const inserted = (await insertRes.json()) as RequirementRow[];
     const requirement = inserted[0];
 
+    // The count above ran before our insert, so two concurrent creates at the
+    // limit both passed it. Re-count now and back this row out if over.
+    const overLimit = await recheckOpenRequirementLimit({ supabaseUrl: SUPABASE_URL, headers: serviceHeaders(), employerId: userId, tier: allowance.tier });
+    if (!overLimit.ok) {
+      await fetch(`${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirement.id)}&employer_id=eq.${encodeURIComponent(userId)}`, {
+        method: "DELETE", headers: serviceHeaders(),
+      }).catch(() => {});
+      return new Response(JSON.stringify(overLimit.body), { status: overLimit.status, headers });
+    }
+
     const finalStatus = await runMatching(
       requirement.id,
       {
         title, location, description, skills, experienceMin, experienceMax, minReadinessBand, minStarCompleteness,
-        employmentType, durationWeeks, hoursPerWeek,
+        employmentType, durationWeeks, hoursPerWeek, customSkills: customSkillSets, workMode,
       },
       userId,
     );
@@ -522,17 +539,24 @@ export const SUSPENDED_MATCHING_STATUS = "suspended";
 export async function runMatching(requirementId: string, req: RequirementInput, ownerUserId: string, opts: RunMatchingOptions = {}): Promise<string> {
   const timeoutMs = opts.timeoutMs ?? MATCHING_TIMEOUT_MS;
   let timer: ReturnType<typeof setTimeout> | undefined;
+  // The race alone only stops US waiting: the inner pass would carry on and
+  // write shortlist rows, a status and notifications after we had already
+  // reported "failed". The signal lets it notice and stop before each write.
+  const controller = new AbortController();
   try {
     return await Promise.race([
-      runMatchingInner(requirementId, req, ownerUserId, Date.now() + timeoutMs - SCAN_RESERVE_MS),
+      runMatchingInner(requirementId, req, ownerUserId, Date.now() + timeoutMs - SCAN_RESERVE_MS, controller.signal),
       new Promise<string>((_, reject) => {
         timer = setTimeout(() => reject(new Error(`matching timed out after ${timeoutMs}ms`)), timeoutMs);
       }),
     ]);
   } catch (err) {
+    controller.abort();
     const msg = err instanceof Error ? err.message : String(err);
     slog.error("employer-requirements matching threw", { code: "employer_requirements_matching_failed", error: msg.slice(0, 200), requirementId });
-    await fetch(`${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}`, {
+    // status=neq.closed: an employer who archived the requirement while this
+    // pass was running must not see it reopened as "failed".
+    await fetch(`${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&status=neq.closed`, {
       method: "PATCH",
       headers: { ...serviceHeaders(), "Content-Type": "application/json", Prefer: "return=minimal" },
       body: JSON.stringify({ status: "failed" }),
@@ -558,7 +582,13 @@ async function deleteLockedMatches(ids: string[], requirementId: string): Promis
   return ok;
 }
 
-async function runMatchingInner(requirementId: string, req: RequirementInput, ownerUserId: string, deadlineMs: number): Promise<string> {
+/** Thrown by the inner pass once runMatching has timed out or failed, so no
+ *  further write happens on behalf of a run the caller already gave up on. */
+function stopIfAborted(signal: AbortSignal): void {
+  if (signal.aborted) throw new Error("matching aborted");
+}
+
+async function runMatchingInner(requirementId: string, req: RequirementInput, ownerUserId: string, deadlineMs: number, signal: AbortSignal): Promise<string> {
   const headers = serviceHeaders();
 
   // A suspended employer is read-only: no matching, no writes, no alerts —
@@ -593,7 +623,10 @@ async function runMatchingInner(requirementId: string, req: RequirementInput, ow
   if (!optedOut) throw new Error("candidate visibility read failed");
   const ineligible = new Set<string>([...optedOut, ...lockedCandidateIds.filter((id) => blocked.has(id))]);
   const plan = planExistingMatches(existing, ineligible);
-  if (plan.removeIneligibleIds.length > 0) await deleteLockedMatches(plan.removeIneligibleIds, requirementId);
+  if (plan.removeIneligibleIds.length > 0) {
+    stopIfAborted(signal);
+    await deleteLockedMatches(plan.removeIneligibleIds, requirementId);
+  }
 
   // Touched rows keep their pipeline state and are excluded from re-scoring,
   // so they must not reappear as fresh candidates in the pool either.
@@ -650,6 +683,7 @@ async function runMatchingInner(requirementId: string, req: RequirementInput, ow
   const ranked = blended.filter((m) => m.matchScore >= MIN_MATCH_SCORE_FLOOR);
   const droppedByFloorAfterBlend = blended.length - ranked.length;
 
+  stopIfAborted(signal);
   if (ranked.length > 0) {
     const rows = ranked.map((m) => ({
       requirement_id: requirementId,
@@ -674,6 +708,7 @@ async function runMatchingInner(requirementId: string, req: RequirementInput, ow
   // shortlist in place instead of an empty one. Locked rows only.
   const rankedIds = new Set(ranked.map((m) => m.candidateId));
   const staleIds = planStaleRemovals(plan.untouched, rankedIds, scanComplete);
+  stopIfAborted(signal);
   if (staleIds.length > 0) await deleteLockedMatches(staleIds, requirementId);
   const removedStale = new Set(staleIds);
   // Untouched rows a partial scan couldn't re-evaluate stay on the list.
@@ -685,6 +720,7 @@ async function runMatchingInner(requirementId: string, req: RequirementInput, ow
   // here has been unlocked. Awaited with a swallowed rejection so a delivery
   // failure can neither fail the pass nor be dropped when the isolate exits.
   const newStrongMatches = selectNewStrongMatches(ranked, previousScoreByCandidate, STRONG_MATCH_THRESHOLD);
+  stopIfAborted(signal);
   if (newStrongMatches.length > 0) {
     const title = req.title || "your requirement";
     const topScore = Math.max(...newStrongMatches.map((m) => m.matchScore));
@@ -717,6 +753,7 @@ async function runMatchingInner(requirementId: string, req: RequirementInput, ow
   // &status=neq.closed guards against a requirement archived while this
   // pass was in flight: without it this write would flip a closed posting
   // back open (and the stage-flip below could re-fire "matches ready").
+  stopIfAborted(signal);
   await fetch(`${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&status=neq.closed`, {
     method: "PATCH",
     headers: { ...headers, "Content-Type": "application/json", Prefer: "return=minimal" },
@@ -729,6 +766,7 @@ async function runMatchingInner(requirementId: string, req: RequirementInput, ow
   // already moved forward manually is never dragged back; also guarded
   // against status=closed for the same in-flight-archive race as above.
   if (finalStatus === "ready" || finalStatus === "partial") {
+    stopIfAborted(signal);
     const stageFlipRes = await fetch(
       `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&stage=eq.ai_matching&status=neq.closed`,
       {
@@ -767,7 +805,7 @@ async function runMatchingInner(requirementId: string, req: RequirementInput, ow
  *  any failure here is swallowed by runMatching's own try/catch per
  *  requirement, consistent with the best-effort `void notify(...)` pattern
  *  used across this codebase. */
-const MAX_INCREMENTAL_REQUIREMENTS = 10;
+const MAX_INCREMENTAL_REQUIREMENTS = 5;
 
 /** Bounds how many requirements get re-scored concurrently in a single
     batch. Unbounded Promise.all across a whole backlog risks an edge
@@ -793,7 +831,7 @@ export async function rematchOpenRequirementsForNewResume(): Promise<void> {
     // unbounded backlog.
     const res = await fetch(
       `${SUPABASE_URL}/rest/v1/employer_requirements?stage=in.(ai_matching,ready_for_review)&status=neq.closed` +
-        `&select=id,employer_id,title,location,description,skills,experience_min,experience_max,min_readiness_band,min_star_completeness,employment_type,duration_weeks,hours_per_week,stage,status,last_matched_at,employers!inner(suspended_at)` +
+        `&select=id,employer_id,title,location,description,skills,experience_min,experience_max,min_readiness_band,min_star_completeness,employment_type,duration_weeks,hours_per_week,custom_skill_sets,work_mode,due_date,stage,status,last_matched_at,employers!inner(suspended_at)` +
         `&employers.suspended_at=is.null&order=last_matched_at.asc.nullsfirst&limit=100`,
       { headers: serviceHeaders() },
     );
@@ -813,6 +851,8 @@ export async function rematchOpenRequirementsForNewResume(): Promise<void> {
       employmentType: r.employment_type,
       durationWeeks: r.duration_weeks,
       hoursPerWeek: r.hours_per_week,
+      customSkills: r.custom_skill_sets ?? [],
+      workMode: r.work_mode,
     }));
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);

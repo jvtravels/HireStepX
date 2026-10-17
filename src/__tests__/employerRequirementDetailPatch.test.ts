@@ -106,7 +106,8 @@ function routedFetch(o: RouteOpts) {
       return { ok: true, json: async () => o.identity ?? { email: "boss@gmail.com", email_confirmed_at: "2026-01-01" } };
     }
     if (u.includes("/employer_requirement_activity")) return count(o.recentRematches === undefined ? 0 : o.recentRematches);
-    if (u.includes("/employer_requirements") && u.includes("status=neq.closed") && u.includes("employer_id=eq.")) {
+    // The PATCH URL also carries status=neq.closed (so a failed run can't reopen an archived row); only reads are counts.
+    if (init?.method !== "PATCH" && u.includes("/employer_requirements") && u.includes("status=neq.closed") && u.includes("employer_id=eq.")) {
       return count(o.openRequirements === undefined ? 0 : o.openRequirements);
     }
     if (init?.method === "PATCH") return { ok: true, json: async () => [o.patched ?? o.existing] };
@@ -228,6 +229,10 @@ const EDIT_BODY = {
   dueDate: EXISTING_ROW.due_date,
 };
 
+// A title change is something matching reads, so it spends a rematch. EDIT_BODY alone
+// changes nothing matching reads and is deliberately not charged (see the no-rematch tests below).
+const RERUN_BODY = { ...EDIT_BODY, title: "Senior UI/UX Designer" };
+
 describe("employer-requirement-detail PATCH — suspension and tier limits", () => {
   it("refuses an edit from a suspended employer with 403 and writes nothing", async () => {
     const existing = { ...EXISTING_ROW, employers: { suspended_at: "2026-05-01T00:00:00Z", verification_tier: "verified", website: null } };
@@ -257,7 +262,7 @@ describe("employer-requirement-detail PATCH — suspension and tier limits", () 
     const fetchMock = routedFetch({ existing: EXISTING_ROW, recentRematches: 5 }); // basic tier = 5/hour
     global.fetch = fetchMock as unknown as typeof fetch;
 
-    const res = await handler(patchReq(EDIT_BODY));
+    const res = await handler(patchReq(RERUN_BODY));
 
     expect(res.status).toBe(429);
     const body = await res.json();
@@ -271,7 +276,7 @@ describe("employer-requirement-detail PATCH — suspension and tier limits", () 
     const fetchMock = routedFetch({ existing: EXISTING_ROW, recentRematches: null });
     global.fetch = fetchMock as unknown as typeof fetch;
 
-    const res = await handler(patchReq(EDIT_BODY));
+    const res = await handler(patchReq(RERUN_BODY));
 
     expect(res.status).toBe(503);
     expect((await res.json()).code).toBe("limit_check_unavailable");
@@ -283,7 +288,7 @@ describe("employer-requirement-detail PATCH — suspension and tier limits", () 
     const fetchMock = routedFetch({ existing, recentRematches: 6 }); // would block basic (5), fine for verified (40)
     global.fetch = fetchMock as unknown as typeof fetch;
 
-    const res = await handler(patchReq(EDIT_BODY));
+    const res = await handler(patchReq(RERUN_BODY));
 
     expect(res.status).toBe(200);
     expect(runMatching).toHaveBeenCalledTimes(1);
@@ -332,5 +337,59 @@ describe("employer-requirement-detail PATCH — suspension and tier limits", () 
 
     expect(res.status).toBe(403);
     expect(patchCall(fetchMock)).toBeUndefined();
+  });
+});
+
+describe("employer-requirement-detail PATCH — rematch only when matching inputs change", () => {
+  it("an edit that changes nothing matching reads keeps the status, skips the allowance check and logs no_rematch", async () => {
+    const fetchMock = routedFetch({ existing: EXISTING_ROW, recentRematches: 99 }); // would 429 if charged
+    global.fetch = fetchMock as unknown as typeof fetch;
+
+    const res = await handler(patchReq({ ...EDIT_BODY, department: "Design" }));
+
+    expect(res.status).toBe(200);
+    expect(runMatching).not.toHaveBeenCalled();
+    expect(logRequirementActivity).toHaveBeenCalledWith("req-1", "emp-1", "updated", "no_rematch");
+    const sentBody = JSON.parse((patchCall(fetchMock)![1] as RequestInit).body as string);
+    expect(sentBody.status).toBeUndefined();
+  });
+
+  it("an edit that changes a matching input re-runs matching and logs a plain update", async () => {
+    const fetchMock = routedFetch({ existing: EXISTING_ROW });
+    global.fetch = fetchMock as unknown as typeof fetch;
+
+    const res = await handler(patchReq({ ...RERUN_BODY, customSkillSets: ["Prototyping"], workMode: "remote" }));
+
+    expect(res.status).toBe(200);
+    expect(runMatching).toHaveBeenCalledTimes(1);
+    expect(runMatching.mock.calls[0][1]).toMatchObject({ customSkills: ["Prototyping"], workMode: "remote" });
+    expect(logRequirementActivity).toHaveBeenCalledWith("req-1", "emp-1", "updated", undefined);
+  });
+
+  it("any save re-runs matching when the last run failed", async () => {
+    const fetchMock = routedFetch({ existing: { ...EXISTING_ROW, status: "failed" } });
+    global.fetch = fetchMock as unknown as typeof fetch;
+
+    const res = await handler(patchReq(EDIT_BODY));
+
+    expect(res.status).toBe(200);
+    expect(runMatching).toHaveBeenCalledTimes(1);
+  });
+
+  it("the write is guarded against an archived requirement: status=neq.closed, and an empty result is a 409", async () => {
+    const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
+      const u = String(url);
+      if (u.includes("/auth/v1/admin/users/")) return { ok: true, json: async () => ({ email: "boss@gmail.com", email_confirmed_at: "2026-01-01" }) };
+      if (init?.method === "PATCH") return { ok: true, json: async () => [] }; // archived between the read and the write
+      if (u.includes("/employer_requirement_activity")) return { ok: true, headers: { get: () => "0-0/0" }, json: async () => [] };
+      return { ok: true, json: async () => [EXISTING_ROW] };
+    });
+    global.fetch = fetchMock as unknown as typeof fetch;
+
+    const res = await handler(patchReq(RERUN_BODY));
+
+    expect(res.status).toBe(409);
+    expect(String(patchCall(fetchMock)![0])).toContain("status=neq.closed");
+    expect(runMatching).not.toHaveBeenCalled();
   });
 });

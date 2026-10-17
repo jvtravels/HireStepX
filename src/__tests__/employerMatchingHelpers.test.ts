@@ -14,6 +14,12 @@ import {
   loadBlockedCandidateIds,
   loadOptedOutCandidateIds,
   loadEvidenceFlags,
+  loadGradedSessions,
+  requirementNeedsRematch,
+  recheckOpenRequirementLimit,
+  SESSION_MAX_PAGES,
+  SESSION_PAGE_LIMIT,
+  type MatchingInputs,
   selectNewStrongMatches,
   strongMatchAlertBody,
   canStartBatch,
@@ -31,6 +37,7 @@ import {
   type PoolProfile,
 } from "../../server-handlers/_employer-matching-helpers";
 import { TIER_LIMITS } from "../../server-handlers/_employer-trust";
+import { slog } from "../../server-handlers/_shared";
 
 const H = { apikey: "k" };
 
@@ -388,5 +395,119 @@ describe("pre-unlock masking", () => {
   it("lists what is masked", () => {
     expect(LOCKED_MASKED_FIELDS).not.toContain("employerNames");
     expect(LOCKED_MASKED_FIELDS).toEqual(expect.arrayContaining(["name", "email", "phone", "linkedin", "portfolioLinks"]));
+  });
+});
+
+describe("loadGradedSessions paging and retry", () => {
+  const sess = (n: number) => Array.from({ length: n }, (_, i) => ({ user_id: "u1", score: 70, created_at: `2026-01-${String((i % 28) + 1).padStart(2, "0")}`, report_generated_at: "x" }));
+  const ok = (rows: unknown[]) => ({ ok: true, json: async () => rows });
+
+  it("pages on while a page comes back full, ordered with an id tiebreak", async () => {
+    const urls: string[] = [];
+    const f = vi.fn(async (url: string) => {
+      urls.push(String(url));
+      return ok(urls.length === 1 ? sess(SESSION_PAGE_LIMIT) : sess(3));
+    });
+    const out = await loadGradedSessions("https://x", H, ["u1"], false, f as unknown as typeof fetch);
+    expect(out).toHaveLength(SESSION_PAGE_LIMIT + 3);
+    expect(urls).toHaveLength(2);
+    expect(urls[0]).toContain("order=created_at.desc,id.desc");
+    expect(urls[0]).toContain("offset=0");
+    expect(urls[1]).toContain(`offset=${SESSION_PAGE_LIMIT}`);
+  });
+
+  it("stops at SESSION_MAX_PAGES even if every page is full", async () => {
+    const f = vi.fn(async () => ok(sess(SESSION_PAGE_LIMIT)));
+    await loadGradedSessions("https://x", H, ["u1"], false, f as unknown as typeof fetch);
+    expect(f).toHaveBeenCalledTimes(SESSION_MAX_PAGES);
+  });
+
+  it("retries a failed page once and uses the retry's rows", async () => {
+    let calls = 0;
+    const f = vi.fn(async () => (++calls === 1 ? { ok: false, json: async () => [] } : ok(sess(2))));
+    const out = await loadGradedSessions("https://x", H, ["u1"], false, f as unknown as typeof fetch);
+    expect(out).toHaveLength(2);
+    expect(f).toHaveBeenCalledTimes(2);
+  });
+
+  it("warns with the number of candidates scored without sessions when a batch fails twice", async () => {
+    const warn = vi.spyOn(slog, "warn").mockImplementation(() => {});
+    const f = vi.fn(async () => { throw new Error("network"); });
+    const out = await loadGradedSessions("https://x", H, ["a", "b", "c"], false, f as unknown as typeof fetch);
+    expect(out).toEqual([]);
+    expect(f).toHaveBeenCalledTimes(2);
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining("loadGradedSessions"), expect.objectContaining({ skippedCandidates: 3 }));
+    warn.mockRestore();
+  });
+});
+
+describe("requirementNeedsRematch", () => {
+  const before: MatchingInputs = {
+    title: "Frontend Engineer", description: "Build UI", skills: ["React"], customSkillSets: [], locations: ["Pune"], workMode: "hybrid",
+    experienceMin: 2, experienceMax: 5, minReadinessBand: null, minStarCompleteness: null, employmentType: "full_time",
+  };
+
+  it("is false when nothing matching reads changed, even with whitespace/case noise", () => {
+    expect(requirementNeedsRematch(before, { ...before, title: " Frontend Engineer ", skills: ["react"] })).toBe(false);
+  });
+
+  it.each([
+    ["title", { title: "Backend Engineer" }],
+    ["description", { description: "Build APIs" }],
+    ["skills", { skills: ["React", "Node"] }],
+    ["customSkillSets", { customSkillSets: ["GraphQL"] }],
+    ["locations", { locations: ["Mumbai"] }],
+    ["workMode", { workMode: "remote" }],
+    ["experienceMin", { experienceMin: 3 }],
+    ["experienceMax", { experienceMax: 8 }],
+    ["minReadinessBand", { minReadinessBand: "hire" }],
+    ["minStarCompleteness", { minStarCompleteness: 60 }],
+    ["employmentType", { employmentType: "contract" }],
+  ] as Array<[string, Partial<MatchingInputs>]>)("is true when %s changes", (_name, patch) => {
+    expect(requirementNeedsRematch(before, { ...before, ...patch })).toBe(true);
+  });
+
+  it("is true for any save when the last run failed or never finished", () => {
+    expect(requirementNeedsRematch(before, before, "failed")).toBe(true);
+    expect(requirementNeedsRematch(before, before, "generating")).toBe(true);
+    expect(requirementNeedsRematch(before, before, "ready")).toBe(false);
+  });
+});
+
+describe("recheckOpenRequirementLimit", () => {
+  const countFetch = (n: number | null) => vi.fn(async () => (n === null
+    ? { ok: false, headers: { get: () => null } }
+    : { ok: true, headers: { get: () => `0-0/${n}` } })) as unknown as typeof fetch;
+  const args = { supabaseUrl: "https://x", headers: H, employerId: "emp", tier: "basic" as const };
+
+  it("allows when the count including the new row is within the limit", async () => {
+    const limit = TIER_LIMITS.basic.openRequirements;
+    const r = await recheckOpenRequirementLimit({ ...args, fetchImpl: countFetch(limit) });
+    expect(r.ok).toBe(true);
+  });
+
+  it("refuses when a concurrent create pushed the count past the limit", async () => {
+    const limit = TIER_LIMITS.basic.openRequirements;
+    const r = await recheckOpenRequirementLimit({ ...args, fetchImpl: countFetch(limit + 1) });
+    expect(r.ok).toBe(false);
+  });
+
+  it("lets the request through when the count is unreadable (the pre-insert gate already passed)", async () => {
+    const r = await recheckOpenRequirementLimit({ ...args, fetchImpl: countFetch(null) });
+    expect(r.ok).toBe(true);
+  });
+});
+
+describe("rematch allowance count excludes no_rematch edits", () => {
+  it("queries activity with an or() that keeps NULL-detail rows and drops no_rematch", async () => {
+    const urls: string[] = [];
+    const f = vi.fn(async (url: string) => {
+      urls.push(String(url));
+      if (String(url).includes("/auth/v1/")) return { ok: true, json: async () => ({ email: "x@gmail.com", email_confirmed_at: "2026-01-01" }) };
+      return { ok: true, headers: { get: () => "0-0/0" }, json: async () => [] };
+    }) as unknown as typeof fetch;
+    await checkEmployerAllowance({ supabaseUrl: "https://x", headers: H, employerId: "emp", employer: {}, needsOpenSlot: false, needsRematch: true, fetchImpl: f });
+    const activity = urls.find((u) => u.includes("employer_requirement_activity"))!;
+    expect(decodeURIComponent(activity)).toContain("or=(detail.is.null,detail.neq.no_rematch)");
   });
 });
