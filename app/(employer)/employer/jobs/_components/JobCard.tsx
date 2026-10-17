@@ -27,7 +27,6 @@ export default function JobCard({ r, readOnly, onStage, actions }: { r: Requirem
             <span style={{ display: "block", fontFamily: f.sans, fontSize: textSize.base, color: t.inkSoft, marginTop: 2 }}>{[budget, jobType].filter(Boolean).join(" · ")}</span>
           )}
         </Link>
-        {isClosed && <Badge tone="neutral">Closed</Badge>}
         <div style={{ margin: "-6px -8px -6px 0", flexShrink: 0 }}>{actions}</div>
       </div>
       {r.skills.length > 0 && (

@@ -80,7 +80,7 @@ export default function ConversationList({
               className={cn(
                 "h-7 rounded-full border px-3 text-xs font-medium transition-colors pointer-coarse:h-9",
                 filter === c.id
-                  ? "border-primary bg-primary text-primary-foreground"
+                  ? "border-[var(--btn-primary)] bg-[var(--btn-primary)] text-[var(--btn-primary-foreground)]"
                   : "border-border bg-background text-muted-foreground hover:bg-muted",
               )}
             >

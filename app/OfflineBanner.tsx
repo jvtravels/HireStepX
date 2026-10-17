@@ -32,13 +32,15 @@ export function OfflineBanner() {
   const isBack = status === "online";
   const degraded = status === "degraded";
 
-  // The console has no interview answers to sync, and a top banner would sit
-  // on its header, so it gets a bottom pill that says what actually happens.
+  // The console has no interview answers to sync, so it gets a pill that says
+  // what actually happens. It sits just under the header: a bottom pill covered
+  // the pagination and composer controls, and pointer-events-none keeps taps
+  // on whatever lies beneath.
   if (employer) {
     return (
       <div
         role="alert"
-        className="fixed bottom-4 left-1/2 z-[9999] w-max max-w-[calc(100vw-32px)] -translate-x-1/2 rounded-full bg-hx-coal px-4 py-2 text-center text-[13px] font-medium leading-snug text-white shadow-lg"
+        className="pointer-events-none fixed top-[60px] left-1/2 z-[9999] w-max max-w-[calc(100vw-32px)] -translate-x-1/2 rounded-full bg-hx-coal px-4 py-2 text-center text-[13px] font-medium leading-snug text-white shadow-lg"
       >
         {isBack
           ? "Back online"
