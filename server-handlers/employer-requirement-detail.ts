@@ -80,6 +80,7 @@ import {
   canManuallyTransitionStage,
   type RequirementRow,
   type RequirementStage,
+  MIN_DESCRIPTION_LENGTH,
 } from "./_employer-requirements-helpers";
 
 declare const process: { env: Record<string, string | undefined> };
@@ -672,7 +673,7 @@ async function handlePatch(req: Request, requirementId: string, userId: string, 
     const skipRematch = existing.stage === "interviewing" || existing.stage === "hired";
 
     if (!isValidRequirementInput(title, locations, description)) {
-      return new Response(JSON.stringify({ error: "title, at least one location, and a role description (min 20 characters) are required" }), { status: 400, headers });
+      return new Response(JSON.stringify({ error: `title, at least one location, and a role description (min ${MIN_DESCRIPTION_LENGTH} characters) are required` }), { status: 400, headers });
     }
     if (!isValidRange(experienceMin, experienceMax)) {
       return new Response(JSON.stringify({ error: "Minimum experience can't be greater than maximum experience" }), { status: 400, headers });

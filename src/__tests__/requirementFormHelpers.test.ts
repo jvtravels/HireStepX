@@ -22,7 +22,7 @@ const valid = (over: Partial<RequirementDraft> = {}): RequirementDraft => ({
   ...initialDraft(),
   title: "Senior Engineer",
   locations: ["Mumbai"],
-  description: "Build and own backend services for our hiring platform.",
+  description: "Build and own backend services for our hiring platform, working with product and design to ship reliable features.",
   ...over,
 });
 
@@ -39,7 +39,7 @@ describe("validateDraft", () => {
   });
 
   it("asks for a description when empty", () => {
-    expect(validateDraft(valid({ description: "" }), TODAY).description).toMatch(/at least 20/);
+    expect(validateDraft(valid({ description: "" }), TODAY).description).toMatch(/at least 80/);
   });
 
   it("rejects decimal, oversized and inverted experience", () => {

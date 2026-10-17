@@ -22,7 +22,7 @@ async function fillStepOne() {
   fireEvent.change(loc, { target: { value: "Pune" } });
   fireEvent.keyDown(loc, { key: "Enter" });
   await screen.findByText("Pune");
-  type(/^description/i, "Own the services behind our hiring platform end to end.");
+  type(/^description/i, "Own the services behind our hiring platform end to end. You will partner with product and design to ship dependable features for candidates and employers.");
 }
 
 beforeAll(() => {

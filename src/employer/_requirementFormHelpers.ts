@@ -1,12 +1,13 @@
 import type { SalaryType, EmploymentType, Requirement } from "./mockData";
 import type { RequirementDraft } from "./_requirementPayload";
+import { MIN_DESCRIPTION_LENGTH } from "../../server-handlers/_employer-requirements-helpers";
 
 /* Pure logic behind RequirementForm: validation, experience presets, salary
    unit conversion and draft (de)serialisation. Limits mirror the server
    validators in server-handlers/_employer-requirements-helpers.ts, which
    silently drop out-of-range values, so the form has to enforce them first. */
 
-export const MIN_DESCRIPTION_LENGTH = 20;
+export { MIN_DESCRIPTION_LENGTH };
 export const MAX_DESCRIPTION_LENGTH = 5000;
 export const MAX_LONG_TEXT_LENGTH = 2000;
 export const MAX_EXPERIENCE_YEARS = 40;

@@ -30,7 +30,7 @@ const STORED = {
   title: "Backend Engineer",
   location: "Pune",
   noticePeriodPref: "Up to 30 days",
-  description: "Build and run the services behind our hiring platform.",
+  description: "Build and run the services behind our hiring platform. You will partner with product and design to ship dependable features for candidates and employers.",
   status: "ready",
   stage: "ready_for_review",
   department: "Engineering",
@@ -151,7 +151,7 @@ describe("edit form → PATCH handler → stored columns", () => {
     change(/^minimum \(/i, "20");
     change(/^maximum \(/i, "30");
     addTag(/required skills/i, "Go");
-    change(/^description/i, "Design and operate the payment services for our platform.");
+    change(/^description/i, "Design and operate the payment services for our platform. You will partner with product and design to ship dependable features for candidates and employers.");
     change(/responsibilities/i, "Own reliability.");
     change(/nice to have/i, "Rust");
     addTag(/preferred colleges/i, "NIT Trichy");
@@ -206,7 +206,7 @@ describe("edit form → PATCH handler → stored columns", () => {
       budget_max: 30,
       salary_type: "per-annum",
       skills: ["Node.js", "Go"],
-      description: "Design and operate the payment services for our platform.",
+      description: "Design and operate the payment services for our platform. You will partner with product and design to ship dependable features for candidates and employers.",
       responsibilities: "Own reliability.",
       nice_to_have: "Rust",
       preferred_colleges: ["IIT Bombay", "NIT Trichy"],

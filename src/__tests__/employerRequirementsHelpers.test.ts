@@ -42,7 +42,7 @@ describe("asBoundedString", () => {
 });
 
 describe("isValidRequirementInput", () => {
-  const jd = "Own the checkout funnel end to end and mentor two juniors.";
+  const jd = "Own the checkout funnel end to end and mentor two juniors. You will partner with product and design to ship dependable features for candidates and employers.";
 
   it("accepts a real title, at least one location, and a real JD", () => {
     expect(isValidRequirementInput("SDE II", ["Bengaluru"], jd)).toBe(true);

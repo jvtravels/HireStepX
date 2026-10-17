@@ -38,7 +38,7 @@ const EXISTING_ROW = {
   title: "UI/UX Designer",
   location: "Bengaluru",
   notice_period_pref: "30 days",
-  description: "Design end-to-end product experiences for our marketplace app.",
+  description: "Design end-to-end product experiences for our marketplace app. You will partner with product and design to ship dependable features for candidates and employers.",
   status: "ready",
   stage: "ready_for_review",
   department: "Product",
