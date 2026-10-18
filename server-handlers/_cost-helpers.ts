@@ -95,6 +95,34 @@ export function sttInr(calls: number, rates: CostRates = DEFAULT_COST_RATES): nu
   return Math.max(0, calls) * rates.sttUsdPerCall * rates.usdToInr;
 }
 
+/** Public list USD per million tokens {input, output}, matched by substring of
+ *  the logged model id (most specific first). Unknown models fall back to the
+ *  blended rate. */
+const MODEL_USD_PER_M: Array<[string, { in: number; out: number }]> = [
+  ["gemini-3.5-flash-lite", { in: 0.3, out: 2.5 }],
+  ["gemini-2.5-flash-lite", { in: 0.1, out: 0.4 }],
+  ["gpt-oss-120b", { in: 0.15, out: 0.6 }],
+  ["gpt-oss-20b", { in: 0.075, out: 0.3 }],
+];
+
+export function llmCallInr(
+  call: { model?: string | null; promptTokens: number; completionTokens: number; totalTokens: number; isFallback: boolean },
+  rates: CostRates = DEFAULT_COST_RATES,
+): number {
+  const m = (call.model || "").toLowerCase();
+  const hit = MODEL_USD_PER_M.find(([k]) => m.includes(k));
+  if (hit && (call.promptTokens > 0 || call.completionTokens > 0)) {
+    const usd = (call.promptTokens * hit[1].in + call.completionTokens * hit[1].out) / 1_000_000;
+    return usd * rates.usdToInr;
+  }
+  return llmInr(call.totalTokens, call.isFallback, rates);
+}
+
+/** India (UTC+5:30) calendar date of an ISO timestamp — "today" for the admin. */
+export function istDate(iso: string | number): string {
+  return new Date(new Date(iso).getTime() + 19_800_000).toISOString().slice(0, 10);
+}
+
 export interface CostInputs {
   /** Total `llm_usage.total_tokens` over the window from the primary provider. */
   llmTokensPrimary: number;

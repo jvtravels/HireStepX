@@ -3,7 +3,7 @@
 import { fetchJSON, daysAgo, LIMIT_LLM, fetchCount, TTS_SERVICES, STT_SERVICES, supa } from "./_admin-shared";
 import { emptyBreakdown, categorizeLlmError } from "./_admin-llm-categorizer";
 import { getAnomalies } from "./_admin-activity";
-import { costBreakdown, llmInr, RATES_LAST_VERIFIED_AT, rateCardAgeDays, isRateCardStale } from "./_cost-helpers";
+import { costBreakdown, llmCallInr, ttsInr, sttInr, istDate, RATES_LAST_VERIFIED_AT, rateCardAgeDays, isRateCardStale } from "./_cost-helpers";
 
 export async function getFinancials() {
   const [payments, activeProfiles] = await Promise.all([
@@ -515,122 +515,130 @@ export async function saveCostReconciliation(month: string, actualInvoiceInr: nu
 export async function getCostData() {
   const round2 = (n: number) => Math.round(n * 100) / 100;
   const now = Date.now();
-  const today = new Date(now).toISOString().slice(0, 10);
+  const today = istDate(now);
   const thirtyDaysAgo = daysAgo(30);
   const sevenDaysAgo = daysAgo(7);
-  const fourteenDaysAgo = daysAgo(14);
 
-  const [recentSessions, topSessions, endpointUsage, lastWeekSessions, reconciliations] = await Promise.all([
-    // All sessions last 30d with cost fields — includes user_id for per-user aggregation
-    fetchJSON<{
-      id: string; user_id: string; type: string; focus: string; score: number; duration: number;
-      llm_cost_inr: number | null; prompt_tokens: number | null; completion_tokens: number | null;
-      created_at: string;
-    }>(`sessions?select=id,user_id,type,focus,score,duration,llm_cost_inr,prompt_tokens,completion_tokens,created_at&created_at=gte.${thirtyDaysAgo}&order=created_at.desc&limit=2000`),
-    // Top 30 most expensive sessions all-time
-    fetchJSON<{
-      id: string; user_id: string; type: string; focus: string; score: number; duration: number;
-      llm_cost_inr: number | null; prompt_tokens: number | null; completion_tokens: number | null;
-      created_at: string;
-    }>(`sessions?select=id,user_id,type,focus,score,duration,llm_cost_inr,prompt_tokens,completion_tokens,created_at&llm_cost_inr=not.is.null&order=llm_cost_inr.desc.nullslast&limit=30`),
-    // LLM usage by endpoint for cost-per-endpoint breakdown
-    fetchJSON<{ endpoint: string; total_tokens: number; is_fallback: boolean; created_at: string }>(
-      `llm_usage?select=endpoint,total_tokens,is_fallback,created_at&created_at=gte.${thirtyDaysAgo}&limit=5000`,
-    ),
-    // Sessions 8–14 days ago (prior week) for week-over-week comparison
-    fetchJSON<{ llm_cost_inr: number | null }>(
-      `sessions?select=llm_cost_inr&created_at=gte.${fourteenDaysAgo}&created_at=lt.${sevenDaysAgo}&limit=2000`,
-    ),
-    // Real invoice totals entered against modeled estimates — see saveCostReconciliation.
+  type SessionRow = {
+    id: string; user_id: string; type: string; focus: string; score: number; duration: number;
+    llm_cost_inr: number | null; prompt_tokens: number | null; completion_tokens: number | null; created_at: string;
+  };
+  type LlmRow = {
+    endpoint: string; model: string | null; is_fallback: boolean; prompt_tokens: number | null;
+    completion_tokens: number | null; total_tokens: number | null; session_id: string | null;
+    user_id: string | null; created_at: string;
+  };
+  type VoiceRow = { service: string; request_chars: number | null; user_id: string | null; created_at: string };
+
+  const [recentSessions, llmRows, voiceRows, reconciliations] = await Promise.all([
+    fetchJSON<SessionRow>(`sessions?select=id,user_id,type,focus,score,duration,llm_cost_inr,prompt_tokens,completion_tokens,created_at&created_at=gte.${thirtyDaysAgo}&order=created_at.desc&limit=2000`),
+    fetchJSON<LlmRow>(`llm_usage?select=endpoint,model,is_fallback,prompt_tokens,completion_tokens,total_tokens,session_id,user_id,created_at&created_at=gte.${thirtyDaysAgo}&limit=20000`),
+    fetchJSON<VoiceRow>(`service_usage?select=service,request_chars,user_id,created_at&created_at=gte.${thirtyDaysAgo}&limit=20000`),
     fetchJSON<CostReconciliationRow>(`cost_rate_reconciliations?select=month,actual_invoice_inr,modeled_inr,note,created_at&order=month.desc&limit=12`),
   ]);
 
-  const costedSessions = recentSessions.filter(s => s.llm_cost_inr != null && s.llm_cost_inr > 0);
-  const totalLlmInr = costedSessions.reduce((sum, s) => sum + (s.llm_cost_inr || 0), 0);
-  const avgCostPerSession = costedSessions.length > 0 ? totalLlmInr / costedSessions.length : 0;
-  const highestSessionCostInr = topSessions.length > 0 ? (topSessions[0].llm_cost_inr || 0) : 0;
+  // Price every logged LLM call per model; failed calls log 0 tokens so cost 0.
+  const priced = llmRows.map(r => ({
+    ...r,
+    day: istDate(r.created_at),
+    inr: llmCallInr({
+      model: r.model, promptTokens: r.prompt_tokens || 0, completionTokens: r.completion_tokens || 0,
+      totalTokens: r.total_tokens || 0, isFallback: !!r.is_fallback,
+    }),
+  }));
+  const sessionLlm = new Map<string, number>();
+  for (const r of priced) if (r.session_id) sessionLlm.set(r.session_id, (sessionLlm.get(r.session_id) || 0) + r.inr);
 
-  // Data coverage — how many sessions have cost data vs total
-  const nullCostCount = recentSessions.length - costedSessions.length;
-  const dataCoveragePercent = recentSessions.length > 0
-    ? Math.round((costedSessions.length / recentSessions.length) * 100)
-    : 0;
+  const voice = voiceRows.map(v => {
+    const isTts = TTS_SERVICES.has(v.service);
+    const isStt = STT_SERVICES.has(v.service);
+    return { ...v, day: istDate(v.created_at), isTts, isStt, inr: isTts ? ttsInr(v.request_chars || 0) : isStt ? sttInr(1) : 0 };
+  });
 
-  // Week-over-week: this week vs prior week
-  const thisWeekSessions = costedSessions.filter(s => s.created_at >= sevenDaysAgo);
-  const thisWeekInr = round2(thisWeekSessions.reduce((sum, s) => sum + (s.llm_cost_inr || 0), 0));
-  const lastWeekInr = round2(lastWeekSessions.filter(s => s.llm_cost_inr != null && s.llm_cost_inr > 0)
-    .reduce((sum, s) => sum + (s.llm_cost_inr || 0), 0));
-  const wowDeltaPct = lastWeekInr > 0
-    ? Math.round(((thisWeekInr - lastWeekInr) / lastWeekInr) * 100)
-    : null;
+  const sessions = recentSessions.map(s => {
+    const fromUsage = sessionLlm.get(s.id);
+    return { ...s, costInr: fromUsage != null ? fromUsage : (s.llm_cost_inr || 0), day: istDate(s.created_at) };
+  });
+  const costedSessions = sessions.filter(s => s.costInr > 0);
 
-  // Today's cost + anomaly detection (today vs 30d daily average)
-  const todayCostInr = round2(costedSessions
-    .filter(s => s.created_at?.slice(0, 10) === today)
-    .reduce((sum, s) => sum + (s.llm_cost_inr || 0), 0));
-  const dailyAvgInr = round2(totalLlmInr / 30);
-  // Spike if today is 2× the 30d daily average and exceeds ₹0.20 absolute
-  const isCostSpike = todayCostInr > dailyAvgInr * 2 && todayCostInr > 0.2;
+  const windowOf = (fromIso: string | null, dayOnly?: string) => {
+    const inWin = (iso: string, day: string) => dayOnly ? day === dayOnly : (!fromIso || iso >= fromIso);
+    const llm = priced.filter(r => inWin(r.created_at, r.day));
+    const vc = voice.filter(v => inWin(v.created_at, v.day));
+    const llmTotal = llm.reduce((t, r) => t + r.inr, 0);
+    const ttsTotal = vc.filter(v => v.isTts).reduce((t, v) => t + v.inr, 0);
+    const sttTotal = vc.filter(v => v.isStt).reduce((t, v) => t + v.inr, 0);
+    const n = sessions.filter(s => inWin(s.created_at, s.day)).length;
+    const total = llmTotal + ttsTotal + sttTotal;
+    return {
+      llmInr: round2(llmTotal), ttsInr: round2(ttsTotal), sttInr: round2(sttTotal), totalInr: round2(total),
+      sessions: n, perSessionInr: n > 0 ? round2(total / n) : 0,
+    };
+  };
+  const todayWin = windowOf(null, today);
+  const week = windowOf(sevenDaysAgo);
+  const month = windowOf(null);
 
-  // Cost by focus type
+  const thisWeekInr = week.totalInr;
+  const prevWeekFrom = daysAgo(14);
+  const lastWeekInr = round2(
+    priced.filter(r => r.created_at >= prevWeekFrom && r.created_at < sevenDaysAgo).reduce((t, r) => t + r.inr, 0) +
+    voice.filter(v => v.created_at >= prevWeekFrom && v.created_at < sevenDaysAgo).reduce((t, v) => t + v.inr, 0),
+  );
+  const wowDeltaPct = lastWeekInr > 0 ? Math.round(((thisWeekInr - lastWeekInr) / lastWeekInr) * 100) : null;
+
+  const attributedLlm = priced.filter(r => r.session_id).reduce((t, r) => t + r.inr, 0);
+  const totalLlmInr = month.llmInr;
+  const attributedPct = totalLlmInr > 0 ? Math.round((attributedLlm / totalLlmInr) * 100) : 0;
+
+  const perDay: Record<string, number> = {};
+  for (let i = 29; i >= 0; i--) perDay[istDate(now - i * 86400000)] = 0;
+  for (const r of priced) if (r.day in perDay) perDay[r.day] += r.inr;
+  for (const v of voice) if (v.day in perDay) perDay[v.day] += v.inr;
+  for (const d of Object.keys(perDay)) perDay[d] = round2(perDay[d]);
+
+  const dailyAvgInr = round2(month.totalInr / 30);
+  const isCostSpike = todayWin.totalInr > dailyAvgInr * 2 && todayWin.totalInr > 5;
+
   const focusMap: Record<string, { total: number; count: number }> = {};
   for (const s of costedSessions) {
     const key = s.focus || s.type || "unknown";
-    if (!focusMap[key]) focusMap[key] = { total: 0, count: 0 };
-    focusMap[key].total += s.llm_cost_inr || 0;
+    (focusMap[key] ||= { total: 0, count: 0 });
+    focusMap[key].total += s.costInr;
     focusMap[key].count++;
   }
   const byFocus: Record<string, { totalInr: number; sessions: number; avgInr: number }> = {};
   for (const [k, v] of Object.entries(focusMap)) {
-    byFocus[k] = {
-      totalInr: round2(v.total),
-      sessions: v.count,
-      avgInr: round2(v.count > 0 ? v.total / v.count : 0),
-    };
+    byFocus[k] = { totalInr: round2(v.total), sessions: v.count, avgInr: round2(v.total / v.count) };
   }
 
-  // Daily cost trend (30d)
-  const perDay: Record<string, number> = {};
-  for (let i = 29; i >= 0; i--) {
-    perDay[new Date(now - i * 86400000).toISOString().slice(0, 10)] = 0;
-  }
-  for (const s of costedSessions) {
-    const d = s.created_at?.slice(0, 10);
-    if (d && d in perDay) perDay[d] = round2((perDay[d] || 0) + (s.llm_cost_inr || 0));
-  }
+  const bucket = (rows: typeof priced) => {
+    const ep: Record<string, { estimatedInr: number; tokens: number; calls: number }> = {};
+    const model: Record<string, { estimatedInr: number; tokens: number; calls: number; failed: number }> = {};
+    for (const r of rows) {
+      const e = (ep[r.endpoint || "unknown"] ||= { estimatedInr: 0, tokens: 0, calls: 0 });
+      e.estimatedInr += r.inr; e.tokens += r.total_tokens || 0; e.calls++;
+      const mk = `${r.endpoint || "unknown"} · ${r.model || "unknown"}`;
+      const m = (model[mk] ||= { estimatedInr: 0, tokens: 0, calls: 0, failed: 0 });
+      m.estimatedInr += r.inr; m.tokens += r.total_tokens || 0; m.calls++;
+      if (!(r.total_tokens || 0)) m.failed++;
+    }
+    for (const v of Object.values(ep)) v.estimatedInr = round2(v.estimatedInr);
+    for (const v of Object.values(model)) v.estimatedInr = round2(v.estimatedInr);
+    return { ep, model };
+  };
+  const b30 = bucket(priced);
+  const bToday = bucket(priced.filter(r => r.day === today));
 
-  // Cost by endpoint (estimated from token counts × rate card)
-  const epMap: Record<string, { primaryTokens: number; fallbackTokens: number; calls: number }> = {};
-  for (const u of endpointUsage) {
-    const ep = u.endpoint || "unknown";
-    if (!epMap[ep]) epMap[ep] = { primaryTokens: 0, fallbackTokens: 0, calls: 0 };
-    epMap[ep].calls++;
-    if (u.is_fallback) epMap[ep].fallbackTokens += u.total_tokens || 0;
-    else epMap[ep].primaryTokens += u.total_tokens || 0;
-  }
-  const byEndpoint: Record<string, { estimatedInr: number; tokens: number; calls: number }> = {};
-  for (const [ep, d] of Object.entries(epMap)) {
-    byEndpoint[ep] = {
-      estimatedInr: round2(llmInr(d.primaryTokens, false) + llmInr(d.fallbackTokens, true)),
-      tokens: d.primaryTokens + d.fallbackTokens,
-      calls: d.calls,
-    };
-  }
-
-  // Top 5 users by LLM spend (30d) — compute from costedSessions
-  const userCostMap: Record<string, { total: number; sessions: number }> = {};
-  for (const s of costedSessions) {
-    const uid = s.user_id || "unknown";
-    if (!userCostMap[uid]) userCostMap[uid] = { total: 0, sessions: 0 };
-    userCostMap[uid].total += s.llm_cost_inr || 0;
-    userCostMap[uid].sessions++;
-  }
+  // Per-user: attributed session LLM + that user's unattributed LLM + their voice.
+  const userCostMap: Record<string, { llm: number; voice: number; sessions: number }> = {};
+  const u = (id: string) => (userCostMap[id] ||= { llm: 0, voice: 0, sessions: 0 });
+  for (const r of priced) if (r.user_id) u(r.user_id).llm += r.inr;
+  for (const v of voice) if (v.user_id) u(v.user_id).voice += v.inr;
+  for (const s of sessions) if (s.user_id) u(s.user_id).sessions++;
   const topUserIds = Object.entries(userCostMap)
-    .sort(([, a], [, b]) => b.total - a.total)
-    .slice(0, 5)
-    .map(([uid]) => uid);
-  // Fetch profiles for top users
+    .sort(([, a], [, b]) => (b.llm + b.voice) - (a.llm + a.voice))
+    .slice(0, 5).map(([id]) => id);
   let topUserProfiles: { id: string; name: string | null; email: string }[] = [];
   if (topUserIds.length > 0) {
     topUserProfiles = await fetchJSON<{ id: string; name: string | null; email: string }>(
@@ -638,42 +646,51 @@ export async function getCostData() {
     );
   }
   const profileMap = new Map(topUserProfiles.map(p => [p.id, { name: p.name || "(no name)", email: p.email }]));
-  const topUsersByCost = topUserIds.map(uid => ({
-    userId: uid,
-    name: profileMap.get(uid)?.name || "(no name)",
-    email: profileMap.get(uid)?.email || "—",
-    totalLlmInr: round2(userCostMap[uid].total),
-    sessions: userCostMap[uid].sessions,
-    avgInr: round2(userCostMap[uid].sessions > 0 ? userCostMap[uid].total / userCostMap[uid].sessions : 0),
-  }));
+  const topUsersByCost = topUserIds.map(uid => {
+    const c = userCostMap[uid];
+    const total = c.llm + c.voice;
+    return {
+      userId: uid,
+      name: profileMap.get(uid)?.name || "(no name)",
+      email: profileMap.get(uid)?.email || "—",
+      totalLlmInr: round2(c.llm),
+      voiceInr: round2(c.voice),
+      totalInr: round2(total),
+      sessions: c.sessions,
+      avgInr: round2(c.sessions > 0 ? total / c.sessions : 0),
+    };
+  });
+
+  const topSessions = [...costedSessions].sort((a, b) => b.costInr - a.costInr).slice(0, 30);
 
   return {
-    totalLlmInr: round2(totalLlmInr),
-    avgCostPerSession: round2(avgCostPerSession),
-    highestSessionCostInr: round2(highestSessionCostInr),
+    totalLlmInr,
+    avgCostPerSession: month.perSessionInr,
+    highestSessionCostInr: round2(topSessions[0]?.costInr || 0),
     sessionCount: costedSessions.length,
-    totalSessions30d: recentSessions.length,
-    nullCostCount,
-    dataCoveragePercent,
+    totalSessions30d: sessions.length,
+    nullCostCount: sessions.length - costedSessions.length,
+    dataCoveragePercent: sessions.length > 0 ? Math.round((costedSessions.length / sessions.length) * 100) : 0,
     thisWeekInr,
     lastWeekInr,
     wowDeltaPct,
-    todayCostInr,
+    todayCostInr: todayWin.totalInr,
     dailyAvgInr,
     isCostSpike,
+    today: { date: today, ...todayWin },
+    last7d: week,
+    last30d: month,
+    attributedLlmPct: attributedPct,
+    unattributedLlmInr: round2(totalLlmInr - attributedLlm),
     byFocus,
     perDay,
-    byEndpoint,
+    byEndpoint: b30.ep,
+    byModel: b30.model,
+    byModelToday: bToday.model,
     topUsersByCost,
-    // Rate-card provenance — see _cost-helpers.ts's own "list estimates, not
-    // billed amounts" caveat. Surfaced here so staleness is visible wherever
-    // the modeled cost figures are, not just in the health-alerts tab.
     ratesLastVerifiedAt: RATES_LAST_VERIFIED_AT,
     rateCardAgeDays: rateCardAgeDays(now),
     rateCardIsStale: isRateCardStale(now),
-    // Real invoice totals vs. this tool's own modeled estimate, entered via
-    // the "save-cost-reconciliation" action — the FinOps "operational clock
-    // vs. financial clock" split applied concretely.
     costReconciliations: reconciliations
       .map(r => ({
         month: r.month,
@@ -689,7 +706,7 @@ export async function getCostData() {
       focus: s.focus || s.type || "—",
       score: s.score || 0,
       duration: s.duration || 0,
-      llmCostInr: round2(s.llm_cost_inr || 0),
+      llmCostInr: round2(s.costInr),
       promptTokens: s.prompt_tokens || 0,
       completionTokens: s.completion_tokens || 0,
       date: s.created_at,

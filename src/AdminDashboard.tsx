@@ -106,6 +106,8 @@ interface SessionsData {
   recent: Array<{ id: string; userId: string; type: string; difficulty: string; focus?: string; score: number; duration: number; date: string; llmCostInr?: number | null; promptTokens?: number | null; completionTokens?: number | null; isFallback?: boolean }>;
 }
 
+interface CostWindow { llmInr: number; ttsInr: number; sttInr: number; totalInr: number; sessions: number; perSessionInr: number }
+
 interface CostData {
   totalLlmInr: number;
   avgCostPerSession: number;
@@ -123,7 +125,14 @@ interface CostData {
   byFocus: Record<string, { totalInr: number; sessions: number; avgInr: number }>;
   perDay: Record<string, number>;
   byEndpoint: Record<string, { estimatedInr: number; tokens: number; calls: number }>;
-  topUsersByCost: Array<{ userId: string; name: string; email: string; totalLlmInr: number; sessions: number; avgInr: number }>;
+  topUsersByCost: Array<{ userId: string; name: string; email: string; totalLlmInr: number; voiceInr: number; totalInr: number; sessions: number; avgInr: number }>;
+  today: CostWindow & { date: string };
+  last7d: CostWindow;
+  last30d: CostWindow;
+  attributedLlmPct: number;
+  unattributedLlmInr: number;
+  byModel: Record<string, { estimatedInr: number; tokens: number; calls: number; failed: number }>;
+  byModelToday: Record<string, { estimatedInr: number; tokens: number; calls: number; failed: number }>;
   topExpensiveSessions: Array<{
     id: string; userId: string; focus: string; score: number; duration: number;
     llmCostInr: number; promptTokens: number; completionTokens: number; date: string;
@@ -2655,41 +2664,78 @@ export default function AdminDashboard() {
     return (
       <div>
         {/* Data quality banner */}
-        {cd.dataCoveragePercent < 70 && (
+        {cd.attributedLlmPct < 70 && (
           <div style={{ background: "rgba(180,83,9,0.08)", border: "1px solid rgba(180,83,9,0.25)", borderRadius: 8, padding: "10px 16px", marginBottom: 16, fontSize: 12, color: c.ember }}>
-            ⚠️ Cost data coverage is only {cd.dataCoveragePercent}% ({cd.nullCostCount} of {cd.totalSessions30d} sessions missing
-            <code style={{ fontFamily: font.mono, marginLeft: 4 }}>llm_cost_inr</code>). Averages below are computed only on sessions
-            that have data — actual per-session cost may be higher. Check <code style={{ fontFamily: font.mono }}>save-session.ts</code> fire-and-forget PATCH for silent failures.
+            Only {cd.attributedLlmPct}% of LLM spend is tagged to a session. The other ₹{cd.unattributedLlmInr.toFixed(2)} (resume analysis,
+            question generation, interview-time calls) is still counted in every total on this tab, but not in the per-session LLM figure.
           </div>
         )}
 
         {/* Cost spike warning */}
         {cd.isCostSpike && (
           <div style={{ background: "rgba(220,38,38,0.07)", border: "1px solid rgba(220,38,38,0.25)", borderRadius: 8, padding: "10px 16px", marginBottom: 16, fontSize: 12, color: "#DC2626" }}>
-            🚨 Cost spike today: ₹{cd.todayCostInr.toFixed(2)} vs ₹{cd.dailyAvgInr.toFixed(2)} daily avg (30d). Verify for anomalous session volume or runaway prompts.
+            🚨 Cost spike today: ₹{cd.todayCostInr.toFixed(2)} vs ₹{cd.dailyAvgInr.toFixed(2)} daily avg (30d, all-in). Verify for anomalous session volume or runaway prompts.
           </div>
         )}
+
+        {/* Today / 7d / 30d breakdown (IST days, LLM priced per model, voice from service_usage) */}
+        <div style={{ ...card, marginBottom: 24, padding: 0, overflow: "auto" }}>
+          <div style={{ padding: "16px 24px 6px" }}>
+            <p style={labelStyle}>Cost Breakdown · all-in (LLM + TTS + STT)</p>
+            <p style={{ margin: "4px 0 0", fontSize: 11, color: c.stone }}>
+              Today = IST calendar day ({cd.today.date}). Per session = total spend / saved sessions, so spend on abandoned or unsaved sessions is included.
+            </p>
+          </div>
+          <table style={tableStyle}>
+            <thead>
+              <tr>
+                <th style={thStyle}>Window</th>
+                <th style={thStyle}>Sessions</th>
+                <th style={thStyle}>LLM ₹</th>
+                <th style={thStyle}>TTS ₹</th>
+                <th style={thStyle}>STT ₹</th>
+                <th style={thStyle}>Total ₹</th>
+                <th style={thStyle}>₹ / session</th>
+              </tr>
+            </thead>
+            <tbody>
+              {([["Today", cd.today], ["Last 7 days", cd.last7d], ["Last 30 days", cd.last30d]] as Array<[string, CostWindow]>).map(([label, w]) => (
+                <tr key={label}>
+                  <td style={{ ...tdStyle, fontSize: 12, fontWeight: 600 }}>{label}</td>
+                  <td style={{ ...tdStyle, fontFamily: font.mono }}>{w.sessions}</td>
+                  <td style={{ ...tdStyle, fontFamily: font.mono }}>₹{w.llmInr.toFixed(2)}</td>
+                  <td style={{ ...tdStyle, fontFamily: font.mono }}>₹{w.ttsInr.toFixed(2)}</td>
+                  <td style={{ ...tdStyle, fontFamily: font.mono }}>₹{w.sttInr.toFixed(2)}</td>
+                  <td style={{ ...tdStyle, fontFamily: font.mono, color: T.indigo, fontWeight: 700 }}>₹{w.totalInr.toFixed(2)}</td>
+                  <td style={{ ...tdStyle, fontFamily: font.mono, fontWeight: 700 }}>{w.sessions > 0 ? `₹${w.perSessionInr.toFixed(2)}` : "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p style={{ margin: 0, padding: "10px 24px 14px", fontSize: 11, color: c.stone }}>
+            STT history starts 2026-10-12 and TTS logging 2026-09-22, so the 30-day per-session figure is understated.
+            Cartesia and Azure characters are priced at the Sarvam rate (upper bound). STT is calls × an assumed 1.8 min average, not metered minutes.
+          </p>
+        </div>
 
         {/* Headline unit economics */}
         <div style={{ display: "flex", flexWrap: "wrap", gap: 16, marginBottom: 24 }}>
           <div style={statCard}>
-            <p style={labelStyle}>Avg Cost / Session</p>
-            <p style={bigNum}>₹{cd.avgCostPerSession.toFixed(2)}</p>
+            <p style={labelStyle}>Today (IST)</p>
+            <p style={bigNum}>₹{cd.today.totalInr.toFixed(2)}</p>
+            <p style={{ margin: "4px 0 0", fontSize: 11, color: c.stone }}>Daily avg (30d) ₹{cd.dailyAvgInr.toFixed(2)}{wowBadge}</p>
+          </div>
+          <div style={statCard}>
+            <p style={labelStyle}>All-in Cost / Session (7d)</p>
+            <p style={bigNum}>₹{cd.last7d.perSessionInr.toFixed(2)}</p>
             <p style={{ margin: "4px 0 0", fontSize: 11, color: c.stone }}>
-              LLM only · {cd.dataCoveragePercent}% coverage · {cd.sessionCount}/{cd.totalSessions30d} sessions
+              LLM + voice · {cd.last7d.sessions} sessions · this week ₹{cd.thisWeekInr.toFixed(2)} · prior ₹{cd.lastWeekInr.toFixed(2)}
             </p>
           </div>
           <div style={statCard}>
-            <p style={labelStyle}>Total LLM Cost (30d)</p>
-            <p style={bigNum}>₹{cd.totalLlmInr.toFixed(2)}{wowBadge}</p>
-            <p style={{ margin: "4px 0 0", fontSize: 11, color: c.stone }}>
-              This week ₹{cd.thisWeekInr.toFixed(2)} · Prior ₹{cd.lastWeekInr.toFixed(2)}
-            </p>
-          </div>
-          <div style={statCard}>
-            <p style={labelStyle}>Most Expensive Session</p>
+            <p style={labelStyle}>Most Expensive Session (LLM)</p>
             <p style={{ ...bigNum, color: cd.highestSessionCostInr > 2 ? c.ember : T.indigo }}>₹{cd.highestSessionCostInr.toFixed(3)}</p>
-            <p style={{ margin: "4px 0 0", fontSize: 11, color: c.stone }}>Today ₹{cd.todayCostInr.toFixed(2)} · Avg/day ₹{cd.dailyAvgInr.toFixed(2)}</p>
+            <p style={{ margin: "4px 0 0", fontSize: 11, color: c.stone }}>{cd.attributedLlmPct}% of LLM spend is tagged to a session</p>
           </div>
           {grossMarginPerSession != null && (
             <div style={statCard}>
@@ -2698,15 +2744,8 @@ export default function AdminDashboard() {
                 {grossMarginPerSession >= 0 ? "+" : ""}₹{grossMarginPerSession.toFixed(2)}
               </p>
               <p style={{ margin: "4px 0 0", fontSize: 11, color: c.stone }}>
-                Revenue ₹{paidRevPerSession!.toFixed(2)} − LLM ₹{cd.avgCostPerSession.toFixed(2)}
+                Revenue ₹{paidRevPerSession!.toFixed(2)} − cost ₹{cd.avgCostPerSession.toFixed(2)} (30d, all-in)
               </p>
-            </div>
-          )}
-          {overview?.cost && (
-            <div style={statCard}>
-              <p style={labelStyle}>Voice Cost (30d)</p>
-              <p style={{ ...bigNum, fontSize: 20 }}>₹{(overview.cost.month.ttsInr + overview.cost.month.sttInr).toFixed(2)}</p>
-              <p style={{ margin: "4px 0 0", fontSize: 11, color: c.stone }}>TTS ₹{overview.cost.month.ttsInr} · STT ₹{overview.cost.month.sttInr}</p>
             </div>
           )}
         </div>
@@ -2720,7 +2759,7 @@ export default function AdminDashboard() {
           color: cd.rateCardIsStale ? c.ember : c.stone,
         }}>
           {cd.rateCardIsStale ? "⚠️ " : ""}Rate card last verified <strong>{cd.ratesLastVerifiedAt}</strong> ({cd.rateCardAgeDays} days ago)
-          {cd.rateCardIsStale && " — overdue for a recheck against current Groq/Sarvam/Deepgram pricing"}. All figures on this tab are
+          {cd.rateCardIsStale && " — overdue for a recheck against current Groq/Sarvam/Deepgram pricing"}. LLM is priced per model from provider-reported tokens; all figures on this tab are
           modeled from <code style={{ fontFamily: font.mono }}>DEFAULT_COST_RATES</code>, not real invoices — log an actual month below to check them.
         </div>
 
@@ -2813,7 +2852,7 @@ export default function AdminDashboard() {
 
         {/* Daily cost trend */}
         <div style={{ ...card, marginBottom: 24 }}>
-          <p style={{ ...labelStyle, marginBottom: 12 }}>LLM Cost / Day — ₹ (30d)</p>
+          <p style={{ ...labelStyle, marginBottom: 12 }}>All-in Cost / Day — ₹ (30d, IST)</p>
           <MiniBarChart data={cd.perDay} color={T.copper} height={100} />
           <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6, fontSize: 10, color: c.stone }}>
             <span>{Object.keys(cd.perDay)[0]}</span>
@@ -2852,7 +2891,7 @@ export default function AdminDashboard() {
 
           {/* Cost by endpoint */}
           <div style={{ ...card, flex: 1, minWidth: 280 }}>
-            <p style={{ ...labelStyle, marginBottom: 16 }}>Estimated Cost by API Endpoint (30d)</p>
+            <p style={{ ...labelStyle, marginBottom: 16 }}>LLM Cost by API Endpoint (30d)</p>
             {Object.keys(cd.byEndpoint).length === 0
               ? <p style={{ color: c.stone, fontSize: 13 }}>No data yet</p>
               : <table style={tableStyle}>
@@ -2879,17 +2918,54 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Top users by LLM spend */}
+        {/* LLM cost by endpoint x model */}
+        <div style={{ ...card, marginBottom: 24 }}>
+          <p style={{ ...labelStyle, marginBottom: 16 }}>LLM Cost by Endpoint and Model (30d · today)</p>
+          {Object.keys(cd.byModel).length === 0
+            ? <p style={{ color: c.stone, fontSize: 13 }}>No data yet</p>
+            : <table style={tableStyle}>
+                <thead>
+                  <tr>
+                    <th style={thStyle}>Endpoint · model</th>
+                    <th style={thStyle}>Calls</th>
+                    <th style={thStyle}>Failed</th>
+                    <th style={thStyle}>Tokens</th>
+                    <th style={thStyle}>30d ₹</th>
+                    <th style={thStyle}>Today ₹</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {Object.entries(cd.byModel).sort(([, a], [, b]) => b.estimatedInr - a.estimatedInr).map(([k, d]) => (
+                    <tr key={k}>
+                      <td style={{ ...tdStyle, fontFamily: font.mono, fontSize: 11 }}>{k}</td>
+                      <td style={{ ...tdStyle, fontFamily: font.mono }}>{d.calls}</td>
+                      <td style={{ ...tdStyle, fontFamily: font.mono, color: d.failed > 0 ? c.ember : "inherit" }}>{d.failed}</td>
+                      <td style={{ ...tdStyle, fontFamily: font.mono }}>{formatNum(d.tokens)}</td>
+                      <td style={{ ...tdStyle, fontFamily: font.mono, color: T.indigo }}>₹{d.estimatedInr.toFixed(2)}</td>
+                      <td style={{ ...tdStyle, fontFamily: font.mono }}>₹{(cd.byModelToday[k]?.estimatedInr ?? 0).toFixed(2)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+          }
+          <p style={{ margin: "10px 0 0", fontSize: 11, color: c.stone }}>
+            Failed or timed-out calls log 0 tokens and are priced at ₹0. Provider free tiers (e.g. Gemini) may make real spend lower than list price.
+          </p>
+        </div>
+
+        {/* Top users by spend */}
         {cd.topUsersByCost.length > 0 && (
           <div style={{ ...card, marginBottom: 24 }}>
-            <p style={{ ...labelStyle, marginBottom: 16 }}>Top 5 Users by LLM Spend (30d)</p>
+            <p style={{ ...labelStyle, marginBottom: 16 }}>Top 5 Users by Spend (30d, LLM + voice)</p>
             <table style={tableStyle}>
               <thead>
                 <tr>
                   <th style={thStyle}>User</th>
                   <th style={thStyle}>Sessions</th>
+                  <th style={thStyle}>LLM ₹</th>
+                  <th style={thStyle}>Voice ₹</th>
                   <th style={thStyle}>Total ₹</th>
-                  <th style={thStyle}>Avg ₹</th>
+                  <th style={thStyle}>₹ / session</th>
                 </tr>
               </thead>
               <tbody>
@@ -2906,7 +2982,9 @@ export default function AdminDashboard() {
                       <div style={{ color: c.stone, fontSize: 10 }}>{u.email}</div>
                     </td>
                     <td style={{ ...tdStyle, fontFamily: font.mono }}>{u.sessions}</td>
-                    <td style={{ ...tdStyle, fontFamily: font.mono, color: T.indigo, fontWeight: 700 }}>₹{u.totalLlmInr.toFixed(2)}</td>
+                    <td style={{ ...tdStyle, fontFamily: font.mono }}>₹{u.totalLlmInr.toFixed(2)}</td>
+                    <td style={{ ...tdStyle, fontFamily: font.mono }}>₹{u.voiceInr.toFixed(2)}</td>
+                    <td style={{ ...tdStyle, fontFamily: font.mono, color: T.indigo, fontWeight: 700 }}>₹{u.totalInr.toFixed(2)}</td>
                     <td style={{ ...tdStyle, fontFamily: font.mono, color: u.avgInr > 1 ? c.ember : "inherit" }}>₹{u.avgInr.toFixed(3)}</td>
                   </tr>
                 ))}
@@ -2919,7 +2997,7 @@ export default function AdminDashboard() {
         {cd.topExpensiveSessions.length > 0 && (
           <div style={{ ...card, padding: 0, overflow: "auto" }}>
             <div style={{ padding: "16px 24px 10px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <p style={labelStyle}>Top 30 Most Expensive Sessions (all-time)</p>
+              <p style={labelStyle}>Top 30 Most Expensive Sessions (30d, LLM only)</p>
               <Button
                 variant="ghost"
                 size="xs"
