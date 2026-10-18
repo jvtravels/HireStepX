@@ -39,6 +39,7 @@ interface SimProfile { id: string; name: string; target_role: string | null; emp
 interface SimMatch {
   id: string; candidate_user_id: string; match_score: number; unlocked: boolean;
   candidate_status?: string; candidate_status_note?: string | null; interview_scheduled_at?: string | null;
+  candidate_response?: string; missed_passes?: number; strong_alerted_at?: string | null;
 }
 interface Sim {
   suspended?: boolean;
