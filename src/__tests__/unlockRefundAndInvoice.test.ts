@@ -245,7 +245,7 @@ describe("invoice snapshot written at fulfilment", () => {
     const html = buildInvoiceHtml({
       invoiceNo: "HSX-2609-000004", createdAt: NOW.toISOString(), orderId: "order_old", candidateNames: [], candidateCount: 1,
       cashPaise: 5900, creditPaise: 0, refunded: false, snapshot: null,
-      supplier: { name: "Live Supplier", address: "", gstin: GSTIN_KARNATAKA },
+      supplier: { name: "Live Supplier", address: "Bengaluru", gstin: GSTIN_KARNATAKA, sac: "998439" },
       buyer: { companyName: "Live Buyer", billingName: "", gstin: "" },
     });
     expect(html).toContain("Live Supplier");
@@ -332,7 +332,7 @@ describe("credit note numbers and partial refunds", () => {
   const taxBase: InvoiceInput = {
     invoiceNo: "HSX-2610-000001", createdAt: "2026-10-05T10:00:00Z", orderId: "order_1", candidateNames: [], candidateCount: 1,
     cashPaise: 5900, creditPaise: 0, refunded: false,
-    supplier: { name: "HireStepX Pvt Ltd", address: "", gstin: GSTIN_KARNATAKA },
+    supplier: { name: "HireStepX Pvt Ltd", address: "Bengaluru", gstin: GSTIN_KARNATAKA, sac: "998439" },
     buyer: { companyName: "Acme", billingName: "", gstin: "27AAPFU0939F1ZV" },
   };
 
