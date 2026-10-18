@@ -15,7 +15,7 @@
 export const config = { runtime: "edge" };
 
 import { withAuthAndRateLimit, corsHeaders, withRequestId, slog } from "./_shared";
-import { resolveRole, employerAttachmentBlock, MESSAGE_ID_RE, type MessageSenderRole } from "./_messages-helpers";
+import { resolveRole, employerAttachmentBlock, isSafeAttachmentPath, MESSAGE_ID_RE, type MessageSenderRole } from "./_messages-helpers";
 import { loadEmployerMatchAccess, loadAuthIdentity, DENIED_STATUS } from "./_entitlements";
 
 declare const process: { env: Record<string, string | undefined> };
@@ -107,6 +107,13 @@ export default async function handler(req: Request): Promise<Response> {
       }
     }
     if (!message.attachment_path) {
+      return new Response(JSON.stringify({ error: "This message has no attachment" }), { status: 404, headers });
+    }
+
+    // Stored paths are `<matchId>/<name>`; refuse anything else (legacy or
+    // tampered rows) before it is concatenated into a storage URL.
+    const pathMatchId = message.conversations?.match_id;
+    if (!pathMatchId || !isSafeAttachmentPath(message.attachment_path, pathMatchId)) {
       return new Response(JSON.stringify({ error: "This message has no attachment" }), { status: 404, headers });
     }
 

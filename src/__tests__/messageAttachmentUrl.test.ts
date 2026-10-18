@@ -22,6 +22,8 @@ interface Opts {
   suspended?: boolean;
   reqStatus?: string;
   senderRole?: "employer" | "candidate";
+  attachmentPath?: string;
+  noConversation?: boolean;
 }
 
 const EMP = "emp-1";
@@ -36,9 +38,10 @@ function installFetch(o: Opts) {
     if (u.includes("/rest/v1/conversation_messages")) {
       return {
         ok: true,
-        json: async () => [{ id: MSG, employer_id: EMP, candidate_user_id: CAND, sender_role: o.senderRole ?? "candidate", attachment_path: `${MATCH}/f.pdf`, conversations: { match_id: MATCH } }],
+        json: async () => [{ id: MSG, employer_id: EMP, candidate_user_id: CAND, sender_role: o.senderRole ?? "candidate", attachment_path: o.attachmentPath ?? `${MATCH}/f.pdf`, conversations: { match_id: MATCH } }],
       };
     }
+    if (u.includes("/rest/v1/conversations?match_id=")) return { ok: true, json: async () => (o.noConversation ? [] : [{ id: "c1" }]) };
     if (u.includes("/rest/v1/requirement_matches")) {
       return {
         ok: true,
@@ -134,11 +137,28 @@ describe("message-attachment-url gating", () => {
   });
 });
 
+describe("message-attachment-url path validation", () => {
+  it.each([`${MATCH}/../x/f.pdf`, `/${MATCH}/f.pdf`, `${MATCH}\\f.pdf`, `22222222-2222-4222-8222-222222222222/f.pdf`])(
+    "refuses to sign a stored path of %s",
+    async (attachmentPath) => {
+      asUser(CAND);
+      const f = installFetch({ attachmentPath });
+      const res = await get();
+      expect(res.status).toBe(404);
+      expect(signed(f)).toBe(false);
+    },
+  );
+});
+
+const b64 = (bytes: number[]) => btoa(String.fromCharCode(...bytes));
+const PDF_B64 = b64([0x25, 0x50, 0x44, 0x46, 0x2d, 0x31, 0x2e, 0x34]);
+
 describe("message-attachment-upload gating", () => {
-  const upload = () => uploadHandler(new Request("https://x.test/api/message-attachment-upload", {
+  const send = (contentType: string, fileBase64: string) => uploadHandler(new Request("https://x.test/api/message-attachment-upload", {
     method: "POST",
-    body: JSON.stringify({ matchId: MATCH, fileName: "cv.pdf", contentType: "application/pdf", fileBase64: "aGVsbG8=" }),
+    body: JSON.stringify({ matchId: MATCH, fileName: "cv.pdf", contentType, fileBase64 }),
   }));
+  const upload = () => send("application/pdf", PDF_B64);
   const stored = (f: ReturnType<typeof installFetch>) => f.mock.calls.some(([u]) => String(u).includes("/storage/v1/object/chat-attachments/"));
 
   it("lets an unlocked employer upload", async () => {
@@ -173,6 +193,35 @@ describe("message-attachment-upload gating", () => {
     const res = await upload();
     expect(res.status).toBe(409);
     expect((await res.json()).code).toBe("employer_unavailable");
+    expect(stored(f)).toBe(false);
+  });
+
+  it("415s when the bytes do not match the declared type, and stores nothing", async () => {
+    const f = installFetch({ unlocked: true });
+    // HTML posing as a PDF / PNG
+    for (const [type, text] of [["application/pdf", "<html><script>x</script>"], ["image/png", "%PDF-1.4"]] as const) {
+      const res = await send(type, btoa(text));
+      expect(res.status).toBe(415);
+      expect((await res.json()).error).toMatch(/doesn't match/);
+    }
+    expect(stored(f)).toBe(false);
+  });
+
+  it("accepts real PNG, JPEG, DOCX (zip) and plain text, rejects binary text/plain", async () => {
+    installFetch({ unlocked: true });
+    expect((await send("image/png", b64([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0]))).status).toBe(200);
+    expect((await send("image/jpeg", b64([0xff, 0xd8, 0xff, 0xe0]))).status).toBe(200);
+    expect((await send("application/vnd.openxmlformats-officedocument.wordprocessingml.document", b64([0x50, 0x4b, 0x03, 0x04]))).status).toBe(200);
+    expect((await send("text/plain", btoa("hello world"))).status).toBe(200);
+    expect((await send("text/plain", b64([0x4d, 0x5a, 0x00, 0x01]))).status).toBe(415);
+  });
+
+  it("403s a candidate who would be cold-opening a thread", async () => {
+    asUser(CAND);
+    const f = installFetch({ unlocked: false, noConversation: true });
+    const res = await upload();
+    expect(res.status).toBe(403);
+    expect((await res.json()).code).toBe("no_relationship");
     expect(stored(f)).toBe(false);
   });
 });

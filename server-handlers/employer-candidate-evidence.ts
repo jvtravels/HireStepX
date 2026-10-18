@@ -43,7 +43,7 @@ import { notify } from "./_notify";
 import { captureServerEvent } from "./_posthog";
 import { emailShell, title as emailTitle, para, button, escapeHtml } from "./_email-theme";
 import { isSuppressed, marketingEmailParts, preferenceDepsFromEnv } from "./_unsubscribe";
-import { loadEmployerMatchAccess, loadAuthIdentity, DENIED_STATUS } from "./_entitlements";
+import { loadEmployerMatchAccess, loadAuthIdentity, contactReleasable, DENIED_STATUS } from "./_entitlements";
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
@@ -224,14 +224,18 @@ export default async function handler(req: Request): Promise<Response> {
 
     /* Answers are shown while locked; only the candidate's name and contact
        details are scrubbed. A failed name lookup withholds the text instead. */
-    const lockedName = unlocked || !latest ? "" : await loadCandidateName(candidateUserId);
+    /* A candidate who declined after the unlock is treated like a still-locked
+       one: answers are scrubbed of name/contact text and the resume file is
+       dropped, so paying earlier does not keep contact details flowing. */
+    const releasable = contactReleasable(decision.access);
+    const lockedName = releasable || !latest ? "" : await loadCandidateName(candidateUserId);
     const scrubQuestions = (qs: ReturnType<typeof extractQuestionBreakdown>) =>
-      unlocked ? qs : lockedName === null ? [] : scrubLockedQuestions(qs, lockedName);
+      releasable ? qs : lockedName === null ? [] : scrubLockedQuestions(qs, lockedName);
     const scrubQuotes = (qs: ReturnType<typeof extractEvidenceQuotes>) =>
-      unlocked ? qs : lockedName === null ? [] : scrubLockedQuotes(qs, lockedName);
+      releasable ? qs : lockedName === null ? [] : scrubLockedQuotes(qs, lockedName);
 
     let resumeFile: { fileName: string } | null = null;
-    if (unlocked) {
+    if (releasable) {
       const fileRes = await fetch(
         `${SUPABASE_URL}/rest/v1/resume_versions?select=file_name,file_path,resumes!inner(user_id)&resumes.user_id=eq.${encodeURIComponent(candidateUserId)}&file_path=not.is.null&order=created_at.desc&limit=1`,
         { headers: serviceHeaders() },

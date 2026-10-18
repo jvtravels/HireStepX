@@ -19,7 +19,7 @@ export const config = { runtime: "edge" };
 
 import { withAuthAndRateLimit, corsHeaders, withRequestId, slog } from "./_shared";
 import { base64ToBytes } from "./_resume-upload-helpers";
-import { inferAttachmentExtension, resolveRole, employerSendBlock, candidateSendBlock, MATCH_ID_RE } from "./_messages-helpers";
+import { inferAttachmentExtension, attachmentBytesMatchType, conversationExists, resolveRole, employerSendBlock, candidateSendBlock, MATCH_ID_RE } from "./_messages-helpers";
 import {
   fetchMatchAccessRow,
   isBlockedByCandidate,
@@ -127,7 +127,11 @@ export default async function handler(req: Request): Promise<Response> {
       }
       block = employerSendBlock(row, decision.access);
     } else {
-      block = candidateSendBlock(row);
+      const exists = await conversationExists(SUPABASE_URL, serviceHeaders(), matchId);
+      if (exists === "error") {
+        return new Response(JSON.stringify({ error: "Match lookup error" }), { status: 502, headers });
+      }
+      block = candidateSendBlock(row, exists);
     }
     if (block) {
       return new Response(JSON.stringify({ error: block.error, code: block.code }), { status: block.status, headers });
@@ -145,6 +149,11 @@ export default async function handler(req: Request): Promise<Response> {
   if (bytes.length === 0) return new Response(JSON.stringify({ error: "Empty file" }), { status: 400, headers });
   if (bytes.length > MAX_BYTES) {
     return new Response(JSON.stringify({ error: "File too large (8MB max)" }), { status: 413, headers });
+  }
+
+  // The declared MIME is client-controlled; the bytes must actually look like it.
+  if (!attachmentBytesMatchType(bytes, contentType)) {
+    return new Response(JSON.stringify({ error: "The file content doesn't match its declared type." }), { status: 415, headers });
   }
 
   const storagePath = `${matchId}/${crypto.randomUUID()}.${ext}`;

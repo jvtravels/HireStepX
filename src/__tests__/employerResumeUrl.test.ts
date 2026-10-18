@@ -14,10 +14,10 @@ vi.mock("../../server-handlers/_shared", () => ({
 // Real _entitlements: ownership/unlock rules are exercised through the network layer.
 const { default: handler } = await import("../../server-handlers/employer-candidate-resume-url");
 
-interface MatchOpts { employerId?: string; unlocked?: boolean; withdrew?: boolean; missing?: boolean }
+interface MatchOpts { employerId?: string; unlocked?: boolean; withdrew?: boolean; missing?: boolean; response?: string | null; blocked?: boolean }
 function matchRow(o: MatchOpts) {
   return [{
-    id: "m1", requirement_id: "r1", candidate_user_id: "cand-1", match_score: 80, unlocked: o.unlocked ?? false,
+    id: "m1", requirement_id: "r1", candidate_user_id: "cand-1", match_score: 80, unlocked: o.unlocked ?? false, candidate_response: o.response ?? null,
     employer_requirements: { employer_id: o.employerId ?? "emp-1", status: "ready", title: "Dev", employers: { company_name: "Acme", website: "acme.com", suspended_at: null, verification_tier: "basic" } },
     profiles: { name: "C", employer_visibility: o.withdrew ? "off" : "on" },
   }];
@@ -28,7 +28,7 @@ function installFetch(opts: MatchOpts & { files?: unknown[]; signOk?: boolean })
     const u = String(url);
     if (u.includes("/auth/v1/admin/users/")) return { ok: true, json: async () => ({ email: "a@acme.com", email_confirmed_at: "t" }) };
     if (u.includes("/rest/v1/requirement_matches")) return { ok: true, json: async () => (opts.missing ? [] : matchRow(opts)) };
-    if (u.includes("/rest/v1/employer_blocks")) return { ok: true, json: async () => [] };
+    if (u.includes("/rest/v1/employer_blocks")) return { ok: true, json: async () => (opts.blocked ? [{ candidate_user_id: "cand-1" }] : []) };
     if (u.includes("/rest/v1/resume_versions")) return { ok: true, json: async () => opts.files ?? [{ file_name: "Priya CV.pdf", file_path: "cand-1/cv.pdf" }] };
     if (u.includes("/storage/v1/object/sign/")) {
       return opts.signOk === false
@@ -85,6 +85,25 @@ describe("employer-candidate-resume-url", () => {
     const res = await get();
     expect(res.status).toBe(409);
     expect((await res.json()).code).toBe("candidate_withdrew");
+  });
+
+  it("409s candidate_declined for an unlocked candidate who declined, and never signs", async () => {
+    const f = installFetch({ unlocked: true, response: "declined" });
+    const res = await get();
+    expect(res.status).toBe(409);
+    expect((await res.json()).code).toBe("candidate_declined");
+    expect(f.mock.calls.some(([u]) => String(u).includes("resume_versions") || String(u).includes("/object/sign/"))).toBe(false);
+  });
+
+  it("404s a blocked employer even after unlock, and never signs", async () => {
+    const f = installFetch({ unlocked: true, blocked: true });
+    expect((await get()).status).toBe(404);
+    expect(f.mock.calls.some(([u]) => String(u).includes("/object/sign/"))).toBe(false);
+  });
+
+  it("still serves an unlocked candidate who responded interested", async () => {
+    installFetch({ unlocked: true, response: "interested" });
+    expect((await get()).status).toBe(200);
   });
 
   it("404s when the candidate has no resume file and 502s when signing fails", async () => {

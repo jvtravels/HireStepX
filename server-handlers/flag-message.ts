@@ -88,6 +88,22 @@ export default async function handler(req: Request): Promise<Response> {
       return new Response(JSON.stringify({ error: "Not authorized for this conversation" }), { status: 403, headers });
     }
 
+    // Idempotent per reporter: a repeat report of the same message by the same
+    // person must not add a second open flag (the admin queue and any strike
+    // counting key off flag rows). Their own auto-flag (role "system") does not
+    // count as a report. No unique index exists, so this is check-then-insert.
+    const dupRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/message_flags?message_id=eq.${encodeURIComponent(message.id)}` +
+        `&flagged_by=eq.${encodeURIComponent(auth.userId)}&flagged_by_role=neq.system&select=id&limit=1`,
+      { headers: serviceHeaders() },
+    ).catch(() => null);
+    if (dupRes && dupRes.ok) {
+      const dups = (await dupRes.json().catch(() => [])) as unknown[];
+      if (dups.length > 0) {
+        return new Response(JSON.stringify({ ok: true, duplicate: true }), { status: 200, headers });
+      }
+    }
+
     const insertRes = await fetch(`${SUPABASE_URL}/rest/v1/message_flags`, {
       method: "POST",
       headers: { ...serviceHeaders(), "Content-Type": "application/json", Prefer: "return=representation" },

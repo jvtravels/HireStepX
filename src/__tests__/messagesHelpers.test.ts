@@ -12,6 +12,11 @@ import {
   redactContactInfo,
   messageBodyForViewer,
   CONTACT_REDACTION_MARK,
+  employerMessageCap,
+  isSafeAttachmentPath,
+  attachmentBytesMatchType,
+  candidateSendBlock,
+  EMPLOYER_MESSAGE_WINDOW_MS,
 } from "../../server-handlers/_messages-helpers";
 
 describe("asMessageBody", () => {
@@ -156,5 +161,65 @@ describe("messageBodyForViewer", () => {
   it("does not rewrite the employer's own or system messages", () => {
     expect(messageBodyForViewer(body, "employer", true)).toBe(body);
     expect(messageBodyForViewer(body, "system", true)).toBe(body);
+  });
+});
+
+describe("employerMessageCap", () => {
+  const now = Date.parse("2026-10-01T12:00:00Z");
+  const ago = (ms: number) => new Date(now - ms).toISOString();
+
+  it("is not limited under the cap", () => {
+    expect(employerMessageCap(Array.from({ length: 19 }, () => ago(1000)), now)).toEqual({ limited: false, retryAfterSeconds: 0 });
+  });
+
+  it("limits at the cap and reports when the oldest counted message ages out", () => {
+    const sent = Array.from({ length: 20 }, (_, i) => ago(i === 19 ? 23 * 3_600_000 : 1000));
+    const r = employerMessageCap(sent, now);
+    expect(r.limited).toBe(true);
+    expect(r.retryAfterSeconds).toBe(3600);
+  });
+
+  it("ignores messages outside the window and unparseable timestamps", () => {
+    const sent = [...Array.from({ length: 19 }, () => ago(1000)), ago(EMPLOYER_MESSAGE_WINDOW_MS + 1000), "garbage"];
+    expect(employerMessageCap(sent, now).limited).toBe(false);
+  });
+});
+
+describe("isSafeAttachmentPath", () => {
+  const M = "11111111-1111-4111-8111-111111111111";
+  it("accepts <matchId>/<name>", () => {
+    expect(isSafeAttachmentPath(`${M}/abc-123.pdf`, M)).toBe(true);
+  });
+  it.each([`${M}/../x.pdf`, `${M}/..%2f`, `/${M}/a.pdf`, `${M}\\a.pdf`, `${M}/a/b.pdf`, `${M}/`, `${M}/a b.pdf`, "other/a.pdf", `${M}/..`])("rejects %s", (p) => {
+    expect(isSafeAttachmentPath(p, M)).toBe(false);
+  });
+});
+
+describe("attachmentBytesMatchType", () => {
+  const b = (...n: number[]) => new Uint8Array(n);
+  it("checks magic bytes per declared type", () => {
+    expect(attachmentBytesMatchType(b(0x25, 0x50, 0x44, 0x46, 0x2d), "application/pdf")).toBe(true);
+    expect(attachmentBytesMatchType(b(0x3c, 0x68, 0x74, 0x6d), "application/pdf")).toBe(false);
+    expect(attachmentBytesMatchType(b(0xff, 0xd8, 0xff), "image/jpeg")).toBe(true);
+    expect(attachmentBytesMatchType(b(0x50, 0x4b, 0x03, 0x04), "application/vnd.openxmlformats-officedocument.wordprocessingml.document")).toBe(true);
+    expect(attachmentBytesMatchType(b(0x52, 0x49, 0x46, 0x46, 0, 0, 0, 0, 0x57, 0x45, 0x42, 0x50), "image/webp")).toBe(true);
+    expect(attachmentBytesMatchType(b(0x25, 0x50, 0x44, 0x46), "image/png")).toBe(false);
+    expect(attachmentBytesMatchType(b(0x25, 0x50, 0x44, 0x46), "application/x-msdownload")).toBe(false);
+  });
+  it("rejects binary content declared as text/plain", () => {
+    expect(attachmentBytesMatchType(new TextEncoder().encode("hello\nworld"), "text/plain")).toBe(true);
+    expect(attachmentBytesMatchType(b(0x4d, 0x5a, 0x00), "text/plain")).toBe(false);
+  });
+});
+
+describe("candidateSendBlock new-thread rule", () => {
+  const match = (over: Record<string, unknown>) => ({
+    employer_requirements: { employers: { suspended_at: null } }, unlocked: false, candidate_response: null, ...over,
+  }) as unknown as Parameters<typeof candidateSendBlock>[0];
+  it("blocks a cold new thread but not a reply, nor a thread after unlock or interest", () => {
+    expect(candidateSendBlock(match({}), false)?.code).toBe("no_relationship");
+    expect(candidateSendBlock(match({}), true)).toBeNull();
+    expect(candidateSendBlock(match({ unlocked: true }), false)).toBeNull();
+    expect(candidateSendBlock(match({ candidate_response: "interested" }), false)).toBeNull();
   });
 });

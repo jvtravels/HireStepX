@@ -86,6 +86,42 @@ export function decideEmployerMatchAccess(
   };
 }
 
+export type ContactWithheld = "withdrew" | "declined";
+
+/** Why an unlocked match's contact details (email, phone, links, resume file,
+ *  free-text contact) may no longer reach the employer, or null when they may.
+ *  A paid unlock buys a snapshot, not a standing right to reach someone who has
+ *  since withdrawn employer visibility or declined. (A blocked employer never
+ *  gets an EmployerMatchAccess at all, see decideEmployerMatchAccess.) Same
+ *  rule as contactWithheldReason in _employer-matching-helpers.ts, kept here
+ *  because that module imports this one. */
+export function contactWithheldFor(
+  access: Pick<EmployerMatchAccess, "unlocked" | "candidateWithdrew"> & { match: Pick<MatchAccessRow, "candidate_response"> },
+): ContactWithheld | null {
+  if (!access.unlocked) return null;
+  if (access.candidateWithdrew) return "withdrew";
+  if (access.match.candidate_response === "declined") return "declined";
+  return null;
+}
+
+/** The ONE predicate for "may contact details leave the server for this
+ *  employer?": paid unlock and the candidate has not withdrawn or declined. */
+export function contactReleasable(
+  access: Pick<EmployerMatchAccess, "unlocked" | "candidateWithdrew"> & { match: Pick<MatchAccessRow, "candidate_response"> },
+): boolean {
+  return access.unlocked && contactWithheldFor(access) === null;
+}
+
+/** contactReleasable for a raw match row (paths that never build an
+ *  EmployerMatchAccess, e.g. a candidate-side send notifying the employer). */
+export function matchContactReleasable(row: MatchAccessRow): boolean {
+  return contactReleasable({
+    unlocked: !!row.unlocked,
+    candidateWithdrew: row.profiles?.employer_visibility === "off",
+    match: row,
+  });
+}
+
 export const DENIED_STATUS: Record<AccessDenied, { status: number; error: string }> = {
   not_found: { status: 404, error: "Candidate match not found" },
   forbidden: { status: 403, error: "Forbidden" },

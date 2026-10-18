@@ -6,6 +6,8 @@ import {
   isBlockedByCandidate,
   loadAuthIdentity,
   DENIED_STATUS,
+  contactReleasable,
+  contactWithheldFor,
   type MatchAccessRow,
 } from "../../server-handlers/_entitlements";
 
@@ -119,5 +121,21 @@ describe("loadEmployerMatchAccess", () => {
     expect(await loadEmployerMatchAccess({ ...params, fetchImpl: vi.fn().mockResolvedValue(res({}, false)) })).toEqual({ ok: false, reason: "error" });
     const f = vi.fn().mockResolvedValueOnce(res([row()])).mockResolvedValueOnce(res({}, false));
     expect(await loadEmployerMatchAccess({ ...params, fetchImpl: f })).toEqual({ ok: false, reason: "error" });
+  });
+});
+
+describe("contactReleasable / contactWithheldFor", () => {
+  const acc = (unlocked: boolean, candidateWithdrew: boolean, candidate_response: string | null) => ({ unlocked, candidateWithdrew, match: { candidate_response } });
+  it("releases only for a paid unlock with a willing candidate", () => {
+    expect(contactReleasable(acc(true, false, null))).toBe(true);
+    expect(contactReleasable(acc(true, false, "interested"))).toBe(true);
+    expect(contactReleasable(acc(false, false, "interested"))).toBe(false);
+    expect(contactReleasable(acc(true, true, null))).toBe(false);
+    expect(contactReleasable(acc(true, false, "declined"))).toBe(false);
+  });
+  it("names why contact is withheld", () => {
+    expect(contactWithheldFor(acc(true, true, "declined"))).toBe("withdrew");
+    expect(contactWithheldFor(acc(true, false, "declined"))).toBe("declined");
+    expect(contactWithheldFor(acc(false, false, "declined"))).toBeNull();
   });
 });

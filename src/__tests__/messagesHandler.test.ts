@@ -23,6 +23,13 @@ interface MatchOpts {
   candidateStatus?: string;
   suspended?: boolean;
   blocked?: boolean;
+  noConversation?: boolean;
+  /** created_at of employer messages already in the thread (cap query). */
+  employerSentAt?: string[];
+  /** rows returned for the thread read */
+  messages?: Array<Record<string, unknown>>;
+  /** rows returned for the inbox list */
+  inbox?: Array<Record<string, unknown>>;
 }
 
 const EMP = "emp-1";
@@ -50,11 +57,19 @@ function installFetch(o: MatchOpts) {
     if (u.endsWith("/rest/v1/conversation_messages") && init?.method === "POST") {
       return { ok: true, status: 201, json: async () => [{ id: "msg1", conversation_id: "c1", sender_id: "x", sender_role: "employer", body: "hi", attachment_path: null, attachment_name: null, attachment_mime: null, auto_flag_reason: null, created_at: "t" }], text: async () => "" };
     }
-    if (u.includes("/rest/v1/conversation_messages?conversation_id=")) return { ok: true, json: async () => [] };
+    if (u.includes("/rest/v1/conversation_messages?conversation_id=") && u.includes("sender_role=eq.employer")) {
+      return { ok: true, json: async () => (o.employerSentAt ?? []).map((created_at) => ({ created_at })) };
+    }
+    if (u.includes("/rest/v1/conversation_messages?conversation_id=")) return { ok: true, json: async () => o.messages ?? [] };
+    if (u.includes("/rest/v1/conversations?or=")) return { ok: true, json: async () => o.inbox ?? [] };
     if (u.includes("/rest/v1/conversations?match_id=")) {
+      if (o.noConversation && init?.method !== "POST") return { ok: true, json: async () => [] };
       return { ok: true, json: async () => [{ id: "c1", match_id: MATCH, requirement_id: "r1", employer_id: EMP, candidate_user_id: CAND, last_message_at: null, last_sender_role: null, employer_last_read_at: null, candidate_last_read_at: null, created_at: "t" }] };
     }
     if (u.includes("/rest/v1/conversations?id=")) return { ok: true, json: async () => [] };
+    if (u.endsWith("/rest/v1/conversations") && init?.method === "POST") {
+      return { ok: true, text: async () => JSON.stringify([{ id: "c1", match_id: MATCH, requirement_id: "r1", employer_id: EMP, candidate_user_id: CAND }]) };
+    }
     throw new Error(`unexpected fetch ${u}`);
   });
   global.fetch = fetchMock as unknown as typeof fetch;
@@ -160,5 +175,145 @@ describe("messages POST gating", () => {
     expect(body.context.employerUnavailable).toBe(true);
     expect(body.context.companyName).not.toBe("Acme");
     expect(sent(f)).toBe(false);
+  });
+});
+
+const getThread = () => handler(new Request(`https://x.test/api/messages?matchId=${MATCH}`));
+
+describe("messages: company identity stays confidential until unlock", () => {
+  it("masks the company name from a candidate while the match is locked, and shows it once unlocked", async () => {
+    asUser(CAND);
+    installFetch({ unlocked: false });
+    expect((await (await getThread()).json()).context.companyName).toBe("Confidential company");
+    installFetch({ unlocked: true });
+    expect((await (await getThread()).json()).context.companyName).toBe("Acme");
+  });
+
+  it("masks the company name in the candidate's inbox list until unlock", async () => {
+    asUser(CAND);
+    const row = (unlocked: boolean) => ({
+      id: "c1", match_id: MATCH, requirement_id: "r1", employer_id: EMP, candidate_user_id: CAND,
+      last_message_at: null, last_sender_role: null, employer_last_read_at: null, candidate_last_read_at: null, created_at: "t",
+      employer_requirements: { title: "Dev", employers: { company_name: "Acme", suspended_at: null } },
+      profiles: { name: "C", employer_visibility: "on" },
+      requirement_matches: { candidate_status: "shortlisted", match_score: 80, unlocked },
+    });
+    installFetch({ inbox: [row(false)] });
+    let conv = (await (await handler(new Request("https://x.test/api/messages"))).json()).conversations[0];
+    expect(conv.companyName).toBe("Confidential company");
+    expect(conv.counterpartName).toBe("Confidential company");
+    installFetch({ inbox: [row(true)] });
+    conv = (await (await handler(new Request("https://x.test/api/messages"))).json()).conversations[0];
+    expect(conv.companyName).toBe("Acme");
+  });
+});
+
+describe("messages: inbox list for a suspended employer", () => {
+  it("403s the employer's inbox once suspended", async () => {
+    const row = {
+      id: "c1", match_id: MATCH, requirement_id: "r1", employer_id: EMP, candidate_user_id: CAND,
+      last_message_at: null, last_sender_role: null, employer_last_read_at: null, candidate_last_read_at: null, created_at: "t",
+      employer_requirements: { title: "Dev", employers: { company_name: "Acme", suspended_at: "2026-09-01T00:00:00Z" } },
+      profiles: { name: "C", employer_visibility: "on" },
+      requirement_matches: { candidate_status: "shortlisted", match_score: 80, unlocked: true },
+    };
+    installFetch({ inbox: [row] });
+    const res = await handler(new Request("https://x.test/api/messages"));
+    expect(res.status).toBe(403);
+    expect((await res.json()).error).toMatch(/suspended/);
+  });
+});
+
+describe("messages: a candidate cannot cold-open a thread", () => {
+  it("403s no_relationship for a candidate with a locked, un-answered match and no thread", async () => {
+    asUser(CAND);
+    const f = installFetch({ unlocked: false, noConversation: true });
+    const res = await post();
+    expect(res.status).toBe(403);
+    expect((await res.json()).code).toBe("no_relationship");
+    expect(sent(f)).toBe(false);
+  });
+
+  it("lets the candidate open a thread once they are interested or the employer unlocked", async () => {
+    asUser(CAND);
+    installFetch({ unlocked: false, response: "interested", noConversation: true });
+    expect((await post()).status).toBe(201);
+    installFetch({ unlocked: true, noConversation: true });
+    expect((await post()).status).toBe(201);
+  });
+
+  it("still lets a candidate reply in an existing thread even while locked", async () => {
+    asUser(CAND);
+    installFetch({ unlocked: false });
+    expect((await post()).status).toBe(201);
+  });
+});
+
+describe("messages: employer per-match spam cap", () => {
+  it("429s message_cap_reached with Retry-After after 20 employer messages in 24h", async () => {
+    const hourAgo = (h: number) => new Date(Date.now() - h * 3_600_000).toISOString();
+    const f = installFetch({ unlocked: true, employerSentAt: Array.from({ length: 20 }, (_, i) => hourAgo(1 + i * 0.5)) });
+    const res = await post();
+    expect(res.status).toBe(429);
+    expect((await res.json()).code).toBe("message_cap_reached");
+    expect(Number(res.headers.get("Retry-After"))).toBeGreaterThan(0);
+    expect(sent(f)).toBe(false);
+  });
+
+  it("allows the send under the cap and never caps the candidate", async () => {
+    installFetch({ unlocked: true, employerSentAt: Array.from({ length: 19 }, () => new Date().toISOString()) });
+    expect((await post()).status).toBe(201);
+    asUser(CAND);
+    installFetch({ unlocked: true, employerSentAt: Array.from({ length: 25 }, () => new Date().toISOString()) });
+    expect((await post()).status).toBe(201);
+  });
+});
+
+describe("messages: attachment path validation", () => {
+  it.each([
+    `${MATCH}/../other/f.pdf`,
+    `/${MATCH}/f.pdf`,
+    `${MATCH}\\f.pdf`,
+    `${MATCH}/%2e%2e/f.pdf`,
+    `${MATCH}/a/b.pdf`,
+    `22222222-2222-4222-8222-222222222222/f.pdf`,
+  ])("400s %s", async (attachmentPath) => {
+    const f = installFetch({ unlocked: true });
+    const res = await post({ matchId: MATCH, body: "x", attachmentPath });
+    expect(res.status).toBe(400);
+    expect(sent(f)).toBe(false);
+  });
+
+  it("accepts a path an upload minted", async () => {
+    installFetch({ unlocked: true });
+    expect((await post({ matchId: MATCH, body: "x", attachmentPath: `${MATCH}/aaaa-bbbb.pdf` })).status).toBe(201);
+  });
+});
+
+describe("messages: attachment names and contact for a non-releasable employer", () => {
+  const candMsg = { id: "m", conversation_id: "c1", sender_id: CAND, sender_role: "candidate", body: "call 9876543210", attachment_path: `${MATCH}/a.pdf`, attachment_name: "Priya_Sharma_9876543210.pdf", attachment_mime: "application/pdf", auto_flag_reason: null, created_at: "t" };
+
+  it("redacts the file name and phone while locked", async () => {
+    installFetch({ unlocked: false, response: "interested", messages: [candMsg] });
+    const body = await (await getThread()).json();
+    expect(body.messages[0].attachmentName).toBe("Attachment");
+    expect(body.messages[0].body).not.toContain("9876543210");
+  });
+
+  it("keeps them hidden after an unlocked candidate declines or withdraws", async () => {
+    for (const o of [{ response: "declined" }, { withdrew: true }]) {
+      installFetch({ unlocked: true, messages: [candMsg], ...o });
+      const body = await (await getThread()).json();
+      expect(body.messages[0].attachmentName).toBe("Attachment");
+      expect(body.messages[0].body).not.toContain("9876543210");
+      expect(body.context.contactLocked).toBe(true);
+    }
+  });
+
+  it("shows them to an unlocked employer with a willing candidate", async () => {
+    installFetch({ unlocked: true, messages: [candMsg] });
+    const body = await (await getThread()).json();
+    expect(body.messages[0].attachmentName).toBe("Priya_Sharma_9876543210.pdf");
+    expect(body.messages[0].body).toContain("9876543210");
   });
 });

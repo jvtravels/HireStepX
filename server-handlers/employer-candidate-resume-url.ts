@@ -11,7 +11,7 @@
 export const config = { runtime: "edge" };
 
 import { withAuthAndRateLimit, corsHeaders, withRequestId, slog } from "./_shared";
-import { loadEmployerMatchAccess, loadAuthIdentity, DENIED_STATUS } from "./_entitlements";
+import { loadEmployerMatchAccess, loadAuthIdentity, contactWithheldFor, DENIED_STATUS } from "./_entitlements";
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
@@ -78,9 +78,15 @@ export default async function handler(req: Request): Promise<Response> {
     }
 
     // The resume file carries the candidate's contact details; once they have
-    // withdrawn employer visibility it closes with evidence and messaging.
-    if (decision.access.candidateWithdrew) {
-      return new Response(JSON.stringify({ error: "This candidate has withdrawn from employer contact.", code: "candidate_withdrew" }), { status: 409, headers });
+    // withdrawn employer visibility or declined contact it closes with evidence
+    // and messaging.
+    const withheld = contactWithheldFor(decision.access);
+    if (withheld) {
+      return new Response(JSON.stringify(
+        withheld === "withdrew"
+          ? { error: "This candidate has withdrawn from employer contact.", code: "candidate_withdrew" }
+          : { error: "This candidate declined contact for this job.", code: "candidate_declined" },
+      ), { status: 409, headers });
     }
 
     const candidateUserId = decision.access.match.candidate_user_id;

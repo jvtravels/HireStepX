@@ -32,7 +32,14 @@ import {
   messageBodyForViewer,
   employerSendBlock,
   candidateSendBlock,
+  conversationExists,
+  employerMessageCap,
+  isSafeAttachmentPath,
+  EMPLOYER_MESSAGE_CAP,
+  EMPLOYER_MESSAGE_WINDOW_MS,
+  REDACTED_ATTACHMENT_NAME,
   CONTACT_REDACTED_NOTICE,
+  CONTACT_WITHHELD_NOTICE,
   type MessageRole,
   type MessageSenderRole,
 } from "./_messages-helpers";
@@ -42,11 +49,14 @@ import {
   isBlockedByCandidate,
   decideEmployerMatchAccess,
   loadAuthIdentity,
+  contactReleasable,
+  matchContactReleasable,
   DENIED_STATUS,
   type EmployerMatchAccess,
   type MatchAccessRow,
 } from "./_entitlements";
 import { maskedCandidateName, isSuspended } from "./_employer-trust";
+import { CONFIDENTIAL_COMPANY_NAME } from "./candidate-hiring-activity";
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
@@ -186,7 +196,8 @@ function toMessageShape(row: MessageRow, hideContact = false) {
     body,
     contactRedacted: hideContact && body !== row.body,
     attachmentPath: row.attachment_path,
-    attachmentName: row.attachment_name,
+    // File names routinely embed the candidate's name or number.
+    attachmentName: hideContact && row.sender_role === "candidate" && row.attachment_name ? REDACTED_ATTACHMENT_NAME : row.attachment_name,
     attachmentMime: row.attachment_mime,
     flagged: row.auto_flag_reason != null,
     createdAt: row.created_at,
@@ -196,7 +207,7 @@ function toMessageShape(row: MessageRow, hideContact = false) {
 interface ConversationListRow extends ConversationRow {
   employer_requirements: { title: string; employers: { company_name: string; suspended_at?: string | null } | null } | null;
   profiles: { name: string | null; employer_visibility?: string | null } | null;
-  requirement_matches: { candidate_status: string; match_score: number; unlocked: boolean } | null;
+  requirement_matches: { candidate_status: string; match_score: number; unlocked: boolean; candidate_response?: string | null } | null;
 }
 
 /** Lists every conversation the caller is a party to, newest first — the
@@ -207,13 +218,21 @@ interface ConversationListRow extends ConversationRow {
 async function handleListConversations(headers: Record<string, string>, authUserId: string): Promise<Response> {
   const res = await fetch(
     `${SUPABASE_URL}/rest/v1/conversations?or=(employer_id.eq.${authUserId},candidate_user_id.eq.${authUserId})` +
-      `&select=*,employer_requirements(title,employers(company_name,suspended_at)),profiles(name,employer_visibility),requirement_matches(candidate_status,match_score,unlocked)` +
+      `&select=*,employer_requirements(title,employers(company_name,suspended_at)),profiles(name,employer_visibility),requirement_matches(candidate_status,match_score,unlocked,candidate_response)` +
       `&order=last_message_at.desc.nullslast,created_at.desc`,
     { headers: serviceHeaders() },
   );
   const rows = (await res.json().catch(() => [])) as ConversationListRow[];
   if (!res.ok) {
     return new Response(JSON.stringify({ error: "Failed to load conversations" }), { status: 502, headers });
+  }
+
+  // Same rule as every other employer path: a suspended / scheduled-for-deletion
+  // employer is read-only and gets no inbox either.
+  const employerRow = rows.find((r) => r.employer_id === authUserId);
+  if (employerRow && isSuspended(employerRow.employer_requirements?.employers)) {
+    const d = DENIED_STATUS.suspended;
+    return new Response(JSON.stringify({ error: d.error }), { status: d.status, headers });
   }
 
   // An employer must not see threads a candidate has since blocked, nor ones
@@ -241,18 +260,25 @@ async function handleListConversations(headers: Record<string, string>, authUser
     // suspended / deleted employer, and can't post into it (see POST).
     const employerUnavailable = role === "candidate" && isSuspended(row.employer_requirements?.employers);
     const viewerLastReadAt = role === "employer" ? row.employer_last_read_at : row.candidate_last_read_at;
+    // A candidate learns the company's name only once the employer has unlocked
+    // them, exactly as on the hiring-activity list.
+    const employerDisplayName = employerUnavailable
+      ? UNAVAILABLE_EMPLOYER_NAME
+      : role === "employer" || row.requirement_matches?.unlocked
+        ? row.employer_requirements?.employers?.company_name || "Employer"
+        : CONFIDENTIAL_COMPANY_NAME;
     return {
       matchId: row.match_id,
       conversationId: row.id,
       role,
       counterpartName: role === "employer"
         ? (row.requirement_matches?.unlocked ? (row.profiles?.name || "Candidate") : maskedCandidateName(row.match_id))
-        : (employerUnavailable ? UNAVAILABLE_EMPLOYER_NAME : row.employer_requirements?.employers?.company_name || "Employer"),
+        : employerDisplayName,
       // Independent of `role` on purpose: a candidate must never see a
       // person's name as the other party, even if `role` mis-resolves on a
       // malformed row (e.g. employer_id == candidate_user_id). The candidate
       // UI reads this field instead of counterpartName.
-      companyName: employerUnavailable ? UNAVAILABLE_EMPLOYER_NAME : row.employer_requirements?.employers?.company_name || "Employer",
+      companyName: employerDisplayName,
       employerUnavailable,
       roleTitle: row.employer_requirements?.title || "Role",
       lastMessageAt: row.last_message_at,
@@ -278,7 +304,9 @@ async function handleGet(req: Request, headers: Record<string, string>, auth: { 
   const resolved = await resolveMatchAndRole(headers, matchId, auth.userId);
   if (resolved instanceof Response) return resolved;
   const { match, role } = resolved;
-  const hideContact = role === "employer" && !match.unlocked;
+  // Contact text stays masked for an employer until the unlock is paid AND the
+  // candidate has not since withdrawn or declined.
+  const hideContact = role === "employer" && !(resolved.access && contactReleasable(resolved.access));
 
   const employerUnavailable = role === "candidate" && isSuspended(match.employer_requirements?.employers);
 
@@ -288,7 +316,11 @@ async function handleGet(req: Request, headers: Record<string, string>, auth: { 
     : (match.profiles?.name || "Candidate");
   const context = {
     roleTitle: match.employer_requirements?.title || "Role",
-    companyName: employerUnavailable ? UNAVAILABLE_EMPLOYER_NAME : match.employer_requirements?.employers?.company_name || "Employer",
+    companyName: employerUnavailable
+      ? UNAVAILABLE_EMPLOYER_NAME
+      : role === "candidate" && !match.unlocked
+        ? CONFIDENTIAL_COMPANY_NAME
+        : match.employer_requirements?.employers?.company_name || "Employer",
     employerUnavailable,
     candidateName,
     matchScore: match.match_score ?? null,
@@ -297,7 +329,7 @@ async function handleGet(req: Request, headers: Record<string, string>, auth: { 
     // True while an employer is reading a Locked match: contact text in the
     // thread is masked and the UI explains why.
     contactLocked: hideContact,
-    contactNotice: hideContact ? CONTACT_REDACTED_NOTICE : null,
+    contactNotice: hideContact ? (match.unlocked ? CONTACT_WITHHELD_NOTICE : CONTACT_REDACTED_NOTICE) : null,
     // The candidate withdrew employer visibility after the unlock: history
     // below stays readable, new messages are refused.
     candidateWithdrew: resolved.access?.candidateWithdrew ?? false,
@@ -369,7 +401,7 @@ async function handlePost(req: Request, headers: Record<string, string>, auth: {
 
   // Attachments must live under this match's own storage prefix, otherwise a
   // caller could attach (and have the recipient sign) another thread's file.
-  if (attachmentPath && !attachmentPath.startsWith(`${match.id}/`)) {
+  if (attachmentPath && !isSafeAttachmentPath(attachmentPath, match.id)) {
     return new Response(JSON.stringify({ error: "Invalid attachment" }), { status: 400, headers });
   }
 
@@ -377,7 +409,15 @@ async function handlePost(req: Request, headers: Record<string, string>, auth: {
   // rejected candidate. Candidate: refused only when the employer is suspended
   // or deleted (history stays readable via GET; replies on a closed requirement
   // are still allowed).
-  const block = role === "employer" ? employerSendBlock(match, resolved.access) : candidateSendBlock(match);
+  let hasConversation = true;
+  if (role === "candidate") {
+    const exists = await conversationExists(SUPABASE_URL, serviceHeaders(), match.id);
+    if (exists === "error") {
+      return new Response(JSON.stringify({ error: "Failed to load conversation" }), { status: 502, headers });
+    }
+    hasConversation = exists;
+  }
+  const block = role === "employer" ? employerSendBlock(match, resolved.access) : candidateSendBlock(match, hasConversation);
   if (block) {
     return new Response(JSON.stringify({ error: block.error, code: block.code }), { status: block.status, headers });
   }
@@ -386,6 +426,28 @@ async function handlePost(req: Request, headers: Record<string, string>, auth: {
   if (!conversation) {
     slog.error("messages POST: failed to resolve conversation", { code: "messages_conversation_create_failed", userId: auth.userId, matchId });
     return new Response(JSON.stringify({ error: "Failed to start conversation" }), { status: 500, headers });
+  }
+
+  // Spam control: a per-match cap on employer messages in a rolling 24h window.
+  if (role === "employer") {
+    const since = new Date(Date.now() - EMPLOYER_MESSAGE_WINDOW_MS).toISOString();
+    const recentRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/conversation_messages?conversation_id=eq.${encodeURIComponent(conversation.id)}` +
+        `&sender_role=eq.employer&created_at=gte.${encodeURIComponent(since)}&select=created_at&order=created_at.desc&limit=${EMPLOYER_MESSAGE_CAP}`,
+      { headers: serviceHeaders() },
+    ).catch(() => null);
+    if (recentRes && recentRes.ok) {
+      const recent = (await recentRes.json().catch(() => [])) as Array<{ created_at: string }>;
+      const cap = employerMessageCap(recent.map((r) => r.created_at));
+      if (cap.limited) {
+        return new Response(
+          JSON.stringify({ error: "You've reached the daily message limit for this candidate. Try again later.", code: "message_cap_reached" }),
+          { status: 429, headers: { ...headers, "Retry-After": String(cap.retryAfterSeconds) } },
+        );
+      }
+    } else {
+      slog.warn("messages: employer cap lookup failed", { conversationId: conversation.id, status: recentRes?.status });
+    }
   }
 
   const autoFlagReason = detectContactInfoFlag(text);
@@ -447,7 +509,7 @@ async function handlePost(req: Request, headers: Record<string, string>, auth: {
     title: role === "employer" ? "New message from an employer" : "New message from a candidate",
     // A candidate's text can carry a phone/email; an employer whose match is
     // still Locked must not get it through the notification either.
-    body: text ? (role === "candidate" && !match.unlocked ? redactContactInfo(text).text : text).slice(0, 140) : "Sent an attachment.",
+    body: text ? (role === "candidate" && !matchContactReleasable(match) ? redactContactInfo(text).text : text).slice(0, 140) : "Sent an attachment.",
     link: role === "employer" ? "/messages" : `/employer/requirements/${match.requirement_id}`,
     groupKey: `msg:${conversation.id}`,
     actionLabel: "Reply",

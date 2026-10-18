@@ -85,13 +85,106 @@ export function employerSendBlock(match: MatchAccessRow, access: EmployerMatchAc
 
 /** Why a candidate may not send into this match's thread, or null when allowed.
  *  A candidate can always reply on a closed requirement; only a suspended /
- *  deleted employer is a dead end. */
-export function candidateSendBlock(match: MatchAccessRow): ThreadBlock | null {
+ *  deleted employer is a dead end. Opening a NEW thread needs a real
+ *  relationship (the employer paid to unlock, or the candidate has said
+ *  "interested"): an algorithmic match alone is not a licence to cold-message
+ *  an employer who never engaged. Replies in an existing thread are unaffected. */
+export function candidateSendBlock(match: MatchAccessRow, hasConversation: boolean): ThreadBlock | null {
   if (isSuspended(match.employer_requirements?.employers)) {
     return { status: 409, error: "This employer is no longer available on HireStepX, so you can't send new messages.", code: "employer_unavailable" };
   }
+  if (!hasConversation && !match.unlocked && match.candidate_response !== "interested") {
+    return { status: 403, error: "You can only start a conversation once the employer has contacted you or you have shown interest in this job.", code: "no_relationship" };
+  }
   return null;
 }
+
+/** Whether a conversation already exists for a match. Fails closed (true is
+ *  never assumed): a lookup error is reported as "error" so the caller 502s. */
+export async function conversationExists(
+  supabaseUrl: string,
+  serviceHeaders: Record<string, string>,
+  matchId: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<boolean | "error"> {
+  const res = await fetchImpl(
+    `${supabaseUrl}/rest/v1/conversations?match_id=eq.${encodeURIComponent(matchId)}&select=id&limit=1`,
+    { headers: serviceHeaders },
+  );
+  if (!res.ok) return "error";
+  const rows = (await res.json().catch(() => [])) as unknown[];
+  return rows.length > 0;
+}
+
+/* ── Employer spam cap ── */
+
+export const EMPLOYER_MESSAGE_CAP = 20;
+export const EMPLOYER_MESSAGE_WINDOW_MS = 24 * 60 * 60 * 1000;
+
+export interface MessageCapResult {
+  limited: boolean;
+  /** Seconds until the oldest counted message leaves the window (0 when not limited). */
+  retryAfterSeconds: number;
+}
+
+/** Per-match cap on employer messages inside a rolling window. `sentAt` are the
+ *  created_at timestamps of the employer's messages on this match; anything
+ *  outside the window or unparseable is ignored. */
+export function employerMessageCap(
+  sentAt: string[],
+  now: number = Date.now(),
+  cap: number = EMPLOYER_MESSAGE_CAP,
+  windowMs: number = EMPLOYER_MESSAGE_WINDOW_MS,
+): MessageCapResult {
+  const inWindow = sentAt
+    .map((t) => Date.parse(t))
+    .filter((t) => Number.isFinite(t) && t > now - windowMs && t <= now)
+    .sort((a, b) => a - b);
+  if (inWindow.length < cap) return { limited: false, retryAfterSeconds: 0 };
+  // The cap frees a slot when the (n - cap + 1)th oldest message ages out.
+  const blocking = inWindow[inWindow.length - cap];
+  return { limited: true, retryAfterSeconds: Math.max(1, Math.ceil((blocking + windowMs - now) / 1000)) };
+}
+
+/* ── Attachment hardening ── */
+
+/** A stored attachment path is only ever `<matchId>/<name>`; anything else
+ *  (traversal, absolute, backslash, encoded separators, extra segments) is
+ *  refused before it is stored or concatenated into a storage URL. */
+export function isSafeAttachmentPath(path: string, matchId: string): boolean {
+  if (!matchId || !path.startsWith(`${matchId}/`)) return false;
+  const name = path.slice(matchId.length + 1);
+  if (!/^[A-Za-z0-9._-]{1,120}$/.test(name)) return false;
+  return !name.includes("..");
+}
+
+function startsWithBytes(bytes: Uint8Array, sig: number[], offset = 0): boolean {
+  return bytes.length >= offset + sig.length && sig.every((b, i) => bytes[offset + i] === b);
+}
+
+/** Checks the file's leading bytes against the MIME type the client declared,
+ *  so a renamed executable/HTML file cannot ride in as a PDF or image. */
+export function attachmentBytesMatchType(bytes: Uint8Array, contentType: string): boolean {
+  switch (contentType) {
+    case "application/pdf": return startsWithBytes(bytes, [0x25, 0x50, 0x44, 0x46]); // %PDF
+    case "image/png": return startsWithBytes(bytes, [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+    case "image/jpeg": return startsWithBytes(bytes, [0xff, 0xd8, 0xff]);
+    case "image/webp": return startsWithBytes(bytes, [0x52, 0x49, 0x46, 0x46]) && startsWithBytes(bytes, [0x57, 0x45, 0x42, 0x50], 8);
+    case "application/vnd.openxmlformats-officedocument.wordprocessingml.document": return startsWithBytes(bytes, [0x50, 0x4b, 0x03, 0x04]); // PK zip
+    case "application/msword": return startsWithBytes(bytes, [0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1]); // OLE2
+    case "text/plain": {
+      // No magic number: reject binary (NUL / most C0 controls) in the first 4 KB.
+      const head = bytes.subarray(0, 4096);
+      for (const b of head) if (b === 0 || (b < 0x20 && b !== 0x09 && b !== 0x0a && b !== 0x0d && b !== 0x0c)) return false;
+      return true;
+    }
+    default: return false;
+  }
+}
+
+/** What an employer sees as a candidate-sent file's name while the contact is
+ *  not releasable: file names routinely embed the candidate's name or number. */
+export const REDACTED_ATTACHMENT_NAME = "Attachment";
 
 /** Why an employer may not download an attachment from this match's thread.
  *  Stricter than sending: a candidate-sent file (e.g. a resume) carries contact
@@ -164,6 +257,7 @@ export function detectContactInfoFlag(body: string): string | null {
 }
 
 export const CONTACT_REDACTION_MARK = "[contact details hidden until unlock]";
+export const CONTACT_WITHHELD_NOTICE = "This candidate has chosen not to share contact details with you.";
 export const CONTACT_REDACTED_NOTICE = "Contact details unlock after you unlock this candidate.";
 
 /** Replaces emails, phone numbers and spelled-out digit runs with a visible
