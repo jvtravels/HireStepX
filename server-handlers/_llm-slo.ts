@@ -19,7 +19,7 @@ export const RECOVERY_WINDOW_MS = 150_000;
 
 /** evaluate-session-retry / -fast are tiers of the same user request. */
 export function endpointFamily(endpoint: string): string {
-  return endpoint.replace(/-(retry|fast)$/, "");
+  return endpoint.replace(/-(retry|fast|core|pq)$/, "");
 }
 
 const isFailure = (s: string) => s === "error" || s === "timeout";

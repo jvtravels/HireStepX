@@ -9,6 +9,8 @@ describe("endpointFamily", () => {
   it("folds retry tiers into the base endpoint", () => {
     expect(endpointFamily("evaluate-session-retry")).toBe("evaluate-session");
     expect(endpointFamily("evaluate-session-fast")).toBe("evaluate-session");
+    expect(endpointFamily("evaluate-session-core")).toBe("evaluate-session");
+    expect(endpointFamily("evaluate-session-pq")).toBe("evaluate-session");
     expect(endpointFamily("generate-questions")).toBe("generate-questions");
   });
 });

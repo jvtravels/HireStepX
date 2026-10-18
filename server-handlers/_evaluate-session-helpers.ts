@@ -1328,3 +1328,38 @@ export function validateVerdictCoherence(
     ? `Below the bar at ${overallScore}/100 — ${weakestName} is the weakest axis and the place to start.`
     : `Below the bar at ${overallScore}/100 — several axes need work before this reads as a hire.`;
 }
+
+/* ── Split report generation ──
+   One call used to emit the whole ~5,100-token report, so a single slow or
+   truncated generation lost everything. The per-question block (restructured
+   answer, exemplar, follow-up, length verdict per question) is the bulk of it
+   and is independent of the verdict/skills/coaching block, so the two are
+   generated in parallel and merged. */
+
+const SHAPE_MARKER = "Return a JSON object with EXACTLY this shape:";
+const RULES_TAIL_MARKER = "Apply all the CRITICAL RULES above to every field.";
+
+export function splitReportEnabled(raw: string | undefined): boolean {
+  return raw === "1" || raw?.toLowerCase() === "true";
+}
+
+/** Derive the two split prompts from the monolithic prompt. Returns null when the prompt
+ *  no longer contains the expected anchors, so the caller falls back to the single call. */
+export function buildSplitPrompts(prompt: string, perQuestionShape: string): { core: string; perQuestion: string } | null {
+  const shapeAt = prompt.indexOf(SHAPE_MARKER);
+  const tailAt = prompt.indexOf(RULES_TAIL_MARKER);
+  if (shapeAt < 0 || tailAt < shapeAt || !prompt.includes(perQuestionShape)) return null;
+  const head = prompt.slice(0, shapeAt);
+  const tail = prompt.slice(tailAt);
+  const core = prompt.replace(perQuestionShape, "") +
+    "\n\nSPLIT-REPORT NOTE: a separate pass produces perQuestion. Do NOT include a perQuestion field in this response; every other field is still required.";
+  const perQuestion = `${head}SPLIT-REPORT NOTE: this pass produces ONLY the per-question breakdown; other fields (overallScore, skills, verdict, coaching, ...) are generated separately. Ignore instructions to return them.\n\n${SHAPE_MARKER}\n{\n${perQuestionShape}\n}\n\n${tail}`;
+  return { core, perQuestion };
+}
+
+/** A per-question pass is usable when it yields a non-empty array of graded items. */
+export function isUsablePerQuestion(parsed: { perQuestion?: unknown } | null | undefined): boolean {
+  const pq = parsed?.perQuestion;
+  if (!Array.isArray(pq) || pq.length === 0) return false;
+  return pq.every((q) => q && typeof q === "object" && typeof (q as { idx?: unknown }).idx === "number" && typeof (q as { score?: unknown }).score === "number");
+}
