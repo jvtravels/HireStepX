@@ -70,7 +70,7 @@ export default function BillingHistorySection() {
   const liveSupplier = { name: LEGAL_ENTITY.name, address: LEGAL_ENTITY.address, gstin: LEGAL_ENTITY.gstin, sac: LEGAL_ENTITY.sac };
   // A purchase with a snapshot is judged and rendered by the supplier it was issued under, not today's env.
   const supplierFor = (p: UnlockPurchase) => p.invoiceSnapshot?.supplier ?? liveSupplier;
-  const showDocument = (p: UnlockPurchase, document: InvoiceInput["document"]) => {
+  const showDocument = (p: UnlockPurchase, document: InvoiceInput["document"], creditNote: InvoiceInput["creditNote"] = null) => {
     const { cashPaise, creditPaise } = purchaseAmounts(p);
     openInvoice({
       invoiceNo: p.invoiceNo ?? null,
@@ -85,6 +85,8 @@ export default function BillingHistorySection() {
       jobTitle: requirements.find((r) => r.id === p.requirementId)?.title ?? null,
       document,
       partialRefundPaise: p.partialRefundPaise ?? 0,
+      partialRefundAt: p.partialRefundAt ?? null,
+      creditNote,
       snapshot: p.invoiceSnapshot ?? null,
       supplier: liveSupplier,
       buyer: { companyName, billingName: companyBillingName, gstin: companyGstin },
@@ -127,7 +129,15 @@ export default function BillingHistorySection() {
                 <button type="button" className={linkClass} onClick={() => showDocument(p, "invoice")}>{purchaseAmounts(p).cashPaise === 0 || !supplierFor(p).gstin ? "View receipt" : "View invoice"}</button>
               ) : null}
               {canIssueCreditNote(p, supplierFor(p)) ? (
-                <button type="button" className={`${linkClass} ml-3`} onClick={() => showDocument(p, "credit_note")}>Credit note</button>
+                (p.creditNotes?.length ?? 0) > 0 ? (
+                  p.creditNotes?.map((n) => (
+                    <button key={n.no} type="button" className={`${linkClass} ml-3`} onClick={() => showDocument(p, "credit_note", n)}>
+                      {(p.creditNotes?.length ?? 0) > 1 ? `Credit note ${n.no}` : "Credit note"}
+                    </button>
+                  ))
+                ) : (
+                  <button type="button" className={`${linkClass} ml-3`} onClick={() => showDocument(p, "credit_note")}>Credit note</button>
+                )
               ) : null}
             </TableCell>
           </TableRow>

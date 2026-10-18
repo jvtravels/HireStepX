@@ -18,6 +18,7 @@ const getVercelClientIp = vi.fn();
 const supabaseUrl = vi.fn();
 const supabaseAnonKey = vi.fn();
 const supabaseServiceHeaders = vi.fn();
+const redisPipeline = vi.fn(async (..._args: unknown[]): Promise<unknown> => null);
 
 vi.mock("../../server-handlers/_shared", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../../server-handlers/_shared")>();
@@ -30,6 +31,8 @@ vi.mock("../../server-handlers/_shared", async (importOriginal) => {
     supabaseAnonKey: (...args: unknown[]) => supabaseAnonKey(...args),
     supabaseServiceHeaders: (...args: unknown[]) => supabaseServiceHeaders(...args),
     verifyEmployerAuthToken: actual.verifyEmployerAuthToken,
+    withRequestId: actual.withRequestId,
+    redisPipeline: redisPipeline,
     slog: { error: vi.fn(), warn: vi.fn(), info: vi.fn() },
   };
 });
@@ -212,6 +215,17 @@ describe("employer-create-unlock-order — request gating", () => {
     await handler(mockReq({ mode: "single", matchId: M1 }), res);
     expect(res.statusCode).toBe(403);
     expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  it("stamps a distinct X-Request-ID on every response, including the early rejections", async () => {
+    const a = mockRes();
+    await handler(mockReq({ mode: "single", matchId: M1 }, { headers: { origin: "https://app.hirestepx.com" } }), a);
+    expect(a.statusCode).toBe(401);
+    const b = mockRes();
+    await handler(mockReq({ mode: "single", matchId: M1 }), b);
+    expect(a.headers["X-Request-ID"]).toBeTruthy();
+    expect(b.headers["X-Request-ID"]).toBeTruthy();
+    expect(a.headers["X-Request-ID"]).not.toBe(b.headers["X-Request-ID"]);
   });
 
   it("429s and sets Retry-After when rate limited", async () => {

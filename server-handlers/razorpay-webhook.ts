@@ -7,6 +7,7 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { createHmac, timingSafeEqual } from "crypto";
 import { escapeHtml } from "./_shared";
 import { handleEmployerUnlockWebhook } from "./_employer-unlock-webhook";
+import { alertUnlockProblem } from "./_unlock-fulfillment";
 import { captureServerEvent } from "./_posthog";
 import { emailShell, title, para, b, button, dataCard } from "./_email-theme";
 import { grantSessionCredits, revokeSessionCredits } from "./_session-credits";
@@ -194,6 +195,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (sigBuffer.length !== expectedBuffer.length || !timingSafeEqual(sigBuffer, expectedBuffer)) {
     clearTimeout(globalTimeout);
     console.error("[webhook] Signature mismatch");
+    // Misconfigured secret or a forged call: tell ops now (rate-limited per hour, per source IP).
+    await alertUnlockProblem({
+      kind: "webhook_signature", key: String(req.headers["x-forwarded-for"] || "unknown").split(",")[0].trim().slice(0, 64),
+      subject: "Razorpay webhook signature mismatch",
+      detail: "A Razorpay webhook failed signature verification. If this repeats for real events, RAZORPAY_WEBHOOK_SECRET is wrong and payments will not be fulfilled by the webhook.",
+    });
     return res.status(400).json({ error: "Invalid signature" });
   }
 
@@ -206,7 +213,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: "Invalid JSON" });
   }
   const eventType = event?.event;
-  const eventId = event?.entity?.id || event?.payload?.payment?.entity?.id || event?.payload?.subscription?.entity?.id || "";
+  // refund.* envelopes carry entity:"event", and every refund on a payment shares
+  // the payment id, so keying on it would swallow the 2nd partial refund as a
+  // "duplicate". Key refund events on the refund entity's own id.
+  const refundEntityId = typeof eventType === "string" && eventType.startsWith("refund.")
+    ? event?.payload?.refund?.entity?.id
+    : undefined;
+  const eventId = refundEntityId || event?.entity?.id || event?.payload?.payment?.entity?.id || event?.payload?.subscription?.entity?.id || "";
   const dedupKey = `${eventType}:${eventId}`;
   if (dedupKey.length > 5) {
     const dedupResult = await checkDedup(dedupKey);
@@ -254,10 +267,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       try {
         outcome = await handleEmployerUnlockWebhook({
           eventType, event, supabaseUrl: SUPABASE_URL,
+          razorpayKeyId: (process.env.RAZORPAY_KEY_ID || "").trim(),
+          razorpayKeySecret: (process.env.RAZORPAY_KEY_SECRET || "").trim(),
           headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` },
         });
       } catch (unlockErr) {
         console.error("[webhook] employer unlock handler threw:", unlockErr);
+        await alertUnlockProblem({
+          kind: "unlock_webhook_threw", key: String(event?.payload?.payment?.entity?.order_id || event?.payload?.payment?.entity?.id || eventType),
+          subject: "Employer unlock webhook handler threw",
+          detail: `Event ${String(eventType)} could not be processed (${unlockErr instanceof Error ? unlockErr.message : String(unlockErr)}). Razorpay will redeliver; check that a captured payment was fulfilled.`,
+          error: unlockErr,
+        });
         if (dedupKey.length > 5) await releaseDedup(dedupKey);
         return res.status(500).json({ error: "Internal error" });
       }

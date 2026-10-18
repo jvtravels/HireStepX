@@ -19,6 +19,19 @@ function req() {
   return new Request("https://x.test/api/employer-unlock-history", { method: "GET" });
 }
 
+/** URL-routed fetch: each key is matched as a substring of the request URL; unmatched tables answer []. */
+function routed(map: Record<string, unknown | ((url: string) => { ok: boolean; status?: number; body: unknown })>) {
+  return vi.fn(async (input: RequestInfo | URL) => {
+    const url = String(input);
+    const key = Object.keys(map).find((k) => url.includes(k));
+    const v = key ? map[key] : [];
+    const r = typeof v === "function" ? (v as (u: string) => { ok: boolean; status?: number; body: unknown })(url) : { ok: true, body: v };
+    return { ok: r.ok, status: r.status ?? (r.ok ? 200 : 500), json: async () => r.body, text: async () => JSON.stringify(r.body) } as Response;
+  });
+}
+
+const PAY_ROW = { id: "p1", match_id: "m1", match_ids: null, amount: 5900, currency: "INR", created_at: "2026-10-01T00:00:00Z" };
+
 beforeEach(() => {
   vi.restoreAllMocks();
   withAuthAndRateLimit.mockResolvedValue({ auth: { userId: "emp-1" }, headers: {} });
@@ -32,15 +45,10 @@ describe("employer-unlock-history handler", () => {
   });
 
   it("returns purchases with candidate snapshots on the happy path", async () => {
-    global.fetch = vi.fn()
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => [{ id: "p1", match_id: "m1", match_ids: null, amount: 5900, currency: "INR", created_at: "2026-10-01T00:00:00Z" }],
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => [{ id: "m1", unlocked_candidate_name: "Priya Sharma", unlocked_candidate_email: "priya@example.com" }],
-      });
+    global.fetch = routed({
+      employer_unlock_payments: [PAY_ROW],
+      requirement_matches: [{ id: "m1", candidate_user_id: "c1", unlocked_candidate_name: "Priya Sharma", unlocked_candidate_email: "priya@example.com" }],
+    });
 
     const res = await handler(req());
     const body = await res.json();
@@ -62,6 +70,7 @@ describe("employer-unlock-history handler", () => {
         invoiceSnapshot: null,
         partialRefundPaise: 0,
         partialRefundAt: null,
+        creditNotes: [],
         gstin: null,
         billingName: null,
         candidates: [{ matchId: "m1", name: "Priya Sharma", email: "priya@example.com" }],
@@ -70,20 +79,14 @@ describe("employer-unlock-history handler", () => {
   });
 
   it("still returns the purchase list when the candidate-snapshot columns don't exist yet (supabase-migrations/0026 not applied) instead of 500ing", async () => {
-    global.fetch = vi.fn()
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => [{ id: "p1", match_id: "m1", match_ids: null, amount: 5900, currency: "INR", created_at: "2026-10-01T00:00:00Z" }],
-      })
-      // PostgREST rejects the unknown-column select with a 400 + a JSON
-      // error BODY (not an array) — the historical bug iterated this object
-      // directly and threw "not iterable", turning a cosmetic lookup failure
-      // into a full 500 for the whole endpoint.
-      .mockResolvedValueOnce({
-        ok: false,
-        status: 400,
-        json: async () => ({ code: "42703", message: 'column "unlocked_candidate_name" does not exist' }),
-      });
+    // PostgREST rejects the unknown-column select with a 400 + a JSON
+    // error BODY (not an array) — the historical bug iterated this object
+    // directly and threw "not iterable", turning a cosmetic lookup failure
+    // into a full 500 for the whole endpoint.
+    global.fetch = routed({
+      employer_unlock_payments: [PAY_ROW],
+      requirement_matches: () => ({ ok: false, status: 400, body: { code: "42703", message: 'column "unlocked_candidate_name" does not exist' } }),
+    });
 
     const res = await handler(req());
     const body = await res.json();
@@ -105,6 +108,7 @@ describe("employer-unlock-history handler", () => {
         invoiceSnapshot: null,
         partialRefundPaise: 0,
         partialRefundAt: null,
+        creditNotes: [],
         gstin: null,
         billingName: null,
         candidates: [{ matchId: "m1", name: null, email: null }],
@@ -117,15 +121,13 @@ describe("employer-unlock-history handler", () => {
   });
 
   it("surfaces invoice, refund, order status and GST billing identity when present", async () => {
-    global.fetch = vi.fn()
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => [{ id: "p1", match_id: "m1", match_ids: null, amount: 5900, currency: "INR", created_at: "2026-10-01T00:00:00Z", razorpay_order_id: "order_1", invoice_no: "INV-0001", refunded_at: "2026-10-02T00:00:00Z" }],
-      })
-      .mockResolvedValueOnce({ ok: true, json: async () => [{ id: "m1", unlocked_candidate_name: "Priya Sharma", unlocked_candidate_email: "priya@example.com" }] })
-      .mockResolvedValueOnce({ ok: true, json: async () => [{ razorpay_order_id: "order_1", status: "paid" }] })
-      .mockResolvedValueOnce({ ok: true, json: async () => [{ amount: -2000, order_ref: "order_1" }] })
-      .mockResolvedValueOnce({ ok: true, json: async () => [{ gstin: "29ABCDE1234F1Z5", billing_name: "Acme Pvt Ltd" }] });
+    global.fetch = routed({
+      employer_unlock_payments: [{ ...PAY_ROW, razorpay_order_id: "order_1", invoice_no: "INV-0001", refunded_at: "2026-10-02T00:00:00Z" }],
+      requirement_matches: [{ id: "m1", candidate_user_id: "c1", unlocked_candidate_name: "Priya Sharma", unlocked_candidate_email: "priya@example.com" }],
+      employer_unlock_orders: [{ razorpay_order_id: "order_1", status: "paid" }],
+      employer_credit_ledger: [{ amount: -2000, order_ref: "order_1" }],
+      "select=gstin": [{ gstin: "29ABCDE1234F1Z5", billing_name: "Acme Pvt Ltd" }],
+    });
 
     const res = await handler(req());
     const body = await res.json();
@@ -180,6 +182,66 @@ describe("employer-unlock-history handler", () => {
       expect(String(fetchMock.mock.calls[0][0])).toContain("invoice_snapshot");
       expect(String(fetchMock.mock.calls[1][0])).not.toContain("invoice_snapshot");
       expect(body.purchases[0]).toMatchObject({ invoiceNo: "HSX-2610-000001", invoiceSnapshot: null, partialRefundPaise: 0 });
+    });
+  });
+
+  describe("withheld contact", () => {
+    const match = (over: Record<string, unknown> = {}) => ({
+      id: "m1", candidate_user_id: "c1", candidate_response: null, profiles: { employer_visibility: "on" },
+      unlocked_candidate_name: "Priya Sharma", unlocked_candidate_email: "priya@example.com", ...over,
+    });
+    const run = async (o: { match?: Record<string, unknown>; payRow?: Record<string, unknown>; blocked?: boolean; suspended?: boolean; orderStatus?: string }) => {
+      global.fetch = routed({
+        employer_unlock_payments: [{ ...PAY_ROW, razorpay_order_id: "order_1", ...o.payRow }],
+        requirement_matches: [match(o.match)],
+        employer_blocks: o.blocked ? [{ candidate_user_id: "c1" }] : [],
+        "select=suspended_at": o.suspended ? [{ suspended_at: "2026-10-05T00:00:00Z" }] : [{ suspended_at: null }],
+        employer_unlock_orders: [{ razorpay_order_id: "order_1", status: o.orderStatus ?? "fulfilled" }],
+      });
+      return (await (await handler(req())).json()).purchases[0].candidates[0];
+    };
+
+    it("releases name and email while the candidate is still reachable", async () => {
+      expect(await run({})).toEqual({ matchId: "m1", name: "Priya Sharma", email: "priya@example.com" });
+    });
+
+    it.each([
+      ["withdrew", { match: { profiles: { employer_visibility: "off" } } }],
+      ["declined", { match: { candidate_response: "declined" } }],
+      ["blocked", { blocked: true }],
+      ["suspended", { suspended: true }],
+      ["refunded (ledger)", { payRow: { refunded_at: "2026-10-02T00:00:00Z" } }],
+      ["refunded (order)", { orderStatus: "refunded" }],
+    ])("masks the name and drops the email when the unlock is %s", async (_label, o) => {
+      const c = await run(o as Parameters<typeof run>[0]);
+      expect(c).toEqual({ matchId: "m1", name: "Candidate #m1", email: null });
+    });
+  });
+
+  describe("credit notes (migration 0047)", () => {
+    it("lists the credit notes issued for each order, oldest first", async () => {
+      global.fetch = routed({
+        employer_unlock_payments: [{ ...PAY_ROW, razorpay_order_id: "order_1", invoice_no: "HSX-2610-000001" }],
+        employer_credit_notes: [
+          { order_id: "order_1", amount_paise: 1000, credit_note_no: "CN-2610-000001", created_at: "2026-10-02T00:00:00Z" },
+          { order_id: "order_1", amount_paise: 500, credit_note_no: "CN-2610-000002", created_at: "2026-10-03T00:00:00Z" },
+        ],
+      });
+      const body = await (await handler(req())).json();
+      expect(body.purchases[0].creditNotes).toEqual([
+        { no: "CN-2610-000001", amountPaise: 1000, issuedAt: "2026-10-02T00:00:00Z" },
+        { no: "CN-2610-000002", amountPaise: 500, issuedAt: "2026-10-03T00:00:00Z" },
+      ]);
+    });
+
+    it("returns an empty list (client derives the number) when the table does not exist yet", async () => {
+      global.fetch = routed({
+        employer_unlock_payments: [{ ...PAY_ROW, razorpay_order_id: "order_1" }],
+        employer_credit_notes: () => ({ ok: false, status: 404, body: { code: "42P01" } }),
+      });
+      const res = await handler(req());
+      expect(res.status).toBe(200);
+      expect((await res.json()).purchases[0].creditNotes).toEqual([]);
     });
   });
 

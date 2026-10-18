@@ -12,16 +12,22 @@
  * 'paid' orders are the retry case: payment recorded but unlock writes failed.
  * A second pass releases credit still held by recently 'failed' orders (a
  * release that failed at the time must not leave the employer's credit stuck).
+ * Recently 'expired'/'failed' orders are also checked against Razorpay: a payment
+ * captured after the order lapsed (the expiry race) is fulfilled or converted to
+ * credit instead of being stranded. A last pass numbers fulfilled cash orders whose
+ * invoice number assignment failed at the time (invoice back-fill).
  */
 
 import { slog } from "./_shared";
 import {
+  assignInvoiceNo,
   fulfillUnlockOrder,
   findCapturedPaymentForOrder,
+  writeInvoiceSnapshot,
   ORDER_SELECT,
   type UnlockOrderRow,
 } from "./_unlock-fulfillment";
-import { releaseCredit } from "./_employer-credit";
+import { releaseCredit, creditSpentOnOrders } from "./_employer-credit";
 import { captureServerEvent } from "./_posthog";
 import { isCreditOrderRef, settleCreditOrder } from "./_employer-credit-unlock";
 import type { NotifyInput } from "./_notify";
@@ -44,6 +50,12 @@ export interface ReconcileSummary {
   skipped: number;
   /** Failed orders whose held credit was (re)released by the second pass. */
   creditSwept?: number;
+  /** 'paid' orders for which Razorpay shows no live captured payment (needs a human; not an error). */
+  paidWithoutCapture?: number;
+  /** Fulfilled cash orders that got their missing invoice number this run. */
+  invoicesBackfilled?: number;
+  /** Back-fill attempts that failed (also counted in `errors`). */
+  invoiceBackfillErrors?: number;
 }
 
 export interface ReconcileParams {
@@ -57,7 +69,7 @@ export interface ReconcileParams {
   now?: () => Date;
 }
 
-type Outcome = "fulfilled" | "partial" | "expired" | "pending" | "error" | "skipped";
+type Outcome = "fulfilled" | "partial" | "expired" | "pending" | "error" | "skipped" | "paid_without_capture" | "unchanged";
 
 /** Credit-only orders have no Razorpay order: the credit ledger says whether
  *  the employer actually paid. Spent -> finish the unlock; never spent -> the
@@ -96,29 +108,41 @@ async function reconcileCreditOrder(order: UnlockOrderRow, p: ReconcileParams, f
 }
 
 async function reconcileOne(order: UnlockOrderRow, p: ReconcileParams, f: typeof fetch, now: Date): Promise<Outcome> {
-  if (isCreditOrderRef(order.razorpay_order_id)) return reconcileCreditOrder(order, p, f, now);
+  if (isCreditOrderRef(order.razorpay_order_id)) {
+    // Credit-only orders have no Razorpay payment to arrive late; only live ones are settled.
+    return order.status === "created" || order.status === "paid" ? reconcileCreditOrder(order, p, f, now) : "unchanged";
+  }
   const found = await findCapturedPaymentForOrder(order.razorpay_order_id, p.razorpayKeyId, p.razorpayKeySecret, f);
   if (found === "error") return "error";
 
   if (!found) {
     if (order.status === "paid") {
-      // Marked paid but Razorpay shows no live captured payment (refunded out-of-band?). Needs a human.
-      slog.error("unlock order is 'paid' but Razorpay has no captured payment", {
+      // Marked paid but Razorpay shows no live captured payment (refunded out-of-band?). Needs a human, but it is a
+      // standing condition rather than a fresh failure: a counted warning, not an error that pages every run.
+      slog.warn("unlock order is 'paid' but Razorpay has no captured payment", {
         code: "unlock_reconcile_paid_without_capture", orderId: order.razorpay_order_id, paymentId: order.razorpay_payment_id,
       });
-      return "skipped";
+      return "paid_without_capture";
     }
+    // Already expired/failed (late-capture check): nothing paid, nothing to do.
+    if (order.status !== "created") return "unchanged";
     if (now.getTime() - new Date(order.created_at).getTime() < EXPIRE_AFTER_MS) return "pending";
     try {
+      // return=representation: only the call whose CAS really moved the row releases the credit. A payment that
+      // fulfilled the order between our Razorpay read and this PATCH leaves it 'paid'/'fulfilled', and releasing
+      // the credit then would hand back credit the order consumed.
       const res = await f(
         `${p.supabaseUrl}/rest/v1/employer_unlock_orders?razorpay_order_id=eq.${encodeURIComponent(order.razorpay_order_id)}&status=eq.created`,
         {
           method: "PATCH",
-          headers: { ...p.headers, "Content-Type": "application/json", Prefer: "return=minimal" },
+          headers: { ...p.headers, "Content-Type": "application/json", Prefer: "return=representation" },
           body: JSON.stringify({ status: "expired", updated_at: now.toISOString() }),
         },
       );
       if (!res.ok) return "error";
+      const moved: unknown = await res.json().catch(() => null);
+      if (!Array.isArray(moved)) return "error";
+      if (moved.length === 0) return "pending"; // lost the race to a payment; the next run reads the real state
       await releaseCredit(p.supabaseUrl, p.headers, order.employer_id, order.razorpay_order_id, f);
       void captureServerEvent("employer_unlock_abandoned", order.employer_id, {
         requirementId: order.requirement_id, orderId: order.razorpay_order_id, amountPaise: order.amount, mode: order.mode,
@@ -141,9 +165,11 @@ async function reconcileOne(order: UnlockOrderRow, p: ReconcileParams, f: typeof
   }
 }
 
-async function sweepQuery(p: ReconcileParams, f: typeof fetch, cutoff: string, order: string, limit: number): Promise<UnlockOrderRow[]> {
+async function sweepQuery(
+  p: ReconcileParams, f: typeof fetch, cutoff: string, order: string, limit: number, statuses = "created,paid",
+): Promise<UnlockOrderRow[]> {
   const res = await f(
-    `${p.supabaseUrl}/rest/v1/employer_unlock_orders?status=in.(created,paid)&created_at=lt.${encodeURIComponent(cutoff)}` +
+    `${p.supabaseUrl}/rest/v1/employer_unlock_orders?status=in.(${statuses})&created_at=lt.${encodeURIComponent(cutoff)}` +
       `&select=${ORDER_SELECT}&order=${order}&limit=${limit}`,
     { headers: p.headers },
   );
@@ -166,9 +192,12 @@ export async function reconcileUnlockOrders(p: ReconcileParams): Promise<Reconci
   const newestCount = limit >= 5 ? Math.max(1, Math.floor(limit / 5)) : 0;
   const oldest = await sweepQuery(p, f, cutoff, "created_at.asc", limit - newestCount);
   const newest = newestCount > 0 ? await sweepQuery(p, f, cutoff, "created_at.desc", newestCount) : [];
+  // Orders that lapsed ('expired'/'failed') in the last week whose payment may still have been captured.
+  const lateCutoff = new Date(now.getTime() - LATE_CAPTURE_DAYS * 86_400_000).toISOString();
+  const lapsed = await sweepClosedQuery(p, f, lateCutoff, LATE_CAPTURE_LIMIT);
   const seen = new Set<string>();
   const orders: UnlockOrderRow[] = [];
-  for (const o of [...oldest, ...newest]) {
+  for (const o of [...oldest, ...newest, ...lapsed]) {
     if (seen.has(o.razorpay_order_id)) continue;
     seen.add(o.razorpay_order_id);
     orders.push(o);
@@ -186,12 +215,108 @@ export async function reconcileUnlockOrders(p: ReconcileParams): Promise<Reconci
     );
     for (const o of outcomes) {
       if (o === "error") summary.errors += 1;
-      else summary[o] += 1;
+      else if (o === "paid_without_capture") summary.paidWithoutCapture = (summary.paidWithoutCapture ?? 0) + 1;
+      else if (o !== "unchanged") summary[o] += 1;
     }
   }
 
   summary.creditSwept = await sweepFailedOrderCredit(p, f, now);
+  const backfill = await backfillMissingInvoices(p, f, now);
+  summary.invoicesBackfilled = backfill.filled;
+  summary.invoiceBackfillErrors = backfill.errors;
+  summary.errors += backfill.errors;
   return summary;
+}
+
+const LATE_CAPTURE_DAYS = 7;
+const LATE_CAPTURE_LIMIT = 25;
+
+/** Recently expired/failed orders, newest first. These are re-checked against Razorpay because a payment can be
+ *  captured after the order lapsed; fulfilment then re-spends released credit or converts the cash to credit. */
+async function sweepClosedQuery(p: ReconcileParams, f: typeof fetch, since: string, limit: number): Promise<UnlockOrderRow[]> {
+  try {
+    const res = await f(
+      `${p.supabaseUrl}/rest/v1/employer_unlock_orders?status=in.(expired,failed)&updated_at=gte.${encodeURIComponent(since)}` +
+        `&select=${ORDER_SELECT}&order=updated_at.desc&limit=${limit}`,
+      { headers: p.headers },
+    );
+    if (!res.ok) return [];
+    const rows = (await res.json().catch(() => null)) as UnlockOrderRow[] | null;
+    return Array.isArray(rows) ? rows : [];
+  } catch {
+    return [];
+  }
+}
+
+const BACKFILL_DAYS = 14;
+const BACKFILL_LIMIT = 50;
+
+/** Numbers fulfilled/partial cash orders whose ledger row has no invoice_no (the assignment RPC failed when the order
+ *  closed). A cash order that unlocked nobody legitimately has no invoice and is skipped. Soft-fails to
+ *  nothing when the invoice columns are missing (migration 0032/0045 unapplied). */
+async function backfillMissingInvoices(p: ReconcileParams, f: typeof fetch, now: Date): Promise<{ filled: number; errors: number }> {
+  const out = { filled: 0, errors: 0 };
+  try {
+    const since = new Date(now.getTime() - BACKFILL_DAYS * 86_400_000).toISOString();
+    const res = await f(
+      `${p.supabaseUrl}/rest/v1/employer_unlock_payments?invoice_no=is.null&amount=gt.0&refunded_at=is.null` +
+        `&created_at=gte.${encodeURIComponent(since)}&select=razorpay_payment_id,razorpay_order_id,employer_id&order=created_at.desc&limit=${BACKFILL_LIMIT}`,
+      { headers: p.headers },
+    );
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      if (res.status === 400 && /PGRST204|42703|column/i.test(text)) return out;
+      out.errors += 1;
+      return out;
+    }
+    const rows = (await res.json().catch(() => null)) as Array<{ razorpay_payment_id: string; razorpay_order_id: string | null; employer_id: string }> | null;
+    if (!Array.isArray(rows) || rows.length === 0) return out;
+
+    const orderIds = Array.from(new Set(rows.map((r) => r.razorpay_order_id).filter((v): v is string => !!v)));
+    if (orderIds.length === 0) return out;
+    const ordRes = await f(
+      `${p.supabaseUrl}/rest/v1/employer_unlock_orders?razorpay_order_id=in.(${orderIds.map(encodeURIComponent).join(",")})` +
+        `&status=in.(fulfilled,partial)&select=${ORDER_SELECT}`,
+      { headers: p.headers },
+    );
+    if (!ordRes.ok) { out.errors += 1; return out; }
+    const orders = (await ordRes.json().catch(() => null)) as UnlockOrderRow[] | null;
+    if (!Array.isArray(orders)) { out.errors += 1; return out; }
+    const orderById = new Map(orders.map((o) => [o.razorpay_order_id, o]));
+
+    const allMatchIds = Array.from(new Set(orders.flatMap((o) => o.match_ids)));
+    const unlocked = new Set<string>();
+    if (allMatchIds.length > 0) {
+      const mRes = await f(
+        `${p.supabaseUrl}/rest/v1/requirement_matches?id=in.(${allMatchIds.map(encodeURIComponent).join(",")})&unlocked=eq.true&select=id`,
+        { headers: p.headers },
+      );
+      if (!mRes.ok) { out.errors += 1; return out; }
+      const mRows = (await mRes.json().catch(() => null)) as Array<{ id: string }> | null;
+      if (!Array.isArray(mRows)) { out.errors += 1; return out; }
+      for (const m of mRows) unlocked.add(m.id);
+    }
+
+    for (const r of rows) {
+      const order = r.razorpay_order_id ? orderById.get(r.razorpay_order_id) : undefined;
+      if (!order || !order.match_ids.some((id) => unlocked.has(id))) continue;
+      const no = await assignInvoiceNo(p.supabaseUrl, p.headers, r.razorpay_payment_id, f);
+      if (!no) { out.errors += 1; continue; }
+      out.filled += 1;
+      const spent = await creditSpentOnOrders(p.supabaseUrl, p.headers, order.employer_id, [order.razorpay_order_id], f);
+      if (spent) {
+        await writeInvoiceSnapshot({
+          supabaseUrl: p.supabaseUrl, headers: p.headers, order, paymentId: r.razorpay_payment_id,
+          creditPaise: spent.get(order.razorpay_order_id) ?? 0, now, f,
+        });
+      }
+      slog.warn("back-filled a missing unlock invoice number", { code: "unlock_invoice_backfilled", orderId: order.razorpay_order_id, invoiceNo: no });
+    }
+  } catch (err) {
+    out.errors += 1;
+    slog.error("invoice back-fill sweep threw", { code: "unlock_invoice_backfill_threw", err: err instanceof Error ? err.message : String(err) });
+  }
+  return out;
 }
 
 const FAILED_SWEEP_DAYS = 7;

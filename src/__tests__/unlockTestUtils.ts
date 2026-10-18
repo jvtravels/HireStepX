@@ -22,6 +22,8 @@ export interface FakeOrder {
   created_at: string;
   paid_at: string | null;
   fulfilled_at: string | null;
+  updated_at?: string;
+  refund_due_paise?: number | null;
 }
 export interface FakeMatch {
   id: string;
@@ -31,6 +33,7 @@ export interface FakeMatch {
   unlocked_at: string | null;
   unlocked_candidate_name: string | null;
   unlocked_candidate_email: string | null;
+  candidate_response?: string | null;
   profiles: { name: string | null; email: string | null; employer_visibility: string | null } | null;
 }
 export interface FakeLedger {
@@ -46,7 +49,9 @@ export interface FakeLedger {
   partial_refund_at?: string | null;
   match_id?: string;
   match_ids?: string[];
+  created_at?: string;
 }
+export interface FakeCreditNote { id: string; order_id: string; refund_id: string; amount_paise: number; credit_note_no: string; created_at: string }
 
 const json = (body: unknown, status = 200) =>
   status === 204 ? new Response(null, { status }) : new Response(JSON.stringify(body), { status });
@@ -80,7 +85,11 @@ export class FakeUnlockDb {
   /** Return true to make a request fail with a 500. */
   failWhen: ((method: string, url: string) => boolean) | null = null;
   /** Employer billing identity served from `employers` (what the invoice snapshot freezes). */
-  employers = new Map<string, { company_name: string; billing_name: string; gstin: string }>();
+  employers = new Map<string, { company_name: string; billing_name: string; gstin: string; suspended_at?: string | null }>();
+  /** true = migration 0047 applied: employer_credit_notes + assign_employer_credit_note exist. */
+  applied0047 = false;
+  creditNotes: FakeCreditNote[] = [];
+  creditNoteSeq = 0;
   /** true = migration 0045 applied: the invoice_no default is gone, assign_unlock_invoice_no exists and the
    *  snapshot / partial-refund columns exist. false = the pre-0045 schema, where the column default numbers
    *  every inserted row and the new columns / RPC answer like PostgREST does for unknown ones. */
@@ -120,6 +129,9 @@ export class FakeUnlockDb {
       else if (eq(st)) rows = rows.filter((r) => r.status === eq(st));
       const lt = q.get("created_at")?.replace(/^lt\./, "");
       if (lt && q.get("created_at")?.startsWith("lt.")) rows = rows.filter((r) => r.created_at < lt);
+      const upd = q.get("updated_at");
+      if (upd?.startsWith("gte.")) rows = rows.filter((r) => (r.updated_at ?? r.created_at) >= upd.slice(4));
+      if (q.get("razorpay_payment_id") === "is.null") rows = rows.filter((r) => r.razorpay_payment_id == null);
       if (q.get("employer_id")) rows = rows.filter((r) => r.employer_id === eq(q.get("employer_id")));
       if (method === "GET") {
         const dir = q.get("order") === "created_at.desc" ? -1 : 1;
@@ -128,6 +140,8 @@ export class FakeUnlockDb {
       }
       if (method === "PATCH") {
         for (const r of rows) Object.assign(r, body);
+        // return=representation answers with the rows the filter really matched (the CAS signal).
+        if (String((init?.headers as Record<string, string> | undefined)?.Prefer ?? "").includes("return=representation")) return json(rows);
         return json(null, 204);
       }
       if (method === "POST") {
@@ -147,6 +161,10 @@ export class FakeUnlockDb {
       const pid = eq(q.get("razorpay_payment_id"));
       let rows = this.ledger.filter((l) => !pid || l.razorpay_payment_id === pid);
       if (q.get("refunded_at") === "is.null") rows = rows.filter((l) => !l.refunded_at);
+      if (q.get("invoice_no") === "is.null") rows = rows.filter((l) => !l.invoice_no);
+      if (q.get("amount") === "gt.0") rows = rows.filter((l) => l.amount > 0);
+      const lcreated = q.get("created_at");
+      if (lcreated?.startsWith("gte.")) rows = rows.filter((l) => !l.created_at || l.created_at >= lcreated.slice(4));
       if (q.get("invoice_snapshot") === "is.null") rows = rows.filter((l) => l.invoice_snapshot == null);
       const or = q.get("or")?.match(/^\(partial_refund_paise\.is\.null,partial_refund_paise\.lt\.(\d+)\)$/);
       if (or) rows = rows.filter((l) => l.partial_refund_paise == null || l.partial_refund_paise < Number(or[1]));
@@ -165,6 +183,24 @@ export class FakeUnlockDb {
       if (!row) return json(null);
       if (!row.invoice_no) row.invoice_no = this.nextInvoiceNo();
       return json(row.invoice_no);
+    }
+
+    if (table === "rpc/assign_employer_credit_note") {
+      if (!this.applied0047) return json({ code: "PGRST202", message: "function not found" }, 404);
+      const found = this.creditNotes.find((c) => c.refund_id === body.p_refund_id);
+      if (found) return json(found.credit_note_no);
+      const note: FakeCreditNote = {
+        id: `cn-${this.creditNotes.length + 1}`, order_id: body.p_order_id, refund_id: body.p_refund_id, amount_paise: body.p_amount_paise,
+        credit_note_no: `CN-2610-${String(++this.creditNoteSeq).padStart(6, "0")}`, created_at: new Date().toISOString(),
+      };
+      this.creditNotes.push(note);
+      return json(note.credit_note_no);
+    }
+
+    if (table === "employer_credit_notes") {
+      if (!this.applied0047) return json({ code: "42P01", message: "relation does not exist" }, 404);
+      const ids = inList(q.get("order_id"));
+      return json(this.creditNotes.filter((c) => !ids || ids.includes(c.order_id)));
     }
 
     if (table === "employers") {
@@ -191,7 +227,7 @@ export class FakeUnlockDb {
   };
 }
 
-export interface FakeRzpPayment { id: string; status: string; amount: number; order_id: string; refund_status?: string | null; amount_refunded?: number }
+export interface FakeRzpPayment { id: string; status: string; amount: number; order_id: string; refund_status?: string | null; amount_refunded?: number; currency?: string }
 
 export function fakeRazorpay(cfg: { orders?: Record<string, { amount: number; notes?: Record<string, unknown> }>; payments?: FakeRzpPayment[]; down?: boolean }) {
   return async (input: RequestInfo | URL): Promise<Response> => {

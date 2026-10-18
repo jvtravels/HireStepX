@@ -31,6 +31,8 @@ import {
   supabaseAnonKey,
   supabaseServiceHeaders,
   verifyEmployerAuthToken,
+  withRequestId,
+  slog,
 } from "./_shared";
 import { verifyRazorpaySignature, buildSignaturePayload } from "./_payment-verification";
 import {
@@ -44,6 +46,7 @@ import {
   fetchRazorpayOrder,
   loadUnlockOrder,
   backfillLegacyUnlockOrder,
+  alertUnlockProblem,
   type CapturedPayment,
 } from "./_unlock-fulfillment";
 
@@ -63,6 +66,8 @@ async function fetchPaymentWithCaptureRetry(paymentId: string): Promise<Captured
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const origin = applyCorsHeaders(req, res);
+  const requestId = withRequestId({})["X-Request-ID"];
+  res.setHeader("X-Request-ID", requestId);
   if (handlePreflightAndMethod(req, res)) return;
 
   const bodyContentLength = parseInt((req.headers["content-length"] as string) || "0", 10);
@@ -82,7 +87,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
-    console.error("Missing Razorpay env vars for employer unlock verification");
+    slog.error("Missing Razorpay env vars for employer unlock verification", { code: "unlock_verify_not_configured", requestId });
     return res.status(503).json({ error: "Payments not configured. Please contact support@hirestepx.com" });
   }
 
@@ -121,7 +126,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const signPayload = buildSignaturePayload({ orderId: razorpay_order_id, paymentId: razorpay_payment_id });
     if (!verifyRazorpaySignature(signPayload, razorpay_signature, RAZORPAY_KEY_SECRET)) {
-      console.error("Employer unlock signature mismatch for order", razorpay_order_id.slice(0, 8) + "...");
+      slog.warn("Employer unlock signature mismatch", { code: "unlock_verify_signature_mismatch", requestId, employerId, orderRef: razorpay_order_id.slice(0, 8) });
       return res.status(400).json({ error: "Payment signature verification failed" });
     }
 
@@ -134,7 +139,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(502).json({ error: "Could not confirm the payment with the gateway. Please retry in a moment." });
     }
     if (payment.orderId && payment.orderId !== razorpay_order_id) {
-      console.error("Employer unlock payment/order mismatch for order", razorpay_order_id.slice(0, 8) + "...");
+      slog.warn("Employer unlock payment/order mismatch", { code: "unlock_verify_order_mismatch", requestId, employerId, orderRef: razorpay_order_id.slice(0, 8) });
       return res.status(400).json({ error: "Invalid payment details" });
     }
     if (payment.status !== "captured") {
@@ -162,7 +167,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           })
         : null;
       if (!order) {
-        console.error("Employer unlock order not found / not owned for order", razorpay_order_id.slice(0, 8) + "...");
+        slog.warn("Employer unlock order not found / not owned", { code: "unlock_verify_order_not_owned", requestId, employerId, orderRef: razorpay_order_id.slice(0, 8) });
         return res.status(403).json({ error: "Forbidden" });
       }
     }
@@ -174,10 +179,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       payment,
       expectEmployerId: employerId,
     });
+    slog.info("employer unlock verify", { code: "unlock_verify_result", requestId, employerId, orderId: razorpay_order_id, result: result.kind });
 
     switch (result.kind) {
       case "fulfilled":
       case "partial": {
+        // Fulfilment already masks the name and drops the email for a candidate who has since withdrawn, declined or
+        // blocked this employer (or when the employer is suspended); an empty contact is what the client sees.
         const profileByMatchId = new Map(result.candidates.map((c) => [c.matchId, { name: c.name, email: c.email }]));
         const payload = buildBatchUnlockResponsePayload({ matchIds: result.unlockedMatchIds, profileByMatchId });
         const base = { ...payload, orderId: razorpay_order_id, orderStatus: result.kind, invoiceNo: result.invoiceNo };
@@ -213,15 +221,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(409).json({ error: "Payment not captured yet", code: "payment_not_captured", pending: true, orderId: razorpay_order_id });
       case "error":
         if (result.code === "forbidden") return res.status(403).json({ error: "Forbidden" });
-        if (result.code === "amount_mismatch" || result.code === "order_mismatch" || result.code === "duplicate_payment") {
+        if (result.code === "amount_mismatch" || result.code === "currency_mismatch" || result.code === "order_mismatch" || result.code === "duplicate_payment") {
+          await alertUnlockProblem({
+            kind: "unlock_not_fulfilled", key: razorpay_order_id,
+            subject: "Payment captured but not fulfilled",
+            detail: `Employer unlock order ${razorpay_order_id} (payment ${razorpay_payment_id}) is captured but was rejected: ${result.code}. Manual review or refund needed.`,
+            distinctId: employerId,
+          });
           return res.status(400).json({ error: "Invalid order", orderId: razorpay_order_id });
         }
-        console.error("employer unlock fulfilment failed:", result.message);
+        slog.error("employer unlock fulfilment failed", { code: "unlock_verify_fulfilment_failed", requestId, employerId, orderId: razorpay_order_id, message: result.message });
+        await alertUnlockProblem({
+          kind: "unlock_not_fulfilled", key: razorpay_order_id,
+          subject: "Payment captured but not fulfilled",
+          detail: `Employer unlock order ${razorpay_order_id} (payment ${razorpay_payment_id}) was captured but fulfilment failed (${result.message}). The webhook and reconciler retry; check it completes.`,
+          distinctId: employerId,
+        });
         // The order stays 'paid' and the webhook/reconciler retries — tell the buyer so.
         return res.status(500).json({ error: "Payment received but the unlock could not be completed yet. It will be retried automatically.", orderId: razorpay_order_id });
     }
   } catch (err) {
-    console.error("employer-verify-unlock-payment error:", err);
+    slog.error("employer-verify-unlock-payment threw", { code: "unlock_verify_unexpected_error", requestId, employerId, err: err instanceof Error ? err.message : String(err) });
     return res.status(500).json({ error: "Internal error" });
   }
 }

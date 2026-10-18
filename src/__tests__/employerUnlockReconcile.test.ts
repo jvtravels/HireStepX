@@ -32,6 +32,7 @@ beforeEach(() => {
   db = new FakeUnlockDb();
   notifyImpl.mockClear();
   vi.mocked(slog.error).mockClear();
+  vi.mocked(slog.warn).mockClear();
 });
 
 describe("reconcileUnlockOrders", () => {
@@ -101,9 +102,11 @@ describe("reconcileUnlockOrders", () => {
   it("flags a 'paid' order with no live captured payment for a human and does not touch it", async () => {
     db.seed({ orders: [order({ status: "paid", razorpay_payment_id: "pay_1", created_at: ago(HOUR) })] });
     const s = await sweep({ payments: [] });
-    expect(s.skipped).toBe(1);
+    // A standing condition for a human, counted but not an error (it must not fail the cron every day).
+    expect(s).toMatchObject({ paidWithoutCapture: 1, errors: 0 });
     expect(db.orders.get("order_1")?.status).toBe("paid");
-    expect(slog.error).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({ code: "unlock_reconcile_paid_without_capture" }));
+    expect(slog.warn).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({ code: "unlock_reconcile_paid_without_capture" }));
+    expect(slog.error).not.toHaveBeenCalledWith(expect.any(String), expect.objectContaining({ code: "unlock_reconcile_paid_without_capture" }));
   });
 
   it("counts a database failure during fulfilment as an error and keeps the order open", async () => {
@@ -202,7 +205,7 @@ describe("cron-reconcile-unlock-orders handler", () => {
     process.env.CRON_SECRET = "s3cret";
     process.env.RAZORPAY_KEY_ID = "k";
     process.env.RAZORPAY_KEY_SECRET = "s";
-    const beat = vi.spyOn(heartbeat, "recordCronSuccess").mockResolvedValue(undefined);
+    const beat = vi.spyOn(heartbeat, "recordCronResult");
     const stale = new Date(Date.now() - 2 * HOUR).toISOString();
     const row = { id: "r1", razorpay_order_id: "order_1", employer_id: "emp-1", requirement_id: null, mode: "single", match_ids: ["m1"], amount: 5900, currency: "INR", status: "created", razorpay_payment_id: null, created_at: stale, paid_at: null, fulfilled_at: null };
     // Razorpay unreachable -> the order counts as an error
@@ -211,15 +214,17 @@ describe("cron-reconcile-unlock-orders handler", () => {
       return new Response(JSON.stringify(String(input).includes("employer_unlock_orders?status=in") ? [row] : []), { status: 200 });
     }) as typeof fetch);
     const bad = await cron(req("Bearer s3cret"));
-    expect(bad.status).toBe(200);
-    expect(await bad.json()).toMatchObject({ ok: true, errors: 1 });
-    expect(beat).not.toHaveBeenCalled();
+    // errors make the run report failure (500, ok:false) and record no heartbeat, but the summary is still returned
+    expect(bad.status).toBe(500);
+    expect(await bad.json()).toMatchObject({ ok: false, errors: 1 });
+    expect(await beat.mock.results[0].value).toBe(false);
     failing.mockRestore();
 
     const ok = vi.spyOn(globalThis, "fetch").mockImplementation((async () => new Response("[]", { status: 200 })) as typeof fetch);
     expect((await cron(req("Bearer s3cret"))).status).toBe(200);
     ok.mockRestore();
-    expect(beat).toHaveBeenCalledWith("cron-reconcile-unlock-orders");
+    expect(beat).toHaveBeenLastCalledWith("cron-reconcile-unlock-orders", expect.objectContaining({ errors: 0 }));
+    expect(await beat.mock.results[1].value).toBe(true);
     beat.mockRestore();
   });
 

@@ -161,6 +161,8 @@ export interface UnlockPurchase {
   /** Cumulative paise refunded when the payment was only partly refunded. */
   partialRefundPaise?: number;
   partialRefundAt?: string | null;
+  /** One entry per refund (migration 0047); absent/empty means the number is derived from the invoice. */
+  creditNotes?: Array<{ no: string; amountPaise: number; issuedAt: string }>;
 }
 
 export interface CreditEvent {

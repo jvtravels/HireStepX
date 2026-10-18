@@ -27,6 +27,8 @@ import {
   supabaseAnonKey,
   supabaseServiceHeaders,
   verifyEmployerAuthToken,
+  withRequestId,
+  slog,
 } from "./_shared";
 import { singleUnlockPrice, batchUnlockPrice, formatPaise, creditToApply } from "./_unlock-pricing";
 import { loadRankedVisibleMatches, nextUnlockBatchQuote } from "./_employer-matching-helpers";
@@ -87,6 +89,8 @@ async function creditOrderResponse(
 ): Promise<{ status: number; body: Record<string, unknown> }> {
   const settled = await settleCreditOrder({ supabaseUrl, headers, order, expectEmployerId: order.employer_id });
   if (settled.kind === "fulfilled" || settled.kind === "partial") {
+    // settleCreditOrder -> fulfillUnlockOrder already blanks the email and masks the name of a candidate who has
+    // since withdrawn, declined or blocked this employer (or when the employer is suspended), including on a replay.
     const candidates = settled.candidates.map((c) => ({ matchId: c.matchId, name: c.name || "Candidate", contact: { email: c.email || "" } }));
     const creditAppliedPaise = (order.mode === "single" ? singleUnlockPrice() : batchUnlockPrice(order.match_ids.length)).amountPaise;
     return {
@@ -126,6 +130,8 @@ async function markOrderFailed(
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const origin = applyCorsHeaders(req, res);
+  const requestId = withRequestId({})["X-Request-ID"];
+  res.setHeader("X-Request-ID", requestId);
   if (handlePreflightAndMethod(req, res)) return;
 
   const bodyContentLength = parseInt((req.headers["content-length"] as string) || "0", 10);
@@ -145,7 +151,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
-    console.error("Missing Razorpay env vars for employer unlock");
+    slog.error("Missing Razorpay env vars for employer unlock", { code: "unlock_create_not_configured", requestId });
     return res.status(503).json({ error: "Payments not configured. Please contact support@hirestepx.com" });
   }
 
@@ -297,7 +303,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const nowMs = Date.now();
     const openOrders = await loadOpenOrders(SUPABASE_URL, sh, employerId);
     if (!openOrders) {
-      console.error("[employer-create-unlock-order] open-order lookup failed");
+      slog.error("employer-create-unlock-order open-order lookup failed", { code: "unlock_create_open_order_lookup_failed", requestId, employerId });
       return res.status(503).json({ error: "Payments are temporarily unavailable. Please try again shortly." });
     }
 
@@ -323,7 +329,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const unlockedToday = await countUnlocksLast24h(SUPABASE_URL, sh, employerId, nowMs);
     if (unlockedToday === null) {
-      console.error("[employer-create-unlock-order] daily unlock count failed");
+      slog.error("employer-create-unlock-order daily unlock count failed", { code: "unlock_create_daily_count_failed", requestId, employerId });
       return res.status(503).json({ error: "Payments are temporarily unavailable. Please try again shortly." });
     }
     const limit = decideUnlockLimit({
@@ -373,7 +379,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(done.status).json(done.body);
       }
       if (inserted.kind !== "inserted") {
-        console.error("credit unlock order insert failed:", inserted.kind === "error" ? inserted.detail : "conflict without winner");
+        slog.error("credit unlock order insert failed", { code: "unlock_create_credit_order_insert_failed", requestId, employerId, detail: inserted.kind === "error" ? inserted.detail : "conflict without winner" });
         return res.status(500).json({ error: "Could not start the unlock. Please try again." });
       }
       const spent = await spendCreditDetailed(SUPABASE_URL, sh, employerId, price.amountPaise, inserted.order.razorpay_order_id);
@@ -413,7 +419,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (!response.ok) {
       const errText = await response.text().catch(() => "");
-      console.error("Razorpay error:", response.status, errText);
+      slog.error("Razorpay order creation failed", { code: "unlock_create_razorpay_failed", requestId, employerId, status: response.status, detail: errText.slice(0, 200) });
       const detail = response.status === 401
         ? "Payment gateway credentials are invalid. Please contact support."
         : "Could not create payment order. Please try again or contact support@hirestepx.com";
@@ -452,10 +458,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (inserted.kind === "conflict" && inserted.order) {
       return res.status(200).json(orderResponse(inserted.order, { reused: true }));
     }
-    console.error("employer_unlock_orders insert failed:", inserted.kind === "error" ? inserted.detail : "conflict without winner");
+    slog.error("employer_unlock_orders insert failed", { code: "unlock_create_order_insert_failed", requestId, employerId, detail: inserted.kind === "error" ? inserted.detail : "conflict without winner" });
     return res.status(500).json({ error: "Could not start the payment. Please try again." });
   } catch (err) {
-    console.error("employer-create-unlock-order error:", err);
+    slog.error("employer-create-unlock-order threw", { code: "unlock_create_unexpected_error", requestId, employerId, err: err instanceof Error ? err.message : String(err) });
     return res.status(500).json({ error: "Internal error" });
   } finally {
     if (lockKey) void releaseCreateLock(lockKey, { url: UPSTASH_URL, token: UPSTASH_TOKEN });

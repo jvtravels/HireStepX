@@ -13,7 +13,7 @@ export const config = { runtime: "nodejs" };
 
 import { slog, supabaseUrl, supabaseServiceHeaders } from "./_shared";
 import { reconcileUnlockOrders } from "./_employer-unlock-reconcile";
-import { recordCronSuccess } from "./_cron-heartbeat";
+import { recordCronResult } from "./_cron-heartbeat";
 
 declare const process: { env: Record<string, string | undefined> };
 
@@ -40,11 +40,11 @@ export default async function handler(req: Request): Promise<Response> {
       razorpayKeyId: keyId,
       razorpayKeySecret: keySecret,
     });
-    if (summary.errors > 0) slog.warn("unlock reconcile finished with errors", { code: "unlock_reconcile_errors", ...summary });
-    // A run that left orders in error is not healthy: skipping the heartbeat lets the
-    // staleness alert fire if it keeps happening. The summary is still returned.
-    if (summary.errors === 0) await recordCronSuccess("cron-reconcile-unlock-orders");
-    return jsonResponse({ ok: true, ...summary, duration_ms: Date.now() - t0 });
+    if (summary.errors > 0) slog.error("unlock reconcile finished with errors", { code: "unlock_reconcile_errors", ...summary });
+    // A run that left orders in error is not healthy: no heartbeat (so the staleness alert fires if it keeps
+    // happening) and a 500 so the cron run itself shows as failed. The summary is still returned.
+    const healthy = await recordCronResult("cron-reconcile-unlock-orders", summary);
+    return jsonResponse({ ok: healthy, ...summary, duration_ms: Date.now() - t0 }, healthy ? 200 : 500);
   } catch (err) {
     slog.error("unlock reconcile failed", { code: "unlock_reconcile_failed", err: err instanceof Error ? err.message : String(err) });
     return jsonResponse({ error: "Reconcile failed" }, 500);

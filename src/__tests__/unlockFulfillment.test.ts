@@ -79,7 +79,9 @@ describe("fulfillUnlockOrder — happy path", () => {
     expect(r.kind).toBe("fulfilled");
     if (r.kind === "fulfilled") expect(r.invoiceNo).toBe("HSX-2610-000099");
     expect(db.matches.get("m1")?.unlocked).toBe(true);
-    expect(notifyImpl).not.toHaveBeenCalled();
+    // The notification belongs to whichever call closes the order (the CAS winner), not to the ledger insert:
+    // here an earlier attempt left the ledger row but never closed the order, so this call must tell the buyer.
+    expect(notifyImpl).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -186,8 +188,8 @@ describe("fulfillUnlockOrder — refusals and failure handling", () => {
     expect(r2.kind).toBe("fulfilled");
     expect(db.matches.get("m1")?.unlocked).toBe(true);
     expect(db.ledger).toHaveLength(1);
-    // The first attempt already inserted the ledger row, so the retry does not double-notify.
-    expect(retry.notifyImpl).not.toHaveBeenCalled();
+    // The first attempt never closed the order (so never notified); the retry that closes it notifies exactly once.
+    expect(retry.notifyImpl).toHaveBeenCalledTimes(1);
   });
 
   it("returns db_error when the ledger insert fails for a reason other than a duplicate", async () => {
@@ -200,7 +202,7 @@ describe("fulfillUnlockOrder — refusals and failure handling", () => {
 
 describe("razorpay reads", () => {
   it("toCapturedPayment parses entities and rejects malformed ones", () => {
-    expect(toCapturedPayment({ id: "pay_1", status: "captured", amount: 5900, order_id: "order_1" })).toEqual({ ...PAY, refundStatus: null, amountRefunded: 0 });
+    expect(toCapturedPayment({ id: "pay_1", status: "captured", amount: 5900, order_id: "order_1" })).toEqual({ ...PAY, refundStatus: null, amountRefunded: 0, currency: null });
     expect(toCapturedPayment({ id: "pay_1", status: "captured", amount: 5900, refund_status: "full", amount_refunded: 5900 })).toMatchObject({ refundStatus: "full", amountRefunded: 5900 });
     expect(toCapturedPayment({ id: "pay_1" })).toBeNull();
     expect(toCapturedPayment(null)).toBeNull();

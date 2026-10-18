@@ -30,7 +30,7 @@ import { captureServerEvent } from "./_posthog";
 
 export type CreditReason =
   | "declined" | "withdrew" | "blocked" | "no_response" | "unavailable"
-  | "payment_refunded" | "payment_disputed" | "late_payment";
+  | "payment_refunded" | "payment_disputed" | "late_payment" | "employer_suspended";
 /** Reasons where the candidate acted after the employer may already have engaged:
  *  an employer who messaged them got what the unlock pays for. */
 const MESSAGE_SKIP_REASONS: ReadonlySet<string> = new Set(["declined", "withdrew", "blocked"]);
@@ -47,11 +47,24 @@ export function isRefundableStatus(status: string | null | undefined): boolean {
   return REFUNDABLE_STATUSES.has(status ?? "shortlisted");
 }
 
-/** Paise credited for one candidate of a paid order: their equal share of
- *  everything the employer paid for it, cash and credit alike. */
-export function creditShare(orderCashPaise: number, creditSpentPaise: number, matchCount: number): number {
+/** Splits `totalPaise` into `count` whole-paise shares that add up to the total exactly.
+ *  Largest-remainder: every share is floor(total / count) and the leftover paise go one each
+ *  to the first shares (all fractional parts are equal, so ties break by position). A plain
+ *  floor lost up to count-1 paise per order and Math.round could overshoot it. */
+export function splitPaise(totalPaise: number, count: number): number[] {
+  if (count <= 0) return [];
+  const total = Math.max(0, Math.floor(totalPaise));
+  const base = Math.floor(total / count);
+  const extra = total - base * count;
+  return Array.from({ length: count }, (_, i) => base + (i < extra ? 1 : 0));
+}
+
+/** Paise credited for the candidate at `index` of a paid order: their share of
+ *  everything the employer paid for it, cash and credit alike. The shares of all
+ *  `matchCount` candidates (index 0..matchCount-1) sum to cash + credit exactly. */
+export function creditShare(orderCashPaise: number, creditSpentPaise: number, matchCount: number, index = 0): number {
   if (matchCount <= 0) return 0;
-  return Math.max(0, Math.floor((orderCashPaise + creditSpentPaise) / matchCount));
+  return splitPaise(orderCashPaise + creditSpentPaise, matchCount)[Math.min(Math.max(0, index), matchCount - 1)] ?? 0;
 }
 
 export function creditReasonLabel(reason: CreditReason | string | null | undefined): string {
@@ -64,6 +77,7 @@ export function creditReasonLabel(reason: CreditReason | string | null | undefin
     case "payment_refunded": return "Payment refunded";
     case "payment_disputed": return "Payment disputed";
     case "late_payment": return "Late payment kept as credit";
+    case "employer_suspended": return "Account suspended at unlock";
     default: return "Credit";
   }
 }
@@ -566,7 +580,9 @@ export async function creditRefundForMatches(p: RefundParams): Promise<RefundRes
     for (const matchId of eligibleIds) {
       const order = orders.find((o) => o.match_ids.includes(matchId));
       if (!order) continue;
-      const amountPaise = creditShare(order.amount, spentByEmployer.get(order.employer_id)?.get(order.razorpay_order_id) ?? 0, order.match_ids.length);
+      const amountPaise = creditShare(
+        order.amount, spentByEmployer.get(order.employer_id)?.get(order.razorpay_order_id) ?? 0, order.match_ids.length, order.match_ids.indexOf(matchId),
+      );
       if (amountPaise <= 0) continue;
 
       const state = await insertLedger(p.base, p.headers, {
@@ -613,37 +629,78 @@ export async function creditRefundForMatches(p: RefundParams): Promise<RefundRes
   return result;
 }
 
+export interface UnavailableReturn {
+  /** false when a read or write failed: the caller must leave the order retriable. */
+  ok: boolean;
+  /** Paise newly credited by this call (0 on a replay). */
+  returnedPaise: number;
+  /** Paise credited on the order for these matches in total, whichever call wrote them. */
+  creditedPaise: number;
+}
+
 /** Candidates that could not be unlocked after payment: their full share of
- *  what was paid on the order — CREDIT SPENT AND CASH — comes back as credit
+ *  what was paid on the order, CREDIT SPENT AND CASH, comes back as credit
  *  automatically, so the cash share no longer depends on support reading a log
- *  line. Idempotent: one refund row per match. Returns paise returned by this call. */
-export async function returnCreditForUnavailable(p: {
+ *  line. Idempotent (one refund row per match) and safe to re-run until `ok`.
+ *  `orderMatchIds` fixes each match's position in the largest-remainder split so
+ *  a retry computes the same share. `reason` defaults to "unavailable". */
+export async function returnCreditForUnavailableDetailed(p: {
   base: string; headers: Headers; employerId: string; orderRef: string; orderMatchCount: number; failedMatchIds: string[];
+  orderMatchIds?: string[];
   /** Cash paid on the order (employer_unlock_orders.amount). */
   orderCashPaise?: number;
+  reason?: "unavailable" | "employer_suspended";
   fetchImpl?: typeof fetch;
-}): Promise<number> {
+}): Promise<UnavailableReturn> {
   const f = p.fetchImpl ?? fetch;
-  if (p.failedMatchIds.length === 0 || p.orderMatchCount <= 0) return 0;
+  if (p.failedMatchIds.length === 0 || p.orderMatchCount <= 0) return { ok: true, returnedPaise: 0, creditedPaise: 0 };
   try {
-    const spent = (await creditSpentOnOrders(p.base, p.headers, p.employerId, [p.orderRef], f))?.get(p.orderRef) ?? 0;
-    const share = creditShare(p.orderCashPaise ?? 0, spent, p.orderMatchCount);
-    if (share <= 0) return 0;
+    const spentMap = await creditSpentOnOrders(p.base, p.headers, p.employerId, [p.orderRef], f);
+    // An unreadable ledger must not be mistaken for "no credit was spent": that would under-credit.
+    if (!spentMap) return { ok: false, returnedPaise: 0, creditedPaise: 0 };
+    const shares = splitPaise((p.orderCashPaise ?? 0) + (spentMap.get(p.orderRef) ?? 0), p.orderMatchCount);
     let returned = 0;
-    for (const matchId of p.failedMatchIds) {
-      const state = await insertLedger(p.base, p.headers, {
-        employer_id: p.employerId, amount: share, kind: "refund", reason: "unavailable", match_id: matchId, order_ref: p.orderRef,
-      }, f);
+    let ok = true;
+    for (let i = 0; i < p.failedMatchIds.length; i += 1) {
+      const matchId = p.failedMatchIds[i];
+      const pos = p.orderMatchIds?.indexOf(matchId) ?? -1;
+      const share = shares[pos >= 0 ? pos : i] ?? 0;
+      if (share <= 0) continue;
+      const row = { employer_id: p.employerId, amount: share, kind: "refund", match_id: matchId, order_ref: p.orderRef };
+      let state = await insertLedger(p.base, p.headers, { ...row, reason: p.reason ?? "unavailable" }, f);
+      // Migration 0047 (the employer_suspended reason) not applied: a plain "unavailable" credit is better than none.
+      if (state === "unsupported" && p.reason === "employer_suspended") {
+        state = await insertLedger(p.base, p.headers, { ...row, reason: "unavailable" }, f);
+      }
       if (state === "inserted") returned += share;
+      else if (state === "error") ok = false;
     }
+    // What the ledger now holds for THESE matches under THIS order (a duplicate may belong to another order).
+    let credited = returned;
+    const idList = p.failedMatchIds.map(encodeURIComponent).join(",");
+    const back = await f(
+      `${p.base}/rest/v1/employer_credit_ledger?employer_id=eq.${encodeURIComponent(p.employerId)}&kind=eq.refund` +
+        `&order_ref=eq.${encodeURIComponent(p.orderRef)}&match_id=in.(${idList})&select=amount`,
+      { headers: p.headers },
+    );
+    if (back.ok) {
+      const rows = (await back.json().catch(() => null)) as Array<{ amount: number }> | null;
+      if (Array.isArray(rows)) credited = rows.reduce((n, r) => n + (Number.isInteger(r.amount) ? r.amount : 0), 0);
+      else ok = false;
+    } else if (!isMissing(back.status, await back.text().catch(() => ""))) ok = false;
     if (returned > 0) {
-      void captureServerEvent("employer_credit_granted", p.employerId, { orderId: p.orderRef, amountPaise: returned, matches: p.failedMatchIds.length, reason: "unavailable" });
+      void captureServerEvent("employer_credit_granted", p.employerId, { orderId: p.orderRef, amountPaise: returned, matches: p.failedMatchIds.length, reason: p.reason ?? "unavailable" });
     }
-    return returned;
+    return { ok, returnedPaise: returned, creditedPaise: credited };
   } catch (err) {
     slog.error("credit return threw", { orderRef: p.orderRef, err: err instanceof Error ? err.message : String(err) });
-    return 0;
+    return { ok: false, returnedPaise: 0, creditedPaise: 0 };
   }
+}
+
+/** Paise newly returned by this call; see returnCreditForUnavailableDetailed for the retriable form. */
+export async function returnCreditForUnavailable(p: Parameters<typeof returnCreditForUnavailableDetailed>[0]): Promise<number> {
+  return (await returnCreditForUnavailableDetailed(p)).returnedPaise;
 }
 
 /** Unlocked match ids one candidate shares with one employer, for block/report triggers. */

@@ -15,7 +15,12 @@
  *                                      clawed back and credit spent on it released
  *                                      A partial refund leaves the order untouched and records
  *                                      partial_refund_paise on the ledger row (migration 0045) so
- *                                      the employer can download a credit note for it.
+ *                                      the employer can download a credit note for it. Every
+ *                                      refund (keyed on its own refund id, so two partial
+ *                                      refunds are two notes) also gets a numbered row in
+ *                                      employer_credit_notes (migration 0047).
+ *                                      A refund that arrives before the capture (no payment id on
+ *                                      the order yet) records the payment id and is processed.
  *   payment.dispute.*               -> order 'disputed' + slog.error; no
  *                                      automatic relock (support decides). A LOST
  *                                      dispute claws back the credit the order
@@ -27,9 +32,12 @@
  */
 
 import { slog } from "./_shared";
-import { clawbackOrderCredit } from "./_employer-credit";
+import { clawbackOrderCredit, creditSpentOnOrders } from "./_employer-credit";
 import {
+  alertUnlockProblem,
+  assignCreditNote,
   backfillLegacyUnlockOrder,
+  fetchRazorpayPayment,
   fulfillUnlockOrder,
   loadUnlockOrder,
   ORDER_SELECT,
@@ -47,7 +55,7 @@ export interface UnlockWebhookEvent {
   payload?: {
     payment?: { entity?: Record<string, unknown> };
     order?: { entity?: { id?: string } };
-    refund?: { entity?: { payment_id?: string; amount?: number } };
+    refund?: { entity?: { id?: string; payment_id?: string; amount?: number } };
     dispute?: { entity?: { payment_id?: string } };
   };
 }
@@ -57,6 +65,10 @@ export interface UnlockWebhookParams {
   event: UnlockWebhookEvent | undefined;
   supabaseUrl: string;
   headers: Record<string, string>;
+  /** When both are set, a captured payment is re-fetched from Razorpay before fulfilling, so an
+   *  already-refunded payment (events can arrive out of order) is never fulfilled from stale payload data. */
+  razorpayKeyId?: string;
+  razorpayKeySecret?: string;
   fetchImpl?: typeof fetch;
   notifyImpl?: (input: NotifyInput) => Promise<void>;
   now?: () => Date;
@@ -148,6 +160,30 @@ async function stampLedgerRefunded(
   return res.ok;
 }
 
+/** A refund event for a payment no order has recorded yet: look the order up by the payment's
+ *  order id and, if it is ours and still unpaid, stamp the payment id (conditional on null so a
+ *  racing capture wins). null when the order is not an unlock order or belongs to another payment. */
+async function adoptPaymentForOrder(
+  p: UnlockWebhookParams, paymentId: string, f: typeof fetch, now: Date,
+): Promise<UnlockOrderRow | null | "error"> {
+  const orderId = p.event?.payload?.payment?.entity?.order_id;
+  if (typeof orderId !== "string" || !orderId) return null;
+  const order = await loadUnlockOrder(p.supabaseUrl, p.headers, orderId, f);
+  if (order === "error") return "error";
+  if (!order) return null;
+  if (order.razorpay_payment_id) return order.razorpay_payment_id === paymentId ? order : null;
+  const res = await f(
+    `${p.supabaseUrl}/rest/v1/employer_unlock_orders?razorpay_order_id=eq.${encodeURIComponent(orderId)}&razorpay_payment_id=is.null`,
+    {
+      method: "PATCH",
+      headers: { ...p.headers, "Content-Type": "application/json", Prefer: "return=minimal" },
+      body: JSON.stringify({ razorpay_payment_id: paymentId, updated_at: now.toISOString() }),
+    },
+  );
+  if (!res.ok) return "error";
+  return { ...order, razorpay_payment_id: paymentId };
+}
+
 export async function handleEmployerUnlockWebhook(p: UnlockWebhookParams): Promise<UnlockWebhookOutcome> {
   const f = p.fetchImpl ?? fetch;
   const now = (p.now ?? (() => new Date()))();
@@ -156,9 +192,10 @@ export async function handleEmployerUnlockWebhook(p: UnlockWebhookParams): Promi
   /* ── payment.captured / order.paid ── */
   if (eventType === "payment.captured" || eventType === "order.paid") {
     const entity = event?.payload?.payment?.entity;
-    const payment = toCapturedPayment(entity);
-    const orderId: string | undefined = payment?.orderId ?? event?.payload?.order?.entity?.id;
-    if (!payment || !orderId) return { handled: false };
+    const payloadPayment = toCapturedPayment(entity);
+    const orderId: string | undefined = payloadPayment?.orderId ?? event?.payload?.order?.entity?.id;
+    if (!payloadPayment || !orderId) return { handled: false };
+    let payment = payloadPayment;
 
     let order = await loadUnlockOrder(p.supabaseUrl, p.headers, orderId, f);
     if (order === "error") return retry("order lookup failed");
@@ -179,6 +216,14 @@ export async function handleEmployerUnlockWebhook(p: UnlockWebhookParams): Promi
       }
     }
 
+    // The payload can be stale: a refund may already have landed. Fulfil from Razorpay's current view.
+    if (p.razorpayKeyId && p.razorpayKeySecret) {
+      const live = (await fetchRazorpayPayment(payment.id, p.razorpayKeyId, p.razorpayKeySecret, f))
+        ?? (await fetchRazorpayPayment(payment.id, p.razorpayKeyId, p.razorpayKeySecret, f));
+      if (!live) return retry("payment re-fetch failed");
+      payment = { ...live, orderId: live.orderId ?? payment.orderId };
+    }
+
     const result = await fulfillUnlockOrder({
       supabaseUrl: p.supabaseUrl, headers: p.headers, razorpayOrderId: orderId, payment,
       fetchImpl: f, notifyImpl: p.notifyImpl, now: () => now,
@@ -197,8 +242,15 @@ export async function handleEmployerUnlockWebhook(p: UnlockWebhookParams): Promi
       case "not_found":
         return done({ received: true, skipped: "unlock_order_not_found" });
       case "error":
+        // Money was captured but the order is not fulfilled: tell ops now rather than via tomorrow's digest.
+        await alertUnlockProblem({
+          kind: "unlock_not_fulfilled", key: orderId,
+          subject: "Payment captured but not fulfilled",
+          detail: `Employer unlock order ${orderId} (payment ${payment.id}) was captured but fulfilment failed: ${result.code} (${result.message}). ${result.code === "db_error" ? "Razorpay will redeliver and the reconciler retries." : "Retrying cannot fix this; manual review or refund needed."}`,
+          distinctId: order.employer_id,
+        });
         if (result.code === "db_error") return retry("unlock fulfilment failed");
-        // amount/order mismatch or duplicate payment: retrying cannot fix it; fulfilment already slog.error'd.
+        // amount/currency/order mismatch or duplicate payment: retrying cannot fix it; fulfilment already slog.error'd.
         return done({ received: true, skipped: `unlock_${result.code}` });
     }
   }
@@ -208,18 +260,31 @@ export async function handleEmployerUnlockWebhook(p: UnlockWebhookParams): Promi
     const refund = event?.payload?.refund?.entity;
     const paymentId: string | undefined = refund?.payment_id;
     if (!paymentId) return { handled: false };
-    const order = await findOrderByPaymentId(p.supabaseUrl, p.headers, paymentId, f);
+    let order = await findOrderByPaymentId(p.supabaseUrl, p.headers, paymentId, f);
     if (order === "error") return retry("order lookup failed");
-    if (!order) return { handled: false };
+    if (!order) {
+      // A refund can beat the capture: the order has no payment id yet. Adopt the payment so the
+      // refund is processed now (and the later capture finds the order already refunded).
+      const claimed = await adoptPaymentForOrder(p, paymentId, f, now);
+      if (claimed === "error") return retry("order lookup failed");
+      if (!claimed) return { handled: false };
+      order = claimed;
+    }
 
     // The payment entity carries the running total, so the refund that completes a series of
     // partial refunds is recognised as the full refund it is.
     const paidEntity = event?.payload?.payment?.entity;
     const refundAmount = typeof refund?.amount === "number" ? refund.amount : 0;
     const refundedTotal = Math.max(refundAmount, typeof paidEntity?.amount_refunded === "number" ? paidEntity.amount_refunded : 0);
+    const refundId = typeof refund?.id === "string" && refund.id ? refund.id : "";
     if (refundedTotal < order.amount) {
       const recorded = await recordPartialRefund(p.supabaseUrl, p.headers, paymentId, refundedTotal, f, now);
       if (recorded === "error") return retry("partial refund record failed");
+      // One numbered credit note per refund (idempotent on the refund id). Best effort: without the table
+      // the document falls back to the derived credit-note number.
+      if (refundId && refundAmount > 0) {
+        await assignCreditNote(p.supabaseUrl, p.headers, order.razorpay_order_id, refundId, refundAmount, f);
+      }
       slog.warn("partial refund on employer unlock order — matches left unlocked, manual review", {
         code: "unlock_partial_refund", orderId: order.razorpay_order_id, paymentId, refundAmount, refundedTotal, orderAmount: order.amount, recordedOnLedger: recorded === "recorded",
       });
@@ -230,6 +295,13 @@ export async function handleEmployerUnlockWebhook(p: UnlockWebhookParams): Promi
     // every step is a no-op the second time round.
     if (!(await relockOrderMatches(p.supabaseUrl, p.headers, order, f))) return retry("relock failed");
     if (!(await stampLedgerRefunded(p.supabaseUrl, p.headers, paymentId, f, now))) return retry("ledger update failed");
+    if (refundId) {
+      // The refund that completes the order. Its note also covers the credit that was spent on the order and is
+      // about to be released, so the spend is read BEFORE the clawback below nets it to zero. Idempotent on the
+      // refund id, so a retry after a later failure keeps the first (correct) amount.
+      const spent = (await creditSpentOnOrders(p.supabaseUrl, p.headers, order.employer_id, [order.razorpay_order_id], f))?.get(order.razorpay_order_id) ?? 0;
+      await assignCreditNote(p.supabaseUrl, p.headers, order.razorpay_order_id, refundId, (refundAmount > 0 ? refundAmount : order.amount) + Math.max(0, spent), f);
+    }
     // Cash went back to the card, so credit minted from it (candidate-decline refunds, a late-payment
     // conversion) is reversed and credit spent on the order is returned. May leave a negative balance.
     const clawback = await clawbackOrderCredit({

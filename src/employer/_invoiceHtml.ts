@@ -1,3 +1,4 @@
+import { isTaxInvoiceReady } from "../../data/legal-entity";
 import { formatPaise } from "../../server-handlers/_unlock-pricing";
 import { creditNoteNumber, gstBreakup, GST_RATE_PERCENT, type InvoiceSnapshot } from "../../server-handlers/_unlock-tax";
 
@@ -30,12 +31,17 @@ export interface InvoiceInput {
   refunded: boolean;
   /** When the refund happened; the credit note is dated with it. */
   refundedAt?: string | null;
+  /** When a partial refund happened; dates the credit note when no explicit one is passed. */
+  partialRefundAt?: string | null;
   /** Job the unlock was bought for, when known. */
   jobTitle?: string | null;
   /** "credit_note" renders the credit note for a refunded purchase. */
   document?: "invoice" | "credit_note";
   /** Cumulative paise refunded on a purchase that was only partly refunded; the credit note covers this amount. */
   partialRefundPaise?: number;
+  /** The specific credit note to render (one row per refund). Its number, date and amount win over the
+   *  derived ones; omitted for legacy rows, which fall back to `creditNoteNumber(invoiceNo)`. */
+  creditNote?: { no: string; amountPaise: number; issuedAt: string } | null;
   /** Frozen supplier/buyer/tax data from fulfilment (migration 0045). When present it wins over
    *  `supplier`/`buyer`, so a later env or profile change cannot rewrite an issued document.
    *  Absent on legacy rows, which render from the live values. */
@@ -87,10 +93,10 @@ export function canIssueCreditNote(p: { invoiceNo?: string | null; amount: numbe
 const ESCAPES: Record<string, string> = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
 export const escapeHtml = (v: string): string => v.replace(/[&<>"']/g, (c) => ESCAPES[c]);
 
-/** A document is only a GST tax invoice when the seller has a GSTIN; until then
- *  it is a payment receipt that still carries the buyer's GSTIN. */
+/** A document is only a GST tax invoice when the seller has a valid GSTIN, name, address and SAC;
+ *  until then it is a payment receipt that still carries the buyer's GSTIN. */
 export function isTaxInvoice(supplier: InvoiceSupplier): boolean {
-  return supplier.gstin.trim() !== "";
+  return isTaxInvoiceReady(supplier);
 }
 
 export function buildInvoiceHtml(i: InvoiceInput): string {
@@ -102,15 +108,20 @@ export function buildInvoiceHtml(i: InvoiceInput): string {
   const taxDoc = kind === "tax_invoice" || kind === "credit_note";
   const creditNote = kind === "credit_note";
   const title = { tax_invoice: "Tax invoice", credit_note: "Credit note", receipt: "Payment receipt", credit_redemption: "Credit redemption" }[kind];
-  const fmtDate = (iso: string) => new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" });
-  const docDate = fmtDate(creditNote ? i.refundedAt || i.createdAt : i.createdAt);
-  const docNo = creditNote ? creditNoteNumber(i.invoiceNo ?? "") : kind === "credit_redemption" ? null : i.invoiceNo;
+  // Pinned to IST: the invoice number's YYMM is the IST month, so the printed date must agree with it
+  // whatever timezone the viewer's browser is in.
+  const fmtDate = (iso: string) => new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Kolkata" });
+  const note = i.creditNote ?? null;
+  const docDate = fmtDate(creditNote ? note?.issuedAt || i.refundedAt || i.partialRefundAt || i.createdAt : i.createdAt);
+  const derivedNoteNo = creditNoteNumber(i.invoiceNo ?? "");
+  const docNo = creditNote ? note?.no ?? derivedNoteNo : kind === "credit_redemption" ? null : i.invoiceNo;
   const buyerName = buyer.billingName.trim() || buyer.companyName;
   const supplierName = supplier.name.trim() || "HireStepX";
   const invoiceTotal = i.cashPaise + i.creditPaise;
-  const partial = creditNote && !i.refunded && (i.partialRefundPaise ?? 0) > 0;
+  const noteAmount = note ? note.amountPaise : i.refunded ? 0 : i.partialRefundPaise ?? 0;
+  const partial = creditNote && noteAmount > 0 && noteAmount < invoiceTotal;
   // A partial credit note reverses only the refunded amount; a full one reverses the whole invoice.
-  const total = partial ? Math.min(i.partialRefundPaise ?? 0, invoiceTotal) : invoiceTotal;
+  const total = partial ? noteAmount : invoiceTotal;
   const sign = creditNote ? "&minus;" : "";
   const money = (paise: number) => `${sign}${escapeHtml(formatPaise(paise))}`;
   const unlocks = `${i.candidateCount} contact unlock${i.candidateCount === 1 ? "" : "s"}`;
@@ -139,8 +150,8 @@ ${i.creditPaise > 0 && !partial ? `<tr><td class="k">Of which paid from account 
 <tr><td class="k">${creditNote ? "Cash refunded or returned as credit" : "Paid by card / UPI"}</td><td class="v">${money(partial ? total : i.cashPaise)}</td></tr>`;
     notes = `<p class="note">Place of supply: ${escapeHtml(posText)}.</p>`
       + (creditNote ? `<p class="note">Credit note against tax invoice ${escapeHtml(i.invoiceNo ?? "")} dated ${escapeHtml(fmtDate(i.createdAt))}. ${partial ? "Amounts reverse the part of that invoice that was refunded." : "All amounts reverse that invoice."}</p>` : "")
-      + (!creditNote && i.refunded ? `<p class="note">This payment was refunded; see credit note ${escapeHtml(creditNoteNumber(i.invoiceNo ?? ""))}.</p>` : "")
-      + (!creditNote && !i.refunded && (i.partialRefundPaise ?? 0) > 0 ? `<p class="note">This payment was partially refunded (${escapeHtml(formatPaise(i.partialRefundPaise ?? 0))}); see credit note ${escapeHtml(creditNoteNumber(i.invoiceNo ?? ""))}.</p>` : "");
+      + (!creditNote && i.refunded ? `<p class="note">This payment was refunded; see credit note ${escapeHtml(note?.no ?? derivedNoteNo)}.</p>` : "")
+      + (!creditNote && !i.refunded && (i.partialRefundPaise ?? 0) > 0 ? `<p class="note">This payment was partially refunded (${escapeHtml(formatPaise(i.partialRefundPaise ?? 0))}); see credit note ${escapeHtml(note?.no ?? derivedNoteNo)}.</p>` : "");
   } else if (kind === "credit_redemption") {
     rows = `<tr><td class="k">${escapeHtml(itemLabel)}</td><td class="v">${escapeHtml(formatPaise(total))}</td></tr>
 <tr class="total"><td class="k">Paid from account credit (not cash)</td><td class="v">${escapeHtml(formatPaise(i.creditPaise))}</td></tr>`;

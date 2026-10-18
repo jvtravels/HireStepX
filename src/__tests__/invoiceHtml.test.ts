@@ -29,7 +29,7 @@ describe("invoice html", () => {
   });
 
   it("becomes a tax invoice and prints both GSTINs once the supplier has one", () => {
-    const html = buildInvoiceHtml({ ...base, supplier: { name: "HireStepX Pvt Ltd", address: "Pune", gstin: "29AABCT1332L1ZA" } });
+    const html = buildInvoiceHtml({ ...base, supplier: { name: "HireStepX Pvt Ltd", address: "Pune", gstin: "29AABCT1332L1ZA", sac: "998439" } });
     expect(html).toContain("Tax invoice");
     expect(html).toContain("GSTIN: 29AABCT1332L1ZA");
     expect(html).toContain("GSTIN: 27AAPFU0939F1ZV");
@@ -52,7 +52,7 @@ describe("invoice html", () => {
 
 const MH = "27AABCT1332L1ZA"; // Maharashtra
 const KA = "29AAPFU0939F1ZV"; // Karnataka
-const taxSupplier = { name: "HireStepX Pvt Ltd", address: "Pune", gstin: MH };
+const taxSupplier = { name: "HireStepX Pvt Ltd", address: "Pune", gstin: MH, sac: "998439" };
 const taxBase: InvoiceInput = { ...base, supplier: taxSupplier, buyer: { ...base.buyer, gstin: MH }, cashPaise: 11800 };
 
 describe("GST split", () => {
@@ -109,7 +109,7 @@ describe("tax invoice", () => {
     expect(html).toContain("Place of supply: Maharashtra (27)");
     expect(html).toContain("GSTIN: " + MH);
     expect(html).toContain("1 contact unlock for the job Backend Engineer");
-    expect(html).not.toContain("SAC:");
+    expect(html).toContain("SAC: 998439");
   });
 
   it("uses IGST when the buyer is in another state", () => {
@@ -119,8 +119,11 @@ describe("tax invoice", () => {
     expect(html).toContain("Karnataka (29)");
   });
 
-  it("renders the SAC only when configured", () => {
+  it("renders the configured SAC, and without one the document is a receipt, not a tax invoice", () => {
     expect(buildInvoiceHtml({ ...taxBase, supplier: { ...taxSupplier, sac: "998599" } })).toContain("SAC: 998599");
+    const noSac = buildInvoiceHtml({ ...taxBase, supplier: { ...taxSupplier, sac: "" } });
+    expect(noSac).toContain("Payment receipt");
+    expect(noSac).not.toContain("CGST");
   });
 
   it("taxes the full price and shows credit as a separate non-cash line", () => {

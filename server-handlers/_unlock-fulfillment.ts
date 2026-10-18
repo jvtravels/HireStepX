@@ -44,9 +44,11 @@
 import { patchMatchUnlocked } from "./_unlock-apply";
 import { notify as defaultNotify, type NotifyInput } from "./_notify";
 import { razorpayBasicAuth } from "./_razorpay-auth";
-import { slog } from "./_shared";
-import { captureServerEvent } from "./_posthog";
-import { returnCreditForUnavailable, ensureCreditSpent, clawbackOrderCredit } from "./_employer-credit";
+import { slog, redisPipeline } from "./_shared";
+import { captureServerEvent, captureServerException } from "./_posthog";
+import { sendOpsAlert } from "./_ops-alert";
+import { returnCreditForUnavailableDetailed, splitPaise, ensureCreditSpent, clawbackOrderCredit } from "./_employer-credit";
+import { maskedCandidateName, isSuspended } from "./_employer-trust";
 import { sendUnlockReceiptEmail } from "./_unlock-receipt-email";
 import { buildInvoiceSnapshot } from "./_unlock-tax";
 import { readLegalEntity } from "../data/legal-entity";
@@ -84,17 +86,25 @@ export interface CapturedPayment {
   refundStatus?: string | null;
   /** Paise already refunded (amount_refunded). */
   amountRefunded?: number;
+  /** ISO currency code; only INR is ever sold, so anything else is rejected (currency_mismatch). */
+  currency?: string | null;
 }
 
 export interface FailedMatch {
   matchId: string;
-  reason: "gone" | "blocked" | "candidate_opted_out";
+  reason: "gone" | "blocked" | "candidate_opted_out" | "employer_suspended";
 }
+
+/** Why an unlocked candidate's contact must not reach the employer right now. */
+export type CandidateWithheld = "withdrew" | "declined" | "blocked" | "employer_suspended";
 
 export interface FulfilledCandidate {
   matchId: string;
+  /** Masked ("Candidate ab12") when `withheld` is set. */
   name: string | null;
+  /** null when `withheld` is set. */
   email: string | null;
+  withheld?: CandidateWithheld | null;
 }
 
 export type FulfillResult =
@@ -118,7 +128,7 @@ export type FulfillResult =
   | { kind: "converted_to_credit"; order: UnlockOrderRow; creditPaise: number }
   | { kind: "not_found" }
   | { kind: "not_captured"; paymentStatus: string }
-  | { kind: "error"; code: "amount_mismatch" | "order_mismatch" | "forbidden" | "duplicate_payment" | "db_error"; message: string };
+  | { kind: "error"; code: "amount_mismatch" | "currency_mismatch" | "order_mismatch" | "forbidden" | "duplicate_payment" | "db_error"; message: string };
 
 /** Statuses an order may move to 'paid' from (not 'paid' itself: that is the retry path). */
 const PAYABLE_STATUSES = "created,expired,failed";
@@ -131,13 +141,14 @@ function isRecord(v: unknown): v is Record<string, unknown> {
 /** Parses a Razorpay payment entity (webhook payload or REST response). */
 export function toCapturedPayment(entity: unknown): CapturedPayment | null {
   if (!isRecord(entity)) return null;
-  const { id, status, amount, order_id, refund_status, amount_refunded } = entity;
+  const { id, status, amount, order_id, refund_status, amount_refunded, currency } = entity;
   if (typeof id !== "string" || typeof status !== "string" || typeof amount !== "number") return null;
   return {
     id, status, amount,
     orderId: typeof order_id === "string" ? order_id : null,
     refundStatus: typeof refund_status === "string" ? refund_status : null,
     amountRefunded: typeof amount_refunded === "number" ? amount_refunded : 0,
+    currency: typeof currency === "string" ? currency : null,
   };
 }
 
@@ -146,6 +157,45 @@ export function toCapturedPayment(entity: unknown): CapturedPayment | null {
  *  alone cannot tell a refunded payment from a live one. */
 export function isFullyRefundedPayment(p: CapturedPayment): boolean {
   return p.refundStatus === "full" || (p.amount > 0 && (p.amountRefunded ?? 0) >= p.amount);
+}
+
+/* ── Ops alerting ── */
+
+const ALERT_WINDOW_SEC = 3_600;
+const ALERT_MAX_WAIT_MS = 1_200;
+const alertedInMemory = new Map<string, number>();
+
+/** True once per key per hour: Redis SET NX EX, with a per-instance map when Redis is down so an
+ *  outage cannot turn one failure into an alert storm. */
+async function claimAlertSlot(key: string): Promise<boolean> {
+  try {
+    const out = await redisPipeline([["SET", `opsalert:${key}`, "1", "NX", "EX", ALERT_WINDOW_SEC]]);
+    if (out) return out[0] === "OK";
+  } catch { /* fall through to the in-memory guard */ }
+  const nowMs = Date.now();
+  const last = alertedInMemory.get(key);
+  if (last !== undefined && nowMs - last < ALERT_WINDOW_SEC * 1_000) return false;
+  alertedInMemory.set(key, nowMs);
+  if (alertedInMemory.size > 500) for (const [k, t] of alertedInMemory) if (nowMs - t > ALERT_WINDOW_SEC * 1_000) alertedInMemory.delete(k);
+  return true;
+}
+
+/** Tells the founder now (PostHog exception + email/Slack ops alert) instead of ~24h later via the
+ *  daily digest. Alerts at most once per `key` per hour. Never throws, and waits at most ~1.2s so it
+ *  cannot stall the response it is reporting a failure on. */
+export async function alertUnlockProblem(p: {
+  kind: string; key: string; subject: string; detail: string; error?: unknown; distinctId?: string;
+}): Promise<void> {
+  const work = (async () => {
+    try {
+      if (!(await claimAlertSlot(`${p.kind}:${p.key}`))) return;
+      await Promise.allSettled([
+        captureServerException(p.error ?? new Error(p.subject), p.distinctId, { kind: p.kind, key: p.key, detail: p.detail }),
+        sendOpsAlert(p.subject, p.detail),
+      ]);
+    } catch { /* alerting must never break the payment path */ }
+  })();
+  await Promise.race([work, new Promise<void>((r) => setTimeout(r, ALERT_MAX_WAIT_MS))]);
 }
 
 /* ── Razorpay reads ── */
@@ -226,6 +276,7 @@ interface MatchRowLite {
   requirement_id: string;
   candidate_user_id: string;
   unlocked: boolean;
+  candidate_response?: string | null;
   unlocked_candidate_name?: string | null;
   unlocked_candidate_email?: string | null;
   profiles: { name: string | null; email: string | null; employer_visibility?: string | null } | null;
@@ -237,7 +288,7 @@ async function loadMatchesAndBlocks(
   const idParam = order.match_ids.map((id) => encodeURIComponent(id)).join(",");
   const matchRes = await fetchImpl(
     `${supabaseUrl}/rest/v1/requirement_matches?id=in.(${idParam})` +
-      `&select=id,requirement_id,candidate_user_id,unlocked,unlocked_candidate_name,unlocked_candidate_email,profiles(name,email,employer_visibility)`,
+      `&select=id,requirement_id,candidate_user_id,unlocked,candidate_response,unlocked_candidate_name,unlocked_candidate_email,profiles(name,email,employer_visibility)`,
     { headers },
   );
   if (!matchRes.ok) return null;
@@ -264,7 +315,19 @@ function rupees(paise: number): string {
   return `₹${(paise / 100).toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
 }
 
-function candidateOf(m: MatchRowLite): FulfilledCandidate {
+/** Why this match's contact may not be shown: the candidate withdrew visibility, declined,
+ *  blocked the employer, or the employer is suspended. null = releasable. A paid unlock
+ *  buys a snapshot, not a standing right to reach someone who has since opted out. */
+function withheldReason(m: MatchRowLite, blocked: Set<string>, employerSuspended: boolean): CandidateWithheld | null {
+  if (employerSuspended) return "employer_suspended";
+  if (blocked.has(m.candidate_user_id)) return "blocked";
+  if (m.profiles?.employer_visibility === "off") return "withdrew";
+  if (m.candidate_response === "declined") return "declined";
+  return null;
+}
+
+function candidateOf(m: MatchRowLite, withheld: CandidateWithheld | null = null): FulfilledCandidate {
+  if (withheld) return { matchId: m.id, name: maskedCandidateName(m.id), email: null, withheld };
   return {
     matchId: m.id,
     name: m.profiles?.name ?? m.unlocked_candidate_name ?? null,
@@ -272,9 +335,40 @@ function candidateOf(m: MatchRowLite): FulfilledCandidate {
   };
 }
 
-function refundShare(order: UnlockOrderRow, failedCount: number): number {
-  if (failedCount <= 0 || order.match_ids.length === 0) return 0;
-  return Math.round((order.amount * Math.min(failedCount, order.match_ids.length)) / order.match_ids.length);
+/** Cash-only estimate of what the failed matches were worth: the sum of their exact
+ *  largest-remainder shares, so it agrees with creditShare / the credit actually returned. */
+function refundShare(order: UnlockOrderRow, failedIndexes: number[]): number {
+  const n = order.match_ids.length;
+  if (failedIndexes.length === 0 || n === 0) return 0;
+  const shares = splitPaise(order.amount, n);
+  return failedIndexes.reduce((sum, i) => sum + (shares[i] ?? 0), 0);
+}
+
+function failedIndexesOf(order: UnlockOrderRow, failedIds: string[]): number[] {
+  const set = new Set(failedIds);
+  return order.match_ids.flatMap((id, i) => (set.has(id) ? [i] : []));
+}
+
+/** employers.suspended_at: a suspended employer's paid order is not unlocked and is returned as
+ *  credit. "error" on a failed read (the caller retries); a missing column reads as not suspended. */
+async function loadEmployerSuspended(
+  supabaseUrl: string, headers: Record<string, string>, employerId: string, f: typeof fetch,
+): Promise<boolean | "error"> {
+  try {
+    const res = await f(
+      `${supabaseUrl}/rest/v1/employers?id=eq.${encodeURIComponent(employerId)}&select=suspended_at`,
+      { headers },
+    );
+    if (!res.ok) {
+      const t = await res.text().catch(() => "");
+      return isMissingColumn(res.status, t) ? false : "error";
+    }
+    const rows = (await res.json().catch(() => null)) as Array<{ suspended_at?: string | null }> | null;
+    if (!Array.isArray(rows)) return "error";
+    return isSuspended(rows[0]);
+  } catch {
+    return "error";
+  }
 }
 
 async function patchOrder(
@@ -293,6 +387,29 @@ async function patchOrder(
     return res.ok;
   } catch {
     return false;
+  }
+}
+
+/** CAS close of the order. Returns how many rows matched (0 = another call closed it first),
+ *  or null when the write failed. */
+async function patchOrderRows(
+  supabaseUrl: string, headers: Record<string, string>, razorpayOrderId: string, fromStatuses: string,
+  body: Record<string, unknown>, fetchImpl: typeof fetch,
+): Promise<number | null> {
+  try {
+    const res = await fetchImpl(
+      `${supabaseUrl}/rest/v1/employer_unlock_orders?razorpay_order_id=eq.${encodeURIComponent(razorpayOrderId)}&status=in.(${fromStatuses})`,
+      {
+        method: "PATCH",
+        headers: { ...headers, "Content-Type": "application/json", Prefer: "return=representation" },
+        body: JSON.stringify({ ...body, updated_at: new Date().toISOString() }),
+      },
+    );
+    if (!res.ok) return null;
+    const rows: unknown = await res.json().catch(() => null);
+    return Array.isArray(rows) ? rows.length : null;
+  } catch {
+    return null;
   }
 }
 
@@ -374,6 +491,12 @@ export async function fulfillUnlockOrder(p: FulfillParams): Promise<FulfillResul
     });
     return { kind: "error", code: "amount_mismatch", message: "payment amount does not match the order" };
   }
+  if (p.payment.currency && p.payment.currency.toUpperCase() !== "INR") {
+    slog.error("unlock payment currency is not INR", {
+      code: "unlock_currency_mismatch", orderId: order.razorpay_order_id, currency: p.payment.currency,
+    });
+    return { kind: "error", code: "currency_mismatch", message: "payment currency does not match the order" };
+  }
   if (order.status === "refunded" || order.status === "disputed") return { kind: order.status, order };
   if (isFullyRefundedPayment(p.payment)) return closeRefundedPayment(p, order, f, now());
 
@@ -388,10 +511,13 @@ export async function fulfillUnlockOrder(p: FulfillParams): Promise<FulfillResul
 
   const state = await loadMatchesAndBlocks(p.supabaseUrl, p.headers, order, f);
   if (!state) return { kind: "error", code: "db_error", message: "match lookup failed" };
+  const suspended = await loadEmployerSuspended(p.supabaseUrl, p.headers, order.employer_id, f);
+  if (suspended === "error") return { kind: "error", code: "db_error", message: "employer lookup failed" };
   const byId = new Map(state.matches.map((m) => [m.id, m]));
   const requirementId = order.requirement_id ?? state.matches[0]?.requirement_id ?? null;
 
-  /* Replay of a finished order: report, never re-write. */
+  /* Replay of a finished order: report, never re-write contact. A candidate who has since
+   * withdrawn, declined or blocked this employer (or a suspended employer) gets no contact back. */
   if (alreadyDone) {
     const unlockedRows = order.match_ids.map((id) => byId.get(id)).filter((m): m is MatchRowLite => !!m && m.unlocked);
     const failed: FailedMatch[] = order.match_ids
@@ -401,16 +527,33 @@ export async function fulfillUnlockOrder(p: FulfillParams): Promise<FulfillResul
     if (!replayInvoiceNo && order.amount > 0 && unlockedRows.length > 0) {
       replayInvoiceNo = await assignInvoiceNo(p.supabaseUrl, p.headers, p.payment.id, f);
     }
+    // An order closed 'partial' by an older build may never have had its share returned (the return ran after the
+    // status flip). Retrying is idempotent: the ledger's unique indexes make the credit land once.
+    let returnedReplay = 0;
+    const estimate = refundShare(order, failedIndexesOf(order, failed.map((x) => x.matchId)));
+    if (order.status === "partial" && failed.length > 0) {
+      const back = await returnCreditForUnavailableDetailed({
+        base: p.supabaseUrl, headers: p.headers, employerId: order.employer_id, orderRef: order.razorpay_order_id,
+        orderMatchCount: order.match_ids.length, failedMatchIds: failed.map((x) => x.matchId),
+        orderMatchIds: order.match_ids, orderCashPaise: order.amount, fetchImpl: f,
+      });
+      if (back.ok) {
+        returnedReplay = back.creditedPaise;
+        if (replayInvoiceNo && back.creditedPaise > 0) {
+          await assignCreditNote(p.supabaseUrl, p.headers, order.razorpay_order_id, `unavailable:${order.razorpay_order_id}`, back.creditedPaise, f);
+        }
+      }
+    }
     return {
       kind: order.status === "partial" ? "partial" : "fulfilled",
       order, requirementId,
       unlockedMatchIds: unlockedRows.map((m) => m.id),
       failed,
-      candidates: unlockedRows.map(candidateOf),
+      candidates: unlockedRows.map((m) => candidateOf(m, withheldReason(m, state.blockedCandidateIds, suspended))),
       invoiceNo: replayInvoiceNo,
       firstFulfilment: false,
-      refundDueEstimatePaise: refundShare(order, failed.length),
-      returnedCreditPaise: 0,
+      refundDueEstimatePaise: estimate,
+      returnedCreditPaise: returnedReplay,
     };
   }
 
@@ -464,8 +607,9 @@ export async function fulfillUnlockOrder(p: FulfillParams): Promise<FulfillResul
   const toUnlock: MatchRowLite[] = [];
   const alreadyUnlocked: MatchRowLite[] = [];
   for (const id of order.match_ids) {
-    const m = byId.get(id);
-    if (!m) failed.push({ matchId: id, reason: "gone" });
+    const m = byId.get(id) as MatchRowLite | undefined;
+    if (suspended) failed.push({ matchId: id, reason: "employer_suspended" });
+    else if (!m) failed.push({ matchId: id, reason: "gone" });
     else if (m.unlocked) alreadyUnlocked.push(m);
     else if (state.blockedCandidateIds.has(m.candidate_user_id)) failed.push({ matchId: id, reason: "blocked" });
     else if (m.profiles?.employer_visibility === "off") failed.push({ matchId: id, reason: "candidate_opted_out" });
@@ -492,11 +636,38 @@ export async function fulfillUnlockOrder(p: FulfillParams): Promise<FulfillResul
 
   const unlockedRows = [...alreadyUnlocked, ...toUnlock];
   const kind = failed.length > 0 ? "partial" : "fulfilled";
+  const failedIndexes = failedIndexesOf(order, failed.map((x) => x.matchId));
+  const refundDueEstimatePaise = refundShare(order, failedIndexes);
 
-  /* 4. close the order. */
-  await patchOrder(p.supabaseUrl, p.headers, order.razorpay_order_id, OPEN_STATUSES, {
+  /* 3b. return the unavailable share BEFORE closing the order. If this fails the order stays 'paid'
+   * and the reconciler retries (the ledger's unique indexes make the credit land once). Doing it after
+   * the status flip would strand the credit forever: a closed order is never revisited. */
+  let returnedPaise = 0;
+  if (failed.length > 0) {
+    const back = await returnCreditForUnavailableDetailed({
+      base: p.supabaseUrl, headers: p.headers, employerId: order.employer_id, orderRef: order.razorpay_order_id,
+      orderMatchCount: order.match_ids.length, failedMatchIds: failed.map((x) => x.matchId),
+      orderMatchIds: order.match_ids, orderCashPaise: order.amount,
+      reason: suspended ? "employer_suspended" : "unavailable", fetchImpl: f,
+    });
+    if (!back.ok) {
+      slog.error("unlock credit return failed — order left 'paid' for the reconciler", {
+        code: "unlock_credit_return_failed", orderId: order.razorpay_order_id, employerId: order.employer_id,
+      });
+      return { kind: "error", code: "db_error", message: "failed to return credit for unavailable candidates" };
+    }
+    returnedPaise = back.creditedPaise;
+  }
+
+  /* 4. close the order. The call whose CAS matches a row owns the notifications. */
+  const closed = await patchOrderRows(p.supabaseUrl, p.headers, order.razorpay_order_id, OPEN_STATUSES, {
     status: kind, fulfilled_at: unlockedAt, razorpay_payment_id: p.payment.id,
   }, f);
+  if (closed === null) {
+    slog.error("unlock order close failed — order left 'paid' for the reconciler", { code: "unlock_order_close_failed", orderId: order.razorpay_order_id });
+    return { kind: "error", code: "db_error", message: "failed to close the order" };
+  }
+  const firstFulfilment = closed > 0;
 
   // Only a cash purchase that really unlocked someone is a tax invoice: no number for credit-only rows,
   // 409 replays or an order where every candidate turned out to be unavailable.
@@ -506,16 +677,13 @@ export async function fulfillUnlockOrder(p: FulfillParams): Promise<FulfillResul
     await writeInvoiceSnapshot({
       supabaseUrl: p.supabaseUrl, headers: p.headers, order, paymentId: p.payment.id, creditPaise: creditApplied, now: now(), f,
     });
+    // The returned share is a credit against this invoice. Best effort: a missing note is repaired on the next replay.
+    if (invoiceNo && returnedPaise > 0) {
+      await assignCreditNote(p.supabaseUrl, p.headers, order.razorpay_order_id, `unavailable:${order.razorpay_order_id}`, returnedPaise, f);
+    }
   }
 
-  const refundDueEstimatePaise = refundShare(order, failed.length);
-  let returnedPaise = 0;
   if (failed.length > 0) {
-    returnedPaise = await returnCreditForUnavailable({
-      base: p.supabaseUrl, headers: p.headers, employerId: order.employer_id, orderRef: order.razorpay_order_id,
-      orderMatchCount: order.match_ids.length, failedMatchIds: failed.map((x) => x.matchId),
-      orderCashPaise: order.amount, fetchImpl: f,
-    });
     if (refundDueEstimatePaise > 0) {
       // Best-effort: the column exists only once migration 0042 is applied. Records the cash share that went back as credit.
       await patchOrder(p.supabaseUrl, p.headers, order.razorpay_order_id, "partial", { refund_due_paise: refundDueEstimatePaise }, f);
@@ -531,10 +699,9 @@ export async function fulfillUnlockOrder(p: FulfillParams): Promise<FulfillResul
     });
   }
 
-  const firstFulfilment = ledger.state === "inserted";
   if (firstFulfilment) {
-    // Here rather than in the verify handler: the webhook or reconciler can be
-    // the first to fulfil an order, and only the ledger-insert winner gets here.
+    // Here rather than in the verify handler: the webhook or reconciler can be the first to fulfil an
+    // order. Gated on the order CAS (not the ledger insert) so a retry after a failed unlock still notifies.
     void captureServerEvent("employer_unlock_paid", order.employer_id, {
       requirementId,
       candidatesUnlocked: unlockedRows.length,
@@ -554,7 +721,9 @@ export async function fulfillUnlockOrder(p: FulfillParams): Promise<FulfillResul
       userId: order.employer_id,
       type: "unlock_confirmed",
       title: order.mode === "batch" ? "Candidate contacts unlocked" : "Candidate contact unlocked",
-      body: n === 0
+      body: suspended
+        ? `Payment received, but your account is suspended so no contact was unlocked. ${returnedPaise > 0 ? `${rupees(returnedPaise)} was added to your account credit` : "We will refund this payment"} (order ${order.razorpay_order_id}).`
+        : n === 0
         ? creditOnly
           ? "The candidate is no longer available, so your credit was returned to your balance."
           : `Payment received, but the candidate is no longer available. ${returnedPaise > 0 ? `${rupees(returnedPaise)} was added to your account credit` : "We will refund this payment"} (order ${order.razorpay_order_id}).`
@@ -576,9 +745,9 @@ export async function fulfillUnlockOrder(p: FulfillParams): Promise<FulfillResul
 
   return {
     kind, order, requirementId,
-    unlockedMatchIds: unlockedRows.map((m) => m.id),
+    unlockedMatchIds: suspended ? [] : unlockedRows.map((m) => m.id),
     failed,
-    candidates: unlockedRows.map(candidateOf),
+    candidates: suspended ? [] : unlockedRows.map((m) => candidateOf(m, withheldReason(m, state.blockedCandidateIds, false))),
     invoiceNo,
     firstFulfilment,
     refundDueEstimatePaise,
@@ -608,8 +777,9 @@ const isMissingColumn = (status: number, text: string) =>
 /** Assigns the tax-invoice number for a cash purchase that unlocked someone.
  *  The RPC is idempotent (only fills a null invoice_no), so a lost race returns
  *  null and we read the winner's number. null when migration 0045 is unapplied
- *  (the column default numbered the row at insert instead). */
-async function assignInvoiceNo(
+ *  (the column default numbered the row at insert instead) or the call failed;
+ *  the reconciler's invoice back-fill sweep numbers any fulfilled cash order left without one. */
+export async function assignInvoiceNo(
   supabaseUrl: string, headers: Record<string, string>, paymentId: string, f: typeof fetch,
 ): Promise<string | null> {
   try {
@@ -623,13 +793,38 @@ async function assignInvoiceNo(
       return typeof v === "string" && v ? v : await invoiceFor(supabaseUrl, headers, paymentId, f);
     }
     if (res.status !== 404) slog.warn("unlock invoice number assignment failed", { code: "unlock_invoice_assign_failed", paymentId, status: res.status });
-  } catch { /* the number is retried on the next fulfilment pass */ }
+  } catch { /* retried by the reconciler's invoice back-fill */ }
+  return null;
+}
+
+export interface CreditNoteRow { credit_note_no: string; amount_paise: number; refund_id: string; created_at?: string }
+
+/** Writes (once per refundId) the numbered credit note for a refund or a returned share
+ *  (assign_employer_credit_note, migration 0047). null when the migration is unapplied (callers then
+ *  fall back to the derived CN number) or the call failed; safe to repeat. */
+export async function assignCreditNote(
+  supabaseUrl: string, headers: Record<string, string>, orderId: string, refundId: string, amountPaise: number, f: typeof fetch,
+): Promise<CreditNoteRow | null> {
+  if (!(amountPaise > 0)) return null;
+  try {
+    const res = await f(`${supabaseUrl}/rest/v1/rpc/assign_employer_credit_note`, {
+      method: "POST",
+      headers: { ...headers, "Content-Type": "application/json" },
+      body: JSON.stringify({ p_order_id: orderId, p_refund_id: refundId, p_amount_paise: Math.round(amountPaise) }),
+    });
+    if (res.ok) {
+      const v = (await res.json().catch(() => null)) as Partial<CreditNoteRow> | null;
+      return v && typeof v.credit_note_no === "string" && v.credit_note_no ? (v as CreditNoteRow) : null;
+    }
+    // 404 / PGRST202 = function absent (migration 0047 unapplied): expected, silent.
+    if (res.status !== 404) slog.warn("credit note assignment failed", { code: "credit_note_assign_failed", orderId, refundId, status: res.status });
+  } catch { /* the derived credit-note number still renders */ }
   return null;
 }
 
 /** Freezes supplier, buyer, tax rate and the tax breakup onto the ledger row. Best effort and
  *  write-once (only fills a null snapshot); rows without one render from live values. */
-async function writeInvoiceSnapshot(p: {
+export async function writeInvoiceSnapshot(p: {
   supabaseUrl: string; headers: Record<string, string>; order: UnlockOrderRow; paymentId: string;
   creditPaise: number; now: Date; f: typeof fetch;
 }): Promise<void> {

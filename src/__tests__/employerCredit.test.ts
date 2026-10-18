@@ -5,7 +5,7 @@ import { slog } from "../../server-handlers/_shared";
 vi.mock("../../server-handlers/_notify", () => ({ notify: vi.fn() }));
 
 const {
-  creditShare, isRefundableStatus, creditBalance, spendCredit, spendCreditDetailed, releaseCredit, creditSpentOnOrders, creditRefundForMatches,
+  creditShare, splitPaise, isRefundableStatus, creditBalance, spendCredit, spendCreditDetailed, releaseCredit, creditSpentOnOrders, creditRefundForMatches,
   returnCreditForUnavailable, clawbackOrderCredit, ensureCreditSpent, flagCreditAbuse, toCreditEvents,
 } = await import("../../server-handlers/_employer-credit");
 const { sweepUnreachableCredits } = await import("../../server-handlers/_employer-credit-sweep");
@@ -20,9 +20,29 @@ describe("pure credit rules", () => {
     expect(creditShare(29_900, 0, 10)).toBe(2_990);
     expect(creditShare(5_900, 0, 1)).toBe(5_900);
     expect(creditShare(3_900, 2_000, 1)).toBe(5_900);
-    expect(creditShare(100, 0, 3)).toBe(33);
+    expect(creditShare(100, 0, 3)).toBe(34); // the first candidate carries the odd paisa
+    expect(creditShare(100, 0, 3, 1)).toBe(33);
     expect(creditShare(0, 0, 1)).toBe(0);
     expect(creditShare(5_900, 0, 0)).toBe(0);
+  });
+
+  it("splitPaise / creditShare: for every total and count the shares are whole, within 1 paisa of each other, and sum to the total", () => {
+    let seed = 12345;
+    const rnd = (n: number) => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed % n; };
+    const cases: Array<[number, number]> = [[0, 1], [1, 7], [100, 3], [11_960, 4], [29_900, 10]];
+    for (let i = 0; i < 300; i++) cases.push([rnd(200_000), 1 + rnd(25)]);
+    for (const [total, n] of cases) {
+      const shares = splitPaise(total, n);
+      expect(shares).toHaveLength(n);
+      expect(shares.reduce((a, b) => a + b, 0)).toBe(total);
+      expect(shares.every((x) => Number.isInteger(x) && x >= 0)).toBe(true);
+      expect(Math.max(...shares) - Math.min(...shares)).toBeLessThanOrEqual(1);
+      // cash + credit are summed before splitting, and each index agrees with the split
+      const cash = Math.floor(total / 2);
+      const parts = Array.from({ length: n }, (_, k) => creditShare(cash, total - cash, n, k));
+      expect(parts).toEqual(shares);
+    }
+    expect(splitPaise(100, 0)).toEqual([]);
   });
 
   it("only candidates the employer is still waiting on are refundable", () => {

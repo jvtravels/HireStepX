@@ -22,6 +22,7 @@ const getVercelClientIp = vi.fn();
 const supabaseUrl = vi.fn();
 const supabaseAnonKey = vi.fn();
 const supabaseServiceHeaders = vi.fn();
+const redisPipeline = vi.fn(async (..._args: unknown[]): Promise<unknown> => null);
 
 vi.mock("../../server-handlers/_shared", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../../server-handlers/_shared")>();
@@ -34,9 +35,14 @@ vi.mock("../../server-handlers/_shared", async (importOriginal) => {
     supabaseAnonKey: (...args: unknown[]) => supabaseAnonKey(...args),
     supabaseServiceHeaders: (...args: unknown[]) => supabaseServiceHeaders(...args),
     verifyEmployerAuthToken: actual.verifyEmployerAuthToken,
+    withRequestId: actual.withRequestId,
+    redisPipeline: redisPipeline,
     slog: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
   };
 });
+
+const sendOpsAlert = vi.fn(async (..._a: unknown[]) => {});
+vi.mock("../../server-handlers/_ops-alert", () => ({ sendOpsAlert: (...a: unknown[]) => sendOpsAlert(...a) }));
 
 const { default: handler } = await import("../../server-handlers/employer-verify-unlock-payment");
 
@@ -452,5 +458,61 @@ describe("employer-verify-unlock-payment — late payment on a credit order", ()
     expect(res.statusCode).toBe(409);
     expect(res.body).toMatchObject({ code: "order_converted_to_credit", creditPaise: 3900 });
     expect(db.matches.get("m1")?.unlocked).toBe(false);
+  });
+});
+
+describe("employer-verify-unlock-payment — observability and contact withholding", () => {
+  it("stamps X-Request-ID on success and on rejections", async () => {
+    let res = mockRes();
+    await handler(mockReq(validBody()), res);
+    expect(res.headers["X-Request-ID"]).toBeTruthy();
+    res = mockRes();
+    await handler(mockReq(validBody(ORDER_ID, PAYMENT_ID), { headers: { authorization: "Bearer user-token", origin: "https://app.hirestepx.com" } }), res);
+    const other = mockRes();
+    await handler(mockReq({ razorpay_order_id: "x" }), other);
+    expect(other.statusCode).toBe(400);
+    expect(other.headers["X-Request-ID"]).toBeTruthy();
+    expect(other.headers["X-Request-ID"]).not.toBe(res.headers["X-Request-ID"]);
+  });
+
+  it("alerts ops when a captured payment could not be fulfilled (db error), still answering 500", async () => {
+    sendOpsAlert.mockClear();
+    redisPipeline.mockResolvedValue(["OK"]);
+    db.failWhen = (m, url) => m === "PATCH" && url.includes("requirement_matches");
+    const res = mockRes();
+    await handler(mockReq(validBody()), res);
+    expect(res.statusCode).toBe(500);
+    expect(sendOpsAlert).toHaveBeenCalledWith("Payment captured but not fulfilled", expect.stringContaining(ORDER_ID));
+    redisPipeline.mockResolvedValue(null);
+  });
+
+  it("alerts ops when the captured payment is rejected as unfixable (amount mismatch), answering 400", async () => {
+    sendOpsAlert.mockClear();
+    redisPipeline.mockResolvedValue(["OK"]);
+    payments = [capturedPayment({ amount: 100 })];
+    const res = mockRes();
+    await handler(mockReq(validBody()), res);
+    expect(res.statusCode).toBe(400);
+    expect(sendOpsAlert).toHaveBeenCalledTimes(1);
+    redisPipeline.mockResolvedValue(null);
+  });
+
+  it("a replay never hands back contact for a candidate who withdrew after the unlock", async () => {
+    await handler(mockReq(validBody()), mockRes());
+    db.matches.get("m1")!.profiles!.employer_visibility = "off";
+    const res = mockRes();
+    await handler(mockReq(validBody()), res);
+    expect(res.statusCode).toBe(200);
+    const body = JSON.stringify(res.body);
+    expect(body).not.toContain("m1@example.com");
+    expect(body).not.toContain("Name m1");
+  });
+
+  it("a replay for a suspended employer returns no contact", async () => {
+    await handler(mockReq(validBody()), mockRes());
+    db.employers.set("emp-1", { company_name: "Acme", billing_name: "", gstin: "", suspended_at: "2026-10-09T00:00:00Z" });
+    const res = mockRes();
+    await handler(mockReq(validBody()), res);
+    expect(JSON.stringify(res.body)).not.toContain("m1@example.com");
   });
 });

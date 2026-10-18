@@ -52,3 +52,20 @@ export function legalEntityLines(entity: LegalEntity = LEGAL_ENTITY): Array<{ la
 export function copyrightHolder(entity: LegalEntity = LEGAL_ENTITY): string {
   return entity.name || "HireStepX";
 }
+
+/** 15-character GSTIN layout: 2-digit state code, 10-character PAN, entity number, "Z", check character.
+ *  Format only; the check character is validated where buyers' GSTINs are parsed (server-handlers/_gstin.ts). */
+export const GSTIN_FORMAT = /^\d{2}[A-Z]{5}\d{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
+
+/** True only when the seller can lawfully issue a GST "Tax invoice" (GST Act s.31, Invoice Rules r.46):
+ *  a well-formed GSTIN AND legal name, address and SAC. Setting NEXT_PUBLIC_LEGAL_GSTIN alone is not
+ *  enough: a document missing the supplier's name, address or SAC is not a valid tax invoice, so
+ *  invoice wording must fall back to "Payment receipt" until all four are configured.
+ *  Invoice code (src/employer/_invoiceHtml.ts isTaxInvoice) should call this instead of testing GSTIN
+ *  presence alone. */
+export function isTaxInvoiceReady(entity: Pick<LegalEntity, "name" | "address" | "gstin" | "sac"> = LEGAL_ENTITY): boolean {
+  return GSTIN_FORMAT.test(entity.gstin.trim().toUpperCase())
+    && entity.name.trim() !== ""
+    && entity.address.trim() !== ""
+    && (entity.sac ?? "").trim() !== "";
+}

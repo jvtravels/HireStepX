@@ -52,7 +52,8 @@ export function gstBreakup(totalPaise: number, supplierGstin: string, buyerGstin
   const pos = resolvePlaceOfSupply(supplierGstin, buyerGstin);
   const interState = supplierState == null || pos.code !== supplierState;
   const half = ratePercent / 2;
-  const cgst = Math.floor(taxPaise / 2);
+  // An odd paisa of tax goes to CGST, so SGST is never the larger half (the two must still sum to the tax).
+  const cgst = Math.ceil(taxPaise / 2);
   const lines = interState
     ? [{ label: `IGST @ ${ratePercent}%`, paise: taxPaise }]
     : [{ label: `CGST @ ${half}%`, paise: cgst }, { label: `SGST @ ${half}%`, paise: taxPaise - cgst }];
