@@ -52,6 +52,14 @@ export function proratedRemainderSentence(): string {
   return `If fewer than ${UNLOCK_BUNDLE_SIZE} candidates are left locked in a batch (some already unlocked one at a time, or a final partial batch), you pay ${each} for each one left instead of the full batch price.`;
 }
 
+/** Worked example for the marketing page, computed from the real price table so it can never drift. */
+export function workedPricingExampleSentence(): string {
+  const singles = 3;
+  const perBatchCandidate = batchUnlockPrice(1).amountPaise;
+  const tenSinglyPaise = UNLOCK_BUNDLE_SIZE * UNLOCK_SINGLE_PRICE_PAISE;
+  return `Unlock ${singles} candidates one at a time: ${singles} × ${formatPaise(UNLOCK_SINGLE_PRICE_PAISE)} = ${formatPaise(singles * UNLOCK_SINGLE_PRICE_PAISE)}. Unlock a full batch of ${UNLOCK_BUNDLE_SIZE}: ${formatPaise(UNLOCK_BATCH_PRICE_PAISE)}, which is ${formatPaise(perBatchCandidate)} a candidate. Unlocking those same ${UNLOCK_BUNDLE_SIZE} one at a time would cost ${formatPaise(tenSinglyPaise)}.`;
+}
+
 export const PAY_AS_YOU_GO_SENTENCE =
   "Pay as you go: there is no subscription, nothing renews automatically and we never store your card for recurring billing.";
 
@@ -59,5 +67,14 @@ export const PAY_AS_YOU_GO_SENTENCE =
 export const CREDIT_BACK_SENTENCE =
   `If a candidate you paid for declines, withdraws, blocks you or doesn't reply within ${CREDIT_NO_RESPONSE_DAYS} days of your interview invite, that candidate's share is added back as account credit and applied automatically to your next unlock. It is credit, not a cash refund.`;
 
+/** Single wording for what happens to unspent credit on deletion, rendered in the terms,
+ *  the refund policy and the settings deletion notice so the three cannot drift. Matches
+ *  behaviour: deleting an employer account does not pay credit out (no cash-out path exists). */
+export const CREDIT_ON_DELETION_SENTENCE =
+  "Unspent employer credit is not redeemable for cash and lapses when an account is deleted; to request a refund of unused credit, contact support before deleting.";
+
+/* Mirrors the billing code: unlock prices are GST-inclusive totals that
+   server-handlers/_unlock-tax.ts splits into taxable value and tax. Never word
+   this as "GST is added on top". */
 export const GST_STATEMENT =
-  "GST is added or included according to HireStepX's GST registration status at the time of purchase. Until we are registered we do not charge GST and receipts are not GST tax invoices; once registered, the price and tax shown at checkout will say so.";
+  "Prices are GST-inclusive once we are GST-registered: the price shown at checkout is the total you pay, and your tax invoice shows the GST within it. Until we are registered we do not charge GST and receipts are not GST tax invoices.";

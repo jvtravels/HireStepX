@@ -16,6 +16,9 @@ import {
   shouldAutoSuspend,
   AUTO_SUSPEND_REPORT_THRESHOLD,
   maskedCandidateName,
+  registrableDomain,
+  isPublicSuffixHost,
+  isAcceptableCompanyWebsite,
 } from "../../server-handlers/_employer-trust";
 
 describe("emailDomain / isFreeMailDomain / websiteHost", () => {
@@ -162,5 +165,76 @@ describe("expanded free-mail and disposable lists", () => {
   it("keeps the two lists disjoint and lowercase", () => {
     for (const d of DISPOSABLE_MAIL_DOMAINS) expect(FREE_MAIL_DOMAINS.has(d)).toBe(false);
     for (const d of [...FREE_MAIL_DOMAINS, ...DISPOSABLE_MAIL_DOMAINS]) expect(d).toBe(d.toLowerCase());
+  });
+});
+
+describe("verified tier needs an exact registrable-domain match", () => {
+  const base = { storedTier: "basic", emailConfirmed: true };
+  it("does not verify x@acme.co.in against a website that is just the public suffix co.in", () => {
+    expect(deriveEmployerTier({ ...base, email: "x@acme.co.in", website: "co.in" })).toBe("email_verified");
+    expect(deriveEmployerTier({ ...base, email: "x@acme.co.in", website: "https://www.co.in/" })).toBe("email_verified");
+    expect(deriveEmployerTier({ ...base, email: "x@acme.com", website: "com" })).toBe("email_verified");
+  });
+  it("verifies acme.co.in against acme.co.in", () => {
+    expect(deriveEmployerTier({ ...base, email: "x@acme.co.in", website: "https://acme.co.in" })).toBe("verified");
+  });
+  it("verifies a subdomain mail host against the apex website, and the reverse", () => {
+    expect(deriveEmployerTier({ ...base, email: "x@mail.acme.com", website: "acme.com" })).toBe("verified");
+    expect(deriveEmployerTier({ ...base, email: "x@acme.com", website: "https://careers.acme.com/jobs" })).toBe("verified");
+  });
+  it("rejects lookalike and sibling domains", () => {
+    expect(deriveEmployerTier({ ...base, email: "x@evilacme.com", website: "acme.com" })).toBe("email_verified");
+    expect(deriveEmployerTier({ ...base, email: "x@acme.com", website: "acme.com.evil.io" })).toBe("email_verified");
+    expect(deriveEmployerTier({ ...base, email: "x@foo.co.in", website: "bar.co.in" })).toBe("email_verified");
+  });
+  it("does not let a shared hosting suffix prove a company", () => {
+    expect(deriveEmployerTier({ ...base, email: "x@vercel.app", website: "vercel.app" })).toBe("email_verified");
+    expect(deriveEmployerTier({ ...base, email: "x@evil.github.io", website: "good.github.io" })).toBe("email_verified");
+  });
+  it("never verifies on a free-mail or disposable website", () => {
+    expect(deriveEmployerTier({ ...base, email: "x@gmail.com", website: "gmail.com" })).toBe("basic");
+    expect(deriveEmployerTier({ ...base, email: "x@acme.com", website: "mailinator.com" })).toBe("email_verified");
+  });
+});
+
+describe("registrableDomain / isPublicSuffixHost / isAcceptableCompanyWebsite", () => {
+  it("resolves multi-label suffixes", () => {
+    expect(registrableDomain("mail.acme.co.in")).toBe("acme.co.in");
+    expect(registrableDomain("acme.com")).toBe("acme.com");
+    expect(registrableDomain("a.b.acme.co.uk")).toBe("acme.co.uk");
+    expect(registrableDomain("acme.vercel.app")).toBe("acme.vercel.app");
+  });
+  it("returns empty for suffixes, IPs and blanks", () => {
+    for (const h of ["co.in", "org.in", "ac.in", "gov.in", "nic.in", "edu.in", "net.in", "com", "co.uk", "", "10.0.0.1", "localhost"]) {
+      expect(registrableDomain(h), h).toBe("");
+    }
+    expect(isPublicSuffixHost("co.in")).toBe(true);
+    expect(isPublicSuffixHost("acme.co.in")).toBe(false);
+  });
+  it("accepts real websites and rejects bare suffixes", () => {
+    expect(isAcceptableCompanyWebsite("https://www.acme.co.in/careers")).toBe(true);
+    expect(isAcceptableCompanyWebsite("co.in")).toBe(false);
+    expect(isAcceptableCompanyWebsite("https://com")).toBe(false);
+    expect(isAcceptableCompanyWebsite("")).toBe(false);
+  });
+});
+
+describe("expanded throwaway and Indian free-mail lists", () => {
+  it("lists at least 150 disposable domains, all lowercase and well formed", () => {
+    expect(DISPOSABLE_MAIL_DOMAINS.size).toBeGreaterThanOrEqual(150);
+    for (const d of DISPOSABLE_MAIL_DOMAINS) expect(d, d).toMatch(/^[a-z0-9-]+(\.[a-z0-9-]+)+$/);
+  });
+  it.each(["mailinator.net", "10minutemail.co.uk", "dropmail.me", "emailfake.com", "armyspy.com", "mailsac.com", "tmailor.com", "yopmail.fr"])(
+    "treats %s as disposable",
+    (d) => {
+      expect(isDisposableMailDomain(d)).toBe(true);
+      expect(isFreeMailDomain(d)).toBe(true);
+    },
+  );
+  it.each(["rediffmail.com", "in.com", "indiatimes.com", "rediffmail.in"])("treats %s as free mail", (d) => {
+    expect(isFreeMailDomain(d)).toBe(true);
+  });
+  it("keeps free and disposable lists disjoint from real company domains", () => {
+    for (const d of ["acme.com", "tcs.com", "infosys.com", "zoho.in"]) expect(isFreeMailDomain(d), d).toBe(false);
   });
 });

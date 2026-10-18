@@ -8,7 +8,7 @@ import { captureClientEvent } from "../posthogClient";
 import { CopyEmailLink } from "../_CopyEmailLink";
 import { referralTermsText } from "../referralShare";
 import { legalEntityLines } from "../../data/legal-entity";
-import { CREDIT_BACK_SENTENCE, GST_STATEMENT, unlockFeeSentence } from "../employer/_employerOffer";
+import { CREDIT_BACK_SENTENCE, CREDIT_ON_DELETION_SENTENCE, GST_STATEMENT, unlockFeeSentence } from "../employer/_employerOffer";
 import { Button } from "@/components/ui/button";
 
 /* ════════════════════════════════════════════════════════════════════
@@ -1763,7 +1763,7 @@ function LegalPage({
   );
 }
 
-const POLICY_UPDATED = "11 October 2026";
+const POLICY_UPDATED = "18 October 2026";
 
 function LegalEntityList() {
   const lines = legalEntityLines();
@@ -1828,6 +1828,14 @@ export function PrivacyV2() {
       <p><strong>Retention.</strong> Employer discovery uses the same practice data described above, so it follows the same retention. Deleting your account removes you from employer discovery.</p>
       <p><strong>Questions or complaints.</strong> Contact our <a href="/grievance">Grievance Officer</a>.</p>
 
+      {/* "As long as tax law requires" is deliberate: a CA must confirm the period before any number is published. */}
+      <h2 id="employer-data">Employer data</h2>
+      <p>If you register a company account, this section applies to you in addition to the rest of this policy.</p>
+      <p><strong>What we collect.</strong> Your company name and website, your work email, an optional logo, the GSTIN and billing name you choose to add for invoices, the jobs and shortlists you create, your conversations with candidates, and your unlock and payment history (orders, amounts and Razorpay references). Card and UPI details are handled by Razorpay and never reach us.</p>
+      <p><strong>Why.</strong> To match candidates to your jobs, to deliver unlocks, to issue receipts and tax invoices, to rate-limit and verify employers (we compare your sign-in email domain with your website), to prevent misuse, and to answer support requests.</p>
+      <p><strong>Candidate data you unlock.</strong> What you receive about a candidate is that candidate's personal data. Use it only as the <a href="/terms#employers">employer terms</a> allow.</p>
+      <p><strong>When you delete your account.</strong> It is paused for 7 days so you can restore it. After that, your company profile, logo, jobs, shortlists and conversations are permanently deleted. Your company name, website and logo are removed from payment records, and your sign-in email is replaced. Payment and order records, with the GSTIN and billing name on your invoices, are kept for as long as tax law requires. {CREDIT_ON_DELETION_SENTENCE}</p>
+
       <h2>Your rights under the DPDP Act 2023</h2>
       <p>India's Digital Personal Data Protection Act, 2023 gives you the right to access, correct, and erase the data we hold on you, to nominate another person to exercise these rights on your behalf, and to a grievance redressal process. We process your data to deliver the service you signed up for and, for optional analytics and advertising, only on your consent, which you can withdraw at any time as easily as you gave it.</p>
       <p>Cross-border transfers: our providers process data in India, the United States, and other regions where they operate (for example Supabase in Ireland). If your grievance is not resolved to your satisfaction, you may escalate to the Data Protection Board of India once it is constituted.</p>
@@ -1842,7 +1850,7 @@ export function PrivacyV2() {
       <h2>Children</h2>
       <p>HireStepX is not directed at anyone under 18, the age of a child under the DPDP Act. We do not knowingly process the personal data of children. If you believe a minor has created an account, email <CopyEmailLink email="grievance@hirestepx.com" /> and we will remove it.</p>
 
-      <PolicyChanges history="13 October 2026 (cookie banner now lets you choose analytics and advertising separately); 11 October 2026 (corrected processors, retention, deletion, cookie and age wording); 10 October 2026." />
+      <PolicyChanges history="18 October 2026 (employer data and employer credit on deletion explained); 13 October 2026 (cookie banner now lets you choose analytics and advertising separately); 11 October 2026 (corrected processors, retention, deletion, cookie and age wording); 10 October 2026." />
     </LegalPage>
   );
 }
@@ -1880,6 +1888,7 @@ export function TermsV2() {
         <li><strong>Fees.</strong> {unlockFeeSentence()} The price shown at checkout is the amount charged.</li>
         <li><strong>GST.</strong> {GST_STATEMENT}</li>
         <li><strong>Refunds.</strong> See the <a href="/refund#employers">employer section of the refund policy</a>. In short: if a candidate becomes unavailable after you pay, that portion is refunded; once a candidate's contact details have been delivered to you, the fee is not refundable except where the law requires.</li>
+        <li><strong>Account credit and deletion.</strong> {CREDIT_ON_DELETION_SENTENCE}</li>
         <li><strong>No guarantee.</strong> We do not guarantee any number of candidates, responses, interviews, or hires, or the accuracy of what candidates say about themselves. Practice scores are not certified assessments.</li>
         <li><strong>Use of candidate data.</strong> Use candidate details only to evaluate and contact that candidate about the role you registered. Do not resell, share, publish, or add them to marketing lists; do not send unrelated, bulk, or spam messages; do not discriminate unlawfully; keep the data secure and delete it when you no longer need it.</li>
         <li><strong>Candidate withdrawal and opt-out.</strong> Candidates can turn discovery off, block, or report you at any time. If they do, you will not see anything new from them and, if they withdraw before your payment is fulfilled, that candidate is not unlocked and is refunded. You must stop contacting a candidate who asks you to.</li>
@@ -1895,7 +1904,7 @@ export function TermsV2() {
       <h2>Complaints and governing law</h2>
       <p>Write to our <a href="/grievance">Grievance Officer</a> at <CopyEmailLink email="grievance@hirestepx.com" />. We acknowledge within 24 hours and resolve within 15 days. These terms are governed by the laws of India. Disputes go to the courts of Bengaluru, Karnataka.</p>
 
-      <PolicyChanges history="11 October 2026 (minimum age 18, employer terms added, complaint timelines unified); 10 October 2026." />
+      <PolicyChanges history="18 October 2026 (employer credit on account deletion); 11 October 2026 (minimum age 18, employer terms added, complaint timelines unified); 10 October 2026." />
     </LegalPage>
   );
 }
@@ -1918,6 +1927,7 @@ export function RefundPolicyV2() {
         <li><strong>Credit back.</strong> {CREDIT_BACK_SENTENCE}</li>
         <li><strong>Candidate unavailable after payment.</strong> If a candidate blocked you, turned employer visibility off, or was removed between your payment and the unlock, that candidate is not unlocked and you are refunded that candidate's share of the order (the order amount divided across the candidates in it). A full-batch order that unlocks none is refunded in full.</li>
         <li><strong>After delivery.</strong> Once a candidate's contact details have been delivered to you, that unlock is not refundable, except where the law requires or if we made an error (for example a duplicate charge).</li>
+        <li><strong>Unspent credit and account deletion.</strong> {CREDIT_ON_DELETION_SENTENCE}</li>
         <li><strong>Duplicate or failed payments.</strong> If you were charged twice or charged without an unlock, tell us the order ID and we will refund it.</li>
         <li><strong>No outcome guarantee.</strong> A candidate not replying, declining, or not being hired is not a ground for refund.</li>
         <li><strong>GST.</strong> {GST_STATEMENT}</li>
@@ -1929,7 +1939,7 @@ export function RefundPolicyV2() {
       <h2>Disputes</h2>
       <p>If you believe a session was scored unfairly and want a refund of just that session's credit, hit the "Dispute score" link inside the session report. We review every dispute within 24 hours. For any other complaint, write to the <a href="/grievance">Grievance Officer</a>: we acknowledge within 24 hours and resolve within 15 days.</p>
 
-      <PolicyChanges history="11 October 2026 (employer unlock refunds added); 30 May 2026." />
+      <PolicyChanges history="18 October 2026 (employer credit on account deletion); 11 October 2026 (employer unlock refunds added); 30 May 2026." />
     </LegalPage>
   );
 }

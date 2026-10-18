@@ -13,13 +13,14 @@ import {
   REVEALED_ON_UNLOCK,
   VISIBLE_BEFORE_UNLOCK,
   proratedRemainderSentence,
+  workedPricingExampleSentence,
 } from "@/employer/_employerOffer";
 import { FAQ_ENTRIES, SCORING_STEPS } from "./_content";
 import { buildEmployersJsonLd } from "./_jsonld";
 import { employersCSS } from "./_styles";
 
 const PRICE_LINE = `${formatPaise(UNLOCK_BATCH_PRICE_PAISE)} for ${UNLOCK_BUNDLE_SIZE} candidates or ${formatPaise(UNLOCK_SINGLE_PRICE_PAISE)} for one`;
-const TITLE = "Post a job and hire candidates matched on interview practice";
+const TITLE = "Hire Candidates Matched on Interview Practice | HireStepX";
 const DESCRIPTION = `Post a job free and get an AI-matched shortlist of candidates who practise interviews on HireStepX, ranked on skills fit and, where they have them, their own graded practice sessions. Pay only to unlock contact details: ${PRICE_LINE}. No subscription.`;
 const SHARE_IMAGE = "https://hirestepx.com/opengraph-image";
 
@@ -86,6 +87,7 @@ export default function EmployersLandingPage() {
             <Link href="/terms#employers" className="emp-link">employer terms</Link> and{" "}
             <Link href="/refund#employers" className="emp-link">refund policy</Link>.
           </p>
+          <p className="emp-fine">Sign up with your work email; personal Gmail or Yahoo addresses are not accepted.</p>
         </section>
 
         <section className="emp-wrap" aria-labelledby="emp-why">
@@ -182,6 +184,7 @@ export default function EmployersLandingPage() {
             </div>
           </div>
           <div className="emp-billing">
+            <p><strong>Worked example.</strong> {workedPricingExampleSentence()}</p>
             <p><strong>Partial batches.</strong> {proratedRemainderSentence()}</p>
             <p><strong>Credit back.</strong> {CREDIT_BACK_SENTENCE}</p>
             <p><strong>GST.</strong> {GST_STATEMENT}</p>

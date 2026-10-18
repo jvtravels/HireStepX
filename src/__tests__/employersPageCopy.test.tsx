@@ -4,6 +4,7 @@ import type { ReactElement } from "react";
 import { PrivacyV2, TermsV2, RefundPolicyV2, HowItWorksV2 } from "../marketing-v2/MarketingPagesV2";
 import EmployersLandingPage, { metadata } from "../../app/(marketing)/employers/page";
 import { FAQ_ENTRIES, SCORING_STEPS } from "../../app/(marketing)/employers/_content";
+import { CREDIT_ON_DELETION_SENTENCE, GST_STATEMENT, workedPricingExampleSentence } from "../employer/_employerOffer";
 import { FooterDome } from "../marketing-v2/FooterDome";
 
 vi.mock("next/navigation", () => ({
@@ -44,6 +45,22 @@ describe("/employers copy", () => {
     }
   });
 
+  it("puts the brand in the title and tells employers a work email is required", () => {
+    expect(String(metadata.title)).toMatch(/\| HireStepX$/);
+    expect(text).toContain("Sign up with your work email; personal Gmail or Yahoo addresses are not accepted.");
+  });
+
+  it("shows a worked pricing example built from the real prices and a GST-inclusive statement", () => {
+    expect(text).toContain(workedPricingExampleSentence());
+    expect(text).toContain(GST_STATEMENT);
+    expect(text).not.toMatch(/GST is added/i);
+  });
+
+  it("renders Organization, FAQPage and BreadcrumbList JSON-LD", () => {
+    const html = renderToStaticMarkup(<EmployersLandingPage />);
+    for (const type of ["Organization", "FAQPage", "BreadcrumbList"]) expect(html).toContain(`"@type":"${type}"`);
+  });
+
   it("does not call practice sessions verified", () => {
     expect(text).not.toMatch(/verified practice sessions/i);
     expect(SCORING_STEPS.map((s) => s.title)).toContain("Graded practice sessions");
@@ -60,6 +77,28 @@ describe("/employers copy", () => {
     expect(levels.filter((l) => l === 1)).toHaveLength(1);
     for (let i = 1; i < levels.length; i++) expect(levels[i] - levels[i - 1]).toBeLessThanOrEqual(1);
     expect(text).not.toContain("You've done the work");
+  });
+});
+
+describe("employer credit on deletion and employer data copy", () => {
+  const terms = dom(<TermsV2 />).textContent ?? "";
+  const refund = dom(<RefundPolicyV2 />).textContent ?? "";
+  const privacy = dom(<PrivacyV2 />).textContent ?? "";
+
+  it("states the forfeiture of unspent credit in the terms and the refund policy", () => {
+    expect(terms).toContain(CREDIT_ON_DELETION_SENTENCE);
+    expect(refund).toContain(CREDIT_ON_DELETION_SENTENCE);
+  });
+
+  it("lists the employer data categories and the tax retention in the privacy policy", () => {
+    const section = privacy.slice(privacy.indexOf("Employer data"));
+    for (const term of ["company name", "work email", "GSTIN", "billing name", "unlock and payment history", "as long as tax law requires"]) {
+      expect(section.toLowerCase()).toContain(term.toLowerCase());
+    }
+  });
+
+  it("has no em dashes in the new legal copy", () => {
+    for (const t of [terms, refund, privacy]) expect(t.slice(t.indexOf("Employer"))).not.toContain("—");
   });
 });
 

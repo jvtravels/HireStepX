@@ -61,7 +61,8 @@ supabase-schema.sql     DDL + RLS policies for every table
 1. Supabase Auth (email + password, plus Google OAuth)
 2. Session handling in `AuthContext.tsx` — multiple devices may be signed in
    at once (single-device `active_device_token` enforcement was removed in
-   `c1326e9c`); tabs sync logout over a BroadcastChannel. Email verification
+   `c1326e9c`; `signout-other-devices.ts` still rotates the token but nothing
+   reads it for enforcement); tabs sync logout over a BroadcastChannel. Email verification
    is a custom HMAC link (`custom_email_verified`, `verify-email.ts`), and
    `/api/resend-verification` re-issues it with a generic response.
 3. `withAuthAndRateLimit()` preamble in `server-handlers/_shared.ts` —

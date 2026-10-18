@@ -20,6 +20,9 @@
  *   account_erasure_log               proof of erasure; sha256(user id) only, counts only
  *   Razorpay itself has no deletion API: its copy is its own retention exception.
  *   Database backups are not edited; they age out ("overwritten within 30 days").
+ * The public privacy policy states this retention only as "as long as tax law requires".
+ * Have a CA confirm the exact period (books of account and GST records) before the
+ * policy or any retention job names a number.
  */
 
 import {

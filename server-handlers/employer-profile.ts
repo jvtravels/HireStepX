@@ -33,7 +33,8 @@ import { buildEmployerWelcomeEmail, sendEmployerEmail } from "./_employer-emails
 import { base64ToBytes } from "./_resume-upload-helpers";
 import { loadAuthIdentity } from "./_entitlements";
 import { parseBillingNameInput, parseGstinInput } from "./_gstin";
-import { deriveEmployerTier, emailDomain, isDeletionPending, isEmployerTier, isFreeMailDomain, isSuspended, TIER_LIMITS, tierAtLeast, type EmployerTier } from "./_employer-trust";
+import { sniffLogoType } from "./_employer-logo-helpers";
+import { deriveEmployerTier, emailDomain, isAcceptableCompanyWebsite, isDeletionPending, isEmployerTier, isFreeMailDomain, isSuspended, TIER_LIMITS, tierAtLeast, type EmployerTier } from "./_employer-trust";
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
@@ -167,6 +168,12 @@ async function uploadLogoIfPresent(userId: string, body: SubmitBody): Promise<Lo
   }
   if (bytes.length === 0) return { kind: "error", message: "We couldn't read that logo file. Try a different image." };
   if (bytes.length > LOGO_MAX_BYTES) return { kind: "error", message: "Logo is too large. Keep it under 2 MB." };
+  // The declared MIME is client-controlled: trust the magic bytes, and refuse a mismatch
+  // (e.g. HTML or SVG renamed to image/png) rather than storing it in a public bucket.
+  if (sniffLogoType(bytes) !== contentType) {
+    slog.error("employer-profile logo rejected", { code: "employer_profile_logo_content_mismatch", contentType: contentType.slice(0, 50), userId });
+    return { kind: "error", message: "That file isn't a valid PNG, JPG, or WEBP image. Try a different logo." };
+  }
 
   const storagePath = `${userId}/logo-${Date.now().toString(36)}.${ext}`;
   try {
@@ -315,7 +322,9 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
   if (companyName.length < 2) {
     return new Response(JSON.stringify({ error: "companyName is required" }), { status: 400, headers });
   }
-  if (website && !/^(https?:\/\/)?[a-z0-9-]+(\.[a-z0-9-]+)+(\/.*)?$/i.test(website)) {
+  // A bare public suffix ("co.in", "com") or an IP is not a company website; accepting it
+  // would let any same-suffix email address pass the website-match verification.
+  if (website && (!/^(https?:\/\/)?[a-z0-9-]+(\.[a-z0-9-]+)+(\/.*)?$/i.test(website) || !isAcceptableCompanyWebsite(website))) {
     return new Response(JSON.stringify({ error: "Enter a valid company website, e.g. acme.com" }), { status: 400, headers });
   }
 

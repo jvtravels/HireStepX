@@ -1,6 +1,7 @@
 "use client";
 
 import { formatPaise } from "../../server-handlers/_unlock-pricing";
+import { CREDIT_ON_DELETION_SENTENCE } from "./_employerOffer";
 
 /* What deleting an employer account does, shown inside the settings danger zone.
    The candidate copy ("removes your account and all data") would be wrong here:
@@ -19,7 +20,7 @@ export function deletionWarnings(facts: EmployerDeletionFacts): string[] {
     out.push(`You have ${facts.openJobs} open ${facts.openJobs === 1 ? "job" : "jobs"}. ${facts.openJobs === 1 ? "It stops" : "They stop"} being matched to candidates, and nothing new can be posted until you restore the account.`);
   }
   if (facts.creditPaise !== null && facts.creditPaise > 0) {
-    out.push(`You have ${formatPaise(facts.creditPaise)} of unspent account credit. It cannot be cashed out and is lost if the deletion completes, so spend it first.`);
+    out.push(`You have ${formatPaise(facts.creditPaise)} of unspent account credit. ${CREDIT_ON_DELETION_SENTENCE}`);
   }
   return out;
 }
@@ -44,7 +45,8 @@ export default function EmployerDeletionNotice({ facts }: { facts: EmployerDelet
       <div>
         <p className="m-0 font-semibold">Kept, anonymised, for tax</p>
         <ul className="m-0 mt-1 list-disc pl-5 text-muted-foreground">
-          <li>Payment and order records, with your identity removed. We are required to keep these.</li>
+          <li>Payment and order records, which we are required to keep. Your sign-in email is replaced, and your company name, website and logo are removed.</li>
+          <li>The GSTIN and billing name printed on your invoices, for as long as tax law requires.</li>
         </ul>
       </div>
       <p className="m-0 text-muted-foreground">

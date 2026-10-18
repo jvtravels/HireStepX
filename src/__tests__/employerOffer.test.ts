@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   CREDIT_BACK_SENTENCE,
   CREDIT_NO_RESPONSE_DAYS,
+  CREDIT_ON_DELETION_SENTENCE,
   GST_STATEMENT,
   HIDDEN_BEFORE_UNLOCK,
   PAY_AS_YOU_GO_SENTENCE,
@@ -9,9 +10,10 @@ import {
   VISIBLE_BEFORE_UNLOCK,
   proratedRemainderSentence,
   unlockFeeSentence,
+  workedPricingExampleSentence,
 } from "../employer/_employerOffer";
 import { NO_RESPONSE_DAYS } from "../../server-handlers/_employer-credit";
-import { UNLOCK_BATCH_PRICE_PAISE, UNLOCK_BUNDLE_SIZE, formatPaise } from "../../server-handlers/_unlock-pricing";
+import { UNLOCK_BATCH_PRICE_PAISE, UNLOCK_BUNDLE_SIZE, UNLOCK_SINGLE_PRICE_PAISE, formatPaise } from "../../server-handlers/_unlock-pricing";
 import { FAQ_ENTRIES, SCORING_STEPS } from "../../app/(marketing)/employers/_content";
 import { buildEmployersJsonLd } from "../../app/(marketing)/employers/_jsonld";
 
@@ -32,6 +34,26 @@ describe("employer offer copy", () => {
     expect(VISIBLE_BEFORE_UNLOCK.join(" ")).not.toMatch(/portfolio/i);
   });
 
+  it("says prices are GST-inclusive and never that GST is added on top", () => {
+    expect(GST_STATEMENT).toMatch(/GST-inclusive/);
+    expect(GST_STATEMENT).not.toMatch(/GST is added|added or included|plus GST/i);
+  });
+
+  it("builds the worked pricing example from the real price table", () => {
+    const ex = workedPricingExampleSentence();
+    expect(ex).toContain(`3 × ${formatPaise(UNLOCK_SINGLE_PRICE_PAISE)} = ${formatPaise(3 * UNLOCK_SINGLE_PRICE_PAISE)}`);
+    expect(ex).toContain(formatPaise(UNLOCK_BATCH_PRICE_PAISE));
+    expect(ex).toContain(formatPaise(UNLOCK_BUNDLE_SIZE * UNLOCK_SINGLE_PRICE_PAISE));
+    expect(ex).not.toContain("—");
+  });
+
+  it("states credit forfeiture on deletion once, without em dashes or cash-out promises", () => {
+    expect(CREDIT_ON_DELETION_SENTENCE).toMatch(/not redeemable for cash/);
+    expect(CREDIT_ON_DELETION_SENTENCE).toMatch(/lapses when an account is deleted/);
+    expect(CREDIT_ON_DELETION_SENTENCE).toMatch(/contact support before deleting/);
+    expect(CREDIT_ON_DELETION_SENTENCE).not.toContain("—");
+  });
+
   it("uses no em dashes in user-facing strings", () => {
     const all = [
       ...VISIBLE_BEFORE_UNLOCK, ...HIDDEN_BEFORE_UNLOCK, ...REVEALED_ON_UNLOCK,
@@ -50,6 +72,11 @@ describe("/employers JSON-LD", () => {
     const parsed = JSON.parse(faq.__html);
     expect(parsed["@type"]).toBe("FAQPage");
     expect(parsed.mainEntity).toHaveLength(FAQ_ENTRIES.length);
+  });
+
+  it("also emits an Organization for the brand", () => {
+    const org = buildEmployersJsonLd().map((s) => JSON.parse(s.__html)).find((o) => o["@type"] === "Organization");
+    expect(org).toMatchObject({ name: "HireStepX", url: "https://hirestepx.com" });
   });
 
   it("never emits a raw < in the serialised payload", () => {

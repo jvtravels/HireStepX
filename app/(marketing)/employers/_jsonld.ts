@@ -22,9 +22,27 @@ export function buildFaqSchema(entries: readonly FaqEntry[]): Record<string, unk
   };
 }
 
+/* Brand entity for the employer landing page. Kept free of build-time env (legal
+ * name, GSTIN) so the CSP hash computed by the generator script is identical to
+ * what the page renders. */
+export function buildOrganizationSchema(): Record<string, unknown> {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "HireStepX",
+    url: "https://hirestepx.com",
+    logo: "https://hirestepx.com/wordmark.png",
+    description: "AI mock interview platform for Indian candidates. Employers post a job free and pay only to unlock the contact details of matched candidates.",
+    areaServed: { "@type": "Country", name: "India" },
+    sameAs: ["https://www.linkedin.com/company/hirestepx", "https://twitter.com/hirestepx"],
+    contactPoint: { "@type": "ContactPoint", contactType: "customer support", url: "https://hirestepx.com/contact", availableLanguage: ["English"] },
+  };
+}
+
 export function buildEmployersJsonLd(): { __html: string }[] {
   return [
     serialize(breadcrumb([{ name: "For employers", path: "/employers" }])),
     serialize(buildFaqSchema(FAQ_ENTRIES)),
+    serialize(buildOrganizationSchema()),
   ];
 }

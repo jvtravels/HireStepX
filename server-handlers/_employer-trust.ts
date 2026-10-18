@@ -7,7 +7,8 @@
  * signup — signup stays self-serve:
  *   basic          signed up with a free-mail address, no admin verification
  *   email_verified confirmed sign-in email on a company (non-free-mail) domain
- *   verified       email domain matches the employer's website, or an admin
+ *   verified       email's registrable domain EQUALS the website's registrable
+ *                  domain (public-suffix aware, no DNS lookups), or an admin
  *                  verified them (employers.verification_tier = 'verified')
  */
 
@@ -38,15 +39,60 @@ export const FREE_MAIL_DOMAINS: ReadonlySet<string> = new Set([
   "hey.com", "duck.com", "web.de", "mail.ru", "qq.com", "163.com", "126.com",
   "zoho.com", "zohomail.in", "zohomail.com", "yandex.com", "yandex.ru",
   "mail.com", "gmx.com", "gmx.net", "inbox.com", "fastmail.com",
+  "indiatimes.com", "yahoomail.com", "lycos.com", "aim.com", "att.net", "comcast.net", "verizon.net", "sbcglobal.net",
+  "bellsouth.net", "cox.net", "earthlink.net", "optonline.net", "libero.it", "orange.fr", "free.fr", "wanadoo.fr",
+  "t-online.de", "gmx.de", "freenet.de", "naver.com", "daum.net", "hanmail.net", "sina.com", "sohu.com", "yeah.net",
+  "rambler.ru", "bk.ru", "list.ru", "inbox.ru", "ukr.net", "abv.bg", "o2.pl", "wp.pl", "interia.pl", "seznam.cz",
+  "mailfence.com", "runbox.com", "posteo.de", "mailbox.org", "hushmail.com", "gmx.us", "rediffmail.in", "rediff.co.in",
 ]);
 
 /* Throwaway inboxes: never a real company contact, whatever the website says. */
 export const DISPOSABLE_MAIL_DOMAINS: ReadonlySet<string> = new Set([
-  "mailinator.com", "guerrillamail.com", "guerrillamail.net", "guerrillamail.org", "guerrillamail.biz", "guerrillamail.de",
-  "guerrillamailblock.com", "sharklasers.com", "grr.la", "spam4.me",
-  "10minutemail.com", "10minutemail.net", "tempmail.com", "temp-mail.org", "temp-mail.io", "tempmail.net", "tempr.email",
-  "yopmail.com", "yopmail.fr", "yopmail.net", "trashmail.com", "trashmail.net", "getnada.com", "nada.email",
-  "maildrop.cc", "throwawaymail.com", "dispostable.com", "fakeinbox.com", "mailnesia.com", "mohmal.com", "emailondeck.com",
+  // Mailinator family
+  "mailinator.com", "mailinator.net", "mailinator.org", "mailinator2.com", "mailinater.com", "notmailinator.com", "tmailinator.com",
+  "binkmail.com", "bobmail.info", "chammy.info", "devnullmail.com", "letthemeatspam.com", "reallymymail.com", "reconmail.com",
+  "safetymail.info", "sogetthis.com", "spamhereplease.com", "streetwisemail.com", "suremail.info", "thisisnotmyrealemail.com",
+  "tradermail.info", "veryrealemail.com", "zippymail.info",
+  // Guerrilla Mail family
+  "guerrillamail.com", "guerrillamail.net", "guerrillamail.org", "guerrillamail.biz", "guerrillamail.de", "guerrillamail.info",
+  "guerrillamailblock.com", "sharklasers.com", "grr.la", "spam4.me", "pokemail.net",
+  // 10-minute / temp-mail style
+  "10minutemail.com", "10minutemail.net", "10minutemail.org", "10minutemail.co.uk", "10minemail.com", "20minutemail.com",
+  "30minutemail.com", "my10minutemail.com", "tempmail.com", "tempmail.net", "temp-mail.org", "temp-mail.io", "temp-mail.ru",
+  "tempr.email", "tempmailo.com", "tempail.com", "tempinbox.com", "tempmailaddress.com", "tmpmail.org", "tmpmail.net",
+  "tmail.ws", "temporary-mail.net", "temporaryemail.net", "temporaryforwarding.com", "temporaryinbox.com", "tempsky.com",
+  "tmailor.com", "throwam.com", "burnermail.io",
+  // Yopmail family
+  "yopmail.com", "yopmail.fr", "yopmail.net", "cool.fr.nf", "jetable.fr.nf", "nospam.ze.tc", "nomail.xl.cx", "mega.zik.dj",
+  "speed.1s.fr", "courriel.fr.nf", "moncourrier.fr.nf", "monemail.fr.nf", "monmail.fr.nf",
+  // Trashmail / wegwerf / discard
+  "trashmail.com", "trashmail.net", "trashmail.org", "trashmail.de", "trashmail.me", "trashmail.io", "trashmail.at",
+  "trash-mail.com", "trash-mail.de", "trashymail.com", "mytrashmail.com", "mailmetrash.com", "easytrashmail.com",
+  "wegwerfmail.de", "wegwerfmail.net", "wegwerfmail.org", "wegwerfemail.de", "einrot.com", "einrot.de",
+  "discard.email", "discardmail.com", "discardmail.de", "dropmail.me", "33mail.com",
+  // Fake Mail Generator and other generators
+  "armyspy.com", "cuvox.de", "dayrep.com", "fleckens.hu", "gustr.com", "jourrapide.com", "rhyta.com", "superrito.com", "teleworm.us",
+  "emailfake.com", "email-fake.com", "fakemail.net", "fakemailgenerator.com", "fakeinbox.com", "getairmail.com",
+  "getnada.com", "nada.email", "maildrop.cc", "throwawaymail.com", "dispostable.com", "mailnesia.com", "mohmal.com",
+  "emailondeck.com", "harakirimail.com", "incognitomail.org", "inboxbear.com", "inboxkitten.com", "moakt.com", "moakt.cc",
+  "mailsac.com", "mailcatch.com", "mailexpire.com", "mailforspam.com", "mailmoat.com", "mailnull.com", "mailtemp.info",
+  "mailzilla.com", "maildim.com", "emailtemporanea.net", "crazymailing.com", "cs.email",
+  // Spam-trap style
+  "anonbox.net", "anonymbox.com", "spamgourmet.com", "spamex.com", "spambox.us", "spamfree24.org", "spamavert.com",
+  "spam.la", "spaml.com", "spambog.com", "spambog.de", "spambog.ru", "sendspamhere.com", "putthisinyourspamdatabase.com",
+  "nospamfor.us", "nospam4.us", "nurfuerspam.de", "haltospam.com", "spoofmail.de", "smellfear.com", "snakemail.com",
+  "sneakemail.com", "spamevader.com",
+  // Assorted well-known throwaway providers
+  "mintemail.com", "mt2014.com", "nowmymail.com", "objectmail.com", "onewaymail.com", "owlpic.com", "pjjkp.com", "quickinbox.com",
+  "rcpt.at", "s0ny.net", "shieldedmail.com", "sofort-mail.de", "jetable.org", "kasmail.com", "klassmaster.com", "lroid.com",
+  "mvrht.com", "mypartyclip.de", "nepwk.com", "nwldx.com", "oneoffmail.com", "pookmail.com", "proxymail.eu", "receiveee.com",
+  "rmqkr.net", "selfdestructingmail.com", "trbvm.com", "trbvn.com", "wh4f.org", "yuurok.com", "dcctb.com", "deadaddress.com",
+  "disposableemailaddresses.com", "e4ward.com", "emkei.cz", "fastacura.com", "filzmail.com", "getonemail.com", "hulapla.de",
+  "imails.info", "instant-mail.de", "jnxjn.com", "junk1e.com", "kurzepost.de", "lifebyfood.com", "lookugly.com", "meltmail.com",
+  "nobulk.com", "noclickemail.com", "nomail.pw", "pancakemail.com", "plexolan.de", "privatdemail.net", "quickmail.nl",
+  "rppkn.com", "sandelf.de", "stuffmail.de", "supergreatmail.com", "teewars.org", "thankyou2010.com", "tyldd.com",
+  "uggsrock.com", "vomoto.com", "walala.org", "webm4il.info", "wilemail.com", "xagloo.com", "yapped.net", "zehnminutenmail.de",
+  "zoemail.org",
 ]);
 
 export function emailDomain(email: string | null | undefined): string {
@@ -79,6 +125,62 @@ export function websiteHost(website: string | null | undefined): string {
   }
 }
 
+/* Built-in public-suffix subset (no network, no dependency). A website or email
+ * domain that IS one of these, or that sits under a multi-label suffix here, is
+ * resolved to its registrable domain so "acme.co.in" is never confused with the
+ * shared suffix "co.in". Unknown TLDs fall back to a single-label suffix, which
+ * is correct for every plain gTLD/ccTLD not listed. Private hosting suffixes
+ * (github.io, vercel.app ...) are included because anyone can register a
+ * subdomain there, so owning "x.vercel.app" proves nothing about a company. */
+export const PUBLIC_SUFFIXES: ReadonlySet<string> = new Set([
+  // India
+  "co.in", "org.in", "net.in", "ac.in", "gov.in", "nic.in", "edu.in", "res.in", "firm.in", "gen.in", "ind.in", "mil.in",
+  // UK / Ireland
+  "co.uk", "org.uk", "ac.uk", "gov.uk", "me.uk", "ltd.uk", "plc.uk", "net.uk", "sch.uk",
+  // APAC / other common
+  "com.au", "net.au", "org.au", "edu.au", "gov.au", "co.nz", "org.nz", "net.nz", "co.za", "org.za", "com.sg", "edu.sg", "org.sg",
+  "com.my", "com.ph", "com.hk", "com.tw", "com.cn", "net.cn", "org.cn", "co.jp", "or.jp", "ne.jp", "co.kr", "co.id", "or.id",
+  "com.pk", "com.bd", "com.lk", "com.np", "co.th", "com.vn",
+  "com.br", "com.ar", "com.mx", "com.co", "com.tr", "com.ng", "co.ke", "com.eg", "co.il", "com.ua", "com.pl",
+  "co.ae", "com.sa", "com.qa",
+  // Private suffixes where subdomains are open to anyone
+  "github.io", "gitlab.io", "vercel.app", "netlify.app", "herokuapp.com", "blogspot.com", "wordpress.com", "web.app",
+  "firebaseapp.com", "pages.dev", "workers.dev", "onrender.com", "azurewebsites.net", "cloudfront.net", "amazonaws.com",
+  "appspot.com", "wixsite.com", "weebly.com", "squarespace.com", "notion.site", "carrd.co", "framer.app", "my.canva.site",
+]);
+
+function normalizeHost(host: string): string {
+  return host.trim().toLowerCase().replace(/\.+$/, "").replace(/^www\./, "");
+}
+
+/** True when the host is exactly a public suffix ("co.in", "com", "vercel.app"). */
+export function isPublicSuffixHost(host: string): boolean {
+  const h = normalizeHost(host);
+  if (!h) return false;
+  return !h.includes(".") || PUBLIC_SUFFIXES.has(h);
+}
+
+/** Registrable domain ("mail.acme.co.in" -> "acme.co.in"), or "" when the host
+ *  is empty, an IP-like literal, or itself a public suffix. */
+export function registrableDomain(host: string | null | undefined): string {
+  const h = normalizeHost(host ?? "");
+  if (!h || isPublicSuffixHost(h)) return "";
+  const labels = h.split(".");
+  if (!/[a-z]/.test(labels[labels.length - 1])) return ""; // IPv4 / numeric TLD
+  // Longest multi-label suffix wins; otherwise the last label is the suffix.
+  let suffixLabels = 1;
+  for (let n = Math.min(3, labels.length - 1); n >= 2; n--) {
+    if (PUBLIC_SUFFIXES.has(labels.slice(-n).join("."))) { suffixLabels = n; break; }
+  }
+  return labels.slice(-(suffixLabels + 1)).join(".");
+}
+
+/** A website we accept on a company profile: has a real host that is not a
+ *  public suffix or IP. Free-mail hosts are rejected by the tier rule, not here. */
+export function isAcceptableCompanyWebsite(website: string | null | undefined): boolean {
+  return registrableDomain(websiteHost(website)) !== "";
+}
+
 export function isEmployerTier(v: unknown): v is EmployerTier {
   return v === "basic" || v === "email_verified" || v === "verified";
 }
@@ -96,8 +198,12 @@ export function deriveEmployerTier(input: {
   const domain = emailDomain(input.email);
   if (input.emailConfirmed && domain && !isFreeMailDomain(domain)) {
     derived = "email_verified";
-    const host = websiteHost(input.website);
-    if (host && (host === domain || host.endsWith(`.${domain}`) || domain.endsWith(`.${host}`))) {
+    // Exact registrable-domain match only: suffix matching let "x@acme.co.in" verify
+    // against a website of "co.in", and a lookalike "evilacme.com" must never match "acme.com".
+    // Purely string-based on purpose: no DNS in the request path.
+    const mailRoot = registrableDomain(domain);
+    const siteRoot = registrableDomain(websiteHost(input.website));
+    if (mailRoot && siteRoot && mailRoot === siteRoot && !isFreeMailDomain(siteRoot)) {
       derived = "verified";
     }
   }
