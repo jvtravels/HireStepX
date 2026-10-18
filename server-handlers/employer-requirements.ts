@@ -142,7 +142,7 @@ async function sendStrongMatchEmail(opts: {
       footer,
       preview: headline,
       body:
-        emailTitle("New strong match", { accentWord: "found" }) +
+        emailTitle("Strong match", { accentWord: "updated" }) +
         para(escapeHtml(headline)) +
         dataCard("Requirement", [
           ["Role", escapeHtml(reqTitle)],
@@ -158,7 +158,7 @@ async function sendStrongMatchEmail(opts: {
       const res = await fetch("https://api.resend.com/emails", {
         method: "POST",
         headers: { Authorization: `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ from: FROM_EMAIL, to: [email], subject: "New strong match found | HireStepX", html, ...parts.resend }),
+        body: JSON.stringify({ from: FROM_EMAIL, to: [email], subject: "Strong match update | HireStepX", html, ...parts.resend }),
         signal: controller.signal,
       });
       if (!res.ok) {
@@ -621,6 +621,29 @@ export async function runMatching(requirementId: string, req: RequirementInput, 
   }
 }
 
+/** Best-effort: a failure only means the next pass may re-announce, never a failed run. */
+async function recordMissedPasses(requirementId: string, misses: Array<{ id: string; missed: number }>): Promise<void> {
+  const byCount = new Map<number, string[]>();
+  for (const m of misses) byCount.set(m.missed, [...(byCount.get(m.missed) ?? []), m.id]);
+  for (const [missed, ids] of byCount) {
+    for (const batch of chunk(ids, 100)) {
+      await fetch(
+        `${SUPABASE_URL}/rest/v1/requirement_matches?requirement_id=eq.${encodeURIComponent(requirementId)}&id=in.(${inList(batch)})&unlocked=eq.false`,
+        { method: "PATCH", headers: { ...serviceHeaders(), "Content-Type": "application/json", Prefer: "return=minimal" }, body: JSON.stringify({ missed_passes: missed }) },
+      ).catch(() => {});
+    }
+  }
+}
+
+async function markStrongAlerted(requirementId: string, candidateIds: string[]): Promise<void> {
+  for (const batch of chunk(candidateIds, 100)) {
+    await fetch(
+      `${SUPABASE_URL}/rest/v1/requirement_matches?requirement_id=eq.${encodeURIComponent(requirementId)}&candidate_user_id=in.(${inList(batch)})`,
+      { method: "PATCH", headers: { ...serviceHeaders(), "Content-Type": "application/json", Prefer: "return=minimal" }, body: JSON.stringify({ strong_alerted_at: new Date().toISOString() }) },
+    ).catch(() => {});
+  }
+}
+
 async function deleteLockedMatches(ids: string[], requirementId: string): Promise<boolean> {
   let ok = true;
   for (const batch of chunk(ids, 100)) {
@@ -659,7 +682,7 @@ async function runMatchingInner(requirementId: string, req: RequirementInput, ow
   await markRematchAttempt(requirementId);
 
   const existingRead = await fetchKeyset<ExistingMatchRow & Record<string, unknown>>({
-    baseUrl: `${SUPABASE_URL}/rest/v1/requirement_matches?requirement_id=eq.${encodeURIComponent(requirementId)}&select=id,candidate_user_id,match_score,unlocked,candidate_status,candidate_status_note,interview_scheduled_at`,
+    baseUrl: `${SUPABASE_URL}/rest/v1/requirement_matches?requirement_id=eq.${encodeURIComponent(requirementId)}&select=id,candidate_user_id,match_score,unlocked,candidate_status,candidate_status_note,interview_scheduled_at,candidate_response,missed_passes,strong_alerted_at`,
     headers, keyField: "id", pageSize: 1000, maxRows: 5000,
   });
   if (existingRead.failed) throw new Error("existing matches read failed");
@@ -668,6 +691,7 @@ async function runMatchingInner(requirementId: string, req: RequirementInput, ow
   // STRONG_MATCH_THRESHOLD on *this* pass can be told apart from one who has
   // been a strong match all along.
   const previousScoreByCandidate = new Map(existing.map((m) => [m.candidate_user_id, m.match_score]));
+  const alertedCandidateIds = new Set(existing.filter((m) => m.strong_alerted_at).map((m) => m.candidate_user_id));
 
   const blocked = await loadBlockedCandidateIds(SUPABASE_URL, headers, ownerUserId);
   if (!blocked) throw new Error("employer blocks read failed");
@@ -750,6 +774,7 @@ async function runMatchingInner(requirementId: string, req: RequirementInput, ow
       candidate_user_id: m.candidateId,
       match_score: m.matchScore,
       roster_score: m.rosterScore,
+      missed_passes: 0,
     }));
     // merge-duplicates: two concurrent runMatching passes for the same
     // requirement can both reach this insert for the same candidate — the
@@ -767,9 +792,13 @@ async function runMatchingInner(requirementId: string, req: RequirementInput, ow
   // Stale cleanup runs AFTER the upsert, so a failure mid-pass leaves the old
   // shortlist in place instead of an empty one. Locked rows only.
   const rankedIds = new Set(ranked.map((m) => m.candidateId));
-  const staleIds = planStaleRemovals(plan.untouched, rankedIds, scanComplete);
+  const { removeIds: staleIds, missIds } = planStaleRemovals(plan.untouched, rankedIds, scanComplete);
   stopIfAborted(signal);
-  if (staleIds.length > 0) await deleteLockedMatches(staleIds, requirementId);
+  if (missIds.length > 0) await recordMissedPasses(requirementId, missIds);
+  if (staleIds.length > 0) {
+    slog.info("requirement matches removed after repeated misses", { code: "match_removed_stale", requirementId, count: staleIds.length, matchIds: staleIds.map((id) => id.slice(0, 8)) });
+    await deleteLockedMatches(staleIds, requirementId);
+  }
   const removedStale = new Set(staleIds);
   // Untouched rows a partial scan couldn't re-evaluate stay on the list.
   const retained = plan.untouched.filter((m) => !rankedIds.has(m.candidate_user_id) && !removedStale.has(m.id));
@@ -779,7 +808,7 @@ async function runMatchingInner(requirementId: string, req: RequirementInput, ow
   // and a score only — no name or candidate-derived label, because nothing
   // here has been unlocked. Awaited with a swallowed rejection so a delivery
   // failure can neither fail the pass nor be dropped when the isolate exits.
-  const newStrongMatches = selectNewStrongMatches(ranked, previousScoreByCandidate, STRONG_MATCH_THRESHOLD);
+  const newStrongMatches = selectNewStrongMatches(ranked, previousScoreByCandidate, STRONG_MATCH_THRESHOLD, undefined, alertedCandidateIds);
   stopIfAborted(signal);
   if (newStrongMatches.length > 0) {
     const title = req.title || "your requirement";
@@ -788,7 +817,7 @@ async function runMatchingInner(requirementId: string, req: RequirementInput, ow
       notify({
         userId: ownerUserId,
         type: "strong_match_found",
-        title: "New strong match found",
+        title: "Strong match update",
         body: strongMatchAlertBody(newStrongMatches.length, topScore, title),
         link: `/employer/requirements/${requirementId}`,
       }).catch(() => {}),
@@ -800,6 +829,7 @@ async function runMatchingInner(requirementId: string, req: RequirementInput, ow
         topScore,
       }).catch(() => {}),
     ]);
+    await markStrongAlerted(requirementId, newStrongMatches.map((m) => m.candidateId));
   }
 
   const finalStatus = classifyRequirementStatus([

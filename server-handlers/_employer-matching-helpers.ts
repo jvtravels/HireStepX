@@ -79,13 +79,20 @@ export interface ExistingMatchRow {
   candidate_status: string | null;
   candidate_status_note: string | null;
   interview_scheduled_at: string | null;
+  /** Candidate's reply to the employer ("interested" / "declined"); absent on rows read before it was selected. */
+  candidate_response?: string | null;
+  missed_passes?: number | null;
+  strong_alerted_at?: string | null;
 }
+
+/** Consecutive passes a locked match may miss the fresh ranking before it is removed. */
+export const MISSED_PASSES_BEFORE_REMOVAL = 3;
 
 /** A row the employer has acted on — paid to unlock, moved off the default
  *  "shortlisted" stage, left a note, or scheduled an interview — keeps its id
  *  and pipeline state through a re-match and is never re-scored. */
-export function isTouchedMatch(m: Pick<ExistingMatchRow, "unlocked" | "candidate_status" | "candidate_status_note" | "interview_scheduled_at">): boolean {
-  return !!m.unlocked || (!!m.candidate_status && m.candidate_status !== "shortlisted") || !!m.candidate_status_note || !!m.interview_scheduled_at;
+export function isTouchedMatch(m: Pick<ExistingMatchRow, "unlocked" | "candidate_status" | "candidate_status_note" | "interview_scheduled_at" | "candidate_response">): boolean {
+  return !!m.unlocked || (!!m.candidate_response && m.candidate_response !== "none") || (!!m.candidate_status && m.candidate_status !== "shortlisted") || !!m.candidate_status_note || !!m.interview_scheduled_at;
 }
 
 export interface ExistingMatchPlan {
@@ -118,11 +125,17 @@ export function planExistingMatches(existing: ExistingMatchRow[], ineligibleCand
 /** Untouched, locked rows whose candidate did not make the fresh ranking.
  *  Only safe after a COMPLETE pool scan: a truncated scan can't tell "no
  *  longer matches" from "never looked at", so it removes nothing. */
-export function planStaleRemovals(untouched: ExistingMatchRow[], rankedCandidateIds: Set<string>, scanComplete: boolean): string[] {
-  if (!scanComplete) return [];
-  return untouched
-    .filter((m) => !m.unlocked && !isTouchedMatch(m) && !rankedCandidateIds.has(m.candidate_user_id))
-    .map((m) => m.id);
+export function planStaleRemovals(untouched: ExistingMatchRow[], rankedCandidateIds: Set<string>, scanComplete: boolean): { removeIds: string[]; missIds: Array<{ id: string; missed: number }> } {
+  const removeIds: string[] = [];
+  const missIds: Array<{ id: string; missed: number }> = [];
+  if (!scanComplete) return { removeIds, missIds };
+  for (const m of untouched) {
+    if (m.unlocked || isTouchedMatch(m) || rankedCandidateIds.has(m.candidate_user_id)) continue;
+    const missed = (m.missed_passes ?? 0) + 1;
+    if (missed >= MISSED_PASSES_BEFORE_REMOVAL) removeIds.push(m.id);
+    else missIds.push({ id: m.id, missed });
+  }
+  return { removeIds, missIds };
 }
 
 /* ── Pool selection ── */
@@ -502,9 +515,10 @@ export function selectNewStrongMatches<T extends RankedLike>(
   previousScoreByCandidate: Map<string, number>,
   strongThreshold: number,
   cap: number = MAX_NEW_STRONG_ALERTS,
+  alreadyAlertedIds: Set<string> = new Set(),
 ): T[] {
   return ranked
-    .filter((m) => m.matchScore >= strongThreshold && (previousScoreByCandidate.get(m.candidateId) ?? -1) < strongThreshold)
+    .filter((m) => m.matchScore >= strongThreshold && !alreadyAlertedIds.has(m.candidateId) && (previousScoreByCandidate.get(m.candidateId) ?? -1) < strongThreshold)
     .sort((a, b) => b.matchScore - a.matchScore)
     .slice(0, cap);
 }
@@ -514,8 +528,8 @@ export function selectNewStrongMatches<T extends RankedLike>(
 export function strongMatchAlertBody(count: number, topScore: number, requirementTitle: string): string {
   const title = requirementTitle || "your requirement";
   return count === 1
-    ? `A new strong match (${topScore}%) was found for ${title}.`
-    : `${count} new strong matches found for ${title} (top score ${topScore}%).`;
+    ? `A candidate now ranks as a strong match (${topScore}%) for ${title}.`
+    : `${count} candidates now rank as strong matches for ${title} (top score ${topScore}%).`;
 }
 
 /* ── Cron / run budgets ── */

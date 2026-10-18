@@ -158,11 +158,29 @@ describe("planStaleRemovals", () => {
     row({ id: "paid", candidate_user_id: "paid-gone", unlocked: true }),
     row({ id: "noted", candidate_user_id: "noted-gone", candidate_status_note: "x" }),
   ];
-  it("removes only locked, untouched rows that fell out of the ranking", () => {
-    expect(planStaleRemovals(untouched, new Set(["still-ranked"]), true)).toEqual(["stale"]);
+  it("counts a miss for locked, untouched rows that fell out of the ranking", () => {
+    const r = planStaleRemovals(untouched, new Set(["still-ranked"]), true);
+    expect(r.removeIds).toEqual([]);
+    expect(r.missIds).toEqual([{ id: "stale", missed: 1 }]);
   });
-  it("removes nothing when the pool scan was incomplete", () => {
-    expect(planStaleRemovals(untouched, new Set(), false)).toEqual([]);
+  it("removes a row only after the third consecutive miss", () => {
+    const r = planStaleRemovals([row({ id: "s", candidate_user_id: "gone", missed_passes: 2 })], new Set(), true);
+    expect(r.removeIds).toEqual(["s"]);
+  });
+  it("never removes a row the candidate responded to", () => {
+    const r = planStaleRemovals([row({ id: "r", candidate_user_id: "gone", candidate_response: "interested", missed_passes: 9 })], new Set(), true);
+    expect(r).toEqual({ removeIds: [], missIds: [] });
+  });
+  it("does nothing when the pool scan was incomplete", () => {
+    expect(planStaleRemovals(untouched, new Set(), false)).toEqual({ removeIds: [], missIds: [] });
+  });
+});
+
+describe("selectNewStrongMatches alert-once", () => {
+  it("skips candidates already alerted", () => {
+    const ranked = [{ candidateId: "a", matchScore: 60 }, { candidateId: "b", matchScore: 60 }];
+    const out = selectNewStrongMatches(ranked, new Map(), 40, 5, new Set(["a"]));
+    expect(out.map((m) => m.candidateId)).toEqual(["b"]);
   });
 });
 
@@ -320,7 +338,7 @@ describe("strong-match alerts", () => {
     const one = strongMatchAlertBody(1, 82, "Senior Designer");
     const many = strongMatchAlertBody(4, 82, "Senior Designer");
     expect(one).toContain("82%");
-    expect(many).toContain("4 new strong matches");
+    expect(many).toContain("4 candidates now rank as strong matches");
     expect(`${one} ${many}`).not.toMatch(/Candidate #|@/);
   });
 });

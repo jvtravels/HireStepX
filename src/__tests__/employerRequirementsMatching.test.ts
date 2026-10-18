@@ -205,7 +205,7 @@ describe("runMatching — re-match cleanup", () => {
       profiles: [dev("good"), chef("gone-1"), chef("gone-2"), chef("gone-3"), chef("gone-4")],
       sessions: [graded("good")],
       matches: [
-        { id: "m-stale", candidate_user_id: "gone-1", match_score: 50, unlocked: false },
+        { id: "m-stale", candidate_user_id: "gone-1", match_score: 50, unlocked: false, missed_passes: 2 },
         { id: "m-paid", candidate_user_id: "gone-2", match_score: 50, unlocked: true },
         { id: "m-interviewing", candidate_user_id: "gone-3", match_score: 50, unlocked: false, candidate_status: "interviewing" },
         { id: "m-noted", candidate_user_id: "gone-4", match_score: 50, unlocked: false, candidate_status_note: "great call" },
@@ -225,7 +225,7 @@ describe("runMatching — re-match cleanup", () => {
     const { fetchMock } = makeSim({
       profiles: [dev("good"), chef("gone-1")],
       sessions: [graded("good")],
-      matches: [{ id: "m-stale", candidate_user_id: "gone-1", match_score: 50, unlocked: false }],
+      matches: [{ id: "m-stale", candidate_user_id: "gone-1", match_score: 50, unlocked: false, missed_passes: 2 }],
     });
     const inner = fetchMock.getMockImplementation()!;
     fetchMock.mockImplementation(async (u: string, i?: RequestInit) => {
