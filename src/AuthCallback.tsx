@@ -173,29 +173,12 @@ export default function AuthCallback() {
         }}>
           <p style={{ color: c.ember, fontSize: 14, margin: 0 }}>{error}</p>
         </div>
+        {/* The auth code and state are single-use, so retrying the exchange here can never succeed; restarting from /login is the only real retry. */}
         <div style={{ display: "flex", gap: 12, justifyContent: "center", marginTop: 8 }}>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => router.push("/login")}
-            style={{
-              fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory,
-              background: "transparent", border: `1px solid ${c.border}`,
-              padding: "8px 20px",
-            }}
-          >
-            Back to Login
-          </Button>
           <Button
             variant="default"
             size="sm"
-            onClick={() => {
-              setError("");
-              router.push("/login");
-              setTimeout(() => {
-                // Re-trigger Google OAuth from login page
-              }, 100);
-            }}
+            onClick={() => router.replace("/login")}
             style={{
               fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.obsidian,
               background: T.indigo,

@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 import {
   hashToken,
   consumeToken,
+  releaseToken,
 } from "../../server-handlers/_used-tokens";
 
 const SUPABASE_URL = "https://example.supabase.co";
@@ -181,5 +182,21 @@ describe("consumeToken", () => {
     // Critical: must NOT contain resolution=ignore-duplicates which
     // would silently swallow a replay.
     expect(headers["Prefer"]).not.toContain("ignore-duplicates");
+  });
+});
+
+describe("releaseToken", () => {
+  it("DELETEs the hashed ledger row and reports success", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(ok(204));
+    expect(await releaseToken(SUPABASE_URL, SERVICE_KEY, "a.1.x", fetchImpl as unknown as typeof fetch)).toBe(true);
+    const [url, init] = fetchImpl.mock.calls[0];
+    expect(url).toBe(`${SUPABASE_URL}/rest/v1/used_verification_tokens?token_hash=eq.${hashToken("a.1.x")}`);
+    expect(init.method).toBe("DELETE");
+  });
+
+  it("returns false on non-2xx, network error, or missing config", async () => {
+    expect(await releaseToken(SUPABASE_URL, SERVICE_KEY, "t", vi.fn().mockResolvedValue(notOk(500)) as unknown as typeof fetch)).toBe(false);
+    expect(await releaseToken(SUPABASE_URL, SERVICE_KEY, "t", vi.fn().mockRejectedValue(new Error("down")) as unknown as typeof fetch)).toBe(false);
+    expect(await releaseToken("", SERVICE_KEY, "t", vi.fn() as unknown as typeof fetch)).toBe(false);
   });
 });

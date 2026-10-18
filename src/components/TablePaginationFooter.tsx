@@ -63,6 +63,7 @@ export function TablePaginationFooter({
           <Select value={String(rowsPerPage)} onValueChange={(v) => onRowsPerPageChange(Number(v))}>
             <SelectTrigger
               size="sm"
+              aria-label="Rows per page"
               style={{ borderRadius: 6, fontFamily: F.sans, fontSize: 13, fontWeight: 500, color: T.inkFaint }}
             >
               <SelectValue />

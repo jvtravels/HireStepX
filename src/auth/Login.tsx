@@ -314,13 +314,17 @@ export default function Login() {
   // Map known error codes to user-facing copy. Falls back to a generic
   // message for unrecognized codes so users never see raw error tokens.
   const errorParamMessage = errorParam
-    ? errorParam === "verification-failed"
-      ? "We couldn't verify your email. The link may have expired — sign up again or try a fresh reset link."
-      : errorParam === "verification-expired"
-        ? "Your verification link has expired. Sign up again to receive a new one."
-        : errorParam === "session-expired"
-          ? "Your session expired. Please log in again."
-          : "Something went wrong. Try again or contact support."
+    ? errorParam === "verification-failed" || errorParam === "config"
+      ? "We couldn't verify your email just now. Open the link in your email again in a minute; it still works. If it keeps failing, contact hello@hirestepx.com."
+      : errorParam === "link-expired" || errorParam === "verification-expired"
+        ? "Your verification link has expired. Sign up again with the same email to get a new one."
+        : errorParam === "invalid-token"
+          ? "That verification link isn't valid. Use the latest email we sent you, or sign up again to get a new one."
+          : errorParam === "user-not-found"
+            ? "We couldn't find an account for that link. Sign up to create one."
+            : errorParam === "session-expired"
+              ? "Your session expired. Please log in again."
+              : "Something went wrong. Try again or contact hello@hirestepx.com."
     : null;
 
   const verifiedNotice =

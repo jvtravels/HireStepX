@@ -1832,6 +1832,7 @@ a[href]:not([data-slot]):not([data-sidebar]):not([role]):not([data-no-underline]
 }
 .hsx-cookie__actions > button { min-width: 112px; }
 .hsx-cookie__customize { margin-right: auto; }
+.hsx-cookie__short { display: none; }
 @media (max-width: 640px) {
   .hsx-cookie {
     left: 0;
@@ -1849,4 +1850,34 @@ a[href]:not([data-slot]):not([data-sidebar]):not([role]):not([data-no-underline]
   .hsx-cookie__actions > button { flex: 1 1 0; min-width: 0; }
   .hsx-cookie__actions > .hsx-cookie__customize { flex: 1 1 100%; order: 3; margin-right: 0; }
   .hsx-cookie__actions > .hsx-cookie__save { flex: 1 1 100%; order: -1; }
+
+  /* First-visit banner: a compact strip (~100px) so it doesn't cover a
+     third of a phone screen. The heading stays for screen readers
+     (aria-labelledby); the privacy link flows inline after the sentence. */
+  .hsx-cookie--compact .hsx-cookie__title {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+  .hsx-cookie--compact .hsx-cookie__long { display: none; }
+  .hsx-cookie--compact .hsx-cookie__short { display: inline; }
+  .hsx-cookie--compact .hsx-cookie__scroll { padding: 10px 12px 0; overflow-y: visible; }
+  .hsx-cookie--compact .hsx-cookie__text,
+  .hsx-cookie--compact .hsx-cookie__text--small {
+    display: inline;
+    margin: 0;
+    font-size: var(--text-xs, 12px);
+    line-height: 1.35;
+  }
+  .hsx-cookie--compact .hsx-cookie__text--small::before { content: " "; }
+  .hsx-cookie--compact .hsx-cookie__actions {
+    padding: 8px 12px max(8px, env(safe-area-inset-bottom, 0px));
+    flex-wrap: nowrap;
+    gap: 6px;
+  }
+  .hsx-cookie--compact .hsx-cookie__actions > button { padding-inline: 6px; }
+  .hsx-cookie--compact .hsx-cookie__actions > .hsx-cookie__customize { flex: 1 1 0; order: 0; }
 }

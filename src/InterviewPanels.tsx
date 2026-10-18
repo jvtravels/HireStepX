@@ -1238,6 +1238,35 @@ export const TranscriptPanel = memo(function TranscriptPanel({ transcript, inter
     return () => mql.removeEventListener("change", handler);
   }, []);
 
+  const panelRef = useRef<HTMLDivElement>(null);
+  // The full-viewport backdrop below swallows clicks outside the drawer, so
+  // this is a modal: Escape closes, Tab stays inside, focus returns to the
+  // control that opened it.
+  useEffect(() => {
+    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    panelRef.current?.focus();
+    const onKey = (ev: KeyboardEvent) => {
+      if (ev.key === "Escape") {
+        ev.stopPropagation();
+        setShowTranscript(false);
+        return;
+      }
+      if (ev.key !== "Tab" || !panelRef.current) return;
+      const focusables = panelRef.current.querySelectorAll<HTMLElement>("button, [href], input, select, textarea, [tabindex]:not([tabindex='-1'])");
+      if (focusables.length === 0) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      const active = document.activeElement;
+      if (ev.shiftKey && (active === first || active === panelRef.current)) { ev.preventDefault(); last.focus(); }
+      else if (!ev.shiftKey && active === last) { ev.preventDefault(); first.focus(); }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      if (opener?.isConnected) opener.focus();
+    };
+  }, [setShowTranscript]);
+
   // Panel transcript filter
   const [transcriptFilter, setTranscriptFilter] = useState("all");
   const filteredTranscript = transcriptFilter === "all" ? transcript : transcript.filter(msg => {
@@ -1259,7 +1288,7 @@ export const TranscriptPanel = memo(function TranscriptPanel({ transcript, inter
           animation: "fadeUp 0.15s ease",
         }}
       />
-      <div className="iv-transcript-panel" style={isMobile ? {
+      <div ref={panelRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="iv-transcript-title" className="iv-transcript-panel outline-none" style={isMobile ? {
         position: "fixed", bottom: 0, left: 0, right: 0,
         maxHeight: "60vh",
         background: e.cream,
@@ -1288,7 +1317,7 @@ export const TranscriptPanel = memo(function TranscriptPanel({ transcript, inter
           display: "flex", justifyContent: "space-between", alignItems: "center",
         }}>
           <div>
-            <span style={{ fontFamily: ef.sans, fontSize: 18, fontWeight: 500, color: e.coal, letterSpacing: "-0.01em", display: "block" }}>
+            <span id="iv-transcript-title" style={{ fontFamily: ef.sans, fontSize: 18, fontWeight: 500, color: e.coal, letterSpacing: "-0.01em", display: "block" }}>
               Transcript
             </span>
             <span style={{ fontFamily: ef.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1.4, color: e.inkSoft, marginTop: 2, display: "block" }}>

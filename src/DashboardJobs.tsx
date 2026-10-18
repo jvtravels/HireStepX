@@ -132,7 +132,7 @@ function compareRows(a: JobMatch, b: JobMatch, sort: Sort<SortColumn>): number {
       return dir * ((a.budgetMax ?? a.budgetMin ?? 0) - (b.budgetMax ?? b.budgetMin ?? 0));
     case "interest":
       // "Employer interest" is what the two badges in that column show
-      // (Contacted vs Interested), not the invisible matchScore — sorting by
+      // (Matched vs Employer interested), not the invisible matchScore — sorting by
       // matchScore silently reordered rows by a number nobody on screen sees.
       return dir * ((a.unlocked ? 1 : 0) - (b.unlocked ? 1 : 0));
     case "date":
@@ -154,7 +154,7 @@ function experienceBucket(m: JobMatch): string | null {
 // visual language instead of five hand-tuned one-offs (mono vs sans,
 // five different font sizes, a green success color used for a neutral
 // job-type label). Color is reserved for genuine state (Matched,
-// Contacted, New); job type is a category, not a state, so it stays
+// Employer interested, New); job type is a category, not a state, so it stays
 // neutral per the design system's "accent for state, not decoration" rule.
 type BadgeTone = "neutral" | "success" | "brand" | "info";
 const BADGE_TONE: Record<BadgeTone, { color: string; background: string }> = {
@@ -217,7 +217,7 @@ function JobCard({ r, onOpen }: { r: JobMatch; onOpen: () => void }) {
         </div>
         <div style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.4, display: "flex", flexWrap: "wrap", columnGap: 6 }}>{meta.map((m, i) => <span key={i} style={{ whiteSpace: "nowrap" }}>{m}{i < meta.length - 1 && <span aria-hidden="true"> ·</span>}</span>)}</div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-          {r.unlocked ? <Badge tone="brand">Contacted</Badge> : <Badge tone="success">Matched</Badge>}
+          {r.unlocked ? <Badge tone="brand" title="This employer unlocked your profile and can reach out directly">Employer interested</Badge> : <Badge tone="success" title="Your profile matched this role's requirements">Matched</Badge>}
           {closed && <Badge tone="neutral">Role closed</Badge>}
           {isNew && <Badge tone="info">New</Badge>}
           {jobType && <Badge tone="neutral">{jobType}</Badge>}
@@ -327,6 +327,7 @@ export default function DashboardJobs() {
   );
 
   const filterSections = useMemo<FilterSection[]>(() => [
+    { key: "status", label: "Status", options: [{ value: "matched", label: "Matched" }, { value: "interested", label: "Employer interested" }] },
     { key: "location", label: "Location", options: locationOptions.map((o) => ({ value: o, label: o })) },
     { key: "jobType", label: "Job type", options: jobTypeOptions.map((o) => ({ value: o, label: o })) },
     { key: "experience", label: "Experience", options: experienceOptions.map((o) => ({ value: o, label: o })) },
@@ -346,7 +347,8 @@ export default function DashboardJobs() {
     const q = search.trim().toLowerCase();
     const list = matches.filter((m) => {
       const company = m.unlocked ? m.companyName : "";
-      if (q && !(`${m.roleTitle} ${company} ${m.location}`.toLowerCase().includes(q))) return false;
+      if (q && !(`${m.roleTitle} ${company} ${m.location} ${m.skills.join(" ")}`.toLowerCase().includes(q))) return false;
+      if (filters.status?.length && !filters.status.includes(m.unlocked ? "interested" : "matched")) return false;
       if (filters.location?.length && !filters.location.includes(m.location)) return false;
       if (filters.jobType?.length && !filters.jobType.includes(jobTypeLabel(m))) return false;
       if (filters.experience?.length && !filters.experience.includes(experienceBucket(m) ?? "")) return false;
@@ -428,7 +430,7 @@ export default function DashboardJobs() {
     );
   }
 
-  const shortlisted = data?.shortlistedCount ?? 0;
+  const shortlisted = matches.length;
 
   const body = shell(
     shortlisted === 0 ? (
@@ -436,16 +438,20 @@ export default function DashboardJobs() {
         <BriefcaseIcon size={26} color={t.inkFaint} aria-hidden="true" />
         <p style={{ fontFamily: f.sans, fontSize: 14.5, fontWeight: 600, color: t.coal, margin: 0 }}>No matches yet</p>
         <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkFaint, margin: 0, lineHeight: 1.5, maxWidth: 380 }}>
-          Employers browse the talent roster and reach out when a role fits — there's no set schedule for this.
-          Your match score is driven by your practice history, so completing more sessions improves how you rank.
+          Jobs show up here when your profile matches an open role, or when an employer shows interest in you. You can't apply; employers come to you.
+          Complete your resume, keep practising, and stay visible to employers to be matched sooner.
         </p>
-        <Button
-          onClick={() => router.push("/session/new")}
-          variant="outline"
-          style={{ marginTop: 4, borderRadius: 8, height: 36, fontFamily: f.sans, fontSize: 13, fontWeight: 500 }}
-        >
-          Start a practice session
-        </Button>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center", marginTop: 4 }}>
+          <Button onClick={() => router.push("/session/new")} style={{ borderRadius: 8, height: 36, fontFamily: f.sans, fontSize: 13, fontWeight: 500 }}>
+            Start a practice session
+          </Button>
+          <Button onClick={() => router.push("/resume")} variant="outline" style={{ borderRadius: 8, height: 36, fontFamily: f.sans, fontSize: 13, fontWeight: 500 }}>
+            Complete your resume
+          </Button>
+          <Button onClick={() => router.push("/settings")} variant="outline" style={{ borderRadius: 8, height: 36, fontFamily: f.sans, fontSize: 13, fontWeight: 500 }}>
+            Check employer visibility
+          </Button>
+        </div>
       </div>
     ) : (
       <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
@@ -574,8 +580,8 @@ export default function DashboardJobs() {
                     <TableCell style={{ padding: "12px 20px", verticalAlign: "top", maxWidth: 220, whiteSpace: "normal" }}>
                       <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 4 }}>
                         {r.unlocked ? (
-                          <Badge tone="brand" title="This employer has unlocked your profile and can reach out directly">
-                            Contacted
+                          <Badge tone="brand" title="This employer unlocked your profile and can reach out directly">
+                            Employer interested
                           </Badge>
                         ) : (
                           <Badge tone="success" title="Your profile matched this role's requirements">

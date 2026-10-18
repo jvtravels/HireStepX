@@ -34,6 +34,7 @@ import { HeaderChip, ReportCardShell } from "./panels/_primitives";
 import { StartHereHint, ANCHOR_PART_2, ANCHOR_PART_3, ANCHOR_PART_4 } from "./panels/StartHereHint";
 import { SectionBand } from "./panels/_primitives";
 import { TLDRHero } from "./panels/TLDRHero";
+import { atCompany } from "./roleLabel";
 import { OfferTrajectory } from "./panels/OfferTrajectory";
 import { InHandMonthlyCard } from "./panels/InHandMonthlyCard";
 import { PhaseLadderPanel } from "./panels/PhaseLadderPanel";
@@ -239,7 +240,7 @@ export function NegotiationFullReport({
         >
           {(() => {
             const lines: string[] = [
-              `Salary negotiation: ${role} at ${company}`,
+              `Salary negotiation: ${role}${atCompany(company)}`,
               `Outcome: ${
                 outcome.outcome === "accepted" ? `Accepted at ₹${typeof finalTotal === "number" ? parseFloat(finalTotal.toFixed(1)) : finalTotal} LPA` :
                 outcome.outcome === "walked_away" ? "Walked away" :

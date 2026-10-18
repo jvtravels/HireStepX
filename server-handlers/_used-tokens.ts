@@ -106,3 +106,28 @@ export async function consumeToken(
     };
   }
 }
+
+/** Give a token back after the verify step failed on OUR side (user update
+ *  error, lookup outage). Without this the link is burned and the user is
+ *  stuck unverified with a "used" link. Best-effort: a failed release just
+ *  leaves the previous behaviour (they request a new link). */
+export async function releaseToken(
+  supabaseUrl: string,
+  serviceKey: string,
+  token: string,
+  fetchImpl: typeof fetch = globalThis.fetch,
+): Promise<boolean> {
+  if (!supabaseUrl || !serviceKey) return false;
+  try {
+    const res = await fetchImpl(
+      `${supabaseUrl}/rest/v1/used_verification_tokens?token_hash=eq.${hashToken(token)}`,
+      {
+        method: "DELETE",
+        headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}`, Prefer: "return=minimal" },
+      },
+    );
+    return res.status >= 200 && res.status < 300;
+  } catch {
+    return false;
+  }
+}

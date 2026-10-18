@@ -88,7 +88,7 @@ describe("JobDetailPage", () => {
     }]);
     render(<JobDetailPage />);
     await waitFor(() => expect(screen.getByText("Role closed")).toBeInTheDocument());
-    expect(screen.getByText(/Company details are shared once this employer contacts you/)).toBeInTheDocument();
+    expect(screen.getByText(/Company details are shared once this employer shows interest/)).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /acme\.example/ })).not.toBeInTheDocument();
     expect(screen.getByText("Compensation not disclosed")).toBeInTheDocument();
     expect(screen.getByText("No specific skills listed for this role.")).toBeInTheDocument();

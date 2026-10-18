@@ -112,7 +112,7 @@ export async function downloadScoreCard(props: ScoreCardProps): Promise<void> {
   ctx.fillText(roleText, W - PADDING, ACCENT_BAR_H + 48);
   ctx.fillStyle = C.inkSoft;
   ctx.font = `400 18px ${C.font}`;
-  ctx.fillText(compText, W - PADDING, ACCENT_BAR_H + 76);
+  if (compText) ctx.fillText(compText, W - PADDING, ACCENT_BAR_H + 76);
   ctx.textAlign = "left";
 
   /* ── Divider ────────────────────────────────────────────────────── */

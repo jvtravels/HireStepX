@@ -1,4 +1,5 @@
 import type { NegotiationOutcome } from "../derivations";
+import { atCompany } from "../roleLabel";
 import { t, f, radius } from "./_primitives";
 import { Button } from "@/components/ui/button";
 
@@ -13,7 +14,7 @@ export function NextRoundCTA({
   let primaryLabel: string;
   if (outcome.outcome === "accepted") {
     title = "Take this into your next negotiation";
-    body = `You closed the deal on ${role} at ${company}. Run a session for the next role you're targeting, and practise the moves you missed before they cost you on the real one.`;
+    body = `You closed the deal on ${role}${atCompany(company)}. Run a session for the next role you're targeting, and practise the moves you missed before they cost you on the real one.`;
     primaryLabel = "Practise next round →";
   } else if (outcome.outcome === "walked_away") {
     title = "Run the next round";

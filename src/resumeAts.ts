@@ -32,7 +32,17 @@ function hasHeadingLine(lines: string[], keywords: string[]): boolean {
   });
 }
 
-export function computeATSScore(resumeText: string, _targetRole?: string): ATSResult {
+/* Sections the caller already knows exist from structured parsing. Plain
+ * text from PDF extraction is often flattened (no line breaks), which hides
+ * headings from hasHeadingLine() and produced false "missing Work
+ * Experience" next to a visibly populated Experience section. */
+export interface ATSStructuredHints {
+  experience?: boolean;
+  skills?: boolean;
+  education?: boolean;
+}
+
+export function computeATSScore(resumeText: string, _targetRole?: string, hints?: ATSStructuredHints): ATSResult {
   const text = resumeText.toLowerCase();
   const lines = resumeText.split("\n").filter(l => l.trim().length > 0);
 
@@ -42,17 +52,17 @@ export function computeATSScore(resumeText: string, _targetRole?: string): ATSRe
   // when a short heading-like line actually names them — see
   // hasHeadingLine() above.
   const requiredSections = [
-    { name: "Contact Info", keywords: ["email", "@", "phone", "linkedin", "github"], heading: false },
-    { name: "Work Experience", keywords: ["experience", "employment", "work history", "professional experience"], heading: true },
-    { name: "Education", keywords: ["education", "academic", "university", "degree", "college"], heading: true },
-    { name: "Skills", keywords: ["skills", "technical skills", "technologies", "competencies", "tools"], heading: true },
+    { name: "Contact Info", keywords: ["email", "@", "phone", "linkedin", "github"], heading: false, known: false },
+    { name: "Work Experience", keywords: ["experience", "employment", "work history", "professional experience"], heading: true, known: hints?.experience === true },
+    { name: "Education", keywords: ["education", "academic", "university", "degree", "college"], heading: true, known: hints?.education === true },
+    { name: "Skills", keywords: ["skills", "technical skills", "technologies", "competencies", "tools"], heading: true, known: hints?.skills === true },
   ];
 
   // Bonus sections
   const bonusSections = [
-    { name: "Summary", keywords: ["summary", "objective", "profile", "about"], heading: true },
-    { name: "Projects", keywords: ["projects", "portfolio"], heading: true },
-    { name: "Certifications", keywords: ["certifications", "certificates", "licenses"], heading: true },
+    { name: "Summary", keywords: ["summary", "objective", "profile", "about"], heading: true, known: false },
+    { name: "Projects", keywords: ["projects", "portfolio"], heading: true, known: false },
+    { name: "Certifications", keywords: ["certifications", "certificates", "licenses"], heading: true, known: false },
   ];
 
   // Action verbs — require more for a high score
@@ -70,8 +80,8 @@ export function computeATSScore(resumeText: string, _targetRole?: string): ATSRe
   const hasMetrics = metricsFound > 0;
 
   // Check sections
-  const matchesSection = (s: { keywords: string[]; heading: boolean }): boolean =>
-    s.heading ? hasHeadingLine(lines, s.keywords) : s.keywords.some(k => text.includes(k));
+  const matchesSection = (s: { keywords: string[]; heading: boolean; known: boolean }): boolean =>
+    s.known || (s.heading ? hasHeadingLine(lines, s.keywords) : s.keywords.some(k => text.includes(k)));
   const foundSections = requiredSections.filter(matchesSection);
   const missingSections = requiredSections.filter(s => !matchesSection(s));
   const foundBonus = bonusSections.filter(matchesSection);
@@ -133,7 +143,7 @@ export function computeATSScore(resumeText: string, _targetRole?: string): ATSRe
   ].filter(Boolean) as string[];
 
   const missing = [
-    ...missingSections.map(s => `Missing: ${s.name} section`),
+    ...missingSections.map(s => `${s.name} section`),
     foundVerbs.length < 5 ? "Add more action verbs (achieved, led, built, implemented...)" : null,
     !hasMetrics ? "Add quantified metrics (%, $, numbers)" : null,
     !hasBullets ? "Use bullet points for better readability" : null,

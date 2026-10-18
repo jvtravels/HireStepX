@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import type { NegotiationOutcome } from "../derivations";
+import { atCompany } from "../roleLabel";
 import { SectionHeader, EyebrowLabel, t, f, radius, space } from "./_primitives";
 import { Button } from "@/components/ui/button";
 
@@ -115,7 +116,7 @@ export function CounterOfferLetterPanel({
   if (outcome.outcome === "accepted") {
     letter = `Hi <Recruiter>,
 
-Thank you for the offer for the ${role} role at ${company}. I'm happy to formally accept the package at ${closingLine}.
+Thank you for the offer for the ${role} role${atCompany(company)}. I'm happy to formally accept the package at ${closingLine}.
 
 Could you send the formal offer letter at your convenience? Happy to confirm notice period and start date once that's in hand.
 
@@ -130,7 +131,7 @@ Best,
   } else if (outcome.candidateAsk !== null) {
     letter = `Hi <Recruiter>,
 
-Thanks for the productive call. I want to keep the conversation alive, I'm genuinely interested in the ${role} role at ${company}.
+Thanks for the productive call. I want to keep the conversation alive, I'm genuinely interested in the ${role} role${atCompany(company)}.
 
 Where I think we are: you're at ₹${closing} LPA, I'm anchored at ₹${outcome.candidateAsk} LPA. A few questions that might help us close the gap:
 
@@ -150,7 +151,7 @@ Best,
   } else {
     letter = `Hi <Recruiter>,
 
-Thanks for the offer for the ${role} role at ${company}. I'd like to take a moment to think it through against the market for this band before responding fully.
+Thanks for the offer for the ${role} role${atCompany(company)}. I'd like to take a moment to think it through against the market for this band before responding fully.
 
 A few questions that would help me put together a thoughtful response:
 
@@ -166,7 +167,7 @@ Best,
 
 — — —
 Before you send: name a specific counter number in your follow-up call. Look up the band on Levels.fyi or
-Glassdoor for "${role}" at companies similar to ${company} this quarter. A defended range
+Glassdoor for "${role}" at ${company ? `companies similar to ${company}` : "similar companies"} this quarter. A defended range
 ("I was anchoring at ₹X–Y based on what I'm seeing") is stronger than a single number.`;
     commentary = [
       "Buys time without committing to a number you haven't researched yet",

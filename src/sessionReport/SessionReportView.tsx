@@ -526,7 +526,7 @@ export default function SessionReportView({
       <>
         <style>{SESSION_REPORT_STYLES}</style>
         <div style={{ display: "flex", flexDirection: "column", width: "100%", fontFamily: f.sans, color: t.coal, paddingBottom: 48 }}>
-          <main
+          <section
             id="ir-main"
             aria-label="HR Round report"
             className="ir-main-container"
@@ -547,7 +547,7 @@ export default function SessionReportView({
             <ProductRating sessionId={sessionId ?? ""} />
             <TestimonialNudge score={data.overallScore} priorSessionCount={data.priorSessionCount} role={data.role} />
             <FooterSection onTrustAnswer={onTrustAnswer} onUsefulAnswer={onUsefulAnswer} />
-          </main>
+          </section>
         </div>
       </>
     );
@@ -589,7 +589,8 @@ export default function SessionReportView({
         <a href="#ir-section-hero" className="ir-skip-link">
           Skip to report
         </a>
-        <main
+        {/* section, not main: the app shell's SidebarInset already provides the page's one main landmark. */}
+        <section
           id="ir-main"
           aria-label="Interview report"
           className="ir-main-container"
@@ -687,7 +688,7 @@ export default function SessionReportView({
             return data.negotiationOutcome ? secondary : <MoreDetail>{secondary}</MoreDetail>;
           })()}
           <TestimonialNudge score={data.overallScore} priorSessionCount={data.priorSessionCount} role={data.role} />
-        </main>
+        </section>
       </div>
     </>
   );

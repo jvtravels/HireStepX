@@ -349,7 +349,7 @@ export function sessionReportToInterviewResult(
 ): InterviewResultData {
   const { report, session } = ctx;
 
-  const company = ctx.targetCompany || session.company || "your target company";
+  const company = ctx.targetCompany || session.company || "";
   const role = ctx.targetRole || session.role || "Candidate";
   // Seniority band for the "Level" pill. The previous derivation took the
   // last whitespace token of `companyLabel` ("Flipkart", "Big Tech
@@ -1949,7 +1949,7 @@ export function toBehavioralFullReportData(
    * the persona but the report should still read like one. */
   const persona: BehavioralFullReportData["persona"] = {
     voice: ctx.personaVoice || "Hiring Manager",
-    tier: session.company ? `${session.company}-tier` : "your target tier",
+    tier: session.company ? `${session.company}-tier` : "",
     role: session.role || "Candidate",
     lpaBand: ctx.lpaBand || "—",
   };

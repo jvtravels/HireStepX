@@ -8,6 +8,7 @@
 import { t, f, radius, size } from "../tokens";
 import type { DeliveryMetric, InterviewResultData, Verdict } from "../types";
 import { ReportCardShell } from "./_primitives";
+import { atCompany } from "../roleLabel";
 import { Badge } from "@/components/ui/badge";
 import {
   CalibrationBanner,
@@ -61,7 +62,7 @@ export function HeroSection({ data }: { data: InterviewResultData }) {
       padding={28}
     >
       <h1 id="ir-hero-heading" style={{ position: "absolute", width: 1, height: 1, padding: 0, margin: -1, overflow: "hidden", clip: "rect(0,0,0,0)", whiteSpace: "nowrap", border: 0 }}>
-        Interview Report — {data.role} at {data.company}, scored {data.overallScore} out of 100
+        Interview Report — {data.role}{atCompany(data.company)}, scored {data.overallScore} out of 100
       </h1>
       {data.readiness && (
         <ReadinessHeadline
@@ -75,11 +76,13 @@ export function HeroSection({ data }: { data: InterviewResultData }) {
 
       {/* Top row: company / role / level / difficulty pills */}
       <div className="ir-pill-bar" style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 20 }}>
-        <span className="ir-pill">
-          <span style={{ fontSize: size.base }}>🟢</span>
-          {data.company}
-          <span style={{ color: t.inkSoft, fontSize: size.xs, marginLeft: 4 }}>Company</span>
-        </span>
+        {data.company && (
+          <span className="ir-pill">
+            <span style={{ fontSize: size.base }}>🟢</span>
+            {data.company}
+            <span style={{ color: t.inkSoft, fontSize: size.xs, marginLeft: 4 }}>Company</span>
+          </span>
+        )}
         <span className="ir-pill">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={t.indigo} strokeWidth="2" aria-hidden="true">
             <polyline points="16 18 22 12 16 6" />

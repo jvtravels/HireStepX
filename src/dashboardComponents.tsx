@@ -238,7 +238,13 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
         headers: authHeadersRef.current,
         body: JSON.stringify(pendingVerification),
       })
-        .then(r => r.json())
+        .then(r => {
+          // 401 (stale token), 429 and 5xx are transient: the charge already
+          // succeeded, so route them to the retry path instead of treating
+          // them as a definitive rejection that drops the pending record.
+          if (r.status === 401 || r.status === 429 || r.status >= 500) throw new Error(`transient ${r.status}`);
+          return r.json();
+        })
         .then(verifyData => {
           if (cancelled) return;
           if (verifyData.success) {
@@ -287,6 +293,7 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
         })
         .catch(() => {
           if (cancelled) return;
+          authHeadersRef.current = {}; // force a fresh token on retry (a 401 means it went stale)
           // Auto-retry once after 2 seconds with user feedback
           if (attempt < 1) {
             setError("Verification taking longer than expected — retrying...");

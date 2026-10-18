@@ -1,4 +1,5 @@
 import { derivePhases, type NegotiationOutcome } from "../derivations";
+import { atCompany } from "../roleLabel";
 
 export function TLDRHero({
   outcome, role, company, priorSessionCount,
@@ -60,15 +61,15 @@ export function TLDRHero({
      * ONLY when the deal did not close. State the accept plainly and DON'T
      * fabricate a delta we can't compute. */
     verdict = counterNamed
-      ? `You accepted the ${role} offer at ${company} — you'd countered at ₹${candidateAsk} LPA. The exact offer movement wasn't captured this session, so the panels below work from the kernel's own record of where you landed.`
-      : `You accepted the ${role} offer at ${company}. The exact offer movement wasn't captured this session, so the panels below work from the kernel's own record of where you landed.`;
+      ? `You accepted the ${role} offer${atCompany(company)} — you'd countered at ₹${candidateAsk} LPA. The exact offer movement wasn't captured this session, so the panels below work from the kernel's own record of where you landed.`
+      : `You accepted the ${role} offer${atCompany(company)}. The exact offer movement wasn't captured this session, so the panels below work from the kernel's own record of where you landed.`;
   } else if (outcome.outcome === "walked_away") {
     /* `closing` can be null when the candidate walked before any offer
      * number landed — never interpolate it raw (that renders "₹null LPA"
      * in the user's face). Name the figure only when we actually have it. */
     verdict = closing !== null
-      ? `You walked away from a ₹${closing} LPA offer for ${role} at ${company}. The panels below help you decide whether the next round of this role (or a similar one) is worth a counter-anchor.`
-      : `You walked away from the ${role} offer at ${company} before a firm number landed. The panels below help you decide whether the next round of this role (or a similar one) is worth a counter-anchor.`;
+      ? `You walked away from a ₹${closing} LPA offer for ${role}${atCompany(company)}. The panels below help you decide whether the next round of this role (or a similar one) is worth a counter-anchor.`
+      : `You walked away from the ${role} offer${atCompany(company)} before a firm number landed. The panels below help you decide whether the next round of this role (or a similar one) is worth a counter-anchor.`;
   } else {
     /* R-10 (2026-07-10, live staging — Senior Product Designer @ Lollypop
      * Design Studio): the no-agreement branch read like a win ("You explored N

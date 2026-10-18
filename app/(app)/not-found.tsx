@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import AppNotFound from "@/AppNotFound";
 
 export default function NotFound() {
-  redirect("/dashboard");
+  return <AppNotFound />;
 }

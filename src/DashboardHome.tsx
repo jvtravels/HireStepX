@@ -478,10 +478,6 @@ export default function DashboardHome() {
       />
 
       <ResumeFreshnessStrip parsedAt={resumeData?.parsedAt} onRefresh={goToResume} />
-      <OutcomePrompt
-        firstSessionDate={user?.practiceTimestamps?.[0]}
-        isCampus={sessions.recentSessions.some((s) => s.focus === "campus-placement")}
-      />
 
       <StatCardsRow
         hasData={sessions.hasData}
@@ -534,6 +530,12 @@ export default function DashboardHome() {
           headline={nextMove.headline}
         />
       )}
+
+      {/* Secondary survey: sits below the primary next-move CTA at every width. */}
+      <OutcomePrompt
+        firstSessionDate={user?.practiceTimestamps?.[0]}
+        isCampus={sessions.recentSessions.some((s) => s.focus === "campus-placement")}
+      />
 
       {sessions.sessionsLoading ? (
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", gap: 16 }}>

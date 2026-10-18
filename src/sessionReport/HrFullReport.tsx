@@ -22,6 +22,7 @@
 import type { HrReportData, Question, Skill } from "./types";
 import { t, f } from "./tokens";
 import { ReportCardShell, SectionBand } from "./panels/_primitives";
+import { atCompany } from "./roleLabel";
 import { Empty, EmptyDescription } from "@/components/ui/empty";
 import { Button } from "@/components/ui/button";
 
@@ -1013,7 +1014,7 @@ export default function HrFullReport({
         )}
         {totalDims === 0 && (
           <div className="hrfr-bridge-msg" style={{ fontFamily: SANS, fontSize: 13, lineHeight: 1.5, color: "#E5E2F2", gridColumn: "3 / -1" }}>
-            HR Round for {role} at {company}
+            HR Round for {role}{atCompany(company)}
           </div>
         )}
         <div

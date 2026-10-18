@@ -161,7 +161,7 @@ export function ReadinessHeadline({
       </div>
       <span style={{ height: 22, width: 1, background: t.line }} aria-hidden="true" />
       <p style={{ fontFamily: f.sans, fontSize: size.base, color: t.coal, margin: 0, flex: 1, minWidth: 240, lineHeight: 1.45 }}>
-        For <strong style={{ color: t.coal, fontWeight: 600 }}>{formatRoleWithLevel(level, role)}</strong> at <strong>{company}</strong>.
+        For <strong style={{ color: t.coal, fontWeight: 600 }}>{formatRoleWithLevel(level, role)}</strong>{company ? <> at <strong>{company}</strong></> : null}.
         {readiness.pct >= 80 ? (
           <> You&apos;re interview-ready — focus on consistency.</>
         ) : (

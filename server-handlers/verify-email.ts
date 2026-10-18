@@ -3,7 +3,7 @@
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { validateToken as validateTokenPure } from "./_email-verify-helpers";
-import { consumeToken } from "./_used-tokens";
+import { consumeToken, releaseToken } from "./_used-tokens";
 
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
@@ -208,6 +208,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!updateRes.ok) {
       const errBody = await updateRes.text();
       console.error("Failed to confirm email:", updateRes.status, errBody);
+      await releaseToken(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, token);
       return res.redirect(302, `${APP_URL}/login?error=verification-failed`);
     }
 
@@ -215,6 +216,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.redirect(302, `${APP_URL}/login?verified=true${refQuery}`);
   } catch (err) {
     console.error("Email verification error:", err);
+    await releaseToken(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, token);
     return res.redirect(302, `${APP_URL}/login?error=verification-failed`);
   }
 }

@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { createPortal } from "react-dom";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { track } from "@vercel/analytics";
 import { captureClientEvent } from "./posthogClient";
@@ -1763,8 +1764,19 @@ export default function SessionSetup() {
           1080px-capped inner wrapper was making the logo + name look
           bunched toward the centre on wide displays. */}
       <div className="hsx-setup-topbar" style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", gap: 16, borderBottom: `1px solid ${T.line}`, background: T.cream }}>
-        <div role="button" tabIndex={0} onClick={() => router.push("/dashboard")} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); router.push("/dashboard"); } }} style={{ justifySelf: "start", cursor: "pointer" }} title="Back to dashboard">
-          <Wordmark />
+        <div style={{ justifySelf: "start", display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
+          <Link href="/dashboard" aria-label="HireStepX, go to dashboard" style={{ textDecoration: "none", display: "inline-flex" }}>
+            <Wordmark />
+          </Link>
+          {/* history.length is 1 when the page was opened directly, where back() would leave the app. */}
+          <button
+            type="button"
+            onClick={() => { if (window.history.length > 1) router.back(); else router.push("/dashboard"); }}
+            style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "transparent", border: "none", cursor: "pointer", padding: "6px 8px", borderRadius: 8, fontFamily: F.sans, fontSize: 14, fontWeight: 500, color: T.inkSoft }}
+          >
+            <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5" /><path d="m12 19-7-7 7-7" /></svg>
+            Back
+          </button>
         </div>
         <div style={{ justifySelf: "center" }} />
         {/* Identity chip — always reserves a fixed-height slot so the

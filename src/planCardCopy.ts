@@ -54,3 +54,16 @@ export function planCtaTitle(label: string): string {
     ? "Get more sessions — ₹9 per session or ₹39 for 5 (Sprint Pack)"
     : "Buy more interview sessions";
 }
+
+/**
+ * Labels for the two separate quota pieces on the plan card. "Sessions used
+ * 2 of 2" next to "4 extra sessions available" read as a contradiction, so
+ * the plan allowance and purchased credits are named distinctly: the first is
+ * the plan's own allowance, the second is a separate bought balance.
+ */
+export function planUsageLabels(isStarter: boolean): { allowance: string; credits: string } {
+  return {
+    allowance: isStarter ? "Pack sessions used" : "Plan sessions used",
+    credits: "Purchased sessions left",
+  };
+}

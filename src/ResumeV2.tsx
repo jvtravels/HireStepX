@@ -14,7 +14,8 @@
 import { useMemo } from "react";
 import { tokens as T, fonts as F, textSize as S } from "./auth/_tokens";
 import { useAuth } from "./AuthContext";
-import { useDashboardUIActions } from "./DashboardContext";
+import { useDashboardSessions, useDashboardUIActions } from "./DashboardContext";
+import { practiceCoverageStatus } from "./dashboardData";
 import { useResumeUpload, type ResumePhase } from "./useResumeUpload";
 import { PortfolioLinksSection } from "./settingsSections";
 import LoadingScreen from "./_LoadingScreen";
@@ -247,6 +248,7 @@ function ResumeEmptyState({ onUpload, errorMsg }: { onUpload: () => void; errorM
 export default function ResumeV2Screen() {
   const { user, loading: authLoading, updateUser: authUpdateUser } = useAuth();
   const { showToast } = useDashboardUIActions();
+  const { practiceCoverage } = useDashboardSessions();
   const {
     phase,
     profile,
@@ -264,8 +266,11 @@ export default function ResumeV2Screen() {
   const atsResult = useMemo(() => {
     const source = resumeText || user?.resumeText || "";
     if (!source) return null;
-    return computeATSScore(source, user?.targetRole);
-  }, [resumeText, user?.resumeText, user?.targetRole]);
+    return computeATSScore(source, user?.targetRole, {
+      experience: (profile?.experiences?.length ?? 0) > 0,
+      skills: (profile?.topSkills.length ?? 0) > 0,
+    });
+  }, [resumeText, user?.resumeText, user?.targetRole, profile]);
 
   const coverageRows = useMemo(() => {
     if (!profile) return [];
@@ -318,9 +323,16 @@ export default function ResumeV2Screen() {
     const qualityScore = profile.resumeScore ?? 0;
     const qualityTone = toneForPct(qualityScore);
     const atsTone = atsResult ? toneForPct(atsResult.score) : "error";
-    const coveredCount = coverageRows.filter((r) => r.band === "good" || r.band === "excellent").length;
-    const coverageTone: MetricTone = coveredCount === 0 ? "error" : coveredCount < coverageRows.length ? "warning" : "good";
-    const coverageChip = coveredCount === 0 ? "Not started" : coveredCount === coverageRows.length ? "Complete" : "In progress";
+    // Resume-fit tracks (the "Practice next" list) are a separate signal from
+    // practice coverage; coverage itself comes from the same helper and data
+    // the dashboard card uses so the two screens can never disagree.
+    const strongFitCount = coverageRows.filter((r) => r.band === "good" || r.band === "excellent").length;
+    const coverageStatus = practiceCoverageStatus(practiceCoverage);
+    const coveredCount = practiceCoverage.practicedCount;
+    const coverageTotal = practiceCoverage.totalAreas;
+    const coverageTone: MetricTone = coverageStatus.status === "not_started" ? "error" : coverageStatus.status === "in_progress" ? "warning" : "good";
+    const coverageChip = coverageStatus.label;
+    const fitTone: MetricTone = strongFitCount === 0 ? "error" : strongFitCount < coverageRows.length ? "warning" : "good";
 
     const scoreBreakdownRows = SCORE_BREAKDOWN_META.map((meta) => {
       const value = profile.scoreBreakdown?.[meta.key] ?? 0;
@@ -533,7 +545,7 @@ export default function ResumeV2Screen() {
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <MicIcon size={15} color={T.inkFaint} aria-hidden="true" />
-                  <p style={{ fontFamily: font.ui, fontSize: S.sm, fontWeight: 500, color: T.inkFaint, margin: 0 }}>Interview coverage</p>
+                  <p style={{ fontFamily: font.ui, fontSize: S.sm, fontWeight: 500, color: T.inkFaint, margin: 0 }}>Practice coverage</p>
                 </div>
                 <Badge style={{ background: metricColor[coverageTone].chipBg, color: metricColor[coverageTone].chipText, borderRadius: 999, fontFamily: font.ui, fontWeight: 600, fontSize: S.xs, padding: "2px 8px" }}>
                   {coverageChip}
@@ -542,9 +554,9 @@ export default function ResumeV2Screen() {
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
                   <span style={{ fontFamily: font.ui, fontSize: S["3xl"], fontWeight: 700, color: T.coal }}>{coveredCount}</span>
-                  <span style={{ fontFamily: font.ui, fontSize: S.md, color: T.inkFaint }}>/ {coverageRows.length}</span>
+                  <span style={{ fontFamily: font.ui, fontSize: S.md, color: T.inkFaint }}>/ {coverageTotal}</span>
                 </div>
-                <ProgressBar value={coveredCount} max={coverageRows.length} color={metricColor[coverageTone].bar} label={`Interview coverage: ${coveredCount} out of ${coverageRows.length}`} />
+                <ProgressBar value={coveredCount} max={coverageTotal} color={metricColor[coverageTone].bar} label={`Practice coverage: ${coveredCount} out of ${coverageTotal}`} />
               </div>
             </SectionCard>
           </div>
@@ -754,7 +766,7 @@ export default function ResumeV2Screen() {
                     <div style={{ display: "flex", alignItems: "flex-start", gap: 10, background: T.white, border: `1px solid ${T.errorLine}`, borderRadius: 8, padding: "10px 14px" }}>
                       <AlertCircleIcon size={14} color={T.errorInk} aria-hidden="true" style={{ flexShrink: 0, marginTop: 2 }} />
                       <p style={{ fontFamily: font.ui, fontSize: S.base, color: T.coal, margin: 0, flex: 1 }}>
-                        Missing: {atsResult.missing.join(", ")}
+                        Needs attention: {atsResult.missing.join(", ")}
                       </p>
                     </div>
                   )}
@@ -839,8 +851,8 @@ export default function ResumeV2Screen() {
                   </div>
                   <p style={{ fontFamily: font.ui, fontSize: S.base, color: T.inkFaint, margin: "2px 0 0" }}>Questions matched to resume</p>
                 </div>
-                <Badge style={{ background: metricColor[coverageTone].chipBg, color: metricColor[coverageTone].chipText, borderRadius: 999, fontFamily: font.ui, fontWeight: 600, fontSize: S.sm, padding: "4px 10px" }}>
-                  {coveredCount} / {coverageRows.length} covered
+                <Badge style={{ background: metricColor[fitTone].chipBg, color: metricColor[fitTone].chipText, borderRadius: 999, fontFamily: font.ui, fontWeight: 600, fontSize: S.sm, padding: "4px 10px" }}>
+                  {strongFitCount} / {coverageRows.length} strong fits
                 </Badge>
               </div>
               <Divider />

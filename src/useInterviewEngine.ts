@@ -228,6 +228,7 @@ export function useInterviewEngine() {
   // entry with no draft at all, and kicked a mid-interview refresh back to
   // /dashboard after the session had already been counted/charged.
   const rawDraftExistedRef = useRef(false);
+  const unansweredSessionIdRef = useRef<string | null>(null);
   if (!draftRef.current) {
     try {
       const raw = localStorage.getItem(draftKey);
@@ -245,6 +246,14 @@ export function useInterviewEngine() {
           if (valid) {
             draftRef.current = valid;
           } else {
+            // Rejected draft (no answer yet): keep its id so a refresh before
+            // the first answer re-sends the SAME sessionId to
+            // record-session-start (idempotent) instead of charging a second credit.
+            if (parsed && typeof parsed.sessionId === "string" && parsed.sessionId
+              && typeof parsed.savedAt === "number" && Date.now() - parsed.savedAt < 30 * 60_000
+              && (!parsed.interviewType || parsed.interviewType === interviewType)) {
+              unansweredSessionIdRef.current = parsed.sessionId;
+            }
             localStorage.removeItem(draftKey);
             deleteFromIDB(draftKey);
           }
@@ -270,6 +279,8 @@ export function useInterviewEngine() {
     sessionIdAdoptedRef.current = true;
     if (draftRef.current?.sessionId) {
       liveSessionIdRef.current = draftRef.current.sessionId;
+    } else if (unansweredSessionIdRef.current) {
+      liveSessionIdRef.current = unansweredSessionIdRef.current;
     }
   }
 
@@ -352,7 +363,7 @@ export function useInterviewEngine() {
      The endpoint is idempotent on sessionId (handles React StrictMode
      double-mount and any client retry); save-session.ts checks the
      same started_session_ids list to avoid double-bumping on completion.
-     Fire-and-forget with one retry — a transient network blip on the
+     Fire-and-forget with up to two retries (1.5s, 4s) — a transient network blip on the
      first attempt must not silently drop the session-start record, which
      would cause quota counting to undercount active sessions. */
   useEffect(() => {
@@ -360,41 +371,40 @@ export function useInterviewEngine() {
     if (missingStartIntentRef.current) return; // B-EMP2: bouncing to /dashboard — don't charge a credit
     const sessionId = liveSessionIdRef.current;
     (async () => {
-      try {
-        const { apiFetch } = await import("./apiClient");
-        const startResult = await apiFetch<{ ok: boolean; allowed?: boolean; recorded?: boolean; concurrent?: boolean; reason?: string }>("/api/record-session-start", { sessionId, type: interviewType });
-        // S9-B24 — credit gate: server blocked this session start (over free limit,
-        // no purchased credits). Mirror the generate-questions 403 path so the user
-        // lands on the upgrade modal instead of a broken interview.
-        if (!startResult.ok && startResult.status === 403) {
-          const reason = startResult.data?.reason || "";
-          toast(reason || "Session limit reached — redirecting to dashboard.", "info");
-          router.replace("/dashboard?upgrade=1");
-          return;
-        }
-        // OA-B50: server detected an in-flight session on another device — warn so the
-        // user knows they may consume a second credit.
-        if (startResult.data?.concurrent) {
-          toast("Heads-up: it looks like another session is active on a different device. Running two sessions simultaneously may use extra practice credits.", "info");
-        }
-      } catch (e1) {
-        console.warn("[interview] record-session-start failed, retrying in 2s:", e1 instanceof Error ? e1.message : e1);
-        await new Promise(r => setTimeout(r, 2000));
-        try {
-          const { apiFetch } = await import("./apiClient");
-          await apiFetch("/api/record-session-start", { sessionId, type: interviewType });
-        } catch (e2) {
-          console.error("[interview] record-session-start permanently failed:", e2 instanceof Error ? e2.message : e2);
-          // Quota is counted at START; a permanent failure here means this
-          // session is never debited (free test-drive) AND completion can't
-          // dedupe against it. Track so we can see how often the safeguard
-          // leaks rather than letting it fail silently.
-          captureClientEvent("record_session_start_failed", {
-            session_id: sessionId,
-            type: interviewType,
-            error: e2 instanceof Error ? e2.message : String(e2),
-          });
-        }
+      const { apiFetch } = await import("./apiClient");
+      type StartResp = { ok: boolean; allowed?: boolean; recorded?: boolean; concurrent?: boolean; reason?: string };
+      // apiFetch never rejects: transient failures arrive as status 0 / 429 / 5xx.
+      // Retry those with backoff; the endpoint is idempotent on sessionId.
+      const delays = [0, 1500, 4000];
+      let startResult = await apiFetch<StartResp>("/api/record-session-start", { sessionId, type: interviewType });
+      for (let i = 1; i < delays.length && !startResult.ok && (startResult.status === 0 || startResult.status === 429 || startResult.status >= 500); i++) {
+        await new Promise(r => setTimeout(r, delays[i]));
+        startResult = await apiFetch<StartResp>("/api/record-session-start", { sessionId, type: interviewType });
+      }
+      // S9-B24 — credit gate: server blocked this session start (over free limit,
+      // no purchased credits). Mirror the generate-questions 403 path so the user
+      // lands on the upgrade modal instead of a broken interview.
+      if (!startResult.ok && startResult.status === 403) {
+        const reason = startResult.data?.reason || "";
+        toast(reason || "Session limit reached — redirecting to dashboard.", "info");
+        router.replace("/dashboard?upgrade=1");
+        return;
+      }
+      if (!startResult.ok) {
+        // Fail open so an outage never blocks practice; save-session still
+        // debits on completion because the id is absent from started_session_ids.
+        console.error("[interview] record-session-start permanently failed:", startResult.status, startResult.error);
+        captureClientEvent("record_session_start_failed", {
+          session_id: sessionId,
+          type: interviewType,
+          error: startResult.error || `HTTP ${startResult.status}`,
+        });
+        return;
+      }
+      // OA-B50: server detected an in-flight session on another device — warn so the
+      // user knows they may consume a second credit.
+      if (startResult.data?.concurrent) {
+        toast("Heads-up: it looks like another session is active on a different device. Running two sessions simultaneously may use extra practice credits.", "info");
       }
     })();
     // Mount-only: liveSessionIdRef is stable for this engine instance.

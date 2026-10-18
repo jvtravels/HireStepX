@@ -115,7 +115,7 @@ function CompanyCard({ job, onMessage, actions, response }: {
         <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
           <LockIcon size={14} color={t.inkFaint} aria-hidden="true" style={{ marginTop: 2, flexShrink: 0 }} />
           <p style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft, margin: 0, lineHeight: 1.5 }}>
-            Company details are shared once this employer contacts you. Keep practising to rank higher in their search.
+            Company details are shared once this employer shows interest. You can't apply to this role; they'll reach out if you're a fit.
           </p>
         </div>
       )}
@@ -253,7 +253,7 @@ export default function JobDetailPage() {
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
               {job.unlocked
-                ? <StatusChip label="Contacted" color={t.indigoDeep} background={t.indigo100} />
+                ? <StatusChip label="Employer interested" color={t.indigoDeep} background={t.indigo100} />
                 : <StatusChip label="Matched" color={t.successInk} background={t.success100} />}
               {closed && <StatusChip label="Role closed" color={t.inkSoft} background={t.creamSoft} />}
             </div>
@@ -317,7 +317,7 @@ export default function JobDetailPage() {
 
           <div style={{ fontFamily: f.sans, fontSize: 12, color: t.inkFaint, marginTop: 20, paddingTop: 14, borderTop: `1px solid ${t.line}` }}>
             {job.unlocked && job.unlockedAt
-              ? `Contacted ${daysAgo(job.unlockedAt)} · matched ${daysAgo(job.matchedAt)}`
+              ? `Employer showed interest ${daysAgo(job.unlockedAt)} · matched ${daysAgo(job.matchedAt)}`
               : `Matched ${daysAgo(job.matchedAt)}`}
           </div>
         </section>
@@ -378,6 +378,28 @@ export default function JobDetailPage() {
               />
             </div>
           </section>
+          {closed ? (
+            <section aria-labelledby="job-closed-heading" style={PANEL_STYLE}>
+              <h2 id="job-closed-heading" style={{ ...SECTION_HEADING_STYLE, margin: 0 }}>This role is closed</h2>
+              <p style={{ ...BODY_TEXT_STYLE, marginTop: 10 }}>
+                The employer is no longer hiring for this role. Your profile stays visible to other employers.
+              </p>
+              <Button type="button" variant="outline" style={{ marginTop: 12 }} onClick={backToJobs}>See other matches</Button>
+            </section>
+          ) : !job.unlocked && (
+            <section aria-labelledby="job-strengthen-heading" style={PANEL_STYLE}>
+              <h2 id="job-strengthen-heading" style={{ ...SECTION_HEADING_STYLE, margin: 0 }}>Strengthen your match</h2>
+              <p style={{ ...BODY_TEXT_STYLE, marginTop: 10 }}>
+                You can't apply to this role. Employers reach out when a profile stands out, so a stronger profile helps.
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 12 }}>
+                <Button type="button" onClick={() => router.push(`/session/new?role=${encodeURIComponent(job.roleTitle)}`)}>
+                  Practise for {job.roleTitle}
+                </Button>
+                <Button type="button" variant="outline" onClick={() => router.push("/resume")}>Update your resume</Button>
+              </div>
+            </section>
+          )}
         </div>
       </div>
     </div>

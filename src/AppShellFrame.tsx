@@ -118,6 +118,14 @@ export default function AppShellFrame({
 }: AppShellFrameProps) {
   const initial = (account.name || "?")[0].toUpperCase();
 
+  // Real hrefs make crumbs focusable and open-in-new-tab friendly; plain
+  // left-clicks still route through onNavigate so SPA navigation is unchanged.
+  const crumbClick = (path: string) => (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    e.preventDefault();
+    onNavigate(path);
+  };
+
   /* The scrollable content div below persists across navigations (only the
      `pageKey`-keyed child inside it remounts), so its scrollTop carries over
      from whatever page the user last scrolled — a new page can open already
@@ -297,14 +305,14 @@ export default function AppShellFrame({
             <BreadcrumbList style={{ fontFamily: F.sans, fontSize: 13, flexWrap: "nowrap", overflow: "hidden", alignItems: "center" }}>
               {/* On narrow phones only the current (last) crumb is shown; the ancestors are reachable via the sidebar and browser back. */}
               <BreadcrumbItem className="h-5 shrink-0 overflow-hidden whitespace-nowrap max-[480px]:hidden">
-                <BreadcrumbLink onClick={() => onNavigate(breadcrumbRoot.path)} style={{ color: c.inkSoft, cursor: "pointer", display: "flex", alignItems: "center" }}>
+                <BreadcrumbLink href={breadcrumbRoot.path} onClick={crumbClick(breadcrumbRoot.path)} style={{ color: c.inkSoft, cursor: "pointer", display: "flex", alignItems: "center" }}>
                   {breadcrumbRoot.label}
                 </BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator className="max-[480px]:hidden" />
               {extraCrumbs && extraCrumbs.length > 0 ? (
                 <BreadcrumbItem className="h-5 min-w-0 shrink-[3] overflow-hidden whitespace-nowrap max-[480px]:hidden">
-                  <BreadcrumbLink onClick={() => onNavigate(pageLabelPath ?? breadcrumbRoot.path)} style={{ color: c.inkSoft, cursor: "pointer", display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  <BreadcrumbLink href={pageLabelPath ?? breadcrumbRoot.path} onClick={crumbClick(pageLabelPath ?? breadcrumbRoot.path)} style={{ color: c.inkSoft, cursor: "pointer", display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     {pageLabel}
                   </BreadcrumbLink>
                 </BreadcrumbItem>
@@ -326,7 +334,7 @@ export default function AppShellFrame({
                           {crumb.label}
                         </BreadcrumbPage>
                       ) : (
-                        <BreadcrumbLink onClick={() => onNavigate(crumb.path!)} style={{ color: c.inkSoft, cursor: "pointer", display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        <BreadcrumbLink href={crumb.path} onClick={crumbClick(crumb.path)} style={{ color: c.inkSoft, cursor: "pointer", display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                           {crumb.label}
                         </BreadcrumbLink>
                       )}

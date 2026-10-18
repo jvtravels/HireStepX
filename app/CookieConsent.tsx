@@ -106,7 +106,7 @@ export default function CookieConsent() {
       role="dialog"
       aria-labelledby={titleId}
       aria-describedby={descId}
-      className="hsx-cookie"
+      className={expanded ? "hsx-cookie" : "hsx-cookie hsx-cookie--compact"}
     >
       <div className="hsx-cookie__scroll">
         <div className="hsx-cookie__head">
@@ -128,7 +128,10 @@ export default function CookieConsent() {
         <p id={descId} className="hsx-cookie__text">
           {expanded
             ? "Choose which optional cookies to allow. Nothing optional loads until you decide."
-            : <>Essential cookies keep you signed in and secure. We&rsquo;d also like to use analytics{showAds ? " and advertising" : ""} cookies to improve HireStepX. Nothing optional loads until you choose.</>}
+            : <>
+                <span className="hsx-cookie__long">Essential cookies keep you signed in and secure. We&rsquo;d also like to use analytics{showAds ? " and advertising" : ""} cookies to improve HireStepX. Nothing optional loads until you choose.</span>
+                <span className="hsx-cookie__short">Essential cookies keep you signed in. Optional analytics{showAds ? " and ad" : ""} cookies load only if you accept.</span>
+              </>}
         </p>
 
         {expanded && (

@@ -24,8 +24,8 @@ export const ScoreTrendChart = memo(function ScoreTrendChart({ data }: { data: T
 
   return (
     <div style={{ position: "relative" }}>
-      <svg aria-hidden="true" width="100%" viewBox={`0 0 ${w} ${h}`} style={{ display: "block" }}
-        role="img" aria-label={`Score trend from ${scores[0]} to ${scores[scores.length - 1]}`}
+      <svg width="100%" viewBox={`0 0 ${w} ${h}`} style={{ display: "block" }}
+        role="img" aria-label={`Score trend across ${scores.length} sessions, from ${scores[0]} to ${scores[scores.length - 1]}`}
         onMouseLeave={() => setHovered(null)}
       >
         <defs>

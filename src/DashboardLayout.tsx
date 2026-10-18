@@ -30,7 +30,7 @@ import { listConversations } from "./messagesApi";
 import { useDashboardCore, useDashboardSessions, useDashboardSubscription, useDashboardUI } from "./DashboardContext";
 const UpgradeModal = dynamic(() => import("./dashboardComponents").then(m => ({ default: m.UpgradeModal })), { ssr: false });
 import { FREE_SESSION_LIMIT, STARTER_WEEKLY_LIMIT } from "./dashboardData";
-import { starterPackFootnote, planCtaLabel, planCtaTitle } from "./planCardCopy";
+import { starterPackFootnote, planCtaLabel, planCtaTitle, planUsageLabels } from "./planCardCopy";
 import { daysUntilEvent } from "./dashboardHelpers";
 import { useConnectionState } from "./connectionMonitor";
 import dynamic from "next/dynamic";
@@ -343,7 +343,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
 
             return (
               <>
-                {/* ── Row 1: "Sessions used" label + remaining count ── */}
+                {/* ── Row 1: plan allowance usage (purchased credits are a separate row below) ── */}
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 2 }}>
                   <p
                     aria-live="polite"
@@ -352,7 +352,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                       fontWeight: isLow ? 600 : 400,
                       opacity: showExhaustedAlarm ? 0.65 : 1 }}
                   >
-                    Sessions used
+                    {planUsageLabels(isStarter).allowance}
                   </p>
                   <span title="A session counts as soon as you start it, even if you leave before finishing." style={{ fontFamily: font.mono, fontSize: 12,
                     color: showExhaustedAlarm ? c.ember : isLow ? c.ember : c.inkSoft,
@@ -371,7 +371,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                   style={{ background: c.border, marginBottom: 10, marginTop: 6, "--bar-fill": barFill } as React.CSSProperties}
                 />
 
-                {/* ── Extra sessions available — always visible ──
+                {/* ── Purchased sessions left — always visible ──
                     Green + bold when credits exist. Muted with 0 when none —
                     so users always see the row and know purchased credits are a thing. */}
                 {(() => {
@@ -389,7 +389,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                         ) : (
                           <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                         )}
-                        Extra sessions available
+                        {planUsageLabels(isStarter).credits}
                       </span>
                       <span style={{ fontFamily: font.mono, fontSize: 13, fontWeight: 800, letterSpacing: "-0.01em",
                         color: hasCredits ? c.sage : T.copper, opacity: hasCredits ? 1 : 0.55 }}>

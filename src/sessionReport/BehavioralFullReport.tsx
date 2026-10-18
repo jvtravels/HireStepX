@@ -598,8 +598,8 @@ export default function BehavioralFullReport({
         }}
       >
         <span>
-          You just interviewed with a <strong>{data.persona.voice}</strong> at a{" "}
-          <strong>{data.persona.tier}</strong> · {data.persona.role}, {data.persona.lpaBand} band
+          You just interviewed with a <strong>{data.persona.voice}</strong>
+          {data.persona.tier ? <> at a <strong>{data.persona.tier}</strong></> : null} · {data.persona.role}, {data.persona.lpaBand} band
         </span>
         <span style={{ opacity: 0.85, fontSize: 12 }}>
           Session {String(data.sessionMeta.number).padStart(2, "0")} · {data.sessionMeta.dateISO} ·{" "}
