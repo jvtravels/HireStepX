@@ -679,7 +679,7 @@ export async function callLLM(opts: LLMOptions, timeoutMs = 15000, meta?: { user
   };
 
   // Walk providers in order (fast: groq→gemini→gemini-2.5, slow: gemini→gemini-2.5→groq→cloudflare). First success wins.
-  console.warn(`[LLM] Provider chain: ${providers.map(p => p.name).join(" → ")}${reordered ? ` (reordered, degraded: ${degradedNames.join(",")})` : ""} (timeout: ${timeoutMs}ms${meta?.totalBudgetMs != null ? `, totalBudget: ${meta.totalBudgetMs}ms` : ""})`);
+  console.info(`[LLM] Provider chain: ${providers.map(p => p.name).join(" → ")}${reordered ? ` (reordered, degraded: ${degradedNames.join(",")})` : ""} (timeout: ${timeoutMs}ms${meta?.totalBudgetMs != null ? `, totalBudget: ${meta.totalBudgetMs}ms` : ""})`);
   let lastErr: unknown;
   const providerErrors: string[] = [];
 

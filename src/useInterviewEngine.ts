@@ -1106,6 +1106,7 @@ export function useInterviewEngine() {
         const completionRate = totalQuestions > 0 ? currentStep / totalQuestions : 0;
         const body = JSON.stringify({
           message: "session_abandoned",
+          level: "info",
           event: "session_abandoned",
           type: interviewType,
           difficulty: interviewDifficulty,
