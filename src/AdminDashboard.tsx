@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback, useRef, memo } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
 import { c, font, radius } from "./tokens";
 import { tokens as T } from "./auth/_tokens";
@@ -9,6 +9,8 @@ import { SearchWithSuggestions } from "./components/SearchWithSuggestions";
 import LoadingScreen from "./_LoadingScreen";
 import AdminUnlockPanel from "./AdminUnlockPanel";
 import AdminEmployerFinancials from "./AdminEmployerFinancials";
+import AdminCostTab from "./AdminCostTab";
+import { MiniBarChart, bigNum, card, exportCsv, formatDateTime, formatNum, labelStyle, statCard, tableStyle, tdStyle, thStyle, type CostData } from "./adminShared";
 
 /* ─── Token-based auth ─── */
 // Token lives in a React ref (memory only). The HttpOnly admin_token cookie is
@@ -105,45 +107,6 @@ interface SessionsData {
   scoreDistribution: Record<string, number>; byType: Record<string, number>;
   byDifficulty: Record<string, number>; avgSkillScores: Record<string, number>;
   recent: Array<{ id: string; userId: string; type: string; difficulty: string; focus?: string; score: number; duration: number; date: string; llmCostInr?: number | null; promptTokens?: number | null; completionTokens?: number | null; isFallback?: boolean }>;
-}
-
-interface CostWindow { llmInr: number; ttsInr: number; sttInr: number; totalInr: number; sessions: number; perSessionInr: number }
-
-interface CostData {
-  totalLlmInr: number;
-  avgCostPerSession: number;
-  highestSessionCostInr: number;
-  sessionCount: number;
-  totalSessions30d: number;
-  nullCostCount: number;
-  dataCoveragePercent: number;
-  thisWeekInr: number;
-  lastWeekInr: number;
-  wowDeltaPct: number | null;
-  todayCostInr: number;
-  dailyAvgInr: number;
-  isCostSpike: boolean;
-  byFocus: Record<string, { totalInr: number; sessions: number; avgInr: number }>;
-  perDay: Record<string, number>;
-  byEndpoint: Record<string, { estimatedInr: number; tokens: number; calls: number }>;
-  topUsersByCost: Array<{ userId: string; name: string; email: string; totalLlmInr: number; voiceInr: number; totalInr: number; sessions: number; avgInr: number }>;
-  today: CostWindow & { date: string };
-  last7d: CostWindow;
-  last30d: CostWindow;
-  attributedLlmPct: number;
-  unattributedLlmInr: number;
-  byModel: Record<string, { estimatedInr: number; tokens: number; calls: number; failed: number }>;
-  byModelToday: Record<string, { estimatedInr: number; tokens: number; calls: number; failed: number }>;
-  topExpensiveSessions: Array<{
-    id: string; userId: string; focus: string; score: number; duration: number;
-    llmCostInr: number; promptTokens: number; completionTokens: number; date: string;
-  }>;
-  ratesLastVerifiedAt: string;
-  rateCardAgeDays: number;
-  rateCardIsStale: boolean;
-  costReconciliations: Array<{
-    month: string; actualInvoiceInr: number; modeledInr: number; variancePct: number | null; note: string | null;
-  }>;
 }
 
 interface HealthAlert {
@@ -325,20 +288,9 @@ function paise(amount: number): string {
   return "₹" + (amount / 100).toLocaleString("en-IN", { maximumFractionDigits: 0 });
 }
 
-function formatNum(n: number): string {
-  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + "M";
-  if (n >= 1_000) return (n / 1_000).toFixed(1) + "K";
-  return n.toLocaleString();
-}
-
 function formatDate(d: string | null): string {
   if (!d) return "—";
   return new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
-}
-
-function formatDateTime(d: string | null): string {
-  if (!d) return "—";
-  return new Date(d).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 }
 
 function timeAgo(d: string | null): string {
@@ -353,85 +305,7 @@ function timeAgo(d: string | null): string {
   return formatDate(d);
 }
 
-/**
- * Export an array of objects as a CSV download. Quotes cells containing
- * commas/quotes/newlines per RFC 4180. Browser-only — no-op on SSR.
- */
-function exportCsv<T extends object>(filename: string, rows: T[]): void {
-  if (typeof window === "undefined" || rows.length === 0) return;
-  const keys = Array.from(new Set(rows.flatMap((r) => Object.keys(r))));
-  const escape = (v: unknown): string => {
-    if (v === null || v === undefined) return "";
-    const s = typeof v === "object" ? JSON.stringify(v) : String(v);
-    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-  };
-  // T is a caller-supplied shape, not a Record<string, unknown> — keys are
-  // derived from Object.keys() at runtime, so an index-signature cast at
-  // every call site would otherwise be required just to read r[k] here.
-  const lines = [keys.join(","), ...rows.map((r) => keys.map((k) => escape((r as Record<string, unknown>)[k])).join(","))];
-  const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url; a.download = filename;
-  document.body.appendChild(a); a.click();
-  document.body.removeChild(a); URL.revokeObjectURL(url);
-}
-
 /* ─── Styles ─── */
-
-const card = {
-  background: c.graphite,
-  border: `1px solid ${c.border}`,
-  borderRadius: radius.lg,
-  padding: "20px 24px",
-} as const;
-
-const statCard = {
-  ...card,
-  flex: "1 1 200px",
-  minWidth: 180,
-} as const;
-
-const labelStyle = {
-  fontSize: 11,
-  fontWeight: 600 as const,
-  textTransform: "uppercase" as const,
-  letterSpacing: "0.08em",
-  color: c.stone,
-  margin: "0 0 6px",
-} as const;
-
-const bigNum = {
-  fontSize: 28,
-  fontWeight: 700 as const,
-  color: c.ivory,
-  fontFamily: font.mono,
-  margin: 0,
-  lineHeight: 1.2,
-} as const;
-
-const tableStyle = {
-  width: "100%",
-  borderCollapse: "collapse" as const,
-  fontSize: 13,
-} as const;
-
-const thStyle = {
-  textAlign: "left" as const,
-  padding: "10px 12px",
-  fontSize: 11,
-  fontWeight: 600 as const,
-  textTransform: "uppercase" as const,
-  letterSpacing: "0.06em",
-  color: c.stone,
-  borderBottom: `1px solid ${c.border}`,
-} as const;
-
-const tdStyle = {
-  padding: "10px 12px",
-  color: c.chalk,
-  borderBottom: `1px solid ${c.borderSubtle}`,
-} as const;
 
 const exportBtn = {
   fontFamily: font.ui, fontSize: 11, fontWeight: 600,
@@ -457,35 +331,6 @@ function CreditMeter({ label, used, cap, format }: { label: string; used: number
     </div>
   );
 }
-
-/* ─── Mini Bar Chart (memoized) ─── */
-
-const MiniBarChart = memo(function MiniBarChart({ data, color = T.indigo, height = 80 }: { data: Record<string, number>; color?: string; height?: number }) {
-  const entries = Object.entries(data);
-  const values = entries.map(([, v]) => v);
-  const max = Math.max(...values, 1);
-  const barW = Math.max(4, Math.floor(100 / values.length) - 1);
-
-  return (
-    <div style={{ display: "flex", alignItems: "flex-end", gap: 2, height, width: "100%" }}>
-      {entries.map(([key, v], i) => (
-        <div
-          key={i}
-          title={`${key}: ${v.toLocaleString()}`}
-          style={{
-            flex: 1,
-            maxWidth: barW + "%",
-            height: `${Math.max(2, (v / max) * 100)}%`,
-            background: color,
-            borderRadius: "3px 3px 0 0",
-            opacity: 0.8,
-            transition: "height 0.3s ease",
-          }}
-        />
-      ))}
-    </div>
-  );
-});
 
 /* ─── Tier Badge ─── */
 
@@ -704,11 +549,6 @@ export default function AdminDashboard() {
   const [qaBusy, setQaBusy] = useState(false);
   const [qaDeleteConfirm, setQaDeleteConfirm] = useState(false);
   const [liveData, setLiveData] = useState<{ sessions: Array<{ id: string; user_id: string; type: string; difficulty: string; score: number | null; created_at: string }>; since: string } | null>(null);
-  const [recMonth, setRecMonth] = useState(() => new Date().toISOString().slice(0, 7));
-  const [recAmount, setRecAmount] = useState("");
-  const [recNote, setRecNote] = useState("");
-  const [recBusy, setRecBusy] = useState(false);
-  const [recStatus, setRecStatus] = useState<{ ok: boolean; msg: string } | null>(null);
 
   const fetchSection = useCallback(async (section: string, extra?: Record<string, unknown>, skipCache = false): Promise<unknown> => {
     if (!authed) return null;
@@ -2647,424 +2487,6 @@ export default function AdminDashboard() {
     );
   };
 
-  const renderCosts = () => {
-    if (!costData) return <EmptyState title="No cost data available" />;
-    const cd = costData;
-
-    const focusLabel = (f: string) => f.replace(/-/g, " ").replace(/\b\w/g, ch => ch.toUpperCase());
-
-    // Gross margin per session = revenue/session (rough monthly estimate) - LLM cost/session
-    // thisMonthPaise / 100 → INR; divide by total sessions as a proxy (month sessions not available on overview)
-    const thisMonthRevInr = overview?.revenue ? overview.revenue.thisMonthPaise / 100 : 0;
-    const paidRevPerSession = (thisMonthRevInr > 0 && cd.totalSessions30d > 0)
-      ? Math.round((thisMonthRevInr / cd.totalSessions30d) * 100) / 100
-      : null;
-    const grossMarginPerSession = paidRevPerSession != null
-      ? Math.round((paidRevPerSession - cd.avgCostPerSession) * 100) / 100
-      : null;
-
-    const wowBadge = cd.wowDeltaPct != null
-      ? (cd.wowDeltaPct > 0
-          ? <span style={{ fontSize: 11, color: c.ember, marginLeft: 6 }}>▲ {cd.wowDeltaPct}% WoW</span>
-          : <span style={{ fontSize: 11, color: c.sage, marginLeft: 6 }}>▼ {Math.abs(cd.wowDeltaPct)}% WoW</span>)
-      : null;
-
-    return (
-      <div>
-        {/* Data quality banner */}
-        {cd.attributedLlmPct < 70 && (
-          <div style={{ background: "rgba(180,83,9,0.08)", border: "1px solid rgba(180,83,9,0.25)", borderRadius: 8, padding: "10px 16px", marginBottom: 16, fontSize: 12, color: c.ember }}>
-            Only {cd.attributedLlmPct}% of LLM spend is tagged to a session. The other ₹{cd.unattributedLlmInr.toFixed(2)} (resume analysis,
-            question generation, interview-time calls) is still counted in every total on this tab, but not in the per-session LLM figure.
-          </div>
-        )}
-
-        {/* Cost spike warning */}
-        {cd.isCostSpike && (
-          <div style={{ background: "rgba(220,38,38,0.07)", border: "1px solid rgba(220,38,38,0.25)", borderRadius: 8, padding: "10px 16px", marginBottom: 16, fontSize: 12, color: "#DC2626" }}>
-            🚨 Cost spike today: ₹{cd.todayCostInr.toFixed(2)} vs ₹{cd.dailyAvgInr.toFixed(2)} daily avg (30d, all-in). Verify for anomalous session volume or runaway prompts.
-          </div>
-        )}
-
-        {/* Today / 7d / 30d breakdown (IST days, LLM priced per model, voice from service_usage) */}
-        <div style={{ ...card, marginBottom: 24, padding: 0, overflow: "auto" }}>
-          <div style={{ padding: "16px 24px 6px" }}>
-            <p style={labelStyle}>Cost Breakdown · all-in (LLM + TTS + STT)</p>
-            <p style={{ margin: "4px 0 0", fontSize: 11, color: c.stone }}>
-              Today = IST calendar day ({cd.today.date}). Per session = total spend / saved sessions, so spend on abandoned or unsaved sessions is included.
-            </p>
-          </div>
-          <table style={tableStyle}>
-            <thead>
-              <tr>
-                <th style={thStyle}>Window</th>
-                <th style={thStyle}>Sessions</th>
-                <th style={thStyle}>LLM ₹</th>
-                <th style={thStyle}>TTS ₹</th>
-                <th style={thStyle}>STT ₹</th>
-                <th style={thStyle}>Total ₹</th>
-                <th style={thStyle}>₹ / session</th>
-              </tr>
-            </thead>
-            <tbody>
-              {([["Today", cd.today], ["Last 7 days", cd.last7d], ["Last 30 days", cd.last30d]] as Array<[string, CostWindow]>).map(([label, w]) => (
-                <tr key={label}>
-                  <td style={{ ...tdStyle, fontSize: 12, fontWeight: 600 }}>{label}</td>
-                  <td style={{ ...tdStyle, fontFamily: font.mono }}>{w.sessions}</td>
-                  <td style={{ ...tdStyle, fontFamily: font.mono }}>₹{w.llmInr.toFixed(2)}</td>
-                  <td style={{ ...tdStyle, fontFamily: font.mono }}>₹{w.ttsInr.toFixed(2)}</td>
-                  <td style={{ ...tdStyle, fontFamily: font.mono }}>₹{w.sttInr.toFixed(2)}</td>
-                  <td style={{ ...tdStyle, fontFamily: font.mono, color: T.indigo, fontWeight: 700 }}>₹{w.totalInr.toFixed(2)}</td>
-                  <td style={{ ...tdStyle, fontFamily: font.mono, fontWeight: 700 }}>{w.sessions > 0 ? `₹${w.perSessionInr.toFixed(2)}` : "—"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <p style={{ margin: 0, padding: "10px 24px 14px", fontSize: 11, color: c.stone }}>
-            STT history starts 2026-10-12 and TTS logging 2026-09-22, so the 30-day per-session figure is understated.
-            Cartesia and Azure characters are priced at the Sarvam rate (upper bound). STT is calls × an assumed 1.8 min average, not metered minutes.
-          </p>
-        </div>
-
-        {/* Headline unit economics */}
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 16, marginBottom: 24 }}>
-          <div style={statCard}>
-            <p style={labelStyle}>Today (IST)</p>
-            <p style={bigNum}>₹{cd.today.totalInr.toFixed(2)}</p>
-            <p style={{ margin: "4px 0 0", fontSize: 11, color: c.stone }}>Daily avg (30d) ₹{cd.dailyAvgInr.toFixed(2)}{wowBadge}</p>
-          </div>
-          <div style={statCard}>
-            <p style={labelStyle}>All-in Cost / Session (7d)</p>
-            <p style={bigNum}>₹{cd.last7d.perSessionInr.toFixed(2)}</p>
-            <p style={{ margin: "4px 0 0", fontSize: 11, color: c.stone }}>
-              LLM + voice · {cd.last7d.sessions} sessions · this week ₹{cd.thisWeekInr.toFixed(2)} · prior ₹{cd.lastWeekInr.toFixed(2)}
-            </p>
-          </div>
-          <div style={statCard}>
-            <p style={labelStyle}>Most Expensive Session (LLM)</p>
-            <p style={{ ...bigNum, color: cd.highestSessionCostInr > 2 ? c.ember : T.indigo }}>₹{cd.highestSessionCostInr.toFixed(3)}</p>
-            <p style={{ margin: "4px 0 0", fontSize: 11, color: c.stone }}>{cd.attributedLlmPct}% of LLM spend is tagged to a session</p>
-          </div>
-          {grossMarginPerSession != null && (
-            <div style={statCard}>
-              <p style={labelStyle}>Gross Margin / Session</p>
-              <p style={{ ...bigNum, color: grossMarginPerSession >= 0 ? c.sage : c.ember }}>
-                {grossMarginPerSession >= 0 ? "+" : ""}₹{grossMarginPerSession.toFixed(2)}
-              </p>
-              <p style={{ margin: "4px 0 0", fontSize: 11, color: c.stone }}>
-                Revenue ₹{paidRevPerSession!.toFixed(2)} − cost ₹{cd.avgCostPerSession.toFixed(2)} (30d, all-in)
-              </p>
-            </div>
-          )}
-        </div>
-
-        {/* Rate-card provenance — these modeled figures are list-rate estimates,
-            not billed amounts (see _cost-helpers.ts's own header comment). */}
-        <div style={{
-          background: cd.rateCardIsStale ? "rgba(180,83,9,0.08)" : "rgba(14,12,8,0.04)",
-          border: `1px solid ${cd.rateCardIsStale ? "rgba(180,83,9,0.25)" : "rgba(14,12,8,0.1)"}`,
-          borderRadius: 8, padding: "10px 16px", marginBottom: 16, fontSize: 12,
-          color: cd.rateCardIsStale ? c.ember : c.stone,
-        }}>
-          {cd.rateCardIsStale ? "⚠️ " : ""}Rate card last verified <strong>{cd.ratesLastVerifiedAt}</strong> ({cd.rateCardAgeDays} days ago)
-          {cd.rateCardIsStale && " — overdue for a recheck against current Groq/Sarvam/Deepgram pricing"}. LLM is priced per model from provider-reported tokens; all figures on this tab are
-          modeled from <code style={{ fontFamily: font.mono }}>DEFAULT_COST_RATES</code>, not real invoices — log an actual month below to check them.
-        </div>
-
-        {/* Actual invoice vs. modeled estimate */}
-        <div style={{ ...card, marginBottom: 24 }}>
-          <p style={{ ...labelStyle, marginBottom: 12 }}>Actual Invoice vs. Modeled Estimate</p>
-          {cd.costReconciliations.length > 0 ? (
-            <div style={{ marginBottom: 14 }}>
-              {cd.costReconciliations.map(r => (
-                <div key={r.month} style={{ display: "flex", alignItems: "center", gap: 12, padding: "6px 0", borderBottom: "1px solid rgba(14,12,8,0.06)", fontSize: 12 }}>
-                  <span style={{ width: 70, color: c.ivory }}>{r.month}</span>
-                  <span style={{ color: c.stone }}>Modeled ₹{r.modeledInr.toFixed(2)}</span>
-                  <span style={{ color: c.stone }}>Actual ₹{r.actualInvoiceInr.toFixed(2)}</span>
-                  {r.variancePct != null && (
-                    <span style={{ color: Math.abs(r.variancePct) > 20 ? c.ember : c.sage, fontWeight: 600 }}>
-                      {r.variancePct > 0 ? "+" : ""}{r.variancePct}%
-                    </span>
-                  )}
-                  {r.note && <span style={{ color: c.stone, fontStyle: "italic" }}>{r.note}</span>}
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p style={{ fontSize: 12, color: c.stone, marginBottom: 14 }}>No invoice totals logged yet — the modeled figures above have never been checked against a real bill.</p>
-          )}
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
-            <input
-              type="month"
-              value={recMonth}
-              onChange={(e) => setRecMonth(e.target.value)}
-              disabled={recBusy}
-              style={{ background: T.white, color: T.coal, border: "1px solid rgba(14,12,8,0.18)", borderRadius: 6, padding: "7px 10px", fontSize: 13, fontFamily: font.ui }}
-            />
-            <input
-              type="number"
-              min="0"
-              step="0.01"
-              value={recAmount}
-              onChange={(e) => setRecAmount(e.target.value)}
-              disabled={recBusy}
-              placeholder="actual invoice ₹"
-              style={{ width: 140, background: T.white, color: T.coal, border: "1px solid rgba(14,12,8,0.18)", borderRadius: 6, padding: "7px 10px", fontSize: 13, fontFamily: font.ui }}
-            />
-            <input
-              type="text"
-              value={recNote}
-              onChange={(e) => setRecNote(e.target.value)}
-              disabled={recBusy}
-              placeholder="note (optional)"
-              maxLength={500}
-              style={{ flex: 1, minWidth: 140, background: T.white, color: T.coal, border: "1px solid rgba(14,12,8,0.18)", borderRadius: 6, padding: "7px 10px", fontSize: 13, fontFamily: font.ui }}
-            />
-            <Button
-              variant="outline"
-              disabled={recBusy}
-              onClick={async () => {
-                const amount = parseFloat(recAmount);
-                if (!recMonth || isNaN(amount) || amount < 0) {
-                  setRecStatus({ ok: false, msg: "Enter a month and a non-negative amount." });
-                  return;
-                }
-                setRecBusy(true);
-                setRecStatus(null);
-                try {
-                  const res = await fetchSection("save-cost-reconciliation", { month: recMonth, actualInvoiceInr: amount, note: recNote || undefined }, true);
-                  const r = res as { ok?: boolean; error?: string } | null;
-                  if (r?.ok) {
-                    setRecStatus({ ok: true, msg: "Saved." });
-                    setRecNote("");
-                    const fresh = await fetchSection("costs", undefined, true) as CostData | null;
-                    if (fresh) setCostData(fresh);
-                  } else {
-                    setRecStatus({ ok: false, msg: r?.error ?? "Save failed" });
-                  }
-                } catch (err) {
-                  setRecStatus({ ok: false, msg: String(err) });
-                } finally {
-                  setRecBusy(false);
-                }
-              }}
-              style={{ background: "rgba(21,128,61,0.12)", color: T.successInk, border: "1px solid rgba(21,128,61,0.3)" }}
-            >
-              Log invoice
-            </Button>
-          </div>
-          {recStatus && (
-            <p style={{ marginTop: 8, fontSize: 12, color: recStatus.ok ? c.sage : c.ember }}>{recStatus.msg}</p>
-          )}
-        </div>
-
-        {/* Daily cost trend */}
-        <div style={{ ...card, marginBottom: 24 }}>
-          <p style={{ ...labelStyle, marginBottom: 12 }}>All-in Cost / Day — ₹ (30d, IST)</p>
-          <MiniBarChart data={cd.perDay} color={T.copper} height={100} />
-          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6, fontSize: 10, color: c.stone }}>
-            <span>{Object.keys(cd.perDay)[0]}</span>
-            <span>Today</span>
-          </div>
-        </div>
-
-        <div style={{ display: "flex", gap: 16, marginBottom: 24, flexWrap: "wrap" }}>
-          {/* Cost by focus */}
-          <div style={{ ...card, flex: 1, minWidth: 280 }}>
-            <p style={{ ...labelStyle, marginBottom: 16 }}>Cost by Interview Focus (30d)</p>
-            {Object.keys(cd.byFocus).length === 0
-              ? <p style={{ color: c.stone, fontSize: 13 }}>No data yet</p>
-              : <table style={tableStyle}>
-                  <thead>
-                    <tr>
-                      <th style={thStyle}>Focus</th>
-                      <th style={thStyle}>Sessions</th>
-                      <th style={thStyle}>Total ₹</th>
-                      <th style={thStyle}>Avg ₹</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {Object.entries(cd.byFocus).sort(([, a], [, b]) => b.totalInr - a.totalInr).map(([focus, d]) => (
-                      <tr key={focus}>
-                        <td style={{ ...tdStyle, fontSize: 12 }}>{focusLabel(focus)}</td>
-                        <td style={{ ...tdStyle, fontFamily: font.mono }}>{d.sessions}</td>
-                        <td style={{ ...tdStyle, fontFamily: font.mono, color: T.indigo }}>₹{d.totalInr.toFixed(2)}</td>
-                        <td style={{ ...tdStyle, fontFamily: font.mono, color: d.avgInr > 1 ? c.ember : c.sage }}>₹{d.avgInr.toFixed(3)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-            }
-          </div>
-
-          {/* Cost by endpoint */}
-          <div style={{ ...card, flex: 1, minWidth: 280 }}>
-            <p style={{ ...labelStyle, marginBottom: 16 }}>LLM Cost by API Endpoint (30d)</p>
-            {Object.keys(cd.byEndpoint).length === 0
-              ? <p style={{ color: c.stone, fontSize: 13 }}>No data yet</p>
-              : <table style={tableStyle}>
-                  <thead>
-                    <tr>
-                      <th style={thStyle}>Endpoint</th>
-                      <th style={thStyle}>Calls</th>
-                      <th style={thStyle}>Tokens</th>
-                      <th style={thStyle}>Est. ₹</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {Object.entries(cd.byEndpoint).sort(([, a], [, b]) => b.estimatedInr - a.estimatedInr).map(([ep, d]) => (
-                      <tr key={ep}>
-                        <td style={{ ...tdStyle, fontFamily: font.mono, fontSize: 11 }}>{ep}</td>
-                        <td style={{ ...tdStyle, fontFamily: font.mono }}>{d.calls}</td>
-                        <td style={{ ...tdStyle, fontFamily: font.mono }}>{formatNum(d.tokens)}</td>
-                        <td style={{ ...tdStyle, fontFamily: font.mono, color: T.indigo }}>₹{d.estimatedInr.toFixed(2)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-            }
-          </div>
-        </div>
-
-        {/* LLM cost by endpoint x model */}
-        <div style={{ ...card, marginBottom: 24 }}>
-          <p style={{ ...labelStyle, marginBottom: 16 }}>LLM Cost by Endpoint and Model (30d · today)</p>
-          {Object.keys(cd.byModel).length === 0
-            ? <p style={{ color: c.stone, fontSize: 13 }}>No data yet</p>
-            : <table style={tableStyle}>
-                <thead>
-                  <tr>
-                    <th style={thStyle}>Endpoint · model</th>
-                    <th style={thStyle}>Calls</th>
-                    <th style={thStyle}>Failed</th>
-                    <th style={thStyle}>Tokens</th>
-                    <th style={thStyle}>30d ₹</th>
-                    <th style={thStyle}>Today ₹</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {Object.entries(cd.byModel).sort(([, a], [, b]) => b.estimatedInr - a.estimatedInr).map(([k, d]) => (
-                    <tr key={k}>
-                      <td style={{ ...tdStyle, fontFamily: font.mono, fontSize: 11 }}>{k}</td>
-                      <td style={{ ...tdStyle, fontFamily: font.mono }}>{d.calls}</td>
-                      <td style={{ ...tdStyle, fontFamily: font.mono, color: d.failed > 0 ? c.ember : "inherit" }}>{d.failed}</td>
-                      <td style={{ ...tdStyle, fontFamily: font.mono }}>{formatNum(d.tokens)}</td>
-                      <td style={{ ...tdStyle, fontFamily: font.mono, color: T.indigo }}>₹{d.estimatedInr.toFixed(2)}</td>
-                      <td style={{ ...tdStyle, fontFamily: font.mono }}>₹{(cd.byModelToday[k]?.estimatedInr ?? 0).toFixed(2)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-          }
-          <p style={{ margin: "10px 0 0", fontSize: 11, color: c.stone }}>
-            Failed or timed-out calls log 0 tokens and are priced at ₹0. Provider free tiers (e.g. Gemini) may make real spend lower than list price.
-          </p>
-        </div>
-
-        {/* Top users by spend */}
-        {cd.topUsersByCost.length > 0 && (
-          <div style={{ ...card, marginBottom: 24 }}>
-            <p style={{ ...labelStyle, marginBottom: 16 }}>Top 5 Users by Spend (30d, LLM + voice)</p>
-            <table style={tableStyle}>
-              <thead>
-                <tr>
-                  <th style={thStyle}>User</th>
-                  <th style={thStyle}>Sessions</th>
-                  <th style={thStyle}>LLM ₹</th>
-                  <th style={thStyle}>Voice ₹</th>
-                  <th style={thStyle}>Total ₹</th>
-                  <th style={thStyle}>₹ / session</th>
-                </tr>
-              </thead>
-              <tbody>
-                {cd.topUsersByCost.map((u) => (
-                  <tr
-                    key={u.userId}
-                    onClick={() => { setSelectedUserId(u.userId); setUserDetail(null); }}
-                    style={{ cursor: "pointer", transition: "background 120ms" }}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(180,83,9,0.06)"; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
-                  >
-                    <td style={{ ...tdStyle, fontSize: 12 }}>
-                      <div style={{ fontWeight: 600 }}>{u.name}</div>
-                      <div style={{ color: c.stone, fontSize: 10 }}>{u.email}</div>
-                    </td>
-                    <td style={{ ...tdStyle, fontFamily: font.mono }}>{u.sessions}</td>
-                    <td style={{ ...tdStyle, fontFamily: font.mono }}>₹{u.totalLlmInr.toFixed(2)}</td>
-                    <td style={{ ...tdStyle, fontFamily: font.mono }}>₹{u.voiceInr.toFixed(2)}</td>
-                    <td style={{ ...tdStyle, fontFamily: font.mono, color: T.indigo, fontWeight: 700 }}>₹{u.totalInr.toFixed(2)}</td>
-                    <td style={{ ...tdStyle, fontFamily: font.mono, color: u.avgInr > 1 ? c.ember : "inherit" }}>₹{u.avgInr.toFixed(3)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {/* Top expensive sessions */}
-        {cd.topExpensiveSessions.length > 0 && (
-          <div style={{ ...card, padding: 0, overflow: "auto" }}>
-            <div style={{ padding: "16px 24px 10px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <p style={labelStyle}>Top 30 Most Expensive Sessions (30d, LLM only)</p>
-              <Button
-                variant="ghost"
-                size="xs"
-                onClick={() => exportCsv("expensive-sessions.csv", cd.topExpensiveSessions)}
-                style={{ fontSize: 11, color: T.indigo, background: "none", border: "none", padding: "2px 6px" }}
-              >
-                Export CSV
-              </Button>
-            </div>
-            <table style={tableStyle}>
-              <thead>
-                <tr>
-                  <th style={thStyle}>Session ID</th>
-                  <th style={thStyle}>Focus</th>
-                  <th style={thStyle}>Score</th>
-                  <th style={thStyle}>Duration</th>
-                  <th style={thStyle}>Prompt tok</th>
-                  <th style={thStyle}>Compl tok</th>
-                  <th style={thStyle}>Cost ₹</th>
-                  <th style={thStyle}>Date</th>
-                  <th style={thStyle}></th>
-                </tr>
-              </thead>
-              <tbody>
-                {cd.topExpensiveSessions.map((s, i) => (
-                  <tr
-                    key={i}
-                    onClick={() => { setSelectedSessionId(s.id); setSessionDetail(null); }}
-                    style={{ cursor: "pointer", transition: "background 120ms" }}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(180,83,9,0.06)"; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
-                  >
-                    <td style={{ ...tdStyle, fontFamily: font.mono, fontSize: 11 }}>{s.id.slice(0, 8)}…</td>
-                    <td style={{ ...tdStyle, fontSize: 12 }}>{focusLabel(s.focus)}</td>
-                    <td style={{ ...tdStyle, fontFamily: font.mono, color: s.score >= 65 ? c.sage : s.score >= 40 ? T.copper : c.ember }}>{s.score}</td>
-                    <td style={{ ...tdStyle, fontFamily: font.mono }}>{s.duration ? `${Math.round(s.duration / 60)}m` : "—"}</td>
-                    <td style={{ ...tdStyle, fontFamily: font.mono }}>{formatNum(s.promptTokens)}</td>
-                    <td style={{ ...tdStyle, fontFamily: font.mono }}>{formatNum(s.completionTokens)}</td>
-                    <td style={{ ...tdStyle, fontFamily: font.mono, fontWeight: 700, color: s.llmCostInr > 1.5 ? c.ember : T.indigo }}>
-                      ₹{s.llmCostInr.toFixed(3)}
-                    </td>
-                    <td style={{ ...tdStyle, fontSize: 12 }}>{formatDateTime(s.date)}</td>
-                    <td style={{ ...tdStyle, color: T.indigo, fontSize: 11 }}>View →</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        <p style={{ marginTop: 16, fontSize: 11, color: c.stone }}>
-          LLM costs: list-rate estimates (Groq GPT-OSS 20B $0.075/M input + $0.30/M output; 120B $0.15/M + $0.60/M · 1 USD = ₹84).
-          Voice costs (TTS/STT) are aggregate rate-card estimates with no per-session breakdown.
-          Reconcile against actual Groq/Azure/Deepgram invoices before any pricing decision.
-        </p>
-      </div>
-    );
-  };
-
   const renderSessions = () => {
     if (!sessions) return <EmptyState title="No session data available" />;
 
@@ -3746,7 +3168,16 @@ export default function AdminDashboard() {
       case "promo-codes": return renderPromoCodes();
       case "calendar": return renderCalendar();
       case "outcomes": return renderOutcomes();
-      case "costs": return renderCosts();
+      case "costs": return (
+        <AdminCostTab
+          costData={costData}
+          monthRevenueInr={overview?.revenue ? overview.revenue.thisMonthPaise / 100 : 0}
+          fetchSection={fetchSection}
+          onCostData={setCostData}
+          onOpenUser={(id) => { setSelectedUserId(id); setUserDetail(null); }}
+          onOpenSession={(id) => { setSelectedSessionId(id); setSessionDetail(null); }}
+        />
+      );
       case "analytics": return renderAnalytics();
       case "live": return renderLive();
     }
