@@ -91,10 +91,11 @@ interface ServiceInfo {
 interface LLMData {
   totalCalls: number; totalTokens: number; todayTokens: number; fallbackRate: number; errorRate: number;
   errorBreakdown?: { rateLimit: number; contextLength: number; timeout: number; serverError: number; modelAccess: number; auth: number; safety: number; other: number };
-  byEndpoint: Record<string, { calls: number; tokens: number; avgLatency: number; errors: number }>;
+  byEndpoint: Record<string, { calls: number; tokens: number; avgLatency: number; errors: number; p50?: number; p95?: number }>;
+  userFacingErrorCount?: number; recoveredErrorCount?: number;
   byModel: Record<string, { calls: number; tokens: number }>;
   tokensPerDay: Record<string, number>;
-  recentErrors: Array<{ endpoint: string; model: string; error: string | null; status?: string; date: string }>;
+  recentErrors: Array<{ endpoint: string; model: string; error: string | null; status?: string; date: string; recovered?: boolean }>;
   services?: ServiceInfo[];
   anomalies?: AnomaliesData;
 }
@@ -2504,6 +2505,7 @@ export default function AdminDashboard() {
                       <th style={thStyle}>Calls</th>
                       <th style={thStyle}>Tokens</th>
                       <th style={thStyle}>Avg Latency</th>
+                      <th style={thStyle}>p50 / p95</th>
                       <th style={thStyle}>Errors</th>
                     </tr>
                   </thead>
@@ -2514,6 +2516,7 @@ export default function AdminDashboard() {
                         <td style={{ ...tdStyle, fontFamily: font.mono }}>{d.calls}</td>
                         <td style={{ ...tdStyle, fontFamily: font.mono }}>{formatNum(d.tokens)}</td>
                         <td style={{ ...tdStyle, fontFamily: font.mono }}>{d.avgLatency}ms</td>
+                        <td style={{ ...tdStyle, fontFamily: font.mono }}>{d.p95 ? `${Math.round((d.p50 ?? 0) / 1000)}s /${Math.round(d.p95 / 1000)}s` : "—"}</td>
                         <td style={{ ...tdStyle, fontFamily: font.mono, color: d.errors > 0 ? c.ember : c.stone }}>{d.errors}</td>
                       </tr>
                     ))}
@@ -2575,6 +2578,11 @@ export default function AdminDashboard() {
           <div style={{ ...card, padding: 0, overflow: "auto" }}>
             <div style={{ padding: "16px 24px 8px" }}>
               <p style={{ ...labelStyle, color: c.ember }}>Recent Errors</p>
+              {llm.userFacingErrorCount != null && (
+                <p style={{ margin: "6px 0 0", fontSize: 12, color: c.stone, lineHeight: 1.5 }}>
+                  <strong style={{ color: llm.userFacingErrorCount > 0 ? c.ember : c.ivory }}>{llm.userFacingErrorCount}</strong> reached a user (no fallback succeeded) · <strong style={{ color: c.ivory }}>{llm.recoveredErrorCount ?? 0}</strong> recovered by a later fallback attempt. Recovered rows cost latency, not reports.
+                </p>
+              )}
             </div>
             <table style={tableStyle}>
               <thead>
@@ -2591,7 +2599,7 @@ export default function AdminDashboard() {
                   <tr key={i}>
                     <td style={{ ...tdStyle, fontFamily: font.mono, fontSize: 12, verticalAlign: "top" as const }}>{e.endpoint}</td>
                     <td style={{ ...tdStyle, fontSize: 12, verticalAlign: "top" as const }}>{e.model}</td>
-                    <td style={{ ...tdStyle, fontFamily: font.mono, fontSize: 11, color: c.ember, verticalAlign: "top" as const }}>{e.status || "error"}</td>
+                    <td style={{ ...tdStyle, fontFamily: font.mono, fontSize: 11, color: e.recovered ? c.stone : c.ember, verticalAlign: "top" as const }}>{e.recovered ? "recovered" : (e.status || "error")}</td>
                     <td style={{ ...tdStyle, fontSize: 11, color: c.ember, fontFamily: font.mono, whiteSpace: "pre-wrap" as const, wordBreak: "break-word" as const, maxWidth: 520, lineHeight: 1.5 }}>{e.error || "—"}</td>
                     <td style={{ ...tdStyle, fontSize: 12, verticalAlign: "top" as const, whiteSpace: "nowrap" as const }}>{formatDateTime(e.date)}</td>
                   </tr>

@@ -3,6 +3,7 @@
 import { fetchJSON, daysAgo, LIMIT_LLM, fetchCount, TTS_SERVICES, STT_SERVICES, supa } from "./_admin-shared";
 import { emptyBreakdown, categorizeLlmError } from "./_admin-llm-categorizer";
 import { getAnomalies } from "./_admin-activity";
+import { markRecovered, successLatency } from "./_llm-slo";
 import { costBreakdown, llmCallInr, ttsInr, sttInr, istDate, RATES_LAST_VERIFIED_AT, rateCardAgeDays, isRateCardStale } from "./_cost-helpers";
 
 export async function getFinancials() {
@@ -199,15 +200,17 @@ export async function getLLMUsage() {
   }
 
   // Compute avg latency
-  const cleanEndpoints: Record<string, { calls: number; tokens: number; avgLatency: number; errors: number }> = {};
+  const cleanEndpoints: Record<string, { calls: number; tokens: number; avgLatency: number; errors: number; p50: number; p95: number }> = {};
   for (const [ep, d] of Object.entries(byEndpoint)) {
-    cleanEndpoints[ep] = { calls: d.calls, tokens: d.tokens, avgLatency: d.calls > 0 ? Math.round(d._latencySum / d.calls) : 0, errors: d.errors };
+    const lat = successLatency(usage.filter(u => (u.endpoint || "unknown") === ep));
+    cleanEndpoints[ep] = { calls: d.calls, tokens: d.tokens, avgLatency: d.calls > 0 ? Math.round(d._latencySum / d.calls) : 0, errors: d.errors, p50: lat.p50, p95: lat.p95 };
   }
 
   const totalTokens = usage.reduce((s, u) => s + (u.total_tokens || 0), 0);
   const todayTokens = usage.filter(u => u.created_at?.startsWith(today)).reduce((s, u) => s + (u.total_tokens || 0), 0);
   const fallbackCount = usage.filter(u => u.is_fallback).length;
-  const errored = usage.filter(u => u.status === "error" || u.status === "timeout");
+  const errored = markRecovered(usage.filter(u => u.status === "error" || u.status === "timeout"));
+  const userFacingErrors = errored.filter(u => !u.recovered);
 
   // Categorize each error so the dashboard surfaces *why* calls fail. Token
   // quota is one of many failure modes; per-minute rate limits, context-length
@@ -224,12 +227,14 @@ export async function getLLMUsage() {
     todayTokens,
     fallbackRate: usage.length > 0 ? Math.round((fallbackCount / usage.length) * 100) : 0,
     errorRate: usage.length > 0 ? Math.round((errored.length / usage.length) * 100) : 0,
+    userFacingErrorCount: userFacingErrors.length,
+    recoveredErrorCount: errored.length - userFacingErrors.length,
     errorBreakdown,
     byEndpoint: cleanEndpoints,
     byModel,
     tokensPerDay,
     recentErrors: errored.slice(0, 20).map(u => ({
-      endpoint: u.endpoint, model: u.model, error: u.error_message, status: u.status, date: u.created_at,
+      endpoint: u.endpoint, model: u.model, error: u.error_message, status: u.status, date: u.created_at, recovered: u.recovered,
     })),
     // Service details for the enhanced Services view
     services: await buildServiceDetails(usage),
