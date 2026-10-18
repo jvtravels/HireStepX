@@ -27,6 +27,7 @@ import { captureClientEvent } from "./posthogClient";
 import { tokens as t, fonts as f, textSize } from "./auth/_tokens";
 import { daysAgo } from "./hiringMatchFormat";
 import { ReferralsRouteSkeleton } from "./routeSkeletons";
+import CandidatePageHeader, { CandidatePagePanel } from "./CandidatePageHeader";
 import {
   SESSIONS_PER_REFERRAL,
   buildShareMessage,
@@ -159,13 +160,12 @@ export default function DashboardReferrals() {
   const divided = { ...sectionStyle, paddingTop: 20, borderTop: `1px solid ${t.line}` } as const;
 
   return (
-    <div style={{ background: t.white, display: "flex", flexDirection: "column", flex: 1, minHeight: 0, borderRadius: 12, border: `1px solid ${t.line}`, overflow: "hidden", fontFamily: f.sans }}>
-      <div style={{ padding: "16px 20px", borderBottom: `1px solid ${t.line}` }}>
-        <h1 id="referral-title" style={{ fontFamily: f.sans, fontSize: 26, fontWeight: 700, color: t.coal, margin: 0, letterSpacing: "-0.01em", lineHeight: "32px" }}>Referrals</h1>
-        <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkFaint, margin: "2px 0 0" }}>
-          Invite friends to HireStepX. They get a free practice session when they join, and you get one after their first practice session (at least 3 answers).
-        </p>
-      </div>
+    <CandidatePagePanel>
+      <CandidatePageHeader
+        title="Referrals"
+        titleId="referral-title"
+        subtitle="Invite friends to HireStepX. They get a free practice session when they join, and you get one after their first practice session (at least 3 answers)."
+      />
 
       <div style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: 20 }}>
         <div style={{ display: "flex", alignItems: "flex-start", gap: 32, flexWrap: "wrap" }}>
@@ -270,6 +270,6 @@ export default function DashboardReferrals() {
           </div>
         </div>
       </div>
-    </div>
+    </CandidatePagePanel>
   );
 }

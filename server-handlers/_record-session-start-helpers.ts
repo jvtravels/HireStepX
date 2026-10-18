@@ -69,3 +69,107 @@ export function detectConcurrentSession(input: ConcurrentSessionInput): boolean 
     return now - startedMs <= staleAfterMs;
   });
 }
+
+/* ─── Compare-and-swap append ───
+ * The start record used to be read-then-PATCH: two tabs starting at once both
+ * read the same arrays and the second PATCH silently overwrote the first, so
+ * one start (and its practice_timestamps entry) vanished. Same CAS shape as
+ * save-session.ts: the PATCH only matches while practice_timestamps still
+ * equals the value we read; a loser re-reads and re-applies on top of the
+ * winner's write. */
+
+export interface StartRow {
+  practice_timestamps?: unknown;
+  started_session_ids?: unknown;
+  started_session_ts?: unknown;
+}
+
+const asStringArray = (v: unknown): string[] =>
+  Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : [];
+
+/** PostgREST filter pinning practice_timestamps to the value that was read.
+ *  A NULL column needs `is.null`; `eq.[]` would never match it. */
+export function casFilterFor(raw: unknown): string {
+  return Array.isArray(raw)
+    ? `practice_timestamps=eq.${encodeURIComponent(JSON.stringify(raw))}`
+    : "practice_timestamps=is.null";
+}
+
+export function buildNextStartState(row: StartRow, sessionId: string, nowIso: string) {
+  const timestamps = asStringArray(row.practice_timestamps);
+  const starts = asStringArray(row.started_session_ids);
+  const startTs = asStringArray(row.started_session_ts);
+  return {
+    // Caps match save-session.ts; the id/ts arrays share a cap so they stay index-aligned.
+    practice_timestamps: [...timestamps, nowIso].slice(-500),
+    started_session_ids: [...starts, sessionId].slice(-50),
+    started_session_ts: [...startTs, nowIso].slice(-50),
+  };
+}
+
+export type CasStartResult =
+  | { outcome: "recorded"; attempts: number }
+  | { outcome: "already_counted" }
+  | { outcome: "schema_pending"; ok: boolean }
+  | { outcome: "contended" }
+  | { outcome: "error"; status: number; body: string };
+
+export interface CasStartInput {
+  baseUrl: string;
+  serviceKey: string;
+  userId: string;
+  sessionId: string;
+  /** Row as already read by the caller (saves one round-trip on the first attempt). */
+  initialRow: StartRow;
+  nowIso: string;
+  fetchImpl?: typeof fetch;
+  maxAttempts?: number;
+}
+
+export async function casAppendStart(input: CasStartInput): Promise<CasStartResult> {
+  const { baseUrl, serviceKey, userId, sessionId, nowIso } = input;
+  const f = input.fetchImpl ?? fetch;
+  const maxAttempts = input.maxAttempts ?? 4;
+  const authHeaders = { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` };
+  const url = `${baseUrl}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}`;
+  let row = input.initialRow;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    if (attempt > 1) {
+      const res = await f(`${url}&select=practice_timestamps,started_session_ids,started_session_ts`, { headers: authHeaders });
+      if (!res.ok) return { outcome: "error", status: res.status, body: "" };
+      const arr = await res.json().catch(() => []);
+      row = Array.isArray(arr) && arr[0] ? arr[0] : {};
+    }
+    // A sibling request with this same id (StrictMode double-mount, client
+    // retry) may have won the previous round.
+    if (asStringArray(row.started_session_ids).includes(sessionId)) {
+      return { outcome: "already_counted" };
+    }
+
+    const next = buildNextStartState(row, sessionId, nowIso);
+    const patch = (body: Record<string, unknown>) =>
+      f(`${url}&${casFilterFor(row.practice_timestamps)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...authHeaders, Prefer: "return=representation" },
+        body: JSON.stringify(body),
+      });
+
+    let res = await patch({ ...next, has_completed_onboarding: true });
+    let schemaPending = false;
+    if (!res.ok) {
+      const t = await res.text().catch(() => "");
+      // started_session_* columns not migrated yet: still bump practice_timestamps.
+      if (!/started_session_ids|started_session_ts/.test(t)) return { outcome: "error", status: res.status, body: t };
+      schemaPending = true;
+      res = await patch({ practice_timestamps: next.practice_timestamps, has_completed_onboarding: true });
+      if (!res.ok) return { outcome: "schema_pending", ok: false };
+    }
+    const updated = await res.json().catch(() => []);
+    if (Array.isArray(updated) && updated.length > 0) {
+      return schemaPending ? { outcome: "schema_pending", ok: true } : { outcome: "recorded", attempts: attempt };
+    }
+    // Zero rows matched: another write changed practice_timestamps. Re-read and retry.
+  }
+  return { outcome: "contended" };
+}

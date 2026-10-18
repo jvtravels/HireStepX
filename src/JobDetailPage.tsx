@@ -6,7 +6,7 @@
    a header card (icon tile, title, icon meta row) beside a details card,
    with the breadcrumb (not a back link) as the way up. */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -36,7 +36,39 @@ const ACTION_STACK_STYLE = { display: "flex", flexDirection: "column", gap: 8, m
 const ACTION_TOP_STYLE = { marginTop: 12 } as const;
 const BODY_TEXT_STYLE = { fontFamily: f.sans, fontSize: 14, color: t.coal, margin: 0, lineHeight: 1.6, whiteSpace: "pre-line", overflowWrap: "anywhere" } as const;
 const BODY_TIGHT_STYLE = { ...BODY_TEXT_STYLE, marginTop: 10 } as const;
+const BODY_SOFT_STYLE = { ...BODY_TEXT_STYLE, color: t.inkSoft } as const;
+/* ~8 lines at 14px / 1.6; the mask fades the cut so it reads as "more below". */
+const CLAMP_EXTRA_STYLE = {
+  maxHeight: 180, overflow: "hidden",
+  WebkitMaskImage: "linear-gradient(to bottom, black 70%, transparent)",
+  maskImage: "linear-gradient(to bottom, black 70%, transparent)",
+} as const;
+const BODY_CLAMPED_STYLE = { ...BODY_TEXT_STYLE, ...CLAMP_EXTRA_STYLE } as const;
+const BODY_SOFT_CLAMPED_STYLE = { ...BODY_SOFT_STYLE, ...CLAMP_EXTRA_STYLE } as const;
+const TOGGLE_BUTTON_STYLE = { marginTop: 4, paddingInline: 0 } as const;
 const EMPTY_TEXT_STYLE = { fontFamily: f.sans, fontSize: 13, color: t.inkFaint, fontStyle: "italic", margin: 0 } as const;
+
+const COLLAPSE_THRESHOLD = 600;
+
+function CollapsibleText({ text, soft }: { text: string; soft?: boolean }) {
+  const [expanded, setExpanded] = useState(false);
+  const id = useId();
+  const long = text.length > COLLAPSE_THRESHOLD;
+  const collapsed = long && !expanded;
+  const style = collapsed
+    ? (soft ? BODY_SOFT_CLAMPED_STYLE : BODY_CLAMPED_STYLE)
+    : (soft ? BODY_SOFT_STYLE : BODY_TEXT_STYLE);
+  return (
+    <>
+      <p id={id} style={style}>{text}</p>
+      {long && (
+        <Button type="button" variant="link" size="sm" style={TOGGLE_BUTTON_STYLE} aria-expanded={expanded} aria-controls={id} onClick={() => setExpanded((v) => !v)}>
+          {expanded ? "Show less" : "Show more"}
+        </Button>
+      )}
+    </>
+  );
+}
 
 function IconTile({ children }: { children: React.ReactNode }) {
   return (
@@ -286,19 +318,19 @@ export default function JobDetailPage() {
             {job.description && (
               <section aria-label="About the role">
                 <h2 style={SECTION_HEADING_STYLE}>About the role</h2>
-                <p style={BODY_TEXT_STYLE}>{job.description}</p>
+                <CollapsibleText text={job.description} />
               </section>
             )}
             {job.responsibilities && (
               <section aria-label="Responsibilities">
                 <h2 style={SECTION_HEADING_STYLE}>Responsibilities</h2>
-                <p style={BODY_TEXT_STYLE}>{job.responsibilities}</p>
+                <CollapsibleText text={job.responsibilities} />
               </section>
             )}
             {job.niceToHave && (
               <section aria-label="Nice to have">
                 <h2 style={SECTION_HEADING_STYLE}>Nice to have</h2>
-                <p style={{ ...BODY_TEXT_STYLE, color: t.inkSoft }}>{job.niceToHave}</p>
+                <CollapsibleText text={job.niceToHave} soft />
               </section>
             )}
             {!hasBody && <p style={EMPTY_TEXT_STYLE}>This employer hasn't added a role description yet.</p>}

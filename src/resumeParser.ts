@@ -3,6 +3,7 @@
 
 import { yieldToMainThread } from "./_browser-api-guards";
 import { INDIAN_CITIES } from "./_indian-cities";
+import { isUnreadableResumeText, truncateResumeText, UNREADABLE_RESUME_MESSAGE } from "../server-handlers/_resume-text-helpers";
 
 /** Read a .txt file directly */
 function readTxt(file: File): Promise<string> {
@@ -642,9 +643,10 @@ export async function parseResumeDataAsync(rawText: string): Promise<ParsedResum
 /**
  * Extract text from a resume file.
  * Supports: .pdf, .docx, .doc, .txt
- * Returns the extracted text, trimmed to max 5000 chars for LLM context.
+ * Returns the extracted text, trimmed to max 12,000 chars for LLM context,
+ * plus whether anything was cut so the UI can say so.
  */
-export async function extractResumeText(file: File): Promise<string> {
+export async function extractResumeTextWithMeta(file: File): Promise<{ text: string; truncated: boolean }> {
   const name = file.name.toLowerCase();
   let text = "";
 
@@ -676,13 +678,14 @@ export async function extractResumeText(file: File): Promise<string> {
   // Clean up whitespace
   text = text.replace(/\r\n/g, "\n").replace(/[ \t]+/g, " ").replace(/\n{3,}/g, "\n\n").trim();
 
-  // Cap at 12,000 chars — long enough for a 3-page resume, cheap enough for LLM context.
-  // Trim to the last newline so we don't cut in the middle of a sentence.
-  if (text.length > 12000) {
-    const truncated = text.slice(0, 12000);
-    const lastNl = truncated.lastIndexOf("\n");
-    text = lastNl > 8000 ? truncated.slice(0, lastNl) : truncated;
-  }
+  if (isUnreadableResumeText(text)) throw new Error(UNREADABLE_RESUME_MESSAGE);
 
-  return text;
+  // 12,000 chars: long enough for a 3-page resume, cheap enough for LLM context.
+  // Section-aware, so a long CV loses the tail of each section rather than
+  // whole trailing sections (education, certifications).
+  return truncateResumeText(text);
+}
+
+export async function extractResumeText(file: File): Promise<string> {
+  return (await extractResumeTextWithMeta(file)).text;
 }

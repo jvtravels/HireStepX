@@ -37,6 +37,7 @@ export default function OnboardingComplete() {
   });
   const [loading, setLoading] = useState(!stateData.score);
   const [sessionCount, setSessionCount] = useState(1);
+  const [redirectNote, setRedirectNote] = useState("");
 
   useEffect(() => {
     captureClientEvent("onboarding_completed", { user_id: user?.id || null });
@@ -50,13 +51,16 @@ export default function OnboardingComplete() {
           aiFeedback: latest.ai_feedback ?? "",
           skillScores: latest.skill_scores ?? null,
         });
-      } else if (user.hasCompletedOnboarding) {
-        router.replace("/dashboard");
       } else {
-        router.replace("/onboarding");
+        // Stay on the loading screen while redirecting; clearing it would flash
+        // the results card with placeholder numbers.
+        setRedirectNote(user.hasCompletedOnboarding ? "No results to show yet. Taking you to your dashboard…" : "Finish setting up your profile first. Taking you there…");
+        router.replace(user.hasCompletedOnboarding ? "/dashboard" : "/onboarding");
+        return;
       }
       setLoading(false);
     }).catch(() => {
+      setRedirectNote(user.hasCompletedOnboarding ? "We couldn't load your results. Taking you to your dashboard…" : "Finish setting up your profile first. Taking you there…");
       router.replace(user.hasCompletedOnboarding ? "/dashboard" : "/onboarding");
     });
     // Fire once per user — router/user.hasCompletedOnboarding/stateData.score are read inside async branches and re-running on their change would race the redirect.
@@ -74,7 +78,7 @@ export default function OnboardingComplete() {
     : null;
 
   if (loading) {
-    return <LoadingScreen message="Loading your results…" />;
+    return <LoadingScreen message={redirectNote || "Loading your results…"} />;
   }
 
   return (

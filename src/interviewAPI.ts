@@ -212,6 +212,12 @@ export interface EvaluationResult {
   nextSteps?: string[];
 }
 
+/* Bounded so a hung XHR resolves as status 0 and falls through to the retry
+   queue instead of pinning saveSessionResult forever. Longer than the engine's
+   10s UI race on purpose: the request may still land after the user has moved
+   on, and the server dedups on id. */
+const SAVE_TIMEOUT_MS = 25_000;
+
 /** Save session to localStorage + Supabase with fallback. */
 export async function saveSessionResult(result: SessionResult, userId?: string): Promise<{
   localOk: boolean;
@@ -284,7 +290,7 @@ export async function saveSessionResult(result: SessionResult, userId?: string):
         // would pick the new version, which would silently rebind the
         // session. This way it's locked from the start.
         resume_version_id: result.resumeVersionId || null,
-      });
+      }, { timeoutMs: SAVE_TIMEOUT_MS });
       if (res.ok && res.data?.ok) {
         cloudOk = true;
         if (res.data.strippedColumns && res.data.strippedColumns.length > 0) {

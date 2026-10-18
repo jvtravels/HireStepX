@@ -46,6 +46,7 @@ import { dur, ease } from "./_motion";
 import { daysAgo, formatComp, formatExperience, WORK_MODE_LABEL, EMPLOYMENT_TYPE_LABEL, type SalaryType } from "./hiringMatchFormat";
 import { CompanyAvatar } from "./CompanyAvatar";
 import { useMaxWidth } from "./hooks/useMaxWidth";
+import CandidatePageHeader, { CandidatePagePanel } from "./CandidatePageHeader";
 
 export interface JobMatch {
   id: string;
@@ -99,6 +100,10 @@ interface HiringActivity {
 type SortColumn = "company" | "title" | "location" | "experience" | "jobType" | "salary" | "interest" | "date";
 const DEFAULT_SORT: Sort<SortColumn> = { column: "date", direction: "desc" };
 const RECENT_SEARCHES_KEY = "hirestepx-candidate-jobs-recent-searches";
+const JOBS_ACTIONS_WIDE = { gap: 14, flex: 1 } as const;
+const JOBS_ACTIONS_NARROW = { gap: 14, flex: "1 1 100%", justifyContent: "stretch" } as const;
+const JOBS_SEARCH_WIDE = { flex: "1 1 240px", minWidth: 200, maxWidth: "50%" } as const;
+const JOBS_SEARCH_NARROW = { flex: "1 1 160px", minWidth: 0 } as const;
 
 const COLUMN_LABEL: Record<SortColumn, string> = {
   company: "Company",
@@ -373,37 +378,41 @@ export default function DashboardJobs() {
   };
 
   const renderHeading = (withFilters: boolean) => (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: isNarrow ? "14px 16px" : "16px 20px", borderBottom: `1px solid ${t.line}`, flexWrap: "wrap", gap: 12 }}>
-      <h1 style={{ fontFamily: f.sans, fontSize: 26, fontWeight: 700, color: t.coal, margin: 0, letterSpacing: "-0.01em", lineHeight: "32px", flexShrink: 0 }}>Jobs</h1>
-      <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap", justifyContent: isNarrow ? "stretch" : "flex-end", flex: isNarrow ? "1 1 100%" : 1, minWidth: 0 }}>
-        {withFilters && (
-          <>
-            <SearchWithSuggestions
-              id="jobs-search"
-              label="Search jobs"
-              value={search}
-              onChange={setSearch}
-              placeholder="Search by job title, location, or skill"
-              storageKey={RECENT_SEARCHES_KEY}
-              suggestedFilters={suggestedFilters}
-              style={isNarrow ? { flex: "1 1 160px", minWidth: 0 } : { flex: "1 1 240px", minWidth: 200, maxWidth: "50%" }}
-            />
-            <FiltersPanel sections={filterSections} value={filters} onApply={setFilters} />
-          </>
-        )}
-        <Button size="lg" className={isNarrow ? "gap-2 px-4 w-full" : "gap-2 px-4"} onClick={() => router.push("/session/new")}>
-          <PlusIcon size={16} strokeWidth={2.5} aria-hidden="true" />
-          Start session
-        </Button>
-      </div>
-    </div>
+    <CandidatePageHeader
+      title="Jobs"
+      padding={isNarrow ? "14px 16px" : "16px 20px"}
+      actionsStyle={isNarrow ? JOBS_ACTIONS_NARROW : JOBS_ACTIONS_WIDE}
+      actions={
+        <>
+          {withFilters && (
+            <>
+              <SearchWithSuggestions
+                id="jobs-search"
+                label="Search jobs"
+                value={search}
+                onChange={setSearch}
+                placeholder="Search by job title, location, or skill"
+                storageKey={RECENT_SEARCHES_KEY}
+                suggestedFilters={suggestedFilters}
+                style={isNarrow ? JOBS_SEARCH_NARROW : JOBS_SEARCH_WIDE}
+              />
+              <FiltersPanel sections={filterSections} value={filters} onApply={setFilters} />
+            </>
+          )}
+          <Button size="lg" className={isNarrow ? "gap-2 px-4 w-full" : "gap-2 px-4"} onClick={() => router.push("/session/new")}>
+            <PlusIcon size={16} strokeWidth={2.5} aria-hidden="true" />
+            Start session
+          </Button>
+        </>
+      }
+    />
   );
 
   const shell = (body: React.ReactNode, withFilters = false) => (
-    <div style={{ background: t.white, display: "flex", flexDirection: "column", flex: 1, minHeight: 0, borderRadius: 16, border: `1px solid ${t.line}`, overflow: "hidden" }}>
+    <CandidatePagePanel>
       {renderHeading(withFilters)}
       {body}
-    </div>
+    </CandidatePagePanel>
   );
 
   if (!loaded) {

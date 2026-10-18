@@ -13,6 +13,7 @@ import {
 } from "./_resume-versioning";
 import { computeScoreBreakdown } from "./_resume-score";
 import { redactProfilePii } from "./_pii-redact";
+import { isUnreadableResumeText, truncateResumeText, UNREADABLE_RESUME_MESSAGE, RESUME_CHAR_CAP } from "./_resume-text-helpers";
 
 declare const process: { env: Record<string, string | undefined> };
 const GROQ_KEY = process.env.GROQ_API_KEY || "";
@@ -20,12 +21,10 @@ const GEMINI_KEY = process.env.GEMINI_API_KEY || "";
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || "";
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 
-// Must match src/resumeParser.ts's extractResumeText() cap. That client-side
-// cap is the real ceiling on how much resume text ever reaches this handler;
-// this constant used to be 6000, silently discarding the back half of any
-// resume over ~1.5 pages (older roles, education, certifications) with no
-// signal to the user about why their analysis looked incomplete.
-const RESUME_LLM_CHAR_CAP = 12000;
+// Shared with src/resumeParser.ts so client and server cut at the same size.
+// Truncation is section-aware (see truncateResumeText) and reported back as
+// `truncated` so the UI can tell the user instead of silently dropping the tail.
+const RESUME_LLM_CHAR_CAP = RESUME_CHAR_CAP;
 
 /**
  * Coerce an LLM-returned value into a plain string. The model occasionally
@@ -264,11 +263,22 @@ export default async function handler(req: Request): Promise<Response> {
   try {
     const { resumeText, targetRole, domain, fileName, fileHash } = await req.json();
 
+    // Validation failures never reach the LLM, so give back the monthly slot
+    // taken above; otherwise a few bad uploads burn the whole month's allowance.
+    const releaseParseSlot = () => {
+      if (resumeParseKey) redisIncrByWithExpiry(resumeParseKey, -1, 32 * 24 * 3600).catch(() => {/* fail silently */});
+    };
     if (!resumeText || typeof resumeText !== "string" || resumeText.length < 20) {
+      releaseParseSlot();
       return new Response(JSON.stringify({ error: "Resume text too short" }), { status: 400, headers });
     }
     if (resumeText.length > 50000) {
+      releaseParseSlot();
       return new Response(JSON.stringify({ error: "Resume text too long" }), { status: 400, headers });
+    }
+    if (isUnreadableResumeText(resumeText)) {
+      releaseParseSlot();
+      return new Response(JSON.stringify({ error: UNREADABLE_RESUME_MESSAGE, code: "unreadable_text" }), { status: 422, headers });
     }
 
     // Hash-based dedup. If the user has uploaded text with this exact
@@ -323,8 +333,8 @@ export default async function handler(req: Request): Promise<Response> {
     }
 
     const roleContext = targetRole ? `The candidate is targeting a ${sanitizeForLLM(targetRole, 100)} role.` : "";
-    const resumeForLLM = sanitizeForLLM(resumeText, RESUME_LLM_CHAR_CAP);
-    const truncated = resumeText.length > RESUME_LLM_CHAR_CAP;
+    const { text: cappedResume, truncated } = truncateResumeText(resumeText, RESUME_LLM_CHAR_CAP);
+    const resumeForLLM = sanitizeForLLM(cappedResume, RESUME_LLM_CHAR_CAP);
 
     const prompt = `You are a senior career coach and ATS expert. Analyze this resume and return a detailed JSON profile.
 ${roleContext}

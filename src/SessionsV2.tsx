@@ -36,6 +36,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { SortableHead, type Sort as SharedSort } from "@/components/SortableHead";
 import { TablePaginationFooter } from "@/components/TablePaginationFooter";
 import { useMaxWidth } from "./hooks/useMaxWidth";
+import CandidatePageHeader, { CandidatePagePanel } from "./CandidatePageHeader";
 import { FiltersPanel, type FilterSection, type FilterSelection } from "@/components/FiltersPanel";
 import { SearchWithSuggestions } from "@/components/SearchWithSuggestions";
 
@@ -177,29 +178,29 @@ function parseRowDate(date: string): number {
   return Number.isNaN(t) ? 0 : t;
 }
 
+const START_BTN_STYLE: React.CSSProperties = {
+  padding: "12px 20px",
+  height: 44,
+  gap: 8,
+  fontSize: 15,
+  boxShadow: `0px 2px 4px color-mix(in srgb, ${T.indigo} 20%, transparent)`,
+};
+
+const WORKSPACE_ACTIONS_STYLE: React.CSSProperties = { flex: "1 1 auto" };
+const SEARCH_STYLE: React.CSSProperties = { flex: "1 1 240px", minWidth: 200, maxWidth: 560 };
+
 function PageHeader({ onStartSession }: { onStartSession: () => void }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: `1px solid ${T.line}`, flexWrap: "wrap", gap: 12 }}>
-      <div>
-        <h1 style={{ fontFamily: font.ui, fontSize: 26, fontWeight: 700, color: T.coal, margin: 0, letterSpacing: "-0.01em", lineHeight: "32px" }}>Sessions</h1>
-        <p style={{ fontFamily: font.ui, fontSize: 14, color: T.inkFaint, margin: "2px 0 0" }}>
-          Review your practice sessions, track your progress and keep improving.
-        </p>
-      </div>
-      <Button
-        onClick={onStartSession}
-        style={{
-          padding: "12px 20px",
-          height: 44,
-          gap: 8,
-          fontSize: 15,
-          boxShadow: `0px 2px 4px color-mix(in srgb, ${T.indigo} 20%, transparent)`,
-        }}
-      >
-        <PlusIcon size={16} strokeWidth={2.5} aria-hidden="true" />
-        Start session
-      </Button>
-    </div>
+    <CandidatePageHeader
+      title="Sessions"
+      subtitle="Review your practice sessions, track your progress and keep improving."
+      actions={
+        <Button onClick={onStartSession} style={START_BTN_STYLE}>
+          <PlusIcon size={16} strokeWidth={2.5} aria-hidden="true" />
+          Start session
+        </Button>
+      }
+    />
   );
 }
 
@@ -241,26 +242,30 @@ function WorkspaceHeader({
   }, [sections, filters, onFiltersChange]);
 
   return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 20px", borderBottom: `1px solid ${T.line}`, flexWrap: "wrap", gap: 12 }}>
-      <h1 style={{ fontFamily: font.ui, fontSize: 26, lineHeight: "32px", fontWeight: 700, color: T.coal, margin: 0, letterSpacing: "-0.01em", flexShrink: 0 }}>Sessions</h1>
-      <div style={{ display: "flex", alignItems: "center", flex: "1 1 auto", flexWrap: "wrap", gap: 8, justifyContent: "flex-end", minWidth: 0 }}>
-        <SearchWithSuggestions
-          id="sessions-search"
-          label="Search sessions"
-          value={search}
-          onChange={onSearchChange}
-          placeholder="Search sessions..."
-          storageKey="hirestepx-sessions-recent-searches"
-          suggestedFilters={suggestedFilters}
-          style={{ flex: "1 1 240px", minWidth: 200, maxWidth: 560 }}
-        />
-        <FiltersPanel sections={sections} value={filters} onApply={onFiltersChange} />
-        <Button size="lg" className="gap-2 px-4" onClick={onStartSession}>
-          <PlusIcon size={16} strokeWidth={2.5} aria-hidden="true" />
-          Start session
-        </Button>
-      </div>
-    </div>
+    <CandidatePageHeader
+      title="Sessions"
+      padding="10px 20px"
+      actionsStyle={WORKSPACE_ACTIONS_STYLE}
+      actions={
+        <>
+          <SearchWithSuggestions
+            id="sessions-search"
+            label="Search sessions"
+            value={search}
+            onChange={onSearchChange}
+            placeholder="Search sessions..."
+            storageKey="hirestepx-sessions-recent-searches"
+            suggestedFilters={suggestedFilters}
+            style={SEARCH_STYLE}
+          />
+          <FiltersPanel sections={sections} value={filters} onApply={onFiltersChange} />
+          <Button size="lg" className="gap-2 px-4" onClick={onStartSession}>
+            <PlusIcon size={16} strokeWidth={2.5} aria-hidden="true" />
+            Start session
+          </Button>
+        </>
+      }
+    />
   );
 }
 
@@ -720,7 +725,7 @@ export default function SessionsV2Screen() {
 
   return (
     <TooltipProvider>
-      <div style={{ background: T.white, display: "flex", flexDirection: "column", fontFamily: font.ui, flex: 1, minHeight: 0, borderRadius: 12, border: `1px solid ${T.line}`, overflow: "hidden" }}>
+      <CandidatePagePanel>
         {showPageHeader && !sessionsLoading && <PageHeader onStartSession={onStartSession} />}
         <SkeletonReveal
           loading={sessionsLoading}
@@ -731,7 +736,7 @@ export default function SessionsV2Screen() {
           {body}
         </div>
         </SkeletonReveal>
-      </div>
+      </CandidatePagePanel>
     </TooltipProvider>
   );
 }

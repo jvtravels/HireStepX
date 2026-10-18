@@ -6,6 +6,9 @@ import { useCallback, useEffect, useRef } from "react";
 
 /* ─── Error mapping ─── */
 
+export const UNVERIFIED_EMAIL_MESSAGE =
+  "Your email isn't verified yet. Check your inbox for the verification link, or request a new one below.";
+
 /** Map Supabase auth errors to user-facing copy. Keep messages short
     and actionable; never leak which field was wrong (security). */
 export function mapAuthError(raw: string | undefined): string {
@@ -32,7 +35,7 @@ export function mapAuthError(raw: string | undefined): string {
     return "This email is already in our system. Check your inbox for a pending verification link, or sign in instead.";
   }
   if (msg.includes("email not confirmed") || msg.includes("not confirmed")) {
-    return "Your email isn't verified yet. Check your inbox for the verification link, or use \"Forgot password\" to resend it.";
+    return UNVERIFIED_EMAIL_MESSAGE;
   }
   if (msg.includes("rate limit") || msg.includes("too many requests")) {
     return "Too many attempts. Try again in a few minutes.";

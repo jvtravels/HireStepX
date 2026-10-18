@@ -466,7 +466,7 @@ export default function ResumeV2Screen() {
             )}
             {truncated && (
               <p style={{ fontFamily: font.ui, fontSize: S.sm, color: T.warningInk, margin: 0 }}>
-                Your resume was long — analysis ran on a truncated excerpt.
+                Your resume is long, so we analysed a shortened version that keeps the start of every section. Content past that point was not scored.
               </p>
             )}
             {profile.careerTrajectory && (

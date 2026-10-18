@@ -31,8 +31,10 @@ import {
   mapAuthError,
   markSessionStart,
   readStaySignedInPref,
+  UNVERIFIED_EMAIL_MESSAGE,
   useIsMounted,
 } from "./_shell";
+import ResendVerification from "./ResendVerification";
 
 // Auto-hide password if visible for this long (over-shoulder protection)
 const PASSWORD_VISIBLE_TIMEOUT_MS = 10_000;
@@ -317,9 +319,9 @@ export default function Login() {
     ? errorParam === "verification-failed" || errorParam === "config"
       ? "We couldn't verify your email just now. Open the link in your email again in a minute; it still works. If it keeps failing, contact hello@hirestepx.com."
       : errorParam === "link-expired" || errorParam === "verification-expired"
-        ? "Your verification link has expired. Sign up again with the same email to get a new one."
+        ? "Your verification link has expired. Enter your email below and request a new one."
         : errorParam === "invalid-token"
-          ? "That verification link isn't valid. Use the latest email we sent you, or sign up again to get a new one."
+          ? "That verification link isn't valid. Use the latest email we sent you, or enter your email below and request a new one."
           : errorParam === "user-not-found"
             ? "We couldn't find an account for that link. Sign up to create one."
             : errorParam === "session-expired"
@@ -333,6 +335,14 @@ export default function Login() {
       : verifiedParam === "already"
         ? "This email is already verified. Log in below to continue."
         : null;
+
+  // Offer a fresh link on every screen state where the old one is unusable.
+  const needsVerificationHelp =
+    error === UNVERIFIED_EMAIL_MESSAGE ||
+    errorParam === "link-expired" ||
+    errorParam === "verification-expired" ||
+    errorParam === "invalid-token" ||
+    errorParam === "verification-failed";
 
   const displayError = isLocked
     ? `Account temporarily locked after too many attempts. Try again in ${Math.ceil(lockoutSeconds / 60)} minute${lockoutSeconds > 60 ? "s" : ""}.`
@@ -566,6 +576,8 @@ export default function Login() {
                 {displayError}
               </div>
             )}
+
+            {needsVerificationHelp && !isLocked && <ResendVerification email={email} />}
 
             <form
               onSubmit={handleSubmit}

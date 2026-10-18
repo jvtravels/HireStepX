@@ -848,7 +848,7 @@ export default function Onboarding() {
   // section means returning users no longer see a 1-2s flash of
   // onboarding before the redirect fires. Matches /loading.tsx style.
   if (authLoading || shouldRedirectAway) {
-    return <LoadingScreen />;
+    return <LoadingScreen message={shouldRedirectAway ? "You're already set up. Taking you to your dashboard…" : undefined} />;
   }
 
   // Inline warning when the entered target role doesn't match the resume's

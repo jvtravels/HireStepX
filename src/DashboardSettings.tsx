@@ -5,8 +5,8 @@ import { useDocTitle } from "./useDocTitle";
 import { authHeaders, getPaymentHistory, type PaymentRecord } from "./supabase";
 import { useDashboardUIActions } from "./DashboardContext";
 import EmployerVisibilityCard from "./EmployerVisibilityCard";
+import CandidatePageHeader, { CandidatePageContainer } from "./CandidatePageHeader";
 import {
-  PageHeader,
   FlatSection,
   AccountSection,
   PlanUsageSection,
@@ -81,9 +81,9 @@ export default function SettingsPage() {
   const tierLabel = TIER_DISPLAY_NAMES[tierId] || (tierId.charAt(0).toUpperCase() + tierId.slice(1));
 
   return (
-    <div style={{ width: "100%", maxWidth: 960, margin: "0 auto" }}>
+    <CandidatePageContainer>
       <div style={{ background: c.graphite, border: `1px solid ${c.border}`, borderRadius: 16, overflow: "hidden" }}>
-        <PageHeader title="Settings" desc="Manage your subscription, payments, privacy, and account security." />
+        <CandidatePageHeader title="Settings" subtitle="Manage your subscription, payments, privacy, and account security." padding="20px 28px" />
 
         <FlatSection title="Plan & Usage">
           <PlanUsageSection
@@ -130,6 +130,6 @@ export default function SettingsPage() {
           />
         </FlatSection>
       </div>
-    </div>
+    </CandidatePageContainer>
   );
 }

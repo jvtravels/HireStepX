@@ -66,6 +66,7 @@ import {
   decideComponentGapFollowUp,
 } from "./_interview-engine-helpers";
 import type { InterviewerPersonality } from "./_interview-engine-helpers";
+import { useBeforeUnloadGuard } from "./useBeforeUnloadGuard";
 
 /* ─── Draft data shape (for IDB restore) ─── */
 interface InterviewDraft {
@@ -792,17 +793,9 @@ export function useInterviewEngine() {
   // Click-recovery for autoplay blocks — see ./_audio-unlock.ts.
   useClickRecoverAutoplay(toast);
 
-  // Prevent accidental navigation/close during active interview
-  useEffect(() => {
-    const handler = (e: BeforeUnloadEvent) => {
-      if (!interviewEndedRef.current) {
-        e.preventDefault();
-        e.returnValue = "";
-      }
-    };
-    window.addEventListener("beforeunload", handler);
-    return () => window.removeEventListener("beforeunload", handler);
-  }, []);
+  // Warn before a hard close/refresh once there is an answer to lose; stays on
+  // through evaluation + save, released when handleEnd settles.
+  const releaseUnloadGuard = useBeforeUnloadGuard(transcript.some(t => t.speaker === "user"));
 
   // Offline + save status + mic error
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
@@ -1100,8 +1093,7 @@ export function useInterviewEngine() {
       try { localStorage.setItem(draftKey, JSON.stringify(draftData)); } catch { /* expected: localStorage may be unavailable */ }
       saveToIDB(draftKey, draftData);
     };
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      e.preventDefault();
+    const handleBeforeUnload = () => {
       saveDraft();
       // Fire-and-forget abandonment analytics (use sendBeacon since page is unloading)
       try {
@@ -3621,6 +3613,7 @@ export function useInterviewEngine() {
       console.warn("[interview] handleEnd exceeded 58s — forcing navigation to session detail");
       // replace not push — same reasoning as the success path: back-button
       // from /session/[id] must not land on /interview.
+      releaseUnloadGuard();
       try { router.replace(`/session/${sessionId}`); } catch { /* best effort */ }
       setEvaluating(false);
     }, 58_000);
@@ -4043,8 +4036,11 @@ export function useInterviewEngine() {
       questions_answered: currentQuestionNum,
     });
 
-    try { localStorage.removeItem(draftKey); } catch { /* expected: localStorage cleanup is non-critical */ }
-    try { await deleteFromIDB(draftKey); } catch { /* expected: IDB cleanup is non-critical */ }
+    // Nothing persisted anywhere ("failed") means the draft is the only copy: keep it so the user can resume and re-save.
+    if (savePath !== "failed") {
+      try { localStorage.removeItem(draftKey); } catch { /* expected: localStorage cleanup is non-critical */ }
+      try { await deleteFromIDB(draftKey); } catch { /* expected: IDB cleanup is non-critical */ }
+    }
     try {
       // /api/sessions/save already atomically appends the timestamp and sets
       // has_completed_onboarding=true server-side. We still call updateUser
@@ -4084,6 +4080,7 @@ export function useInterviewEngine() {
     } finally {
       clearTimeout(safetyTimer);
       clearTimeout(escapeHatch);
+      releaseUnloadGuard();
       setEvaluating(false);
     }
     // handleEnd reads many derived values (draftKey/evalTimedOut/evaluating/interviewScript/jdAnalysisData/jobDescription/negotiationStyle/shouldUseResume/targetRole/targetSalary/toast/usedFallbackScore) at fire-time. It runs exactly once per session — re-creating the callback on each of these would only churn ref identity without changing behavior since handleEndRef holds the latest version.

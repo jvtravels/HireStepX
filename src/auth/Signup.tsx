@@ -31,6 +31,7 @@ import {
   validateSignupPassword,
 } from "./_validation";
 import { trackAuth, loginViewedEvent } from "./_analytics";
+import { ResendStatus, resendButtonLabel, useResendVerification } from "./ResendVerification";
 import {
   buildAuthLink,
   computeAuthRedirect,
@@ -57,6 +58,18 @@ const NAME_MAX_LENGTH = 40;
 const EMAIL_MAX_LENGTH = 254;
 const PASSWORD_MAX_LENGTH = 128;
 const COMPANY_NAME_MAX_LENGTH = 200;
+
+const RESEND_BUTTON_BASE_STYLE: React.CSSProperties = {
+  minWidth: 200,
+  height: "auto",
+  borderRadius: 8,
+  padding: "12px 20px",
+  fontFamily: f.sans,
+  fontSize: 15,
+  gap: 10,
+};
+const RESEND_BUTTON_SECONDARY_STYLE: React.CSSProperties = { ...RESEND_BUTTON_BASE_STYLE, fontWeight: 500, boxShadow: shadows.card };
+const RESEND_BUTTON_PRIMARY_STYLE: React.CSSProperties = { ...RESEND_BUTTON_BASE_STYLE, fontWeight: 600, boxShadow: shadows.cta };
 // Shown next to the affirmation; covered by the same consent version (data/legal-versions.ts).
 const EMPLOYER_DISCOVERY_NOTICE =
   "Employers can find a masked version of your practice profile (skills and scores, with no name) and can pay to unlock your contact details. You can switch this off any time in Settings.";
@@ -95,49 +108,8 @@ export default function Signup() {
   // Only computed when the user has touched the field and value is non-empty.
   const emailSuggestion = emailTouched ? suggestEmailCorrection(email) : null;
 
-  // Resend-verification state on the success screen.
-  const [resendCooldown, setResendCooldown] = useState(0);
-  const [resending, setResending] = useState(false);
-  const [resendError, setResendError] = useState<string | null>(null);
-
-  // Cooldown timer
-  useEffect(() => {
-    if (resendCooldown <= 0) return;
-    const id = setInterval(
-      () => setResendCooldown((s) => Math.max(0, s - 1)),
-      1000,
-    );
-    return () => clearInterval(id);
-  }, [resendCooldown]);
-
-  const handleResendVerification = useCallback(async () => {
-    if (resendCooldown > 0 || resending) return;
-    setResending(true);
-    setResendError(null);
-    try {
-      const cleanEmail = sanitizeEmail(email);
-      const res = await fetch("/api/send-welcome", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: cleanEmail, name: name.trim() }),
-      });
-      if (!isMounted.current) return;
-      if (res.status === 429) {
-        setResendError(
-          "Too many requests. Try again in a few minutes.",
-        );
-      } else if (!res.ok) {
-        setResendError("Couldn't send the email. Try again in a moment.");
-      } else {
-        setResendCooldown(60);
-      }
-    } catch {
-      if (!isMounted.current) return;
-      setResendError("Couldn't reach our servers. Check your connection.");
-    } finally {
-      if (isMounted.current) setResending(false);
-    }
-  }, [resendCooldown, resending, email, name, isMounted]);
+  // Resend-verification on the success screen (shared with Login's expired-link state).
+  const resend = useResendVerification(email);
 
   // Plan + redirect param preservation
   const planParam = searchParams?.get("plan") ?? null;
@@ -537,49 +509,15 @@ export default function Signup() {
                   type="button"
                   variant={emailProvider ? "outline" : "default"}
                   size="lg"
-                  onClick={handleResendVerification}
-                  disabled={resendCooldown > 0 || resending}
-                  aria-busy={resending || undefined}
-                  style={{
-                    minWidth: 200,
-                    height: "auto",
-                    borderRadius: 8,
-                    padding: "12px 20px",
-                    fontFamily: f.sans,
-                    fontSize: 15,
-                    fontWeight: emailProvider ? 500 : 600,
-                    gap: 10,
-                    boxShadow: emailProvider ? shadows.card : shadows.cta,
-                    opacity: resendCooldown > 0 || resending ? 0.6 : 1,
-                  }}
+                  onClick={resend.send}
+                  disabled={resend.cooldown > 0 || resend.sending}
+                  aria-busy={resend.sending || undefined}
+                  style={emailProvider ? RESEND_BUTTON_SECONDARY_STYLE : RESEND_BUTTON_PRIMARY_STYLE}
                 >
-                  {resending ? (
-                    <>
-                      <Spinner />
-                      Resending…
-                    </>
-                  ) : resendCooldown > 0 ? (
-                    <span aria-live="polite">
-                      Resend in {resendCooldown}s
-                    </span>
-                  ) : (
-                    <span aria-live="polite">Resend verification email</span>
-                  )}
+                  {resend.sending && <Spinner />}
+                  {resendButtonLabel(resend.sending, resend.cooldown)}
                 </Button>
-                {resendError && (
-                  <p
-                    role="alert"
-                    style={{
-                      fontFamily: f.sans,
-                      fontSize: 12,
-                      color: t.error,
-                      margin: 0,
-                      textAlign: "center",
-                    }}
-                  >
-                    {resendError}
-                  </p>
-                )}
+                <ResendStatus message={resend.message} />
 
                 <Button
                   type="button"

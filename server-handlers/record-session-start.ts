@@ -20,7 +20,7 @@
 export const config = { runtime: "edge" };
 
 import { withAuthAndRateLimit, corsHeaders, withRequestId, slog, checkSessionLimit } from "./_shared";
-import { detectConcurrentSession } from "./_record-session-start-helpers";
+import { detectConcurrentSession, casAppendStart } from "./_record-session-start-helpers";
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || "";
@@ -75,9 +75,9 @@ export default async function handler(req: Request): Promise<Response> {
     return new Response(JSON.stringify({ error: "sessionId required" }), { status: 400, headers });
   }
 
-  /* Read profile, check if this session was already recorded as
-     started, append if not. The 90-day filter on started_session_ids
-     keeps the column small — older entries get pruned on each write. */
+  /* Read profile, check if this session was already recorded as started,
+     then append with a compare-and-swap (casAppendStart) so two tabs
+     starting at once can't overwrite each other's start record. */
   try {
     const getRes = await fetch(
       `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(auth.userId)}&select=practice_timestamps,started_session_ids,started_session_ts`,
@@ -168,70 +168,36 @@ export default async function handler(req: Request): Promise<Response> {
       } catch { /* non-critical — never block session start */ }
     }
 
-    const existingTimestamps: string[] = Array.isArray(row.practice_timestamps) ? row.practice_timestamps : [];
-    const nowIso = new Date().toISOString();
-    /* Cap at 500 timestamps + 50 session-id IDs — both bounds match
-       the existing save-session.ts cap pattern. */
-    const nextTimestamps = [...existingTimestamps, nowIso].slice(-500);
-    const nextStarts = [...existingStarts, sessionId].slice(-50);
-    /* Same cap as nextStarts (50) so the two arrays stay index-aligned —
-       startedAtById is rebuilt from them by position on the next call. */
-    const nextStartTs = [...existingStartTs, nowIso].slice(-50);
+    const cas = await casAppendStart({
+      baseUrl: SUPABASE_URL,
+      serviceKey: SUPABASE_SERVICE_KEY,
+      userId: auth.userId,
+      sessionId,
+      initialRow: row,
+      nowIso: new Date().toISOString(),
+    });
 
-    const patchRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(auth.userId)}`,
-      {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          apikey: SUPABASE_SERVICE_KEY,
-          Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
-          Prefer: "return=minimal",
-        },
-        body: JSON.stringify({
-          practice_timestamps: nextTimestamps,
-          started_session_ids: nextStarts,
-          started_session_ts: nextStartTs,
-          has_completed_onboarding: true,
-        }),
-      },
-    );
-
-    if (!patchRes.ok) {
-      const t = await patchRes.text().catch(() => "");
-      /* Schema may not yet have started_session_ids/started_session_ts columns —
-         retry without them so the practice_timestamps bump still happens. */
-      if (/started_session_ids|started_session_ts/.test(t)) {
-        const retry = await fetch(
-          `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(auth.userId)}`,
-          {
-            method: "PATCH",
-            headers: {
-              "Content-Type": "application/json",
-              apikey: SUPABASE_SERVICE_KEY,
-              Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
-              Prefer: "return=minimal",
-            },
-            body: JSON.stringify({ practice_timestamps: nextTimestamps, has_completed_onboarding: true }),
-          },
-        );
-        /* Deliberate soft case: started_session_ids column not yet
-           migrated. Stays a 200 so the client/engine doesn't treat it
-           as a hard error, but emit a structured signal so a monitor
-           can alarm that the migration is still pending. */
-        slog.warn("record-session-start schema migration pending", {
-          code: "record_session_start_schema_migration_pending",
-          retryOk: retry.ok,
-          retryHttpStatus: retry.status,
-          userId: auth.userId,
-          sessionId,
-        });
-        return new Response(JSON.stringify({ ok: retry.ok, allowed: true, recorded: retry.ok, schemaMigrationPending: true }), { status: 200, headers });
-      }
+    if (cas.outcome === "already_counted") {
+      return new Response(JSON.stringify({ ok: true, allowed: true, recorded: false, reason: "already counted" }), { status: 200, headers });
+    }
+    if (cas.outcome === "schema_pending") {
+      /* Deliberate soft case: started_session_ids column not yet
+         migrated. Stays a 200 so the client/engine doesn't treat it
+         as a hard error, but emit a structured signal so a monitor
+         can alarm that the migration is still pending. */
+      slog.warn("record-session-start schema migration pending", {
+        code: "record_session_start_schema_migration_pending",
+        retryOk: cas.ok,
+        userId: auth.userId,
+        sessionId,
+      });
+      return new Response(JSON.stringify({ ok: cas.ok, allowed: true, recorded: cas.ok, schemaMigrationPending: true }), { status: 200, headers });
+    }
+    if (cas.outcome !== "recorded") {
       slog.error("record-session-start patch failed", {
-        code: "record_session_start_patch_failed",
-        httpStatus: patchRes.status,
-        body: t.slice(0, 200),
+        code: cas.outcome === "contended" ? "record_session_start_cas_contended" : "record_session_start_patch_failed",
+        httpStatus: cas.outcome === "error" ? cas.status : undefined,
+        body: cas.outcome === "error" ? cas.body.slice(0, 200) : undefined,
         userId: auth.userId,
         sessionId,
       });

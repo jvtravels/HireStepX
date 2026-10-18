@@ -2086,8 +2086,8 @@ export function RequireAuth({ children }: { children: ReactNode }) {
   // Session restore runs on every hard load, so this is the first loader the
   // user sees — show the destination screen's shape, not a generic blob.
   if (loading || (!isLoggedIn && hasStoredSession())) return routeSkeletonFor(pathname) ?? <LoadingScreen />;
-  if (!isLoggedIn) return null;
-  if (user && !user.hasCompletedOnboarding && !getLocalOnboardingDone(user.id) && !["/onboarding", "/interview", "/onboarding/complete"].includes(pathname) && !pathname.startsWith("/session/")) return null;
+  if (!isLoggedIn) return <LoadingScreen message="Taking you to sign in…" />;
+  if (user && !user.hasCompletedOnboarding && !getLocalOnboardingDone(user.id) && !["/onboarding", "/interview", "/onboarding/complete"].includes(pathname) && !pathname.startsWith("/session/")) return <LoadingScreen message="Let's finish setting up your profile first…" />;
 
   return <>{children}</>;
 }

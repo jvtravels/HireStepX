@@ -22,6 +22,7 @@ import {
   SettingsIcon,
   CreditCardIcon,
   UserPlusIcon,
+  MessageSquareIcon,
 } from "lucide-react";
 import { DropdownMenuGroup, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { preloadRouteChunk } from "./routeChunkPreload";
@@ -75,13 +76,14 @@ const navItems = [
   { id: "analytics", path: "/analytics", label: "Analytics" },
   { id: "resume", path: "/resume", label: "Your Profile" },
   { id: "jobs", path: "/jobs", label: "Jobs" },
+  { id: "messages", path: "/messages", label: "Messages" },
+  { id: "referrals", path: "/referrals", label: "Referrals" },
+  { id: "settings", path: "/settings", label: "Settings" },
 ];
 
-const EXTRA_ROUTE_LABELS: { prefix: string; label: string }[] = [
-  { prefix: "/messages", label: "Messages" },
-  { prefix: "/settings", label: "Settings" },
-  { prefix: "/referrals", label: "Referrals" },
-];
+/* Nav entries whose sub-routes (e.g. /settings/billing, /messages/<id>)
+   keep the entry highlighted. */
+const NESTED_NAV_IDS = new Set(["messages", "referrals", "settings"]);
 
 function NavIcon({ id }: { id: string }) {
   const props = { size: 18, "aria-hidden": true as const };
@@ -92,6 +94,8 @@ function NavIcon({ id }: { id: string }) {
     case "analytics": return <TrendingUpIcon {...props} />;
     case "resume": return <FileTextIcon {...props} />;
     case "jobs": return <BriefcaseIcon {...props} />;
+    case "messages": return <MessageSquareIcon {...props} />;
+    case "referrals": return <UserPlusIcon {...props} />;
     case "settings": return <SettingsIcon {...props} />;
     default: return null;
   }
@@ -230,14 +234,11 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
     return () => window.removeEventListener("keydown", handler);
   }, []);
 
-  const extraRoute = EXTRA_ROUTE_LABELS.find(r => pathname === r.prefix || pathname?.startsWith(r.prefix + "/"));
-
-  // Determine active nav from current route. Messages and Settings have no
-  // sidebar entry (reached via the bell / account menu), so no item is
-  // highlighted there instead of falling back to Dashboard.
+  // Determine active nav from current route.
   const activeNav = (() => {
     const path = pathname;
-    if (extraRoute) return "";
+    const nested = navItems.find(item => NESTED_NAV_IDS.has(item.id) && (path === item.path || path?.startsWith(item.path + "/")));
+    if (nested) return nested.id;
     if (path === "/dashboard" || path === "/dashboard/") return "dashboard";
     // /session/[id] is the Sessions detail view, not its own nav item —
     // treat it as a sub-route of "/sessions" so the sidebar highlights
@@ -458,8 +459,8 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
       }
       onLogout={() => { authLogout(); }}
       breadcrumbRoot={{ label: "HireStepX", path: "/dashboard" }}
-      pageLabel={extraRoute?.label ?? (navItems.find((item) => item.id === activeNav)?.label || "Dashboard")}
-      pageLabelPath={extraRoute?.prefix ?? navItems.find((item) => item.id === activeNav)?.path}
+      pageLabel={navItems.find((item) => item.id === activeNav)?.label || "Dashboard"}
+      pageLabelPath={navItems.find((item) => item.id === activeNav)?.path}
       extraCrumbs={breadcrumbExtra}
       isMobile={isMobile}
       mainId="dashboard-main"
@@ -530,10 +531,6 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
             ))}
           </CommandGroup>
           <CommandGroup heading="Actions">
-            <CommandItem onSelect={() => { setPaletteOpen(false); nav.push("/settings"); }}>
-              <SettingsIcon size={16} aria-hidden="true" />
-              Settings
-            </CommandItem>
             <CommandItem onSelect={() => { setPaletteOpen(false); setShowUpgradeModal(true); }}>
               <CreditCardIcon size={16} aria-hidden="true" />
               Plans & billing

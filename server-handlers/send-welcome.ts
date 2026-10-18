@@ -6,6 +6,7 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { createHmac, randomBytes } from "crypto";
 import { resolve } from "dns/promises";
 import { isDisposableEmailServer } from "./_disposable-emails";
+import { findAuthUserByEmail, isOAuthOnlyUser } from "./_auth-user-lookup";
 import { createUnconfirmedUser, validateSignupFields } from "./_signup-account";
 import { CONSENT_METADATA_KEY, currentSignupConsent } from "../src/_consent-record";
 import {
@@ -338,6 +339,35 @@ async function sendNoAccountFoundEmail(email: string): Promise<void> {
   }
 }
 
+/* Sent instead of a reset link when the address belongs to an OAuth-only
+   (Google) account. Generic 200 to the caller either way. */
+async function sendOAuthOnlyResetEmail(email: string): Promise<void> {
+  if (!RESEND_API_KEY) return;
+  try {
+    const safeEmail = escapeHtml(email);
+    await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
+      signal: AbortSignal.timeout(10_000),
+      body: JSON.stringify({
+        from: FROM_EMAIL,
+        to: [email],
+        subject: "Sign in with Google",
+        html: emailShell({
+          preview: "This account uses Google to sign in, so there's no password to reset.",
+          body:
+            title("Use Google to", { accentWord: "sign in." }) +
+            para(`Someone asked to reset the HireStepX password for ${b(safeEmail)}. This account signs in with Google, so there's no password to reset.`) +
+            button("Go to sign in", `${APP_URL}/login`) +
+            para(`Choose "Continue with Google" with this address. If you didn't request this, ignore it, nothing has changed.`, { small: true, muted: true }),
+        }),
+      }),
+    });
+  } catch (err) {
+    console.warn("[reset] oauth-only email send failed:", err instanceof Error ? err.message : "Unknown");
+  }
+}
+
 // ─── Password Reset Email Handler ───────────────────────────────────────────
 async function handleReset(req: VercelRequest, res: VercelResponse, normalizedEmail: string) {
   // Email-format validation. The user reported password-reset emails
@@ -389,37 +419,23 @@ async function handleReset(req: VercelRequest, res: VercelResponse, normalizedEm
   }
 
   try {
-    // Check if user exists before sending reset email
-    const userListRes = await fetch(
-      `${SUPABASE_URL}/auth/v1/admin/users?filter=${encodeURIComponent(normalizedEmail)}&page=1&per_page=1`,
-      {
-        headers: {
-          apikey: SUPABASE_SERVICE_ROLE_KEY,
-          Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-        },
-      },
-    );
-    if (userListRes.ok) {
-      const userListData = await userListRes.json();
-      const users = userListData.users || userListData || [];
-      const found = Array.isArray(users) && users.some((u: { email?: string }) => u.email?.toLowerCase() === normalizedEmail);
-      if (!found) {
-        /* Email enumeration defense — the client UI must look identical
-           whether the email exists or not, so attackers probing
-           /forgot-password can't tell which addresses are registered.
-           BUT a silent no-op leaves a legit user (typo'd email, wrong
-           account) sitting forever on "Check your email" with no
-           explanation.
-           Option C from the audit: silent in UI, but send a "we
-           couldn't find an account" email to the typed address. The
-           legit user immediately understands what happened; the
-           attacker only learns about emails sent to their own probe
-           address (no information leak). Same per-IP + per-email
-           rate limits (3/h IP, 5/24h email) bound abuse cost. */
-        console.log(`[reset] unknown email — sending "no account found" courtesy email: ${normalizedEmail.slice(0, 3)}***`);
-        await sendNoAccountFoundEmail(normalizedEmail);
-        return res.status(200).json({ ok: true });
-      }
+    // Exact-email lookup (admin ?filter= is a substring match). A failed
+    // lookup falls through to generate_link, which resolves the user itself.
+    const lookup = await findAuthUserByEmail(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, normalizedEmail);
+    if (lookup.ok && !lookup.user) {
+      /* Email enumeration defense: the UI looks identical whether or not the
+         email exists, but a silent no-op strands a legit user (typo, wrong
+         account) on "Check your email". So send a "no account found"
+         courtesy email to the typed address; a prober only ever reaches
+         their own inbox. Same per-IP + per-email limits bound abuse. */
+      console.log(`[reset] unknown email, sending "no account found" courtesy email: ${normalizedEmail.slice(0, 3)}***`);
+      await sendNoAccountFoundEmail(normalizedEmail);
+      return res.status(200).json({ ok: true });
+    }
+    if (lookup.ok && lookup.user && isOAuthOnlyUser(lookup.user)) {
+      // Google-only accounts have no password; point them at the button they used.
+      await sendOAuthOnlyResetEmail(normalizedEmail);
+      return res.status(200).json({ ok: true });
     }
 
     /* Always generate a fresh recovery link.

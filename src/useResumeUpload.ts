@@ -12,7 +12,7 @@ import { useEffect, useRef, useState } from "react";
 import { useAuth } from "./AuthContext";
 import { useDashboardCore } from "./DashboardContext";
 import {
-  extractResumeText,
+  extractResumeTextWithMeta,
   parseResumeData,
   isAiResume,
   isFallbackResume,
@@ -158,8 +158,9 @@ export function useResumeUpload(): ResumeUploadState {
     setPhase("extracting");
 
     let text: string;
+    let clientTruncated = false;
     try {
-      text = await extractResumeText(file);
+      ({ text, truncated: clientTruncated } = await extractResumeTextWithMeta(file));
       setResumeText(text);
       updatePersisted({ resumeFileName: file.name });
       updateUser({ resumeFileName: file.name, resumeText: text });
@@ -197,11 +198,14 @@ export function useResumeUpload(): ResumeUploadState {
       console.error("[resume] Upload-time AI analysis failed:", analyzeError);
     }
 
+    // The client cut already happened before the server saw the text, so the
+    // server's own flag alone would never fire for long resumes.
+    setTruncated(clientTruncated);
     if (result?.profile) {
       void archiveResumeFile(file, result.resumeVersionId);
       setProfile(result.profile);
       setAnalysisSource("ai");
-      setTruncated(!!result.truncated);
+      setTruncated(clientTruncated || !!result.truncated);
       updateUser({ resumeData: { _type: "ai", ...result.profile } });
       setPhase("done");
     } else {
