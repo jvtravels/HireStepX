@@ -208,7 +208,7 @@ export default async function handler(req: Request): Promise<Response> {
       // this response is returned — a bare fire-and-forget promise has no
       // guaranteed lifetime past the response on Vercel's Edge runtime, so
       // the rescore could silently never run.
-      if ("resume_data" in updates) after(() => rematchOpenRequirementsForNewResume());
+      if ("resume_data" in updates) after(() => rematchOpenRequirementsForNewResume(auth.userId));
       return new Response(JSON.stringify({ profile, strippedColumns: stripped }), { status: 200, headers });
     }
 

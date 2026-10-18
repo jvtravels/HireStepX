@@ -55,6 +55,15 @@ export const MAX_NEW_STRONG_ALERTS = 5;
 /** Time a matching run keeps back for LLM rerank + writes after the scan. */
 export const SCAN_RESERVE_MS = 4_000;
 export const REMATCH_WINDOW_MS = 60 * 60 * 1000;
+/** Fewer ms than this left in a run and the model call is skipped: it would
+ *  only run the request into its timeout, and the deterministic result (which
+ *  is always persisted) is a better outcome than a failed run. */
+export const LLM_MIN_REMAINING_MS = 5_000;
+/** Kept back after the model call for the upsert + status writes. */
+export const LLM_WRITE_RESERVE_MS = 2_000;
+export const LLM_MAX_BUDGET_MS = 12_000;
+/** How long a stored model score may stand in for a missing one. */
+export const LLM_SCORE_MAX_AGE_MS = 14 * 24 * 60 * 60 * 1000;
 
 export const DEFAULT_PAGE_LIMIT = 25;
 export const MAX_PAGE_LIMIT = 100;
@@ -83,6 +92,10 @@ export interface ExistingMatchRow {
   candidate_response?: string | null;
   missed_passes?: number | null;
   strong_alerted_at?: string | null;
+  /** Raw (un-blended) model score from the last pass that had one. Absent
+   *  when the column is not migrated yet (0048). */
+  llm_score?: number | null;
+  llm_scored_at?: string | null;
 }
 
 /** Consecutive passes a locked match may miss the fresh ranking before it is removed. */
@@ -501,6 +514,113 @@ export async function loadEvidenceFlags(
   return flags;
 }
 
+/* ── Model-score budget + reuse ── */
+
+/** Model-call budget from the time a run has left. 0 means skip the call. */
+export function llmBudgetMs(remainingMs: number): number {
+  if (!Number.isFinite(remainingMs) || remainingMs < LLM_MIN_REMAINING_MS) return 0;
+  return Math.min(LLM_MAX_BUDGET_MS, Math.floor(remainingMs - LLM_WRITE_RESERVE_MS));
+}
+
+export interface LlmScoreEntry {
+  score: number;
+  scoredAt: string;
+  /** True when carried over from an earlier pass rather than just computed. */
+  reused: boolean;
+}
+
+/** Model opinion per candidate for this pass: fresh scores win, and a
+ *  candidate the model did not score this time (call skipped, failed, or the
+ *  model omitted them) keeps their last stored opinion while it is recent.
+ *  Without this a transient outage swings every blended score down, and the
+ *  recovery swings it back up across the strong threshold. */
+export function resolveLlmScores(
+  candidateIds: string[],
+  fresh: Map<string, number>,
+  prior: Map<string, { llm_score?: number | null; llm_scored_at?: string | null }>,
+  nowMs: number,
+  maxAgeMs: number = LLM_SCORE_MAX_AGE_MS,
+): Map<string, LlmScoreEntry> {
+  const out = new Map<string, LlmScoreEntry>();
+  const nowIso = new Date(nowMs).toISOString();
+  for (const id of candidateIds) {
+    const f = fresh.get(id);
+    if (f != null) {
+      out.set(id, { score: f, scoredAt: nowIso, reused: false });
+      continue;
+    }
+    const p = prior.get(id);
+    if (!p || p.llm_score == null || !p.llm_scored_at) continue;
+    const at = Date.parse(p.llm_scored_at);
+    if (!Number.isFinite(at) || nowMs - at > maxAgeMs || at > nowMs + 60_000) continue;
+    out.set(id, { score: p.llm_score, scoredAt: p.llm_scored_at, reused: true });
+  }
+  return out;
+}
+
+/** True when this candidate's blended score crossed the strong bar only
+ *  because the model's opinion appeared or disappeared since the last pass,
+ *  not because the deterministic evidence changed. Such a crossing is noise,
+ *  not a new strong match, so it must not raise an alert. Only meaningful for
+ *  an existing row whose model column was readable. */
+export function isModelSourceFlip(p: {
+  previousHadModelScore: boolean;
+  nowHasModelScore: boolean;
+  deterministicScore: number;
+  strongThreshold: number;
+}): boolean {
+  return p.previousHadModelScore !== p.nowHasModelScore && p.deterministicScore < p.strongThreshold;
+}
+
+/** Statuses an employer or candidate has already closed out. Such a row stays
+ *  on file (it is paid-for or pipeline history) but is not an open candidate,
+ *  so it must not lift a requirement's status or its matched-pool size. */
+const DEAD_MATCH_STATUSES = new Set(["rejected", "not_a_fit"]);
+
+export function isLiveMatch(m: Pick<ExistingMatchRow, "candidate_status" | "candidate_response">): boolean {
+  if (m.candidate_status && DEAD_MATCH_STATUSES.has(m.candidate_status)) return false;
+  return m.candidate_response !== "declined";
+}
+
+/* ── Archive undo ── */
+
+/** Pipeline stages an archive's "reject remaining" can have moved a row out
+ *  of, and so the only ones a restore may put it back into. */
+export const RESTORABLE_CANDIDATE_STATUSES = ["shortlisted", "interview_invited", "interviewing"] as const;
+export type RestorableCandidateStatus = (typeof RESTORABLE_CANDIDATE_STATUSES)[number];
+export const MAX_RESTORE_MATCHES = 1000;
+
+export interface RejectedMatchRecord {
+  id: string;
+  previousStatus: RestorableCandidateStatus;
+}
+
+/** A legacy row with no status was "active" and shows as shortlisted. */
+export function previousStatusOf(candidateStatus: string | null | undefined): RestorableCandidateStatus {
+  return (RESTORABLE_CANDIDATE_STATUSES as readonly string[]).includes(candidateStatus ?? "")
+    ? (candidateStatus as RestorableCandidateStatus)
+    : "shortlisted";
+}
+
+/** Validates the undo payload the client echoes back from the archive
+ *  response. Null on anything malformed: a restore must never write a status
+ *  the archive could not have replaced. */
+export function parseRestoreMatches(input: unknown): RejectedMatchRecord[] | null {
+  if (!Array.isArray(input) || input.length === 0 || input.length > MAX_RESTORE_MATCHES) return null;
+  const out: RejectedMatchRecord[] = [];
+  const seen = new Set<string>();
+  for (const entry of input) {
+    if (!entry || typeof entry !== "object") return null;
+    const { id, previousStatus } = entry as { id?: unknown; previousStatus?: unknown };
+    if (typeof id !== "string" || !/^[0-9a-fA-F-]{36}$/.test(id)) return null;
+    if (typeof previousStatus !== "string" || !(RESTORABLE_CANDIDATE_STATUSES as readonly string[]).includes(previousStatus)) return null;
+    if (seen.has(id)) continue;
+    seen.add(id);
+    out.push({ id, previousStatus: previousStatus as RestorableCandidateStatus });
+  }
+  return out;
+}
+
 /* ── Strong-match alerts ── */
 
 export interface RankedLike {
@@ -519,7 +639,7 @@ export function selectNewStrongMatches<T extends RankedLike>(
 ): T[] {
   return ranked
     .filter((m) => m.matchScore >= strongThreshold && !alreadyAlertedIds.has(m.candidateId) && (previousScoreByCandidate.get(m.candidateId) ?? -1) < strongThreshold)
-    .sort((a, b) => b.matchScore - a.matchScore)
+    .sort((a, b) => b.matchScore - a.matchScore || (a.candidateId < b.candidateId ? -1 : a.candidateId > b.candidateId ? 1 : 0))
     .slice(0, cap);
 }
 
@@ -681,6 +801,9 @@ export interface MatchingInputs {
   minReadinessBand: string | null | undefined;
   minStarCompleteness: number | null | undefined;
   employmentType: string | null | undefined;
+  /** Judge contract fit for internships; matching reads both. */
+  durationWeeks?: number | null;
+  hoursPerWeek?: number | null;
 }
 
 function sameList(a: string[] | null | undefined, b: string[] | null | undefined): boolean {
@@ -710,7 +833,9 @@ export function requirementNeedsRematch(
     (before.experienceMax ?? null) !== (after.experienceMax ?? null) ||
     (before.minReadinessBand ?? null) !== (after.minReadinessBand ?? null) ||
     (before.minStarCompleteness ?? null) !== (after.minStarCompleteness ?? null) ||
-    (before.employmentType ?? null) !== (after.employmentType ?? null)
+    (before.employmentType ?? null) !== (after.employmentType ?? null) ||
+    (before.durationWeeks ?? null) !== (after.durationWeeks ?? null) ||
+    (before.hoursPerWeek ?? null) !== (after.hoursPerWeek ?? null)
   );
 }
 

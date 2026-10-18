@@ -37,13 +37,16 @@
 export const config = { runtime: "edge" };
 
 import { withAuthAndRateLimit, corsHeaders, withRequestId, slog } from "./_shared";
-import { extractResumeLocation, explainMatch, extractSkills } from "./_requirement-match-helpers";
+import { extractResumeLocation, explainMatch, extractSkills, type RequirementInput } from "./_requirement-match-helpers";
 import { extractResumeDetail, redactResumeDetailForLock } from "./_resume-detail-helpers";
 import { later } from "./_employer-dashboard-helpers";
 import { runMatching, logRequirementActivity } from "./employer-requirements";
 import {
   fetchKeyset,
   loadGradedSessions,
+  keepSessionsForRole,
+  computeTrustedSessionStats,
+  buildCandidatePoolRow,
   parsePagination,
   paginate,
   loadRankedVisibleMatches,
@@ -58,6 +61,10 @@ import {
   inList,
   LOCKED_MASKED_FIELDS,
   contactWithheldReason,
+  previousStatusOf,
+  parseRestoreMatches,
+  RESTORABLE_CANDIDATE_STATUSES,
+  type RejectedMatchRecord,
   type Allowance,
   type EmployerGateRow,
 } from "./_employer-matching-helpers";
@@ -200,6 +207,7 @@ export default async function handler(req: Request): Promise<Response> {
       candidate_status: string; candidate_status_note: string | null; interview_scheduled_at: string | null;
       candidate_status_updated_at: string | null; created_at: string | null;
       candidate_response?: string | null;
+      llm_score?: number | null;
     };
     // Light columns only, keyset-paginated: the heavy profile/session reads
     // below run for the requested page, not the whole shortlist.
@@ -211,8 +219,13 @@ export default async function handler(req: Request): Promise<Response> {
     // candidate_response ships in its own migration: if it is not applied yet
     // the read fails, so retry without it and report the response as unknown
     // (null) rather than failing the whole page.
-    let matchesRead = await readMatches(`${MATCH_COLUMNS},candidate_response`);
+    // llm_score (migration 0048) is the model's opinion behind the stored
+    // score, needed for the breakdown to reproduce it; it degrades the same way.
+    let matchesRead = await readMatches(`${MATCH_COLUMNS},candidate_response,llm_score`);
     let responseKnown = true;
+    if (matchesRead.failed) {
+      matchesRead = await readMatches(`${MATCH_COLUMNS},candidate_response`);
+    }
     if (matchesRead.failed) {
       responseKnown = false;
       matchesRead = await readMatches(MATCH_COLUMNS);
@@ -255,10 +268,25 @@ export default async function handler(req: Request): Promise<Response> {
     // Server-graded sessions only (report_generated_at set): a client-relayed
     // session row is not evidence an employer should see counted.
     const sessionCounts = new Map<string, number>();
+    // The same role-matched, trusted stats scoring used, per candidate, so the
+    // "why this score" breakdown is computed from identical inputs.
+    const sessionRowsByUser = new Map<string, Awaited<ReturnType<typeof loadGradedSessions>>>();
     if (candidateIds.length > 0) {
-      const graded = await loadGradedSessions(SUPABASE_URL, serviceHeaders(), candidateIds, false);
-      for (const r of graded) sessionCounts.set(r.user_id, (sessionCounts.get(r.user_id) || 0) + 1);
+      const graded = await loadGradedSessions(SUPABASE_URL, serviceHeaders(), candidateIds, !!(requirement.min_readiness_band || requirement.min_star_completeness));
+      for (const r of graded) {
+        sessionCounts.set(r.user_id, (sessionCounts.get(r.user_id) || 0) + 1);
+        sessionRowsByUser.set(r.user_id, [...(sessionRowsByUser.get(r.user_id) ?? []), r]);
+      }
     }
+    const scoringInput: RequirementInput = {
+      title: requirement.title, location: requirement.location, description: requirement.description || "",
+      skills: requirement.skills ?? [], customSkills: requirement.custom_skill_sets ?? [], workMode: requirement.work_mode,
+      experienceMin: requirement.experience_min, experienceMax: requirement.experience_max,
+      minReadinessBand: asBoundedReadinessBand(requirement.min_readiness_band),
+      minStarCompleteness: requirement.min_star_completeness,
+      employmentType: requirement.employment_type, durationWeeks: requirement.duration_weeks, hoursPerWeek: requirement.hours_per_week,
+    };
+    const nowMs = Date.now();
 
     /* Which unlocked candidates have an original resume file on record, so the
        table only offers a download that will work. Best-effort: on a failed read
@@ -296,12 +324,17 @@ export default async function handler(req: Request): Promise<Response> {
       const lastActive = timestamps.length ? timestamps[timestamps.length - 1] : null;
       const lastActiveDaysAgo = lastActive ? Math.max(0, Math.round((Date.now() - new Date(lastActive).getTime()) / 86_400_000)) : -1;
       const resumeDetail = extractResumeDetail(profile?.resume_data);
+      const stats = computeTrustedSessionStats(keepSessionsForRole(sessionRowsByUser.get(m.candidate_user_id) ?? [], requirement.title));
+      const pool = profile
+        ? buildCandidatePoolRow({
+            id: m.candidate_user_id, name: profile.name, target_role: profile.target_role, industry: null,
+            resume_data: profile.resume_data, practice_timestamps: profile.practice_timestamps,
+          }, stats, nowMs)
+        : undefined;
       const matchBreakdown = explainMatch(
         { target_role: profile?.target_role ?? null, resume_data: profile?.resume_data ?? null },
-        {
-          title: requirement.title, location: requirement.location, description: requirement.description || "",
-          skills: requirement.skills ?? [], customSkills: requirement.custom_skill_sets ?? [], workMode: requirement.work_mode,
-        },
+        scoringInput,
+        { pool, llmScore: m.llm_score ?? null },
       );
 
       const unlocked = m.unlocked;
@@ -423,6 +456,99 @@ export default async function handler(req: Request): Promise<Response> {
   }
 }
 
+/** Rejects every still-active match on an archived requirement and returns
+ *  what it changed. Reads the rows first and writes by id, so the returned
+ *  record is exactly the set that was rejected even if a row moves between
+ *  the read and the write (the write re-checks the active statuses). A failure
+ *  is logged and yields an empty record: the archive itself already succeeded. */
+async function rejectRemainingMatches(requirementId: string, userId: string): Promise<RejectedMatchRecord[]> {
+  const activeStatuses = RESTORABLE_CANDIDATE_STATUSES.map((s) => `"${s}"`).join(",");
+  // Also catches rows with a null candidate_status (legacy rows from before
+  // the column's not-null default was added): those are still "active"
+  // candidates an employer expects reject_remaining to cover.
+  const activeFilter = `or=(candidate_status.in.(${activeStatuses}),candidate_status.is.null)`;
+  const readRes = await fetch(
+    `${SUPABASE_URL}/rest/v1/requirement_matches?requirement_id=eq.${encodeURIComponent(requirementId)}&${activeFilter}&select=id,candidate_status&limit=5000`,
+    { headers: serviceHeaders() },
+  ).catch(() => null);
+  const rows = readRes?.ok ? ((await readRes.json().catch(() => null)) as Array<{ id: string; candidate_status: string | null }> | null) : null;
+  if (!Array.isArray(rows)) {
+    slog.error("employer-requirement-detail archive bulk-reject read failed", { code: "employer_requirement_archive_bulk_reject_failed", httpStatus: readRes?.status ?? 0, userId, requirementId });
+    return [];
+  }
+  const done: RejectedMatchRecord[] = [];
+  const byId = new Map(rows.map((r) => [r.id, previousStatusOf(r.candidate_status)]));
+  for (const batch of chunk(Array.from(byId.keys()), 100)) {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/requirement_matches?requirement_id=eq.${encodeURIComponent(requirementId)}&id=in.(${inList(batch)})&${activeFilter}`,
+      {
+        method: "PATCH",
+        headers: { ...serviceHeaders(), "Content-Type": "application/json", Prefer: "return=representation" },
+        body: JSON.stringify({ candidate_status: "rejected", candidate_status_updated_at: new Date().toISOString() }),
+      },
+    ).catch(() => null);
+    if (!res?.ok) {
+      const t = await res?.text().catch(() => "");
+      slog.error("employer-requirement-detail archive bulk-reject failed", { code: "employer_requirement_archive_bulk_reject_failed", httpStatus: res?.status ?? 0, body: (t ?? "").slice(0, 200), userId, requirementId });
+      continue;
+    }
+    // Prefer the rows the write reports; fall back to the batch when it
+    // reports none (return=minimal proxies), since the filter matched.
+    const returned = (await res.json().catch(() => null)) as Array<{ id: string }> | null;
+    const ids = Array.isArray(returned) && returned.length > 0 ? returned.map((r) => r.id) : batch;
+    for (const id of ids) {
+      const previousStatus = byId.get(id);
+      if (previousStatus) done.push({ id, previousStatus });
+    }
+  }
+  return done;
+}
+
+/** Undo for "archive and reject remaining": puts the recorded matches back to
+ *  the status they held. Scoped to this employer's requirement and to rows
+ *  still "rejected", so it can never overwrite a status set since. */
+async function handleRestoreAction(requirementId: string, userId: string, rawMatches: unknown, headers: Record<string, string>): Promise<Response> {
+  const matches = parseRestoreMatches(rawMatches);
+  if (!matches) return new Response(JSON.stringify({ error: "Invalid matches to restore" }), { status: 400, headers });
+  try {
+    const existingRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&employer_id=eq.${encodeURIComponent(userId)}&select=id,${EMPLOYER_EMBED}`,
+      { headers: serviceHeaders() },
+    );
+    const rows = (await existingRes.json().catch(() => [])) as Array<{ id: string; employers?: EmployerEmbed }>;
+    if (!existingRes.ok || !rows[0]) return new Response(JSON.stringify({ error: "Requirement not found" }), { status: 404, headers });
+    if (isSuspendedEmployer(rows[0].employers)) return denyResponse(suspendedAllowance(), headers);
+
+    const byStatus = new Map<string, string[]>();
+    for (const m of matches) byStatus.set(m.previousStatus, [...(byStatus.get(m.previousStatus) ?? []), m.id]);
+    let restored = 0;
+    for (const [status, ids] of byStatus) {
+      for (const batch of chunk(ids, 100)) {
+        const res = await fetch(
+          `${SUPABASE_URL}/rest/v1/requirement_matches?requirement_id=eq.${encodeURIComponent(requirementId)}&id=in.(${inList(batch)})&candidate_status=eq.rejected`,
+          {
+            method: "PATCH",
+            headers: { ...serviceHeaders(), "Content-Type": "application/json", Prefer: "return=representation" },
+            body: JSON.stringify({ candidate_status: status, candidate_status_updated_at: new Date().toISOString() }),
+          },
+        );
+        if (!res.ok) {
+          slog.error("employer-requirement-detail restore failed", { code: "employer_requirement_restore_failed", httpStatus: res.status, userId, requirementId });
+          return new Response(JSON.stringify({ error: "Failed to restore candidates" }), { status: 500, headers });
+        }
+        const changed = (await res.json().catch(() => [])) as unknown[];
+        restored += Array.isArray(changed) ? changed.length : 0;
+      }
+    }
+    await logRequirementActivity(requirementId, userId, "updated");
+    return new Response(JSON.stringify({ id: requirementId, restored }), { status: 200, headers });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    slog.error("employer-requirement-detail restore threw", { code: "employer_requirement_restore_unexpected_error", error: msg.slice(0, 200), userId, requirementId });
+    return new Response(JSON.stringify({ error: "Failed to restore candidates" }), { status: 500, headers });
+  }
+}
+
 async function handleStatusAction(
   requirementId: string,
   userId: string,
@@ -474,7 +600,12 @@ async function handleStatusAction(
       // stage=eq.ai_matching) from ever firing on the re-score that follows.
       patchBody.stage = "ai_matching";
     }
-    const patchRes = await fetch(`${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}`, {
+    // The read above can be stale by the time we write: two quick archive or
+    // reopen clicks, or an archive racing a reopen, would both pass it. The
+    // status filter makes the transition itself the guard; zero rows back
+    // means someone else already made it.
+    const statusGuard = action === "archive" ? "status=neq.closed" : "status=eq.closed";
+    const patchRes = await fetch(`${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&employer_id=eq.${encodeURIComponent(userId)}&${statusGuard}`, {
       method: "PATCH",
       headers: { ...serviceHeaders(), "Content-Type": "application/json", Prefer: "return=representation" },
       body: JSON.stringify(patchBody),
@@ -484,29 +615,20 @@ async function handleStatusAction(
       slog.error("employer-requirement-detail status action failed", { code: "employer_requirement_status_action_failed", httpStatus: patchRes.status, body: t.slice(0, 200), userId, requirementId, action });
       return new Response(JSON.stringify({ error: "Failed to update requirement" }), { status: 500, headers });
     }
-    const updated = (await patchRes.json()) as Array<{ id: string; status: string }>;
+    const updated = (await patchRes.json().catch(() => [])) as Array<{ id: string; status: string }>;
+    if (!Array.isArray(updated) || updated.length === 0) {
+      return new Response(
+        JSON.stringify({ error: action === "archive" ? "Already archived" : "Requirement isn't archived" }),
+        { status: 409, headers },
+      );
+    }
     await logRequirementActivity(requirementId, userId, action === "archive" ? "archived" : "reopened");
 
+    // Recorded so the client can offer undo: the ids and the status each row
+    // held, taken before the bulk write so the record is what was replaced.
+    let rejectedMatches: RejectedMatchRecord[] | undefined;
     if (action === "archive" && archiveDisposition === "reject_remaining") {
-      const activeStatuses = ["shortlisted", "interview_invited", "interviewing"].map((s) => `"${s}"`).join(",");
-      // Also catches rows with a null candidate_status (legacy rows from
-      // before the column's not-null default was added) — those are still
-      // "active" candidates an employer expects reject_remaining to cover.
-      const bulkRejectRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/requirement_matches?requirement_id=eq.${encodeURIComponent(requirementId)}&or=(candidate_status.in.(${activeStatuses}),candidate_status.is.null)`,
-        {
-          method: "PATCH",
-          headers: { ...serviceHeaders(), "Content-Type": "application/json", Prefer: "return=minimal" },
-          body: JSON.stringify({ candidate_status: "rejected", candidate_status_updated_at: new Date().toISOString() }),
-        },
-      );
-      if (!bulkRejectRes.ok) {
-        const t = await bulkRejectRes.text().catch(() => "");
-        slog.error("employer-requirement-detail archive bulk-reject failed", { code: "employer_requirement_archive_bulk_reject_failed", httpStatus: bulkRejectRes.status, body: t.slice(0, 200), userId, requirementId });
-        // Archive itself already succeeded — surface the partial failure via
-        // logs only, rather than rolling back a status change the employer
-        // already asked for.
-      }
+      rejectedMatches = await rejectRemainingMatches(requirementId, userId);
     }
 
     let finalStatus = updated[0]?.status ?? nextStatus;
@@ -532,7 +654,14 @@ async function handleStatusAction(
       );
     }
 
-    return new Response(JSON.stringify({ id: requirementId, status: finalStatus }), { status: 200, headers });
+    return new Response(
+      JSON.stringify({
+        id: requirementId,
+        status: finalStatus,
+        ...(rejectedMatches ? { rejectedMatchIds: rejectedMatches.map((m) => m.id), rejectedMatches } : {}),
+      }),
+      { status: 200, headers },
+    );
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     slog.error("employer-requirement-detail status action threw", { code: "employer_requirement_status_action_unexpected_error", error: msg.slice(0, 200), userId, requirementId, action });
@@ -596,17 +725,29 @@ async function handleStageAction(
       );
     }
 
-    const patchRes = await fetch(`${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}`, {
-      method: "PATCH",
-      headers: { ...serviceHeaders(), "Content-Type": "application/json", Prefer: "return=representation" },
-      body: JSON.stringify({ stage }),
-    });
+    // Guarded on the stage and status we validated against: an archive, or a
+    // matching run that auto-advanced the stage, between the read above and
+    // this write must not be overwritten by a move that was legal a moment ago.
+    const patchRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&employer_id=eq.${encodeURIComponent(userId)}&stage=eq.${encodeURIComponent(currentStage)}&status=neq.closed`,
+      {
+        method: "PATCH",
+        headers: { ...serviceHeaders(), "Content-Type": "application/json", Prefer: "return=representation" },
+        body: JSON.stringify({ stage }),
+      },
+    );
     if (!patchRes.ok) {
       const t = await patchRes.text().catch(() => "");
       slog.error("employer-requirement-detail stage action failed", { code: "employer_requirement_stage_action_failed", httpStatus: patchRes.status, body: t.slice(0, 200), userId, requirementId, stage });
       return new Response(JSON.stringify({ error: "Failed to update requirement" }), { status: 500, headers });
     }
-    const updated = (await patchRes.json()) as Array<{ id: string; stage: string }>;
+    const updated = (await patchRes.json().catch(() => [])) as Array<{ id: string; stage: string }>;
+    if (!Array.isArray(updated) || updated.length === 0) {
+      return new Response(
+        JSON.stringify({ error: "This requirement changed while you were updating it. Refresh and try again." }),
+        { status: 409, headers },
+      );
+    }
     await logRequirementActivity(requirementId, userId, "stage_changed");
 
     return new Response(JSON.stringify({ id: requirementId, stage: updated[0]?.stage ?? stage }), { status: 200, headers });
@@ -623,6 +764,7 @@ async function handlePatch(req: Request, requirementId: string, userId: string, 
     stage?: unknown;
     archiveReason?: unknown;
     archiveDisposition?: unknown;
+    matches?: unknown;
     title?: unknown; department?: unknown; noticePeriodPref?: unknown; description?: unknown;
     experienceMin?: unknown; experienceMax?: unknown; dueDate?: unknown;
     budgetMin?: unknown; budgetMax?: unknown;
@@ -646,6 +788,10 @@ async function handlePatch(req: Request, requirementId: string, userId: string, 
     const archiveReason = asBoundedString(body.archiveReason, 200) || null;
     const archiveDisposition = asArchiveDisposition(body.archiveDisposition);
     return handleStatusAction(requirementId, userId, body.action, headers, archiveReason, archiveDisposition);
+  }
+
+  if (body.action === "restore") {
+    return handleRestoreAction(requirementId, userId, body.matches, headers);
   }
 
   if (body.action === "set_stage") {
@@ -733,10 +879,11 @@ async function handlePatch(req: Request, requirementId: string, userId: string, 
         experienceMin: existing.experience_min, experienceMax: existing.experience_max,
         minReadinessBand: existing.min_readiness_band, minStarCompleteness: existing.min_star_completeness,
         employmentType: existing.employment_type,
+        durationWeeks: existing.duration_weeks, hoursPerWeek: existing.hours_per_week,
       },
       {
         title, description, skills, customSkillSets, locations, workMode, experienceMin, experienceMax,
-        minReadinessBand, minStarCompleteness, employmentType,
+        minReadinessBand, minStarCompleteness, employmentType, durationWeeks, hoursPerWeek,
       },
       existing.status,
     );

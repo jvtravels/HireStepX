@@ -27,12 +27,14 @@ import {
   MIN_MATCH_SCORE_FLOOR,
   capUnsupportedStrong,
   extractSkills,
+  requirementCriteriaFingerprint,
   type CandidatePoolRow,
   type RequirementInput,
 } from "./_requirement-match-helpers";
 import { extractResumeDetail } from "./_resume-detail-helpers";
 import { llmRerankCandidates, blendScore } from "./_requirement-match-llm";
 import { notify } from "./_notify";
+import { captureServerEvent } from "./_posthog";
 import { emailShell, title as emailTitle, para, button, dataCard, escapeHtml } from "./_email-theme";
 import { isSuppressed, marketingEmailParts, preferenceDepsFromEnv } from "./_unsubscribe";
 import { pickRequirementsToRematch, fetchRematchBacklog, type OpenRequirementForRematch } from "./_incremental-rematch-helpers";
@@ -60,6 +62,11 @@ import {
   buildCandidatePoolRow,
   selectNewStrongMatches,
   strongMatchAlertBody,
+  llmBudgetMs,
+  resolveLlmScores,
+  isModelSourceFlip,
+  isLiveMatch,
+  isTouchedMatch,
   checkEmployerAllowance,
   recheckOpenRequirementLimit,
   maskStrongMatches,
@@ -468,6 +475,14 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
       userId,
     );
     await logRequirementActivity(requirement.id, userId, "created");
+    // Counts and enums only: nothing the employer typed (title, description,
+    // skills) or any candidate identity leaves in an analytics event.
+    await captureServerEvent("employer_requirement_created", userId, {
+      skillsCount: skills.length,
+      hasDescription: description.length > 0,
+      workMode: workMode ?? null,
+      matchedCount: await readMatchedPoolSize(requirement.id),
+    }).catch(() => {});
 
     return new Response(
       JSON.stringify({
@@ -535,11 +550,79 @@ export interface RunMatchingOptions {
   /** Called when the pass threw or timed out, even if the requirement kept its
    *  previous status because a usable shortlist already existed. */
   onFailure?: (err: Error) => void;
+  /** Called when the pass wrote nothing because the requirement's criteria
+   *  changed (or it was archived) mid-scan and a newer run owns the shortlist. */
+  onStale?: () => void;
 }
 
 // Flipped once a PATCH proves migration 0044 is not applied, so each later run
 // skips the doomed write instead of paying a 400 round trip.
 let attemptColumnMissing = false;
+
+// Flipped once a read or write proves migration 0048 (llm_score columns) is not
+// applied; the pass then runs without model-score reuse instead of failing.
+let llmColumnsMissing = false;
+
+/** Returned (never persisted) when the requirement's criteria changed, or it
+ *  was archived, while a pass was scanning: the pass writes nothing because the
+ *  edit that changed them started a newer run that owns the shortlist. */
+export const STALE_MATCHING_STATUS = "stale";
+
+const CRITERIA_SELECT = "id,status,title,location,description,skills,custom_skill_sets,work_mode,experience_min,experience_max,min_readiness_band,min_star_completeness,employment_type,duration_weeks,hours_per_week";
+
+interface CriteriaRow {
+  status?: string;
+  title?: unknown; location?: unknown; description?: unknown; skills?: unknown; custom_skill_sets?: unknown; work_mode?: unknown;
+  experience_min?: unknown; experience_max?: unknown; min_readiness_band?: unknown; min_star_completeness?: unknown;
+  employment_type?: unknown; duration_weeks?: unknown; hours_per_week?: unknown;
+}
+
+const strOrNull = (v: unknown): string | null => (typeof v === "string" ? v : null);
+const numOrNull = (v: unknown): number | null => (typeof v === "number" && Number.isFinite(v) ? v : null);
+const strList = (v: unknown): string[] => (Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : []);
+
+/** Whether the stored criteria still match what this pass scored. An
+ *  unreadable requirement is NOT treated as changed: the criteria race is
+ *  rare, and refusing to write on a flaky read would fail healthy runs. */
+async function criteriaChangedSince(requirementId: string, req: RequirementInput): Promise<boolean> {
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&select=${CRITERIA_SELECT}`,
+    { headers: serviceHeaders() },
+  ).catch(() => null);
+  if (!res?.ok) return false;
+  const rows = (await res.json().catch(() => [])) as CriteriaRow[];
+  const row = Array.isArray(rows) ? rows[0] : undefined;
+  if (!row || typeof row.title !== "string") return false;
+  if (row.status === "closed") return true;
+  const stored: RequirementInput = {
+    title: row.title,
+    location: strOrNull(row.location) ?? "",
+    description: strOrNull(row.description) ?? "",
+    skills: strList(row.skills),
+    customSkills: strList(row.custom_skill_sets),
+    workMode: strOrNull(row.work_mode),
+    experienceMin: numOrNull(row.experience_min),
+    experienceMax: numOrNull(row.experience_max),
+    minReadinessBand: asBoundedReadinessBand(row.min_readiness_band),
+    minStarCompleteness: numOrNull(row.min_star_completeness),
+    employmentType: strOrNull(row.employment_type),
+    durationWeeks: numOrNull(row.duration_weeks),
+    hoursPerWeek: numOrNull(row.hours_per_week),
+  };
+  return requirementCriteriaFingerprint(stored) !== requirementCriteriaFingerprint(req);
+}
+
+/** Matched-pool size the finished pass recorded, for analytics. 0 when it
+ *  can't be read: an event with an unknown count is still worth sending. */
+async function readMatchedPoolSize(requirementId: string): Promise<number> {
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&select=matched_pool_size`,
+    { headers: serviceHeaders() },
+  ).catch(() => null);
+  const rows = res?.ok ? ((await res.json().catch(() => [])) as Array<{ matched_pool_size?: unknown }>) : [];
+  const n = Array.isArray(rows) ? rows[0]?.matched_pool_size : undefined;
+  return typeof n === "number" && Number.isFinite(n) ? n : 0;
+}
 
 /** Stamps the attempt time before matching starts. Best-effort and tolerant of
  *  the unapplied-migration case: it only feeds the sweeps' fair ordering. */
@@ -582,6 +665,24 @@ async function settleFailedRun(requirementId: string): Promise<string> {
     const rows = cur?.ok ? ((await cur.json().catch(() => [])) as Array<{ status: string }>) : [];
     return rows[0]?.status ?? restored;
   }
+  // An empty shortlist that we READ successfully is a legitimate "zero" the
+  // last completed pass may have reached: a transient error now must not
+  // relabel it "failed" (which tells the employer their requirement broke).
+  // Only a requirement whose first pass never finished is failed.
+  if (Array.isArray(scores)) {
+    const cur = await fetch(`${base}&select=status,last_matched_at`, { headers }).catch(() => null);
+    const rows = cur?.ok ? ((await cur.json().catch(() => [])) as Array<{ status?: string; last_matched_at?: string | null }>) : [];
+    const row = Array.isArray(rows) ? rows[0] : undefined;
+    if (row?.status && row.status !== "generating") return row.status;
+    if (row?.status === "generating" && row.last_matched_at) {
+      const res = await fetch(`${base}&status=eq.generating`, {
+        method: "PATCH",
+        headers: { ...headers, "Content-Type": "application/json", Prefer: "return=minimal" },
+        body: JSON.stringify({ status: "zero" }),
+      }).catch(() => null);
+      if (res?.ok) return "zero";
+    }
+  }
   // status=neq.closed: an employer who archived the requirement while this
   // pass was running must not see it reopened as "failed".
   await fetch(`${base}&status=neq.closed`, {
@@ -603,13 +704,23 @@ export async function runMatching(requirementId: string, req: RequirementInput, 
   // write shortlist rows, a status and notifications after we had already
   // reported "failed". The signal lets it notice and stop before each write.
   const controller = new AbortController();
+  const hardDeadlineMs = Date.now() + timeoutMs;
   try {
-    return await Promise.race([
-      runMatchingInner(requirementId, req, ownerUserId, Date.now() + timeoutMs - SCAN_RESERVE_MS, controller.signal),
+    const status = await Promise.race([
+      runMatchingInner(requirementId, req, ownerUserId, hardDeadlineMs - SCAN_RESERVE_MS, hardDeadlineMs, controller.signal),
       new Promise<string>((_, reject) => {
         timer = setTimeout(() => reject(new Error(`matching timed out after ${timeoutMs}ms`)), timeoutMs);
       }),
     ]);
+    if (status === STALE_MATCHING_STATUS) {
+      opts.onStale?.();
+      // Callers that surface a status (the edit/create response) show what the
+      // requirement actually holds; the run that superseded this one settles it.
+      const cur = await fetch(`${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&select=status`, { headers: serviceHeaders() }).catch(() => null);
+      const rows = cur?.ok ? ((await cur.json().catch(() => [])) as Array<{ status?: string }>) : [];
+      return (Array.isArray(rows) && rows[0]?.status) || "generating";
+    }
+    return status;
   } catch (err) {
     controller.abort();
     const msg = err instanceof Error ? err.message : String(err);
@@ -665,7 +776,7 @@ function stopIfAborted(signal: AbortSignal): void {
   if (signal.aborted) throw new Error("matching aborted");
 }
 
-async function runMatchingInner(requirementId: string, req: RequirementInput, ownerUserId: string, deadlineMs: number, signal: AbortSignal): Promise<string> {
+async function runMatchingInner(requirementId: string, req: RequirementInput, ownerUserId: string, deadlineMs: number, hardDeadlineMs: number, signal: AbortSignal): Promise<string> {
   const headers = serviceHeaders();
 
   // A suspended employer is read-only: no matching, no writes, no alerts —
@@ -681,10 +792,18 @@ async function runMatchingInner(requirementId: string, req: RequirementInput, ow
   // After the suspension check so a suspended employer's run stays write-free.
   await markRematchAttempt(requirementId);
 
-  const existingRead = await fetchKeyset<ExistingMatchRow & Record<string, unknown>>({
-    baseUrl: `${SUPABASE_URL}/rest/v1/requirement_matches?requirement_id=eq.${encodeURIComponent(requirementId)}&select=id,candidate_user_id,match_score,unlocked,candidate_status,candidate_status_note,interview_scheduled_at,candidate_response,missed_passes,strong_alerted_at`,
+  const readExisting = (withModelColumns: boolean) => fetchKeyset<ExistingMatchRow & Record<string, unknown>>({
+    baseUrl: `${SUPABASE_URL}/rest/v1/requirement_matches?requirement_id=eq.${encodeURIComponent(requirementId)}&select=id,candidate_user_id,match_score,unlocked,candidate_status,candidate_status_note,interview_scheduled_at,candidate_response,missed_passes,strong_alerted_at${withModelColumns ? ",llm_score,llm_scored_at" : ""}`,
     headers, keyField: "id", pageSize: 1000, maxRows: 5000,
   });
+  let existingRead = await readExisting(!llmColumnsMissing);
+  if (existingRead.failed && !llmColumnsMissing) {
+    // Migration 0048 not applied: retry without the model-score columns. Only a
+    // successful retry proves the columns were the problem.
+    const retry = await readExisting(false);
+    if (!retry.failed) llmColumnsMissing = true;
+    existingRead = retry;
+  }
   if (existingRead.failed) throw new Error("existing matches read failed");
   const existing: ExistingMatchRow[] = existingRead.rows;
   // Captured before anything is written so a candidate who just crossed
@@ -757,35 +876,69 @@ async function runMatchingInner(requirementId: string, req: RequirementInput, ow
   const shortlistCandidates = deterministicRanked
     .map((m) => byId.get(m.candidateId))
     .filter((c): c is CandidatePoolRow => !!c);
-  const llmScores = await llmRerankCandidates(req, shortlistCandidates, { userId: ownerUserId });
+  // The scan can use most of the run's budget; whatever is left (minus a write
+  // reserve) is all the model gets, and below LLM_MIN_REMAINING_MS it is
+  // skipped. The deterministic result still persists either way.
+  const llmBudget = llmBudgetMs(hardDeadlineMs - Date.now());
+  const freshLlmScores = await llmRerankCandidates(req, shortlistCandidates, { userId: ownerUserId, budgetMs: llmBudget });
+  // A candidate the model did not score this pass (skipped, failed, omitted)
+  // keeps their last stored opinion while it is recent, so an outage does not
+  // swing scores down and the recovery back up across the strong threshold.
+  const llmScores = resolveLlmScores(
+    shortlistCandidates.map((c) => c.id),
+    freshLlmScores,
+    new Map(existing.map((m) => [m.candidate_user_id, m])),
+    Date.now(),
+  );
   // Re-applies MIN_MATCH_SCORE_FLOOR after blending: blendScore can pull a
   // candidate who just cleared that floor back below it (or vice versa).
   const blended = deterministicRanked.map((m) => ({
     ...m,
-    matchScore: capUnsupportedStrong(blendScore(m.matchScore, llmScores.get(m.candidateId)), m.skillsSupportStrong),
+    deterministicScore: m.matchScore,
+    matchScore: capUnsupportedStrong(blendScore(m.matchScore, llmScores.get(m.candidateId)?.score), m.skillsSupportStrong),
   }));
   const ranked = blended.filter((m) => m.matchScore >= MIN_MATCH_SCORE_FLOOR);
   const droppedByFloorAfterBlend = blended.length - ranked.length;
 
   stopIfAborted(signal);
+  // The scan above can run for tens of seconds. If the employer edited the
+  // criteria (or archived the requirement) meanwhile, these scores describe a
+  // requirement that no longer exists and must not replace the shortlist the
+  // edit's own run is building.
+  if (await criteriaChangedSince(requirementId, req)) {
+    slog.info("requirement matching skipped: criteria changed mid-scan", { code: "matching_stale_criteria", requirementId });
+    return STALE_MATCHING_STATUS;
+  }
+  stopIfAborted(signal);
   if (ranked.length > 0) {
-    const rows = ranked.map((m) => ({
+    const buildRows = (withModelColumns: boolean) => ranked.map((m) => ({
       requirement_id: requirementId,
       candidate_user_id: m.candidateId,
       match_score: m.matchScore,
       roster_score: m.rosterScore,
       missed_passes: 0,
+      // Every row carries the same keys (null when there is no opinion) so the
+      // bulk upsert is uniform, and a stale opinion past its max age is cleared.
+      ...(withModelColumns
+        ? { llm_score: llmScores.get(m.candidateId)?.score ?? null, llm_scored_at: llmScores.get(m.candidateId)?.scoredAt ?? null }
+        : {}),
     }));
     // merge-duplicates: two concurrent runMatching passes for the same
     // requirement can both reach this insert for the same candidate — the
     // unique (requirement_id, candidate_user_id) constraint would otherwise
     // 409 the second one. The upsert keeps existing row ids, so an untouched
     // row that stays shortlisted is updated in place rather than recreated.
-    const insertMatchesRes = await fetch(`${SUPABASE_URL}/rest/v1/requirement_matches?on_conflict=requirement_id,candidate_user_id`, {
+    const upsert = (withModelColumns: boolean) => fetch(`${SUPABASE_URL}/rest/v1/requirement_matches?on_conflict=requirement_id,candidate_user_id`, {
       method: "POST",
       headers: { ...headers, "Content-Type": "application/json", Prefer: "resolution=merge-duplicates,return=minimal" },
-      body: JSON.stringify(rows),
+      body: JSON.stringify(buildRows(withModelColumns)),
     });
+    let insertMatchesRes = await upsert(!llmColumnsMissing);
+    if (!insertMatchesRes.ok && insertMatchesRes.status === 400 && !llmColumnsMissing) {
+      // Migration 0048 not applied: persist without the model-score columns.
+      insertMatchesRes = await upsert(false);
+      if (insertMatchesRes.ok) llmColumnsMissing = true;
+    }
     if (!insertMatchesRes.ok) throw new Error(`requirement_matches insert failed: ${insertMatchesRes.status}`);
   }
 
@@ -808,7 +961,23 @@ async function runMatchingInner(requirementId: string, req: RequirementInput, ow
   // and a score only — no name or candidate-derived label, because nothing
   // here has been unlocked. Awaited with a swallowed rejection so a delivery
   // failure can neither fail the pass nor be dropped when the isolate exits.
-  const newStrongMatches = selectNewStrongMatches(ranked, previousScoreByCandidate, STRONG_MATCH_THRESHOLD, undefined, alertedCandidateIds);
+  // A score that crossed the bar only because the model's opinion appeared or
+  // vanished since the last pass is a source flip, not news: never announce it.
+  const existingByCandidate = new Map(existing.map((m) => [m.candidate_user_id, m]));
+  const sourceFlipIds = new Set<string>();
+  if (!llmColumnsMissing) {
+    for (const m of ranked) {
+      const prev = existingByCandidate.get(m.candidateId);
+      if (!prev) continue;
+      if (isModelSourceFlip({
+        previousHadModelScore: prev.llm_score != null,
+        nowHasModelScore: llmScores.has(m.candidateId),
+        deterministicScore: m.deterministicScore,
+        strongThreshold: STRONG_MATCH_THRESHOLD,
+      })) sourceFlipIds.add(m.candidateId);
+    }
+  }
+  const newStrongMatches = selectNewStrongMatches(ranked, previousScoreByCandidate, STRONG_MATCH_THRESHOLD, undefined, new Set([...alertedCandidateIds, ...sourceFlipIds]));
   stopIfAborted(signal);
   if (newStrongMatches.length > 0) {
     const title = req.title || "your requirement";
@@ -832,14 +1001,19 @@ async function runMatchingInner(requirementId: string, req: RequirementInput, ow
     await markStrongAlerted(requirementId, newStrongMatches.map((m) => m.candidateId));
   }
 
+  // Only live rows count: a preserved row the employer rejected or the
+  // candidate declined is pipeline history, not an open match, and letting it
+  // count made a requirement read "ready" with nobody left to review.
+  const livePreserved = plan.preserved.filter(isLiveMatch);
+  const liveRetained = retained.filter(isLiveMatch);
   const finalStatus = classifyRequirementStatus([
-    ...plan.preserved.map((m) => ({ matchScore: m.match_score })),
-    ...retained.map((m) => ({ matchScore: m.match_score })),
+    ...livePreserved.map((m) => ({ matchScore: m.match_score })),
+    ...liveRetained.map((m) => ({ matchScore: m.match_score })),
     ...ranked,
   ]);
   // Preserved and retained rows are real matched candidates too — they're
   // just not re-scored this pass — so they count toward the pool size.
-  const matchedPoolSize = freshTotalMatched - droppedByFloorAfterBlend + plan.preserved.length + retained.length;
+  const matchedPoolSize = freshTotalMatched - droppedByFloorAfterBlend + livePreserved.length + liveRetained.length;
   // &status=neq.closed guards against a requirement archived while this
   // pass was in flight: without it this write would flip a closed posting
   // back open (and the stage-flip below could re-fire "matches ready").
@@ -914,8 +1088,172 @@ async function runMatchingInBatches(
   }
 }
 
-export async function rematchOpenRequirementsForNewResume(): Promise<void> {
+/** Hard ceiling on requirements one resume save may score the candidate
+ *  against. Scoring one profile is cheap, but the backlog read and the
+ *  per-requirement writes are not free on a hot, rate-limited endpoint. */
+const MAX_INCREMENTAL_CANDIDATE_REQUIREMENTS = 25;
+
+function requirementInputFromRow(r: OpenRequirementForRematch): RequirementInput {
+  return {
+    title: r.title,
+    location: r.location,
+    description: r.description ?? "",
+    skills: r.skills ?? [],
+    experienceMin: r.experience_min,
+    experienceMax: r.experience_max,
+    minReadinessBand: r.min_readiness_band,
+    minStarCompleteness: r.min_star_completeness,
+    employmentType: r.employment_type,
+    durationWeeks: r.duration_weeks,
+    hoursPerWeek: r.hours_per_week,
+    customSkills: r.custom_skill_sets ?? [],
+    workMode: r.work_mode,
+  };
+}
+
+/** Scores ONE candidate against the open requirements and writes only that
+ *  candidate's rows. A resume save changes one person, so re-scanning the
+ *  whole pool per requirement (as the full pass does) was pure waste. The
+ *  nightly cron remains the full, authoritative pass: this path only ever
+ *  adds or refreshes this candidate's own untouched row, never removes. */
+async function rematchSingleCandidate(candidateId: string): Promise<void> {
+  const headers = serviceHeaders();
+  const profileRes = await fetch(
+    `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(candidateId)}&select=id,name,target_role,industry,resume_data,practice_timestamps,employer_visibility`,
+    { headers },
+  );
+  if (!profileRes.ok) return;
+  const profile = ((await profileRes.json().catch(() => [])) as PoolProfile[])[0];
+  if (!profile || profile.employer_visibility === "off") return;
+
+  const backlogRes = await fetchRematchBacklog({ supabaseUrl: SUPABASE_URL, headers, limit: 100 });
+  if (!backlogRes) return;
+  const rows = ((await backlogRes.json().catch(() => [])) as Array<OpenRequirementForRematch & { employers?: { suspended_at?: string | null } | null }>)
+    .filter((r) => !isSuspended(r.employers) && r.employer_id !== candidateId);
+  const candidates = pickRequirementsToRematch(rows, rows.length)
+    .filter((r) => isRelevantProfile(profile, requirementInputFromRow(r)))
+    .slice(0, MAX_INCREMENTAL_CANDIDATE_REQUIREMENTS);
+  if (candidates.length === 0) return;
+
+  const needsReports = candidates.some((r) => !!(r.min_readiness_band || r.min_star_completeness));
+  const sessionRows = await loadGradedSessions(SUPABASE_URL, headers, [candidateId], needsReports);
+  const blockedByEmployer = new Map<string, Set<string> | null>();
+
+  for (const r of candidates) {
+    try {
+      if (!blockedByEmployer.has(r.employer_id)) blockedByEmployer.set(r.employer_id, await loadBlockedCandidateIds(SUPABASE_URL, headers, r.employer_id));
+      const blocked = blockedByEmployer.get(r.employer_id);
+      // Fail closed: an unreadable block list never lets a blocked person in.
+      if (!blocked || blocked.has(candidateId)) continue;
+      await rematchCandidateForRequirement(r, profile, sessionRows);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      slog.error("incremental candidate rematch failed", { code: "incremental_candidate_rematch_failed", error: msg.slice(0, 200), requirementId: r.id });
+    }
+  }
+}
+
+async function rematchCandidateForRequirement(
+  r: OpenRequirementForRematch,
+  profile: PoolProfile,
+  sessionRows: Awaited<ReturnType<typeof loadGradedSessions>>,
+): Promise<void> {
+  const headers = serviceHeaders();
+  const req = requirementInputFromRow(r);
+  const hired = await loadHiredElsewhere(SUPABASE_URL, headers, r.id, [profile.id]);
+  if (hired.has(profile.id)) return;
+
+  const stats = computeTrustedSessionStats(keepSessionsForRole(sessionRows, req.title));
+  const row = buildCandidatePoolRow(profile, stats, Date.now());
+  const { ranked } = rankAndCap([scoreCandidateMatch(row, req)]);
+  if (ranked.length === 0) return;
+
+  const readExisting = (withModelColumns: boolean) => fetch(
+    `${SUPABASE_URL}/rest/v1/requirement_matches?requirement_id=eq.${encodeURIComponent(r.id)}&candidate_user_id=eq.${encodeURIComponent(profile.id)}` +
+      `&select=id,candidate_user_id,match_score,unlocked,candidate_status,candidate_status_note,interview_scheduled_at,candidate_response,strong_alerted_at${withModelColumns ? ",llm_score,llm_scored_at" : ""}`,
+    { headers },
+  );
+  let existingRes = await readExisting(!llmColumnsMissing);
+  if (!existingRes.ok && !llmColumnsMissing) {
+    const retry = await readExisting(false);
+    if (retry.ok) llmColumnsMissing = true;
+    existingRes = retry;
+  }
+  if (!existingRes.ok) return;
+  const existing = ((await existingRes.json().catch(() => [])) as ExistingMatchRow[])[0];
+  // Pipeline state is the employer's; a touched row is never re-scored here.
+  if (existing && isTouchedMatch(existing)) return;
+
+  const llm = resolveLlmScores([profile.id], new Map(), new Map(existing ? [[profile.id, existing]] : []), Date.now()).get(profile.id);
+  const match = ranked[0];
+  const score = capUnsupportedStrong(blendScore(match.matchScore, llm?.score), match.skillsSupportStrong);
+  if (score < MIN_MATCH_SCORE_FLOOR) return;
+
+  if (await criteriaChangedSince(r.id, req)) return;
+  const upsertRes = await fetch(`${SUPABASE_URL}/rest/v1/requirement_matches?on_conflict=requirement_id,candidate_user_id`, {
+    method: "POST",
+    headers: { ...headers, "Content-Type": "application/json", Prefer: "resolution=merge-duplicates,return=minimal" },
+    // No model columns on purpose: an existing opinion is left as stored.
+    body: JSON.stringify({ requirement_id: r.id, candidate_user_id: profile.id, match_score: score, roster_score: match.rosterScore, missed_passes: 0 }),
+  });
+  if (!upsertRes.ok) throw new Error(`requirement_matches upsert failed: ${upsertRes.status}`);
+
+  // Status and size are derived from live rows, never carried over, so a
+  // requirement can move zero -> partial/ready but is never knocked down here.
+  const scoresRes = await fetch(
+    `${SUPABASE_URL}/rest/v1/requirement_matches?requirement_id=eq.${encodeURIComponent(r.id)}&select=match_score,candidate_status,candidate_response&limit=1000`,
+    { headers },
+  ).catch(() => null);
+  const liveRows = scoresRes?.ok ? ((await scoresRes.json().catch(() => null)) as Array<{ match_score: number; candidate_status: string | null; candidate_response: string | null }> | null) : null;
+  if (Array.isArray(liveRows)) {
+    const live = liveRows.filter(isLiveMatch);
+    const status = classifyRequirementStatus(live.map((m) => ({ matchScore: m.match_score })));
+    const sizeRes = await fetch(`${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(r.id)}&select=matched_pool_size`, { headers }).catch(() => null);
+    const sizeRows = sizeRes?.ok ? ((await sizeRes.json().catch(() => [])) as Array<{ matched_pool_size?: number | null }>) : [];
+    const prevSize = typeof sizeRows[0]?.matched_pool_size === "number" ? sizeRows[0].matched_pool_size : 0;
+    const poolSize = Math.max(live.length, prevSize + (existing ? 0 : 1));
+    await fetch(`${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(r.id)}&status=in.(zero,partial,ready)`, {
+      method: "PATCH",
+      headers: { ...headers, "Content-Type": "application/json", Prefer: "return=minimal" },
+      body: JSON.stringify({ status, matched_pool_size: poolSize, last_matched_at: new Date().toISOString() }),
+    }).catch(() => {});
+    if (status === "ready" || status === "partial") {
+      const flip = await fetch(
+        `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(r.id)}&stage=eq.ai_matching&status=neq.closed`,
+        { method: "PATCH", headers: { ...headers, "Content-Type": "application/json", Prefer: "return=representation" }, body: JSON.stringify({ stage: "ready_for_review" }) },
+      ).catch(() => null);
+      const flipped = flip?.ok ? await flip.json().catch(() => []) : [];
+      if (Array.isArray(flipped) && flipped.length === 1) {
+        await notify({
+          userId: r.employer_id, type: "matches_ready", title: "Candidates ready to review",
+          body: `${r.title || "Your requirement"} has matched candidates ready for review.`, link: `/employer/requirements/${r.id}`,
+        }).catch(() => {});
+      }
+    }
+  }
+
+  // One announcement per candidate per requirement, ever (strong_alerted_at).
+  const wasStrong = (existing?.match_score ?? 0) >= STRONG_MATCH_THRESHOLD;
+  if (score >= STRONG_MATCH_THRESHOLD && !wasStrong && !existing?.strong_alerted_at) {
+    await Promise.all([
+      notify({
+        userId: r.employer_id, type: "strong_match_found", title: "Strong match update",
+        body: strongMatchAlertBody(1, score, r.title || "your requirement"), link: `/employer/requirements/${r.id}`,
+      }).catch(() => {}),
+      sendStrongMatchEmail({ ownerUserId: r.employer_id, requirementId: r.id, requirementTitle: r.title || "your requirement", matchCount: 1, topScore: score }).catch(() => {}),
+    ]);
+    await markStrongAlerted(r.id, [profile.id]);
+  }
+}
+
+/** With a candidate id (the update-profile path) only that candidate is
+ *  scored. Without one this falls back to the legacy bounded full rescans. */
+export async function rematchOpenRequirementsForNewResume(candidateUserId?: string): Promise<void> {
   try {
+    if (candidateUserId) {
+      await rematchSingleCandidate(candidateUserId);
+      return;
+    }
     // Least-recently-attempted first, suspended employers and long-overdue
     // requirements excluded server-side (and again below, defensively), capped
     // so one resume save can't read an unbounded backlog.
@@ -924,21 +1262,7 @@ export async function rematchOpenRequirementsForNewResume(): Promise<void> {
     const rows = ((await res.json().catch(() => [])) as Array<OpenRequirementForRematch & { employers?: { suspended_at?: string | null } | null }>)
       .filter((r) => !isSuspended(r.employers));
     const due = pickRequirementsToRematch(rows, MAX_INCREMENTAL_REQUIREMENTS);
-    await runMatchingInBatches(due, (r) => ({
-      title: r.title,
-      location: r.location,
-      description: r.description ?? "",
-      skills: r.skills ?? [],
-      experienceMin: r.experience_min,
-      experienceMax: r.experience_max,
-      minReadinessBand: r.min_readiness_band,
-      minStarCompleteness: r.min_star_completeness,
-      employmentType: r.employment_type,
-      durationWeeks: r.duration_weeks,
-      hoursPerWeek: r.hours_per_week,
-      customSkills: r.custom_skill_sets ?? [],
-      workMode: r.work_mode,
-    }));
+    await runMatchingInBatches(due, requirementInputFromRow);
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     slog.error("incremental rematch sweep threw", { code: "incremental_rematch_failed", error: msg.slice(0, 200) });

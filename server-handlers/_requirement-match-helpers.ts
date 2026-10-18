@@ -145,6 +145,34 @@ export interface MatchBreakdown {
   /** Server-graded practice sessions for THIS role (what scoring credits),
       not every graded session the candidate has ever done. */
   verifiedSessions?: number;
+  /** Term-by-term reconstruction of the stored score. Present only when the
+      caller supplied the full candidate pool row (see explainMatch). */
+  components?: MatchScoreComponents;
+}
+
+/** The terms scoring multiplies together, so a breakdown can be checked
+    against the number of record: round(clamp(fitPoints + rosterCredit +
+    customBoost) * recencyMultiplier * experienceMultiplier), strong-capped,
+    is deterministicScore, and blendedScore is what is stored. */
+export interface MatchScoreComponents {
+  fitPoints: number;
+  rosterCredit: number;
+  customBoost: number;
+  recencyMultiplier: number;
+  experienceMultiplier: number;
+  deterministicScore: number;
+  /** The model's raw opinion, or null when none was available for this match. */
+  llmScore: number | null;
+  blendedScore: number;
+}
+
+/** Weight the model's opinion carries against the deterministic score. */
+export const LLM_BLEND_WEIGHT = 0.35;
+const DETERMINISTIC_BLEND_WEIGHT = 0.65;
+
+export function blendDeterministicWithLlm(deterministicScore: number, llmScore: number | null | undefined): number {
+  if (llmScore == null) return deterministicScore;
+  return Math.round(deterministicScore * DETERMINISTIC_BLEND_WEIGHT + llmScore * LLM_BLEND_WEIGHT);
 }
 
 /* Cheap suffix-stripping, not a real stemmer — just enough to fold common
@@ -364,6 +392,23 @@ export function capUnsupportedStrong(score: number, supported: boolean | undefin
   return supported === false ? Math.min(score, STRONG_MATCH_THRESHOLD - 1) : score;
 }
 
+/* Words that appear in many place names without identifying one ("New Delhi"
+   vs "New York"); ignored unless they are all the requirement names. */
+const GENERIC_LOCATION_TOKENS = new Set(["new", "india", "city", "state", "district", "north", "south", "east", "west"]);
+
+/** Whole-token location match. A substring test let "new" match "renewable" and
+    a "New Delhi" opening match any candidate in "New York". Both sides are
+    tokenised the same way, so inflection folds equally and only complete words
+    can overlap. */
+export function locationsOverlap(requirementLocation: string, candidateLocation: string): boolean {
+  const reqTokens = tokenize(requirementLocation);
+  const specific = reqTokens.filter((t) => !GENERIC_LOCATION_TOKENS.has(t));
+  const wanted = specific.length > 0 ? specific : reqTokens;
+  if (wanted.length === 0) return false;
+  const have = new Set(tokenize(candidateLocation));
+  return wanted.some((t) => have.has(t));
+}
+
 function fitInputs(candidate: Pick<CandidatePoolRow, "target_role" | "resume_data">, req: RequirementInput) {
   /* Requirement tokens come ONLY from the title and the employer's skill
      picks, never the JD description. A pasted JD is hundreds of words of
@@ -392,8 +437,7 @@ function fitInputs(candidate: Pick<CandidatePoolRow, "target_role" | "resume_dat
   if (isRemote) {
     locationFit = 1;
   } else if (reqLocation && candidateLocation) {
-    const reqLocTokens = tokenize(reqLocation);
-    locationFit = reqLocTokens.some((t) => candidateLocation.includes(t)) ? 1 : 0.35;
+    locationFit = locationsOverlap(reqLocation, candidateLocation) ? 1 : 0.35;
   }
 
   return { roleOverlap, skillOverlap, skillHits, locationFit };
@@ -413,10 +457,27 @@ function experienceFit(yearsExperience: number | null | undefined, min: number |
   return yearsExperience >= lo && yearsExperience <= hi ? 1 : 0.6;
 }
 
-/** Deterministic 0-100 fit score for one candidate against one requirement,
-    plus the candidate's lifetime roster score (session-performance based,
-    independent of this specific requirement). */
-export function scoreCandidateMatch(candidate: CandidatePoolRow, req: RequirementInput): ScoredCandidate {
+/** Every term that feeds the deterministic score, so the live scorer and the
+    employer-facing "why this score" breakdown read one computation instead of
+    two that can drift apart. */
+interface ScoreParts {
+  roleOverlap: number;
+  skillOverlap: number;
+  locationFit: number;
+  rosterScore: number;
+  hasRelevance: boolean;
+  hasRosterEvidence: boolean;
+  supportsStrong: boolean;
+  /** 0-100 before the recency/experience multipliers and the strong-cap. */
+  fitPoints: number;
+  rosterCredit: number;
+  customBoost: number;
+  recencyPenalty: number;
+  expFit: number;
+  matchScore: number;
+}
+
+function computeScoreParts(candidate: CandidatePoolRow, req: RequirementInput): ScoreParts {
   const { roleOverlap, skillOverlap, skillHits, locationFit } = fitInputs(candidate, req);
 
   const rosterScore = Math.round(clamp(candidate.avg_score ?? 50, 0, 100));
@@ -479,23 +540,34 @@ export function scoreCandidateMatch(candidate: CandidatePoolRow, req: Requiremen
   const customBoost = hasRelevance && customSkills.length > 0
     ? CUSTOM_SKILL_BOOST_MAX * (countRequiredSkillsCovered(candidate, customSkills) / customSkills.length)
     : 0;
-  const matchScore = capUnsupportedStrong(
-    Math.round(clamp(fitComponent * 70 + rosterCredit + customBoost, 0, 100) * recencyPenalty * expFit),
+  const fitPoints = fitComponent * 70;
+  const matchScore = clamp(capUnsupportedStrong(
+    Math.round(clamp(fitPoints + rosterCredit + customBoost, 0, 100) * recencyPenalty * expFit),
     supportsStrong,
-  );
+  ), 0, 100);
+  return {
+    roleOverlap, skillOverlap, locationFit, rosterScore, hasRelevance, hasRosterEvidence, supportsStrong,
+    fitPoints, rosterCredit, customBoost, recencyPenalty, expFit, matchScore,
+  };
+}
 
+/** Deterministic 0-100 fit score for one candidate against one requirement,
+    plus the candidate's lifetime roster score (session-performance based,
+    independent of this specific requirement). */
+export function scoreCandidateMatch(candidate: CandidatePoolRow, req: RequirementInput): ScoredCandidate {
+  const parts = computeScoreParts(candidate, req);
   // A bare `{}` resume is not evidence; a parsed resume with content, or a
   // graded session, is.
-  const hasEvidence = hasResumeContent(candidate.resume_data) || hasRosterEvidence;
+  const hasEvidence = hasResumeContent(candidate.resume_data) || parts.hasRosterEvidence;
 
   return {
     candidateId: candidate.id,
-    matchScore: clamp(matchScore, 0, 100),
-    rosterScore,
-    hasRelevance,
+    matchScore: parts.matchScore,
+    rosterScore: parts.rosterScore,
+    hasRelevance: parts.hasRelevance,
     hasEvidence,
     meetsQualityBar: meetsQualityBar(candidate, req),
-    skillsSupportStrong: supportsStrong,
+    skillsSupportStrong: parts.supportsStrong,
   };
 }
 
@@ -507,7 +579,16 @@ export function scoreCandidateMatch(candidate: CandidatePoolRow, req: Requiremen
 export function explainMatch(
   candidate: Pick<CandidatePoolRow, "target_role" | "resume_data">,
   req: RequirementInput,
-  signals: { yearsExperience?: number | null; verifiedSessions?: number } = {},
+  signals: {
+    yearsExperience?: number | null;
+    verifiedSessions?: number;
+    /** Full pool row (role-matched session stats, last-active days, years).
+        When given, `components` is filled from the same computation scoring
+        runs, so the breakdown reproduces the stored score. */
+    pool?: CandidatePoolRow;
+    /** Raw model score persisted with the match, if any. */
+    llmScore?: number | null;
+  } = {},
 ): MatchBreakdown {
   const { roleOverlap, skillOverlap, locationFit } = fitInputs(candidate, req);
   const out: MatchBreakdown = {
@@ -523,6 +604,20 @@ export function explainMatch(
       : Math.round(experienceFit(signals.yearsExperience, req.experienceMin, req.experienceMax) * 100);
   }
   if (signals.verifiedSessions !== undefined) out.verifiedSessions = signals.verifiedSessions;
+  if (signals.pool) {
+    const parts = computeScoreParts(signals.pool, req);
+    const llmScore = signals.llmScore ?? null;
+    out.components = {
+      fitPoints: Math.round(parts.fitPoints * 10) / 10,
+      rosterCredit: Math.round(parts.rosterCredit * 10) / 10,
+      customBoost: Math.round(parts.customBoost * 10) / 10,
+      recencyMultiplier: parts.recencyPenalty,
+      experienceMultiplier: parts.expFit,
+      deterministicScore: parts.matchScore,
+      llmScore,
+      blendedScore: capUnsupportedStrong(blendDeterministicWithLlm(parts.matchScore, llmScore), parts.supportsStrong),
+    };
+  }
   return out;
 }
 
@@ -650,6 +745,33 @@ export function classifyRequirementStatus(matches: Array<{ matchScore: number }>
 export function rankAndCap(scored: ScoredCandidate[], cap = 20): { ranked: ScoredCandidate[]; totalMatched: number } {
   const floorFiltered = scored
     .filter((s) => s.hasRelevance && s.hasEvidence && s.meetsQualityBar !== false && s.matchScore >= MIN_MATCH_SCORE_FLOOR)
-    .sort((a, b) => b.matchScore - a.matchScore);
+    // Equal scores order by candidate id so the cap boundary picks the same
+    // people on every scan instead of whoever the pool read returned first.
+    .sort((a, b) => b.matchScore - a.matchScore || (a.candidateId < b.candidateId ? -1 : a.candidateId > b.candidateId ? 1 : 0));
   return { ranked: floorFiltered.slice(0, cap), totalMatched: floorFiltered.length };
+}
+
+
+/** Stable fingerprint of every requirement field that changes who matches.
+    The cron and the create/edit path capture it before a scan and compare it
+    right before writing, so a scan started on stale criteria can't overwrite
+    the shortlist an employer's edit already produced. Text is trimmed and
+    skills are order-insensitive so cosmetic edits don't read as changes. */
+export function requirementCriteriaFingerprint(req: RequirementInput): string {
+  const list = (xs: string[] | undefined | null) => (xs || []).map((x) => x.trim().toLowerCase()).filter(Boolean).sort();
+  return JSON.stringify([
+    (req.title || "").trim(),
+    (req.location || "").trim(),
+    (req.description || "").trim(),
+    list(req.skills),
+    list(req.customSkills),
+    req.experienceMin ?? null,
+    req.experienceMax ?? null,
+    req.minReadinessBand ?? null,
+    req.minStarCompleteness ?? null,
+    req.employmentType ?? null,
+    req.durationWeeks ?? null,
+    req.hoursPerWeek ?? null,
+    req.workMode ?? null,
+  ]);
 }

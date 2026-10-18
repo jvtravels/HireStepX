@@ -29,7 +29,7 @@ import { pickRequirementsToRematch, fetchRematchBacklog, type OpenRequirementFor
 import { canStartBatch } from "./_employer-matching-helpers";
 import { isSuspended } from "./_employer-trust";
 import { slog } from "./_shared";
-import { recordCronSuccess } from "./_cron-heartbeat";
+import { recordCronResult } from "./_cron-heartbeat";
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
@@ -94,6 +94,11 @@ export default async function handler(req: Request): Promise<Response> {
   let matched = 0;
   let failed = 0;
   let skippedSuspended = 0;
+  // Passes that stood down because the employer edited (or archived) the
+  // requirement mid-scan; the edit's own run owns the result, so this is neither
+  // a success nor a failure.
+  const staleIds = new Set<string>();
+  let skippedStale = 0;
   let attempted = 0;
   let budgetExhausted = false;
   let slowestBatchMs = 0;
@@ -130,7 +135,7 @@ export default async function handler(req: Request): Promise<Response> {
             workMode: r.work_mode,
           },
           r.employer_id,
-          { timeoutMs: CRON_MATCH_TIMEOUT_MS, onFailure: () => { failedIds.add(r.id); } },
+          { timeoutMs: CRON_MATCH_TIMEOUT_MS, onFailure: () => { failedIds.add(r.id); }, onStale: () => { staleIds.add(r.id); } },
         ).catch((err: unknown) => {
           slog.error("cron rematch requirement threw", { code: "cron_rematch_requirement_failed", requirementId: r.id, error: (err instanceof Error ? err.message : String(err)).slice(0, 200) });
           return "failed";
@@ -140,13 +145,15 @@ export default async function handler(req: Request): Promise<Response> {
     attempted += batch.length;
     for (const [idx, status] of statuses.entries()) {
       if (status === "failed" || failedIds.has(batch[idx].id)) failed += 1;
+      else if (staleIds.has(batch[idx].id)) skippedStale += 1;
       else if (status === SUSPENDED_MATCHING_STATUS) skippedSuspended += 1;
       else matched += 1;
     }
     slowestBatchMs = Math.max(slowestBatchMs, Date.now() - batchStart);
   }
 
-  await recordCronSuccess("cron-rematch-requirements");
+  // A sweep where requirements failed must go stale, not look healthy.
+  await recordCronResult("cron-rematch-requirements", { errors: failed });
   return jsonResponse({
     ok: true,
     open_requirements: Number.isFinite(totalOpen) ? totalOpen : rows.length,
@@ -154,6 +161,7 @@ export default async function handler(req: Request): Promise<Response> {
     matched,
     failed,
     skipped_suspended: skippedSuspended,
+    skipped_stale: skippedStale,
     deferred: due.length - attempted,
     budget_exhausted: budgetExhausted,
     duration_ms: Date.now() - t0,

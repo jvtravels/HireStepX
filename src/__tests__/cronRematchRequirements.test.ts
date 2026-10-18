@@ -7,6 +7,9 @@ process.env.CRON_SECRET = "cron-secret";
 const slogError = vi.fn();
 vi.mock("../../server-handlers/_shared", () => ({ slog: { error: (...a: unknown[]) => slogError(...a), warn: vi.fn() } }));
 
+const recordCronResult = vi.fn(async (..._args: unknown[]) => true);
+vi.mock("../../server-handlers/_cron-heartbeat", () => ({ recordCronResult: (...a: unknown[]) => recordCronResult(...a) }));
+
 const runMatching = vi.fn();
 vi.mock("../../server-handlers/employer-requirements", () => ({
   runMatching: (...a: unknown[]) => runMatching(...a),
@@ -40,6 +43,7 @@ beforeEach(() => {
   runMatching.mockReset();
   runMatching.mockResolvedValue("ready");
   slogError.mockReset();
+  recordCronResult.mockClear();
 });
 afterEach(() => vi.useRealTimers());
 
@@ -65,10 +69,35 @@ describe("cron-rematch-requirements", () => {
     expect((await res.json()).processed).toBe(1);
   });
 
+  it("reports zero errors to the heartbeat on a clean sweep", async () => {
+    installFetch([row(1), row(2)]);
+    await call();
+    expect(recordCronResult).toHaveBeenCalledWith("cron-rematch-requirements", { errors: 0 });
+  });
+
+  it("reports the failure count to the heartbeat so a failing sweep goes stale", async () => {
+    installFetch([row(1), row(2), row(3)]);
+    runMatching.mockResolvedValue("failed");
+    const body = await (await call()).json();
+    expect(body.failed).toBe(3);
+    expect(recordCronResult).toHaveBeenCalledWith("cron-rematch-requirements", { errors: 3 });
+  });
+
   it("passes the longer cron timeout to each match", async () => {
     installFetch([row(1)]);
     await call();
-    expect(runMatching.mock.calls[0][3]).toEqual({ timeoutMs: CRON_MATCH_TIMEOUT_MS, onFailure: expect.any(Function) });
+    expect(runMatching.mock.calls[0][3]).toEqual({ timeoutMs: CRON_MATCH_TIMEOUT_MS, onFailure: expect.any(Function), onStale: expect.any(Function) });
+  });
+
+  it("counts a pass that stood down for an edit as skipped_stale, not matched", async () => {
+    installFetch([row(1), row(2)]);
+    runMatching.mockImplementation(async (id: string, _req: unknown, _owner: string, opts: { onStale?: () => void }) => {
+      if (id === "req-1") opts.onStale?.();
+      return "generating";
+    });
+    const body = await (await call()).json();
+    expect(body).toMatchObject({ matched: 1, skipped_stale: 1, failed: 0 });
+    expect(recordCronResult).toHaveBeenCalledWith("cron-rematch-requirements", { errors: 0 });
   });
 
   it("isolates a requirement that throws and still processes the rest", async () => {
