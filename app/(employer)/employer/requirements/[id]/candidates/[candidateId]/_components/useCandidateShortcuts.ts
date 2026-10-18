@@ -2,7 +2,7 @@ import { useEffect } from "react";
 
 type Handlers = { onNext: () => void; onPrev: () => void; onTab: (index: number) => void };
 
-function isTypingTarget(target: EventTarget | null): boolean {
+export function isTypingTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
   if (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)) return true;
   return target.closest('[role="dialog"],[role="alertdialog"],[role="menu"],[role="listbox"]') !== null;

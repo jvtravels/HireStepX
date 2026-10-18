@@ -6,7 +6,7 @@ import { formatNumber } from "@/utils";
 
 export function experienceLabel(min: number | null, max: number | null): string | null {
   if (min == null && max == null) return null;
-  if (min != null && max != null) return `${min}–${max} yrs experience`;
+  if (min != null && max != null) return `${min} to ${max} yrs experience`;
   if (min != null) return `${min}+ yrs experience`;
   return `Up to ${max} yrs experience`;
 }
@@ -103,18 +103,18 @@ export function budgetLabel(req: Requirement): string | null {
   const rawRupees = (salaryType === "per-annum" || salaryType == null) && Math.max(budgetMin ?? 0, budgetMax ?? 0) > 1000;
   if (rawRupees) {
     const fmtRaw = (n: number) => `₹${formatNumber(n)}`;
-    if (budgetMin != null && budgetMax != null) return `${fmtRaw(budgetMin)}–${formatNumber(budgetMax)}/year`;
+    if (budgetMin != null && budgetMax != null) return `${fmtRaw(budgetMin)} to ${formatNumber(budgetMax)}/year`;
     if (budgetMin != null) return `${fmtRaw(budgetMin)}+/year`;
     return `Up to ${fmtRaw(budgetMax as number)}/year`;
   }
   if (salaryType === "per-annum" || salaryType == null) {
-    if (budgetMin != null && budgetMax != null) return `₹${budgetMin}–${budgetMax} LPA`;
+    if (budgetMin != null && budgetMax != null) return `₹${budgetMin} to ${budgetMax} LPA`;
     if (budgetMin != null) return `₹${budgetMin}+ LPA`;
     return `Up to ₹${budgetMax} LPA`;
   }
   const suffix = salaryType === "per-month" ? "/month" : " fixed";
   const fmt = (n: number) => `₹${formatNumber(n)}`;
-  if (budgetMin != null && budgetMax != null) return `${fmt(budgetMin)}–${formatNumber(budgetMax)}${suffix}`;
+  if (budgetMin != null && budgetMax != null) return `${fmt(budgetMin)} to ${formatNumber(budgetMax)}${suffix}`;
   if (budgetMin != null) return `${fmt(budgetMin)}+${suffix}`;
   return `Up to ${fmt(budgetMax as number)}${suffix}`;
 }

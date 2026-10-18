@@ -100,8 +100,45 @@ export function SuspendedBanner() {
 /* ── Loading / error / empty ── */
 
 /** Page-level loading placeholder. The visually hidden label gives screen
-    readers something to announce; the skeleton blocks are decorative. */
-export function PageSkeleton({ label }: { label: string }) {
+    readers something to announce; the skeleton blocks are decorative.
+    `job` mirrors the job detail page: header, tab row, toolbar, candidate rows. */
+export function PageSkeleton({ label, variant = "default" }: { label: string; variant?: "default" | "job" }) {
+  if (variant === "job") {
+    return (
+      <div role="status" aria-busy="true" className="flex min-w-0 flex-col gap-5 pb-6">
+        <span className="sr-only">{label}</span>
+        <div aria-hidden="true" className="grid min-w-0 gap-5 min-[1440px]:grid-cols-[minmax(0,1fr)_320px]">
+          <div className="flex flex-col gap-3">
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-8 w-[min(420px,80%)]" />
+            <div className="flex flex-wrap gap-2">
+              <Skeleton className="h-6 w-28 rounded-full" />
+              <Skeleton className="h-6 w-24 rounded-full" />
+              <Skeleton className="h-6 w-32 rounded-full" />
+            </div>
+          </div>
+          <Skeleton className="hidden h-28 w-full rounded-xl min-[1440px]:block" />
+        </div>
+        <div aria-hidden="true" className="flex flex-col gap-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <Skeleton className="h-9 w-72 max-w-full rounded-lg" />
+            <Skeleton className="h-9 w-56 max-w-full rounded-lg" />
+          </div>
+          {[0, 1, 2, 3, 4].map((i) => (
+            <div key={i} className="flex items-center gap-4 border-t border-hx-line pt-4">
+              <Skeleton className="size-4 shrink-0" />
+              <Skeleton className="size-9 shrink-0 rounded-full" />
+              <div className="flex min-w-0 flex-1 flex-col gap-2">
+                <Skeleton className="h-4 w-2/5" />
+                <Skeleton className="h-3 w-3/5" />
+              </div>
+              <Skeleton className="h-8 w-28 max-sm:hidden" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
   return (
     <div role="status" aria-busy="true" style={{ display: "grid", gap: 16 }}>
       <span className="sr-only">{label}</span>

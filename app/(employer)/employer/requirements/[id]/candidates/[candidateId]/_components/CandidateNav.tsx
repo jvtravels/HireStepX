@@ -23,7 +23,7 @@ function Step({ href, label, shortcut, children }: { href: string | null; label:
     );
   }
   return (
-    <Link href={href} title={`${label} (${shortcut.toUpperCase()})`} aria-keyshortcuts={shortcut} className={cn(STEP, "hover:bg-hx-row focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hx-indigo")}>
+    <Link href={href} title={`${label} (${shortcut.toUpperCase()})`} aria-keyshortcuts={shortcut} className={cn(STEP, "hover:bg-hx-row focus-visible:outline-2 focus-visible:outline-offset-2")}>
       <span className="sr-only">{label}</span>
       {children}
     </Link>

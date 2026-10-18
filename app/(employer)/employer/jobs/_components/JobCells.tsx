@@ -1,10 +1,13 @@
 "use client";
 
 import { InfoIcon, XIcon } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
+import type { RequirementSummary } from "@/employer/mockData";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Badge, type BadgeTone } from "@/employer/_atoms";
 import { tokens as t, fonts as f, textSize } from "@/auth/_tokens";
 import { daysUntil } from "./jobsHelpers";
+import StrongMatchCell from "./StrongMatchCell";
 
 /* Info "i" next to a column header. The visible target is small to keep the
    header compact, but coarse pointers (touch) get a full 44px hit area. */
@@ -32,10 +35,7 @@ export function HeadInfo({ label, children }: { label: string; children: React.R
 export function DueCell({ dueDate }: { dueDate: string | null }) {
   if (!dueDate) {
     return (
-      <span style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.inkSoft }}>
-        <span aria-hidden="true">—</span>
-        <span className="sr-only">No due date</span>
-      </span>
+      <span className="text-[14px] text-hx-ink-soft">Not set</span>
     );
   }
   const left = daysUntil(dueDate);
@@ -65,5 +65,44 @@ export function FilterChip({ label, onRemove }: { label: string; onRemove: () =>
         <XIcon size={11} aria-hidden="true" />
       </button>
     </span>
+  );
+}
+
+const mutedText: React.CSSProperties = { fontFamily: f.sans, fontSize: textSize.base, color: t.inkSoft };
+
+/* One cell for everything the AI found for a job: strong matches first (that
+   is what an employer acts on), then how many candidates were evaluated, then
+   who the strong matches are. Replaces three separate columns that repeated
+   the same numbers. */
+export function MatchesCell({ r }: { r: RequirementSummary }) {
+  const s = r.aiScreening;
+  if (r.status === "generating") {
+    return (
+      <div className="flex items-center gap-1.5">
+        <Spinner style={{ width: 12, height: 12 }} color={t.inkSoft} aria-hidden="true" />
+        <Badge tone="brand">Finding candidates</Badge>
+      </div>
+    );
+  }
+  if (s.evaluated === 0) return <span style={mutedText}>None yet</span>;
+  const evaluatedLine = s.totalMatched > s.evaluated ? `Top ${s.evaluated} of ${s.totalMatched} matched` : `${s.evaluated} evaluated`;
+  const range = s.scoreLow != null && s.scoreHigh != null ? `, scores ${s.scoreLow} to ${s.scoreHigh}%` : "";
+  return (
+    <div className="flex flex-col items-start gap-1">
+      {s.topMatches > 0 ? (
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge tone="info">{s.topMatches} strong {s.topMatches === 1 ? "match" : "matches"}</Badge>
+          {s.strongAvgScore != null && <span style={mutedText}>{s.strongAvgScore}% avg</span>}
+        </div>
+      ) : (
+        <span style={mutedText}>No strong matches yet</span>
+      )}
+      <div style={mutedText}>{evaluatedLine}{range}</div>
+      {s.strongMatches.length > 0 && (
+        <div className="pt-1">
+          <StrongMatchCell aiScreening={s} />
+        </div>
+      )}
+    </div>
   );
 }

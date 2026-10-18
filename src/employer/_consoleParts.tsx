@@ -35,15 +35,40 @@ export function OutlineLink({ href, children, full = false, small = false, onCli
   );
 }
 
-/** Announced loading placeholder. `label` is what a screen reader hears. */
-export function PageSkeleton({ label = "Loading" }: { label?: string }) {
+/** Announced loading placeholder. `label` is what a screen reader hears.
+ *  `list` mirrors a toolbar plus table rows (jobs list); the default mirrors a
+ *  page heading with two content blocks. */
+export function PageSkeleton({ label = "Loading", variant = "page" }: { label?: string; variant?: "page" | "list" }) {
   return (
-    <div role="status" aria-live="polite" aria-busy="true" style={{ width: "100%", display: "flex", flexDirection: "column", gap: 16 }}>
+    <div role="status" aria-live="polite" aria-busy="true" className="flex w-full flex-col gap-4">
       <span className="sr-only">{label}…</span>
-      <Skeleton style={{ height: 40, width: "min(420px, 70%)", borderRadius: 8 }} />
-      <Skeleton style={{ height: 18, width: "min(560px, 90%)", borderRadius: 6 }} />
-      <Skeleton style={{ height: 140, width: "100%", borderRadius: 12 }} />
-      <Skeleton style={{ height: 140, width: "100%", borderRadius: 12 }} />
+      {variant === "list" ? (
+        <div aria-hidden="true" className="flex flex-col gap-3">
+          <div className="flex gap-3">
+            <Skeleton className="h-9 w-64 max-w-full rounded-lg" />
+            <Skeleton className="h-9 w-24 rounded-lg" />
+          </div>
+          {[0, 1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="flex items-center gap-4 border-t border-hx-line pt-3">
+              <div className="flex min-w-0 flex-[2] flex-col gap-2">
+                <Skeleton className="h-4 w-3/5" />
+                <Skeleton className="h-3 w-2/5" />
+              </div>
+              <Skeleton className="h-6 w-24 max-sm:hidden" />
+              <Skeleton className="h-10 w-40 max-sm:hidden" />
+              <Skeleton className="h-4 w-20 max-md:hidden" />
+              <Skeleton className="h-4 w-16 max-md:hidden" />
+            </div>
+          ))}
+        </div>
+      ) : (
+        <>
+          <Skeleton className="h-10 w-[min(420px,70%)] rounded-lg" />
+          <Skeleton className="h-[18px] w-[min(560px,90%)] rounded-md" />
+          <Skeleton className="h-[140px] w-full rounded-xl" />
+          <Skeleton className="h-[140px] w-full rounded-xl" />
+        </>
+      )}
     </div>
   );
 }

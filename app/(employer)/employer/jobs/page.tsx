@@ -21,7 +21,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { type Sort } from "@/components/SortableHead";
 import { TablePaginationFooter } from "@/components/TablePaginationFooter";
 import { useToast } from "@/Toast";
-import { useMaxWidth } from "@/hooks/useMaxWidth";
 import { useEmployerData } from "@/employer/EmployerDataContext";
 import type { RequirementStage } from "@/employer/mockData";
 import { STAGE_LABEL, STAGE_OPTIONS } from "@/employer/_atoms";
@@ -41,7 +40,6 @@ import { useJobRowActions } from "./_components/useJobRowActions";
 const emptyNote: React.CSSProperties = { fontFamily: f.sans, fontSize: textSize.base, color: t.inkSoft, margin: "6px 0 0", lineHeight: 1.5, maxWidth: 380 };
 
 export default function EmployerJobsPage() {
-  const compact = useMaxWidth(640);
   const router = useRouter();
   const { toast } = useToast();
   const {
@@ -167,7 +165,7 @@ export default function EmployerJobsPage() {
 
   const shell = (body: React.ReactNode, filters?: React.ReactNode) => (
     <div style={{ background: t.white, display: "flex", flexDirection: "column", flex: 1, minHeight: 0, borderRadius: 16, border: `1px solid ${t.line}`, overflow: "hidden" }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: compact ? "14px 16px" : "16px 20px", borderBottom: `1px solid ${t.line}`, flexWrap: "wrap", gap: 12 }}>
+      <div className="px-4 py-3.5 sm:px-5 sm:py-4" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: `1px solid ${t.line}`, flexWrap: "wrap", gap: 12 }}>
         <div style={{ flexShrink: 0 }}>
           <h1 style={{ fontFamily: f.sans, fontSize: 26, fontWeight: 700, color: t.coal, margin: 0, letterSpacing: "-0.01em", lineHeight: "32px" }}>Jobs</h1>
           {!requirementsLoading && requirements.length > 0 && (
@@ -182,10 +180,12 @@ export default function EmployerJobsPage() {
             </p>
           )}
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap", justifyContent: compact ? "stretch" : "flex-end", flex: compact ? "1 1 100%" : 1, minWidth: 0 }}>
+        <div className="flex min-w-0 flex-[1_1_100%] flex-wrap items-center gap-3.5 sm:flex-1 sm:justify-end">
           {filters}
           {!suspended && (
-            <PrimaryLink href="/employer/requirements/new" icon={postIcon} full={compact}>Post a job</PrimaryLink>
+            <div className="max-sm:w-full max-sm:[&>a]:w-full">
+              <PrimaryLink href="/employer/requirements/new" icon={postIcon}>Post a job</PrimaryLink>
+            </div>
           )}
         </div>
       </div>
@@ -196,7 +196,7 @@ export default function EmployerJobsPage() {
   if (requirementsLoading) {
     return shell(
       <div style={{ padding: 20 }}>
-        <PageSkeleton label="Loading your jobs" />
+        <PageSkeleton label="Loading your jobs" variant="list" />
       </div>,
     );
   }
@@ -236,16 +236,17 @@ export default function EmployerJobsPage() {
 
   const filterControls = (
     <>
-      <SearchWithSuggestions
-        id="employer-jobs-search"
-        label="Search jobs"
-        value={search}
-        onChange={setSearch}
-        placeholder={compact ? "Search jobs" : "Search by job title, location, or skill"}
-        storageKey={RECENT_SEARCHES_KEY}
-        suggestedFilters={suggestedFilters}
-        style={compact ? { flex: "1 1 160px", minWidth: 0 } : { flex: "1 1 240px", minWidth: 200, maxWidth: "50%" }}
-      />
+      <div className="min-w-0 flex-[1_1_160px] sm:max-w-1/2 sm:min-w-50 sm:flex-[1_1_240px]">
+        <SearchWithSuggestions
+          id="employer-jobs-search"
+          label="Search jobs"
+          value={search}
+          onChange={setSearch}
+          placeholder="Search by title, location or skill"
+          storageKey={RECENT_SEARCHES_KEY}
+          suggestedFilters={suggestedFilters}
+        />
+      </div>
       <AdvancedFiltersPopover
         stageOptions={stageOptions}
         stage={stageFilter}
@@ -321,21 +322,22 @@ export default function EmployerJobsPage() {
       {/* eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex */}
       <div role="region" aria-label="Jobs list" tabIndex={0} className="jobs-scroll" style={{ overflow: "auto", flex: 1, minHeight: 0 }}>
         <TooltipProvider delayDuration={200}>
-          {compact ? (
-            <ul aria-label="Posted jobs" style={{ listStyle: "none", margin: 0, padding: 0 }}>
-              {pageRows.length === 0 && (
-                <li style={{ padding: "32px 16px", textAlign: "center", fontFamily: f.sans, fontSize: textSize.base, color: t.inkSoft }}>
-                  {search.trim() ? `No results for "${search.trim()}"` : "No jobs match these filters"}
-                  <div style={{ marginTop: 12 }}>
-                    <Button variant="outline" className="pointer-coarse:h-11" onClick={clearFilters}>{onlySearchActive ? "Clear search" : "Clear filters"}</Button>
-                  </div>
-                </li>
-              )}
-              {pageRows.map((r) => (
-                <JobCard key={r.id} r={r} readOnly={suspended} onStage={(stage) => changeStage(r.id, stage)} actions={rowActions(r)} />
-              ))}
-            </ul>
-          ) : (
+          {/* Table on wide screens, cards on phones. Switched in CSS so the first
+              paint is right on any viewport (no JS media-query flash). */}
+          <ul aria-label="Posted jobs" className="m-0 hidden list-none p-0 max-sm:block">
+            {pageRows.length === 0 && (
+              <li style={{ padding: "32px 16px", textAlign: "center", fontFamily: f.sans, fontSize: textSize.base, color: t.inkSoft }}>
+                {search.trim() ? `No results for "${search.trim()}"` : "No jobs match these filters"}
+                <div style={{ marginTop: 12 }}>
+                  <Button variant="outline" className="pointer-coarse:h-11" onClick={clearFilters}>{onlySearchActive ? "Clear search" : "Clear filters"}</Button>
+                </div>
+              </li>
+            )}
+            {pageRows.map((r) => (
+              <JobCard key={r.id} r={r} readOnly={suspended} onStage={(stage) => changeStage(r.id, stage)} actions={rowActions(r)} />
+            ))}
+          </ul>
+          <div className="max-sm:hidden">
             <JobsTable
               rows={pageRows}
               hasAnyDepartment={hasAnyDepartment}
@@ -349,7 +351,7 @@ export default function EmployerJobsPage() {
               onlySearchActive={onlySearchActive}
               onClear={clearFilters}
             />
-          )}
+          </div>
         </TooltipProvider>
       </div>
 

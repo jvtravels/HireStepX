@@ -6,10 +6,9 @@ import { Badge, StageCell } from "@/employer/_atoms";
 import { tokens as t, fonts as f, textSize } from "@/auth/_tokens";
 import { WORK_MODE_LABEL, EMPLOYMENT_TYPE_LABEL } from "@/hiringMatchFormat";
 import { budgetLabel, experienceLabel, locationText } from "./jobsHelpers";
-import { DueCell } from "./JobCells";
-import StrongMatchCell from "./StrongMatchCell";
+import { DueCell, MatchesCell } from "./JobCells";
 
-/* Phone layout (<640px): the 10-column table can't fit, so each job renders
+/* Phone layout (<640px): the table can't fit, so each job renders
    as a stacked card carrying the same information as the table cells. */
 export default function JobCard({ r, readOnly, onStage, actions }: { r: RequirementSummary; readOnly: boolean; onStage: (stage: RequirementStage) => void; actions: React.ReactNode }) {
   const mode = r.workMode ? WORK_MODE_LABEL[r.workMode] || r.workMode : null;
@@ -45,26 +44,9 @@ export default function JobCard({ r, readOnly, onStage, actions }: { r: Requirem
           <div style={label}>Due date</div>
           <DueCell dueDate={r.dueDate} />
         </div>
-        <div style={{ minWidth: 0 }}>
-          <div style={label}>AI screening</div>
-          {r.status === "generating" ? (
-            <Badge tone="brand">Finding candidates</Badge>
-          ) : r.aiScreening.evaluated === 0 ? (
-            <span style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.inkSoft }}>—</span>
-          ) : (
-            <>
-              <div style={{ fontFamily: f.sans, fontSize: textSize.md, fontWeight: 500, color: t.coal }}>
-                {r.aiScreening.totalMatched > r.aiScreening.evaluated ? `Top ${r.aiScreening.evaluated} of ${r.aiScreening.totalMatched}` : `${r.aiScreening.evaluated} evaluated`}
-              </div>
-              {r.aiScreening.scoreLow != null && r.aiScreening.scoreHigh != null && (
-                <div style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.inkSoft }}>Score {r.aiScreening.scoreLow}–{r.aiScreening.scoreHigh}%</div>
-              )}
-            </>
-          )}
-        </div>
-        <div style={{ minWidth: 0 }}>
-          <div style={label}>Strong match</div>
-          <StrongMatchCell aiScreening={r.aiScreening} />
+        <div style={{ minWidth: 0, gridColumn: "1 / -1" }}>
+          <div style={label}>Matches</div>
+          <MatchesCell r={r} />
         </div>
         <div style={{ minWidth: 0 }}>
           <div style={label}>Experience</div>

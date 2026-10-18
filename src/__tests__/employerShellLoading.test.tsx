@@ -103,3 +103,27 @@ describe("EmployerShell tab title", () => {
     expect(screen.getByTestId("console-frame").getAttribute("data-crumbs")).toBe("Post a job");
   });
 });
+
+describe("EmployerShell page container", () => {
+  const cardOf = (text: string) => screen.getByText(text).parentElement as HTMLElement;
+
+  it.each([
+    "/employer/requirements/r1",
+    "/employer/requirements/r1/compare",
+    "/employer/requirements/r1/outcome",
+    "/employer/requirements/r1/candidates/m1",
+  ])("does not wrap %s in a bordered card", (path) => {
+    pathname = path;
+    data = { companyStatus: "approved", companyStatusLoading: false, companyStatusError: false };
+    render(<EmployerShell><p>Page</p></EmployerShell>);
+    expect(cardOf("Page").className).not.toContain("border");
+    expect(cardOf("Page").className).not.toContain("bg-white");
+  });
+
+  it("keeps the card on the dashboard", () => {
+    pathname = "/employer";
+    data = { companyStatus: "approved", companyStatusLoading: false, companyStatusError: false };
+    render(<EmployerShell><p>Page</p></EmployerShell>);
+    expect(cardOf("Page").className).toContain("border");
+  });
+});

@@ -9,17 +9,9 @@ import { InfoTip } from "@/employer/_panelParts";
 import type { Candidate, CandidateStatus } from "@/employer/mockData";
 import CandidateRow from "./CandidateRow";
 import { CAND_TABLE_CSS } from "./candidateTableStyles";
-import { COLUMN_LABEL, type SortColumn } from "./candidateTableModel";
+import { COLUMN_LABEL, SORT_OPTIONS, type SortColumn } from "./candidateTableModel";
 
 /* Below 768px the column headers are hidden, so sorting moves to this select. */
-const MOBILE_SORTS: Array<{ value: string; label: string; sort: Sort<SortColumn> }> = [
-  { value: "match-desc", label: "Best match first", sort: { column: "match", direction: "desc" } },
-  { value: "match-asc", label: "Lowest match first", sort: { column: "match", direction: "asc" } },
-  { value: "name-asc", label: "Candidate A to Z", sort: { column: "name", direction: "asc" } },
-  { value: "interview-desc", label: "Highest interview score", sort: { column: "interview", direction: "desc" } },
-  { value: "pipeline-asc", label: "Stage: earliest first", sort: { column: "pipeline", direction: "asc" } },
-];
-
 const PLAIN_HEAD = "h-10 px-3 text-[13px] font-semibold text-hx-ink-soft";
 
 export default function CandidatesTable({
@@ -34,6 +26,9 @@ export default function CandidatesTable({
   onViewEvidence,
   onMessage,
   onStageChange,
+  selectedIds,
+  onSelectedChange,
+  activeId,
   totalCount,
   filteredCount,
   rowsPerPage,
@@ -53,6 +48,9 @@ export default function CandidatesTable({
   onViewEvidence: (c: Candidate) => void;
   onMessage: (c: Candidate) => void;
   onStageChange: (c: Candidate, status: CandidateStatus) => void;
+  selectedIds: ReadonlySet<string>;
+  onSelectedChange: (c: Candidate, checked: boolean) => void;
+  activeId: string | null;
   totalCount: number;
   filteredCount: number;
   rowsPerPage: number;
@@ -81,7 +79,7 @@ export default function CandidatesTable({
   }, [measure, rows.length]);
 
   const mobileValue = `${sort.column}-${sort.direction}`;
-  const mobileKnown = MOBILE_SORTS.some((s) => s.value === mobileValue);
+  const mobileKnown = SORT_OPTIONS.some((s) => s.value === mobileValue);
 
   return (
     <>
@@ -93,12 +91,12 @@ export default function CandidatesTable({
           id="cand-mobile-sort"
           value={mobileKnown ? mobileValue : "match-desc"}
           onChange={(e) => {
-            const next = MOBILE_SORTS.find((s) => s.value === e.target.value);
+            const next = SORT_OPTIONS.find((s) => s.value === e.target.value);
             if (next) onSortChange(next.sort);
           }}
           className="min-h-11 w-full rounded-lg border border-hx-line bg-white px-3 text-[14px] text-hx-coal"
         >
-          {MOBILE_SORTS.map((s) => (
+          {SORT_OPTIONS.map((s) => (
             <option key={s.value} value={s.value}>
               {s.label}
             </option>
@@ -115,12 +113,12 @@ export default function CandidatesTable({
           // Keyboard users can only scroll an overflow region they can focus.
           // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
           tabIndex={0}
-          className="cand-scroll flex-none overflow-x-auto min-[1240px]:overflow-x-clip focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-hx-indigo"
+          className="cand-scroll flex-none overflow-x-auto min-[1240px]:overflow-x-clip focus-visible:outline-2 focus-visible:-outline-offset-2"
         >
           <style>{CAND_TABLE_CSS}</style>
           <Table role="table" className="cand-table min-w-[860px]" containerClassName="overflow-visible">
             <TableCaption className="sr-only">
-              Candidates for this requirement, {filteredCount} shown. Column headers are buttons that sort the table.
+              Candidates for this job, {filteredCount} shown. Each row has a checkbox to select it. Column headers are buttons that sort the table.
             </TableCaption>
             <TableHeader className="cand-thead">
               <TableRow className="h-10 bg-hx-row">
@@ -166,7 +164,7 @@ export default function CandidatesTable({
                   minWidth={130}
                   sort={sort}
                   onSortChange={onSortChange}
-                  after={<InfoTip label="About Stage">Where this candidate currently stands in your hiring process for this requirement.</InfoTip>}
+                  after={<InfoTip label="About Stage">Where this candidate currently stands in your hiring process for this job.</InfoTip>}
                 >
                   Stage
                 </SortableHead>
@@ -188,6 +186,9 @@ export default function CandidatesTable({
                   onViewEvidence={() => onViewEvidence(c)}
                   onMessage={() => onMessage(c)}
                   onStageChange={(status) => onStageChange(c, status)}
+                  selected={selectedIds.has(c.id)}
+                  onSelectedChange={(checked) => onSelectedChange(c, checked)}
+                  active={activeId === c.id}
                 />
               ))}
             </TableBody>

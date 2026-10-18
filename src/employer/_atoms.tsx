@@ -402,8 +402,8 @@ export function Badge({ tone, children }: { tone: BadgeTone; children: React.Rea
 export const STAGE_OPTIONS: RequirementStage[] = ["ai_matching", "ready_for_review", "interviewing", "hired"];
 
 export const STAGE_LABEL: Record<RequirementStage, string> = {
-  ai_matching: "AI Matching",
-  ready_for_review: "Ready for Review",
+  ai_matching: "AI matching",
+  ready_for_review: "Ready for review",
   interviewing: "Interviewing",
   hired: "Hired",
 };
@@ -441,7 +441,7 @@ export const STAGE_ICON: Record<RequirementStage, React.ComponentType<{ size?: n
     `status`, never `stage` (see handleStatusAction in
     employer-requirement-detail.ts), so a requirement archived while still
     mid-matching keeps `stage: "ai_matching"` forever. Without this, a
-    closed posting shows a live spinning "AI Matching" pill next to its
+    closed posting shows a live spinning "AI matching" pill next to its
     "Closed" badge, implying matching is still running on something no
     longer hiring. Frozen renders the label plain and static — no spin,
     no dropdown — since the stage is stale by definition once closed. */

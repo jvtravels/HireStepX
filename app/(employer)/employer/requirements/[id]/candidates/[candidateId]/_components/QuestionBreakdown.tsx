@@ -73,7 +73,7 @@ function QuestionRow({ q, n, candidate, requestUi }: { q: EvidenceQuestion; n: n
           onClick={() => setOpen((v) => !v)}
           aria-expanded={open}
           aria-controls={bodyId}
-          className="-mx-2 w-[calc(100%+1rem)] cursor-pointer rounded-lg border-0 bg-transparent px-2 py-3.5 text-left transition-colors duration-150 hover:bg-hx-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hx-indigo motion-reduce:transition-none pointer-coarse:py-4"
+          className="-mx-2 w-[calc(100%+1rem)] cursor-pointer rounded-lg border-0 bg-transparent px-2 py-3.5 text-left transition-colors duration-150 hover:bg-hx-soft focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none pointer-coarse:py-4"
         >
           {head}
         </button>

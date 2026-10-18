@@ -33,13 +33,13 @@ const AVATAR_GROUP_STYLE = `
 }
 `;
 
-/** "Strong Match" cell — overlapping avatar-initial chips for the candidates
+/** Strong matches avatar stack — overlapping avatar-initial chips for the candidates
     scoring at/above STRONG_MATCH_THRESHOLD. Hovering the chip stack shows a
-    dark "Strong Matches" card (matches the canvas reference) listing each
+    dark "Strong matches" card (matches the canvas reference) listing each
     real candidate's name, years of experience, and skills — no fabricated
     data; candidates beyond the ones we have full profiles for are summed
     into a trailing "+N more" line using the real count. The group's average
-    score is shown under Top Matches instead, since strongAvgScore is the
+    score is shown in the Matches cell instead, since strongAvgScore is the
     average across that same top-matches group. */
 export default function StrongMatchCell({ aiScreening }: { aiScreening: RequirementSummary["aiScreening"] }) {
   const groupRef = useRef<HTMLButtonElement>(null);
@@ -61,7 +61,7 @@ export default function StrongMatchCell({ aiScreening }: { aiScreening: Requirem
     });
   };
 
-  if (aiScreening.evaluated === 0) return <span style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.inkFaint }}>—</span>;
+  if (aiScreening.evaluated === 0) return <span style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.inkFaint }}>None yet</span>;
   if (aiScreening.strongMatches.length === 0) {
     return <span style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.inkFaint }}>None yet</span>;
   }
@@ -71,7 +71,7 @@ export default function StrongMatchCell({ aiScreening }: { aiScreening: Requirem
         <button
           ref={groupRef}
           type="button"
-          aria-label={`${aiScreening.topMatches} strong match${aiScreening.topMatches === 1 ? "" : "es"} — view candidates`}
+          aria-label={`${aiScreening.topMatches} strong match${aiScreening.topMatches === 1 ? "" : "es"}, view candidates`}
           style={{ display: "flex", alignItems: "center", background: "none", border: "none", padding: 10, margin: -10, cursor: "pointer" }}
           onMouseLeave={() => setAvatarShifts(null, "out")}
         >
@@ -112,7 +112,7 @@ export default function StrongMatchCell({ aiScreening }: { aiScreening: Requirem
       >
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <span style={{ fontFamily: f.sans, fontSize: 12, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: t.white, opacity: 0.6 }}>
-            Strong Matches
+            Strong matches
           </span>
           <span
             style={{

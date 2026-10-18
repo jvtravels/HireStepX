@@ -70,7 +70,7 @@ export function RejectDialog({
                     aria-pressed={on}
                     onClick={() => toggle(reason)}
                     className={cn(
-                      "rounded-full border px-3 py-1 text-[13px] pointer-coarse:min-h-11 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hx-indigo",
+                      "rounded-full border px-3 py-1 text-[13px] pointer-coarse:min-h-11 focus-visible:outline-2 focus-visible:outline-offset-2",
                       on ? "border-hx-indigo bg-hx-indigo-100 font-medium text-hx-indigo" : "border-hx-line bg-white text-hx-coal hover:bg-hx-row",
                     )}
                   >

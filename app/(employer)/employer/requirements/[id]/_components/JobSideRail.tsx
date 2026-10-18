@@ -50,7 +50,7 @@ function InsightPill({ insight, active, onSelect }: { insight: JobInsight; activ
         aria-pressed={active}
         aria-label={`${insight.text} ${active ? "Showing these candidates. Select to show everyone." : "Show these candidates."}`}
         className={cn(
-          "inline-flex max-w-full cursor-pointer items-center gap-2 rounded-full border py-1.5 pr-3.5 pl-2.5 text-left text-[13px] leading-snug text-hx-coal transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hx-indigo motion-reduce:transition-none pointer-coarse:min-h-11",
+          "inline-flex max-w-full cursor-pointer items-center gap-2 rounded-full border py-1.5 pr-3.5 pl-2.5 text-left text-[13px] leading-snug text-hx-coal transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none pointer-coarse:min-h-11",
           active ? "border-hx-indigo bg-hx-indigo-100" : "border-hx-line bg-white hover:bg-hx-row",
         )}
       >

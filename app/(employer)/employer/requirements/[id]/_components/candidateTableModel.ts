@@ -17,6 +17,15 @@ export const CONTACT_FILTER_OPTIONS: Array<{ value: ContactFilter; label: string
 
 export const DEFAULT_SORT: Sort<SortColumn> = { column: "match", direction: "desc" };
 
+/* One list for the mobile sort select and the View menu, so both offer the same orders. */
+export const SORT_OPTIONS: Array<{ value: string; label: string; sort: Sort<SortColumn> }> = [
+  { value: "match-desc", label: "Best match first", sort: { column: "match", direction: "desc" } },
+  { value: "match-asc", label: "Lowest match first", sort: { column: "match", direction: "asc" } },
+  { value: "name-asc", label: "Candidate A to Z", sort: { column: "name", direction: "asc" } },
+  { value: "interview-desc", label: "Highest interview score", sort: { column: "interview", direction: "desc" } },
+  { value: "pipeline-asc", label: "Stage: earliest first", sort: { column: "pipeline", direction: "asc" } },
+];
+
 export const COLUMN_LABEL: Record<SortColumn, string> = {
   name: "Candidate",
   match: "Role match",

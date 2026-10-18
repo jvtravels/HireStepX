@@ -10,6 +10,8 @@ import { tokens as t, textSize } from "@/auth/_tokens";
 export const CAND_TABLE_CSS = `
 .rq-row { transition: background-color 150ms cubic-bezier(0.25, 1, 0.5, 1); }
 .rq-row:hover { background: ${t.rowTint} !important; }
+.rq-row[data-selected="true"] { background: ${t.rowTint}; }
+.rq-row[data-active="true"] { outline: 2px solid ${t.indigo}; outline-offset: -2px; }
 .rq-link:hover { text-decoration: underline !important; }
 .rq-link:focus-visible { outline: 2px solid ${t.indigo}; outline-offset: 2px; border-radius: 4px; }
 @media (prefers-reduced-motion: reduce) { .rq-row { transition: none; } }

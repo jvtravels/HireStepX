@@ -4,7 +4,7 @@
    page.tsx). Styled after the candidate dashboard (src/DashboardHomeSections.tsx):
    flat bordered 12px cards on the line token, neutral pills, indigo reserved for
    actions. Built on the shared primitives (ui/table, ui/avatar, NativeSelect,
-   SearchInput, EmptyState, _atoms Badge/Pill/ScoreChip) rather than local
+   the command palette pieces, EmptyState, _atoms Badge/Pill/ScoreChip) rather than local
    copies. Everything is driven by props; data wiring stays in the page. */
 
 import Link from "next/link";
@@ -18,7 +18,7 @@ import { NativeSelect } from "@/components/ui/native-select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { EmptyState } from "@/components/EmptyState";
-import { SearchInput } from "@/components/SearchInput";
+import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Badge, Pill, ScoreChip, STAGE_LABEL, STAGE_TONE } from "./_atoms";
 import { PrimaryLink, OutlineLink } from "./_consoleParts";
 import type { RequirementSummary } from "./mockData";
@@ -64,7 +64,7 @@ function CardHeader({ id, icon, title, action }: { id: string; icon: ReactNode; 
 
 function TextLink({ href, children }: { href: string; children: ReactNode }) {
   return (
-    <Link href={href} className="inline-flex min-h-6 items-center gap-1 whitespace-nowrap rounded-sm py-1 text-[13px] font-semibold text-hx-indigo no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hx-indigo">
+    <Link href={href} className="inline-flex min-h-6 items-center gap-1 whitespace-nowrap rounded-sm py-1 text-[13px] font-semibold text-hx-indigo no-underline focus-visible:outline-2 focus-visible:outline-offset-2">
       {children}
       <ArrowRightIcon size={14} aria-hidden="true" />
     </Link>
@@ -103,44 +103,71 @@ export function DashboardHeader({
   );
 }
 
+/* Command palette pieces give the combobox contract for free: role=combobox
+   on the input, listbox/option roles, aria-activedescendant, Arrow/Home/End
+   keys and Enter to pick. Filtering is ours (shouldFilter off) so jobs and
+   candidates can be grouped. The list stays mounted so aria-controls always
+   resolves; the wrapper hides it until there is a query. */
 function DashboardSearch({ jobs, candidates }: { jobs: RequirementSummary[]; candidates: RecommendedCard[] }) {
+  const router = useRouter();
   const [q, setQ] = useState("");
   const term = q.trim().toLowerCase();
-  const results = useMemo(() => {
-    if (!term) return [];
-    const jobHits = jobs
-      .filter((j) => j.title.toLowerCase().includes(term) || j.skills.some((s) => s.toLowerCase().includes(term)))
-      .map((j) => ({ id: `j-${j.id}`, label: j.title, hint: "Job", href: `/employer/requirements/${j.id}` }));
-    const candidateHits = candidates
-      .filter((c) => c.name.toLowerCase().includes(term) || c.matchedSkills.some((s) => s.toLowerCase().includes(term)))
-      .map((c) => ({ id: `c-${c.matchId}`, label: c.name, hint: c.roleTitle, href: `/employer/requirements/${c.requirementId}/candidates/${c.matchId}` }));
-    return [...jobHits, ...candidateHits].slice(0, 6);
+  const { jobHits, candidateHits } = useMemo(() => {
+    if (!term) return { jobHits: [], candidateHits: [] };
+    return {
+      jobHits: jobs
+        .filter((j) => j.title.toLowerCase().includes(term) || j.skills.some((s) => s.toLowerCase().includes(term)))
+        .slice(0, 4)
+        .map((j) => ({ id: `j-${j.id}`, label: j.title, hint: j.skills.slice(0, 2).join(", "), href: `/employer/requirements/${j.id}` })),
+      candidateHits: candidates
+        .filter((c) => c.name.toLowerCase().includes(term) || c.matchedSkills.some((s) => s.toLowerCase().includes(term)))
+        .slice(0, 4)
+        .map((c) => ({ id: `c-${c.matchId}`, label: c.name, hint: c.roleTitle, href: `/employer/requirements/${c.requirementId}/candidates/${c.matchId}` })),
+    };
   }, [term, jobs, candidates]);
+  const total = jobHits.length + candidateHits.length;
+  const go = (href: string) => { setQ(""); router.push(href); };
 
   return (
     <div className="relative min-w-[220px] flex-1 min-[900px]:w-[260px] min-[900px]:min-w-0 min-[900px]:flex-none">
-      <SearchInput id="employer-dashboard-search" label="Search jobs or skills" value={q} onChange={setQ} onKeyDown={(e) => { if (e.key === "Escape") setQ(""); }} placeholder="Search jobs or skills" />
-      <p role="status" className="sr-only">
-        {term ? (results.length === 0 ? "No results" : `${results.length} ${results.length === 1 ? "result" : "results"}`) : ""}
-      </p>
-      {term && (
-        <div className="mx-swap absolute inset-x-0 top-11 z-20 min-w-0 rounded-xl border border-hx-line bg-white p-1.5 shadow-lg">
-          {results.length === 0 ? (
-            <p className="m-0 px-2.5 py-2 text-[13px] text-hx-ink-soft">No jobs or skills match &ldquo;{q.trim()}&rdquo;.</p>
-          ) : (
-            <ul className={LIST} aria-label="Search results">
-              {results.map((r) => (
-                <li key={r.id}>
-                  <Link href={r.href} className="flex min-h-9 items-center justify-between gap-2.5 rounded-lg px-2.5 py-2 text-[13px] text-hx-coal no-underline hover:bg-hx-soft focus-visible:bg-hx-soft">
+      <Command
+        shouldFilter={false}
+        label="Search jobs and candidates"
+        onKeyDown={(e) => { if (e.key === "Escape") setQ(""); }}
+        className="h-auto overflow-visible bg-transparent p-0"
+      >
+        <CommandInput value={q} onValueChange={setQ} placeholder="Search jobs and candidates" />
+        <div hidden={!term} className="mx-swap absolute inset-x-0 top-11 z-20 min-w-0 rounded-xl border border-hx-line bg-white shadow-lg">
+          <CommandList>
+            {jobHits.length > 0 && (
+              <CommandGroup heading="Jobs">
+                {jobHits.map((r) => (
+                  <CommandItem key={r.id} value={r.id} onSelect={() => go(r.href)} className="min-h-9 justify-between gap-2.5 text-[13px]">
+                    <span className="truncate">{r.label}</span>
+                    {r.hint && <span className="shrink-0 text-hx-ink-soft">{r.hint}</span>}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            )}
+            {candidateHits.length > 0 && (
+              <CommandGroup heading="Candidates">
+                {candidateHits.map((r) => (
+                  <CommandItem key={r.id} value={r.id} onSelect={() => go(r.href)} className="min-h-9 justify-between gap-2.5 text-[13px]">
                     <span className="truncate">{r.label}</span>
                     <span className="shrink-0 text-hx-ink-soft">{r.hint}</span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            )}
+            {term && total === 0 && (
+              <p className="m-0 px-2.5 py-3 text-[13px] text-hx-ink-soft">Nothing matches &ldquo;{q.trim()}&rdquo;. Try a job title, a skill or a candidate name.</p>
+            )}
+          </CommandList>
         </div>
-      )}
+      </Command>
+      <p role="status" className="sr-only">
+        {term ? (total === 0 ? "No results" : `${total} ${total === 1 ? "result" : "results"}`) : ""}
+      </p>
     </div>
   );
 }
@@ -263,7 +290,7 @@ export function ActiveJobsCard({
       <CardHeader
         id="active-jobs-heading"
         icon={<BriefcaseIcon size={18} />}
-        title="Active Jobs"
+        title="Active jobs"
         action={
           <TextLink href="/employer/jobs">View all jobs</TextLink>
         }
@@ -276,7 +303,7 @@ export function ActiveJobsCard({
             <Table className="text-[13px]">
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
-                  {sortHead("title", "Job Title", false)}
+                  {sortHead("title", "Job title", false)}
                   <TableHead className={TH}>Status</TableHead>
                   <TableHead className={`${TH} text-center`}>Evaluated</TableHead>
                   {sortHead("recommended", "Strong matches", true)}
@@ -305,8 +332,8 @@ export function ActiveJobsCard({
                       </TableCell>
                       <TableCell className={`${TD} text-center`}>{j.aiScreening.evaluated}</TableCell>
                       <TableCell className={`${TD} text-center`}>{j.aiScreening.topMatches}</TableCell>
-                      <TableCell className={`${TD} text-center`}>{p ? p.interviewing : "–"}</TableCell>
-                      <TableCell className={`${TD} text-center`}>{p ? p.hired : "–"}</TableCell>
+                      <TableCell className={`${TD} text-center`}>{p ? p.interviewing : "n/a"}</TableCell>
+                      <TableCell className={`${TD} text-center`}>{p ? p.hired : "n/a"}</TableCell>
                       <TableCell className={`${TD} px-1 text-right`}>{rowActions(j)}</TableCell>
                     </TableRow>
                   );
@@ -321,8 +348,8 @@ export function ActiveJobsCard({
               const stats: Array<[string, string | number]> = [
                 ["Evaluated", j.aiScreening.evaluated],
                 ["Strong matches", j.aiScreening.topMatches],
-                ["Interviewing", p ? p.interviewing : "–"],
-                ["Hired", p ? p.hired : "–"],
+                ["Interviewing", p ? p.interviewing : "n/a"],
+                ["Hired", p ? p.hired : "n/a"],
               ];
               return (
                 <li key={j.id} className={`p-3 ${i > 0 ? "border-t border-hx-line" : ""}`}>
@@ -601,20 +628,78 @@ export function RecentActivityCard({ items }: { items: DashboardActivityItem[] }
 
 /* ─── Loading skeleton shaped like the dashboard ─── */
 
-export function DashboardSkeleton() {
+/* Same cards, in the same order and grid, as the loaded dashboard, so nothing
+   jumps when data arrives. Blocks inside a card stand in for its heading and
+   rows; they are decorative and the status line carries the announcement. */
+function SkeletonRows({ count, avatar = false }: { count: number; avatar?: boolean }) {
+  return (
+    <div aria-hidden="true" className="flex flex-col gap-3">
+      {Array.from({ length: count }, (_, i) => (
+        <div key={i} className="flex items-center gap-3">
+          {avatar && <Skeleton className="size-10 shrink-0 rounded-full" />}
+          <div className="flex min-w-0 flex-1 flex-col gap-2">
+            <Skeleton className="h-3.5 w-3/5" />
+            <Skeleton className="h-3 w-2/5" />
+          </div>
+          <Skeleton className="h-6 w-16 shrink-0 rounded-full" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function SkeletonCard({ rows, avatar }: { rows: number; avatar?: boolean }) {
+  return (
+    <div className={CARD}>
+      <Skeleton aria-hidden="true" className="mb-4 h-4 w-36" />
+      <SkeletonRows count={rows} avatar={avatar} />
+    </div>
+  );
+}
+
+export function DashboardSkeleton({ withHeader = false }: { withHeader?: boolean }) {
   return (
     <div role="status" aria-live="polite" aria-busy="true" className="flex flex-col gap-5">
       <span className="sr-only">Loading your overview…</span>
-      <Skeleton className="h-[132px] rounded-xl" />
-      <div className="grid grid-cols-1 gap-5 min-[1100px]:grid-cols-[minmax(0,1fr)_minmax(300px,380px)]">
-        <div className="flex flex-col gap-5">
-          <Skeleton className="h-[320px] rounded-xl" />
-          <Skeleton className="h-[260px] rounded-xl" />
+      {withHeader && (
+        <div aria-hidden="true" className="flex flex-col gap-2">
+          <Skeleton className="h-8 w-56" />
+          <Skeleton className="h-4 w-72 max-w-full" />
         </div>
-        <div className="flex flex-col gap-5">
-          <Skeleton className="h-[200px] rounded-xl" />
-          <Skeleton className="h-[160px] rounded-xl" />
-          <Skeleton className="h-[160px] rounded-xl" />
+      )}
+      {/* Next action */}
+      <div aria-hidden="true" className={`${CARD} flex flex-wrap items-center justify-between gap-x-6 gap-y-3`}>
+        <div className="flex min-w-0 flex-[1_1_320px] items-start gap-3">
+          <Skeleton className="size-9 shrink-0 rounded-lg" />
+          <div className="flex min-w-0 flex-1 flex-col gap-2">
+            <Skeleton className="h-4 w-2/3" />
+            <Skeleton className="h-3.5 w-full max-w-md" />
+          </div>
+        </div>
+        <Skeleton className="h-9 w-36 rounded-lg" />
+      </div>
+      {/* Funnel: three steps */}
+      <div aria-hidden="true" className="grid grid-cols-1 overflow-hidden rounded-xl border border-hx-line bg-white min-[640px]:grid-cols-3">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className={`flex flex-col gap-2.5 p-[18px] ${i < 2 ? "border-b border-hx-line min-[640px]:border-b-0 min-[640px]:border-r" : ""}`}>
+            <div className="flex items-center gap-2.5">
+              <Skeleton className="size-9 rounded-lg" />
+              <Skeleton className="h-4 w-28" />
+            </div>
+            <Skeleton className="h-7 w-14" />
+            <Skeleton className="h-1.5 w-full rounded-full" />
+          </div>
+        ))}
+      </div>
+      <div className="grid grid-cols-1 gap-5 min-[1100px]:grid-cols-[minmax(0,1fr)_minmax(300px,380px)]">
+        <div className="flex min-w-0 flex-col gap-5">
+          <SkeletonCard rows={4} />
+          <SkeletonCard rows={3} avatar />
+        </div>
+        <div className="flex min-w-0 flex-col gap-5">
+          <SkeletonCard rows={2} />
+          <SkeletonCard rows={2} />
+          <SkeletonCard rows={3} />
         </div>
       </div>
     </div>

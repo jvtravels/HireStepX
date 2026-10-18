@@ -2,9 +2,8 @@
 
 import Link from "next/link";
 import { motion, useReducedMotion } from "motion/react";
-import { PlusIcon, SearchXIcon, EyeIcon, InfoIcon } from "lucide-react";
+import { PlusIcon, SearchXIcon, InfoIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/spinner";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { SortableHead, type Sort } from "@/components/SortableHead";
@@ -14,37 +13,27 @@ import { PrimaryLink } from "@/employer/_consoleParts";
 import { tokens as t, fonts as f, textSize } from "@/auth/_tokens";
 import { WORK_MODE_LABEL, EMPLOYMENT_TYPE_LABEL } from "@/hiringMatchFormat";
 import { COLUMN_LABEL, budgetLabel, experienceLabel, locationText, type SortColumn } from "./jobsHelpers";
-import { DueCell, HeadInfo } from "./JobCells";
-import StrongMatchCell from "./StrongMatchCell";
+import { DueCell, HeadInfo, MatchesCell } from "./JobCells";
 
 const MotionTableRow = motion.create(TableRow);
 
-/* The table can only be as wide as its scroll region, so columns are dropped by
-   priority (department, then strong match) as the region narrows instead of
-   truncating whichever happens to be last. min-width tracks the visible
-   columns, the actions column is pinned so row actions are always reachable,
-   and everything else scrolls horizontally. */
+/* The title column and the actions column are pinned so a row stays readable
+   and actionable while the other columns scroll horizontally. Department is
+   the one optional column: it drops out when the region gets narrow, and the
+   rest scrolls. Phones never see this table (page.tsx shows cards instead,
+   switched in CSS). */
 const JOBS_TABLE_CSS = `
 .jobs-scroll { container-type: inline-size; }
-.jobs-table { min-width: 1411px; }
+.jobs-table { min-width: 1200px; }
+.jobs-table :is(th, td):first-child { position: sticky; left: 0; z-index: 1; background: ${t.white}; box-shadow: 1px 0 0 ${t.line}; }
+.jobs-table thead th:first-child { z-index: 3; background: ${t.rowTint}; }
+.jobs-table tbody tr:hover > td:first-child { background: color-mix(in srgb, var(--muted) 50%, ${t.white}); }
 .jobs-col-act { position: sticky; right: 0; z-index: 1; background: ${t.white}; box-shadow: -1px 0 0 ${t.line}; }
-thead .jobs-col-act { background: ${t.rowTint}; }
+thead .jobs-col-act { background: ${t.rowTint}; z-index: 3; }
 tr:hover > .jobs-col-act { background: color-mix(in srgb, var(--muted) 50%, ${t.white}); }
-@container (max-width: 1439px) {
-  .jobs-col-strong { display: none; }
-  .jobs-table { min-width: 1276px; }
-}
 @container (max-width: 1299px) {
   .jobs-col-dept { display: none; }
-  .jobs-table { min-width: 1176px; }
-}
-@container (max-width: 1199px) {
-  .jobs-table :is(th, td):nth-last-child(2) { display: none; }
-  .jobs-table { min-width: 1046px; }
-}
-@container (max-width: 1049px) {
-  .jobs-table :is(th, td):nth-last-child(4) { display: none; }
-  .jobs-table { min-width: 906px; }
+  .jobs-table { min-width: 1100px; }
 }
 `;
 
@@ -92,14 +81,14 @@ export default function JobsTable({
                   resolves the percentage against the table's rendered width
                   and can land below minWidth, silently truncating
                   SortableHead's ellipsis'd label (confirmed in production —
-                  "AI Screening"/"Top Matches"/"Location"/"Due Date" all
+                  "Matches"/"Location"/"Due date" all
                   clipped at typical viewport widths despite generous
                   minWidth). Fixed pixel widths don't have that ambiguity:
                   table-fixed honors them exactly, so every label gets
-                  guaranteed room regardless of viewport. Opportunity
-                  absorbs Department's pixels when there's no department
+                  guaranteed room regardless of viewport. The job
+                  column absorbs Department's pixels when there's no department
                   data to show, so hidden-column space isn't stranded. */}
-              <SortableHead column="title" columnLabel={COLUMN_LABEL.title} defaultDirection="asc" width={hasAnyDepartment ? 220 : 320} minWidth={190} sort={sort} onSortChange={setSort}>Opportunity</SortableHead>
+              <SortableHead column="title" columnLabel={COLUMN_LABEL.title} defaultDirection="asc" width={hasAnyDepartment ? 260 : 320} minWidth={220} sort={sort} onSortChange={setSort}>Job</SortableHead>
               {hasAnyDepartment && (
                 <TableHead className="jobs-col-dept" style={{ width: 100, padding: "0 20px", fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.inkSoft }}>Department</TableHead>
               )}
@@ -114,34 +103,18 @@ export default function JobsTable({
                 Stage
               </SortableHead>
               <SortableHead
-                column="matches"
-                columnLabel={COLUMN_LABEL.matches}
-                width={165}
-                sort={sort}
-                onSortChange={setSort}
-                after={<HeadInfo label="About AI Screening">How many candidates the AI has evaluated against this job, and the score range across them.</HeadInfo>}
-              >
-                AI Screening
-              </SortableHead>
-              <SortableHead
                 column="topMatches"
                 columnLabel={COLUMN_LABEL.topMatches}
-                width={160}
+                width={240}
                 sort={sort}
                 onSortChange={setSort}
-                after={<HeadInfo label="About Top Matches">The curated shortlist of highest-scoring candidates, with their average match score.</HeadInfo>}
+                after={<HeadInfo label="About matches">Strong matches are the highest-scoring candidates for this job, with their average score. Evaluated is how many candidates the AI has scored in total.</HeadInfo>}
               >
-                Top Matches
+                Matches
               </SortableHead>
-              <TableHead className="jobs-col-strong" style={{ width: 135, fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.inkSoft }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                  Strong Match
-                  <HeadInfo label="About Strong Match">The best of the shortlist: candidates scoring highest against this job's evaluation criteria. Hover a candidate to see their experience and skills.</HeadInfo>
-                </div>
-              </TableHead>
               <SortableHead column="experience" columnLabel={COLUMN_LABEL.experience} width={140} sort={sort} onSortChange={setSort}>Experience</SortableHead>
               <SortableHead column="location" columnLabel={COLUMN_LABEL.location} defaultDirection="asc" width={130} sort={sort} onSortChange={setSort}>Location</SortableHead>
-              <SortableHead column="dueDate" columnLabel={COLUMN_LABEL.dueDate} defaultDirection="asc" width={130} sort={sort} onSortChange={setSort}>Due Date</SortableHead>
+              <SortableHead column="dueDate" columnLabel={COLUMN_LABEL.dueDate} defaultDirection="asc" width={130} sort={sort} onSortChange={setSort}>Due date</SortableHead>
               <TableHead className="jobs-col-act" style={{ width: 56, minWidth: 56 }}>
                 <span className="sr-only">Actions</span>
               </TableHead>
@@ -150,7 +123,7 @@ export default function JobsTable({
           <TableBody>
             {pageRows.length === 0 && (
               <TableRow>
-                <TableCell colSpan={hasAnyDepartment ? 10 : 9} style={{ padding: "40px 14px" }}>
+                <TableCell colSpan={hasAnyDepartment ? 8 : 7} style={{ padding: "40px 14px" }}>
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
                     <SearchXIcon size={22} color={t.inkSoft} aria-hidden="true" />
                     <p style={{ fontFamily: f.sans, fontSize: textSize.base, fontWeight: 600, color: t.coal, margin: 0 }}>
@@ -254,45 +227,7 @@ export default function JobsTable({
                     />
                   </TableCell>
                   <TableCell style={{ padding: "12px 20px", verticalAlign: "top", whiteSpace: "normal" }}>
-                    {r.status === "generating" ? (
-                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                        <Spinner style={{ width: 12, height: 12 }} color={t.inkSoft} aria-hidden="true" />
-                        <Badge tone="brand">Finding candidates</Badge>
-                      </div>
-                    ) : r.aiScreening.evaluated === 0 ? (
-                      <span style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.inkSoft }}>None yet</span>
-                    ) : (
-                      <>
-                        <div style={{ display: "flex", alignItems: "center", gap: 5, fontFamily: f.sans, fontSize: textSize.md, fontWeight: 500, color: t.coal }}>
-                          <EyeIcon size={13} color={t.inkSoft} aria-hidden="true" />
-                          {r.aiScreening.totalMatched > r.aiScreening.evaluated
-                            ? `Top ${r.aiScreening.evaluated} (of ${r.aiScreening.totalMatched} matched)`
-                            : `${r.aiScreening.evaluated} evaluated`}
-                        </div>
-                        {r.aiScreening.scoreLow != null && r.aiScreening.scoreHigh != null && (
-                          <div style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.inkSoft, marginTop: 1 }}>
-                            Score range {r.aiScreening.scoreLow} to {r.aiScreening.scoreHigh}%
-                          </div>
-                        )}
-                      </>
-                    )}
-                  </TableCell>
-                  <TableCell style={{ padding: "12px 20px", verticalAlign: "top", whiteSpace: "normal" }}>
-                    {r.aiScreening.evaluated === 0 ? (
-                      <span style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.inkSoft }}>None yet</span>
-                    ) : r.aiScreening.topMatches > 0 ? (
-                      <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-start" }}>
-                        <Badge tone="info">Top {r.aiScreening.topMatches}</Badge>
-                        {r.aiScreening.strongAvgScore != null && (
-                          <div style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.inkSoft, marginTop: 1 }}>{r.aiScreening.strongAvgScore}% avg match score</div>
-                        )}
-                      </div>
-                    ) : (
-                      <span style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.inkSoft }}>None yet</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="jobs-col-strong" style={{ padding: "12px 20px", verticalAlign: "top", whiteSpace: "normal" }}>
-                    <StrongMatchCell aiScreening={r.aiScreening} />
+                    <MatchesCell r={r} />
                   </TableCell>
                   <TableCell style={{ padding: "12px 20px", verticalAlign: "top", whiteSpace: "normal" }}>
                     {exp ? <Badge tone="info">{exp}</Badge> : <span style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.inkSoft }}>Any</span>}

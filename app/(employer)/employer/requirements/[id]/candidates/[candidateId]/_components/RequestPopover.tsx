@@ -152,7 +152,7 @@ export function RequestPopover({
                   setError(null);
                 }}
                 className={cn(
-                  "cursor-pointer rounded-lg border px-2.5 py-2 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hx-indigo pointer-coarse:min-h-11",
+                  "cursor-pointer rounded-lg border px-2.5 py-2 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 pointer-coarse:min-h-11",
                   kind === k ? "border-hx-coal bg-hx-soft" : "border-hx-line bg-white hover:bg-hx-soft",
                 )}
               >
@@ -191,7 +191,7 @@ export function RequestPopover({
                     aria-pressed={topic === d}
                     onClick={() => setTopic(topic === d ? "" : d)}
                     className={cn(
-                      "cursor-pointer rounded-full border px-2.5 py-1 text-[12px] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hx-indigo pointer-coarse:min-h-11",
+                      "cursor-pointer rounded-full border px-2.5 py-1 text-[12px] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 pointer-coarse:min-h-11",
                       topic === d ? "border-hx-coal bg-hx-coal text-white" : "border-hx-line bg-white text-hx-coal hover:bg-hx-soft",
                     )}
                   >
@@ -248,7 +248,7 @@ export function RequestButton({ pendingCount, ...triggerProps }: { pendingCount:
     <button
       {...triggerProps}
       type="button"
-      className="inline-flex h-7 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-full border border-hx-line bg-white px-2.5 text-[12px] font-medium text-hx-ink-soft transition-colors hover:bg-hx-indigo-100 hover:text-hx-indigo focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hx-indigo disabled:cursor-not-allowed disabled:opacity-50 pointer-coarse:h-11 pointer-coarse:px-4"
+      className="inline-flex h-7 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-full border border-hx-line bg-white px-2.5 text-[12px] font-medium text-hx-ink-soft transition-colors hover:bg-hx-indigo-100 hover:text-hx-indigo focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50 pointer-coarse:h-11 pointer-coarse:px-4"
     >
       <PlusIcon size={14} aria-hidden="true" />
       Request
@@ -263,7 +263,7 @@ export function InlineRequestTrigger({ label, requested, ...triggerProps }: { la
     <button
       {...triggerProps}
       type="button"
-      className="cursor-pointer border-0 bg-transparent p-0 text-[12px] font-medium text-hx-indigo underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hx-indigo pointer-coarse:min-h-11"
+      className="cursor-pointer border-0 bg-transparent p-0 text-[12px] font-medium text-hx-indigo underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 pointer-coarse:min-h-11"
     >
       {requested ? "Requested" : label}
     </button>

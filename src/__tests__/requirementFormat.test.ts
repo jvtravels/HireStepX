@@ -95,10 +95,10 @@ describe("whereLabel", () => {
 describe("budgetLabel", () => {
   const req = (over: object) => ({ budgetMin: null, budgetMax: null, salaryType: "per-annum", ...over }) as Parameters<typeof budgetLabel>[0];
   it("shows lakhs for normal per-annum budgets", () => {
-    expect(budgetLabel(req({ budgetMin: 12, budgetMax: 18 }))).toBe("₹12–18 LPA");
+    expect(budgetLabel(req({ budgetMin: 12, budgetMax: 18 }))).toBe("₹12 to 18 LPA");
   });
   it("does not label raw rupee amounts as LPA", () => {
-    expect(budgetLabel(req({ budgetMin: 1800000, budgetMax: 2800000 }))).toBe("₹18,00,000–28,00,000/year");
+    expect(budgetLabel(req({ budgetMin: 1800000, budgetMax: 2800000 }))).toBe("₹18,00,000 to 28,00,000/year");
   });
 });
 

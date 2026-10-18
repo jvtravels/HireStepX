@@ -46,7 +46,7 @@ export function PanelLink({ href, children, label }: { href: string; children: R
     <Link
       href={href}
       aria-label={label}
-      className="inline-flex items-center gap-1 rounded-md text-[13px] font-semibold text-hx-indigo no-underline transition-colors duration-150 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hx-indigo motion-reduce:transition-none pointer-coarse:min-h-11"
+      className="inline-flex items-center gap-1 rounded-md text-[13px] font-semibold text-hx-indigo no-underline transition-colors duration-150 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none pointer-coarse:min-h-11"
     >
       {children}
     </Link>
@@ -60,7 +60,7 @@ export function PanelButton({ onClick, children, expanded, controls }: { onClick
       onClick={onClick}
       aria-expanded={expanded}
       aria-controls={controls}
-      className="inline-flex cursor-pointer items-center gap-1 rounded-md border-0 bg-transparent p-0 text-[13px] font-semibold text-hx-indigo transition-colors duration-150 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hx-indigo motion-reduce:transition-none pointer-coarse:min-h-11"
+      className="inline-flex cursor-pointer items-center gap-1 rounded-md border-0 bg-transparent p-0 text-[13px] font-semibold text-hx-indigo transition-colors duration-150 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none pointer-coarse:min-h-11"
     >
       {children}
     </button>
@@ -188,7 +188,7 @@ export function InfoTip({ label, children }: { label: string; children: ReactNod
         <button
           type="button"
           aria-label={label}
-          className="inline-flex cursor-pointer items-center justify-center rounded-md border-0 bg-transparent p-1 text-hx-ink-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hx-indigo pointer-coarse:size-11"
+          className="inline-flex cursor-pointer items-center justify-center rounded-md border-0 bg-transparent p-1 text-hx-ink-soft focus-visible:outline-2 focus-visible:outline-offset-2 pointer-coarse:size-11"
         >
           <InfoIcon size={12} aria-hidden="true" />
         </button>

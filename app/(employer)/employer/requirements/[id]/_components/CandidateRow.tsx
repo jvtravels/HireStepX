@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, type MouseEvent } from "react";
+import { useEffect, useRef, useState, type MouseEvent } from "react";
 import {
   CalendarPlusIcon,
   CheckIcon,
@@ -19,6 +19,7 @@ import {
 import { cn } from "cn";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -71,7 +72,7 @@ function SkillMatch({ score, matched, gaps }: { score: number; matched: string[]
             <button
               type="button"
               aria-label={`${matched.length} of ${total} required skills.${matched.length > 0 ? ` Has ${matched.join(", ")}.` : ""}${gaps.length > 0 ? ` Missing ${gaps.join(", ")}.` : ""}`}
-              className="flex w-full min-w-0 cursor-default items-center gap-1 rounded-md border-0 bg-transparent p-0 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hx-indigo pointer-coarse:min-h-11"
+              className="flex w-full min-w-0 cursor-default items-center gap-1 rounded-md border-0 bg-transparent p-0 text-left focus-visible:outline-2 focus-visible:outline-offset-2 pointer-coarse:min-h-11"
             >
               {slots.matched.map((skill) => (
                 <span key={`has-${skill}`} aria-hidden="true" className={cn(CHIP, "bg-hx-indigo-100 text-hx-indigo")}>
@@ -140,6 +141,9 @@ export default function CandidateRow({
   onViewEvidence,
   onMessage,
   onStageChange,
+  selected,
+  onSelectedChange,
+  active,
 }: {
   candidate: Candidate;
   requirementId: string;
@@ -150,8 +154,16 @@ export default function CandidateRow({
   onViewEvidence: () => void;
   onMessage: () => void;
   onStageChange: (status: CandidateStatus) => void;
+  selected: boolean;
+  onSelectedChange: (checked: boolean) => void;
+  /** The row the j/k keyboard cursor is on. */
+  active: boolean;
 }) {
   const name = candidateDisplayName(candidate);
+  const rowRef = useRef<HTMLTableRowElement | null>(null);
+  useEffect(() => {
+    if (active) rowRef.current?.scrollIntoView({ block: "nearest" });
+  }, [active]);
   const subtitle = candidateSubtitle(candidate);
   const response = candidateResponseOf(candidate);
   const substep = interviewSubstep(candidate);
@@ -206,9 +218,15 @@ export default function CandidateRow({
   };
 
   return (
-    <TableRow role="row" onClick={openProfile} className="cand-tr rq-row h-[76px] cursor-pointer border-b border-hx-line">
+    <TableRow ref={rowRef} role="row" onClick={openProfile} data-selected={selected} data-active={active} className="cand-tr rq-row h-[76px] cursor-pointer border-b border-hx-line">
       <TableCell role="cell" className="cand-td cand-td-name max-w-[240px] px-3 py-3 align-middle">
         <div className="flex min-w-0 items-center gap-3">
+          <Checkbox
+            checked={selected}
+            onCheckedChange={(v) => onSelectedChange(v === true)}
+            aria-label={`Select ${name}`}
+            className="shrink-0 pointer-coarse:size-6 pointer-coarse:after:-inset-3"
+          />
           <Avatar size="lg" aria-hidden="true" title={candidate.unlocked ? undefined : "Name and contact are hidden until you unlock."}>
             <AvatarFallback className={cn("text-[13px] font-bold", candidate.unlocked ? "bg-hx-indigo-100 text-hx-indigo" : "bg-hx-soft text-hx-ink-soft")}>
               {candidate.unlocked ? initials(candidate.name) : <LockIcon size={15} />}
@@ -245,7 +263,7 @@ export default function CandidateRow({
               type="button"
               onClick={onViewEvidence}
               aria-label={`Evidence for ${name}: ${score != null ? `interview score ${score} out of 100 across ${evidence.interviews} ${evidence.interviews === 1 ? "interview" : "interviews"}${practised ? `, ${practised.toLowerCase()}` : ""}` : "no graded interviews"}${!candidate.unlocked && sourceLabels.length > 0 ? `. Also ${sourceLabels.join(", ")}` : ""}. View evidence report`}
-              className="group flex cursor-pointer flex-col items-start rounded-md border-0 bg-transparent p-0 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hx-indigo pointer-coarse:min-h-11"
+              className="group flex cursor-pointer flex-col items-start rounded-md border-0 bg-transparent p-0 text-left focus-visible:outline-2 focus-visible:outline-offset-2 pointer-coarse:min-h-11"
             >
               {score != null ? (
                 <span title={practised ?? undefined} className="text-[13px] text-hx-ink-soft tabular-nums group-hover:underline">
@@ -265,7 +283,7 @@ export default function CandidateRow({
                       onClick={() => (candidate.hasResumeFile ? void openResume() : router.push(profileHref))}
                       disabled={resumeBusy}
                       aria-label={candidate.hasResumeFile ? `Download ${name}'s resume` : `View ${name}'s resume on their profile`}
-                      className="cursor-pointer border-0 bg-transparent p-0 text-[12px] text-hx-indigo underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hx-indigo disabled:cursor-wait disabled:opacity-60 pointer-coarse:min-h-11"
+                      className="cursor-pointer border-0 bg-transparent p-0 text-[12px] text-hx-indigo underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-wait disabled:opacity-60 pointer-coarse:min-h-11"
                     >
                       Resume
                     </button>
@@ -273,7 +291,7 @@ export default function CandidateRow({
                   {links.github && (
                     <>
                       {evidence.resume && <span aria-hidden="true" className="px-1">·</span>}
-                      <a href={links.github} target="_blank" rel="noopener noreferrer" aria-label={`${name}'s GitHub, opens in a new tab`} className="text-hx-indigo underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hx-indigo pointer-coarse:inline-flex pointer-coarse:min-h-11 pointer-coarse:items-center">
+                      <a href={links.github} target="_blank" rel="noopener noreferrer" aria-label={`${name}'s GitHub, opens in a new tab`} className="text-hx-indigo underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 pointer-coarse:inline-flex pointer-coarse:min-h-11 pointer-coarse:items-center">
                         GitHub
                       </a>
                     </>
@@ -281,7 +299,7 @@ export default function CandidateRow({
                   {links.web && (
                     <>
                       {(evidence.resume || links.github) && <span aria-hidden="true" className="px-1">·</span>}
-                      <a href={links.web} target="_blank" rel="noopener noreferrer" aria-label={`${name}'s portfolio, opens in a new tab`} className="text-hx-indigo underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hx-indigo pointer-coarse:inline-flex pointer-coarse:min-h-11 pointer-coarse:items-center">
+                      <a href={links.web} target="_blank" rel="noopener noreferrer" aria-label={`${name}'s portfolio, opens in a new tab`} className="text-hx-indigo underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 pointer-coarse:inline-flex pointer-coarse:min-h-11 pointer-coarse:items-center">
                         Portfolio
                       </a>
                     </>
@@ -302,7 +320,7 @@ export default function CandidateRow({
                   type="button"
                   aria-label={`Stage for ${name}: ${CANDIDATE_STATUS_LABEL[candidate.candidateStatus]}. Move to another stage`}
                   className={cn(
-                    "inline-flex cursor-pointer items-center gap-1 rounded-full border-0 py-1 pr-2 pl-2.5 text-[12px] font-semibold whitespace-nowrap transition-[filter] duration-150 hover:brightness-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hx-indigo motion-reduce:transition-none pointer-coarse:min-h-11",
+                    "inline-flex cursor-pointer items-center gap-1 rounded-full border-0 py-1 pr-2 pl-2.5 text-[12px] font-semibold whitespace-nowrap transition-[filter] duration-150 hover:brightness-95 focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none pointer-coarse:min-h-11",
                     STAGE_TONE[candidate.candidateStatus],
                   )}
                 >
@@ -347,7 +365,20 @@ export default function CandidateRow({
       </TableCell>
       <TableCell role="cell" className="cand-td cand-td-act w-px whitespace-nowrap px-2 py-3 align-middle">
         <div className="flex items-center justify-end gap-0.5">
-          {primary && (
+          {primary && primary.icon === LockIcon && (
+            <Button
+              type="button"
+              variant="outline"
+              disabled={primary.disabled}
+              onClick={primary.onSelect}
+              aria-label={`${primary.label}: ${name}`}
+              className="h-9 gap-1.5 px-3 text-[13px] font-semibold text-hx-indigo pointer-coarse:h-11"
+            >
+              <LockIcon size={14} aria-hidden="true" />
+              {primary.label}
+            </Button>
+          )}
+          {primary && primary.icon !== LockIcon && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button variant="ghost" size="icon" disabled={primary.disabled} onClick={primary.onSelect} aria-label={`${primary.label}: ${name}`} className="size-8 text-hx-indigo pointer-coarse:size-11">

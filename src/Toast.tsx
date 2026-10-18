@@ -5,16 +5,25 @@ import { haptic } from "./haptics";
 
 /* ─── Types ─── */
 export type ToastType = "success" | "error" | "info";
+export interface ToastAction {
+  label: string;
+  onClick: () => void;
+}
+export interface ToastOptions {
+  /** A single follow-up button, e.g. Undo. Clicking it runs `onClick` and dismisses the toast. */
+  action?: ToastAction;
+}
 interface Toast {
   id: number;
   message: string;
   type: ToastType;
+  action?: ToastAction;
   entering: boolean;
   leaving: boolean;
 }
 
 interface ToastContextValue {
-  toast: (message: string, type?: ToastType) => void;
+  toast: (message: string, type?: ToastType, options?: ToastOptions) => void;
 }
 
 const ToastContext = createContext<ToastContextValue>({ toast: () => {} });
@@ -35,6 +44,12 @@ const STACK_PEEK = 12; // px, per-depth push-back offset
 const STACK_SPREAD_GAP = 8; // px, gap between fanned-out banners
 const STACK_DEPTH_SCALE = 0.06; // per-depth scale shrink
 const STACK_DEPTH_FADE = 0.4; // per-depth opacity dim
+// A toast with an action (Undo) stays long enough to be reached by keyboard or a slow reader.
+const ACTION_TOAST_MS = 9000;
+const ACTION_BUTTON_STYLE: React.CSSProperties = {
+  background: "none", border: "none", color: c.ivory, cursor: "pointer", flexShrink: 0,
+  font: "inherit", fontSize: 13, fontWeight: 600, textDecoration: "underline", padding: "4px 6px", minHeight: 28,
+};
 const STACK_EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
 const STACK_WIDTH = 360;
 const MAX_DEPTH = 2; // three visible deep: 0, 1, 2
@@ -73,13 +88,13 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     setToasts(prev => prev.map(t => (t.id === id ? { ...t, leaving: true } : t)));
   }, []);
 
-  const toast = useCallback((message: string, type: ToastType = "info") => {
+  const toast = useCallback((message: string, type: ToastType = "info", options?: ToastOptions) => {
     const id = ++nextId;
     if (type === "success") haptic.success();
     else if (type === "error") haptic.error();
 
     setToasts(prev => {
-      const withNew: Toast[] = [{ id, message, type, entering: true, leaving: false }, ...prev];
+      const withNew: Toast[] = [{ id, message, type, action: options?.action, entering: true, leaving: false }, ...prev];
       // A fourth (and beyond) banner is pushed straight into its leave
       // animation rather than queued — "the fourth arrival sends the
       // oldest out."
@@ -91,7 +106,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       });
     });
 
-    const timer = setTimeout(() => dismiss(id), 4000);
+    const timer = setTimeout(() => dismiss(id), options?.action ? ACTION_TOAST_MS : 4000);
     timersRef.current.set(id, timer);
 
     // Flush the pre-open (is-enter) state, then release it in the same
@@ -220,6 +235,15 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
               >
                 <div style={{ width: 6, height: 6, borderRadius: "50%", background: color, flexShrink: 0 }} />
                 <span style={{ fontFamily: font.ui, fontSize: 13, color: c.ivory, lineHeight: 1.4, flex: 1 }}>{t.message}</span>
+                {t.action && (
+                  <button
+                    type="button"
+                    onClick={() => { t.action?.onClick(); dismiss(t.id); }}
+                    style={ACTION_BUTTON_STYLE}
+                  >
+                    {t.action.label}
+                  </button>
+                )}
                 <button
                   onClick={() => dismiss(t.id)}
                   aria-label="Dismiss notification"

@@ -9,7 +9,7 @@ export const RECENT_SEARCHES_KEY = "hirestepx-employer-jobs-recent-searches";
 export function experienceLabel(req: RequirementSummary): string | null {
   const { experienceMin, experienceMax } = req;
   if (experienceMin == null && experienceMax == null) return null;
-  if (experienceMin != null && experienceMax != null) return `${experienceMin}–${experienceMax} yrs`;
+  if (experienceMin != null && experienceMax != null) return `${experienceMin} to ${experienceMax} yrs`;
   if (experienceMin != null) return `${experienceMin}+ yrs`;
   return `Up to ${experienceMax} yrs`;
 }
@@ -25,18 +25,18 @@ export function budgetLabel(req: RequirementSummary): string | null {
   const rawRupees = (salaryType === "per-annum" || salaryType == null) && Math.max(budgetMin ?? 0, budgetMax ?? 0) > 1000;
   if (rawRupees) {
     const fmtRaw = (n: number) => `₹${formatNumber(n)}`;
-    if (budgetMin != null && budgetMax != null) return `${fmtRaw(budgetMin)}–${formatNumber(budgetMax)}/year`;
+    if (budgetMin != null && budgetMax != null) return `${fmtRaw(budgetMin)} to ${formatNumber(budgetMax)}/year`;
     if (budgetMin != null) return `${fmtRaw(budgetMin)}+/year`;
     return `Up to ${fmtRaw(budgetMax as number)}/year`;
   }
   if (salaryType === "per-annum" || salaryType == null) {
-    if (budgetMin != null && budgetMax != null) return `₹${budgetMin}–${budgetMax} LPA`;
+    if (budgetMin != null && budgetMax != null) return `₹${budgetMin} to ${budgetMax} LPA`;
     if (budgetMin != null) return `₹${budgetMin}+ LPA`;
     return `Up to ₹${budgetMax} LPA`;
   }
   const suffix = salaryType === "per-month" ? "/month" : " fixed";
   const fmt = (n: number) => `₹${formatNumber(n)}`;
-  if (budgetMin != null && budgetMax != null) return `${fmt(budgetMin)}–${formatNumber(budgetMax)}${suffix}`;
+  if (budgetMin != null && budgetMax != null) return `${fmt(budgetMin)} to ${formatNumber(budgetMax)}${suffix}`;
   if (budgetMin != null) return `${fmt(budgetMin)}+${suffix}`;
   return `Up to ${fmt(budgetMax as number)}${suffix}`;
 }
@@ -81,20 +81,19 @@ export function rangesOverlap(reqMin: number | null, reqMax: number | null, filt
   return lo <= filterMax && hi >= filterMin;
 }
 
-export type SortColumn = "title" | "location" | "experience" | "stage" | "dueDate" | "matches" | "topMatches" | "created";
+export type SortColumn = "title" | "location" | "experience" | "stage" | "dueDate" | "topMatches" | "created";
 // Newest-posted-first — matches the order employer-requirements.ts already
 // returns (created_at.desc), so the initial render isn't silently reordered
 // by a due-date sort that's meaningless until a row actually has a due date.
 export const DEFAULT_SORT: Sort<SortColumn> = { column: "created", direction: "desc" };
 
 export const COLUMN_LABEL: Record<SortColumn, string> = {
-  title: "Opportunity",
+  title: "Job",
   location: "Location",
   experience: "Experience",
   stage: "Stage",
-  dueDate: "Due Date",
-  matches: "AI Screening",
-  topMatches: "Top Matches",
+  dueDate: "Due date",
+  topMatches: "Matches",
   created: "Date posted",
 };
 
@@ -112,10 +111,8 @@ export function compareRows(a: RequirementSummary, b: RequirementSummary, sort: 
       return dir * STAGE_LABEL[a.stage].localeCompare(STAGE_LABEL[b.stage]);
     case "dueDate":
       return dir * (due(a) - due(b));
-    case "matches":
-      return dir * (a.aiScreening.evaluated - b.aiScreening.evaluated);
     case "topMatches":
-      return dir * (a.aiScreening.topMatches - b.aiScreening.topMatches);
+      return dir * (a.aiScreening.topMatches - b.aiScreening.topMatches || a.aiScreening.evaluated - b.aiScreening.evaluated);
     case "created":
       return dir * (new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
   }

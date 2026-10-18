@@ -11,6 +11,7 @@ import { tokens as t, fonts as f, textSize } from "@/auth/_tokens";
 import { Card, CandidateStatusChip, Eyebrow, ScoreChip, SkillTag } from "@/employer/_atoms";
 import { EmptyNote, ErrorRetry, LinkCta, PageSkeleton } from "@/employer/_requirementAtoms";
 import { candidateDisplayName } from "../_components/requirementFormat";
+import { MIN_COMPARE, parseCompareIds } from "../_components/shortlistSelection";
 import { displaySkillName } from "../candidates/[candidateId]/_components/helpers";
 
 const COMPARE_CSS = `
@@ -148,10 +149,8 @@ export default function ComparePage() {
 
   useEmployerBreadcrumb(requirement ? [{ label: requirement.title, path: `/employer/requirements/${params.id}` }, { label: "Compare candidates" }] : null);
 
-  const aId = searchParams.get("a");
-  const bId = searchParams.get("b");
-  const a = requirement?.candidates.find((c) => c.id === aId);
-  const b = requirement?.candidates.find((c) => c.id === bId);
+  const wantedIds = parseCompareIds(searchParams);
+  const chosen = wantedIds.flatMap((id) => requirement?.candidates.find((c) => c.id === id) ?? []);
 
   if (loading) return <PageSkeleton label="Loading candidates to compare" />;
 
@@ -163,25 +162,23 @@ export default function ComparePage() {
     );
   }
 
-  if (!a || !b || a.id === b.id) {
+  if (chosen.length < MIN_COMPARE) {
     return (
       <>
         <style>{COMPARE_CSS}</style>
         <EmptyNote
-          title="Pick two candidates to compare"
+          title="Pick two or three candidates to compare"
           action={<LinkCta variant="outline" href={`/employer/requirements/${requirement.id}`}>Back to shortlist</LinkCta>}
         >
-          {aId && bId && (!a || !b)
-            ? "One of the candidates in this link is no longer on the shortlist. "
-            : "Comparison needs exactly two different candidates. "}
-          Tick two candidates on the shortlist, then choose Compare selected candidates.
+          {chosen.length < wantedIds.length ? "Some candidates in this link are no longer on the shortlist. " : ""}
+          Tick the box next to two or three candidates on the shortlist, then choose Compare in the bar that appears.
         </EmptyNote>
       </>
     );
   }
 
-  const nameA = candidateDisplayName(a);
-  const nameB = candidateDisplayName(b);
+  const names = chosen.map(candidateDisplayName);
+  const namesLabel = names.length === 2 ? `${names[0]} and ${names[1]}` : `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
 
   return (
     <div style={{ minWidth: 0 }}>
@@ -191,27 +188,26 @@ export default function ComparePage() {
         <Eyebrow tone="indigo">Comparing candidates</Eyebrow>
       </div>
       <h1 style={{ fontFamily: f.sans, fontSize: "clamp(22px, 6vw, 26px)", color: t.coal, margin: "6px 0 16px", overflowWrap: "anywhere" }}>{requirement.title}</h1>
-      {(!a.unlocked || !b.unlocked) && (
+      {chosen.some((c) => !c.unlocked) && (
         <p style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.inkFaint, margin: "0 0 16px", maxWidth: 640 }}>
           Names and contact details of locked candidates stay hidden until you unlock them from the shortlist.
         </p>
       )}
-      <Card pad={0} aria-label={`Comparison of ${nameA} and ${nameB}`} style={{ overflow: "hidden", boxShadow: "none" }}>
+      <Card pad={0} aria-label={`Comparison of ${namesLabel}`} style={{ overflow: "hidden", boxShadow: "none" }}>
         <table className="cmp-table">
           <caption className="sr-only">
-            Side-by-side comparison of {nameA} and {nameB} for {requirement.title}
+            Side-by-side comparison of {namesLabel} for {requirement.title}
           </caption>
           <thead>
             <tr>
               <td style={{ background: t.rowTint }}>
                 <span className="sr-only">Attribute</span>
               </td>
-              <th scope="col">
-                <NameCell candidate={a} />
-              </th>
-              <th scope="col">
-                <NameCell candidate={b} />
-              </th>
+              {chosen.map((c) => (
+                <th key={c.id} scope="col">
+                  <NameCell candidate={c} />
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody>
@@ -220,8 +216,9 @@ export default function ComparePage() {
                 <th scope="row" style={{ fontFamily: f.sans, fontSize: textSize.base }}>
                   {row.label}
                 </th>
-                <td>{row.render(a)}</td>
-                <td>{row.render(b)}</td>
+                {chosen.map((c) => (
+                  <td key={c.id}>{row.render(c)}</td>
+                ))}
               </tr>
             ))}
           </tbody>

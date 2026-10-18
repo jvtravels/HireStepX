@@ -10,7 +10,7 @@ import JobHistoryDialog from "./JobHistoryDialog";
 import JobArchiveDialog from "./JobArchiveDialog";
 
 /** Archive/reopen/history behaviour for a job row, shared by the jobs console
- *  and the dashboard's Active Jobs table so both stay identical. Render
+ *  and the dashboard's Active jobs table so both stay identical. Render
  *  `dialogs` once; call `rowActions(job)` per row. */
 export function useJobRowActions() {
   const { toast } = useToast();

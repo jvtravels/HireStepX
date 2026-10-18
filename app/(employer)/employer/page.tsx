@@ -13,7 +13,7 @@ import { tierLadder } from "@/employer/_accountHelpers";
 import { PAY_AS_YOU_GO_SENTENCE, CREDIT_BACK_SENTENCE, unlockFeeSentence } from "@/employer/_employerOffer";
 import { tokens as t, fonts as f } from "@/auth/_tokens";
 import { Card as AtomCard, Eyebrow, EmployerIcon } from "@/employer/_atoms";
-import { PrimaryLink, PageSkeleton, ErrorPanel, InlineAlert } from "@/employer/_consoleParts";
+import { PrimaryLink, ErrorPanel, InlineAlert } from "@/employer/_consoleParts";
 import CompanyProfileForm from "@/employer/CompanyProfileForm";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -21,7 +21,10 @@ import {
   UpcomingInterviewsCard, KeyInsightsCard, RecentActivityCard, NextActionCard, DashboardSkeleton,
 } from "@/employer/DashboardSections";
 import { buildInsights, buildNextAction, buildRecommendedCards, type DashboardRange, type EmployerDashboardData } from "@/employer/dashboardData";
+import { deriveOnboardingSteps, hasProgressedCandidate, type ChecklistStep } from "@/employer/onboardingSteps";
 import { useJobRowActions } from "./jobs/_components/useJobRowActions";
+
+const ONBOARDING_HIDDEN_KEY = "hirestepx-employer-onboarding-hidden";
 
 /* A Google (or other) sign-in on a free-mail address can't create an employer account: the
    server answers work_email_required. Say so up front instead of after they fill the form. */
@@ -137,16 +140,8 @@ function CompanyOnboarding() {
   );
 }
 
-interface ChecklistStep {
-  label: string;
-  body: string;
-  done: boolean;
-  href: string;
-  cta: string;
-}
-
-/** Shown in place of the dashboard until the employer posts a first job. */
-function OnboardingChecklist({ steps }: { steps: ChecklistStep[] }) {
+/** Stands in for the dashboard until the first job exists, then sits above it until each step is done. */
+function OnboardingChecklist({ steps, onDismiss }: { steps: ChecklistStep[]; onDismiss?: () => void }) {
   const doneCount = steps.filter((s) => s.done).length;
   const nextStepIndex = steps.findIndex((s) => !s.done);
 
@@ -155,7 +150,14 @@ function OnboardingChecklist({ steps }: { steps: ChecklistStep[] }) {
       <CardContent>
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, marginBottom: 14 }}>
           <h2 style={{ margin: 0 }}><Eyebrow tone="indigo">Getting started</Eyebrow></h2>
-          <span style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft }}>{doneCount} of {steps.length} done</span>
+          <span style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft }}>
+            {doneCount} of {steps.length} done
+            {onDismiss && (
+              <Button type="button" variant="link" onClick={onDismiss} className="ml-3 h-auto p-0 text-[13px] pointer-coarse:min-h-11">
+                Hide
+              </Button>
+            )}
+          </span>
         </div>
         <ol style={{ display: "flex", flexDirection: "column", gap: 4, listStyle: "none", margin: 0, padding: 0 }}>
           {steps.map((step, i) => (
@@ -200,12 +202,12 @@ function OnboardingChecklist({ steps }: { steps: ChecklistStep[] }) {
 /* Employer landing after approval. Job-level numbers come from the jobs
    list (EmployerDataContext); pipeline counts, trends, interviews and the
    activity feed come from /api/employer-dashboard. If that call fails the
-   sections that only need the jobs list still render, with "–" where a
+   sections that only need the jobs list still render, with "n/a" where a
    pipeline figure would be. The shell already renders the <main> landmark. */
 function EmployerDashboard() {
   const {
     requirements, requirementsLoading, requirementsError, refreshRequirements,
-    companyName, fetchDashboard, limits, suspended,
+    companyName, fetchDashboard, fetchUnlockHistory, limits, suspended,
   } = useEmployerData();
   const [range, setRange] = useState<DashboardRange>(30);
   const [dashboard, setDashboard] = useState<EmployerDashboardData | null>(null);
@@ -249,29 +251,32 @@ function EmployerDashboard() {
     [openRequirements, dashboard, now, canCreate, recommendedCards],
   );
 
-  const onboardingSteps: ChecklistStep[] = [
-    {
-      label: "Post your first job",
-      body: "Tell us the role, location, and notice-period preference, and we'll start matching candidates against it.",
-      done: requirements.length > 0,
-      href: "/employer/requirements/new",
-      cta: "Post a job",
-    },
-    {
-      label: "Review your first AI match",
-      body: "Once candidates are scored against your job, their shortlist shows up on the job's page.",
-      done: false,
-      href: "/employer/jobs",
-      cta: "View your jobs",
-    },
-    {
-      label: "Unlock your first candidate",
-      body: "Unlock a candidate's contact details to reach out and move them into your pipeline.",
-      done: false,
-      href: "/employer/jobs",
-      cta: "Review candidates",
-    },
-  ];
+  const [unlocked, setUnlocked] = useState<boolean | null>(null);
+  const [checklistHidden, setChecklistHidden] = useState(false);
+  useEffect(() => {
+    try {
+      setChecklistHidden(localStorage.getItem(ONBOARDING_HIDDEN_KEY) === "1");
+    } catch { /* storage blocked: show the checklist */ }
+  }, []);
+  const hasJobs = requirements.length > 0;
+  useEffect(() => {
+    if (!hasJobs) return;
+    let cancelled = false;
+    void fetchUnlockHistory().then((history) => {
+      if (!cancelled) setUnlocked(history ? history.some((p) => !p.refundedAt) : null);
+    });
+    return () => { cancelled = true; };
+  }, [hasJobs, fetchUnlockHistory]);
+  const onboardingSteps: ChecklistStep[] = deriveOnboardingSteps({ jobs: requirements, reviewed: hasProgressedCandidate(dashboard), unlocked });
+  const hideChecklist = () => {
+    setChecklistHidden(true);
+    try {
+      localStorage.setItem(ONBOARDING_HIDDEN_KEY, "1");
+    } catch { /* storage blocked: hidden for this visit only */ }
+  };
+  // Once a job exists the checklist is a reminder above the dashboard, only while the unlock
+  // state is known and a step is still open; it can be hidden for good.
+  const showSetupReminder = !suspended && statsReady && hasJobs && unlocked === false && !checklistHidden;
   // The checklist stands in for the dashboard only while there is nothing to
   // show. Once a job exists the real dashboard renders, even if the employer
   // hasn't unlocked a candidate yet.
@@ -308,6 +313,7 @@ function EmployerDashboard() {
           {dashboardState === "failed" && (
             <InlineAlert message="Interview, hiring and activity figures didn't load." onRetry={() => setDashboardNonce((n) => n + 1)} />
           )}
+          {showSetupReminder && <OnboardingChecklist steps={onboardingSteps} onDismiss={hideChecklist} />}
           {nextAction && <NextActionCard action={nextAction} />}
           <DashboardFunnel data={dashboard} recommendedTotal={recommendedTotal} range={range} busy={refreshing} />
           <div aria-busy={refreshing} className="mx-busy grid grid-cols-1 gap-5 min-[1100px]:grid-cols-[minmax(0,1fr)_minmax(300px,380px)]">
@@ -331,7 +337,7 @@ function EmployerDashboard() {
 export default function EmployerHomePage() {
   const { companyStatus, companyStatusLoading, companyStatusError, refreshCompanyStatus } = useEmployerData();
 
-  if (companyStatusLoading) return <PageSkeleton label="Loading your company" />;
+  if (companyStatusLoading) return <DashboardSkeleton withHeader />;
   if (companyStatus === "none" && companyStatusError) {
     return (
       <ErrorPanel

@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
-import { ArrowUpDownIcon, DownloadIcon, LockIcon, RefreshCwIcon, SearchIcon, XIcon } from "lucide-react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { LockIcon, SearchIcon, XIcon } from "lucide-react";
 import { tokens as t, fonts as f, textSize } from "@/auth/_tokens";
 import { useEmployerData, type Requirement } from "@/employer/EmployerDataContext";
 import { useEmployerBreadcrumb } from "@/employer/EmployerShell";
@@ -24,10 +24,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { SearchWithSuggestions } from "@/components/SearchWithSuggestions";
 import { type Sort } from "@/components/SortableHead";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { formatPaise } from "../../../../../server-handlers/_unlock-pricing";
+import { formatPaise, unlockRateNote } from "../../../../../server-handlers/_unlock-pricing";
 import { candidatesToCsv, csvFileName, downloadCsv, exportableCandidates } from "./_components/candidateCsv";
-import CandidatesFilters from "./_components/CandidatesFilters";
 import CandidatesTable from "./_components/CandidatesTable";
 import EvidenceDialog from "./_components/EvidenceDialog";
 import MessagesDialog from "./_components/MessagesDialog";
@@ -38,11 +36,16 @@ import KeyRequirements, { hasKeyRequirements } from "./_components/KeyRequiremen
 import { useJobActions } from "./_components/useJobActions";
 import { FailedState, GeneratingState, ZeroMatchState } from "./_components/StatusStates";
 import UnlockDialog from "./_components/UnlockDialog";
+import SelectionBar from "./_components/SelectionBar";
+import ShortcutsDialog from "./_components/ShortcutsDialog";
+import ViewMenu from "./_components/ViewMenu";
+import { useStageActions } from "./_components/useStageActions";
+import { rowAnnouncement, useShortlistShortcuts } from "./_components/useShortlistShortcuts";
+import { BULK_COPY, compareHref, planBulkMove, pruneSelection, toggleId, type BulkTarget } from "./_components/shortlistSelection";
+import { parseShortlistView, writeShortlistView } from "./_components/shortlistUrlState";
 import {
   CONTACT_FILTER_OPTIONS,
-  DEFAULT_SORT,
   compareCandidates,
-  describeSort,
   filterCandidates,
   type ContactFilter,
   type SortColumn,
@@ -79,12 +82,22 @@ export default function RequirementDetailPage() {
     toolbarObserver.current.observe(el);
   }, []);
 
-  const [search, setSearch] = useState("");
-  const [contactFilter, setContactFilter] = useState<ContactFilter>("all");
-  const [locationFilter, setLocationFilter] = useState<string>("all");
-  const [tabChoice, setTabChoice] = useState<CandidateTab | null>(null);
-  const [insightId, setInsightId] = useState<string | null>(null);
-  const [sort, setSort] = useState<Sort<SortColumn>>(DEFAULT_SORT);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  // The view (tab, search, filters, sort) is read from the URL once and written back as it changes.
+  const [initialView] = useState(() => parseShortlistView(searchParams));
+  const [search, setSearch] = useState(initialView.search);
+  const [contactFilter, setContactFilter] = useState<ContactFilter>(initialView.contact);
+  const [locationFilter, setLocationFilter] = useState<string>(initialView.location);
+  const [tabChoice, setTabChoice] = useState<CandidateTab | null>(initialView.tab);
+  const [insightId, setInsightId] = useState<string | null>(initialView.insight);
+  const [sort, setSort] = useState<Sort<SortColumn>>(initialView.sort);
+  const [selected, setSelected] = useState<Set<string>>(() => new Set());
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [announcement, setAnnouncement] = useState("");
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [pendingBulk, setPendingBulk] = useState<BulkTarget | null>(null);
+  const [bulkBusy, setBulkBusy] = useState(false);
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [unlockTarget, setUnlockTarget] = useState<UnlockTarget | null>(null);
@@ -228,7 +241,6 @@ export default function RequirementDetailPage() {
   const pageSafe = Math.min(page, totalPages);
   const pageRows = filteredSorted.slice((pageSafe - 1) * rowsPerPage, pageSafe * rowsPerPage);
 
-  const sortInfo = describeSort(sort);
   const unlockedCount = useMemo(() => exportableCandidates(candidates).length, [candidates]);
   const exportUnlocked = () => {
     if (!requirement || unlockedCount === 0) return;
@@ -258,16 +270,7 @@ export default function RequirementDetailPage() {
   const [pendingStage, setPendingStage] = useState<{ id: string; status: CandidateStatus } | null>(null);
   const [stageBusy, setStageBusy] = useState(false);
 
-  const applyStage = async (c: Candidate, status: CandidateStatus) => {
-    const res = await updateCandidateStatusResult(c.id, { candidateStatus: status });
-    if (!res.ok) {
-      toast(statusErrorCopy(res.error), "error");
-      return false;
-    }
-    patchCandidates((x) => (x.id === c.id ? { ...x, candidateStatus: status } : x));
-    toast(`${candidateDisplayName(c)} moved to ${CANDIDATE_STATUS_LABEL[status]}`, "success");
-    return true;
-  };
+  const { applyStage, bulkMove } = useStageActions({ candidates, patchCandidates, update: updateCandidateStatusResult, toast });
 
   const handleStageChange = (c: Candidate, status: CandidateStatus) => {
     if (!c.unlocked && needsUnlockFor(status)) setUnlockTarget({ mode: "single", matchId: c.id });
@@ -296,6 +299,68 @@ export default function RequirementDetailPage() {
     return { ok: true };
   };
 
+  useEffect(() => {
+    const next = writeShortlistView(new URLSearchParams(window.location.search), { tab: tabChoice, search, contact: contactFilter, location: locationFilter, sort, insight: insightId });
+    const query = next.toString();
+    if (query === window.location.search.replace(/^\?/, "")) return;
+    window.history.replaceState(window.history.state, "", `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`);
+  }, [tabChoice, search, contactFilter, locationFilter, sort, insightId]);
+
+  // A candidate that left the shortlist (refresh, stage change) can't stay selected.
+  useEffect(() => {
+    setSelected((prev) => pruneSelection(prev, candidates));
+  }, [candidates]);
+
+  const bulkEligible = useMemo<Record<BulkTarget, number>>(
+    () => ({
+      rejected: planBulkMove(candidates, selected, "rejected").changes.length,
+      shortlisted: planBulkMove(candidates, selected, "shortlisted").changes.length,
+    }),
+    [candidates, selected],
+  );
+
+  const runBulk = async (target: BulkTarget) => {
+    setBulkBusy(true);
+    const moved = await bulkMove(selected, target);
+    setBulkBusy(false);
+    setPendingBulk(null);
+    if (moved.length > 0) setSelected((prev) => new Set([...prev].filter((id) => !moved.includes(id))));
+  };
+
+  // Rejecting many at once asks first; moving back to To review is the safe direction.
+  const requestBulk = (target: BulkTarget) => {
+    if (target === "rejected") setPendingBulk(target);
+    else void runBulk(target);
+  };
+
+  const listVisible = requirement?.status === "ready" || requirement?.status === "partial" || requirement?.status === "closed";
+  const moveActive = useCallback((step: 1 | -1) => {
+    if (pageRows.length === 0) return;
+    const at = pageRows.findIndex((c) => c.id === activeId);
+    const index = at === -1 ? (step === 1 ? 0 : pageRows.length - 1) : Math.min(pageRows.length - 1, Math.max(0, at + step));
+    const row = pageRows[index];
+    setActiveId(row.id);
+    setAnnouncement(rowAnnouncement(candidateDisplayName(row), index + 1, pageRows.length, selected.has(row.id)));
+  }, [pageRows, activeId, selected]);
+  const toggleActive = useCallback(() => {
+    const row = pageRows.find((c) => c.id === activeId);
+    if (!row) return;
+    const nowSelected = !selected.has(row.id);
+    setSelected((prev) => toggleId(prev, row.id));
+    setAnnouncement(`${candidateDisplayName(row)} ${nowSelected ? "selected" : "not selected"}`);
+  }, [pageRows, activeId, selected]);
+  const openActive = useCallback(() => {
+    if (activeId) router.push(`/employer/requirements/${params.id}/candidates/${activeId}`);
+  }, [activeId, router, params.id]);
+  const nextRow = useCallback(() => moveActive(1), [moveActive]);
+  const prevRow = useCallback(() => moveActive(-1), [moveActive]);
+  const showShortcuts = useCallback(() => setShortcutsOpen(true), []);
+  const clearSelection = useCallback(() => setSelected(new Set()), []);
+  useShortlistShortcuts(
+    { onNext: nextRow, onPrev: prevRow, onToggleSelect: toggleActive, onOpen: openActive, onHelp: showShortcuts, onEscape: clearSelection },
+    listVisible,
+  );
+
   /* An insight spans every stage, so a tab that hides its candidates would show an empty table. */
   const selectInsight = (id: string | null) => {
     setInsightId(id);
@@ -309,7 +374,7 @@ export default function RequirementDetailPage() {
     setInsightId(null);
   };
 
-  if (loading && !requirement) return <PageSkeleton label="Loading job" />;
+  if (loading && !requirement) return <PageSkeleton label="Loading job" variant="job" />;
 
   if (!requirement) {
     return (
@@ -345,6 +410,7 @@ export default function RequirementDetailPage() {
   // so the button can never disagree with what the order charges.
   const nextLockedBatch = requirement.nextUnlockBatch ?? null;
 
+  const batchNote = nextLockedBatch ? unlockRateNote(nextLockedBatch.count, nextLockedBatch.amountPaise) : null;
   const requiredSkills = Array.from(new Set([...requirement.skills, ...requirement.customSkillSets]));
   const tabs = visibleTabs(counts, tab).map((key) => ({ key, label: TAB_LABEL[key], count: counts[key] }));
 
@@ -403,109 +469,56 @@ export default function RequirementDetailPage() {
                       inputClassName="bg-white"
                     />
                   </div>
-                  <CandidatesFilters
-                    contactFilter={contactFilter}
-                    onContactFilterChange={setContactFilter}
-                    locationFilter={locationFilter}
-                    onLocationFilterChange={setLocationFilter}
+                  <ViewMenu
+                    contact={contactFilter}
+                    onContactChange={setContactFilter}
+                    location={locationFilter}
+                    onLocationChange={setLocationFilter}
                     locationOptions={locationOptions}
+                    sort={sort}
+                    onSortChange={setSort}
                     activeCount={activeFilterCount}
+                    unlockedCount={unlockedCount}
+                    onExport={exportUnlocked}
+                    refreshing={refreshing}
+                    onRefresh={handleRefresh}
+                    onShowShortcuts={showShortcuts}
                   />
-                  <button
-                    type="button"
-                    onClick={() => setSort((s) => ({ ...s, direction: s.direction === "asc" ? "desc" : "asc" }))}
-                    aria-label={`Sorted by ${sortInfo.name}, ${sortInfo.order}. Reverse the order`}
-                    className="inline-flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-full border border-hx-line bg-white px-3 text-[13px] text-hx-coal transition-colors duration-150 hover:bg-hx-row focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hx-indigo motion-reduce:transition-none pointer-coarse:min-h-11"
-                  >
-                    <ArrowUpDownIcon size={13} aria-hidden="true" className="text-hx-ink-soft" />
-                    <span className="text-hx-ink-soft min-[1280px]:max-[1439px]:hidden">Sorted by</span>
-                    <span className="font-medium">{sortInfo.name}</span>
-                  </button>
-                  {hasActiveFilters && (
-                    <Button type="button" variant="link" onClick={clearFilters} className="h-auto shrink-0 text-[14px] font-semibold pointer-coarse:min-h-11">
-                      Clear<span className="min-[1280px]:max-[1439px]:hidden"> filters</span>
-                    </Button>
-                  )}
                 </>
               )}
-              <div className="flex items-center gap-2.5">
-                {hasList && !readOnly && nextLockedBatch && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <span>
-                        <PrimaryCta
-                          size="sm"
-                          icon={<LockIcon size={13} aria-hidden="true" />}
-                          disabled={suspended}
-                          ariaLabel={`Unlock ${nextLockedBatch.count} candidate${nextLockedBatch.count === 1 ? "" : "s"} for ${formatPaise(nextLockedBatch.amountPaise)}`}
-                          onClick={() =>
-                            setUnlockTarget({
-                              mode: "batch",
-                              requirementId: requirement.id,
-                              count: nextLockedBatch.count,
-                              amountPaise: nextLockedBatch.amountPaise,
-                              start: nextLockedBatch.start,
-                              end: nextLockedBatch.end,
-                              remaining: Math.max(0, nextLockedBatch.lockedRemaining - nextLockedBatch.count),
-                            })
-                          }
-                        >
-                          Unlock {nextLockedBatch.count}
-                          <span className="min-[1280px]:max-[1439px]:hidden"> candidate{nextLockedBatch.count === 1 ? "" : "s"}</span> · {formatPaise(nextLockedBatch.amountPaise)}
-                        </PrimaryCta>
-                      </span>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom" className="max-w-64">
-                      {suspended
-                        ? "Unlocking is turned off while your account is suspended."
-                        : `Unlocks the ${nextLockedBatch.count} locked candidate${nextLockedBatch.count === 1 ? "" : "s"} ranked ${nextLockedBatch.start}–${nextLockedBatch.end} at a batch rate.${
-                            nextLockedBatch.lockedRemaining > nextLockedBatch.count
-                              ? ` ${nextLockedBatch.lockedRemaining - nextLockedBatch.count} more stay locked further down; unlock those from their rows.`
-                              : ""
-                          } Names and contact details stay hidden until you pay.`}
-                    </TooltipContent>
-                  </Tooltip>
-                )}
-                {hasList && unlockedCount > 0 && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        onClick={exportUnlocked}
-                        aria-label={`Export ${unlockedCount} unlocked candidate${unlockedCount === 1 ? "" : "s"} as CSV`}
-                        className="shrink-0 rounded-lg pointer-coarse:size-11"
-                      >
-                        <DownloadIcon size={13} aria-hidden="true" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom" className="max-w-64">
-                      Export {unlockedCount} unlocked candidate{unlockedCount === 1 ? "" : "s"} as CSV. Locked, refunded and withdrawn candidates stay out of the file.
-                    </TooltipContent>
-                  </Tooltip>
-                )}
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      onClick={handleRefresh}
-                      disabled={refreshing}
-                      aria-label={refreshing ? "Refreshing candidates" : "Refresh candidates"}
-                      className="shrink-0 rounded-lg pointer-coarse:size-11"
-                    >
-                      <RefreshCwIcon size={13} aria-hidden="true" className={refreshing ? "animate-spin motion-reduce:animate-none" : undefined} />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom" className="max-w-64">Refresh candidates</TooltipContent>
-                </Tooltip>
+            </div>
+            </div>
+
+            {hasList && !readOnly && nextLockedBatch && (
+              <div className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-2">
+                <PrimaryCta
+                  size="sm"
+                  icon={<LockIcon size={13} aria-hidden="true" />}
+                  disabled={suspended}
+                  ariaLabel={`Unlock ${nextLockedBatch.count} candidate${nextLockedBatch.count === 1 ? "" : "s"} for ${formatPaise(nextLockedBatch.amountPaise)}`}
+                  onClick={() =>
+                    setUnlockTarget({
+                      mode: "batch",
+                      requirementId: requirement.id,
+                      count: nextLockedBatch.count,
+                      amountPaise: nextLockedBatch.amountPaise,
+                      start: nextLockedBatch.start,
+                      end: nextLockedBatch.end,
+                      remaining: Math.max(0, nextLockedBatch.lockedRemaining - nextLockedBatch.count),
+                    })
+                  }
+                >
+                  Unlock {nextLockedBatch.count} candidate{nextLockedBatch.count === 1 ? "" : "s"} · {formatPaise(nextLockedBatch.amountPaise)}
+                </PrimaryCta>
+                <p className="m-0 min-w-0 max-w-[60ch] flex-1 text-[13px] leading-snug text-hx-ink-soft">
+                  {suspended
+                    ? "Unlocking is turned off while your account is suspended."
+                    : `Ranked ${nextLockedBatch.start} to ${nextLockedBatch.end}, at ${batchNote?.perCandidate} each.${batchNote?.savings ? ` ${batchNote.savings}` : ""}${nextLockedBatch.lockedRemaining > nextLockedBatch.count ? ` ${nextLockedBatch.lockedRemaining - nextLockedBatch.count} more stay locked further down; unlock those from their rows.` : ""} Names and contact details stay hidden until you pay.`}
+                </p>
               </div>
-            </div>
-            </div>
-  
-            {hasList && appliedChips.length > 0 && (
+            )}
+
+            {hasList && hasActiveFilters && (
               <ul aria-label="Applied filters" className="m-0 mb-4 flex list-none flex-wrap items-center gap-2 p-0">
                 {appliedChips.map((chip) => (
                   <li key={chip.key}>
@@ -513,16 +526,22 @@ export default function RequirementDetailPage() {
                       type="button"
                       onClick={chip.remove}
                       aria-label={`Remove filter: ${chip.label}`}
-                      className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-hx-line bg-white py-1 pr-2 pl-3 text-[13px] text-hx-coal transition-colors duration-150 hover:bg-hx-row focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hx-indigo motion-reduce:transition-none pointer-coarse:min-h-11"
+                      className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-hx-line bg-white py-1 pr-2 pl-3 text-[13px] text-hx-coal transition-colors duration-150 hover:bg-hx-row focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none pointer-coarse:min-h-11"
                     >
                       {chip.label}
                       <XIcon size={13} aria-hidden="true" className="text-hx-ink-soft" />
                     </button>
                   </li>
                 ))}
+                <li>
+                  <Button type="button" variant="link" onClick={clearFilters} className="h-auto text-[14px] font-semibold pointer-coarse:min-h-11">
+                    Clear all
+                  </Button>
+                </li>
               </ul>
             )}
   
+            <div aria-live="polite" role="status" className="sr-only">{announcement}</div>
             <div aria-live="polite" className={refreshNote ? "mb-3" : undefined}>
               {refreshNote && <InlineNotice tone={refreshNote.tone} live={false}>{refreshNote.text}</InlineNotice>}
             </div>
@@ -603,6 +622,18 @@ export default function RequirementDetailPage() {
                     page={pageSafe}
                     totalPages={totalPages}
                     onPageChange={setPage}
+                    selectedIds={selected}
+                    onSelectedChange={(c, checked) => setSelected((prev) => (prev.has(c.id) === checked ? prev : toggleId(prev, c.id)))}
+                    activeId={activeId}
+                  />
+                  <SelectionBar
+                    count={selected.size}
+                    canChangeStage={!readOnly && !suspended}
+                    eligible={bulkEligible}
+                    busy={bulkBusy}
+                    onCompare={() => router.push(compareHref(requirement.id, [...selected]))}
+                    onBulk={requestBulk}
+                    onClear={clearSelection}
                   />
                   </>
                 )}
@@ -638,6 +669,25 @@ export default function RequirementDetailPage() {
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>
+                <AlertDialog open={pendingBulk != null} onOpenChange={(o) => { if (!o && !bulkBusy) setPendingBulk(null); }}>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>
+                        {pendingBulk ? `${BULK_COPY[pendingBulk].action} ${bulkEligible[pendingBulk]} candidate${bulkEligible[pendingBulk] === 1 ? "" : "s"}?` : ""}
+                      </AlertDialogTitle>
+                      <AlertDialogDescription>
+                        You can undo this right after, or reopen a rejected candidate later from the Stage menu.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel disabled={bulkBusy}>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={(e) => { e.preventDefault(); if (pendingBulk) void runBulk(pendingBulk); }} disabled={bulkBusy}>
+                        {bulkBusy ? "Saving…" : "Confirm"}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+                <ShortcutsDialog open={shortcutsOpen} onOpenChange={setShortcutsOpen} />
                 <MessagesDialog
                   matchId={messagesCandidate?.id ?? null}
                   displayName={messagesCandidate ? candidateDisplayName(messagesCandidate) : "Candidate"}
