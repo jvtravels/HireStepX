@@ -1,17 +1,18 @@
 /* Vercel Cron — Erase accounts soft-deleted 7+ days ago.
- * Runs daily. Invoked by Vercel Cron (authenticated via CRON_SECRET header).
+ * Runs daily. Invoked by Vercel Cron (Authorization: Bearer CRON_SECRET, fails closed).
  * The erasure itself is the shared eraseUserData routine (same one delete-account
  * uses for immediate deletes); accounts whose erasure fails keep their deleted_at
  * and are retried by the next run.
  */
 
+import { verifyCronAuth } from "./_cron-auth";
+import { recordCronResult } from "./_cron-heartbeat";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { supabaseUrl, slog } from "./_shared";
 import { eraseUserData, posthogConfigFromEnv } from "./_erase-user";
 import { sendErasureEmail } from "./_erase-user-email";
 
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
-const CRON_SECRET = process.env.CRON_SECRET || "";
 const RESEND_API_KEY = (process.env.RESEND_API_KEY || "").trim();
 const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <noreply@hirestepx.com>";
 const APP_URL = (process.env.APP_URL || "https://hirestepx.vercel.app").replace(/\/$/, "");
@@ -20,11 +21,7 @@ const BATCH_SIZE = 25;
 const TIME_BUDGET_MS = 45_000;
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Only allow from Vercel Cron (x-vercel-cron or Authorization: Bearer CRON_SECRET)
-  const authHeader = req.headers.authorization || "";
-  const isVercelCron = req.headers["x-vercel-cron"] === "1";
-  const hasValidSecret = CRON_SECRET && authHeader === `Bearer ${CRON_SECRET}`;
-  if (!isVercelCron && !hasValidSecret) {
+  if (!verifyCronAuth(req)) {
     return res.status(401).json({ error: "Unauthorized" });
   }
 
@@ -53,7 +50,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(500).json({ error: "Failed to query profiles" });
     }
     const rows = (await findRes.json()) as { id: string }[];
-    if (rows.length === 0) return res.status(200).json({ deleted: 0 });
+    if (rows.length === 0) {
+      await recordCronResult("cleanup-deleted-accounts", { errors: 0 });
+      return res.status(200).json({ deleted: 0 });
+    }
 
     let deleted = 0;
     let retained = 0;
@@ -90,6 +90,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     slog.info("cleanup-deleted-accounts: run complete", { erased: deleted, retainedFinancial: retained, failed });
+    // A stuck erasure is a DPDP deadline risk, so any failure keeps the heartbeat stale.
+    await recordCronResult("cleanup-deleted-accounts", { errors: failed });
     return res.status(200).json({ deleted, retained, failed });
   } catch (err) {
     console.error("[cleanup-deleted-accounts] Error:", err instanceof Error ? err.message : "unknown");

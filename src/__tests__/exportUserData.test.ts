@@ -183,7 +183,7 @@ describe("employer-discovery export", () => {
     const env = buildExportEnvelope({
       userId: "u", userEmail: "e", exportedAt: "t", profile: [], sessions: [], calendar_events: [], payments: [], feedback: [], interview_turns: [], llm_usage: [],
       employer_discovery: { visibility: "off", visibility_updated_at: "t", consent_log: [{ action: "withdrawn" }], blocks: [], reports_filed: [], matches: [], status_events: [], conversations: [], messages: [] },
-      employer_account: { employer: { id: "u" }, requirements: [], unlock_payments: [{ id: "p" }], unlock_orders: [], messages_sent: [] },
+      employer_account: { employer: { id: "u" }, requirements: [], unlock_payments: [{ id: "p" }], unlock_orders: [], messages_sent: [], requirement_activity: [], credit_ledger: [], credit_notes: [] },
     });
     expect(env.employer_discovery.visibility).toBe("off");
     expect(env.employer_account?.unlock_payments).toHaveLength(1);
@@ -192,7 +192,7 @@ describe("employer-discovery export", () => {
 
 /* ── Completeness: new tables, pagination, visible failures ── */
 import { fetchPaged, buildCandidateExportSpecs, EXPORT_MAX_ROWS_PER_TABLE } from "../../server-handlers/_export-user-data-helpers";
-import { collectUserExport } from "../../server-handlers/_export-user-data-collect";
+import { collectUserExport, EMPLOYER_AUDIT_MAX_ROWS } from "../../server-handlers/_export-user-data-collect";
 
 const BASE = "https://proj.supabase.co";
 const UID = "user-1";
@@ -375,5 +375,64 @@ describe("collectUserExport", () => {
     expect(plain.envelope.employer_account).toBeNull();
     const emp = await collect(exportFake({ profiles: [{ id: UID }], employers: [{ id: UID, company_name: "Acme" }], employer_requirements: [{ id: "q1" }] }).fetchImpl);
     expect(emp.envelope.employer_account).toMatchObject({ employer: { company_name: "Acme" }, requirements: [{ id: "q1" }] });
+  });
+
+  it("exports the employer's own requirement activity, credit ledger and credit notes", async () => {
+    const { fetchImpl, calls } = exportFake({
+      profiles: [{ id: UID }],
+      employers: [{ id: UID }],
+      employer_unlock_orders: [{ id: "o1", razorpay_order_id: "order_A" }],
+      employer_requirement_activity: [{ id: "a1", action: "created" }],
+      employer_credit_ledger: [{ id: "l1" }],
+      employer_credit_notes: [{ id: "n1", order_id: "order_A" }],
+    });
+    const { envelope, status } = await collect(fetchImpl);
+    expect(status).toBe("complete");
+    expect(envelope.employer_account).toMatchObject({
+      requirement_activity: [{ id: "a1" }],
+      credit_ledger: [{ id: "l1" }],
+      credit_notes: [{ id: "n1" }],
+    });
+    const notesCall = calls.find((c) => c.url.includes("/employer_credit_notes?"));
+    expect(decodeURIComponent(notesCall?.url ?? "")).toContain('order_id=in.("order_A")');
+  });
+
+  it("treats a not-yet-migrated employer_credit_ledger as empty, not an error", async () => {
+    const { envelope, status } = await collect(exportFake({ profiles: [{ id: UID }], employers: [{ id: UID }] }, { employer_credit_ledger: 404 }).fetchImpl);
+    expect(status).toBe("complete");
+    expect(envelope.employer_account?.credit_ledger).toEqual([]);
+  });
+
+  it("caps audit-style employer tables below the global per-table ceiling and flags truncation", async () => {
+    const many = Array.from({ length: EMPLOYER_AUDIT_MAX_ROWS + 5 }, (_, i) => ({ id: i }));
+    const { envelope, status } = await collect(exportFake({ profiles: [{ id: UID }], employers: [{ id: UID }], employer_requirement_activity: many }).fetchImpl);
+    expect(envelope.employer_account?.requirement_activity).toHaveLength(EMPLOYER_AUDIT_MAX_ROWS);
+    expect(envelope._meta.truncated).toContain("employer_requirement_activity");
+    expect(status).toBe("partial");
+  });
+
+  it("selects the employer notes on matches and gates them behind the unlock", async () => {
+    const { fetchImpl, calls } = exportFake({ profiles: [{ id: UID }] });
+    await collect(fetchImpl);
+    const matchCall = calls.find((c) => c.url.includes("/requirement_matches?"));
+    expect(matchCall?.url).toContain("candidate_status_note");
+    const { shaped } = shapeMatchesForExport([
+      { id: "m1", unlocked: false, candidate_status_note: "Call Acme HR", employer_requirements: { title: "T", employers: { company_name: "Acme" } } },
+      { id: "m2", unlocked: true, candidate_status_note: "Please join Globex on Friday", interview_scheduled_at: "2026-10-20", employer_requirements: { title: "T", employers: { company_name: "Globex" } } },
+    ]);
+    const [locked, open] = shaped as Array<Record<string, unknown>>;
+    expect(locked.employer_note).toBeNull();
+    expect(open.employer_note).toBe("Please join Globex on Friday");
+    expect(open.interview_scheduled_at).toBe("2026-10-20");
+  });
+
+  it("collects candidate_requests and match_status_events for the user", async () => {
+    const { envelope } = await collect(exportFake({
+      profiles: [{ id: UID }],
+      candidate_requests: [{ id: "r1", kind: "access" }],
+      match_status_events: [{ id: "e1", match_id: "m1", to_status: "hired", actor: "candidate", note: "mine" }],
+    }).fetchImpl);
+    expect(envelope.candidate_requests).toEqual([{ id: "r1", kind: "access" }]);
+    expect(envelope.employer_discovery.status_events).toHaveLength(1);
   });
 });

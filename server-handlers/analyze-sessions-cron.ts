@@ -27,6 +27,7 @@
 // kept for documentation: Node.js, maxDuration 240s.
 export const config = { runtime: "nodejs" };
 
+import { verifyCronAuth } from "./_cron-auth";
 import { pickAnalyzer, registeredFocuses } from "./analyzers/_dispatch";
 import type { SessionRowForAnalysis } from "./analyzers/_types";
 import { llmRescore, isRescoreEnabled } from "./analyzers/_llm-rescore";
@@ -41,7 +42,6 @@ import { freshnessSnapshot } from "./_data-freshness";
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
-const CRON_SECRET = process.env.CRON_SECRET || "";
 const MAX_SESSIONS_PER_RUN = 200;
 const LOOKBACK_HOURS = 25;
 
@@ -181,17 +181,12 @@ async function writeInsights(rows: InsightRow[]): Promise<{ ok: number; failed: 
 }
 
 export default async function handler(req: Request): Promise<Response> {
-  if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
-    return jsonResponse({ error: "Server misconfigured" }, 503);
+  if (!verifyCronAuth(req)) {
+    return jsonResponse({ error: "Unauthorized" }, 401);
   }
 
-  // Vercel sets `Authorization: Bearer <CRON_SECRET>` for /api/cron/*.
-  // In dev, allow unauthenticated calls when no secret is configured.
-  if (CRON_SECRET) {
-    const auth = req.headers.get("authorization") || "";
-    if (auth !== `Bearer ${CRON_SECRET}`) {
-      return jsonResponse({ error: "Unauthorized" }, 401);
-    }
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
+    return jsonResponse({ error: "Server misconfigured" }, 503);
   }
 
   const t0 = Date.now();

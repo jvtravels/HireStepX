@@ -6,6 +6,7 @@
 
 export const config = { runtime: "nodejs" };
 
+import { verifyCronAuth } from "./_cron-auth";
 import { slog, supabaseUrl, supabaseServiceHeaders } from "./_shared";
 import { sweepUnreachableCredits } from "./_employer-credit-sweep";
 import { recordCronResult } from "./_cron-heartbeat";
@@ -17,8 +18,7 @@ function jsonResponse(body: unknown, status = 200): Response {
 }
 
 export default async function handler(req: Request): Promise<Response> {
-  const cronSecret = (process.env.CRON_SECRET || "").trim();
-  if (!cronSecret || (req.headers.get("authorization") || "") !== `Bearer ${cronSecret}`) {
+  if (!verifyCronAuth(req)) {
     return jsonResponse({ error: "Unauthorized" }, 401);
   }
   const base = supabaseUrl();

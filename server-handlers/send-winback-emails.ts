@@ -9,6 +9,7 @@
  * built (their resume, sessions, score history), and offers a single
  * free session to come back with zero commitment. */
 
+import { verifyCronAuth } from "./_cron-auth";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { escapeHtml } from "./_shared";
 import { emailShell, title, para, b, button, dataCard, type EmailFooterOptions } from "./_email-theme";
@@ -18,7 +19,6 @@ const SUPABASE_URL = process.env.SUPABASE_URL || "";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const RESEND_API_KEY = (process.env.RESEND_API_KEY || "").trim();
 const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <noreply@hirestepx.com>";
-const CRON_SECRET = (process.env.CRON_SECRET || "").trim();
 const APP_URL = (process.env.APP_URL || "https://hirestepx.com").replace(/\/$/, "");
 const UPSTASH_URL = (process.env.UPSTASH_REDIS_REST_URL || "").trim();
 const UPSTASH_TOKEN = (process.env.UPSTASH_REDIS_REST_TOKEN || "").trim();
@@ -109,7 +109,7 @@ function buildWinbackEmail(
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (!CRON_SECRET || req.headers.authorization !== `Bearer ${CRON_SECRET}`) {
+  if (!verifyCronAuth(req)) {
     return res.status(401).json({ error: "Unauthorized" });
   }
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY || !RESEND_API_KEY) {

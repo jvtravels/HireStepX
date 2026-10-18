@@ -80,6 +80,12 @@ export interface EmployerAccountExport {
   unlock_payments: unknown[];
   unlock_orders: unknown[];
   messages_sent: unknown[];
+  /** Created / updated / archived / stage-change trail on the employer's own requirements. */
+  requirement_activity: unknown[];
+  /** Credit movements on the employer's account (empty until that table is migrated). */
+  credit_ledger: unknown[];
+  /** Per-refund credit notes for the employer's unlock orders. */
+  credit_notes: unknown[];
 }
 
 interface RawMatch {
@@ -91,6 +97,9 @@ interface RawMatch {
   candidate_status?: string | null;
   candidate_response?: string | null;
   candidate_responded_at?: string | null;
+  candidate_status_note?: string | null;
+  candidate_status_updated_at?: string | null;
+  interview_scheduled_at?: string | null;
   employer_requirements?: { title?: string | null; employers?: { company_name?: string | null } | null } | null;
 }
 
@@ -114,6 +123,11 @@ export function shapeMatchesForExport(rows: unknown): { shaped: unknown[]; unloc
       responded_at: raw.candidate_responded_at ?? null,
       unlocked,
       unlocked_at: unlocked ? raw.unlocked_at ?? null : null,
+      status_updated_at: raw.candidate_status_updated_at ?? null,
+      interview_scheduled_at: raw.interview_scheduled_at ?? null,
+      // The employer's free-text note (interview-invite reason / outcome note) can name them, so it
+      // follows the same reveal rule as the status-event notes.
+      employer_note: unlocked ? raw.candidate_status_note ?? null : null,
       employer_company: company,
       role_title: unlocked ? raw.employer_requirements?.title ?? null : null,
     });
@@ -257,6 +271,8 @@ export interface ExportSpec {
   order: string;
   /** A 404 (table from a not-yet-applied migration) means "no rows", not an error. */
   optional?: boolean;
+  /** Tighter per-table row cap than EXPORT_MAX_ROWS_PER_TABLE, for unbounded-growth audit tables. */
+  maxRows?: number;
 }
 
 export interface PagedResult {
@@ -273,7 +289,7 @@ export async function fetchPaged(
   opts: { pageSize?: number; maxRows?: number } = {},
 ): Promise<PagedResult> {
   const pageSize = opts.pageSize ?? EXPORT_PAGE_SIZE;
-  const maxRows = opts.maxRows ?? EXPORT_MAX_ROWS_PER_TABLE;
+  const maxRows = spec.maxRows ?? opts.maxRows ?? EXPORT_MAX_ROWS_PER_TABLE;
   const rows: unknown[] = [];
   const sep = spec.path.includes("?") ? "&" : "?";
   try {

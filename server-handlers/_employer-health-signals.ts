@@ -3,7 +3,7 @@
  * evaluators + one tolerant fetcher; all tolerate unapplied migrations. */
 
 import { getCronHeartbeatAlerts } from "./_cron-heartbeat";
-import { readAllPages, type RestGet } from "./_paged-fetch";
+import { readAllPagesOrMissing, type RestGet } from "./_paged-fetch";
 
 declare const process: { env: Record<string, string | undefined> };
 
@@ -76,15 +76,17 @@ export function evaluateUnlockOrders(orders: readonly OpenOrderRow[], now: numbe
 }
 
 /** Pages through every open order: a refund owed or a stuck paid order past the
-    first 1000 rows must still alert. Returns null on any real read failure. */
-async function fetchOrders(base: string, headers: Record<string, string>, select: string): Promise<{ rows: OpenOrderRow[]; truncated: boolean } | null> {
+    first 1000 rows must still alert. Returns "missing" only when a selected column
+    or the table is not migrated yet, and null on any real read failure (the caller
+    turns that into a critical alert instead of silently dropping the refund signal). */
+async function fetchOrders(base: string, headers: Record<string, string>, select: string): Promise<{ rows: OpenOrderRow[]; truncated: boolean } | "missing" | null> {
   const get: RestGet = (path) => fetch(`${base}/rest/v1/${path}`, { headers, signal: AbortSignal.timeout(8000) });
   try {
-    return await readAllPages<OpenOrderRow>(
+    return (await readAllPagesOrMissing<OpenOrderRow>(
       get,
-      `employer_unlock_orders?status=in.(created,paid,failed,partial)&select=${select}&order=created_at.desc,razorpay_order_id.desc`,
-      { maxRows: 10_000 },
-    );
+      `employer_unlock_orders?status=in.(created,paid,failed,partial)&select=razorpay_order_id,${select}`,
+      { maxRows: 10_000, keyset: "razorpay_order_id" },
+    )) ?? "missing";
   } catch {
     return null;
   }
@@ -98,8 +100,11 @@ export async function getEmployerHealthAlerts(now = Date.now()): Promise<Employe
     const headers = { apikey: key, Authorization: `Bearer ${key}` };
     const base3 = "status,created_at,razorpay_payment_id";
     // refund_due_paise arrives with migration 0042; fall back without it.
-    const orders = (await fetchOrders(base, headers, `${base3},refund_due_paise`)) ?? (await fetchOrders(base, headers, base3));
-    if (orders) {
+    // Fall back ONLY when the column is genuinely missing; a timeout or 5xx
+    // must not drop refund_due_paise and hide a refund alert.
+    let orders = await fetchOrders(base, headers, `${base3},refund_due_paise`);
+    if (orders === "missing") orders = await fetchOrders(base, headers, base3);
+    if (orders && orders !== "missing") {
       alerts.push(...evaluateUnlockOrders(orders.rows, now));
       if (orders.truncated) {
         alerts.push({

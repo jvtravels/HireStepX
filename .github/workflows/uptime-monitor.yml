@@ -1,7 +1,7 @@
 name: Uptime monitor
 
 # Minute-level outside-in probe. The only other uptime signal is the daily
-# Vercel cron (06:00 UTC), so without this an outage can go unnoticed for up to
+# Vercel cron (10:30 UTC), so without this an outage can go unnoticed for up to
 # 24h. GitHub schedules are best-effort (expect 5-15 min jitter), which is still
 # far better than daily. Opens ONE issue per outage and closes it on recovery;
 # it never comments repeatedly, so a long outage doesn't spam notifications.

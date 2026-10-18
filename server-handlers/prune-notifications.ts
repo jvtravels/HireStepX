@@ -8,21 +8,18 @@
  * NOTIFICATIONS_RETENTION_DAYS (default 90) on a daily cron. Idempotent and
  * safe to re-run.
  *
- * Authenticated via Vercel Cron (x-vercel-cron) or Authorization: Bearer CRON_SECRET.
+ * Authenticated via Authorization: Bearer CRON_SECRET only (fails closed).
  */
 
+import { verifyCronAuth } from "./_cron-auth";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { supabaseUrl } from "./_shared";
 
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
-const CRON_SECRET = process.env.CRON_SECRET || "";
 const RETENTION_DAYS = Math.max(14, parseInt(process.env.NOTIFICATIONS_RETENTION_DAYS || "90", 10) || 90);
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  const authHeader = req.headers.authorization || "";
-  const isVercelCron = req.headers["x-vercel-cron"] === "1";
-  const hasValidSecret = CRON_SECRET && authHeader === `Bearer ${CRON_SECRET}`;
-  if (!isVercelCron && !hasValidSecret) {
+  if (!verifyCronAuth(req)) {
     return res.status(401).json({ error: "Unauthorized" });
   }
 

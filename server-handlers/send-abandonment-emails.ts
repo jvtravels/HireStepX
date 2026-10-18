@@ -5,6 +5,7 @@
  * verify-payment.ts on successful payment.
  */
 
+import { verifyCronAuth } from "./_cron-auth";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { escapeHtml } from "./_shared";
 import { emailShell, title, para, b, button, dataCard, mono, type EmailFooterOptions } from "./_email-theme";
@@ -15,7 +16,6 @@ const UPSTASH_TOKEN = (process.env.UPSTASH_REDIS_REST_TOKEN || "").trim();
 const RESEND_API_KEY = (process.env.RESEND_API_KEY || "").trim();
 const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <noreply@hirestepx.com>";
 const APP_URL = (process.env.APP_URL || "https://hirestepx.vercel.app").replace(/\/$/, "");
-const CRON_SECRET = (process.env.CRON_SECRET || "").trim();
 
 interface PaymentIntent {
   userId: string;
@@ -95,11 +95,7 @@ async function sendEmail(intent: PaymentIntent): Promise<boolean> {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Auth: Vercel Cron or CRON_SECRET header
-  const authHeader = req.headers.authorization || "";
-  const isVercelCron = req.headers["x-vercel-cron"] === "1";
-  const hasSecret = CRON_SECRET && authHeader === `Bearer ${CRON_SECRET}`;
-  if (!isVercelCron && !hasSecret) {
+  if (!verifyCronAuth(req)) {
     return res.status(401).json({ error: "Unauthorized" });
   }
 

@@ -10,21 +10,19 @@
  * Inert until configured: returns early if the Google client env is unset.
  */
 
+import { verifyCronAuth } from "./_cron-auth";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { googleConfigured } from "./_google-calendar";
 import { runIncrementalSync, ensureWatchChannel, type SyncRow } from "./_google-sync-runner";
 
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
-const CRON_SECRET = (process.env.CRON_SECRET || "").trim();
 const APP_URL = (process.env.APP_URL || "https://hirestepx.vercel.app").replace(/\/$/, "");
 
 const RENEW_WINDOW_MS = 86_400_000; // re-register a channel within 1 day of expiry
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  const isVercelCron = req.headers["x-vercel-cron"] === "1";
-  const hasSecret = CRON_SECRET && req.headers.authorization === `Bearer ${CRON_SECRET}`;
-  if (!isVercelCron && !hasSecret) {
+  if (!verifyCronAuth(req)) {
     return res.status(401).json({ error: "Unauthorized" });
   }
   if (!googleConfigured({ GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET })) {

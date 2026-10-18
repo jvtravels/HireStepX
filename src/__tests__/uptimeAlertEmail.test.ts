@@ -105,3 +105,86 @@ describe("uptime-check alert email delivery", () => {
     expect(resendBodies).toHaveLength(0);
   });
 });
+
+describe("uptime-check when /api/health itself is unreachable", () => {
+  type Sent = { url: string; body: { subject?: string; to?: string[]; text?: string } };
+  let sent: Sent[] = [];
+  let healthUrls: string[] = [];
+  function installDown(o: { resend?: "ok" | "fail"; slack?: "ok" | "fail" | "unset" } = {}) {
+    global.fetch = vi.fn(async (url: string, init?: { body?: string }) => {
+      const u = String(url);
+      if (u.includes("resend.com")) {
+        sent.push({ url: u, body: JSON.parse(String(init?.body)) });
+        return { ok: (o.resend ?? "ok") === "ok", status: (o.resend ?? "ok") === "ok" ? 200 : 500, json: async () => ({}) };
+      }
+      if (u.includes("hooks.slack.test")) {
+        sent.push({ url: u, body: JSON.parse(String(init?.body)) });
+        return { ok: o.slack === "ok", status: o.slack === "ok" ? 200 : 500, json: async () => ({}) };
+      }
+      healthUrls.push(u);
+      throw new Error("connect ETIMEDOUT");
+    }) as unknown as typeof fetch;
+  }
+
+  beforeEach(() => {
+    sent = [];
+    healthUrls = [];
+    delete process.env.SLACK_ALERT_WEBHOOK_URL;
+    delete process.env.ALERT_EMAIL;
+    delete process.env.APP_URL;
+    process.env.VERCEL_URL = "preview-abc.vercel.app";
+  });
+
+  it("emails an [ACTION] alert and returns 503 instead of only logging", async () => {
+    installDown();
+    const res = await call();
+    expect(res.status).toBe(503);
+    expect(await res.json()).toMatchObject({ alert: true, alertEmailSent: true });
+    expect(sent).toHaveLength(1);
+    expect(sent[0].body.subject).toBe("[ACTION] [ALERT] HireStepX: health check unreachable");
+    expect(sent[0].body.text).toContain("connect ETIMEDOUT");
+  });
+
+  it("probes the production host, never the per-deployment VERCEL_URL", async () => {
+    installDown();
+    await call();
+    expect(healthUrls).toEqual(["https://hirestepx.com/api/health"]);
+    process.env.APP_URL = "https://app.example.com/";
+    healthUrls = [];
+    await call();
+    expect(healthUrls).toEqual(["https://app.example.com/api/health"]);
+  });
+
+  it("sends to ALERT_EMAIL when set, else the support default", async () => {
+    installDown();
+    await call();
+    expect(sent[0].body.to).toEqual(["support@hirestepx.com"]);
+    sent = [];
+    process.env.ALERT_EMAIL = "oncall@example.com";
+    await call();
+    expect(sent[0].body.to).toEqual(["oncall@example.com"]);
+  });
+
+  it("falls back to Slack when email fails, and reports delivered", async () => {
+    process.env.SLACK_ALERT_WEBHOOK_URL = "https://hooks.slack.test/T/B/x";
+    installDown({ resend: "fail", slack: "ok" });
+    const res = await call();
+    expect(res.status).toBe(503);
+    expect(await res.json()).toMatchObject({ alert: true, alertEmailSent: true });
+    expect(sent.some((s) => s.url.includes("hooks.slack.test"))).toBe(true);
+  });
+
+  it("reports alertEmailSent:false when no channel delivers", async () => {
+    installDown({ resend: "fail" });
+    const res = await call();
+    expect(await res.json()).toMatchObject({ alert: true, alertEmailSent: false });
+  });
+
+  it("keeps the alertEmailSent:false / 500 behaviour on the degraded-health path", async () => {
+    getHealthAlerts.mockResolvedValue({ alerts: [alert("cron_stale")], checkedAt: "t" });
+    installFetch({ ok: false });
+    const res = await call();
+    expect(res.status).toBe(500);
+    expect(await res.json()).toMatchObject({ alert: true, alertEmailSent: false });
+  });
+});

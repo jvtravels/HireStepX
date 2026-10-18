@@ -13,7 +13,9 @@
 
 export const config = { runtime: "nodejs" };
 
-import { slog, supabaseUrl, supabaseServiceHeaders, redisGet, redisSetEx } from "./_shared";
+import { verifyCronAuth } from "./_cron-auth";
+import { slog, supabaseUrl, supabaseServiceHeaders, redisGet, redisSetEx, redisPipeline } from "./_shared";
+import { claimMarketingCooldown, releaseMarketingCooldown } from "./_employer-marketing-cooldown";
 import { filterSuppressed, marketingEmailParts, preferenceDepsFromEnv } from "./_unsubscribe";
 import { sendEmployerEmail } from "./_employer-emails";
 import { recordCronResult } from "./_cron-heartbeat";
@@ -62,8 +64,7 @@ function toUnlockActivity(rows: readonly UnlockRow[]): UnlockActivityRow[] {
 }
 
 export default async function handler(req: Request): Promise<Response> {
-  const cronSecret = (process.env.CRON_SECRET || "").trim();
-  if (!cronSecret || (req.headers.get("authorization") || "") !== `Bearer ${cronSecret}`) {
+  if (!verifyCronAuth(req)) {
     return jsonResponse({ error: "Unauthorized" }, 401);
   }
   const base = supabaseUrl();
@@ -92,7 +93,7 @@ export default async function handler(req: Request): Promise<Response> {
       )).rows;
       const unlockPage = await readAllPages<UnlockRow>(
         get,
-        `requirement_matches?unlocked=eq.true&select=unlocked_at,employer_requirements!inner(employer_id)&order=unlocked_at.desc,id.desc`,
+        `requirement_matches?unlocked=eq.true&unlocked_at=gte.${since}&select=unlocked_at,employer_requirements!inner(employer_id)&order=unlocked_at.desc,id.desc`,
         { maxRows: MAX_ROWS },
       );
       unlockRows = unlockPage.rows;
@@ -100,7 +101,7 @@ export default async function handler(req: Request): Promise<Response> {
     } catch (err) {
       throw new ReadFailure("Activity query failed", err);
     }
-    // All unlocks are read (no date window), so "never unlocked" is only provable when the read was not capped.
+    // Unlocks are read for the same 180-day window as requirements (the longest look-back any audience needs), so "never unlocked" is only provable when the read was not capped.
     if (unlocksTruncated) slog.warn("employer winback: unlock read hit the cap, skipping no_unlock this run", { code: "employer_winback_truncated" });
 
     const candidates = selectWinbacks(buildActivity(requirements, toUnlockActivity(unlockRows)), now, { allowNoUnlock: !unlocksTruncated });
@@ -126,11 +127,19 @@ export default async function handler(req: Request): Promise<Response> {
 
     let sent = 0;
     let failed = 0;
+    let cooldownUnavailable = 0;
     let skipped = candidates.length - eligible.length;
     for (const c of eligible) {
       if (sent >= MAX_SENDS_PER_RUN || !allowed.has(c.employerId)) { skipped++; continue; }
       const dedupe = winbackDedupeKey(c.employerId);
       if (await redisGet(dedupe)) { skipped++; continue; }
+      // Shared with the nudge cron; fails closed (skips) when Redis is down.
+      const slot = await claimMarketingCooldown(redisPipeline, c.employerId);
+      if (slot !== "claimed") {
+        if (slot === "unavailable") cooldownUnavailable++;
+        skipped++;
+        continue;
+      }
 
       const parts = await marketingEmailParts(c.employerId, "employer_notifications");
       const mail = buildWinbackEmail(c.kind, employers.get(c.employerId)?.company_name ?? "", parts.footer);
@@ -145,10 +154,12 @@ export default async function handler(req: Request): Promise<Response> {
         await captureServerEvent("employer_winback_sent", c.employerId, { kind: c.kind, requirement_count: c.requirementCount, unlock_count: c.unlockCount });
         sent++;
       } else {
+        await releaseMarketingCooldown(redisPipeline, c.employerId);
         failed++;
         skipped++;
       }
     }
+    if (cooldownUnavailable > 0) slog.warn("employer winback: Redis unavailable, sends skipped (fail closed)", { code: "employer_winback_cooldown_unavailable", skipped: cooldownUnavailable });
     // One bad address must not page anyone, but every send failing means the provider is down.
     const errors = sent === 0 && failed > 0 ? failed : 0;
     if (errors > 0) slog.error("employer winback: every send failed", { code: "employer_winback_all_sends_failed", failed });

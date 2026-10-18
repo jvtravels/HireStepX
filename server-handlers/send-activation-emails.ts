@@ -9,6 +9,7 @@
  * signs up and doesn't start within 48 hours almost never comes back. */
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
+import { verifyCronAuth } from "./_cron-auth";
 import { escapeHtml } from "./_shared";
 import { emailShell, title, para, button, type EmailFooterOptions } from "./_email-theme";
 import { filterSuppressed, marketingEmailParts, preferenceDepsFromEnv } from "./_unsubscribe";
@@ -17,7 +18,6 @@ const SUPABASE_URL = process.env.SUPABASE_URL || "";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const RESEND_API_KEY = (process.env.RESEND_API_KEY || "").trim();
 const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <noreply@hirestepx.com>";
-const CRON_SECRET = (process.env.CRON_SECRET || "").trim();
 const APP_URL = (process.env.APP_URL || "https://hirestepx.com").replace(/\/$/, "");
 const UPSTASH_URL = (process.env.UPSTASH_REDIS_REST_URL || "").trim();
 const UPSTASH_TOKEN = (process.env.UPSTASH_REDIS_REST_TOKEN || "").trim();
@@ -79,9 +79,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  // Verify cron secret — Vercel injects Authorization: Bearer <CRON_SECRET>
-  const authHeader = (req.headers.authorization || "").replace("Bearer ", "");
-  if (CRON_SECRET && authHeader !== CRON_SECRET) {
+  if (!verifyCronAuth(req)) {
     return res.status(401).json({ error: "Unauthorized" });
   }
 

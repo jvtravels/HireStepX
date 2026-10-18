@@ -21,6 +21,11 @@ export const RESUME_FILES_BUCKET = "resume-files";
 /** Signed resume-file links expire quickly: the export is a download, not a share. */
 export const RESUME_LINK_TTL_SECONDS = 3600;
 
+/** Audit-style employer tables grow without bound; cap them tighter than the per-table default. */
+export const EMPLOYER_AUDIT_MAX_ROWS = 20_000;
+const CREDIT_NOTE_ORDER_CHUNK = 40;
+const CREDIT_NOTE_MAX_ORDERS = 2_000;
+
 export interface CollectDeps {
   fetchImpl: typeof fetch;
   supabaseUrl: string;
@@ -100,7 +105,7 @@ export async function collectUserExport(deps: CollectDeps): Promise<CollectResul
     { key: "employer_reports", path: `/rest/v1/employer_reports?reporter_user_id=eq.${e}&select=reason,note,status,created_at,reviewed_at`, order: "created_at.desc,id.asc", optional: true },
     {
       key: "requirement_matches",
-      path: `/rest/v1/requirement_matches?candidate_user_id=eq.${e}&select=id,created_at,unlocked,unlocked_at,profile_viewed_at,candidate_status,candidate_response,candidate_responded_at,employer_requirements(title,employers(company_name))`,
+      path: `/rest/v1/requirement_matches?candidate_user_id=eq.${e}&select=id,created_at,unlocked,unlocked_at,profile_viewed_at,candidate_status,candidate_status_note,candidate_status_updated_at,interview_scheduled_at,candidate_response,candidate_responded_at,employer_requirements(title,employers(company_name))`,
       order: "created_at.desc,id.asc",
       optional: true,
     },
@@ -126,15 +131,34 @@ export async function collectUserExport(deps: CollectDeps): Promise<CollectResul
       { key: "employer_unlock_payments", path: `/rest/v1/employer_unlock_payments?employer_id=eq.${e}`, order: "created_at.desc,id.asc" },
       { key: "employer_unlock_orders", path: `/rest/v1/employer_unlock_orders?employer_id=eq.${e}`, order: "created_at.desc,id.asc" },
       { key: "employer_messages_sent", path: `/rest/v1/conversation_messages?employer_id=eq.${e}&sender_role=eq.employer&select=id,conversation_id,body,attachment_name,created_at`, order: "created_at.desc,id.asc" },
+      { key: "employer_requirement_activity", path: `/rest/v1/employer_requirement_activity?employer_id=eq.${e}`, order: "created_at.desc,id.asc", maxRows: EMPLOYER_AUDIT_MAX_ROWS },
+      // Optional: the ledger table is not in every environment's schema yet (404 means no rows).
+      { key: "employer_credit_ledger", path: `/rest/v1/employer_credit_ledger?employer_id=eq.${e}`, order: "created_at.desc,id.asc", optional: true, maxRows: EMPLOYER_AUDIT_MAX_ROWS },
     ];
     const emp = await runAll(empSpecs);
     attempted += empSpecs.length;
+    // Credit notes hang off the order id, not the employer id. Bounded by the order list and fetched in chunks.
+    const orderIds = emp.employer_unlock_orders
+      .map((o) => (o as { razorpay_order_id?: unknown })?.razorpay_order_id)
+      .filter((v): v is string => typeof v === "string" && v.length > 0)
+      .slice(0, CREDIT_NOTE_MAX_ORDERS);
+    const noteSpecs: ExportSpec[] = [];
+    for (let i = 0; i < orderIds.length; i += CREDIT_NOTE_ORDER_CHUNK) {
+      const list = orderIds.slice(i, i + CREDIT_NOTE_ORDER_CHUNK).map((id) => encodeURIComponent(`"${id}"`)).join(",");
+      noteSpecs.push({ key: `employer_credit_notes_${i}`, path: `/rest/v1/employer_credit_notes?order_id=in.(${list})`, order: "created_at.desc,id.asc", optional: true, maxRows: EMPLOYER_AUDIT_MAX_ROWS });
+    }
+    const notes = noteSpecs.length > 0 ? await runAll(noteSpecs) : {};
+    attempted += noteSpecs.length;
+    if (emp.employer_unlock_orders.length > CREDIT_NOTE_MAX_ORDERS) truncated.push("employer_credit_notes");
     employerAccount = {
       employer: t.employers[0],
       requirements: emp.employer_requirements,
       unlock_payments: emp.employer_unlock_payments,
       unlock_orders: emp.employer_unlock_orders,
       messages_sent: shapeMessagesForExport(emp.employer_messages_sent),
+      requirement_activity: emp.employer_requirement_activity,
+      credit_ledger: emp.employer_credit_ledger,
+      credit_notes: Object.values(notes).flat(),
     };
   }
 

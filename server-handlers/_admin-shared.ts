@@ -4,6 +4,7 @@ import { createHmac, timingSafeEqual } from "crypto";
 import type { VercelRequest } from "@vercel/node";
 import { verifyAdminToken } from "./_admin-auth";
 import { getClientIp, isRateLimited, slog } from "./_shared";
+import { readAllPages } from "./_paged-fetch";
 
 /* ─── Config ─── */
 
@@ -105,6 +106,33 @@ export async function fetchJSON<T = unknown>(path: string): Promise<T[]> {
   }
   const data = await res.json();
   return Array.isArray(data) ? data : [];
+}
+
+export interface FullRead<T> {
+  rows: T[];
+  /** The row cap was hit, so totals computed from `rows` are lower bounds. */
+  truncated: boolean;
+  /** A page read failed. `rows` is then empty, never a partial read dressed up as complete. */
+  failed: boolean;
+}
+
+/** Whole-window read, keyset-paged on `id` (the select must include it) past PostgREST's
+ * 1000-row response cap. Unlike fetchJSON a failure is reported, not collapsed to []. */
+export async function fetchAllRows<T = unknown>(path: string, maxRows = 50_000): Promise<FullRead<T>> {
+  try {
+    const r = await readAllPages<T>((p) => supa(p), path, { keyset: "id", maxRows });
+    return { rows: r.rows, truncated: r.truncated, failed: false };
+  } catch (err) {
+    slog.error("admin-data: paged read failed", { path: path.slice(0, 120), error: err instanceof Error ? err.message : String(err) });
+    return { rows: [], truncated: false, failed: true };
+  }
+}
+
+/** Flags to merge into a section's output: which reads failed or hit the cap. */
+export function readQuality(reads: Record<string, { truncated: boolean; failed: boolean }>) {
+  const degradedSources = Object.keys(reads).filter((k) => reads[k].failed);
+  const truncatedSources = Object.keys(reads).filter((k) => reads[k].truncated);
+  return { degraded: degradedSources.length > 0, degradedSources, truncated: truncatedSources.length > 0, truncatedSources };
 }
 
 export async function fetchCount(table: string, filter = ""): Promise<number> {

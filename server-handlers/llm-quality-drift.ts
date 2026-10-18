@@ -2,6 +2,7 @@
  * grading provider, and alerts on a shift. Needs no LLM calls; it reads the
  * `model` and `overallScore` already stored in sessions.report_json. */
 
+import { verifyCronAuth } from "./_cron-auth";
 import { analyzeDrift, parseSessionRows } from "./_llm-drift-helpers";
 import { sendOpsAlert } from "./_ops-alert";
 
@@ -14,8 +15,7 @@ const RECENT_DAYS = 3;
 const MAX_ROWS = 3000;
 
 export default async function handler(req: Request): Promise<Response> {
-  const cronSecret = process.env.CRON_SECRET;
-  if (!cronSecret || (req.headers.get("authorization") || "") !== `Bearer ${cronSecret}`) {
+  if (!verifyCronAuth(req)) {
     return new Response("Unauthorized", { status: 401 });
   }
   const url = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";

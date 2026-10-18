@@ -3,6 +3,7 @@
  * them sitting poll-only behind the admin dashboard's "health" tab. */
 
 import { getEmployerHealthAlerts } from "./_employer-health-signals";
+import { readAllPages } from "./_paged-fetch";
 import { RATES_LAST_VERIFIED_AT, RATE_STALENESS_THRESHOLD_DAYS, rateCardAgeDays, isRateCardStale } from "./_cost-helpers";
 
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
@@ -20,15 +21,21 @@ function supa(path: string, opts?: RequestInit) {
   });
 }
 
-async function fetchJSON<T = unknown>(path: string): Promise<T[]> {
-  const res = await supa(path);
-  if (!res.ok) {
-    const body = await res.text().catch(() => "");
-    console.error(`[health-alerts] supabase query failed: ${path.slice(0, 120)} → HTTP ${res.status}: ${body.slice(0, 200)}`);
-    return [];
+/** Row cap per signal source. Well above a day of sessions or a fortnight of LLM calls today. */
+const SOURCE_MAX_ROWS = 20_000;
+
+interface Source<T> { rows: T[]; truncated: boolean; failed: boolean }
+
+/** Pages the whole window (PostgREST caps one response at 1000 rows, so a bare `limit=2000`
+    silently under-counts) and reports a failed read instead of returning [] as if it were empty. */
+async function readSource<T>(name: string, path: string): Promise<Source<T>> {
+  try {
+    const r = await readAllPages<T>((p) => supa(p), path, { keyset: "id", maxRows: SOURCE_MAX_ROWS });
+    return { rows: r.rows, truncated: r.truncated, failed: false };
+  } catch (err) {
+    console.error(`[health-alerts] read of ${name} failed:`, err instanceof Error ? err.message : err);
+    return { rows: [], truncated: false, failed: true };
   }
-  const data = await res.json();
-  return Array.isArray(data) ? data : [];
 }
 
 function daysAgo(n: number): string {
@@ -67,33 +74,69 @@ export function actionSubjectBits(alerts: readonly HealthAlert[]): string[] {
   return out;
 }
 
-export async function getHealthAlerts(): Promise<{ alerts: HealthAlert[]; checkedAt: string }> {
+export interface HealthAlertsResult {
+  alerts: HealthAlert[];
+  checkedAt: string;
+  /** A source read failed, so the signals that depend on it were skipped rather than computed from nothing. */
+  degraded: boolean;
+  degradedSources: string[];
+  /** A source hit its row cap, so its counts are lower bounds. */
+  truncated: boolean;
+  truncatedSources: string[];
+}
+
+export async function getHealthAlerts(): Promise<HealthAlertsResult> {
   const now = Date.now();
   const today = new Date(now).toISOString().slice(0, 10);
   const yesterday = new Date(now - 86400000).toISOString().slice(0, 10);
   const sevenDaysAgo = daysAgo(7);
   const fourteenDaysAgo = daysAgo(14);
 
-  const [todaySessions, recentSessions, llmUsageRecent, llmUsagePrev] = await Promise.all([
+  const [todaySrc, recentSrc, usageRecentSrc, usagePrevSrc] = await Promise.all([
     // Sessions today (count + cost coverage)
-    fetchJSON<{ id: string; llm_cost_inr: number | null; score: number | null; created_at: string }>(
-      `sessions?select=id,llm_cost_inr,score,created_at&created_at=gte.${today}&limit=500`,
+    readSource<{ id: string; llm_cost_inr: number | null; score: number | null; created_at: string }>(
+      "sessions_today",
+      `sessions?select=id,llm_cost_inr,score,created_at&created_at=gte.${today}`,
     ),
-    // Sessions last 30d for volume baseline (just ids + date, cheap)
-    fetchJSON<{ created_at: string }>(
-      `sessions?select=created_at&created_at=gte.${sevenDaysAgo}&limit=2000`,
+    // Sessions last 7d for the volume baseline
+    readSource<{ id: string; created_at: string }>(
+      "sessions_7d",
+      `sessions?select=id,created_at&created_at=gte.${sevenDaysAgo}`,
     ),
     // LLM usage last 24h for fallback rate
-    fetchJSON<{ is_fallback: boolean; total_tokens: number }>(
-      `llm_usage?select=is_fallback,total_tokens&created_at=gte.${yesterday}&limit=2000`,
+    readSource<{ id: string; is_fallback: boolean; total_tokens: number }>(
+      "llm_usage_24h",
+      `llm_usage?select=id,is_fallback,total_tokens&created_at=gte.${yesterday}`,
     ),
     // LLM usage prior week for WoW fallback comparison
-    fetchJSON<{ is_fallback: boolean }>(
-      `llm_usage?select=is_fallback&created_at=gte.${fourteenDaysAgo}&created_at=lt.${sevenDaysAgo}&limit=2000`,
+    readSource<{ id: string; is_fallback: boolean }>(
+      "llm_usage_prev_week",
+      `llm_usage?select=id,is_fallback&created_at=gte.${fourteenDaysAgo}&created_at=lt.${sevenDaysAgo}`,
     ),
   ]);
+  const sources: Array<[string, Source<unknown>]> = [
+    ["sessions_today", todaySrc], ["sessions_7d", recentSrc], ["llm_usage_24h", usageRecentSrc], ["llm_usage_prev_week", usagePrevSrc],
+  ];
+  const degradedSources = sources.filter(([, s]) => s.failed).map(([n]) => n);
+  const truncatedSources = sources.filter(([, s]) => s.truncated).map(([n]) => n);
+  const todaySessions = todaySrc.rows;
+  const recentSessions = recentSrc.rows;
+  const llmUsageRecent = usageRecentSrc.rows;
+  const llmUsagePrev = usagePrevSrc.rows;
+  const llmReadable = !usageRecentSrc.failed && !usagePrevSrc.failed;
+  const sessionsReadable = !todaySrc.failed;
+  const volumeReadable = !todaySrc.failed && !recentSrc.failed;
 
   const alerts: HealthAlert[] = [];
+  if (degradedSources.length > 0) {
+    // An unreadable source is not an empty one: say so instead of letting the dependent signals pass quietly.
+    alerts.push({
+      severity: "warning",
+      code: "health_read_degraded",
+      message: `Could not read ${degradedSources.join(", ")}, so the signals that depend on them were skipped this run.`,
+      action: "Check Supabase status and the service-role key, then re-run /api/uptime-check.",
+    });
+  }
   const round1 = (n: number) => Math.round(n * 10) / 10;
 
   // ── Signal 1: LLM fallback rate ──
@@ -104,7 +147,9 @@ export async function getHealthAlerts(): Promise<{ alerts: HealthAlert[]; checke
     ? llmUsagePrev.filter(u => u.is_fallback).length / llmUsagePrev.length
     : 0;
 
-  if (fallbackRate > 0.5 && totalCalls24h >= 5) {
+  if (!llmReadable) {
+    // skipped: see health_read_degraded
+  } else if (fallbackRate > 0.5 && totalCalls24h >= 5) {
     alerts.push({
       severity: "critical",
       code: "llm_groq_down",
@@ -121,7 +166,7 @@ export async function getHealthAlerts(): Promise<{ alerts: HealthAlert[]; checke
   }
 
   // ── Signal 2: Session cost coverage ──
-  if (todaySessions.length >= 3) {
+  if (sessionsReadable && todaySessions.length >= 3) {
     const costed = todaySessions.filter(s => s.llm_cost_inr != null && s.llm_cost_inr > 0).length;
     const coverage = costed / todaySessions.length;
     if (coverage < 0.4) {
@@ -149,7 +194,7 @@ export async function getHealthAlerts(): Promise<{ alerts: HealthAlert[]; checke
     if (d && d !== today) priorDayCounts[d] = (priorDayCounts[d] || 0) + 1;
   }
   const priorDays = Object.values(priorDayCounts);
-  if (priorDays.length >= 3) {
+  if (volumeReadable && priorDays.length >= 3) {
     const dailyAvg = priorDays.reduce((a, b) => a + b, 0) / priorDays.length;
     const todayCount = todaySessions.length;
     const hourOfDay = new Date(now).getUTCHours();
@@ -176,7 +221,7 @@ export async function getHealthAlerts(): Promise<{ alerts: HealthAlert[]; checke
   }
 
   // ── Signal 4: Failed sessions (score=null or score=0) ──
-  if (todaySessions.length >= 3) {
+  if (sessionsReadable && todaySessions.length >= 3) {
     const failed = todaySessions.filter(s => s.score == null || s.score === 0).length;
     const failRate = failed / todaySessions.length;
     if (failRate > 0.4) {
@@ -217,5 +262,9 @@ export async function getHealthAlerts(): Promise<{ alerts: HealthAlert[]; checke
   return {
     alerts,
     checkedAt: new Date(now).toISOString(),
+    degraded: degradedSources.length > 0,
+    degradedSources,
+    truncated: truncatedSources.length > 0,
+    truncatedSources,
   };
 }

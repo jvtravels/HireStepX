@@ -27,8 +27,11 @@ describe("evaluateCronHeartbeats", () => {
     expect(alerts[0]).toMatchObject({ severity: "warning", code: "cron_heartbeat_missing" });
   });
 
-  it("covers every employer cron with a 25h limit", () => {
-    expect(Object.keys(CRON_MAX_SILENCE_MS).sort()).toEqual(["cron-credit-no-response", "cron-reconcile-unlock-orders", "cron-rematch-requirements", "send-employer-nudges", "send-employer-winback"]);
+  it("covers every employer cron plus the subscription/erasure crons with a 25h limit", () => {
+    expect(Object.keys(CRON_MAX_SILENCE_MS).sort()).toEqual([
+      "cleanup-deleted-accounts", "cron-credit-no-response", "cron-reconcile-unlock-orders", "cron-rematch-requirements",
+      "reset-expired-subscriptions", "send-employer-nudges", "send-employer-winback", "send-renewal-reminders",
+    ]);
     for (const ms of Object.values(CRON_MAX_SILENCE_MS)) expect(ms).toBe(25 * HOUR);
   });
 });

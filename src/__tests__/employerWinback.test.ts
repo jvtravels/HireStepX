@@ -4,12 +4,14 @@ process.env.RESEND_API_KEY = "re_key";
 const slogError = vi.fn();
 const redisGet = vi.fn();
 const redisSetEx = vi.fn();
+const redisPipeline = vi.fn();
 vi.mock("../../server-handlers/_shared", () => ({
   slog: { error: (...a: unknown[]) => slogError(...a), warn: vi.fn(), info: vi.fn() },
   supabaseUrl: () => "https://example.supabase.co",
   supabaseServiceHeaders: () => ({ apikey: "k" }),
   redisGet: (...a: unknown[]) => redisGet(...a),
   redisSetEx: (...a: unknown[]) => redisSetEx(...a),
+  redisPipeline: (...a: unknown[]) => redisPipeline(...a),
 }));
 const filterSuppressed = vi.fn();
 vi.mock("../../server-handlers/_unsubscribe", () => ({
@@ -163,6 +165,7 @@ beforeEach(() => {
   process.env.CRON_SECRET = "cron-secret";
   redisGet.mockReset().mockResolvedValue(null);
   redisSetEx.mockReset();
+  redisPipeline.mockReset().mockResolvedValue(["OK"]);
   slogError.mockReset();
   recordCronResult.mockReset().mockResolvedValue(true);
   captureServerEvent.mockReset();
@@ -177,6 +180,37 @@ describe("send-employer-winback handler", () => {
     process.env.CRON_SECRET = "cron-secret";
     expect((await call("Bearer nope")).status).toBe(401);
     expect(sendEmployerEmail).not.toHaveBeenCalled();
+  });
+
+  it("claims the shared 3-day marketing cooldown (SET NX) before sending", async () => {
+    installFetch(baseData());
+    expect((await call()).status).toBe(200);
+    expect(redisPipeline).toHaveBeenCalledWith([["SET", "employer_mkt_cd:e1", expect.any(String), "EX", 3 * 86_400, "NX"]], expect.any(Number));
+    expect(sendEmployerEmail).toHaveBeenCalledTimes(1);
+  });
+
+  it("skips an employer another marketing cron already mailed inside the cooldown", async () => {
+    installFetch(baseData());
+    redisPipeline.mockResolvedValue([null]);
+    expect(await (await call()).json()).toMatchObject({ sent: 0, skipped: 1 });
+    expect(sendEmployerEmail).not.toHaveBeenCalled();
+  });
+
+  it("fails CLOSED when Redis is unavailable: no mail, no dedupe key, still a clean run", async () => {
+    installFetch(baseData());
+    redisPipeline.mockResolvedValue(null);
+    const res = await call();
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({ sent: 0, skipped: 1 });
+    expect(sendEmployerEmail).not.toHaveBeenCalled();
+    expect(redisSetEx).not.toHaveBeenCalled();
+  });
+
+  it("releases the cooldown slot when the send fails so the next run can retry", async () => {
+    installFetch(baseData());
+    sendEmployerEmail.mockResolvedValue(false);
+    await call();
+    expect(redisPipeline).toHaveBeenCalledWith([["DEL", "employer_mkt_cd:e1"]], expect.any(Number));
   });
 
   it("sends one win-back, sets the 30-day dedupe key, emits the event without PII and records the heartbeat", async () => {
@@ -235,5 +269,15 @@ describe("send-employer-winback handler", () => {
     expect(redisSetEx).not.toHaveBeenCalled();
     expect(captureServerEvent).not.toHaveBeenCalled();
     expect(recordCronResult).toHaveBeenCalledWith("send-employer-winback", { errors: 1 });
+  });
+});
+
+describe("send-employer-winback unlock window", () => {
+  it("reads unlock history only for the last 180 days", async () => {
+    installFetch(baseData());
+    await call();
+    const urls = (global.fetch as unknown as { mock: { calls: unknown[][] } }).mock.calls.map((c) => decodeURIComponent(String(c[0])));
+    const unlockUrl = urls.find((u) => u.includes("requirement_matches"));
+    expect(unlockUrl).toMatch(/unlocked_at=gte\.\d{4}-\d{2}-\d{2}T/);
   });
 });

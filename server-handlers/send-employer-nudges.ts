@@ -15,7 +15,9 @@
 
 export const config = { runtime: "nodejs" };
 
-import { slog, supabaseUrl, supabaseServiceHeaders, redisGet, redisSetEx } from "./_shared";
+import { verifyCronAuth } from "./_cron-auth";
+import { slog, supabaseUrl, supabaseServiceHeaders, redisGet, redisSetEx, redisPipeline } from "./_shared";
+import { claimMarketingCooldown, releaseMarketingCooldown } from "./_employer-marketing-cooldown";
 import { filterSuppressed, marketingEmailParts, preferenceDepsFromEnv } from "./_unsubscribe";
 import { isSuspended } from "./_employer-trust";
 import { recordCronResult } from "./_cron-heartbeat";
@@ -62,8 +64,7 @@ async function chunkedRows<T>(get: RestGet, ids: readonly string[], build: (list
 }
 
 export default async function handler(req: Request): Promise<Response> {
-  const cronSecret = (process.env.CRON_SECRET || "").trim();
-  if (!cronSecret || (req.headers.get("authorization") || "") !== `Bearer ${cronSecret}`) {
+  if (!verifyCronAuth(req)) {
     return jsonResponse({ error: "Unauthorized" }, 401);
   }
   const base = supabaseUrl();
@@ -133,6 +134,7 @@ export default async function handler(req: Request): Promise<Response> {
 
     let sent = 0;
     let failed = 0;
+    let cooldownUnavailable = 0;
     let skipped = candidates.length - eligible.length;
     for (const c of eligible) {
       if (sent >= MAX_SENDS_PER_RUN) { skipped++; continue; }
@@ -140,6 +142,13 @@ export default async function handler(req: Request): Promise<Response> {
       if (!allowedIds.has(employerId)) { skipped++; continue; }
       const dedupe = nudgeDedupeKey(c);
       if (await redisGet(dedupe)) { skipped++; continue; }
+      // Shared with the win-back cron; fails closed (skips) when Redis is down.
+      const slot = await claimMarketingCooldown(redisPipeline, employerId);
+      if (slot !== "claimed") {
+        if (slot === "unavailable") cooldownUnavailable++;
+        skipped++;
+        continue;
+      }
 
       const parts = await marketingEmailParts(employerId, "employer_notifications");
       const mail = buildNudgeEmail(c, parts.footer);
@@ -153,10 +162,12 @@ export default async function handler(req: Request): Promise<Response> {
         await redisSetEx(dedupe, NUDGE_TTL_SECONDS, new Date().toISOString());
         sent++;
       } else {
+        await releaseMarketingCooldown(redisPipeline, employerId);
         failed++;
         skipped++;
       }
     }
+    if (cooldownUnavailable > 0) slog.warn("employer nudges: Redis unavailable, sends skipped (fail closed)", { code: "employer_nudges_cooldown_unavailable", skipped: cooldownUnavailable });
     // One bad address must not page anyone, but every send failing means the provider is down.
     const errors = sent === 0 && failed > 0 ? failed : 0;
     if (errors > 0) slog.error("employer nudges: every send failed", { code: "employer_nudges_all_sends_failed", failed });

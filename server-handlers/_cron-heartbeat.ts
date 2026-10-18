@@ -41,8 +41,16 @@ const HOUR_MS = 3_600_000;
 const HEARTBEAT_TTL_SEC = 14 * 24 * 3600;
 
 /** Max silence before alerting. Daily crons get 25h (one missed run + jitter).
-    Tighten the reconcile entry to 60 min when its vercel.json schedule becomes hourly. */
+    Tighten the reconcile entry to 60 min when its vercel.json schedule becomes hourly.
+    Timing invariant: the uptime-check cron (vercel.json, 10:30 UTC) must run AFTER every
+    cron listed here, so a failed run is already >25h stale when it is read and alerts the
+    same morning. The earlier 06:00 slot ran before the 05:20/05:40 money crons, which
+    surfaced a failure only ~24h40m later (just under the limit) and alerted ~48h late.
+    Keep the entry schedules in vercel.json in sync (all are daily). */
 export const CRON_MAX_SILENCE_MS: Record<string, number> = {
+  "reset-expired-subscriptions": 25 * HOUR_MS, // 00:00 UTC, downgrades lapsed paid plans
+  "cleanup-deleted-accounts": 25 * HOUR_MS, // 03:00 UTC, account-erasure (DPDP) SLA
+  "send-renewal-reminders": 25 * HOUR_MS, // 09:00 UTC
   "cron-reconcile-unlock-orders": 25 * HOUR_MS,
   "cron-credit-no-response": 25 * HOUR_MS,
   "cron-rematch-requirements": 25 * HOUR_MS,

@@ -6,6 +6,7 @@
  * a one-token probe, and alerts while there is still time to repoint
  * GEMINI_MODELS / GROQ_MODEL (env change + redeploy, no code change). */
 
+import { verifyCronAuth } from "./_cron-auth";
 import { cloudflareModel, geminiLadder, geminiThinkingConfig, groqModel } from "./_llm-models";
 import { sendOpsAlert } from "./_ops-alert";
 import { buildReport, ladderIsThin, needsAction, type ModelReport } from "./_llm-watchdog-helpers";
@@ -97,8 +98,7 @@ export async function runWatchdog(fetchImpl: Fetch = fetch): Promise<ModelReport
 }
 
 export default async function handler(req: Request): Promise<Response> {
-  const cronSecret = process.env.CRON_SECRET;
-  if (!cronSecret || (req.headers.get("authorization") || "") !== `Bearer ${cronSecret}`) {
+  if (!verifyCronAuth(req)) {
     return new Response("Unauthorized", { status: 401 });
   }
 

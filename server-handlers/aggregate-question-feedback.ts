@@ -5,8 +5,8 @@
  * (b) "this matched my real interview" candidates that ≥2 users
  * confirmed, then emails the digest to MODERATOR_EMAIL via Resend.
  *
- * Authenticated via Vercel's `x-vercel-cron` header OR a Bearer
- * CRON_SECRET (so we can also trigger manually for testing).
+ * Authenticated via Authorization: Bearer CRON_SECRET only (fails closed;
+ * `x-vercel-cron` is spoofable so it is not trusted).
  *
  * The actionable contract is small but real:
  *   - Worst patterns → review the curated bank, refresh stale entries
@@ -15,6 +15,7 @@
  *   question_feedback table just accumulates unread rows.
  */
 
+import { verifyCronAuth } from "./_cron-auth";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { supabaseUrl } from "./_shared";
 import {
@@ -24,7 +25,6 @@ import {
 } from "./_aggregate-feedback-helpers";
 
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
-const CRON_SECRET = process.env.CRON_SECRET || "";
 const RESEND_API_KEY = (process.env.RESEND_API_KEY || "").trim();
 const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <noreply@hirestepx.com>";
 const MODERATOR_EMAIL = process.env.MODERATOR_EMAIL || process.env.ADMIN_EMAIL || "";
@@ -33,12 +33,7 @@ const WINDOW_DAYS = 7;
 const MAX_ROWS = 5000; // safety cap; weekly volume should fit easily
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  /* Auth: Vercel Cron sets x-vercel-cron=1; manual triggers use Bearer
-     CRON_SECRET. Either accepted; anything else is rejected. */
-  const authHeader = (req.headers.authorization as string) || "";
-  const isVercelCron = req.headers["x-vercel-cron"] === "1";
-  const hasValidSecret = CRON_SECRET && authHeader === `Bearer ${CRON_SECRET}`;
-  if (!isVercelCron && !hasValidSecret) {
+  if (!verifyCronAuth(req)) {
     return res.status(401).json({ error: "Unauthorized" });
   }
 

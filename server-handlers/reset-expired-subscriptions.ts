@@ -2,6 +2,8 @@
 /* Runs daily at midnight UTC. Finds subscriptions that have expired and sets tier to 'free'. */
 /* This ensures server-side enforcement even if users don't log in (frontend check is client-side only). */
 
+import { verifyCronAuth } from "./_cron-auth";
+import { recordCronResult } from "./_cron-heartbeat";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { escapeHtml } from "./_shared";
 import { emailShell, title, para, b, button, dataCard, orderedList } from "./_email-theme";
@@ -9,13 +11,12 @@ import { captureServerEvent } from "./_posthog";
 
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
-const CRON_SECRET = (process.env.CRON_SECRET || "").trim();
 const RESEND_API_KEY = (process.env.RESEND_API_KEY || "").trim();
 const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <noreply@hirestepx.com>";
 const APP_URL = (process.env.APP_URL || "https://hirestepx.vercel.app").replace(/\/$/, "");
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (!CRON_SECRET || req.headers.authorization !== `Bearer ${CRON_SECRET}`) {
+  if (!verifyCronAuth(req)) {
     return res.status(401).json({ error: "Unauthorized" });
   }
 
@@ -46,6 +47,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const expired = await expiredRes.json();
     if (!Array.isArray(expired) || expired.length === 0) {
+      await recordCronResult("reset-expired-subscriptions", { errors: 0 });
       return res.status(200).json({ downgraded: 0, message: "No expired subscriptions" });
     }
 
@@ -137,6 +139,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (failed > 0) {
       void captureServerEvent("cron_reset_expired_failed", undefined, { step: "downgrade", failed, downgraded, total: expired.length });
     }
+    await recordCronResult("reset-expired-subscriptions", { errors: failed });
     return res.status(200).json({ downgraded, failed, emailsSent, emailsFailed, total: expired.length });
   } catch (err) {
     console.error("Reset expired subscriptions error:", err);

@@ -5,6 +5,7 @@
  *   Day 7: "Last chance" with a discount/urgency nudge
  * Only targets free-tier users who have at least 1 session but haven't returned. */
 
+import { verifyCronAuth } from "./_cron-auth";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { escapeHtml } from "./_shared";
 import { emailShell, title, para, b, button, dataCard, type EmailFooterOptions } from "./_email-theme";
@@ -14,7 +15,6 @@ const SUPABASE_URL = process.env.SUPABASE_URL || "";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const RESEND_API_KEY = (process.env.RESEND_API_KEY || "").trim();
 const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <noreply@hirestepx.com>";
-const CRON_SECRET = (process.env.CRON_SECRET || "").trim();
 const APP_URL = (process.env.APP_URL || "https://hirestepx.vercel.app").replace(/\/$/, "");
 
 interface UserRow {
@@ -250,7 +250,7 @@ function buildEmail(
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (!CRON_SECRET || req.headers.authorization !== `Bearer ${CRON_SECRET}`) {
+  if (!verifyCronAuth(req)) {
     return res.status(401).json({ error: "Unauthorized" });
   }
 

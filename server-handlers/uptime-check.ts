@@ -12,6 +12,7 @@
 /* No logic here assumes any particular cadence. */
 /* Visible in Vercel Dashboard → Logs for alerting */
 
+import { verifyCronAuth } from "./_cron-auth";
 import { getHealthAlerts, isActionRequired, actionSubjectBits } from "./_health-alerts";
 
 export const config = { runtime: "edge" };
@@ -20,21 +21,19 @@ declare const process: { env: Record<string, string | undefined> };
 
 export default async function handler(req: Request): Promise<Response> {
   // Verify cron secret to prevent unauthorized triggers
-  const authHeader = req.headers.get("authorization");
-  const cronSecret = (process.env.CRON_SECRET || "").trim();
   // Fail closed: an unset secret must not leave this endpoint open.
-  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
+  if (!verifyCronAuth(req)) {
     return new Response("Unauthorized", { status: 401 });
   }
 
-  const baseUrl = process.env.VERCEL_URL
-    ? `https://${process.env.VERCEL_URL}`
-    : "https://hirestepx.vercel.app";
+  // Probe the production host, not VERCEL_URL: that is the per-deployment URL,
+  // which can sit behind Vercel deployment protection and answer 401 to the cron.
+  const baseUrl = (process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || "https://hirestepx.com").trim().replace(/\/$/, "");
 
-  // Returns false when the alert could not be delivered (no key, non-2xx, network
-  // error). The caller surfaces that as a 500 so the cron shows as failed instead
-  // of silently dropping the only notification the founder gets.
-  async function sendAlertEmail(subject: string, text: string): Promise<boolean> {
+  const logAlertFailure = (channel: string, extra: Record<string, unknown>) =>
+    console.error(JSON.stringify({ level: "error", source: "uptime-check", code: `alert_${channel}_failed`, ...extra, timestamp: new Date().toISOString() }));
+
+  async function sendEmail(subject: string, text: string): Promise<boolean> {
     const resendKey = process.env.RESEND_API_KEY;
     if (!resendKey) {
       console.error(JSON.stringify({ level: "error", source: "uptime-check", code: "alert_email_unconfigured", timestamp: new Date().toISOString() }));
@@ -49,19 +48,48 @@ export default async function handler(req: Request): Promise<Response> {
         },
         body: JSON.stringify({
           from: "HireStepX Alerts <alerts@hirestepx.com>",
-          to: ["support@hirestepx.com"],
+          to: [(process.env.ALERT_EMAIL || "").trim() || "support@hirestepx.com"],
           subject,
           text,
         }),
         signal: AbortSignal.timeout(8000),
       });
       if (res.ok) return true;
-      console.error(JSON.stringify({ level: "error", source: "uptime-check", code: "alert_email_failed", httpStatus: res.status, timestamp: new Date().toISOString() }));
+      logAlertFailure("email", { httpStatus: res.status });
       return false;
     } catch (err) {
-      console.error(JSON.stringify({ level: "error", source: "uptime-check", code: "alert_email_failed", error: err instanceof Error ? err.message : String(err), timestamp: new Date().toISOString() }));
+      logAlertFailure("email", { error: err instanceof Error ? err.message : String(err) });
       return false;
     }
+  }
+
+  // Second channel so a Resend outage (which is also when this cron most needs
+  // to speak up) does not silence the only alert.
+  async function sendSlack(subject: string, text: string): Promise<boolean> {
+    const hook = (process.env.SLACK_ALERT_WEBHOOK_URL || "").trim();
+    if (!hook) return false;
+    try {
+      const res = await fetch(hook, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: `*${subject}*\n${text}` }),
+        signal: AbortSignal.timeout(5000),
+      });
+      if (res.ok) return true;
+      logAlertFailure("slack", { httpStatus: res.status });
+      return false;
+    } catch (err) {
+      logAlertFailure("slack", { error: err instanceof Error ? err.message : String(err) });
+      return false;
+    }
+  }
+
+  // Returns false only when NO channel delivered. The caller surfaces that as a
+  // 500 so the cron shows as failed instead of silently dropping the only
+  // notification the founder gets.
+  async function sendAlertEmail(subject: string, text: string): Promise<boolean> {
+    const [email, slack] = await Promise.all([sendEmail(subject, text), sendSlack(subject, text)]);
+    return email || slack;
   }
 
   try {
@@ -135,15 +163,23 @@ export default async function handler(req: Request): Promise<Response> {
       status: 200,
       headers: { "Content-Type": "application/json" },
     });
-  } catch {
+  } catch (err) {
+    const reason = err instanceof Error ? err.message : String(err);
     console.error(JSON.stringify({
       level: "alert",
       source: "uptime-check",
       error: "Health check request failed",
+      reason,
       timestamp: new Date().toISOString(),
     }));
 
-    return new Response(JSON.stringify({ alert: true, error: "Health check unreachable" }), {
+    // An unreachable /api/health is the outage itself; it must page, not just log.
+    const delivered = await sendAlertEmail(
+      "[ACTION] [ALERT] HireStepX: health check unreachable",
+      `The daily uptime check could not read ${baseUrl}/api/health (${reason}).\n\nThe site may be down, or the endpoint is failing. Check the Vercel deployment and logs.`,
+    );
+
+    return new Response(JSON.stringify({ alert: true, alertEmailSent: delivered, error: "Health check unreachable" }), {
       status: 503,
       headers: { "Content-Type": "application/json" },
     });

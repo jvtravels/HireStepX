@@ -1,21 +1,23 @@
 /* Admin sections: financials, LLM/provider usage, cost reconciliation. */
 
-import { fetchJSON, daysAgo, LIMIT_LLM, fetchCount, TTS_SERVICES, STT_SERVICES, supa } from "./_admin-shared";
+import { fetchJSON, fetchAllRows, readQuality, daysAgo, LIMIT_LLM, fetchCount, TTS_SERVICES, STT_SERVICES, supa } from "./_admin-shared";
 import { emptyBreakdown, categorizeLlmError } from "./_admin-llm-categorizer";
 import { getAnomalies } from "./_admin-activity";
 import { markRecovered, successLatency } from "./_llm-slo";
 import { costBreakdown, llmCallInr, ttsInr, sttInr, istDate, RATES_LAST_VERIFIED_AT, rateCardAgeDays, isRateCardStale } from "./_cost-helpers";
 
 export async function getFinancials() {
-  const [payments, activeProfiles] = await Promise.all([
-    fetchJSON<{
+  const [paymentsRead, profilesRead] = await Promise.all([
+    fetchAllRows<{
       id: string; user_id: string; amount: number; currency: string; status: string; tier: string; plan: string; created_at: string;
-    }>(`payments?select=id,user_id,amount,currency,status,tier,plan,created_at&order=created_at.desc&limit=2000`),
+    }>(`payments?select=id,user_id,amount,currency,status,tier,plan,created_at`),
     // Active paid subscriptions: tier not free AND subscription_end in the future
-    fetchJSON<{ subscription_tier: string; subscription_end: string | null }>(
-      `profiles?select=subscription_tier,subscription_end&subscription_tier=neq.free&subscription_tier=not.is.null&limit=5000`,
+    fetchAllRows<{ id: string; subscription_tier: string; subscription_end: string | null }>(
+      `profiles?select=id,subscription_tier,subscription_end&subscription_tier=neq.free&subscription_tier=not.is.null`,
     ),
   ]);
+  const payments = paymentsRead.rows;
+  const activeProfiles = profilesRead.rows;
 
   const now = Date.now();
   const isSuccess = (p: { status: string }) =>
@@ -146,6 +148,7 @@ export async function getFinancials() {
     pendingPayments: pending.length,
     successRate,
     avgTransactionPaise,
+    ...readQuality({ payments: paymentsRead, profiles: profilesRead }),
     paidUserCount,
     arpuPaise,
     estimatedMrrPaise,
@@ -464,14 +467,21 @@ export async function modeledCostForMonth(month: string): Promise<number> {
   const start = `${month}-01`;
   const startDate = new Date(`${start}T00:00:00Z`);
   const end = new Date(Date.UTC(startDate.getUTCFullYear(), startDate.getUTCMonth() + 1, 1)).toISOString().slice(0, 10);
-  const [llmUsage, serviceUsage] = await Promise.all([
-    fetchJSON<{ total_tokens: number; is_fallback: boolean }>(
-      `llm_usage?select=total_tokens,is_fallback&created_at=gte.${start}&created_at=lt.${end}&limit=20000`,
+  const [llmRead, serviceRead] = await Promise.all([
+    fetchAllRows<{ id: string; total_tokens: number; is_fallback: boolean }>(
+      `llm_usage?select=id,total_tokens,is_fallback&created_at=gte.${start}&created_at=lt.${end}`,
     ),
-    fetchJSON<{ service: string; request_chars: number | null; status: string }>(
-      `service_usage?select=service,request_chars,status&created_at=gte.${start}&created_at=lt.${end}&limit=20000`,
+    fetchAllRows<{ id: string; service: string; request_chars: number | null; status: string }>(
+      `service_usage?select=id,service,request_chars,status&created_at=gte.${start}&created_at=lt.${end}`,
     ),
   ]);
+  // This number is compared against a real invoice and persisted; a short or failed read would
+  // store a falsely low "modeled" cost and a bogus variance, so refuse instead.
+  if (llmRead.failed || serviceRead.failed || llmRead.truncated || serviceRead.truncated) {
+    throw new Error(`modeled cost for ${month} could not be computed from complete usage data`);
+  }
+  const llmUsage = llmRead.rows;
+  const serviceUsage = serviceRead.rows;
   let primaryTok = 0, fallbackTok = 0;
   for (const u of llmUsage) {
     if (u.is_fallback) fallbackTok += u.total_tokens || 0;
@@ -535,12 +545,16 @@ export async function getCostData() {
   };
   type VoiceRow = { service: string; request_chars: number | null; user_id: string | null; created_at: string };
 
-  const [recentSessions, llmRows, voiceRows, reconciliations] = await Promise.all([
-    fetchJSON<SessionRow>(`sessions?select=id,user_id,type,focus,score,duration,llm_cost_inr,prompt_tokens,completion_tokens,created_at&created_at=gte.${thirtyDaysAgo}&order=created_at.desc&limit=2000`),
-    fetchJSON<LlmRow>(`llm_usage?select=endpoint,model,is_fallback,prompt_tokens,completion_tokens,total_tokens,session_id,user_id,created_at&created_at=gte.${thirtyDaysAgo}&limit=20000`),
-    fetchJSON<VoiceRow>(`service_usage?select=service,request_chars,user_id,created_at&created_at=gte.${thirtyDaysAgo}&limit=20000`),
+  const [sessionsRead, llmRead, voiceRead, reconciliations] = await Promise.all([
+    fetchAllRows<SessionRow>(`sessions?select=id,user_id,type,focus,score,duration,llm_cost_inr,prompt_tokens,completion_tokens,created_at&created_at=gte.${thirtyDaysAgo}`),
+    fetchAllRows<LlmRow>(`llm_usage?select=id,endpoint,model,is_fallback,prompt_tokens,completion_tokens,total_tokens,session_id,user_id,created_at&created_at=gte.${thirtyDaysAgo}`),
+    fetchAllRows<VoiceRow>(`service_usage?select=id,service,request_chars,user_id,created_at&created_at=gte.${thirtyDaysAgo}`),
     fetchJSON<CostReconciliationRow>(`cost_rate_reconciliations?select=month,actual_invoice_inr,modeled_inr,note,created_at&order=month.desc&limit=12`),
   ]);
+
+  const recentSessions = sessionsRead.rows;
+  const llmRows = llmRead.rows;
+  const voiceRows = voiceRead.rows;
 
   // Price every logged LLM call per model; failed calls log 0 tokens so cost 0.
   const priced = llmRows.map(r => ({
@@ -669,6 +683,7 @@ export async function getCostData() {
   const topSessions = [...costedSessions].sort((a, b) => b.costInr - a.costInr).slice(0, 30);
 
   return {
+    ...readQuality({ sessions: sessionsRead, llm_usage: llmRead, service_usage: voiceRead }),
     totalLlmInr,
     avgCostPerSession: month.perSessionInr,
     highestSessionCostInr: round2(topSessions[0]?.costInr || 0),
