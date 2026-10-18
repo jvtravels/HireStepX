@@ -156,6 +156,9 @@ function experienceBucket(m: JobMatch): string | null {
 // job-type label). Color is reserved for genuine state (Matched,
 // Employer interested, New); job type is a category, not a state, so it stays
 // neutral per the design system's "accent for state, not decoration" rule.
+const EMPTY_BTN_STYLE = { borderRadius: 8, height: 36, fontFamily: f.sans, fontSize: 13, fontWeight: 500 } as const;
+const EMPTY_ACTIONS_STYLE = { display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center", marginTop: 4 } as const;
+
 type BadgeTone = "neutral" | "success" | "brand" | "info";
 const BADGE_TONE: Record<BadgeTone, { color: string; background: string }> = {
   neutral: { color: t.inkSoft, background: t.creamSoft },
@@ -423,7 +426,7 @@ export default function DashboardJobs() {
         <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkFaint, margin: 0, textAlign: "center", maxWidth: 320 }}>
           {message}
         </p>
-        <Button variant="outline" onClick={retry} style={{ borderRadius: 8, height: 36, fontFamily: f.sans, fontSize: 13, fontWeight: 500 }}>
+        <Button variant="outline" onClick={retry} style={EMPTY_BTN_STYLE}>
           Retry
         </Button>
       </div>,
@@ -441,14 +444,14 @@ export default function DashboardJobs() {
           Jobs show up here when your profile matches an open role, or when an employer shows interest in you. You can't apply; employers come to you.
           Complete your resume, keep practising, and stay visible to employers to be matched sooner.
         </p>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center", marginTop: 4 }}>
-          <Button onClick={() => router.push("/session/new")} style={{ borderRadius: 8, height: 36, fontFamily: f.sans, fontSize: 13, fontWeight: 500 }}>
+        <div style={EMPTY_ACTIONS_STYLE}>
+          <Button onClick={() => router.push("/session/new")} style={EMPTY_BTN_STYLE}>
             Start a practice session
           </Button>
-          <Button onClick={() => router.push("/resume")} variant="outline" style={{ borderRadius: 8, height: 36, fontFamily: f.sans, fontSize: 13, fontWeight: 500 }}>
+          <Button onClick={() => router.push("/resume")} variant="outline" style={EMPTY_BTN_STYLE}>
             Complete your resume
           </Button>
-          <Button onClick={() => router.push("/settings")} variant="outline" style={{ borderRadius: 8, height: 36, fontFamily: f.sans, fontSize: 13, fontWeight: 500 }}>
+          <Button onClick={() => router.push("/settings")} variant="outline" style={EMPTY_BTN_STYLE}>
             Check employer visibility
           </Button>
         </div>

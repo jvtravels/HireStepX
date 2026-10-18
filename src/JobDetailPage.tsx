@@ -31,7 +31,11 @@ import CandidateRequestsCard from "./CandidateRequestsCard";
    radius, 24px padding, flat) so the two detail screens read as one product. */
 const PANEL_STYLE = { background: t.white, border: `1px solid ${t.line}`, borderRadius: 16, padding: 24, minWidth: 0 } as const;
 const SECTION_HEADING_STYLE = { fontFamily: f.sans, fontSize: 15, fontWeight: 600, color: t.coal, margin: "0 0 8px" } as const;
+const HEADING_FLUSH_STYLE = { fontFamily: f.sans, fontSize: 15, fontWeight: 600, color: t.coal, margin: 0 } as const;
+const ACTION_STACK_STYLE = { display: "flex", flexDirection: "column", gap: 8, marginTop: 12 } as const;
+const ACTION_TOP_STYLE = { marginTop: 12 } as const;
 const BODY_TEXT_STYLE = { fontFamily: f.sans, fontSize: 14, color: t.coal, margin: 0, lineHeight: 1.6, whiteSpace: "pre-line", overflowWrap: "anywhere" } as const;
+const BODY_TIGHT_STYLE = { ...BODY_TEXT_STYLE, marginTop: 10 } as const;
 const EMPTY_TEXT_STYLE = { fontFamily: f.sans, fontSize: 13, color: t.inkFaint, fontStyle: "italic", margin: 0 } as const;
 
 function IconTile({ children }: { children: React.ReactNode }) {
@@ -350,7 +354,7 @@ export default function JobDetailPage() {
             onError={(msg) => toast(msg, "error")}
           />
           <section aria-labelledby="job-details-heading" style={PANEL_STYLE}>
-            <h2 id="job-details-heading" style={{ ...SECTION_HEADING_STYLE, margin: 0 }}>Role details</h2>
+            <h2 id="job-details-heading" style={HEADING_FLUSH_STYLE}>Role details</h2>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginTop: 16 }}>
               <Detail
                 icon={<UsersIcon size={14} aria-hidden="true" />}
@@ -380,19 +384,19 @@ export default function JobDetailPage() {
           </section>
           {closed ? (
             <section aria-labelledby="job-closed-heading" style={PANEL_STYLE}>
-              <h2 id="job-closed-heading" style={{ ...SECTION_HEADING_STYLE, margin: 0 }}>This role is closed</h2>
-              <p style={{ ...BODY_TEXT_STYLE, marginTop: 10 }}>
+              <h2 id="job-closed-heading" style={HEADING_FLUSH_STYLE}>This role is closed</h2>
+              <p style={BODY_TIGHT_STYLE}>
                 The employer is no longer hiring for this role. Your profile stays visible to other employers.
               </p>
-              <Button type="button" variant="outline" style={{ marginTop: 12 }} onClick={backToJobs}>See other matches</Button>
+              <Button type="button" variant="outline" style={ACTION_TOP_STYLE} onClick={backToJobs}>See other matches</Button>
             </section>
           ) : !job.unlocked && (
             <section aria-labelledby="job-strengthen-heading" style={PANEL_STYLE}>
-              <h2 id="job-strengthen-heading" style={{ ...SECTION_HEADING_STYLE, margin: 0 }}>Strengthen your match</h2>
-              <p style={{ ...BODY_TEXT_STYLE, marginTop: 10 }}>
+              <h2 id="job-strengthen-heading" style={HEADING_FLUSH_STYLE}>Strengthen your match</h2>
+              <p style={BODY_TIGHT_STYLE}>
                 You can't apply to this role. Employers reach out when a profile stands out, so a stronger profile helps.
               </p>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 12 }}>
+              <div style={ACTION_STACK_STYLE}>
                 <Button type="button" onClick={() => router.push(`/session/new?role=${encodeURIComponent(job.roleTitle)}`)}>
                   Practise for {job.roleTitle}
                 </Button>

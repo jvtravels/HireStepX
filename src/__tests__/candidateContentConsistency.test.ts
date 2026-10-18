@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { computePracticeCoverage, practiceCoverageStatus } from "../dashboardData";
+import { computePracticeCoverage } from "../dashboardData";
+import { practiceCoverageStatus } from "../practiceCoverageStatus";
 import { computeATSScore } from "../resumeAts";
 import { planUsageLabels } from "../planCardCopy";
 import { atCompany } from "../sessionReport/roleLabel";

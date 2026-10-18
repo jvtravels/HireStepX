@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Spinner } from "@/components/ui/spinner";
 import { ThinkingOrb } from "thinking-orbs";
+import { useModalDialog } from "./useModalDialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -1238,35 +1239,7 @@ export const TranscriptPanel = memo(function TranscriptPanel({ transcript, inter
     return () => mql.removeEventListener("change", handler);
   }, []);
 
-  const panelRef = useRef<HTMLDivElement>(null);
-  // The full-viewport backdrop below swallows clicks outside the drawer, so
-  // this is a modal: Escape closes, Tab stays inside, focus returns to the
-  // control that opened it.
-  useEffect(() => {
-    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    panelRef.current?.focus();
-    const onKey = (ev: KeyboardEvent) => {
-      if (ev.key === "Escape") {
-        ev.stopPropagation();
-        setShowTranscript(false);
-        return;
-      }
-      if (ev.key !== "Tab" || !panelRef.current) return;
-      const focusables = panelRef.current.querySelectorAll<HTMLElement>("button, [href], input, select, textarea, [tabindex]:not([tabindex='-1'])");
-      if (focusables.length === 0) return;
-      const first = focusables[0];
-      const last = focusables[focusables.length - 1];
-      const active = document.activeElement;
-      if (ev.shiftKey && (active === first || active === panelRef.current)) { ev.preventDefault(); last.focus(); }
-      else if (!ev.shiftKey && active === last) { ev.preventDefault(); first.focus(); }
-    };
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      if (opener?.isConnected) opener.focus();
-    };
-  }, [setShowTranscript]);
-
+  const panelRef = useModalDialog<HTMLDivElement>(() => setShowTranscript(false));
   // Panel transcript filter
   const [transcriptFilter, setTranscriptFilter] = useState("all");
   const filteredTranscript = transcriptFilter === "all" ? transcript : transcript.filter(msg => {
@@ -1312,10 +1285,7 @@ export const TranscriptPanel = memo(function TranscriptPanel({ transcript, inter
             <div style={{ width: 36, height: 4, borderRadius: 2, background: e.lineStrong }} />
           </div>
         )}
-        <div style={{
-          padding: "16px 20px", borderBottom: `1px solid ${e.line}`,
-          display: "flex", justifyContent: "space-between", alignItems: "center",
-        }}>
+        <div style={{ padding: "16px 20px", borderBottom: `1px solid ${e.line}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div>
             <span id="iv-transcript-title" style={{ fontFamily: ef.sans, fontSize: 18, fontWeight: 500, color: e.coal, letterSpacing: "-0.01em", display: "block" }}>
               Transcript
@@ -1324,13 +1294,7 @@ export const TranscriptPanel = memo(function TranscriptPanel({ transcript, inter
               Live transcript · audio is never recorded
             </span>
           </div>
-          <Button
-            variant="outline"
-            size="icon-lg"
-            className="rounded-full"
-            onClick={() => setShowTranscript(false)}
-            aria-label="Close transcript"
-          >
+          <Button variant="outline" size="icon-lg" className="rounded-full" onClick={() => setShowTranscript(false)} aria-label="Close transcript">
             <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </Button>
         </div>

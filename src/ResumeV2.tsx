@@ -15,7 +15,7 @@ import { useMemo } from "react";
 import { tokens as T, fonts as F, textSize as S } from "./auth/_tokens";
 import { useAuth } from "./AuthContext";
 import { useDashboardSessions, useDashboardUIActions } from "./DashboardContext";
-import { practiceCoverageStatus } from "./dashboardData";
+import { practiceCoverageStatus } from "./practiceCoverageStatus";
 import { useResumeUpload, type ResumePhase } from "./useResumeUpload";
 import { PortfolioLinksSection } from "./settingsSections";
 import LoadingScreen from "./_LoadingScreen";

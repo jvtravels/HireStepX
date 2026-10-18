@@ -246,12 +246,10 @@ export function useInterviewEngine() {
           if (valid) {
             draftRef.current = valid;
           } else {
-            // Rejected draft (no answer yet): keep its id so a refresh before
-            // the first answer re-sends the SAME sessionId to
-            // record-session-start (idempotent) instead of charging a second credit.
-            if (parsed && typeof parsed.sessionId === "string" && parsed.sessionId
-              && typeof parsed.savedAt === "number" && Date.now() - parsed.savedAt < 30 * 60_000
-              && (!parsed.interviewType || parsed.interviewType === interviewType)) {
+            // No answer yet: keep the id so a refresh re-sends the SAME sessionId
+            // (idempotent) instead of charging a second credit.
+            if (typeof parsed?.sessionId === "string" && parsed.sessionId && typeof parsed.savedAt === "number"
+              && Date.now() - parsed.savedAt < 30 * 60_000 && (!parsed.interviewType || parsed.interviewType === interviewType)) {
               unansweredSessionIdRef.current = parsed.sessionId;
             }
             localStorage.removeItem(draftKey);
@@ -363,9 +361,8 @@ export function useInterviewEngine() {
      The endpoint is idempotent on sessionId (handles React StrictMode
      double-mount and any client retry); save-session.ts checks the
      same started_session_ids list to avoid double-bumping on completion.
-     Fire-and-forget with up to two retries (1.5s, 4s) — a transient network blip on the
-     first attempt must not silently drop the session-start record, which
-     would cause quota counting to undercount active sessions. */
+     Fire-and-forget with up to two retries (1.5s, 4s): a transient blip must
+     not drop the session-start record (quota would undercount). */
   useEffect(() => {
     if (!user?.id) return; // anon sessions don't count
     if (missingStartIntentRef.current) return; // B-EMP2: bouncing to /dashboard — don't charge a credit
@@ -373,17 +370,14 @@ export function useInterviewEngine() {
     (async () => {
       const { apiFetch } = await import("./apiClient");
       type StartResp = { ok: boolean; allowed?: boolean; recorded?: boolean; concurrent?: boolean; reason?: string };
-      // apiFetch never rejects: transient failures arrive as status 0 / 429 / 5xx.
-      // Retry those with backoff; the endpoint is idempotent on sessionId.
+      // apiFetch never rejects; status 0 / 429 / 5xx are transient, retried (idempotent on sessionId).
       const delays = [0, 1500, 4000];
       let startResult = await apiFetch<StartResp>("/api/record-session-start", { sessionId, type: interviewType });
       for (let i = 1; i < delays.length && !startResult.ok && (startResult.status === 0 || startResult.status === 429 || startResult.status >= 500); i++) {
         await new Promise(r => setTimeout(r, delays[i]));
         startResult = await apiFetch<StartResp>("/api/record-session-start", { sessionId, type: interviewType });
       }
-      // S9-B24 — credit gate: server blocked this session start (over free limit,
-      // no purchased credits). Mirror the generate-questions 403 path so the user
-      // lands on the upgrade modal instead of a broken interview.
+      // S9-B24 credit gate: over the free limit with no credits, so go to the upgrade modal.
       if (!startResult.ok && startResult.status === 403) {
         const reason = startResult.data?.reason || "";
         toast(reason || "Session limit reached — redirecting to dashboard.", "info");
@@ -391,8 +385,7 @@ export function useInterviewEngine() {
         return;
       }
       if (!startResult.ok) {
-        // Fail open so an outage never blocks practice; save-session still
-        // debits on completion because the id is absent from started_session_ids.
+        // Fail open: save-session still debits on completion (id absent from started_session_ids).
         console.error("[interview] record-session-start permanently failed:", startResult.status, startResult.error);
         captureClientEvent("record_session_start_failed", {
           session_id: sessionId,
@@ -401,8 +394,7 @@ export function useInterviewEngine() {
         });
         return;
       }
-      // OA-B50: server detected an in-flight session on another device — warn so the
-      // user knows they may consume a second credit.
+      // OA-B50: in-flight session on another device may consume a second credit.
       if (startResult.data?.concurrent) {
         toast("Heads-up: it looks like another session is active on a different device. Running two sessions simultaneously may use extra practice credits.", "info");
       }
