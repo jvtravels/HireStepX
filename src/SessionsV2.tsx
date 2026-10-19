@@ -171,14 +171,6 @@ function parseRowDate(date: string): number {
   return Number.isNaN(t) ? 0 : t;
 }
 
-const START_BTN_STYLE: React.CSSProperties = {
-  padding: "12px 20px",
-  height: 44,
-  gap: 8,
-  fontSize: 15,
-  boxShadow: `0px 2px 4px color-mix(in srgb, ${T.indigo} 20%, transparent)`,
-};
-
 const WORKSPACE_ACTIONS_STYLE: React.CSSProperties = { flex: "1 1 auto" };
 const SEARCH_STYLE: React.CSSProperties = { flex: "1 1 240px", minWidth: 200, maxWidth: 560 };
 
@@ -188,7 +180,7 @@ function PageHeader({ onStartSession }: { onStartSession: () => void }) {
       title="Sessions"
       subtitle="Review your practice sessions, track your progress and keep improving."
       actions={
-        <Button onClick={onStartSession} style={START_BTN_STYLE}>
+        <Button onClick={onStartSession}>
           <PlusIcon size={16} strokeWidth={2.5} aria-hidden="true" />
           Start session
         </Button>
@@ -252,7 +244,7 @@ function WorkspaceHeader({
             style={SEARCH_STYLE}
           />
           <FiltersPanel sections={sections} value={filters} onApply={onFiltersChange} />
-          <Button size="lg" className="gap-2 px-4" onClick={onStartSession}>
+          <Button onClick={onStartSession}>
             <PlusIcon size={16} strokeWidth={2.5} aria-hidden="true" />
             Start session
           </Button>
@@ -375,7 +367,7 @@ export function SessionsTable({
               <SearchXIcon size={22} color={T.inkFaint} aria-hidden="true" />
               <p style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: T.coal, margin: 0 }}>No sessions match your filters</p>
               <p style={{ fontFamily: font.ui, fontSize: 13, color: T.inkFaint, margin: 0 }}>Try a different search term or clear a filter.</p>
-              <Button variant="outline" size="sm" onClick={onClearFilters} style={{ height: 44, borderRadius: 8, fontFamily: font.ui, fontSize: 13, fontWeight: 500, color: T.inkSoft }}>
+              <Button variant="outline" onClick={onClearFilters}>
                 Clear filters
               </Button>
             </div>
@@ -464,9 +456,7 @@ export function SessionsTable({
                   <p style={{ fontFamily: font.ui, fontSize: 13, color: T.inkFaint, margin: 0 }}>Try a different search term or clear a filter.</p>
                   <Button
                     variant="outline"
-                    size="sm"
                     onClick={onClearFilters}
-                    style={{ height: 36, borderRadius: 8, fontFamily: font.ui, fontSize: 13, fontWeight: 500, color: T.inkSoft }}
                   >
                     Clear filters
                   </Button>
@@ -546,10 +536,7 @@ function SessionsEmptyState({ onStartSession }: { onStartSession: () => void }) 
         <p style={{ fontFamily: font.ui, fontSize: 14, lineHeight: "22px", color: T.inkFaint, margin: 0 }}>
           Start your first mock interview to see your score, progress, and coaching notes here.
         </p>
-        <Button
-          onClick={onStartSession}
-          style={{ fontFamily: font.ui, fontSize: 14, gap: 8, height: 44 }}
-        >
+        <Button size="lg" onClick={onStartSession}>
           <PlusIcon size={16} aria-hidden="true" />
           Start session
         </Button>

@@ -116,13 +116,13 @@ export default class ErrorBoundary extends Component<Props, State> {
             </pre>
           )}
           <div style={{ display: "flex", gap: 12 }}>
-            <Button variant="outline" onClick={this.handleReset} style={{ fontFamily: font.ui, padding: "10px 24px" }}>
+            <Button variant="outline" onClick={this.handleReset} >
               Try Again
             </Button>
             {/* General navigation CTA, not score-related — indigo is the
                 one brand/interactive color; copper stays reserved for
                 score/streak/reward visuals. */}
-            <Button onClick={() => { window.location.replace("/dashboard"); }} style={{ fontFamily: font.ui, padding: "10px 24px" }}>
+            <Button onClick={() => { window.location.replace("/dashboard"); }} >
               Go to Dashboard
             </Button>
           </div>
@@ -195,7 +195,7 @@ export class RouteErrorBoundary extends Component<{ children: ReactNode }, Route
               overflow: "auto", fontFamily: font.mono, textAlign: "left",
             }}>{this.state.error.message}</pre>
           )}
-          <Button variant="outline" size="sm" onClick={() => this.setState({ hasError: false, error: null })} style={{ fontFamily: font.ui, padding: "8px 20px" }}>
+          <Button variant="outline" size="sm" onClick={() => this.setState({ hasError: false, error: null })} >
             Try Again
           </Button>
         </div>

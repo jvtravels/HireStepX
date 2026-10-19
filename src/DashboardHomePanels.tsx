@@ -82,8 +82,7 @@ export function DraftBanner({ type, savedAt, onResume, onDismiss }: DraftBannerP
         <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory, display: "block", marginBottom: 2 }}>You have an unfinished interview</span>
         <span style={{ fontFamily: font.ui, fontSize: 12, color: c.stone }}>{type.charAt(0).toUpperCase() + type.slice(1)} · saved {relativeTime(new Date(savedAt).toISOString())}</span>
       </div>
-      <Button onClick={onResume}
-        style={{ fontFamily: font.ui, fontSize: 12, padding: "8px 18px", height: "auto", whiteSpace: "nowrap" }}>
+      <Button onClick={onResume} size="sm">
         Resume
       </Button>
       <Button variant="ghost" size="icon-sm" onClick={onDismiss} aria-label="Dismiss draft" style={{ color: c.stone }}>
@@ -141,8 +140,7 @@ export function PracticeReminderBanner({ text, onStart }: { text: string; onStar
     <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 20px", borderRadius: radius.md, background: `oklch(from ${T.indigo} l c h / 0.03)`, borderLeft: `3px solid ${T.indigo}`, marginBottom: sp.xl }}>
       <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={T.indigo} strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
       <span style={{ fontFamily: font.ui, fontSize: 14, color: c.chalk, flex: 1, lineHeight: 1.5 }}>{text}</span>
-      <Button onClick={onStart} size="sm" style={{ fontFamily: font.ui, fontSize: 12, color: T.indigo, background: `oklch(from ${T.indigo} l c h / 0.08)`, border: `1px solid oklch(from ${T.indigo} l c h / 0.2)`, borderRadius: 8, whiteSpace: "nowrap" }}
-      >Practice Now</Button>
+      <Button onClick={onStart} size="sm" variant="outline">Practice Now</Button>
     </div>
   );
 }
@@ -336,7 +334,7 @@ export function ChartsRow({ scoreTrend, skills, isMobile, onStartSession, onNavi
               </svg>
               <div style={{ position: "absolute", inset: 0, background: "rgba(250,247,240,0.85)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", borderRadius: radius.md }}>
                 <p style={{ fontFamily: font.ui, fontSize: 14, color: c.chalk, marginBottom: 12 }}>Complete your first session to see your trend</p>
-                <Button onClick={onStartSession} style={{ fontFamily: font.ui, fontSize: 13, height: "auto", padding: "8px 20px" }}>Start a Session</Button>
+                <Button onClick={onStartSession}>Start a Session</Button>
               </div>
             </div>
           )}
@@ -383,7 +381,7 @@ export function ChartsRow({ scoreTrend, skills, isMobile, onStartSession, onNavi
               </div>
               <div style={{ position: "absolute", inset: 0, background: "rgba(250,247,240,0.85)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", borderRadius: radius.md }}>
                 <p style={{ fontFamily: font.ui, fontSize: 13, color: c.chalk, lineHeight: 1.5, textAlign: "center", maxWidth: 220, marginBottom: 10 }}>Complete a session to unlock your skill breakdown</p>
-                <Button onClick={onStartSession} size="sm" style={{ fontFamily: font.ui, fontSize: 12, height: "auto", padding: "7px 16px" }}>Get Started</Button>
+                <Button onClick={onStartSession} size="sm">Get Started</Button>
               </div>
             </div>
           )}

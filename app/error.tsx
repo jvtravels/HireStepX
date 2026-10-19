@@ -106,7 +106,7 @@ export default function GlobalRouteError({
         </p>
       ) : null}
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "center" }}>
-        <Button type="button" onClick={reset} style={{ fontFamily: font.ui, padding: "12px 28px" }}>
+        <Button type="button" onClick={reset} >
           Try again
         </Button>
         <Link

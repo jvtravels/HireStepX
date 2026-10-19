@@ -610,12 +610,7 @@ function PermissionCard({
             variant="default"
             size="sm"
             onClick={onRequest}
-            style={{
-              fontFamily: F.sans, fontSize: 12, fontWeight: 500,
-              padding: "8px 14px", borderRadius: 8,
-              background: T.indigo, color: T.cream, border: "1px solid transparent",
-              cursor: "pointer", transition: "all 160ms ease",
-            }}
+            style={{ background: T.indigo, color: T.cream, border: "1px solid transparent", cursor: "pointer", transition: "all 160ms ease" }}
           >
             Allow
           </Button>
@@ -635,12 +630,7 @@ function PermissionCard({
             size="sm"
             onClick={onDisable}
             aria-label="Turn camera off for this session"
-            style={{
-              fontFamily: F.sans, fontSize: 12, fontWeight: 500,
-              padding: "6px 10px", borderRadius: 8,
-              background: "transparent", color: T.inkSoft, border: 0,
-              cursor: "pointer",
-            }}
+            style={{ background: "transparent", color: T.inkSoft, border: 0, cursor: "pointer" }}
           >
             Turn off
           </Button>
@@ -651,12 +641,7 @@ function PermissionCard({
             variant="outline"
             size="sm"
             onClick={onRequest}
-            style={{
-              fontFamily: F.sans, fontSize: 12, fontWeight: 500,
-              padding: "8px 14px", borderRadius: 8,
-              background: T.white, color: T.coal, border: `1px solid ${T.lineStrong}`,
-              cursor: "pointer", transition: "all 160ms ease",
-            }}
+            style={{ background: T.white, color: T.coal, border: `1px solid ${T.lineStrong}`, cursor: "pointer", transition: "all 160ms ease" }}
           >
             Retry
           </Button>
@@ -667,12 +652,7 @@ function PermissionCard({
             variant="ghost"
             size="sm"
             onClick={onSkip}
-            style={{
-              fontFamily: F.sans, fontSize: 12, fontWeight: 500,
-              padding: "8px 12px", borderRadius: 8,
-              background: "transparent", color: T.inkSoft, border: "0",
-              cursor: "pointer",
-            }}
+            style={{ background: "transparent", color: T.inkSoft, border: "0", cursor: "pointer" }}
           >
             Skip
           </Button>
@@ -683,12 +663,7 @@ function PermissionCard({
             variant="outline"
             size="sm"
             onClick={onRequest}
-            style={{
-              fontFamily: F.sans, fontSize: 12, fontWeight: 500,
-              padding: "8px 14px", borderRadius: 8,
-              background: T.white, color: T.coal, border: `1px solid ${T.lineStrong}`,
-              cursor: "pointer",
-            }}
+            style={{ background: T.white, color: T.coal, border: `1px solid ${T.lineStrong}`, cursor: "pointer" }}
           >
             Enable
           </Button>
@@ -2157,9 +2132,7 @@ export default function SessionSetup() {
                     type="button"
                     variant="link"
                     onClick={() => setShowUpgradeModal(true)}
-                    style={{ background: 'none', border: 'none', fontWeight: 600,
-                             color: 'inherit', cursor: 'pointer', fontSize: 13,
-                             textDecoration: 'underline', padding: 0, height: "auto" }}
+                    style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', textDecoration: 'underline' }}
                   >
                     Upgrade
                   </Button>

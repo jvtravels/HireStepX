@@ -156,9 +156,7 @@ export const SessionHeader = memo(function SessionHeader({ type, dateLabel, scor
   return (
     <div className="sd-anim" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 32, animationDelay: "0s" }}>
       <div>
-        <Button variant="ghost" onClick={onBack} style={{
-          gap: 6, fontSize: 12, color: c.stone, marginBottom: 16,
-        }}>
+        <Button variant="ghost" onClick={onBack} style={{ gap: 6, color: c.stone, marginBottom: 16 }}>
           <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
           Back
         </Button>
@@ -203,20 +201,12 @@ export interface ActionBarProps {
 export const ActionBar = memo(function ActionBar({ copied, onCopy, onDownload }: ActionBarProps) {
   return (
     <div className="sd-anim" style={{ display: "flex", gap: 8, marginBottom: 24, animationDelay: "0.05s" }}>
-      <Button variant="outline" size="sm" onClick={onCopy} aria-label="Copy report" style={{
-        fontWeight: 500,
-        background: copied ? "rgba(21,128,61,0.08)" : "transparent",
-        borderColor: copied ? "rgba(21,128,61,0.3)" : c.border,
-        color: copied ? c.sage : c.stone,
-      }}>
+      <Button variant="outline" size="sm" onClick={onCopy} aria-label="Copy report" style={{ background: copied ? "rgba(21,128,61,0.08)" : "transparent", borderColor: copied ? "rgba(21,128,61,0.3)" : c.border, color: copied ? c.sage : c.stone }}>
         {copied ? <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
           : <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>}
         {copied ? "Copied!" : "Copy"}
       </Button>
-      <Button variant="outline" size="sm" onClick={onDownload} aria-label="Download report" style={{
-        fontWeight: 500,
-        color: c.stone,
-      }}>
+      <Button variant="outline" size="sm" onClick={onDownload} aria-label="Download report" style={{ color: c.stone }}>
         <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         Download
       </Button>
@@ -614,7 +604,7 @@ export const FeedbackSection = memo(function FeedbackSection({ feedbackRating, f
             onBlur={(e) => { e.currentTarget.style.borderColor = c.border; }}
             onKeyDown={(e) => { if (e.key === "Enter") onSubmitComment(); }}
           />
-          <Button onClick={onSubmitComment} style={{ fontFamily: font.ui, fontSize: 11 }}>
+          <Button onClick={onSubmitComment} >
             Save
           </Button>
         </div>
@@ -650,17 +640,17 @@ export const WhatsNext = memo(function WhatsNext({ session, skillEntries, isFree
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
         {weakest && (
           <Button onClick={() => onNavigate(`/session/new?type=${session.type}&focus=${weakest.name.toLowerCase().replace(/\s+/g, "-")}`)}
-            style={{ fontFamily: font.ui, boxShadow: shadow.sm }}>
+            style={{ boxShadow: shadow.sm }}>
             <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polygon points="5,3 19,12 5,21"/></svg>
             Practice {weakest.name}
           </Button>
         )}
         <Button variant="outline" onClick={() => onNavigate(`/session/new?type=${nextType}&difficulty=${nextDifficulty}`)}
-          style={{ fontFamily: font.ui, fontWeight: 500, borderColor: c.border, color: c.chalk }}>
+          style={{ borderColor: c.border, color: c.chalk }}>
           Try {normalizeType(nextType)}
         </Button>
         <Button variant="outline" onClick={() => onNavigate("/sessions")}
-          style={{ fontFamily: font.ui, fontWeight: 500, borderColor: c.border, color: c.stone }}>
+          style={{ borderColor: c.border, color: c.stone }}>
           Back to Sessions
         </Button>
       </div>
@@ -668,7 +658,7 @@ export const WhatsNext = memo(function WhatsNext({ session, skillEntries, isFree
         <div style={{ marginTop: 16, padding: "14px 18px", borderRadius: 10, background: "oklch(0.359 0.135 278.697 / 0.04)", border: `1px solid oklch(0.359 0.135 278.697 / 0.1)`, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
           <span style={{ fontSize: 12, color: c.stone }}>Need more practice? Sessions start at ₹9, no subscription</span>
           <Button variant="outline" size="sm" onClick={() => { window.location.href = "/#pricing"; }}
-            style={{ fontFamily: font.ui, fontWeight: 600, borderColor: "oklch(0.359 0.135 278.697 / 0.2)", color: c.slate, whiteSpace: "nowrap" }}>
+            style={{ borderColor: "oklch(0.359 0.135 278.697 / 0.2)", color: c.slate, whiteSpace: "nowrap" }}>
             Upgrade
           </Button>
         </div>

@@ -115,7 +115,7 @@ export default function OutcomePromptBanner() {
         <p style={{ fontFamily: font.ui, fontSize: 13, color: c.chalk, margin: 0, flex: 1 }}>
           Couldn&apos;t save your update. Please try again.
         </p>
-        <Button onClick={() => setStage("filling")} size="sm" style={{ fontFamily: font.ui, fontSize: 12 }}>Retry</Button>
+        <Button onClick={() => setStage("filling")} size="sm" >Retry</Button>
       </div>
     );
   }
@@ -146,8 +146,8 @@ export default function OutcomePromptBanner() {
           <strong style={{ color: c.ivory }}>How&apos;s your job search going?</strong> 30-second update — helps us show real outcomes (and the next person practicing what you did).
         </p>
         <div style={{ display: "flex", gap: 8 }}>
-          <Button onClick={onSkip} variant="outline" size="sm" style={{ fontFamily: font.ui, fontSize: 12, color: c.stone }}>Not now</Button>
-          <Button onClick={() => setStage("filling")} size="sm" style={{ fontFamily: font.ui, fontSize: 12 }}>Share update</Button>
+          <Button onClick={onSkip} variant="outline" size="sm" style={{ color: c.stone }}>Not now</Button>
+          <Button onClick={() => setStage("filling")} size="sm" >Share update</Button>
         </div>
       </div>
     );
@@ -213,8 +213,8 @@ export default function OutcomePromptBanner() {
       )}
 
       <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
-        <Button onClick={onSkip} variant="outline" style={{ fontFamily: font.ui, fontSize: 12, color: c.stone }}>Cancel</Button>
-        <Button onClick={onSubmit} disabled={submitting} style={{ fontFamily: font.ui, fontSize: 13 }}>
+        <Button onClick={onSkip} variant="outline" style={{ color: c.stone }}>Cancel</Button>
+        <Button onClick={onSubmit} disabled={submitting} >
           {submitting ? "Saving…" : "Submit"}
         </Button>
       </div>

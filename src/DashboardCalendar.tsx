@@ -274,7 +274,7 @@ function PrepRunwayRail({ interview, all, onStart, onBuild, building }: {
                   <div style={{ fontSize: 13, fontWeight: 600, color: c.ivory, lineHeight: 1.25 }}>{n.title}</div>
                   <div style={{ fontSize: 12, color: c.chalk, marginTop: 3, lineHeight: 1.35 }}>{n.detail}</div>
                   {n.state === "active" && (
-                    <Button className="cpr-tap" size="sm" onClick={onStart} style={{ marginTop: sp.sm, fontFamily: font.ui, boxShadow: shadow.sm }}>
+                    <Button className="cpr-tap" size="sm" onClick={onStart} style={{ marginTop: sp.sm, boxShadow: shadow.sm }}>
                       <Icon size={13}>{I.play}</Icon> Start practice
                     </Button>
                   )}
@@ -288,7 +288,7 @@ function PrepRunwayRail({ interview, all, onStart, onBuild, building }: {
           <p style={{ fontSize: 13, color: c.chalk, margin: 0, lineHeight: 1.5, maxWidth: 440 }}>
             No prep sessions yet. Build a countdown of AI mock interviews mapped backward from this date, so you walk in ready.
           </p>
-          <Button className="cpr-tap" onClick={onBuild} disabled={building} style={{ fontFamily: font.ui, boxShadow: shadow.sm }}>
+          <Button className="cpr-tap" onClick={onBuild} disabled={building} style={{ boxShadow: shadow.sm }}>
             <Icon size={15}>{I.sparkle}</Icon> {building ? "Building…" : "Build Prep Runway"}
           </Button>
         </div>
@@ -826,7 +826,7 @@ export default function CalendarPage() {
             </p>
           </div>
           <div className="cpr-actions" style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: sp.sm }}>
-            <Button className="cpr-tap" onClick={openNewForm} style={{ fontFamily: font.ui, boxShadow: shadow.sm }}>
+            <Button className="cpr-tap" onClick={openNewForm} style={{ boxShadow: shadow.sm }}>
               <Icon size={16}>{I.plus}</Icon> Add interview
             </Button>
           </div>
@@ -1014,9 +1014,9 @@ export default function CalendarPage() {
               {formError && <span style={{ fontFamily: font.ui, fontSize: 12, color: c.ember }}>{formError}</span>}
               <div style={{ display: "flex", gap: 10 }}>
                 <Button className="cpr-tap" variant="outline" onClick={() => { setShowForm(false); resetForm(); }}
-                  style={{ fontFamily: font.ui, fontSize: 13.5, padding: "12px 20px" }}>Cancel</Button>
+                  >Cancel</Button>
                 <Button className="cpr-tap" onClick={handleSave} disabled={!canSave}
-                  style={{ flex: 1, fontFamily: font.ui, fontSize: 13.5, padding: "12px 24px", boxShadow: canSave ? shadow.sm : "none" }}>
+                  style={{ flex: 1, boxShadow: canSave ? shadow.sm : "none" }}>
                   {saving ? "Saving…" : editingId ? "Save changes" : (<><Icon size={15}>{I.plus}</Icon> Add interview</>)}
                 </Button>
               </div>
@@ -1072,7 +1072,7 @@ export default function CalendarPage() {
 
                 {/* actions */}
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap", borderTop: `1px solid ${c.borderSubtle}`, marginTop: sp.lg, paddingTop: sp.md }}>
-                  <Button className="cpr-tap" size="sm" onClick={() => startMock(focused)} style={{ fontFamily: font.ui, boxShadow: shadow.sm }}>
+                  <Button className="cpr-tap" size="sm" onClick={() => startMock(focused)} style={{ boxShadow: shadow.sm }}>
                     <Icon size={13}>{I.play}</Icon> {practiceLabel}
                   </Button>
                   <div style={{ position: "relative" }}>
@@ -1107,7 +1107,7 @@ export default function CalendarPage() {
               <p style={{ fontSize: 13, color: c.chalk, margin: "0 auto 18px", maxWidth: 360, lineHeight: 1.5 }}>
                 Add your interview schedule to get countdown reminders and an adaptive Prep Runway of mock sessions.
               </p>
-              <Button className="cpr-tap" onClick={openNewForm} style={{ fontFamily: font.ui, boxShadow: shadow.sm }}>
+              <Button className="cpr-tap" onClick={openNewForm} style={{ boxShadow: shadow.sm }}>
                 <Icon size={15}>{I.plus}</Icon> Add your first interview
               </Button>
             </Card>

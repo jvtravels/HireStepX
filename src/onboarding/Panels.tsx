@@ -91,7 +91,8 @@ export function TopBar({
           variant="ghost"
           onClick={onNavigateHome}
           aria-label="HireStepX home"
-          style={{ padding: 0, color: "inherit", height: "auto" }}
+          className="h-auto p-0"
+          style={{ color: "inherit" }}
         >
           <Wordmark />
         </Button>
@@ -111,13 +112,8 @@ export function TopBar({
                   aria-haspopup="menu"
                   aria-expanded={menuOpen}
                   aria-label={`Account: ${display}`}
-                  style={{
-                    fontFamily: f.sans,
-                    fontWeight: 500,
-                    color: t.coal,
-                    borderRadius: 999,
-                    padding: "4px 10px 4px 4px",
-                  }}
+                  className="h-auto rounded-full py-1 pl-1 pr-2.5"
+                  style={{ color: t.coal }}
                 >
                   <span
                     aria-hidden="true"
@@ -263,7 +259,7 @@ export function ResumeEmptyState({
                 type="button"
                 variant="link"
                 onClick={onUndo}
-                style={{ marginLeft: 12, color: t.indigo, fontSize: 13, height: "auto", padding: 0 }}
+                style={{ marginLeft: 12, color: t.indigo }}
               >
                 Undo
               </Button>
@@ -408,11 +404,9 @@ export function ResumeEmptyState({
               <Button
                 type="button"
                 variant="outline"
+                size="lg"
                 onClick={onSkip}
-                style={{
-                  fontFamily: f.sans, color: t.indigo,
-                  minHeight: 44, // mobile tap target
-                }}
+                style={{ color: t.indigo }}
               >
                 Continue without resume
               </Button>
@@ -625,7 +619,7 @@ export function ResumeLoadingState({
               variant="link"
               onClick={onCancel}
               className="hsx-link-indigo"
-              style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 500, color: t.indigo, height: "auto", padding: 0 }}
+              style={{ color: t.indigo }}
             >
               Cancel
             </Button>
@@ -857,14 +851,8 @@ export function ProfileReadyState({
                     size="sm"
                     onClick={() => setRoleEditing(true)}
                     title="Edit target role"
-                    style={{
-                      fontFamily: f.sans,
-                      fontWeight: 500,
-                      color: t.indigo,
-                      background: t.indigo100,
-                      borderColor: t.indigo,
-                      borderRadius: 999,
-                    }}
+                    className="rounded-full"
+                    style={{ color: t.indigo, background: t.indigo100, borderColor: t.indigo }}
                   >
                     {targetRole && targetRole.trim()
                       ? targetRole
@@ -910,7 +898,7 @@ export function ProfileReadyState({
                 onClick={onReanalyze}
                 className="hsx-link-indigo"
                 title="Re-run the AI parse on this file"
-                style={{ fontFamily: f.sans, fontWeight: 500, color: t.indigo, height: "auto", padding: 0 }}
+                style={{ color: t.indigo }}
               >
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <polyline points="23 4 23 10 17 10" />
@@ -925,7 +913,7 @@ export function ProfileReadyState({
                 variant="link"
                 onClick={onRemove}
                 className="hsx-link-indigo"
-                style={{ fontFamily: f.sans, fontWeight: 500, color: t.inkSoft, height: "auto", padding: 0 }}
+                style={{ color: t.inkSoft }}
               >
                 Remove
               </Button>
@@ -1240,23 +1228,11 @@ function ScoreGauge({
         <div className="hsx-onb-cta-pair" style={{ marginTop: "auto", paddingTop: 14, borderTop: `1px solid ${t.line}`, display: "flex", gap: 8 }}>
           <Button
             type="button"
+            size="lg"
             onClick={onStartInterview}
             disabled={!!starting}
             className="hsx-onb-cta-primary"
-            style={{
-              flex: "1 1 auto",
-              minWidth: 0,
-              height: 44,
-              background: t.indigo,
-              color: t.white,
-              fontFamily: f.sans,
-              letterSpacing: "-0.005em",
-              cursor: starting ? "wait" : "pointer",
-              opacity: starting ? 0.85 : 1,
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-            }}
+            style={{ flex: "1 1 auto", minWidth: 0, background: t.indigo, color: t.white, cursor: starting ? "wait" : "pointer", opacity: starting ? 0.85 : 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
           >
             {starting ? "Starting…" : "Start mock interview"}
             {!starting && (
@@ -1269,16 +1245,10 @@ function ScoreGauge({
             <Button
               type="button"
               variant="outline"
+              size="lg"
               onClick={onGoToDashboard}
               disabled={!!starting}
-              style={{
-                flexShrink: 0,
-                height: 44,
-                color: t.inkSoft,
-                fontFamily: f.sans,
-                fontWeight: 500,
-                whiteSpace: "nowrap",
-              }}
+              style={{ flexShrink: 0, color: t.inkSoft, whiteSpace: "nowrap" }}
             >
               Dashboard
             </Button>

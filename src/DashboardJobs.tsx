@@ -413,7 +413,7 @@ export default function DashboardJobs() {
               <FiltersPanel sections={filterSections} value={filters} onApply={setFilters} />
             </>
           )}
-          <Button size="lg" className={isNarrow ? "gap-2 px-4 w-full" : "gap-2 px-4"} onClick={() => router.push("/session/new")}>
+          <Button className={isNarrow ? "w-full" : undefined} onClick={() => router.push("/session/new")}>
             <PlusIcon size={16} strokeWidth={2.5} aria-hidden="true" />
             Start session
           </Button>
@@ -491,7 +491,7 @@ export default function DashboardJobs() {
                   <Button
                     variant="outline"
                     onClick={clearAllFilters}
-                    style={{ marginTop: 4, borderRadius: 8, height: 44, fontFamily: f.sans, fontSize: 13, fontWeight: 500 }}
+                    className="mt-1"
                   >
                     Clear filters
                   </Button>
@@ -530,7 +530,7 @@ export default function DashboardJobs() {
                       <Button
                         variant="outline"
                         onClick={clearAllFilters}
-                        style={{ marginTop: 4, borderRadius: 8, height: 44, fontFamily: f.sans, fontSize: 12.5, fontWeight: 500 }}
+                        className="mt-1"
                       >
                         Clear filters
                       </Button>

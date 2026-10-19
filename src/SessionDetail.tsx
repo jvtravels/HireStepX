@@ -70,7 +70,7 @@ export function LoadErrorScreen({ message, onRetry, onBack }: { message: string;
             type="button"
             variant="outline"
             onClick={onBack}
-            style={{ color: T.indigo, borderColor: T.indigo, fontWeight: 600 }}
+            style={{ color: T.indigo, borderColor: T.indigo }}
           >
             Back to Sessions
           </Button>

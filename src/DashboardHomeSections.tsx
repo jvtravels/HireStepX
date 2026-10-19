@@ -146,10 +146,7 @@ export function StatCardsRow({
           {!loading && improvementsCount > 0 && <Tag label={`${improvementsCount} to improve`} />}
         </div>
         <ProgressBar value={loading ? 0 : resumeScore ?? 0} color={t.coal} />
-        <Button type="button" variant="ghost" onClick={onViewResume} style={{
-          alignSelf: "flex-start", background: "none", border: "none", padding: 0, height: "auto", cursor: "pointer",
-          fontFamily: f.sans, fontSize: textSize.sm, fontWeight: 600, color: t.indigo,
-        }}>View Details →</Button>
+        <Button type="button" variant="link" size="sm" onClick={onViewResume} className="self-start">View Details →</Button>
       </StatCard>
 
       <StatCard>
@@ -259,7 +256,7 @@ export function NextMoveCard({ isFirstTimer, ctaLabel, onStart, sessionMinutes, 
         {NEXT_MOVE_DESCRIPTION}
       </p>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", columnGap: 20, rowGap: 12, marginTop: 4 }}>
-        <Button type="button" size="cta" onClick={onStart} style={{ fontFamily: f.sans }}>
+        <Button type="button" size="lg" onClick={onStart}>
           {ctaLabel} →
         </Button>
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", columnGap: 10, rowGap: 4, fontFamily: f.sans, fontSize: textSize.sm, color: t.inkFaint }}>
@@ -467,9 +464,9 @@ export function NoSessionsEmptyState({ onStart }: { onStart: () => void }) {
       </p>
       <Button
         type="button"
-        size="cta"
+        size="lg"
         onClick={onStart}
-        style={{ marginTop: 6, fontFamily: f.sans }}
+        className="mt-1.5"
       >
         Start Your First Session
       </Button>

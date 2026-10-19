@@ -579,7 +579,7 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
               {verifyRetries > 0 && (
                 <Button size="sm" onClick={retryVerification}>Retry Verification</Button>
               )}
-              <Button variant="outline" size="sm" onClick={() => { setError(""); setVerifyRetries(0); }} style={{ color: T.indigo, minHeight: "max(36px, var(--coarse-min, 0px))" }}>Dismiss</Button>
+              <Button variant="outline" size="sm" onClick={() => { setError(""); setVerifyRetries(0); }} style={{ color: T.indigo }}>Dismiss</Button>
             </div>
           </div>
         )}
@@ -587,7 +587,7 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
         {/* Promo Code — collapsed by default */}
         {!showPromo && !promoResult?.valid && (
           <div style={{ textAlign: "left", marginBottom: 12 }}>
-            <Button variant="link" onClick={() => setShowPromo(true)} style={{ fontSize: 12, color: T.indigo, padding: 0, height: "auto" }}>
+            <Button variant="link" onClick={() => setShowPromo(true)} style={{ color: T.indigo }}>
               Have a promo code?
             </Button>
           </div>
@@ -686,11 +686,11 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
                           </div>
                           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                             <Button variant="outline" size="icon" onClick={() => setSingleQty(q => Math.max(1, q - 1))} disabled={singleQty <= 1 || !!loading} aria-label="Remove one session"
-                              style={{ flexShrink: 0, background: c.carbon, color: singleQty <= 1 ? c.stone : c.ivory, fontSize: 18, fontWeight: 300 }}>&#8722;</Button>
+                              style={{ flexShrink: 0, background: c.carbon, color: singleQty <= 1 ? c.stone : c.ivory }}>&#8722;</Button>
                             <input type="range" min={1} max={10} step={1} value={singleQty} onChange={e => setSingleQty(Number(e.target.value))} disabled={!!loading} aria-label="Number of sessions" aria-valuenow={singleQty} aria-valuemin={1} aria-valuemax={10} className="upgrade-session-slider"
                               style={{ flex: 1, background: `linear-gradient(to right, ${T.copper} 0%, ${T.copper} ${((singleQty - 1) / 9) * 100}%, ${c.border} ${((singleQty - 1) / 9) * 100}%, ${c.border} 100%)` }} />
                             <Button variant="outline" size="icon" onClick={() => setSingleQty(q => Math.min(10, q + 1))} disabled={singleQty >= 10 || !!loading} aria-label="Add one session"
-                              style={{ flexShrink: 0, background: singleQty >= 10 ? c.carbon : `oklch(0.359 0.135 278.697 / 0.10)`, color: singleQty >= 10 ? c.stone : T.indigo, fontSize: 18, fontWeight: 300 }}>&#43;</Button>
+                              style={{ flexShrink: 0, background: singleQty >= 10 ? c.carbon : `oklch(0.359 0.135 278.697 / 0.10)`, color: singleQty >= 10 ? c.stone : T.indigo }}>&#43;</Button>
                           </div>
                           <p style={{ margin: 0, fontFamily: font.ui, fontSize: 12, color: c.stone, textAlign: "center" }}>
                             {singleQty === 1 ? "1 session" : `${singleQty} sessions`}
@@ -884,7 +884,7 @@ export const PaywallGate = memo(function PaywallGate({ feature, onUpgrade }: { f
             </div>
           )}
 
-          <Button onClick={onUpgrade} size="cta">
+          <Button onClick={onUpgrade} size="lg">
             {copy.cta}
           </Button>
           <span style={{ fontFamily: font.mono, fontSize: 11, color: c.stone, marginTop: 10 }}>{copy.footnote}</span>
@@ -984,15 +984,15 @@ export const EmptyState = memo(function EmptyState({ onStartWarmup, onStartCusto
           3 friendly behavioral questions, ~5 minutes. We'll use your resume to personalize every question and set your baseline score.
         </p>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
-          <Button className="shimmer-btn warmup-pulse-btn" size="cta" onClick={onStartWarmup}
-            style={{ fontFamily: font.ui, animation: "warmupPulse 2s ease-in-out infinite" }}
+          <Button className="shimmer-btn warmup-pulse-btn" size="lg" onClick={onStartWarmup}
+            style={{ animation: "warmupPulse 2s ease-in-out infinite" }}
             onMouseEnter={(e) => { e.currentTarget.style.animation = "none"; }}
             onMouseLeave={(e) => { e.currentTarget.style.animation = "warmupPulse 2s ease-in-out infinite"; }}
           >
             <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="5,3 19,12 5,21" /></svg>
             Start Warmup
           </Button>
-          <Button variant="link" onClick={onStartCustom} style={{ fontSize: 12, fontWeight: 500, color: c.stone }}>
+          <Button variant="link" onClick={onStartCustom} style={{ color: c.stone }}>
             or choose your own session
           </Button>
         </div>

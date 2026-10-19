@@ -85,13 +85,8 @@ const Icons = {
 function OutlineCta({ children, onClick, size = "md" }: {
   children: React.ReactNode; onClick?: () => void; size?: "sm" | "md";
 }) {
-  const pad = size === "sm" ? "9px 16px" : "13px 20px";
   return (
-    <Button type="button" variant="outline" onClick={onClick} style={{
-      display: "inline-flex", alignItems: "center", gap: 8,
-      padding: pad, borderRadius: 8, minHeight: 44, height: "auto",
-      fontFamily: f.sans, fontSize: 14,
-    }}>{children}</Button>
+    <Button type="button" variant="outline" size={size === "sm" ? "default" : "lg"} onClick={onClick}>{children}</Button>
   );
 }
 
@@ -312,10 +307,7 @@ function OutcomePrompt({ firstSessionDate, isCampus }: { firstSessionDate: strin
         )}
         <Button
           type="button" onClick={submit} disabled={busy}
-          style={{
-            marginTop: 12, width: "100%", height: "auto", padding: "8px 0",
-            fontFamily: f.sans, fontSize: 13,
-          }}
+          className="mt-3 w-full"
         >
           {busy ? "Saving…" : "Share result"}
         </Button>
@@ -571,10 +563,7 @@ export default function DashboardHome() {
             Recent Sessions
           </h2>
           {sessions.hasData && (
-            <Button variant="ghost" onClick={goToSessions} className="hover:bg-transparent hover:underline underline-offset-4" style={{
-              fontFamily: f.sans, fontSize: 13, color: t.indigo,
-              padding: "10px 14px", minHeight: 44, height: "auto",
-            }}>View all →</Button>
+            <Button variant="link" size="sm" onClick={goToSessions}>View all →</Button>
           )}
         </div>
         {sessions.sessionsLoading ? (
