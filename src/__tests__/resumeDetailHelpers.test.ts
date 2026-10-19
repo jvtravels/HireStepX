@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { extractResumeDetail, redactResumeDetailForLock, coarsenLockedCity, coarsenPeriod, resumeOwnName } from "../../server-handlers/_resume-detail-helpers";
+import { extractResumeDetail, redactResumeDetailForLock, coarsenLockedCity, coarsenPeriod } from "../../server-handlers/_resume-detail-helpers";
 import { scrubLockedResume } from "../../server-handlers/_employer-matching-helpers";
 
 describe("extractResumeDetail", () => {
@@ -93,21 +93,6 @@ describe("redactResumeDetailForLock", () => {
     expect(redacted.industries).toEqual(["E-commerce"]);
     expect(redacted.noticePeriod).toBe("30 days");
     expect(redacted.currentCtc).toBe("₹22 LPA");
-  });
-
-  it("also removes the name as written on the CV when it differs from the profile name", () => {
-    const detail = extractResumeDetail({ skills: [], summary: "Mohammed Jaleel is an aspiring Design Lead." });
-    const own = resumeOwnName({ name: "Mohammed Jaleel Khan" });
-    const redacted = redactResumeDetailForLock(detail, `Mohammed Khan ${own}`);
-    expect(redacted.summary).not.toMatch(/jaleel|mohammed|khan/i);
-    expect(redacted.summary).toContain("aspiring Design Lead");
-  });
-
-  it("resumeOwnName tolerates missing and malformed resume data", () => {
-    expect(resumeOwnName(null)).toBe("");
-    expect(resumeOwnName([])).toBe("");
-    expect(resumeOwnName({ name: 42 })).toBe("");
-    expect(resumeOwnName({ name: "A B" })).toBe("A B");
   });
 
   it("keeps certifications visible", () => {

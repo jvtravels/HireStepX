@@ -85,14 +85,6 @@ function scrubName(text: string, fullName: string): string {
   return out.replace(/(The candidate)(\s+\1)+/gi, "$1");
 }
 
-/** The name written on the CV itself. It can differ from `profiles.name` (a
- *  middle name, a nickname, a longer spelling), and the AI summary uses it. */
-export function resumeOwnName(resumeData: unknown): string {
-  if (!resumeData || typeof resumeData !== "object" || Array.isArray(resumeData)) return "";
-  const name = (resumeData as Record<string, unknown>).name;
-  return typeof name === "string" ? name : "";
-}
-
 /** Placeholder for an employer, school or project name taken out of free text. */
 const ENTITY_PLACEHOLDER = "[withheld]";
 // Shorter names ("EY", "HP") would match inside ordinary words.
