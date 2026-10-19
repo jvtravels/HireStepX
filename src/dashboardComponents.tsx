@@ -9,6 +9,7 @@ import type { DashboardSession } from "./dashboardTypes";
 import { FREE_SESSION_LIMIT, STARTER_WEEKLY_LIMIT, SINGLE_SESSION_PRICE } from "./dashboardData";
 import { SectionErrorBoundary } from "./ErrorBoundary";
 import { Button } from "@/components/ui/button";
+import CandidatePageHeader, { CandidatePagePanel } from "./CandidatePageHeader";
 import { PLAN_AMOUNT_PAISE, formatRupees } from "../data/plans";
 
 // Cream/indigo/copper results report — ported from the `interview-result`
@@ -826,6 +827,13 @@ const gateCopy: Record<string, GateCopy> = {
   },
 };
 
+/* Page title a gated feature shows in the panel header, matching its breadcrumb. */
+const GATE_TITLE: Record<string, string> = {
+  "The Readiness Index": "Analytics",
+  "Performance Analytics": "Analytics",
+  "Interview Calendar": "Calendar",
+};
+
 export const PaywallGate = memo(function PaywallGate({ feature, onUpgrade }: { feature: string; onUpgrade: () => void }) {
   const highlights = featureHighlights[feature];
   const copy: GateCopy = gateCopy[feature] ?? {
@@ -840,57 +848,33 @@ export const PaywallGate = memo(function PaywallGate({ feature, onUpgrade }: { f
   }, [feature]);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
-      {/* Page header — same title treatment as every other dashboard page
-          (Sessions/Jobs), so a gated page still reads as "this page" rather
-          than a bare dialog dropped under the shell. */}
-      <div style={{ padding: "4px 4px 20px", flexShrink: 0 }}>
-        <h1 style={{ fontFamily: font.ui, fontSize: 26, fontWeight: 700, color: T.coal, margin: 0, letterSpacing: "-0.01em", lineHeight: "32px" }}>{feature}</h1>
-      </div>
+    <CandidatePagePanel>
+      <CandidatePageHeader title={GATE_TITLE[feature] ?? feature} />
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: "48px 24px" }}>
+        <div style={{ width: 64, height: 64, borderRadius: "50%", background: T.indigo100, border: `1px solid ${T.line}`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 20 }}>
+          <svg aria-hidden="true" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={T.indigo} strokeWidth="1.5" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        </div>
+        <p style={{ fontFamily: font.ui, fontSize: 14, color: c.stone, lineHeight: 1.6, maxWidth: 360, margin: `0 0 ${highlights ? 16 : 24}px` }}>
+          {copy.body}
+        </p>
 
-      <div style={{ position: "relative", flex: 1, minHeight: "calc(100dvh - 280px)", overflow: "hidden" }}>
-        {/* Blurred preview background */}
-        <div aria-hidden="true" style={{ position: "absolute", inset: 0, opacity: 0.15, filter: "blur(6px)", pointerEvents: "none", padding: 40 }}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 20 }}>
-            {[1, 2, 3].map(i => (
-              <div key={i} style={{ height: 80, borderRadius: 12, background: c.graphite, border: `1px solid ${c.border}` }} />
+        {highlights && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 24, maxWidth: 280 }}>
+            {highlights.items.map(item => (
+              <div key={item} style={{ display: "flex", alignItems: "center", gap: 8, textAlign: "left" }}>
+                <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c.sage} strokeWidth="2" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span style={{ fontFamily: font.ui, fontSize: 13, color: c.chalk }}>{item}</span>
+              </div>
             ))}
           </div>
-          <div style={{ height: 200, borderRadius: 14, background: c.graphite, border: `1px solid ${c.border}`, marginBottom: 16 }} />
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            {[1, 2].map(i => (
-              <div key={i} style={{ height: 120, borderRadius: 12, background: c.graphite, border: `1px solid ${c.border}` }} />
-            ))}
-          </div>
-        </div>
+        )}
 
-        {/* Lock overlay — flex-centered within the remaining viewport height */}
-        <div style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "calc(100dvh - 280px)", textAlign: "center", padding: 40, zIndex: 1 }}>
-          <div style={{ width: 64, height: 64, borderRadius: "50%", background: "oklch(0.359 0.135 278.697 / 0.06)", border: `1.5px solid oklch(0.359 0.135 278.697 / 0.15)`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 20 }}>
-            <svg aria-hidden="true" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={T.indigo} strokeWidth="1.5" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-          </div>
-          <p style={{ fontFamily: font.ui, fontSize: 14, color: c.stone, lineHeight: 1.6, maxWidth: 360, marginBottom: highlights ? 16 : 24 }}>
-            {copy.body}
-          </p>
-
-          {highlights && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 24, maxWidth: 280 }}>
-              {highlights.items.map(item => (
-                <div key={item} style={{ display: "flex", alignItems: "center", gap: 8, textAlign: "left" }}>
-                  <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c.sage} strokeWidth="2" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
-                  <span style={{ fontFamily: font.ui, fontSize: 13, color: c.chalk }}>{item}</span>
-                </div>
-              ))}
-            </div>
-          )}
-
-          <Button onClick={onUpgrade} size="lg">
-            {copy.cta}
-          </Button>
-          <span style={{ fontFamily: font.mono, fontSize: 11, color: c.stone, marginTop: 10 }}>{copy.footnote}</span>
-        </div>
+        <Button onClick={onUpgrade} size="lg">
+          {copy.cta}
+        </Button>
+        <span style={{ fontFamily: font.mono, fontSize: 11, color: c.stone, marginTop: 10 }}>{copy.footnote}</span>
       </div>
-    </div>
+    </CandidatePagePanel>
   );
 });
 

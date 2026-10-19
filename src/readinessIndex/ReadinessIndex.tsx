@@ -17,6 +17,7 @@ import { captureClientEvent } from "../posthogClient";
 import { useAuth } from "../AuthContext";
 import { markAnalyticsVisited } from "../dashboardHelpers";
 import { AnalyticsRouteSkeleton } from "../routeSkeletons";
+import CandidatePageHeader, { CandidatePagePanel } from "../CandidatePageHeader";
 import type { Fixture, RangeKeyLocal as RangeKey, Pillar } from "./types";
 import { SHEET, BAND_META } from "./ui";
 import {
@@ -191,9 +192,12 @@ function MobileShell({ d }: { d: Fixture }) {
 
 function CenterPane({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ minHeight: 480, display: "flex", alignItems: "center", justifyContent: "center", padding: "48px 22px" }}>
-      <div style={{ maxWidth: 460, textAlign: "center" }}>{children}</div>
-    </div>
+    <CandidatePagePanel>
+      <CandidatePageHeader title="Analytics" />
+      <div style={{ flex: 1, minHeight: 360, display: "flex", alignItems: "center", justifyContent: "center", padding: "48px 22px" }}>
+        <div style={{ maxWidth: 460, textAlign: "center" }}>{children}</div>
+      </div>
+    </CandidatePagePanel>
   );
 }
 
