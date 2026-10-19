@@ -127,6 +127,8 @@ export default function OutcomeFeedbackPage() {
   const available = nextCandidateStatuses(current).filter((s) => !((declined || withdrew) && s === "interview_invited"));
   const selected = choice ? OPTIONS[choice] : null;
   const blocked = access.suspended;
+  const canMessage = !!selected && selected.status !== "shortlisted" && candidate.unlocked && !declined && !withdrew;
+  const sendMessage = canMessage && tellCandidate;
 
   const save = async () => {
     if (!selected) return;
@@ -138,7 +140,7 @@ export default function OutcomeFeedbackPage() {
     const result = await setCandidateStatus(candidate.id, {
       candidateStatus: selected.status,
       note: notes.trim() || undefined,
-      candidateMessage: tellCandidate ? candidateMessage.trim() : "",
+      candidateMessage: sendMessage ? candidateMessage.trim() : "",
     });
     setSubmitting(false);
     if (!result.ok) {
@@ -244,13 +246,20 @@ export default function OutcomeFeedbackPage() {
                   Internal only. The candidate never sees this note.
                 </p>
               </div>
-              {selected && selected.status !== "shortlisted" && (
+              {selected && selected.status !== "shortlisted" && !canMessage && (
+                <p className="m-0 text-xs text-muted-foreground">
+                  {candidate.unlocked
+                    ? "They can't be messaged right now, so only the status will change."
+                    : "Unlock this candidate to send them a message. For now only the status will change."}
+                </p>
+              )}
+              {canMessage && (
                 <div style={{ display: "grid", gap: 8 }}>
                   <label htmlFor="outcome-tell" className="flex cursor-pointer items-center gap-2 text-sm font-medium">
                     <Checkbox id="outcome-tell" checked={tellCandidate} onCheckedChange={(v) => setTellCandidate(v === true)} disabled={blocked} />
                     Also send a message to the candidate
                   </label>
-                  {tellCandidate && (
+                  {sendMessage && (
                     <>
                       <Label htmlFor="outcome-message">Message to candidate</Label>
                       <Textarea

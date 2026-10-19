@@ -306,8 +306,8 @@ const EMAIL_RE = /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i;
 const PHONE_RE =
   /(?:\+?91[\s-]?)?[6-9]\d{4}[\s-]?\d{5}\b|(?:\+?91[\s-]?)?[6-9]\d{9}\b|\+\d{1,3}[\s-]?\d{3,4}[\s-]?\d{3,4}[\s-]?\d{0,4}\b/;
 
-const SPELLED_DIGIT_RE =
-  /\b(?:zero|one|two|three|four|five|six|seven|eight|nine)\b(?:[\s,.-]+\b(?:zero|one|two|three|four|five|six|seven|eight|nine)\b){6,}/i;
+const DIGIT_WORD = String.raw`(?:zero|shunya|sunya|one|ek|two|do|three|teen|four|char|chaar|five|paanch|panch|six|chhe|chhah|chah|seven|saat|eight|aath|nine|nau|double|triple)`;
+const SPELLED_DIGIT_RE = new RegExp(`\\b${DIGIT_WORD}\\b(?:[\\s,.-]+\\b${DIGIT_WORD}\\b){6,}`, "i");
 
 // Phone numbers typed with separators the plain PHONE_RE misses: "98765-43210"
 // is caught there, but "9 8 7 6 5 4 3 2 1 0", "98.76.54.32.10", "(+91) 98765 43210"
@@ -315,7 +315,7 @@ const SPELLED_DIGIT_RE =
 // two separator characters between any two digits. Not preceded or followed by
 // another digit, so a long id or a lakh-formatted salary ("9,00,000") is left alone.
 const SEPARATED_PHONE_RE =
-  /(?<![\d०-९])(?:(?:\+|00)?91[\s.()-]*|0)?[6-9६-९](?:[\s.()-]{0,2}[\d०-९]){9}(?![\d०-९])/;
+  /(?<![\d०-९])(?:(?:\+|00)?91[\s.()\-_/|•·*~]*|0)?[6-9६-९](?:[\s.()\-_/|•·*~]{0,2}[\d०-९]){9}(?![\d०-९])/;
 
 // "name at gmail dot com", "name (at) gmail (dot) com", "name[at]gmail[dot]com",
 // "name @ gmail dot com". A literal "." never takes surrounding spaces, so
@@ -326,7 +326,8 @@ const MAIL_LOCAL = "[a-z0-9._%+-]+";
 const OBFUSCATED_EMAIL_RE = new RegExp(
   `${MAIL_LOCAL}(?:\\s*[(\\[{]\\s*at\\s*[)\\]}]\\s*|\\s*@\\s*)${MAIL_LABEL}(?:${MAIL_DOT}${MAIL_LABEL})*${MAIL_DOT}[a-z]{2,}\\b` +
     // The bare word "at" is only an address when the dot is spoken as well.
-    `|${MAIL_LOCAL}\\s+at\\s+${MAIL_LABEL}(?:\\s+dot\\s+${MAIL_LABEL})*\\s+dot\\s+[a-z]{2,}\\b`,
+    `|${MAIL_LOCAL}\\s+at\\s+${MAIL_LABEL}(?:\\s+dot\\s+${MAIL_LABEL})*\\s+dot\\s+[a-z]{2,}\\b` +
+    `|${MAIL_LOCAL}\\s+at\\s+${MAIL_LABEL}(?:\\.${MAIL_LABEL})*\\.(?:com|in|net|org|co|io|edu)\\b`,
   "i",
 );
 
@@ -347,12 +348,18 @@ const LINK_RE =
 const OFF_PLATFORM_PHRASE_RE =
   /\b(whatsapp|telegram|skype|wechat|signal app|instagram|insta dm)\b|\b(dm|text|message|call|contact|reach)\s+me\s+(on|at|via)\b|\bmy\s+(number|email|whatsapp|insta|instagram)\s+is\b/i;
 
-/** Scans an outgoing message body for contact info / off-platform-contact
- *  solicitation. Returns a short machine-readable reason string to store as
- *  conversation_messages.auto_flag_reason, or null if nothing matched.
- *  Deliberately never blocks the send — see file header. */
-export function detectContactInfoFlag(body: string): string | null {
-  if (!body) return null;
+/** Folds the tricks that slip past the literal patterns: fullwidth and
+ *  compatibility forms (NFKC), Devanagari and Arabic-Indic digits, and
+ *  zero-width or soft-hyphen characters hidden inside a number or address. */
+function foldForContactScan(body: string): string {
+  return body
+    .normalize("NFKC")
+    .replace(/[\u200b-\u200f\u2060\ufeff\u00ad]/g, "")
+    .replace(/[०-९]/g, (d) => String(d.charCodeAt(0) - 0x0966))
+    .replace(/[٠-٩]/g, (d) => String(d.charCodeAt(0) - 0x0660));
+}
+
+function detectPlain(body: string): string | null {
   if (EMAIL_RE.test(body) || OBFUSCATED_EMAIL_RE.test(body)) return "email_detected";
   if (PHONE_RE.test(body) || SEPARATED_PHONE_RE.test(body)) return "phone_number_detected";
   if (SPELLED_DIGIT_RE.test(body)) return "spelled_out_number_detected";
@@ -362,19 +369,21 @@ export function detectContactInfoFlag(body: string): string | null {
   return null;
 }
 
+/** Scans an outgoing message body for contact info / off-platform-contact
+ *  solicitation. Returns a short machine-readable reason string to store as
+ *  conversation_messages.auto_flag_reason, or null if nothing matched.
+ *  Deliberately never blocks the send — see file header. */
+export function detectContactInfoFlag(body: string): string | null {
+  if (!body) return null;
+  return detectPlain(body) ?? detectPlain(foldForContactScan(body));
+}
+
 export const CONTACT_REDACTION_MARK = "[contact details hidden until unlock]";
 export const CONTACT_WITHHELD_NOTICE = "This candidate has chosen not to share contact details with you.";
 export const CONTACT_REDACTED_NOTICE = "Contact details unlock after you unlock this candidate.";
 
-/** Replaces emails (including "x at y dot com"), phone numbers (including
- *  spaced-out digits), spelled-out digit runs, links and @handles with a visible
- *  mark. Applied to message bodies an employer reads while the match is still
- *  Locked: a candidate who shares a number in an "interested" reply must not
- *  hand the employer the contact the unlock fee pays for. The stored body is
- *  untouched, so the full text shows once the employer unlocks. */
-export function redactContactInfo(body: string): { text: string; redacted: boolean } {
-  if (!body) return { text: body, redacted: false };
-  const text = body
+function redactPlain(body: string): string {
+  return body
     .replace(new RegExp(EMAIL_RE.source, "gi"), CONTACT_REDACTION_MARK)
     .replace(new RegExp(OBFUSCATED_EMAIL_RE.source, "gi"), CONTACT_REDACTION_MARK)
     .replace(new RegExp(SEPARATED_PHONE_RE.source, "gu"), CONTACT_REDACTION_MARK)
@@ -382,6 +391,21 @@ export function redactContactInfo(body: string): { text: string; redacted: boole
     .replace(new RegExp(SPELLED_DIGIT_RE.source, "gi"), CONTACT_REDACTION_MARK)
     .replace(new RegExp(LINK_RE.source, "gi"), CONTACT_REDACTION_MARK)
     .replace(new RegExp(SOCIAL_HANDLE_RE.source, "gi"), CONTACT_REDACTION_MARK);
+}
+
+/** Replaces emails (including "x at y dot com"), phone numbers (including
+ *  spaced-out or non-ASCII digits), spelled-out digit runs, links and @handles
+ *  with a visible mark. Applied to message bodies an employer reads while the
+ *  match is still Locked: a candidate who shares a number in an "interested"
+ *  reply must not hand the employer the contact the unlock fee pays for. The
+ *  stored body is untouched, so the full text shows once the employer unlocks.
+ *  When the literal pass leaves something only the folded text reveals, the
+ *  folded text is redacted instead. */
+export function redactContactInfo(body: string): { text: string; redacted: boolean } {
+  if (!body) return { text: body, redacted: false };
+  let text = redactPlain(body);
+  const folded = foldForContactScan(text);
+  if (detectPlain(folded)) text = redactPlain(folded);
   return { text, redacted: text !== body };
 }
 

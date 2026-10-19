@@ -24,6 +24,8 @@ const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
  * Columns the client is allowed to update via this endpoint. Anything not on
  * this list is silently dropped so a malicious client can't touch e.g.
  * subscription_tier, email_verified, deleted_at, etc.
+ * practice_timestamps is deliberately absent: only /api/sessions/save appends
+ * to it, because employers read it as an activity signal.
  */
 export const ALLOWED_COLUMNS = new Set<string>([
   "name",
@@ -36,7 +38,6 @@ export const ALLOWED_COLUMNS = new Set<string>([
   "experience_level",
   "preferred_session_length",
   "interview_types",
-  "practice_timestamps",
   "resume_file_name",
   "resume_text",
   "resume_data",

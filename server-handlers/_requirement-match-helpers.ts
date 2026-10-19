@@ -800,22 +800,31 @@ export const DESCRIPTION_PROMPT_CHARS = 2000;
 const MAX_PROMPT_SKILLS = 20;
 
 /** One candidate's line in the model prompt. */
+/* Candidate-authored text reaches the LLM prompt. Strip control characters
+   and line breaks, collapse whitespace and cap the length so a profile cannot
+   smuggle in a multi-line instruction block. */
+const PROMPT_FIELD_CHARS = 80;
+export function promptSafe(value: unknown, max = PROMPT_FIELD_CHARS): string {
+  if (typeof value !== "string") return "";
+  // eslint-disable-next-line no-control-regex
+  return value.replace(/[\u0000-\u001f\u007f-\u009f\u2028\u2029]+/g, " ").replace(/\s+/g, " ").trim().slice(0, max);
+}
+
 export function candidateSummary(c: CandidatePoolRow): string {
-  const skills = extractSkills(c.resume_data).slice(0, MAX_PROMPT_SKILLS).join(", ") || "none listed";
-  const years = typeof c.years_experience === "number" && Number.isFinite(c.years_experience) ? `${c.years_experience} yrs` : "unknown";
-  const location = extractResumeLocation(c.resume_data) || "unspecified";
-  const role = c.target_role?.trim() || "not specified";
-  // Practice evidence (real mock-interview history) was previously omitted
-  // from this summary entirely, so the model could only judge a candidate
-  // on self-reported role/skills text — it had no way to down-weight a
-  // candidate with zero practice sessions, and generic-sounding corporate
-  // buzzwords ("Business Transformation", "Growth") could read as plausible
-  // for almost any opening. Surfacing it explicitly lets the model apply
-  // the same "no evidence should score low" rule the prompt asks for.
-  const evidence = c.sessions_completed > 0
-    ? `${c.sessions_completed} completed practice session${c.sessions_completed === 1 ? "" : "s"}, avg score ${c.avg_score ?? "n/a"}`
-    : "no completed practice sessions (no evidence of real performance)";
-  return `id: ${c.id} | target role: ${role} | industry: ${c.industry || "unspecified"} | experience: ${years} | location: ${location} | skills: ${skills} | practice history: ${evidence}`;
+  const skills = extractSkills(c.resume_data).slice(0, MAX_PROMPT_SKILLS).map((k) => promptSafe(k, 40)).filter(Boolean);
+  const years = typeof c.years_experience === "number" && Number.isFinite(c.years_experience) ? c.years_experience : null;
+  // Real mock-interview history is the only server-verified signal here; the
+  // prompt asks the model to treat its absence as "no evidence".
+  return JSON.stringify({
+    id: c.id,
+    targetRole: promptSafe(c.target_role) || "not specified",
+    industry: promptSafe(c.industry) || "unspecified",
+    yearsExperience: years,
+    location: promptSafe(extractResumeLocation(c.resume_data)) || "unspecified",
+    skills,
+    completedPracticeSessions: c.sessions_completed,
+    avgPracticeScore: c.sessions_completed > 0 ? c.avg_score ?? null : null,
+  });
 }
 
 function fnv1a(input: string, seed: number): string {

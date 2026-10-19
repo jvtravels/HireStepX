@@ -40,17 +40,21 @@ describe("sanitizeUpdate", () => {
 
   it("preserves arrays, booleans, numbers, nulls, objects", () => {
     const result = sanitizeUpdate({
-      practice_timestamps: ["2026-04-01T00:00:00Z", "2026-04-02T00:00:00Z"],
+      interview_focus: ["behavioural", "technical"],
       has_completed_onboarding: true,
       preferred_session_length: 15,
       resume_data: { topSkills: ["a", "b"] },
       interview_types: null,
     });
-    expect(result.practice_timestamps).toEqual(["2026-04-01T00:00:00Z", "2026-04-02T00:00:00Z"]);
+    expect(result.interview_focus).toEqual(["behavioural", "technical"]);
     expect(result.has_completed_onboarding).toBe(true);
     expect(result.preferred_session_length).toBe(15);
     expect(result.resume_data).toEqual({ topSkills: ["a", "b"] });
     expect(result.interview_types).toBe(null);
+  });
+
+  it("never accepts client-written practice_timestamps", () => {
+    expect("practice_timestamps" in sanitizeUpdate({ practice_timestamps: [new Date().toISOString()] })).toBe(false);
   });
 
   it("rejects non-object input", () => {
@@ -93,7 +97,6 @@ describe("sanitizeUpdate", () => {
       "learning_style",
       "name",
       "portfolio_links",
-      "practice_timestamps",
       "preferred_session_length",
       "resume_data",
       "resume_file_name",
