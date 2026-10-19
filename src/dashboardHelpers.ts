@@ -22,6 +22,8 @@ export interface InterviewEvent {
   start_utc?: string;
   end_utc?: string;
   timezone?: string;
+  /** Date-only event: exported as an all-day entry instead of a made-up clock time. */
+  all_day?: boolean;
   // PRI-35: carried through from the DB row so the Prep Runway rail can group
   // mock-prep sessions under the real interview they prepare for. Optional so
   // legacy localStorage rows and the create form (real interviews) still fit.
@@ -131,6 +133,10 @@ function icsUtc(d: Date): string {
   return d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
 }
 
+function icsDay(d: Date): string {
+  return d.toISOString().slice(0, 10).replace(/-/g, "");
+}
+
 /** Resolve a calendar event's authoritative start/end Date pair. Prefers the
  *  stored UTC instants; falls back to composing the naive date/time strings. */
 function eventInstants(event: InterviewEvent): { start: Date; end: Date } | null {
@@ -165,8 +171,9 @@ export function generateICS(event: InterviewEvent, opts?: { now?: Date }): strin
     "BEGIN:VEVENT",
     `UID:${uid}`,
     `DTSTAMP:${dtstamp}`,
-    `DTSTART:${icsUtc(start)}`,
-    `DTEND:${icsUtc(end)}`,
+    ...(event.all_day
+      ? [`DTSTART;VALUE=DATE:${icsDay(start)}`, `DTEND;VALUE=DATE:${icsDay(new Date(start.getTime() + 86_400_000))}`]
+      : [`DTSTART:${icsUtc(start)}`, `DTEND:${icsUtc(end)}`]),
     "SEQUENCE:0",
     `SUMMARY:${icsEscape(summary)}`,
     `DESCRIPTION:${icsEscape(descParts.join("\n"))}`,

@@ -22,12 +22,10 @@ import {
   SettingsIcon,
   CreditCardIcon,
   UserPlusIcon,
-  MessageSquareIcon,
 } from "lucide-react";
 import { DropdownMenuGroup, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { preloadRouteChunk } from "./routeChunkPreload";
 import AppShellFrame from "./AppShellFrame";
-import { listConversations } from "./messagesApi";
 import { useDashboardCore, useDashboardSessions, useDashboardSubscription, useDashboardUI } from "./DashboardContext";
 const UpgradeModal = dynamic(() => import("./dashboardComponents").then(m => ({ default: m.UpgradeModal })), { ssr: false });
 import { FREE_SESSION_LIMIT, STARTER_WEEKLY_LIMIT } from "./dashboardData";
@@ -76,13 +74,20 @@ const navItems = [
   { id: "analytics", path: "/analytics", label: "Analytics" },
   { id: "resume", path: "/resume", label: "Your Profile" },
   { id: "jobs", path: "/jobs", label: "Jobs" },
-  { id: "messages", path: "/messages", label: "Messages" },
   { id: "referrals", path: "/referrals", label: "Referrals" },
-  { id: "settings", path: "/settings", label: "Settings" },
 ];
 
-/* Nav entries whose sub-routes (e.g. /settings/billing, /messages/<id>)
-   keep the entry highlighted. */
+/* Routes that exist but are deliberately not in the sidebar (Settings is in
+   the account menu, Messages is reached from an interview invite). Kept here
+   so the breadcrumb label resolves and no sidebar item is falsely highlighted. */
+const offNavRoutes = [
+  { id: "messages", path: "/messages", label: "Messages" },
+  { id: "settings", path: "/settings", label: "Settings" },
+];
+const routeItems = [...navItems, ...offNavRoutes];
+
+/* Entries whose sub-routes (e.g. /settings/billing, /messages/<id>) keep the
+   entry active. */
 const NESTED_NAV_IDS = new Set(["messages", "referrals", "settings"]);
 
 function NavIcon({ id }: { id: string }) {
@@ -94,9 +99,7 @@ function NavIcon({ id }: { id: string }) {
     case "analytics": return <TrendingUpIcon {...props} />;
     case "resume": return <FileTextIcon {...props} />;
     case "jobs": return <BriefcaseIcon {...props} />;
-    case "messages": return <MessageSquareIcon {...props} />;
     case "referrals": return <UserPlusIcon {...props} />;
-    case "settings": return <SettingsIcon {...props} />;
     default: return null;
   }
 }
@@ -237,7 +240,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
   // Determine active nav from current route.
   const activeNav = (() => {
     const path = pathname;
-    const nested = navItems.find(item => NESTED_NAV_IDS.has(item.id) && (path === item.path || path?.startsWith(item.path + "/")));
+    const nested = routeItems.find(item => NESTED_NAV_IDS.has(item.id) && (path === item.path || path?.startsWith(item.path + "/")));
     if (nested) return nested.id;
     if (path === "/dashboard" || path === "/dashboard/") return "dashboard";
     // /session/[id] is the Sessions detail view, not its own nav item —
@@ -245,7 +248,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
     // Sessions instead of silently falling back to Dashboard.
     if (path?.startsWith("/session/")) return "sessions";
     if (path?.startsWith("/jobs/")) return "jobs";
-    const match = navItems.find(item => item.path !== "/dashboard" && path === item.path);
+    const match = routeItems.find(item => item.path !== "/dashboard" && path === item.path);
     return match?.id || "dashboard";
   })();
 
@@ -273,7 +276,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
       }))}
       activeId={activeNav}
       onNavigate={(path) => nav.push(path)}
-      messaging={{ fetchConversations: listConversations, basePath: "/messages" }}
+      showNotifications={false}
       audience="candidate"
       onNavHover={(id) => {
         const path = navItems.find((item) => item.id === id)?.path;
@@ -338,8 +341,14 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
               (isStarter && planLeft <= 2) || (isFree && planLeft <= 1)
             );
             const showExhaustedAlarm = planExhausted && !hasCredits;
-            // barFill: matches the "N of N" text — ember when exhausted or low, indigo when healthy.
-            const barFill = (showExhaustedAlarm || isLow) ? c.ember : c.accent;
+            // barFill: ember when exhausted or low, a spent neutral grey when the plan
+            // allowance is used up but purchased credits remain (blue would read as
+            // "healthy"), indigo otherwise.
+            const barFill = (showExhaustedAlarm || isLow)
+              ? c.ember
+              : planExhausted
+                ? `color-mix(in oklch, ${c.inkSoft} 45%, transparent)`
+                : c.accent;
 
 
             return (
@@ -459,8 +468,8 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
       }
       onLogout={() => { authLogout(); }}
       breadcrumbRoot={{ label: "HireStepX", path: "/dashboard" }}
-      pageLabel={navItems.find((item) => item.id === activeNav)?.label || "Dashboard"}
-      pageLabelPath={navItems.find((item) => item.id === activeNav)?.path}
+      pageLabel={routeItems.find((item) => item.id === activeNav)?.label || "Dashboard"}
+      pageLabelPath={routeItems.find((item) => item.id === activeNav)?.path}
       extraCrumbs={breadcrumbExtra}
       isMobile={isMobile}
       mainId="dashboard-main"

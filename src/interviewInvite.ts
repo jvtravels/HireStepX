@@ -1,5 +1,6 @@
 import type { InterviewEvent } from "./dashboardHelpers";
 import type { JobMatch } from "./DashboardJobs";
+import { isDateOnlyInstant } from "./interviewWhen";
 
 const INVITED_STATUSES = new Set(["interview_invited", "interviewing"]);
 
@@ -9,6 +10,7 @@ export function isInterviewInvite(job: Pick<JobMatch, "candidateStatus" | "candi
 
 export function inviteEvent(job: Pick<JobMatch, "id" | "roleTitle" | "companyName" | "interviewScheduledAt">): InterviewEvent | null {
   if (!job.interviewScheduledAt || Number.isNaN(new Date(job.interviewScheduledAt).getTime())) return null;
+  const dateOnly = isDateOnlyInstant(job.interviewScheduledAt);
   return {
     id: `invite-${job.id}`,
     title: `Interview: ${job.roleTitle}`,
@@ -18,8 +20,9 @@ export function inviteEvent(job: Pick<JobMatch, "id" | "roleTitle" | "companyNam
     time: "",
     start_utc: job.interviewScheduledAt,
     duration: 60,
+    all_day: dateOnly,
     location: "",
-    notes: "Invited via HireStepX. Confirm details in your messages.",
+    notes: dateOnly ? "Invited via HireStepX. The employer has not set a time yet, so confirm it in your messages." : "Invited via HireStepX. Confirm details in your messages.",
     status: "upcoming",
     reminders: true,
     role: job.roleTitle,

@@ -2,7 +2,8 @@
 
 import type { ReactNode } from "react";
 import { CalendarIcon, FileTextIcon } from "lucide-react";
-import { clockTime, dayLabel, type ThreadMessage } from "./helpers";
+import { formatInterviewWhen } from "../interviewWhen";
+import { dayLabel, type ThreadMessage } from "./helpers";
 
 export interface RailFact {
   label: string;
@@ -40,7 +41,7 @@ export default function ContextRail({ facts, interviewAt, messages, onOpenAttach
             <CalendarIcon aria-hidden="true" className="size-3.5" /> Interview
           </h3>
           <p className="m-0 text-sm font-medium text-foreground">
-            {dayLabel(interviewAt)}, {clockTime(interviewAt)}
+            {formatInterviewWhen(interviewAt)}
           </p>
         </section>
       )}

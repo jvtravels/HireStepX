@@ -2,6 +2,7 @@
  * they're unit-tested against the real code rather than an inline copy.
  * Mirrors the asBounded.../isValid... pattern in
  * _employer-requirements-helpers.ts. */
+import { formatInterviewWhen } from "../src/interviewWhen";
 
 /** The seven states a candidate can be in against one requirement —
  *  independent of the requirement-level `stage` in
@@ -72,7 +73,7 @@ export function threadMessageFor(
   const said = candidateMessage ? ` Message from the employer: "${candidateMessage}"` : "";
   switch (candidateStatus) {
     case "interview_invited": {
-      const when = interviewScheduledAt ? ` for ${new Date(interviewScheduledAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}` : "";
+      const when = interviewScheduledAt ? ` for ${formatInterviewWhen(interviewScheduledAt)}` : "";
       return `📅 Interview invite sent${when}.${said}`;
     }
     case "interviewing":

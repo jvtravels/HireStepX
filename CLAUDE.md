@@ -278,6 +278,18 @@ if you need to confirm readiness — do not re-trigger.
 - The git workflow: small focused commits on `main` with imperative
   subject lines. Don't amend published commits.
 
+## Candidate product rules (from the maintainer, repeated — do not re-ask)
+
+- **Candidate sidebar** is exactly: Dashboard, Sessions, Analytics, Your Profile,
+  Jobs, Referrals. No Messages, no Settings in the sidebar, and no Messages or
+  Notifications icons in the candidate header. Settings lives in the account menu.
+  (`navItems` / `offNavRoutes` in `src/DashboardLayout.tsx`; header icons are opt-in
+  props on `AppShellFrame`, still on for the employer shell.)
+- Candidates cannot apply to jobs. Only matched jobs are visible to them.
+- Candidates can chat only with employers who contacted them or sent an interview invite.
+- Interviews are always in English. No replay, no peer/human mocks in the MVP.
+- Keep the input border colour as it is.
+
 ## Audit Department Registry
 
 When the user asks for "all departments" or "the audit list", pull this section.

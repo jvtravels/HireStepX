@@ -40,6 +40,7 @@ import { notify } from "./_notify";
 import { findOrCreateConversationId, postSystemMessage } from "./_messages-helpers";
 import { emailShell, title as emailTitle, para, b, button, escapeHtml } from "./_email-theme";
 import { loadEmployerMatchAccess, loadAuthIdentity, DENIED_STATUS } from "./_entitlements";
+import { formatInterviewWhen } from "../src/interviewWhen";
 
 /** Statuses that put the employer in direct contact with the candidate — only
  *  reachable after paying to unlock (rejecting/closing out a match is free). */
@@ -94,7 +95,7 @@ async function sendInterviewInviteEmail(opts: {
     const role = escapeHtml(opts.roleTitle);
     const company = escapeHtml(opts.companyName);
     const when = opts.interviewScheduledAt
-      ? new Date(opts.interviewScheduledAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })
+      ? formatInterviewWhen(opts.interviewScheduledAt)
       : null;
     const headline = `${company} wants to move forward with you for ${role}.`;
     const link = `${APP_URL}/jobs/${encodeURIComponent(opts.matchId)}`;

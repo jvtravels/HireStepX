@@ -18,7 +18,7 @@
    SessionsV2.tsx (Table, Input, Select, DropdownMenu-based FilterPill,
    Button) rather than hand-rolled table/select/button markup. */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   PlusIcon,
@@ -194,7 +194,7 @@ function Badge({ tone, title, children }: { tone: BadgeTone; title?: string; chi
 
 /* Narrow layout (<1024px): one stacked card per match instead of the 8-column
    table, which can't fit without crushing every column. */
-function JobCard({ r, onOpen }: { r: JobMatch; onOpen: () => void }) {
+function JobCard({ r, onOpen, opening }: { r: JobMatch; onOpen: () => void; opening: boolean }) {
   const mode = r.workMode ? WORK_MODE_LABEL[r.workMode] || r.workMode : null;
   const closed = r.status === "closed" || r.status === "failed";
   const comp = formatComp(r.budgetMin, r.budgetMax, r.salaryType);
@@ -209,6 +209,7 @@ function JobCard({ r, onOpen }: { r: JobMatch; onOpen: () => void }) {
         role="button"
         tabIndex={0}
         aria-label={`View details for ${r.roleTitle}${r.unlocked ? ` at ${r.companyName}` : ""}`}
+        aria-busy={opening || undefined}
         onClick={onOpen}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
@@ -216,7 +217,7 @@ function JobCard({ r, onOpen }: { r: JobMatch; onOpen: () => void }) {
             onOpen();
           }
         }}
-        style={{ display: "flex", flexDirection: "column", gap: 10, padding: "14px 16px", cursor: "pointer", minWidth: 0 }}
+        style={{ display: "flex", flexDirection: "column", gap: 10, padding: "14px 16px", cursor: opening ? "progress" : "pointer", minWidth: 0, opacity: opening ? 0.55 : 1 }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
           <CompanyAvatar job={r} size={36} />
@@ -266,7 +267,12 @@ export default function DashboardJobs() {
   const [loaded, setLoaded] = useState(data !== null);
   const [fetchError, setFetchError] = useState(false);
   const [fetchStatus, setFetchStatus] = useState<number | null>(null);
-  const openJob = useCallback((m: JobMatch) => router.push(`/jobs/${encodeURIComponent(m.id)}`), [router]);
+  const [, startOpen] = useTransition();
+  const [openingId, setOpeningId] = useState<string | null>(null);
+  const openJob = useCallback((m: JobMatch) => {
+    setOpeningId(m.id);
+    startOpen(() => router.push(`/jobs/${encodeURIComponent(m.id)}`));
+  }, [router]);
 
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState<FilterSelection>({});
@@ -490,7 +496,7 @@ export default function DashboardJobs() {
               ) : (
                 <ul aria-label="Job matches" className="mx-stagger" style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 340px), 1fr))", gap: 0, background: t.white }}>
                   {pageRows.map((r) => (
-                    <JobCard key={r.id} r={r} onOpen={() => openJob(r)} />
+                    <JobCard key={r.id} r={r} opening={openingId === r.id} onOpen={() => openJob(r)} />
                   ))}
                 </ul>
               )}
@@ -541,6 +547,7 @@ export default function DashboardJobs() {
                     key={r.id}
                     tabIndex={0}
                     aria-label={`View details for ${r.roleTitle}${r.unlocked ? ` at ${r.companyName}` : ""}`}
+                    aria-busy={openingId === r.id || undefined}
                     onClick={() => openJob(r)}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" || e.key === " ") {
@@ -551,7 +558,7 @@ export default function DashboardJobs() {
                     className=""
                     onMouseEnter={(e) => { e.currentTarget.style.background = t.rowTint; }}
                     onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
-                    style={{ cursor: "pointer", minHeight: 72, transition: `background ${dur.instant} ${ease.snap}` }}
+                    style={{ cursor: openingId === r.id ? "progress" : "pointer", opacity: openingId === r.id ? 0.55 : 1, minHeight: 72, transition: `background ${dur.instant} ${ease.snap}` }}
                   >
                     <TableCell style={{ padding: "12px 20px", fontSize: textSize.base, color: t.inkSoft, verticalAlign: "top" }}>
                       <div style={{ display: "flex", alignItems: "flex-start", gap: 8, minWidth: 0 }}>
