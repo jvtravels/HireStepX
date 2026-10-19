@@ -95,6 +95,18 @@ describe("redactResumeDetailForLock", () => {
     expect(redacted.currentCtc).toBe("₹22 LPA");
   });
 
+  it.each(["Mohd.Jaleel Khan", "Jaleel. K", "Mohammed-Jaleel Khan", "Jaleel_Khan Sk"])("removes the name when the profile name is written as %j", (profileName) => {
+    const detail = extractResumeDetail({ skills: [], summary: "Jaleel is an aspiring Design Lead." });
+    const redacted = redactResumeDetailForLock(detail, profileName);
+    expect(redacted.summary).not.toMatch(/jaleel/i);
+    expect(redacted.summary).toContain("aspiring Design Lead");
+  });
+
+  it("matches non-Latin name parts as whole words", () => {
+    const detail = extractResumeDetail({ skills: [], summary: "जलील is an aspiring designer." });
+    expect(redactResumeDetailForLock(detail, "जलील शेख").summary).toBe("The candidate is an aspiring designer.");
+  });
+
   it("keeps certifications visible", () => {
     const detail = extractResumeDetail({
       skills: [],

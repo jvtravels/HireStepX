@@ -75,11 +75,12 @@ function escapeRegExp(s: string): string {
  *  word-bounded so it doesn't gut unrelated substrings. */
 function scrubName(text: string, fullName: string): string {
   if (!text) return text;
-  const parts = fullName.trim().split(/\s+/).filter((p) => p.length > 1);
+  // Split on anything that is not a letter or digit: "A.Jaleel" or "Jaleel." never match as whole words.
+  const parts = fullName.split(/[^\p{L}\p{M}\p{N}]+/u).filter((p) => p.length > 1);
   if (parts.length === 0) return text;
   let out = text;
   for (const part of parts) {
-    out = out.replace(new RegExp(`\\b${escapeRegExp(part)}\\b`, "gi"), "The candidate");
+    out = out.replace(new RegExp(`(?<![\\p{L}\\p{M}\\p{N}])${escapeRegExp(part)}(?![\\p{L}\\p{M}\\p{N}])`, "giu"), "The candidate");
   }
   // Collapse repeats left behind when first+last name both matched back to back.
   return out.replace(/(The candidate)(\s+\1)+/gi, "$1");

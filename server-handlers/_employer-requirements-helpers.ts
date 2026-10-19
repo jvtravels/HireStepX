@@ -275,7 +275,7 @@ export function candidateTraits(
   detail: { seniorityLevel: string | null; industries: string[]; noticePeriod: string | null },
   realName: string,
 ): string[] {
-  const nameParts = realName.toLowerCase().split(/\s+/).filter((p) => p.length > 1);
+  const nameParts = realName.toLowerCase().split(/[^\p{L}\p{M}\p{N}]+/u).filter((p) => p.length > 1);
   const out: string[] = [];
   const seniority = keepTrait(detail.seniorityLevel, nameParts, 24);
   if (seniority) out.push(seniority);
