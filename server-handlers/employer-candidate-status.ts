@@ -153,7 +153,7 @@ export default async function handler(req: Request): Promise<Response> {
   const pre = await withAuthAndRateLimit(req, {
     endpoint: "employer-candidate-status",
     ipLimit: 40,
-    userLimit: 20,
+    userLimit: 60,
     maxBytes: 10_000,
     checkQuota: false,
     allowPatch: true,
@@ -188,7 +188,7 @@ export default async function handler(req: Request): Promise<Response> {
   }
   // `note` is the employer's private record; only `candidateMessage` (or an
   // invite's schedule note) is ever shown to the candidate.
-  const { privateNote: note, candidateMessage } = splitStatusNotes(candidateStatus, body.note, body.candidateMessage);
+  const { privateNote: note, candidateMessage: requestedMessage } = splitStatusNotes(candidateStatus, body.note, body.candidateMessage);
 
   try {
     const identity = await loadAuthIdentity(SUPABASE_URL, serviceHeaders(), auth.userId);
@@ -249,6 +249,16 @@ export default async function handler(req: Request): Promise<Response> {
       );
     }
 
+    // Free text reaches the candidate only through the same gates as a normal
+    // message: a Locked, declined or withdrawn match gets the generic status
+    // line and nothing the employer typed, so a rejection can't smuggle contact
+    // details or harassment past the unlock fee and the candidate's choices.
+    const candidateMessage =
+      unlocked && accessMatch.candidate_response !== "declined" && !decision.access.candidateWithdrew ? requestedMessage : null;
+    // A repeat of the current status is a note or date edit: it must not
+    // re-notify, re-email or re-post to the candidate.
+    const sameState = currentStatus === candidateStatus;
+
     const patchBody: Record<string, unknown> = {
       candidate_status: candidateStatus,
       candidate_status_updated_at: new Date().toISOString(),
@@ -284,6 +294,10 @@ export default async function handler(req: Request): Promise<Response> {
         JSON.stringify({ error: "This candidate's status was just changed by someone else. Refresh and try again" }),
         { status: 409, headers },
       );
+    }
+
+    if (sameState) {
+      return new Response(JSON.stringify(toResponseShape(row)), { status: 200, headers });
     }
 
     // Append-only pipeline audit trail (employer-visible timeline + candidate
