@@ -447,7 +447,6 @@ function PermissionCard({
             ? `linear-gradient(180deg, ${T.error100}, ${T.white})`
             : T.white,
         border: `1px solid ${isGranted ? T.success : isDenied ? T.error : T.line}`,
-        boxShadow: "0 1px 0 rgba(20,17,10,.03), 0 1px 2px rgba(20,17,10,.04), 0 12px 32px -16px rgba(20,17,10,.10)",
         display: "flex",
         alignItems: "center",
         gap: 12,
@@ -615,7 +614,6 @@ function PermissionCard({
               padding: "8px 14px", borderRadius: 8,
               background: T.indigo, color: T.cream, border: "1px solid transparent",
               cursor: "pointer", transition: "all 160ms ease",
-              boxShadow: "0 1px 2px rgba(20,17,10,.08)",
             }}
           >
             Allow
@@ -1412,28 +1410,6 @@ export default function SessionSetup() {
     return "soft";
   }, [isNegotiationFocus, targetCompany]);
 
-  /* S54-B10 (2026-07-24) — disclose when the entered company doesn't match any
-   * named-company pattern in inferCompanyMode and falls to the IT_SERVICES
-   * default. Mirrors the regex guards in _market-mode.ts so the two stay in
-   * sync; IT_SERVICES is the only untuned bucket. */
-  /* S51-B3 (2026-07-24): extended to all focus types — not just negotiation.
-   * When `isNegotiationFocus` was the only gate, HR/behavioral sessions with
-   * unrecognised companies showed no warning at setup; users only discovered
-   * the "not in our tuned profile set" note in the report. The regexes below
-   * mirror the sector lists in `_hr-round-overlays.ts` and `_market-mode.ts`. */
-  const isUntunedCompany = useMemo<boolean>(() => {
-    if (!targetCompany.trim()) return false;
-    const c = targetCompany.trim();
-    if (/(gcc|global\s+capability|captive|walmart|target\s+corp|lowe'?s|tesco|american\s+express|\bamex\b|optum|unitedhealth|wells\s+fargo|jpmorgan|jp\s+morgan|jpmc|goldman|morgan\s+stanley|deutsche|hsbc|bank\s+of\s+america|bofa|barclays|standard\s+chartered|nomura|ubs|credit\s+suisse|citibank|citi\b|nvidia|\bintel\b|qualcomm|adobe|cisco|vmware|\bdell\b|\bhp\b|\bhpe\b|shell\b|mastercard|\bvisa\b|paypal|expedia|uber\b|linkedin)/i.test(c)) return false;
-    if (/(bank|insurance|nbfc|mutual\s+fund|hdfc|icici|kotak|axis|sbi|bajaj\s+finserv|lic|life\s+insurance)/i.test(c)) return false;
-    if (/(zomato|swiggy|zepto|meesho|razorpay|cred\b|groww|slice\b|navi\b|jupiter\b|niyo|jar\b|fi\s+money|smallcase|zetwerk|moglix|ofbusiness|spinny|cars24|droom|ola\b|rapido|dunzo|blinkit)/i.test(c)) return false;
-    if (/(google|microsoft|amazon|meta\b|apple|netflix|salesforce|oracle|sap\b|ibm)/i.test(c)) return false;
-    if (/(freshworks|zoho\b|chargebee|postman\b|browserstack|hasura\b|clevertap|eka\b|druva\b|icertis|uniphore|kissflow|sprinklr|capillary|salto\b|mindtickle|whatfix|saastr\b|razorpayx\b|perfios|darwinbox)/i.test(c)) return false;
-    if (/(mckinsey|bcg|boston\s+consulting|\bbain\b|deloitte|\bey\b|ernst\s+(?:&|and)\s+young|\bkpmg\b|\bpwc\b|pricewaterhouse|kearney|oliver\s+wyman|\bzs\b|zs\s+associates|roland\s+berger|alvarez|grant\s+thornton|accenture)/i.test(c)) return false;
-    if (/(tcs|tata\s+consultancy|infosys|wipro|hcl\b|tech\s+mahindra|cognizant|mphasis|hexaware|ltimindtree|coforge|persistent)/i.test(c)) return false;
-    return true;
-  }, [targetCompany]);
-
   const formComplete =
     !!targetRole.trim() &&
     interviewFocus.length > 0 &&
@@ -1642,14 +1618,6 @@ export default function SessionSetup() {
         .ob-focus-card:not(:disabled):hover {
           transform: translateY(-2px);
         }
-        .hsx-setup-cta:not(:disabled):hover {
-          transform: translateY(-1px);
-          filter: brightness(1.06);
-        }
-        .hsx-setup-cta:not(:disabled):active {
-          transform: translateY(0) scale(0.985);
-          filter: brightness(0.94);
-        }
         .hsx-option-row:hover {
           background: oklch(0.359 0.135 278.697 / 0.06);
         }
@@ -1698,7 +1666,6 @@ export default function SessionSetup() {
           .hsx-setup-time-pill { font-size: 11px !important; padding: 4px 10px !important; }
           .hsx-setup-form-sections { gap: 16px !important; }
           .hsx-setup-cta-zone { margin-top: 16px !important; padding-top: 12px !important; gap: 8px !important; }
-          .hsx-setup-cta { padding: 14px 28px !important; font-size: 14px !important; }
           .ob-focus-card { padding: 10px !important; }
         }
         @media (max-width: 1024px) {
@@ -1734,7 +1701,7 @@ export default function SessionSetup() {
           /* On phones the CTA is full-width AND the zone above it gets a
              1px hairline + extra padding so it reads as the commit zone.
              min-height 48 ensures Apple HIG touch target floor. */
-          .hsx-setup-cta { width: 100% !important; min-width: 0 !important; padding: 16px 24px !important; font-size: 15px !important; min-height: 48px !important; }
+          .hsx-setup-cta { width: 100% !important; min-height: 44px !important; }
           .hsx-setup-cta-zone { border-top: 1px solid #EBE5D2; padding-top: 28px !important; margin-top: 32px !important; }
           /* Time pill bumps to 13/regular for legibility on phones. */
           .hsx-setup-time-pill { font-size: 13px !important; padding: 6px 14px !important; }
@@ -1752,7 +1719,6 @@ export default function SessionSetup() {
           .hsx-setup-content { padding: 16px 14px 56px !important; }
           .ob-s2-focus-grid { grid-template-columns: 1fr !important; }
           .hsx-permission-card { padding: 10px !important; gap: 8px !important; }
-          .hsx-setup-cta { font-size: 14px !important; padding: 14px 18px !important; }
         }
       `}</style>
 
@@ -1841,11 +1807,11 @@ export default function SessionSetup() {
               )}
               {/* Hero — centered, matches the canvas SetupEmpty storyboard. */}
               <div style={{ marginBottom: 32, textAlign: "center" }} className="fade-up-1 hsx-setup-hero">
-                <h1 className="hsx-setup-hero-h1" style={{ fontFamily: F.sans, fontSize: "clamp(1.75rem, 5.6vw, 4rem)", fontWeight: 600, color: T.coal, letterSpacing: "-0.02em", lineHeight: 1.05, margin: 0 }}>
+                <h1 className="hsx-setup-hero-h1" style={{ fontFamily: F.sans, fontSize: "clamp(1.5rem, 3vw, 2rem)", fontWeight: 600, color: T.coal, letterSpacing: "-0.02em", lineHeight: 1.05, margin: 0 }}>
                   Let&apos;s get you{" "}
                   <em style={{ fontStyle: "normal", fontWeight: 600, color: T.indigo }}>ready</em>
                 </h1>
-                <p className="hsx-setup-hero-sub" style={{ fontFamily: F.sans, fontSize: 16, lineHeight: 1.55, color: T.inkSoft, marginTop: 14, marginBottom: 0, textWrap: "balance" }}>
+                <p className="hsx-setup-hero-sub" style={{ fontFamily: F.sans, fontSize: 14, lineHeight: 1.55, color: T.inkSoft, marginTop: 8, marginBottom: 0, textWrap: "balance" }}>
                   Tell us a few things and we&apos;ll personalize the experience for you.
                 </p>
                 {/* Time pill + value-reframe — answers "how long?" and ties
@@ -1911,15 +1877,6 @@ export default function SessionSetup() {
                                 ? <><strong style={{ color: T.coal, fontWeight: 600 }}>Competitive market simulation</strong> — recruiter has more flex to stretch. Push confidently on your ask.</>
                                 : <><strong style={{ color: T.coal, fontWeight: 600 }}>Neutral market simulation</strong> — standard recruiter concession behaviour.</>
                             }
-                          </span>
-                        </div>
-                      )}
-                      {/* S54-B10: untuned-company disclosure */}
-                      {isUntunedCompany && !companyMissing && !hardRoleCompanyMismatch && (
-                        <div style={{ marginTop: 8, fontFamily: F.sans, fontSize: 12, lineHeight: 1.4, display: "flex", alignItems: "flex-start", gap: 5, color: T.inkSoft }}>
-                          <span style={{ flexShrink: 0, marginTop: 1 }}>ⓘ</span>
-                          <span>
-                            <strong style={{ color: T.coal, fontWeight: 600 }}>Generic company simulation</strong>{" — "}{targetCompany.trim()}{isNegotiationFocus ? " isn't in our recruiter database yet. The session will use default IT-services negotiation behaviour rather than company-specific data." : " isn't in our calibrated profile set yet. Scoring will use the default senior-bar rubric rather than company-specific calibration."}
                           </span>
                         </div>
                       )}
@@ -2023,7 +1980,7 @@ export default function SessionSetup() {
                               padding: 14, borderRadius: 12, cursor: comingSoon ? "not-allowed" : "pointer", transition: "all 0.22s cubic-bezier(.2,.7,.2,1)", textAlign: "left",
                               background: comingSoon ? T.cream : sel ? `linear-gradient(180deg, ${T.indigo100}, ${T.white})` : T.white,
                               border: `1px ${comingSoon ? "dashed" : "solid"} ${sel ? T.indigo : T.line}`,
-                              boxShadow: comingSoon ? "none" : sel ? `0 0 0 3px ${T.indigoRing}` : "0 1px 0 rgba(20,17,10,.03), 0 1px 2px rgba(20,17,10,.04), 0 12px 32px -16px rgba(20,17,10,.10)",
+                              boxShadow: sel ? `inset 0 0 0 1px ${T.indigo}` : "none",
                               opacity: comingSoon ? 0.65 : 1,
                               display: "flex", alignItems: "center", gap: 10, color: T.coal,
                               position: "relative", fontFamily: F.sans,
@@ -2235,28 +2192,13 @@ export default function SessionSetup() {
                 <Button
                   type="button"
                   variant="default"
+                  size="lg"
                   onClick={onCtaClick}
                   disabled={isHardDisabled}
                   title={ctaTitle}
                   aria-label={ctaTitle ?? ctaLabel}
-                  className="hsx-setup-cta"
-                  style={{
-                    fontFamily: F.sans, fontSize: 16, fontWeight: 600, padding: "18px 36px", borderRadius: 8,
-                    /* Disabled state uses a fully-saturated neutral pair
-                       (creamSoft + inkSoft) so contrast stays AA and the
-                       button is unmistakably non-actionable. Avoids the
-                       contrast trap of "indigo at 45% opacity on cream". */
-                    background: isHardDisabled ? T.creamSoft : T.indigo,
-                    color: isHardDisabled ? T.inkSoft : T.cream,
-                    border: `1px solid ${isHardDisabled ? T.line : "transparent"}`,
-                    cursor: isHardDisabled ? "not-allowed" : "pointer",
-                    opacity: needsMic && !isHardDisabled ? 0.85 : 1,
-                    transition: "all 180ms cubic-bezier(.2,.7,.2,1)",
-                    display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 12,
-                    boxShadow: isHardDisabled ? "none" : "0 2px 4px rgba(20,17,10,.10), 0 12px 28px -10px rgba(49,46,129,.45)",
-                    letterSpacing: 0.1,
-                    minWidth: 320,
-                  }}
+                  className="hsx-setup-cta px-4"
+                  style={{ opacity: needsMic && !isHardDisabled ? 0.85 : undefined }}
                 >
                   {starting ? (
                     <span style={{ width: 16, height: 16, border: `2.5px solid ${T.indigoRing}`, borderTopColor: T.cream, borderRadius: "50%", animation: "spin 1s linear infinite" }} />
