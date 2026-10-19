@@ -239,7 +239,6 @@ function JobCard({ r, onOpen, opening }: { r: JobMatch; onOpen: () => void; open
           {isNew && <Badge tone="info">New</Badge>}
           {jobType && <Badge tone="neutral">{jobType}</Badge>}
         </div>
-        {r.matchReason && <div style={{ fontFamily: f.sans, fontSize: 13, color: t.inkFaint, lineHeight: 1.4 }}>{r.matchReason}</div>}
         {r.skills.length > 0 && (
           <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
             {r.skills.slice(0, 3).map((sk, si) => (
@@ -605,7 +604,7 @@ export default function DashboardJobs() {
                       {comp || "Not disclosed"}
                     </TableCell>
                     <TableCell style={{ padding: "12px 20px", verticalAlign: "top", maxWidth: 220, whiteSpace: "normal" }}>
-                      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 4 }}>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                         {closed ? (
                           <Badge tone="neutral" title="This role is no longer accepting candidates">
                             Role closed
@@ -620,7 +619,6 @@ export default function DashboardJobs() {
                           </Badge>
                         )}
                       </div>
-                      <div style={{ fontSize: textSize.sm, color: t.inkFaint, lineHeight: 1.4 }}>{r.matchReason}</div>
                     </TableCell>
                     <TableCell style={{ padding: "12px 20px", fontSize: textSize.sm, color: t.inkFaint, verticalAlign: "top", whiteSpace: "normal" }}>
                       {daysAgo(r.matchedAt)}
