@@ -4,7 +4,7 @@
    re-ranking (see analyze-jd-match.ts's callLLM precedent) is a possible
    follow-up, not implemented here. */
 
-import { canonicalSkillToken } from "../src/skillNormalize";
+import { canonicalSkillToken, canonicalizePhrases, skillFamilyKeys } from "../src/skillNormalize";
 import { INDIAN_CITIES } from "../src/_indian-cities";
 
 export interface CandidatePoolRow {
@@ -219,7 +219,7 @@ const STOPWORDS = new Set([
 ]);
 
 function tokenize(text: string, opts: { stripStopwords?: boolean } = {}): string[] {
-  const words = (text || "").toLowerCase().match(/[a-z0-9+.#]+/g) || [];
+  const words = canonicalizePhrases(text || "").match(/[a-z0-9+.#]+/g) || [];
   const stemmed = words.map((w) => stem(canonicalSkillToken(w)));
   return opts.stripStopwords ? stemmed.filter((w) => !STOPWORDS.has(w)) : stemmed;
 }
@@ -332,6 +332,22 @@ function unitsCovered(have: Set<string>, units: string[][]): number {
   return covered;
 }
 
+/* Tokens the candidate's role and skills stand for, plus the generic family
+   each specific skill belongs to ("PostgreSQL" also counts as "SQL"), so a
+   posting that asks for the family is met by any member. Family keys are put
+   through the same canonicalise-and-stem path as unit tokens or they would
+   never compare equal. */
+function resumeSkillTokens(resumeData: unknown): Set<string> {
+  const skills = extractSkills(resumeData);
+  const have = new Set(skills.flatMap((s) => tokenize(s)));
+  for (const skill of skills) for (const family of skillFamilyKeys(skill)) for (const t of tokenize(family)) have.add(t);
+  return have;
+}
+
+function candidateSkillTokens(candidate: Pick<CandidatePoolRow, "target_role" | "resume_data">): Set<string> {
+  return new Set([...tokenize(candidate.target_role || ""), ...resumeSkillTokens(candidate.resume_data)]);
+}
+
 /** How many of the employer's listed skills the candidate's skills or target
     role cover. A multi-word skill counts when at least half its tokens appear,
     so "B2B Sales" is matched by "Sales" but not by an unrelated "B2B". */
@@ -339,10 +355,7 @@ export function countRequiredSkillsCovered(
   candidate: Pick<CandidatePoolRow, "target_role" | "resume_data">,
   requiredSkills: string[],
 ): number {
-  const have = new Set([
-    ...tokenize(candidate.target_role || ""),
-    ...extractSkills(candidate.resume_data).flatMap((s) => tokenize(s)),
-  ]);
+  const have = candidateSkillTokens(candidate);
   return unitsCovered(have, requiredSkills.map((s) => tokenize(s)).filter((t) => t.length > 0));
 }
 
@@ -359,10 +372,7 @@ export function skillsSupportStrong(
 ): boolean {
   const units = requiredSkillUnits((requiredSkills || []).filter((s) => s.trim()), title);
   if (units.length === 0) return false;
-  const have = new Set([
-    ...tokenize(candidate.target_role || ""),
-    ...extractSkills(candidate.resume_data).flatMap((s) => tokenize(s)),
-  ]);
+  const have = candidateSkillTokens(candidate);
   const covered = unitsCovered(have, units);
   return covered >= STRONG_MIN_SKILLS_COVERED || covered / units.length >= STRONG_MIN_SKILLS_SHARE;
 }
@@ -380,7 +390,7 @@ export function hasStrongEvidence(
 ): boolean {
   if (candidate.sessions_completed > 0) return true;
   const units = requiredSkillUnits((requiredSkills || []).filter((s) => s.trim()), title);
-  const resumeTokens = new Set(extractSkills(candidate.resume_data).flatMap((s) => tokenize(s)));
+  const resumeTokens = resumeSkillTokens(candidate.resume_data);
   return unitsCovered(resumeTokens, units) >= 1;
 }
 
@@ -710,6 +720,12 @@ export function classifyRequirementStatus(matches: Array<{ matchScore: number }>
   return "partial";
 }
 
+/** Candidates an employer is shown per requirement. */
+export const MATCH_SHORTLIST_CAP = 20;
+/** Candidates the model re-ranks before the shortlist is cut to the cap, so a
+    candidate it rates highly can climb in from just below the deterministic top. */
+export const LLM_RERANK_WINDOW = 40;
+
 /** Keeps only candidates worth surfacing, ranked best first, capped so a
     requirement never returns an unbounded shortlist.
 
@@ -742,7 +758,7 @@ export function classifyRequirementStatus(matches: Array<{ matchScore: number }>
     size of the floor-filtered pool *before* the `cap` slice, so a caller
     can tell "Top 20" apart from "20 (all of them)" instead of reporting
     the post-cap count as if it were the whole matched pool. */
-export function rankAndCap(scored: ScoredCandidate[], cap = 20): { ranked: ScoredCandidate[]; totalMatched: number } {
+export function rankAndCap(scored: ScoredCandidate[], cap = MATCH_SHORTLIST_CAP): { ranked: ScoredCandidate[]; totalMatched: number } {
   const floorFiltered = scored
     .filter((s) => s.hasRelevance && s.hasEvidence && s.meetsQualityBar !== false && s.matchScore >= MIN_MATCH_SCORE_FLOOR)
     // Equal scores order by candidate id so the cap boundary picks the same
@@ -775,3 +791,62 @@ export function requirementCriteriaFingerprint(req: RequirementInput): string {
     req.workMode ?? null,
   ]);
 }
+
+/* ── Model prompt inputs and their fingerprints ── */
+
+/** How much of the posting description the model prompt includes. */
+export const DESCRIPTION_PROMPT_CHARS = 2000;
+
+const MAX_PROMPT_SKILLS = 20;
+
+/** One candidate's line in the model prompt. */
+export function candidateSummary(c: CandidatePoolRow): string {
+  const skills = extractSkills(c.resume_data).slice(0, MAX_PROMPT_SKILLS).join(", ") || "none listed";
+  const years = typeof c.years_experience === "number" && Number.isFinite(c.years_experience) ? `${c.years_experience} yrs` : "unknown";
+  const location = extractResumeLocation(c.resume_data) || "unspecified";
+  const role = c.target_role?.trim() || "not specified";
+  // Practice evidence (real mock-interview history) was previously omitted
+  // from this summary entirely, so the model could only judge a candidate
+  // on self-reported role/skills text — it had no way to down-weight a
+  // candidate with zero practice sessions, and generic-sounding corporate
+  // buzzwords ("Business Transformation", "Growth") could read as plausible
+  // for almost any opening. Surfacing it explicitly lets the model apply
+  // the same "no evidence should score low" rule the prompt asks for.
+  const evidence = c.sessions_completed > 0
+    ? `${c.sessions_completed} completed practice session${c.sessions_completed === 1 ? "" : "s"}, avg score ${c.avg_score ?? "n/a"}`
+    : "no completed practice sessions (no evidence of real performance)";
+  return `id: ${c.id} | target role: ${role} | industry: ${c.industry || "unspecified"} | experience: ${years} | location: ${location} | skills: ${skills} | practice history: ${evidence}`;
+}
+
+function fnv1a(input: string, seed: number): string {
+  let h = seed >>> 0;
+  for (let i = 0; i < input.length; i++) {
+    h ^= input.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return h.toString(16).padStart(8, "0");
+}
+
+/* Two differently-seeded 32-bit passes: a stored score is trusted only when
+   this matches, and one 32-bit hash is thin for that. */
+function shortHash(input: string): string {
+  return fnv1a(input, 0x811c9dc5) + fnv1a(input, 0x9747b28c);
+}
+
+/** Identity of every requirement field the model prompt reads. A stored model
+ *  score is only reusable while this is unchanged. */
+export function llmCriteriaFingerprint(req: RequirementInput): string {
+  return shortHash(JSON.stringify([
+    req.title ?? "", req.location ?? "", (req.description ?? "").slice(0, DESCRIPTION_PROMPT_CHARS),
+    req.skills ?? [], req.experienceMin ?? null, req.experienceMax ?? null,
+    req.employmentType ?? null, req.durationWeeks ?? null, req.hoursPerWeek ?? null,
+  ]));
+}
+
+/** Identity of everything the model sees about one candidate (role, skills,
+ *  experience, location, practice evidence). profiles carries no resume
+ *  updated_at, so the content the prompt is built from is the stamp. */
+export function llmProfileStamp(c: CandidatePoolRow): string {
+  return shortHash(candidateSummary({ ...c, id: "" }));
+}
+

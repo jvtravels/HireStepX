@@ -219,6 +219,18 @@ describe("runMatching — re-match cleanup", () => {
     expect(deletedIds(calls)).not.toContain("m-paid");
     expect(deletedIds(calls)).not.toContain("m-interviewing");
     expect(deletedIds(calls)).not.toContain("m-noted");
+    // a row the employer touches between the read and the delete is still spared
+    const staleDelete = decodeURIComponent(calls.deletes.find((u) => u.includes("m-stale")) || "");
+    expect(staleDelete).toContain("candidate_status_note=is.null");
+    expect(staleDelete).toContain("interview_scheduled_at=is.null");
+    expect(staleDelete).toContain("candidate_status.eq.shortlisted");
+  });
+
+  it("scans only profiles that are visible and not soft-deleted", async () => {
+    const { fetchMock } = makeSim({ profiles: [dev("good")], sessions: [graded("good")] });
+    await runMatching(REQ_ID, REQ, OWNER);
+    const urls = fetchMock.mock.calls.map((c) => String(c[0]));
+    expect(urls.some((u) => u.includes("employer_visibility=neq.off") && u.includes("deleted_at=is.null"))).toBe(true);
   });
 
   it("upserts new rows BEFORE removing stale ones, so a mid-pass failure never empties the shortlist", async () => {

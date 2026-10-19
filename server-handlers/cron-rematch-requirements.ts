@@ -30,11 +30,11 @@ import { canStartBatch } from "./_employer-matching-helpers";
 import { isSuspended } from "./_employer-trust";
 import { slog } from "./_shared";
 import { recordCronResult } from "./_cron-heartbeat";
+import { verifyCronAuth } from "./_cron-auth";
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
-const CRON_SECRET = process.env.CRON_SECRET || "";
 const MAX_REQUIREMENTS_PER_RUN = 150;
 /** Fixed-size concurrency so a 150-requirement backlog doesn't run fully
     sequentially (slow) or fully in parallel (an unbounded burst of
@@ -67,7 +67,7 @@ export default async function handler(req: Request): Promise<Response> {
   }
   // Fail closed: with CRON_SECRET unset this endpoint used to be open to the
   // internet and re-ran matching (a service-role write sweep) for anyone.
-  if (!CRON_SECRET || (req.headers.get("authorization") || "") !== `Bearer ${CRON_SECRET}`) {
+  if (!verifyCronAuth(req)) {
     return jsonResponse({ error: "Unauthorized" }, 401);
   }
 
@@ -154,8 +154,10 @@ export default async function handler(req: Request): Promise<Response> {
 
   // A sweep where requirements failed must go stale, not look healthy.
   await recordCronResult("cron-rematch-requirements", { errors: failed });
+  // A 500 lets Vercel's cron monitoring and alerting see a sweep that failed
+  // requirements; the body still carries the full counts for the logs.
   return jsonResponse({
-    ok: true,
+    ok: failed === 0,
     open_requirements: Number.isFinite(totalOpen) ? totalOpen : rows.length,
     processed: attempted,
     matched,
@@ -165,5 +167,5 @@ export default async function handler(req: Request): Promise<Response> {
     deferred: due.length - attempted,
     budget_exhausted: budgetExhausted,
     duration_ms: Date.now() - t0,
-  });
+  }, failed > 0 ? 500 : 200);
 }

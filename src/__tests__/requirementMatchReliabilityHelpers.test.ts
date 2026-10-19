@@ -65,19 +65,30 @@ describe("llmBudgetMs", () => {
 describe("resolveLlmScores", () => {
   const now = Date.parse("2026-10-18T00:00:00Z");
   const at = (ms: number) => new Date(now - ms).toISOString();
-  const prior = new Map([["a", { llm_score: 80, llm_scored_at: at(86_400_000) }]]);
+  const guard = { criteriaFingerprint: "fp", profileStamps: new Map([["a", "st"]]) };
+  const stored = (over: Record<string, unknown> = {}) => new Map([["a", {
+    llm_score: 80, llm_scored_at: at(86_400_000), llm_criteria_fingerprint: "fp", llm_profile_stamp: "st", ...over,
+  }]]);
 
   it("prefers a fresh score and stamps it now", () => {
-    const out = resolveLlmScores(["a"], new Map([["a", 55]]), prior, now);
+    const out = resolveLlmScores(["a"], new Map([["a", 55]]), stored(), now, guard);
     expect(out.get("a")).toEqual({ score: 55, scoredAt: new Date(now).toISOString(), reused: false });
   });
-  it("reuses a recent stored score when none came back", () => {
-    expect(resolveLlmScores(["a"], new Map(), prior, now).get("a")).toMatchObject({ score: 80, reused: true });
+  it("reuses a recent stored score when none came back and the provenance matches", () => {
+    expect(resolveLlmScores(["a"], new Map(), stored(), now, guard).get("a")).toMatchObject({ score: 80, reused: true });
   });
   it("drops a stored score past the max age, with a missing stamp, or from the future", () => {
-    expect(resolveLlmScores(["a"], new Map(), new Map([["a", { llm_score: 80, llm_scored_at: at(LLM_SCORE_MAX_AGE_MS + 1000) }]]), now).size).toBe(0);
-    expect(resolveLlmScores(["a"], new Map(), new Map([["a", { llm_score: 80, llm_scored_at: null }]]), now).size).toBe(0);
-    expect(resolveLlmScores(["a"], new Map(), new Map([["a", { llm_score: 80, llm_scored_at: new Date(now + 3_600_000).toISOString() }]]), now).size).toBe(0);
+    expect(resolveLlmScores(["a"], new Map(), stored({ llm_scored_at: at(LLM_SCORE_MAX_AGE_MS + 1000) }), now, guard).size).toBe(0);
+    expect(resolveLlmScores(["a"], new Map(), stored({ llm_scored_at: null }), now, guard).size).toBe(0);
+    expect(resolveLlmScores(["a"], new Map(), stored({ llm_scored_at: new Date(now + 3_600_000).toISOString() }), now, guard).size).toBe(0);
+  });
+  it("drops a stored score when the criteria or the candidate profile changed since it was scored", () => {
+    expect(resolveLlmScores(["a"], new Map(), stored({ llm_criteria_fingerprint: "other" }), now, guard).size).toBe(0);
+    expect(resolveLlmScores(["a"], new Map(), stored({ llm_profile_stamp: "other" }), now, guard).size).toBe(0);
+  });
+  it("drops a stored score that has no provenance, or whose candidate has no current stamp", () => {
+    expect(resolveLlmScores(["a"], new Map(), stored({ llm_criteria_fingerprint: null, llm_profile_stamp: null }), now, guard).size).toBe(0);
+    expect(resolveLlmScores(["a"], new Map(), stored(), now, { criteriaFingerprint: "fp", profileStamps: new Map() }).size).toBe(0);
   });
 });
 

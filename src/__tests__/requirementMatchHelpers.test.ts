@@ -18,6 +18,10 @@ import {
   matchBandLabel,
   CUSTOM_SKILL_BOOST_MAX,
   FAIR_MATCH_SCORE,
+  llmCriteriaFingerprint,
+  llmProfileStamp,
+  LLM_RERANK_WINDOW,
+  MATCH_SHORTLIST_CAP,
   type CandidatePoolRow,
 } from "../../server-handlers/_requirement-match-helpers";
 
@@ -614,5 +618,61 @@ describe("matchBandLabel / hasResumeContent", () => {
     expect(hasResumeContent({ summary: "Ten years in sales" })).toBe(true);
     expect(hasResumeContent({ experience: [{ title: "x" }] })).toBe(true);
     expect(hasResumeContent({ yearsExperience: 4 })).toBe(true);
+  });
+});
+
+describe("skill gate aliasing and families", () => {
+  const covered = (required: string[], skills: string[], text = "") =>
+    countRequiredSkillsCovered(candidate({ resume_data: { skills, summary: text } }), required);
+
+  it.each([
+    ["ML", ["Machine Learning"]],
+    ["Machine Learning", ["ML"]],
+    ["Machine Learning", ["scikit-learn"]],
+    ["Machine Learning", ["TensorFlow"]],
+    ["Power BI", ["PowerBI"]],
+    ["Google Cloud", ["GCP"]],
+    ["GCP", ["Google Cloud Platform"]],
+    ["SQL", ["PostgreSQL"]],
+  ])("%s is covered by %j", (required, skills) => {
+    expect(covered([required], skills)).toBe(1);
+  });
+
+  it.each([
+    ["Java", ["JavaScript"]],
+    ["JavaScript", ["Java"]],
+    ["Machine Learning", ["Marketing"]],
+    ["Power BI", ["Tableau"]],
+    ["Google Cloud", ["AWS"]],
+  ])("%s is not covered by %j", (required, skills) => {
+    expect(covered([required], skills)).toBe(0);
+  });
+});
+
+describe("rerank window", () => {
+  it("looks further down the list than it shows", () => {
+    expect(LLM_RERANK_WINDOW).toBeGreaterThan(MATCH_SHORTLIST_CAP);
+    const pool = Array.from({ length: 50 }, (_, i) => ({
+      candidateId: `c${String(i).padStart(2, "0")}`, matchScore: 90 - i, rosterScore: 0, hasRelevance: true, hasEvidence: true,
+      meetsQualityBar: true, skillsSupportStrong: true,
+    }));
+    expect(rankAndCap(pool, LLM_RERANK_WINDOW).ranked).toHaveLength(LLM_RERANK_WINDOW);
+    expect(rankAndCap(pool).ranked).toHaveLength(MATCH_SHORTLIST_CAP);
+  });
+});
+
+describe("model score provenance", () => {
+  const req = { title: "Data Analyst", location: "Pune", description: "Analyse things", skills: ["SQL", "Power BI"] };
+  it("fingerprint is stable and changes with any field the prompt reads", () => {
+    expect(llmCriteriaFingerprint(req)).toBe(llmCriteriaFingerprint({ ...req }));
+    expect(llmCriteriaFingerprint({ ...req, title: "Data Engineer" })).not.toBe(llmCriteriaFingerprint(req));
+    expect(llmCriteriaFingerprint({ ...req, skills: ["SQL"] })).not.toBe(llmCriteriaFingerprint(req));
+    expect(llmCriteriaFingerprint({ ...req, experienceMin: 3 })).not.toBe(llmCriteriaFingerprint(req));
+  });
+  it("profile stamp ignores the id and changes with the resume content", () => {
+    const a = candidate();
+    expect(llmProfileStamp(a)).toBe(llmProfileStamp({ ...a, id: "other" }));
+    expect(llmProfileStamp({ ...a, resume_data: { skills: ["React", "Go"], location: "Bengaluru" } })).not.toBe(llmProfileStamp(a));
+    expect(llmProfileStamp({ ...a, target_role: "Backend Engineer" })).not.toBe(llmProfileStamp(a));
   });
 });

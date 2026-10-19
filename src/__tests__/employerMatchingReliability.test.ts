@@ -46,6 +46,7 @@ interface SimMatch {
   id: string; candidate_user_id: string; match_score: number; unlocked: boolean;
   candidate_status?: string | null; candidate_response?: string | null;
   llm_score?: number | null; llm_scored_at?: string | null; strong_alerted_at?: string | null;
+  llm_criteria_fingerprint?: string | null; llm_profile_stamp?: string | null;
 }
 interface Sim {
   profiles?: Array<{ id: string; name: string; target_role: string | null; resume_data?: unknown }>;
@@ -177,21 +178,55 @@ describe("model score budget and reuse", () => {
     expect(budget).toBeLessThanOrEqual(12_000);
   });
 
+  /** A first pass where the model scored "a", to learn the provenance a real run stores. */
+  async function scoredByModel() {
+    llmRerankCandidates.mockResolvedValueOnce(new Map([["a", 100]]));
+    const calls = makeSim({ profiles: [dev("a")] });
+    await runMatching(REQ_ID, REQ, OWNER);
+    return rowOf(calls, "a")!;
+  }
+
   it("carries a recent stored model score forward when the model is unavailable, and persists it", async () => {
     const withoutLlm = makeSim({ profiles: [dev("a")] });
     await runMatching(REQ_ID, REQ, OWNER);
     const det = rowOf(withoutLlm, "a")!.match_score as number;
+    const first = await scoredByModel();
 
     const stamp = daysAgo(1);
     const calls = makeSim({
       profiles: [dev("a")],
-      matches: [{ id: "m1", candidate_user_id: "a", match_score: det, unlocked: false, llm_score: 100, llm_scored_at: stamp }],
+      matches: [{
+        id: "m1", candidate_user_id: "a", match_score: det, unlocked: false, llm_score: 100, llm_scored_at: stamp,
+        llm_criteria_fingerprint: first.llm_criteria_fingerprint as string, llm_profile_stamp: first.llm_profile_stamp as string,
+      }],
     });
     await runMatching(REQ_ID, REQ, OWNER);
     const row = rowOf(calls, "a")!;
     expect(row.llm_score).toBe(100);
     expect(row.llm_scored_at).toBe(stamp);
     expect(row.match_score).toBe(Math.round(det * 0.65 + 100 * 0.35));
+  });
+
+  it("does not reuse a stored model score when the criteria or the profile changed since it was scored", async () => {
+    const first = await scoredByModel();
+    expect(first.llm_criteria_fingerprint).toBeTruthy();
+    expect(first.llm_profile_stamp).toBeTruthy();
+    const seed = (over: Partial<SimMatch>): SimMatch => ({
+      id: "m1", candidate_user_id: "a", match_score: first.match_score as number, unlocked: false, llm_score: 100, llm_scored_at: daysAgo(1),
+      llm_criteria_fingerprint: first.llm_criteria_fingerprint as string, llm_profile_stamp: first.llm_profile_stamp as string, ...over,
+    });
+
+    const staleProfile = makeSim({ profiles: [dev("a")], matches: [seed({ llm_profile_stamp: "old-resume" })] });
+    await runMatching(REQ_ID, REQ, OWNER);
+    expect(rowOf(staleProfile, "a")!.llm_score).toBeNull();
+
+    const staleCriteria = makeSim({ profiles: [dev("a")], matches: [seed({ llm_criteria_fingerprint: "old-criteria" })] });
+    await runMatching(REQ_ID, REQ, OWNER);
+    expect(rowOf(staleCriteria, "a")!.llm_score).toBeNull();
+
+    const noProvenance = makeSim({ profiles: [dev("a")], matches: [seed({ llm_criteria_fingerprint: null, llm_profile_stamp: null })] });
+    await runMatching(REQ_ID, REQ, OWNER);
+    expect(rowOf(noProvenance, "a")!.llm_score).toBeNull();
   });
 
   it("drops a stored model score older than the max age", async () => {

@@ -106,8 +106,10 @@ describe("cron-rematch-requirements", () => {
       if (id === "req-2") throw new Error("boom");
       return "ready";
     });
-    const body = await (await call()).json();
-    expect(body).toMatchObject({ ok: true, processed: 3, matched: 2, failed: 1, skipped_suspended: 0, budget_exhausted: false, deferred: 0 });
+    const res = await call();
+    expect(res.status).toBe(500);
+    const body = await res.json();
+    expect(body).toMatchObject({ ok: false, processed: 3, matched: 2, failed: 1, skipped_suspended: 0, budget_exhausted: false, deferred: 0 });
     expect(slogError).toHaveBeenCalledTimes(1);
   });
 

@@ -16,6 +16,7 @@ import {
   contactWithheldReason,
   loadBlockedCandidateIds,
   loadOptedOutCandidateIds,
+  untouchedMatchFilter,
   loadEvidenceFlags,
   loadGradedSessions,
   requirementNeedsRematch,
@@ -71,6 +72,9 @@ describe("pool eligibility", () => {
 
   it("accepts a normal opted-in candidate", () => {
     expect(isEligiblePoolProfile(profile(), ctx)).toBe(true);
+  });
+  it("rejects a soft-deleted candidate", () => {
+    expect(isEligiblePoolProfile(profile({ deleted_at: "2026-10-01T00:00:00Z" }), ctx)).toBe(false);
   });
   it("rejects candidates who switched employer visibility off", () => {
     expect(isEligiblePoolProfile(profile({ employer_visibility: "off" }), ctx)).toBe(false);
@@ -302,6 +306,22 @@ describe("consent loaders", () => {
     const out = await loadOptedOutCandidateIds("https://x", H, ids, f as unknown as typeof fetch);
     expect(f).toHaveBeenCalledTimes(2);
     expect([...out!].sort()).toEqual(["c3", "c7"]);
+  });
+  it("loadOptedOutCandidateIds treats a soft-deleted profile as opted out", async () => {
+    const f = vi.fn(async (url: string) => {
+      expect(decodeURIComponent(String(url))).toContain("deleted_at");
+      return { ok: true, json: async () => [
+        { id: "live", employer_visibility: "masked", deleted_at: null },
+        { id: "gone", employer_visibility: "masked", deleted_at: "2026-10-01T00:00:00Z" },
+      ] };
+    });
+    const out = await loadOptedOutCandidateIds("https://x", H, ["live", "gone"], f as unknown as typeof fetch);
+    expect([...out!]).toEqual(["gone"]);
+  });
+  it("untouchedMatchFilter excludes every state isTouchedMatch protects", () => {
+    const f = untouchedMatchFilter();
+    for (const col of ["candidate_status_note", "interview_scheduled_at", "candidate_response", "candidate_status"]) expect(f).toContain(col);
+    expect(f).toContain("candidate_status.eq.shortlisted");
   });
   it("loadOptedOutCandidateIds returns null on a failed read", async () => {
     const f = vi.fn().mockResolvedValue({ ok: false, json: async () => [] });

@@ -96,6 +96,10 @@ export interface ExistingMatchRow {
    *  when the column is not migrated yet (0048). */
   llm_score?: number | null;
   llm_scored_at?: string | null;
+  /** What the stored model score was computed against (0050): the requirement
+   *  fields the prompt reads, and the candidate profile content it saw. */
+  llm_criteria_fingerprint?: string | null;
+  llm_profile_stamp?: string | null;
 }
 
 /** Consecutive passes a locked match may miss the fresh ranking before it is removed. */
@@ -106,6 +110,14 @@ export const MISSED_PASSES_BEFORE_REMOVAL = 3;
  *  and pipeline state through a re-match and is never re-scored. */
 export function isTouchedMatch(m: Pick<ExistingMatchRow, "unlocked" | "candidate_status" | "candidate_status_note" | "interview_scheduled_at" | "candidate_response">): boolean {
   return !!m.unlocked || (!!m.candidate_response && m.candidate_response !== "none") || (!!m.candidate_status && m.candidate_status !== "shortlisted") || !!m.candidate_status_note || !!m.interview_scheduled_at;
+}
+
+/** PostgREST predicates mirroring !isTouchedMatch, appended to a DELETE so a
+ *  row an employer touched after it was read is not removed. Keep in step with
+ *  isTouchedMatch. */
+export function untouchedMatchFilter(): string {
+  return "&candidate_status_note=is.null&interview_scheduled_at=is.null" +
+    "&and=(or(candidate_response.is.null,candidate_response.eq.none),or(candidate_status.is.null,candidate_status.eq.shortlisted))";
 }
 
 export interface ExistingMatchPlan {
@@ -161,6 +173,7 @@ export interface PoolProfile {
   resume_data: unknown;
   practice_timestamps: string[] | null;
   employer_visibility?: string | null;
+  deleted_at?: string | null;
 }
 
 export function isEligiblePoolProfile(
@@ -169,6 +182,7 @@ export function isEligiblePoolProfile(
 ): boolean {
   if (p.id === ctx.ownerUserId) return false;
   if (p.employer_visibility === "off") return false;
+  if (p.deleted_at) return false;
   if (ctx.blockedCandidateIds.has(p.id)) return false;
   if (ctx.excludedCandidateIds.has(p.id)) return false;
   return hasMatchSignal(p);
@@ -383,7 +397,7 @@ export async function loadBlockedCandidateIds(
 }
 
 /** Candidates (from `ids`) who should no longer be reachable at all: opted
- *  out of employer visibility, or whose profile is gone. Blocks are handled
+ *  out of employer visibility, scheduled for deletion, or whose profile is gone. Blocks are handled
  *  separately. Null on a failed read (fail closed). */
 export async function loadOptedOutCandidateIds(
   supabaseUrl: string,
@@ -394,12 +408,14 @@ export async function loadOptedOutCandidateIds(
   const present = new Set<string>();
   const off = new Set<string>();
   for (const batch of chunk(ids, MAX_IN_BATCH)) {
-    const res = await fetchImpl(`${supabaseUrl}/rest/v1/profiles?id=in.(${inList(batch)})&select=id,employer_visibility`, { headers });
+    const res = await fetchImpl(`${supabaseUrl}/rest/v1/profiles?id=in.(${inList(batch)})&select=id,employer_visibility,deleted_at`, { headers });
     if (!res.ok) return null;
-    const rows = (await res.json().catch(() => [])) as Array<{ id: string; employer_visibility?: string | null }>;
+    const rows = (await res.json().catch(() => [])) as Array<{ id: string; employer_visibility?: string | null; deleted_at?: string | null }>;
     for (const r of rows) {
       present.add(r.id);
-      if (r.employer_visibility === "off") off.add(r.id);
+      // A soft-deleted account is in its grace window and must read as gone,
+      // whatever its visibility setting was.
+      if (r.employer_visibility === "off" || r.deleted_at) off.add(r.id);
     }
   }
   for (const id of ids) if (!present.has(id)) off.add(id);
@@ -529,16 +545,28 @@ export interface LlmScoreEntry {
   reused: boolean;
 }
 
+/** What a stored model score must still match to be reused. */
+export interface LlmReuseGuard {
+  criteriaFingerprint: string;
+  /** Per candidate: stamp of the profile content as it is now. */
+  profileStamps: Map<string, string>;
+}
+
 /** Model opinion per candidate for this pass: fresh scores win, and a
  *  candidate the model did not score this time (call skipped, failed, or the
- *  model omitted them) keeps their last stored opinion while it is recent.
- *  Without this a transient outage swings every blended score down, and the
- *  recovery swings it back up across the strong threshold. */
+ *  model omitted them) keeps their last stored opinion while it is recent AND
+ *  was computed for the same requirement criteria and the same profile
+ *  content. Without this a transient outage swings every blended score down,
+ *  and the recovery swings it back up across the strong threshold; without the
+ *  guard an opinion about an old resume or an old posting outlives the edit.
+ *  A stored score with no recorded provenance (pre-0050, or the columns not
+ *  migrated) is never reused. */
 export function resolveLlmScores(
   candidateIds: string[],
   fresh: Map<string, number>,
-  prior: Map<string, { llm_score?: number | null; llm_scored_at?: string | null }>,
+  prior: Map<string, Pick<ExistingMatchRow, "llm_score" | "llm_scored_at" | "llm_criteria_fingerprint" | "llm_profile_stamp">>,
   nowMs: number,
+  guard: LlmReuseGuard,
   maxAgeMs: number = LLM_SCORE_MAX_AGE_MS,
 ): Map<string, LlmScoreEntry> {
   const out = new Map<string, LlmScoreEntry>();
@@ -551,6 +579,9 @@ export function resolveLlmScores(
     }
     const p = prior.get(id);
     if (!p || p.llm_score == null || !p.llm_scored_at) continue;
+    if (!p.llm_criteria_fingerprint || p.llm_criteria_fingerprint !== guard.criteriaFingerprint) continue;
+    const stamp = guard.profileStamps.get(id);
+    if (!stamp || p.llm_profile_stamp !== stamp) continue;
     const at = Date.parse(p.llm_scored_at);
     if (!Number.isFinite(at) || nowMs - at > maxAgeMs || at > nowMs + 60_000) continue;
     out.set(id, { score: p.llm_score, scoredAt: p.llm_scored_at, reused: true });
