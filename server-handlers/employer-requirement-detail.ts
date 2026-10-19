@@ -38,7 +38,7 @@ export const config = { runtime: "edge" };
 
 import { withAuthAndRateLimit, corsHeaders, withRequestId, slog } from "./_shared";
 import { extractResumeLocation, explainMatch, extractSkills, type RequirementInput } from "./_requirement-match-helpers";
-import { extractResumeDetail, redactResumeDetailForLock, coarsenLockedCity } from "./_resume-detail-helpers";
+import { extractResumeDetail, redactResumeDetailForLock, coarsenLockedCity, resumeOwnName } from "./_resume-detail-helpers";
 import { later } from "./_employer-dashboard-helpers";
 import { runMatching, logRequirementActivity } from "./employer-requirements";
 import {
@@ -351,7 +351,7 @@ export default async function handler(req: Request): Promise<Response> {
       // free text are contact details too, so they go with the rest.
       const resume = unlocked
         ? reachable ? resumeDetail : scrubLockedResume({ ...resumeDetail, phone: null, linkedin: null })
-        : scrubLockedResume(redactResumeDetailForLock(resumeDetail, profile?.name || ""));
+        : scrubLockedResume(redactResumeDetailForLock(resumeDetail, `${profile?.name || ""} ${resumeOwnName(profile?.resume_data)}`));
 
       return {
         id: m.id,
