@@ -262,7 +262,7 @@ alter table payments
 create table if not exists account_erasure_log (
   id uuid primary key default gen_random_uuid(),
   user_hash text not null,
-  trigger text not null check (trigger in ('user_hard', 'scheduled')),
+  trigger text not null check (trigger in ('user_hard', 'scheduled', 'admin')),
   retained_financial boolean not null default false,
   counts jsonb not null default '{}'::jsonb,
   processors jsonb not null default '{}'::jsonb,
@@ -1821,6 +1821,8 @@ create table if not exists requirement_matches (
   unique (requirement_id, candidate_user_id)
 );
 alter table requirement_matches add column if not exists profile_viewed_at timestamptz;
+alter table requirement_matches add column if not exists missed_passes integer not null default 0;
+alter table requirement_matches add column if not exists strong_alerted_at timestamptz;
 
 create index if not exists idx_requirement_matches_requirement on requirement_matches(requirement_id, match_score desc);
 -- The "Candidates view own matches" policy further below filters directly
@@ -1843,6 +1845,11 @@ alter table requirement_matches add column if not exists interview_scheduled_at 
 -- Raw model opinion behind match_score (migration 0048), reused when the model is unavailable.
 alter table requirement_matches add column if not exists llm_score integer;
 alter table requirement_matches add column if not exists llm_scored_at timestamptz;
+-- Provenance for llm_score (migration 0050): what the stored opinion was computed
+-- against. A score is reused only while both still match the current posting and
+-- candidate profile.
+alter table requirement_matches add column if not exists llm_criteria_fingerprint text;
+alter table requirement_matches add column if not exists llm_profile_stamp text;
 
 alter table requirement_matches enable row level security;
 -- Owner-only, scoped via the parent requirement's employer_id. No direct
@@ -2087,13 +2094,11 @@ alter table conversations add column if not exists employer_last_read_at timesta
 alter table conversations add column if not exists candidate_last_read_at timestamptz;
 alter table conversations add column if not exists last_sender_role text check (last_sender_role in ('employer', 'candidate', 'system'));
 
+-- No client policy (migration 0051): every read goes through the API handlers
+-- with the service-role key, which apply the unlock gate and contact redaction.
 alter table conversations enable row level security;
 drop policy if exists "Employers view own conversations" on conversations;
-create policy "Employers view own conversations" on conversations
-  for select using ((auth.uid())::text = employer_id::text);
 drop policy if exists "Candidates view own conversations" on conversations;
-create policy "Candidates view own conversations" on conversations
-  for select using ((auth.uid())::text = candidate_user_id::text);
 
 create table if not exists conversation_messages (
   id uuid primary key default gen_random_uuid(),
@@ -2114,13 +2119,11 @@ create index if not exists idx_conversation_messages_conversation on conversatio
 create index if not exists idx_conversation_messages_employer on conversation_messages(employer_id, created_at desc);
 create index if not exists idx_conversation_messages_candidate on conversation_messages(candidate_user_id, created_at desc);
 
+-- No client policy (migration 0051): a direct employer SELECT returned the raw
+-- body and attachment_path, bypassing the unlock gate in messages.ts.
 alter table conversation_messages enable row level security;
 drop policy if exists "Employers view own conversation messages" on conversation_messages;
-create policy "Employers view own conversation messages" on conversation_messages
-  for select using ((auth.uid())::text = employer_id::text);
 drop policy if exists "Candidates view own conversation messages" on conversation_messages;
-create policy "Candidates view own conversation messages" on conversation_messages
-  for select using ((auth.uid())::text = candidate_user_id::text);
 
 -- Admin-only: flags raised either automatically (auto_flag_reason on the
 -- message itself trips a flag row too, so the admin queue has one place to
@@ -2486,9 +2489,11 @@ create table if not exists public.employer_credit_ledger (
 );
 
 create index if not exists idx_employer_credit_employer on public.employer_credit_ledger (employer_id, created_at desc);
--- A match is refunded as credit at most once, however many triggers fire.
-create unique index if not exists uq_employer_credit_refund_match
-  on public.employer_credit_ledger (match_id) where kind = 'refund';
+-- A match is refunded as credit at most once per order, however many triggers fire (0052; was per match, 0041).
+create unique index if not exists uq_employer_credit_refund_match_order
+  on public.employer_credit_ledger (match_id, order_ref) where kind = 'refund';
+create unique index if not exists uq_employer_credit_refund_match_noorder
+  on public.employer_credit_ledger (match_id) where kind = 'refund' and order_ref is null;
 -- An order spends credit once and releases it once.
 create unique index if not exists uq_employer_credit_spend_order
   on public.employer_credit_ledger (order_ref) where kind = 'spend';
@@ -2691,3 +2696,80 @@ grant execute on function public.assign_unlock_invoice_no(text) to service_role;
 alter table public.employer_credit_ledger drop constraint if exists employer_credit_ledger_reason_check;
 alter table public.employer_credit_ledger add constraint employer_credit_ledger_reason_check
   check (reason in ('declined', 'withdrew', 'blocked', 'no_response', 'unavailable', 'payment_refunded', 'payment_disputed', 'late_payment', 'employer_suspended'));
+
+-- 0051: chat tables are service-role only (see the policy notes above); one
+-- report per person per message, enforced rather than check-then-insert.
+revoke select, insert, update, delete on public.conversation_messages from anon, authenticated;
+revoke select, insert, update, delete on public.conversations from anon, authenticated;
+create unique index if not exists uq_message_flags_reporter
+  on public.message_flags (message_id, flagged_by)
+  where flagged_by_role <> 'system';
+
+-- 0052: a repurchased match can be refunded as credit again (the unique key above is now per order).
+drop index if exists public.uq_employer_credit_refund_match;
+
+-- 0053: gap-free invoice numbers per Indian financial year; credit-only purchases get a tax invoice.
+-- Number shape HSX-YYMM-NNNNNN is unchanged; the counter restarts each April and is seeded from the highest
+-- number already issued in the year. Eligible: a cash order or one paid wholly from credit (credit_pay_ id).
+create table if not exists public.employer_invoice_counters (
+  fy text primary key,
+  last_no bigint not null check (last_no >= 0)
+);
+alter table public.employer_invoice_counters enable row level security; -- service-role only, no client policy
+revoke all on table public.employer_invoice_counters from public, anon, authenticated;
+grant select, insert, update on table public.employer_invoice_counters to service_role;
+
+create or replace function public.assign_unlock_invoice_no(p_payment_id text)
+returns text
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_no text;
+  v_ist timestamp := now() at time zone 'Asia/Kolkata';
+  v_start_year int;
+  v_fy text;
+  v_from int;
+  v_to int;
+  v_seed bigint := 0;
+  v_n bigint;
+  v_seq text;
+begin
+  select invoice_no into v_no
+    from public.employer_unlock_payments
+   where razorpay_payment_id = p_payment_id
+     and (amount > 0 or razorpay_payment_id like 'credit\_pay\_%')
+   for update;
+  if not found then
+    return null;
+  end if;
+  if v_no is not null then
+    return v_no;
+  end if;
+
+  v_start_year := case when extract(month from v_ist) >= 4 then extract(year from v_ist)::int else extract(year from v_ist)::int - 1 end;
+  v_fy := v_start_year::text || '-' || lpad(((v_start_year + 1) % 100)::text, 2, '0');
+
+  if not exists (select 1 from public.employer_invoice_counters where fy = v_fy) then
+    v_from := (v_start_year % 100) * 100 + 4;
+    v_to := ((v_start_year + 1) % 100) * 100 + 3;
+    select coalesce(max((substring(invoice_no from '^HSX-[0-9]{4}-([0-9]+)$'))::bigint), 0) into v_seed
+      from public.employer_unlock_payments
+     where invoice_no ~ '^HSX-[0-9]{4}-[0-9]+$'
+       and substring(invoice_no from 5 for 4)::int between v_from and v_to;
+  end if;
+
+  insert into public.employer_invoice_counters (fy, last_no) values (v_fy, v_seed + 1)
+  on conflict (fy) do update set last_no = public.employer_invoice_counters.last_no + 1
+  returning last_no into v_n;
+
+  v_seq := v_n::text;
+  v_no := 'HSX-' || to_char(v_ist, 'YYMM') || '-' || case when length(v_seq) >= 6 then v_seq else lpad(v_seq, 6, '0') end;
+  update public.employer_unlock_payments set invoice_no = v_no where razorpay_payment_id = p_payment_id;
+  return v_no;
+end;
+$$;
+
+revoke all on function public.assign_unlock_invoice_no(text) from public, anon, authenticated;
+grant execute on function public.assign_unlock_invoice_no(text) to service_role;
