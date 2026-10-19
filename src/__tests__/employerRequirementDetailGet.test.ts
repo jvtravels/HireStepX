@@ -57,7 +57,7 @@ const PHONE = "+91 98765 43210";
 function profileRow(id: string) {
   return {
     id, name: NAME, email: EMAIL, target_role: "Frontend Developer",
-    resume_data: { _type: "fallback", name: NAME, email: EMAIL, phone: PHONE, skills: ["React", "TypeScript"], summary: `Reach me on ${EMAIL} or ${PHONE}` },
+    resume_data: { _type: "fallback", name: NAME, email: EMAIL, phone: PHONE, skills: ["React", "TypeScript"], summary: `Reach me on ${EMAIL} or ${PHONE}`, location: "Jodhpur", experience: [{ title: "Frontend Dev", company: "Razorpay", period: "2020 - 2022", bullets: ["Shipped checkout at Razorpay"] }], education: [{ degree: "B.Tech", school: "IIT Jodhpur", year: "2019" }] },
     practice_timestamps: [], portfolio_links: [{ label: "GitHub", url: "https://github.com/priya" }],
   };
 }
@@ -130,12 +130,22 @@ describe("GET employer-requirement-detail — masking", () => {
     expect(raw).not.toContain("github.com/priya");
   });
 
+  it("withholds employer and school names and a small-town city for a locked match", async () => {
+    install({ matches: [m(1)] });
+    const c = (await get()).body.candidates[0];
+    expect(c.city).toBe("Not specified");
+    expect(JSON.stringify(c)).not.toMatch(/Razorpay|IIT|Jodhpur/);
+    expect((c.resume as { experience: Array<Record<string, unknown>> }).experience[0]).toMatchObject({ title: "Frontend Dev", company: "", period: "2020 - 2022" });
+  });
+
   it("returns real name and contact only for an unlocked match", async () => {
     install({ matches: [m(1, { unlocked: true })] });
     const { body } = await get();
     const c = body.candidates[0];
     expect(c.name).toBe(NAME);
     expect(c.contact).toMatchObject({ email: EMAIL });
+    expect(c.city).toBe("Jodhpur");
+    expect((c.resume as { experience: Array<{ company: string }> }).experience[0].company).toBe("Razorpay");
     expect(c.maskedFields).toEqual([]);
     expect(c.candidateWithdrew).toBe(false);
   });

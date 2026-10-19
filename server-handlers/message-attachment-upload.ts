@@ -19,7 +19,7 @@ export const config = { runtime: "edge" };
 
 import { withAuthAndRateLimit, corsHeaders, withRequestId, slog } from "./_shared";
 import { base64ToBytes } from "./_resume-upload-helpers";
-import { inferAttachmentExtension, attachmentBytesMatchType, conversationExists, resolveRole, employerSendBlock, candidateSendBlock, MATCH_ID_RE } from "./_messages-helpers";
+import { inferAttachmentExtension, attachmentBytesMatchType, conversationExists, resolveRole, employerSendBlock, candidateSendBlock, attachmentObjectName, sanitizeAttachmentName, MATCH_ID_RE, type MessageRole } from "./_messages-helpers";
 import {
   fetchMatchAccessRow,
   isBlockedByCandidate,
@@ -82,7 +82,7 @@ export default async function handler(req: Request): Promise<Response> {
   }
 
   const matchId = typeof body.matchId === "string" ? body.matchId : "";
-  const fileName = typeof body.fileName === "string" ? body.fileName.slice(0, 255) : "attachment";
+  const fileName = sanitizeAttachmentName(body.fileName);
   const contentType = typeof body.contentType === "string" ? body.contentType.slice(0, 100) : "";
   const fileBase64 = typeof body.fileBase64 === "string" ? body.fileBase64 : "";
 
@@ -96,6 +96,7 @@ export default async function handler(req: Request): Promise<Response> {
   // Same gate as POST /api/messages: a file can only be uploaded into a thread
   // its sender could also write to, so a locked/blocked/closed employer can't
   // park files (or probe the bucket) in a thread they can't message.
+  let uploaderRole: MessageRole;
   try {
     const row = await fetchMatchAccessRow(SUPABASE_URL, serviceHeaders(), matchId);
     if (row === "error") {
@@ -109,6 +110,7 @@ export default async function handler(req: Request): Promise<Response> {
     if (!role) {
       return new Response(JSON.stringify({ error: "Not authorized for this conversation" }), { status: 403, headers });
     }
+    uploaderRole = role;
     let block;
     if (role === "employer") {
       const blocked = await isBlockedByCandidate(SUPABASE_URL, serviceHeaders(), row.candidate_user_id, employerId);
@@ -156,7 +158,7 @@ export default async function handler(req: Request): Promise<Response> {
     return new Response(JSON.stringify({ error: "The file content doesn't match its declared type." }), { status: 415, headers });
   }
 
-  const storagePath = `${matchId}/${crypto.randomUUID()}.${ext}`;
+  const storagePath = `${matchId}/${attachmentObjectName(uploaderRole, crypto.randomUUID(), ext)}`;
 
   try {
     const uploadRes = await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${storagePath}`, {

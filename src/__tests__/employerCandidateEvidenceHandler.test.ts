@@ -25,7 +25,7 @@ interface Opts { unlocked?: boolean; response?: string | null; withdrew?: boolea
 const report = {
   skills: [{ name: "Communication", score: 80 }],
   wins: [{ text: "You explained it well", quote: "Mail me at priya@example.com or call 9876543210" }],
-  perQuestion: [{ idx: 0, question: "Tell me about a project", verdict: "strong", score: 80, answerText: "Reach me at priya@example.com" }],
+  perQuestion: [{ idx: 0, question: "Tell me about a project", verdict: "strong", score: 80, answerText: "Reach me at priya@example.com", explanation: "Strong ownership at Acme Corp" }],
 };
 
 function installFetch(o: Opts) {
@@ -67,15 +67,19 @@ describe("employer-candidate-evidence contact withholding", () => {
     const body = await (await get()).json();
     expect(body.resumeFile).toEqual({ fileName: "Priya Sharma CV.pdf" });
     expect(JSON.stringify(body.quotes)).toContain("priya@example.com");
+    expect(body.questions[0].answerText).toContain("priya@example.com");
+    expect(body.questions[0].explanation).toContain("Acme Corp");
   });
 
-  it("scrubs contact text and drops the resume file once an unlocked candidate has declined", async () => {
+  it("withholds verbatim text and drops the resume file once an unlocked candidate has declined", async () => {
     installFetch({ unlocked: true, response: "declined" });
     const res = await get();
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.resumeFile).toBeNull();
-    expect(body.quotes.length).toBeGreaterThan(0);
+    expect(body.quotes).toEqual([]);
+    expect(body.questions[0]).not.toHaveProperty("answerText");
+    expect(body.questions[0]).not.toHaveProperty("explanation");
     const blob = JSON.stringify([body.quotes, body.questions]);
     expect(blob).not.toContain("priya@example.com");
     expect(blob).not.toContain("9876543210");
@@ -94,10 +98,16 @@ describe("employer-candidate-evidence contact withholding", () => {
     expect((await res.json()).code).toBe("candidate_withdrew");
   });
 
-  it("scrubs a locked candidate and omits the resume file", async () => {
+  it("returns no verbatim answers, grader notes or quotes while locked, but keeps scores and skills", async () => {
     installFetch({ unlocked: false });
     const body = await (await get()).json();
     expect(body.resumeFile).toBeNull();
-    expect(JSON.stringify(body.quotes)).not.toContain("priya@example.com");
+    expect(body.quotes).toEqual([]);
+    expect(body.questions).toHaveLength(1);
+    expect(body.questions[0]).toMatchObject({ question: "Tell me about a project", score: 80, verdict: "strong" });
+    expect(body.questions[0]).not.toHaveProperty("answerText");
+    expect(body.questions[0]).not.toHaveProperty("explanation");
+    expect(JSON.stringify(body)).not.toMatch(/priya@example\.com|Acme Corp/);
+    expect(body.skills.length).toBeGreaterThan(0);
   });
 });

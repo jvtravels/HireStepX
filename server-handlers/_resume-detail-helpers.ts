@@ -85,30 +85,79 @@ function scrubName(text: string, fullName: string): string {
   return out.replace(/(The candidate)(\s+\1)+/gi, "$1");
 }
 
-/** Locking a candidate hides only who they are and how to reach them: their
-    name (including inside the AI-written free text, which routinely opens
-    with "<Full Name> is a ...") plus phone and LinkedIn. Everything on the
-    resume itself, employers and schools included, stays visible.
+/** Placeholder for an employer, school or project name taken out of free text. */
+const ENTITY_PLACEHOLDER = "[withheld]";
+// Shorter names ("EY", "HP") would match inside ordinary words.
+const MIN_ENTITY_NAME_LEN = 3;
+
+/** Employer, school, partner and project names are the strongest way to work
+ *  out who a locked candidate is (a CV lists a handful of them, and the
+ *  employer can search for the person). They are also written into the
+ *  AI-generated prose, so the names from the structured fields are scrubbed
+ *  from the free text too. Whole-word, case-insensitive. */
+function lockedEntityNames(detail: ResumeDetail): string[] {
+  const names = new Set<string>();
+  const add = (v: string | undefined) => {
+    const t = (v ?? "").trim();
+    if (t.length >= MIN_ENTITY_NAME_LEN) names.add(t);
+  };
+  for (const e of detail.experience) {
+    add(e.company);
+    e.partners?.forEach(add);
+    e.topProjects?.forEach(add);
+  }
+  for (const ed of detail.education) add(ed.school);
+  return [...names].sort((a, b) => b.length - a.length);
+}
+
+function scrubEntities(text: string, names: string[]): string {
+  let out = text;
+  for (const n of names) out = out.replace(new RegExp(`(?<![\\w])${escapeRegExp(n)}(?![\\w])`, "gi"), ENTITY_PLACEHOLDER);
+  return out;
+}
+
+/** Locking a candidate hides who they are and how to reach them: their name
+    (including inside the AI-written free text, which routinely opens with
+    "<Full Name> is a ...") plus phone and LinkedIn, and every name that could
+    identify them by search: employers, schools, partners, projects and the
+    bullets that describe them. Role titles, tenure, degree level, scope and
+    team size stay, so the employer can still judge fit before paying.
     `realName` is the candidate's actual name, known only server-side. */
 export function redactResumeDetailForLock(detail: ResumeDetail, realName: string): ResumeDetail {
+  const entities = lockedEntityNames(detail);
+  const clean = (t: string) => scrubEntities(scrubName(t, realName), entities);
   return {
     ...detail,
-    summary: scrubName(detail.summary, realName),
-    headline: detail.headline ? scrubName(detail.headline, realName) : detail.headline,
-    keyAchievements: detail.keyAchievements.map((a) => scrubName(a, realName)),
+    summary: clean(detail.summary),
+    headline: detail.headline ? clean(detail.headline) : detail.headline,
+    keyAchievements: detail.keyAchievements.map(clean),
     certifications: detail.certifications.map((c) => scrubName(c, realName)),
-    careerTrajectory: detail.careerTrajectory ? scrubName(detail.careerTrajectory, realName) : detail.careerTrajectory,
-    promotionSignals: detail.promotionSignals.map((p) => scrubName(p, realName)),
-    interviewStrengths: detail.interviewStrengths.map((t) => scrubName(t, realName)),
+    careerTrajectory: detail.careerTrajectory ? clean(detail.careerTrajectory) : detail.careerTrajectory,
+    promotionSignals: detail.promotionSignals.map(clean),
+    interviewStrengths: detail.interviewStrengths.map(clean),
     experience: detail.experience.map((e) => ({
-      ...e,
-      ...(e.scope ? { scope: scrubName(e.scope, realName) } : {}),
-      ...(e.topProjects ? { topProjects: e.topProjects.map((t) => scrubName(t, realName)) } : {}),
-      ...(e.bullets ? { bullets: e.bullets.map((b) => scrubName(b, realName)) } : {}),
+      title: clean(e.title),
+      company: "",
+      period: e.period,
+      ...(e.scope ? { scope: clean(e.scope) } : {}),
+      ...(e.teamSize !== undefined ? { teamSize: e.teamSize } : {}),
     })),
+    education: detail.education.map((ed) => ({ ...ed, school: "" })),
     linkedin: null,
     phone: null,
   };
+}
+
+/** Only these large metros are shown for a locked candidate: a free-text
+ *  locality or a small town, combined with a role and tenure, narrows a person
+ *  down far more than the city filter is worth. */
+const LOCKED_VISIBLE_CITIES: ReadonlySet<string> = new Set([
+  "bangalore", "bengaluru", "mumbai", "delhi", "new delhi", "delhi ncr", "gurgaon", "gurugram",
+  "noida", "hyderabad", "pune", "chennai", "kolkata", "ahmedabad",
+]);
+
+export function coarsenLockedCity(city: string): string {
+  return LOCKED_VISIBLE_CITIES.has(city.trim().toLowerCase()) ? city : "";
 }
 
 function extractDomainYears(v: unknown): ResumeDomainYears[] {

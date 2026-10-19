@@ -31,7 +31,6 @@ import {
   extractSessionTrend,
   extractQuestionBreakdown,
   scrubLockedQuestions,
-  scrubLockedQuotes,
   extractDeliveryMetrics,
   latestSessionByUser,
   selectSessionsForRole,
@@ -222,17 +221,17 @@ export default async function handler(req: Request): Promise<Response> {
     const { rows: sessionRows, fit: roleFit } = selectSessionsForRole(allSessionRows, match.employer_requirements?.title);
     const latest = latestSessionByUser(sessionRows).get(candidateUserId);
 
-    /* Answers are shown while locked; only the candidate's name and contact
-       details are scrubbed. A failed name lookup withholds the text instead. */
-    /* A candidate who declined after the unlock is treated like a still-locked
-       one: answers are scrubbed of name/contact text and the resume file is
-       dropped, so paying earlier does not keep contact details flowing. */
+    /* While locked, nothing the candidate said verbatim leaves the server:
+       answers, the grader's notes on them and the standout quotes routinely
+       name past employers and colleagues, and a name scrub cannot catch those.
+       Scores, STAR flags, skills and the summary-level signals stay. A
+       candidate who declined after the unlock is treated like a locked one, so
+       paying earlier does not keep this flowing. The question wording is still
+       scrubbed of the candidate's name; a failed name lookup withholds it. */
     const releasable = contactReleasable(decision.access);
     const lockedName = releasable || !latest ? "" : await loadCandidateName(candidateUserId);
     const scrubQuestions = (qs: ReturnType<typeof extractQuestionBreakdown>) =>
       releasable ? qs : lockedName === null ? [] : scrubLockedQuestions(qs, lockedName);
-    const scrubQuotes = (qs: ReturnType<typeof extractEvidenceQuotes>) =>
-      releasable ? qs : lockedName === null ? [] : scrubLockedQuotes(qs, lockedName);
 
     let resumeFile: { fileName: string } | null = null;
     if (releasable) {
@@ -250,13 +249,13 @@ export default async function handler(req: Request): Promise<Response> {
         sessionTrend: extractSessionTrend(sessionRows),
         resumeFile,
         skills: latest ? extractEvidenceSkills(latest.report_json) : [],
-        quotes: latest ? scrubQuotes(extractEvidenceQuotes(latest.report_json)) : [],
+        quotes: latest && releasable ? extractEvidenceQuotes(latest.report_json) : [],
         unlocked,
         roleFit,
         readiness: latest ? extractReadinessBand(latest.report_json) : null,
         starCompleteness: latest ? extractStarCompleteness(latest.report_json) : null,
         sessionDate: latest?.created_at ?? null,
-        questions: latest ? scrubQuestions(extractQuestionBreakdown(latest.report_json, true)) : [],
+        questions: latest ? scrubQuestions(extractQuestionBreakdown(latest.report_json, releasable)) : [],
         delivery: latest ? extractDeliveryMetrics(latest.report_json) : null,
         verifiedCapabilities: computeVerifiedCapabilitiesForCandidate(sessionRows, candidateUserId),
       }),

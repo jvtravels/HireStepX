@@ -91,7 +91,8 @@ export default async function handler(req: Request): Promise<Response> {
     // Idempotent per reporter: a repeat report of the same message by the same
     // person must not add a second open flag (the admin queue and any strike
     // counting key off flag rows). Their own auto-flag (role "system") does not
-    // count as a report. No unique index exists, so this is check-then-insert.
+    // count as a report. The check is the fast path; uq_message_flags_reporter
+    // (migration 0051) closes the race between two concurrent requests.
     const dupRes = await fetch(
       `${SUPABASE_URL}/rest/v1/message_flags?message_id=eq.${encodeURIComponent(message.id)}` +
         `&flagged_by=eq.${encodeURIComponent(auth.userId)}&flagged_by_role=neq.system&select=id&limit=1`,
@@ -116,6 +117,10 @@ export default async function handler(req: Request): Promise<Response> {
         note,
       }),
     });
+    if (insertRes.status === 409) {
+      // Unique violation: the same reporter won a race against themselves.
+      return new Response(JSON.stringify({ ok: true, duplicate: true }), { status: 200, headers });
+    }
     if (!insertRes.ok) {
       const t = await insertRes.text().catch(() => "");
       slog.error("flag-message insert failed", { code: "flag_message_insert_failed", httpStatus: insertRes.status, body: t.slice(0, 200), userId: auth.userId });

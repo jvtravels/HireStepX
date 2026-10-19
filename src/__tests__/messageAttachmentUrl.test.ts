@@ -39,7 +39,7 @@ function installFetch(o: Opts) {
     if (u.includes("/rest/v1/conversation_messages")) {
       return {
         ok: true,
-        json: async () => [{ id: MSG, employer_id: EMP, candidate_user_id: CAND, sender_role: o.senderRole ?? "candidate", attachment_path: o.attachmentPath ?? `${MATCH}/f.pdf`, conversations: { match_id: MATCH } }],
+        json: async () => [{ id: MSG, employer_id: EMP, candidate_user_id: CAND, sender_role: o.senderRole ?? "candidate", attachment_path: o.attachmentPath ?? `${MATCH}/candidate-f.pdf`, conversations: { match_id: MATCH } }],
       };
     }
     if (u.includes("/rest/v1/conversations?match_id=")) return { ok: true, json: async () => (o.noConversation ? [] : [{ id: "c1" }]) };
@@ -93,8 +93,22 @@ describe("message-attachment-url gating", () => {
   });
 
   it("lets a locked employer re-download a file they sent themselves", async () => {
-    installFetch({ unlocked: false, response: "interested", senderRole: "employer" });
+    installFetch({ unlocked: false, response: "interested", senderRole: "employer", attachmentPath: `${MATCH}/employer-f.pdf` });
     expect((await get()).status).toBe(200);
+  });
+
+  it("403s a locked employer whose message row says employer but whose file the candidate uploaded", async () => {
+    const f = installFetch({ unlocked: false, response: "interested", senderRole: "employer", attachmentPath: `${MATCH}/candidate-f.pdf` });
+    const res = await get();
+    expect(res.status).toBe(403);
+    expect((await res.json()).code).toBe("unlock_required");
+    expect(signed(f)).toBe(false);
+  });
+
+  it("treats a legacy untagged path as the candidate's, so a locked employer cannot sign it", async () => {
+    const f = installFetch({ unlocked: false, response: "interested", senderRole: "employer", attachmentPath: `${MATCH}/f.pdf` });
+    expect((await get()).status).toBe(403);
+    expect(signed(f)).toBe(false);
   });
 
   it("404s a blocked employer even after unlock", async () => {
@@ -166,6 +180,14 @@ describe("message-attachment-upload gating", () => {
     const f = installFetch({ unlocked: true });
     expect((await upload()).status).toBe(200);
     expect(stored(f)).toBe(true);
+  });
+
+  it("tags the stored object with the uploader's role so signing can gate on it", async () => {
+    installFetch({ unlocked: true });
+    expect((await (await upload()).json()).attachmentPath).toMatch(new RegExp(`^${MATCH}/employer-[0-9a-f-]{36}\\.pdf$`));
+    asUser(CAND);
+    installFetch({ unlocked: false });
+    expect((await (await upload()).json()).attachmentPath).toMatch(new RegExp(`^${MATCH}/candidate-[0-9a-f-]{36}\\.pdf$`));
   });
 
   it("402s a locked employer, 409s a closed requirement, 404s a blocked employer; nothing is stored", async () => {

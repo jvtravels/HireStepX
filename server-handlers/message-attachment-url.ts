@@ -15,7 +15,7 @@
 export const config = { runtime: "edge" };
 
 import { withAuthAndRateLimit, corsHeaders, withRequestId, slog } from "./_shared";
-import { resolveRole, employerAttachmentBlock, isSafeAttachmentPath, MESSAGE_ID_RE, type MessageSenderRole } from "./_messages-helpers";
+import { resolveRole, employerAttachmentBlock, isSafeAttachmentPath, attachmentUploaderRole, MESSAGE_ID_RE, type MessageSenderRole } from "./_messages-helpers";
 import { loadEmployerMatchAccess, loadAuthIdentity, DENIED_STATUS } from "./_entitlements";
 
 declare const process: { env: Record<string, string | undefined> };
@@ -101,7 +101,9 @@ export default async function handler(req: Request): Promise<Response> {
         const d = DENIED_STATUS[decision.reason];
         return new Response(JSON.stringify({ error: d.error }), { status: d.status, headers });
       }
-      const block = employerAttachmentBlock(decision.access, message.sender_role);
+      // Gated on who UPLOADED the file, not on the row's sender_role: an
+      // employer can post any path, and the row would then read "employer".
+      const block = employerAttachmentBlock(decision.access, message.attachment_path ? attachmentUploaderRole(message.attachment_path) : null);
       if (block) {
         return new Response(JSON.stringify({ error: block.error, code: block.code }), { status: block.status, headers });
       }

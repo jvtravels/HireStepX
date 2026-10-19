@@ -34,7 +34,10 @@ import {
   candidateSendBlock,
   conversationExists,
   employerMessageCap,
-  isSafeAttachmentPath,
+  isOwnAttachmentPath,
+  attachmentPathForViewer,
+  attachmentMimeFromPath,
+  sanitizeAttachmentName,
   EMPLOYER_MESSAGE_CAP,
   EMPLOYER_MESSAGE_WINDOW_MS,
   REDACTED_ATTACHMENT_NAME,
@@ -188,14 +191,16 @@ async function findOrCreateConversation(match: MatchRow): Promise<ConversationRo
 /** `hideContact` is set for an employer reading a thread of a still-Locked
  *  match: phone/email text in the candidate's messages is masked in what is
  *  returned (never in storage). The employer's own text is left as written. */
-function toMessageShape(row: MessageRow, hideContact = false) {
+function toMessageShape(row: MessageRow, viewerRole: MessageRole, hideContact = false) {
   const body = messageBodyForViewer(row.body, row.sender_role, hideContact);
   return {
     id: row.id,
     senderRole: row.sender_role,
     body,
     contactRedacted: hideContact && body !== row.body,
-    attachmentPath: row.attachment_path,
+    // An employer never receives the storage key of a candidate's file before
+    // the contact is releasable; the download endpoint takes a message id.
+    attachmentPath: attachmentPathForViewer(row.attachment_path, viewerRole, hideContact),
     // File names routinely embed the candidate's name or number.
     attachmentName: hideContact && row.sender_role === "candidate" && row.attachment_name ? REDACTED_ATTACHMENT_NAME : row.attachment_name,
     attachmentMime: row.attachment_mime,
@@ -368,7 +373,7 @@ async function handleGet(req: Request, headers: Record<string, string>, auth: { 
   return new Response(
     JSON.stringify({
       conversation: { id: conversation.id, matchId: conversation.match_id, lastMessageAt: conversation.last_message_at },
-      messages: msgRows.map((m) => toMessageShape(m, hideContact)),
+      messages: msgRows.map((m) => toMessageShape(m, role, hideContact)),
       context,
     }),
     { status: 200, headers },
@@ -389,8 +394,6 @@ async function handlePost(req: Request, headers: Record<string, string>, auth: {
   }
   const text = asMessageBody(body.body);
   const attachmentPath = typeof body.attachmentPath === "string" ? body.attachmentPath.slice(0, 500) : null;
-  const attachmentName = typeof body.attachmentName === "string" ? body.attachmentName.slice(0, 255) : null;
-  const attachmentMime = typeof body.attachmentMime === "string" ? body.attachmentMime.slice(0, 100) : null;
   if (!text && !attachmentPath) {
     return new Response(JSON.stringify({ error: "Message body or attachment is required" }), { status: 400, headers });
   }
@@ -399,11 +402,17 @@ async function handlePost(req: Request, headers: Record<string, string>, auth: {
   if (resolved instanceof Response) return resolved;
   const { match, role } = resolved;
 
-  // Attachments must live under this match's own storage prefix, otherwise a
-  // caller could attach (and have the recipient sign) another thread's file.
-  if (attachmentPath && !isSafeAttachmentPath(attachmentPath, match.id)) {
+  // An attachment must be a file THIS sender uploaded to THIS match. Prefix
+  // alone is not enough: an employer who learned a candidate's storage key
+  // could otherwise re-post it as their own message, and the download check
+  // exempts employer-sent files from the unlock fee.
+  if (attachmentPath && !isOwnAttachmentPath(attachmentPath, match.id, role)) {
     return new Response(JSON.stringify({ error: "Invalid attachment" }), { status: 400, headers });
   }
+  // Name is display-only and sanitised; the MIME type comes from the path's
+  // extension (the upload already checked the bytes against it), never the client.
+  const attachmentName = attachmentPath ? sanitizeAttachmentName(body.attachmentName) : null;
+  const attachmentMime = attachmentPath ? attachmentMimeFromPath(attachmentPath) : null;
 
   // Employer: unlock / candidate opt-out / declined / closed requirement /
   // rejected candidate. Candidate: refused only when the employer is suspended
@@ -515,7 +524,7 @@ async function handlePost(req: Request, headers: Record<string, string>, auth: {
     actionLabel: "Reply",
   }).catch(() => {});
 
-  return new Response(JSON.stringify({ conversationId: conversation.id, message: toMessageShape(inserted) }), { status: 201, headers });
+  return new Response(JSON.stringify({ conversationId: conversation.id, message: toMessageShape(inserted, role) }), { status: 201, headers });
 }
 
 export default async function handler(req: Request): Promise<Response> {

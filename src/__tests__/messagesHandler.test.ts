@@ -295,20 +295,68 @@ describe("messages: attachment path validation", () => {
     expect(sent(f)).toBe(false);
   });
 
-  it("accepts a path an upload minted", async () => {
+  it("accepts a path the sender's own upload minted", async () => {
     installFetch({ unlocked: true });
-    expect((await post({ matchId: MATCH, body: "x", attachmentPath: `${MATCH}/aaaa-bbbb.pdf` })).status).toBe(201);
+    expect((await post({ matchId: MATCH, body: "x", attachmentPath: `${MATCH}/employer-aaaa-bbbb.pdf` })).status).toBe(201);
+    asUser(CAND);
+    installFetch({ unlocked: true });
+    expect((await post({ matchId: MATCH, body: "x", attachmentPath: `${MATCH}/candidate-aaaa-bbbb.pdf` })).status).toBe(201);
+  });
+
+  it("refuses an employer re-posting a candidate's file (paywall bypass), and legacy untagged paths", async () => {
+    for (const attachmentPath of [`${MATCH}/candidate-aaaa-bbbb.pdf`, `${MATCH}/aaaa-bbbb.pdf`]) {
+      const f = installFetch({ unlocked: false, response: "interested" });
+      const res = await post({ matchId: MATCH, body: "x", attachmentPath });
+      expect(res.status).toBe(400);
+      expect(sent(f)).toBe(false);
+    }
+  });
+
+  it("refuses a candidate re-posting an employer's file", async () => {
+    asUser(CAND);
+    const f = installFetch({ unlocked: true });
+    expect((await post({ matchId: MATCH, body: "x", attachmentPath: `${MATCH}/employer-aaaa-bbbb.pdf` })).status).toBe(400);
+    expect(sent(f)).toBe(false);
+  });
+
+  it("stores a sanitised name and a MIME type derived from the path, not the client's", async () => {
+    const f = installFetch({ unlocked: true });
+    await post({
+      matchId: MATCH, body: "x", attachmentPath: `${MATCH}/employer-aaaa-bbbb.pdf`,
+      attachmentName: "../../etc/passwd\u0000<b>.pdf", attachmentMime: "text/html",
+    });
+    const call = f.mock.calls.find(([u, init]) => String(u).endsWith("/rest/v1/conversation_messages") && (init as RequestInit | undefined)?.method === "POST");
+    const stored = JSON.parse(String((call![1] as RequestInit).body));
+    expect(stored.attachment_name).not.toMatch(/[\\/<>]/);
+    expect(stored.attachment_name).not.toContain("\u0000");
+    expect(stored.attachment_name).toContain("passwd");
+    expect(stored.attachment_mime).toBe("application/pdf");
   });
 });
 
 describe("messages: attachment names and contact for a non-releasable employer", () => {
-  const candMsg = { id: "m", conversation_id: "c1", sender_id: CAND, sender_role: "candidate", body: "call 9876543210", attachment_path: `${MATCH}/a.pdf`, attachment_name: "Priya_Sharma_9876543210.pdf", attachment_mime: "application/pdf", auto_flag_reason: null, created_at: "t" };
+  const candMsg = { id: "m", conversation_id: "c1", sender_id: CAND, sender_role: "candidate", body: "call 9876543210", attachment_path: `${MATCH}/candidate-a.pdf`, attachment_name: "Priya_Sharma_9876543210.pdf", attachment_mime: "application/pdf", auto_flag_reason: null, created_at: "t" };
 
   it("redacts the file name and phone while locked", async () => {
     installFetch({ unlocked: false, response: "interested", messages: [candMsg] });
     const body = await (await getThread()).json();
     expect(body.messages[0].attachmentName).toBe("Attachment");
     expect(body.messages[0].body).not.toContain("9876543210");
+  });
+
+  it("never returns a candidate file's storage key to a non-releasable employer", async () => {
+    installFetch({ unlocked: false, response: "interested", messages: [candMsg] });
+    const body = await (await getThread()).json();
+    expect(body.messages[0].attachmentPath).toBe("withheld");
+    expect(JSON.stringify(body)).not.toContain("candidate-a.pdf");
+  });
+
+  it("still returns the real path once the contact is releasable, and the candidate always gets their own", async () => {
+    installFetch({ unlocked: true, messages: [candMsg] });
+    expect((await (await getThread()).json()).messages[0].attachmentPath).toBe(`${MATCH}/candidate-a.pdf`);
+    asUser(CAND);
+    installFetch({ unlocked: false, messages: [candMsg] });
+    expect((await (await getThread()).json()).messages[0].attachmentPath).toBe(`${MATCH}/candidate-a.pdf`);
   });
 
   it("keeps them hidden after an unlocked candidate declines or withdraws", async () => {

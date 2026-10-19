@@ -38,7 +38,7 @@ export const config = { runtime: "edge" };
 
 import { withAuthAndRateLimit, corsHeaders, withRequestId, slog } from "./_shared";
 import { extractResumeLocation, explainMatch, extractSkills, type RequirementInput } from "./_requirement-match-helpers";
-import { extractResumeDetail, redactResumeDetailForLock } from "./_resume-detail-helpers";
+import { extractResumeDetail, redactResumeDetailForLock, coarsenLockedCity } from "./_resume-detail-helpers";
 import { later } from "./_employer-dashboard-helpers";
 import { runMatching, logRequirementActivity } from "./employer-requirements";
 import {
@@ -343,12 +343,12 @@ export default async function handler(req: Request): Promise<Response> {
       const withheldReason = contactWithheldReason({ unlocked, candidateWithdrew, candidateResponse });
       const reachable = unlocked && !withheldReason;
       /* Name and contact details must never leave the server for a Locked
-         match; masking only in the client is cosmetic. The resume itself
-         (employers, schools, history) is visible either way. */
+         match; masking only in the client is cosmetic. Employer and school
+         names are withheld too (see redactResumeDetailForLock). */
       const name = unlocked ? profile?.name || "Candidate" : maskedCandidateName(m.id);
-      // The resume body stays (it is the paid snapshot) but its own phone,
-      // LinkedIn and any email/number/link written into its free text are
-      // contact details too, so they go with the rest.
+      // For a paid match the resume body stays (it is the paid snapshot) but
+      // its own phone, LinkedIn and any email/number/link written into its
+      // free text are contact details too, so they go with the rest.
       const resume = unlocked
         ? reachable ? resumeDetail : scrubLockedResume({ ...resumeDetail, phone: null, linkedin: null })
         : scrubLockedResume(redactResumeDetailForLock(resumeDetail, profile?.name || ""));
@@ -357,7 +357,7 @@ export default async function handler(req: Request): Promise<Response> {
         id: m.id,
         name,
         targetRole: profile?.target_role || "Not specified",
-        city: extractResumeLocation(profile?.resume_data) || "Not specified",
+        city: (unlocked ? extractResumeLocation(profile?.resume_data) : coarsenLockedCity(extractResumeLocation(profile?.resume_data))) || "Not specified",
         matchScore: m.match_score,
         rosterScore: m.roster_score,
         matchBreakdown,

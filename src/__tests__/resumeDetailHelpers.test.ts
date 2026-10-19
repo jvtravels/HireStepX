@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { extractResumeDetail, redactResumeDetailForLock } from "../../server-handlers/_resume-detail-helpers";
+import { extractResumeDetail, redactResumeDetailForLock, coarsenLockedCity } from "../../server-handlers/_resume-detail-helpers";
 import { scrubLockedResume } from "../../server-handlers/_employer-matching-helpers";
 
 describe("extractResumeDetail", () => {
@@ -66,7 +66,7 @@ describe("extractResumeDetail", () => {
 });
 
 describe("redactResumeDetailForLock", () => {
-  it("hides only identity and contact details, keeping the whole resume visible", () => {
+  it("hides identity, contact and employer names but keeps role, tenure and level signals", () => {
     const detail = extractResumeDetail({
       topSkills: ["Figma"],
       summary: "Product Manager at Meesho, drives strategy for Valmo.",
@@ -82,12 +82,12 @@ describe("redactResumeDetailForLock", () => {
 
     const redacted = redactResumeDetailForLock(detail, "Jane Doe");
 
-    expect(redacted.summary).toBe("Product Manager at Meesho, drives strategy for Valmo.");
-    expect(redacted.headline).toBe("Senior PM @ Meesho");
+    expect(redacted.summary).toBe("Product Manager at [withheld], drives strategy for Valmo.");
+    expect(redacted.headline).toBe("Senior PM @ [withheld]");
     expect(redacted.keyAchievements).toEqual(["Led a 4-person team"]);
     expect(redacted.linkedin).toBeNull();
     expect(redacted.phone).toBeNull();
-    expect(redacted.experience).toEqual([{ title: "Product Manager", company: "Meesho", period: "2022 – Present" }]);
+    expect(redacted.experience).toEqual([{ title: "Product Manager", company: "", period: "2022 – Present" }]);
     expect(redacted.seniorityLevel).toBe("Senior");
     expect(redacted.yearsExperience).toBe(6);
     expect(redacted.industries).toEqual(["E-commerce"]);
@@ -104,7 +104,7 @@ describe("redactResumeDetailForLock", () => {
     expect(redactResumeDetailForLock(detail, "Jane Doe").certifications).toEqual(["Google UX Design"]);
   });
 
-  it("keeps the school in education entries", () => {
+  it("drops the school but keeps degree and year in education entries", () => {
     const detail = extractResumeDetail({
       skills: [],
       education: [{ degree: "B.Tech", school: "IIT Bombay", year: "2018" }],
@@ -112,7 +112,8 @@ describe("redactResumeDetailForLock", () => {
 
     const redacted = redactResumeDetailForLock(detail, "Jane Doe");
 
-    expect(redacted.education).toEqual([{ degree: "B.Tech", school: "IIT Bombay", year: "2018" }]);
+    expect(redacted.education).toEqual([{ degree: "B.Tech", school: "", year: "2018" }]);
+    expect(JSON.stringify(redacted)).not.toMatch(/Bombay/);
   });
 
   it("strips the candidate's name out of the AI-written summary so a locked candidate stays anonymous", () => {
@@ -156,6 +157,42 @@ describe("redactResumeDetailForLock", () => {
     // Name "Ravi" should only match the whole word, not clobber "leadership".
     const redacted = redactResumeDetailForLock(detail, "Ravi");
     expect(redacted.summary).toBe("Experienced with The candidate Shastri's leadership books.");
+  });
+});
+
+describe("redactResumeDetailForLock entity names", () => {
+  const detail = extractResumeDetail({
+    topSkills: ["SQL"],
+    summary: "Ex-Razorpay analyst who later joined Zerodha; studied at IIT Madras.",
+    keyAchievements: ["Cut Razorpay settlement time by 30%"],
+    experiences: [
+      {
+        title: "Data Analyst", company: "Razorpay", start: "2020", end: "2022", scope: "Owned reporting for Razorpay merchants",
+        teamSize: 4, partners: ["Zerodha"], topProjects: ["Project Orion"], bullets: ["Built Project Orion dashboards"],
+      },
+    ],
+  });
+  const withSchool = { ...detail, education: [{ degree: "M.Tech", school: "IIT Madras", year: "2019" }] };
+
+  it("removes employer, school, partner and project names from structure and prose", () => {
+    const locked = redactResumeDetailForLock(withSchool, "Jane Doe");
+    expect(JSON.stringify(locked)).not.toMatch(/Razorpay|Zerodha|Orion|Madras/);
+    expect(locked.experience[0]).toEqual({ title: "Data Analyst", company: "", period: "2020 – 2022", scope: "Owned reporting for [withheld] merchants", teamSize: 4 });
+    expect(locked.education[0]).toEqual({ degree: "M.Tech", school: "", year: "2019" });
+  });
+
+  it("matches whole words only, so a short name does not gut longer words", () => {
+    const d = extractResumeDetail({
+      topSkills: [],
+      summary: "Knows metadata pipelines and worked at Meta.",
+      experiences: [{ title: "Engineer", company: "Meta", start: "2020", end: "2022" }],
+    });
+    expect(redactResumeDetailForLock(d, "Jane").summary).toBe("Knows metadata pipelines and worked at [withheld].");
+  });
+
+  it("leaves everything intact when no entity names are known", () => {
+    const d = extractResumeDetail({ topSkills: [], summary: "Plain summary.", experiences: [] });
+    expect(redactResumeDetailForLock(d, "Jane").summary).toBe("Plain summary.");
   });
 });
 
@@ -225,8 +262,9 @@ describe("richer resume detail", () => {
     const locked = scrubLockedResume(redactResumeDetailForLock(original, "Jane Doe"));
     const json = JSON.stringify(locked);
     expect(json).not.toMatch(/Jane|Doe|jane@/);
-    expect(json).toContain("Flipkart");
-    expect(locked.experience[0]).toMatchObject({ company: "Flipkart", teamSize: 8, partners: ["Design", "Eng"] });
+    expect(json).not.toContain("Flipkart");
+    expect(locked.experience[0]).toMatchObject({ company: "", teamSize: 8 });
+    expect(locked.experience[0]).not.toHaveProperty("partners");
     expect(locked.skillsDetailed).toHaveLength(2);
   });
 });
@@ -235,5 +273,15 @@ describe("extractResumeDetail education", () => {
   it("drops entries with neither a degree nor a school", () => {
     const d = extractResumeDetail({ education: [{ year: "Sep / 2021" }, { degree: "B.Des", school: "NID", year: "2020" }] });
     expect(d.education).toEqual([{ degree: "B.Des", school: "NID", year: "2020" }]);
+  });
+});
+
+describe("coarsenLockedCity", () => {
+  it("keeps a large metro and withholds anything narrower", () => {
+    expect(coarsenLockedCity("Bengaluru")).toBe("Bengaluru");
+    expect(coarsenLockedCity("Gurugram")).toBe("Gurugram");
+    expect(coarsenLockedCity("Vikaspuri, West Delhi near metro")).toBe("");
+    expect(coarsenLockedCity("Jodhpur")).toBe("");
+    expect(coarsenLockedCity("")).toBe("");
   });
 });

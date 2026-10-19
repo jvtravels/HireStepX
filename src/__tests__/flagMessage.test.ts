@@ -15,11 +15,11 @@ const { default: handler } = await import("../../server-handlers/flag-message");
 
 const MSG = "22222222-2222-4222-8222-222222222222";
 
-function installFetch(existingFlag: boolean) {
+function installFetch(existingFlag: boolean, insertStatus = 201) {
   const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
     const u = String(url);
     if (u.includes("/rest/v1/conversation_messages")) return { ok: true, json: async () => [{ id: MSG, conversation_id: "c1", employer_id: "emp-1", candidate_user_id: "cand-1" }] };
-    if (u.includes("/rest/v1/message_flags") && init?.method === "POST") return { ok: true, text: async () => "" };
+    if (u.includes("/rest/v1/message_flags") && init?.method === "POST") return { ok: insertStatus < 400, status: insertStatus, text: async () => "" };
     if (u.includes("/rest/v1/message_flags")) return { ok: true, json: async () => (existingFlag ? [{ id: "f1" }] : []) };
     throw new Error(`unexpected fetch ${u}`);
   });
@@ -49,6 +49,18 @@ describe("flag-message idempotency", () => {
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ ok: true, duplicate: true });
     expect(inserted(f)).toBe(false);
+  });
+
+  it("treats a unique-index violation (lost race against themselves) as a duplicate, not a 500", async () => {
+    installFetch(false, 409);
+    const res = await flag();
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ ok: true, duplicate: true });
+  });
+
+  it("still 500s on any other insert failure", async () => {
+    installFetch(false, 500);
+    expect((await flag()).status).toBe(500);
   });
 
   it("only counts the reporter's own non-system flags as duplicates", async () => {

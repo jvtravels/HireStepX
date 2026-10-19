@@ -163,6 +163,70 @@ export function isSafeAttachmentPath(path: string, matchId: string): boolean {
   return !name.includes("..");
 }
 
+/** Storage object name for a new upload. The uploader's role is part of the
+ *  name because the path is the only thing both the send and the download
+ *  checks can trust: it is minted server-side from the authenticated caller,
+ *  while a message row's sender_role says who POSTed the path, not who owns
+ *  the file. */
+export function attachmentObjectName(uploader: MessageRole, uuid: string, ext: string): string {
+  return `${uploader}-${uuid}.${ext}`;
+}
+
+/** Who uploaded the file behind a stored path, or null for a path that
+ *  predates role-tagged names (treated as the candidate's by the callers). */
+export function attachmentUploaderRole(path: string): MessageRole | null {
+  const name = path.slice(path.lastIndexOf("/") + 1);
+  if (name.startsWith("employer-")) return "employer";
+  if (name.startsWith("candidate-")) return "candidate";
+  return null;
+}
+
+/** A sender may only attach a file they uploaded to this very match, never one
+ *  the other party uploaded (that would re-issue it under the sender's role)
+ *  or one from another thread. */
+export function isOwnAttachmentPath(path: string, matchId: string, senderRole: MessageRole): boolean {
+  return isSafeAttachmentPath(path, matchId) && attachmentUploaderRole(path) === senderRole;
+}
+
+/** The path value an employer is shown for a candidate-uploaded file while the
+ *  contact is not releasable: enough for the client to draw an attachment row,
+ *  never the storage key. */
+export const WITHHELD_ATTACHMENT_PATH = "withheld";
+
+export function attachmentPathForViewer(path: string | null, viewerRole: MessageRole, hideContact: boolean): string | null {
+  if (!path) return null;
+  if (viewerRole === "employer" && hideContact && attachmentUploaderRole(path) !== "employer") return WITHHELD_ATTACHMENT_PATH;
+  return path;
+}
+
+const MAX_ATTACHMENT_NAME_LEN = 120;
+
+/** A display name for an attachment: no path separators, control characters or
+ *  markup-significant characters, capped in length. Falls back to a generic
+ *  name rather than storing something the client chose to look like a path. */
+export function sanitizeAttachmentName(value: unknown, fallback = "attachment"): string {
+  if (typeof value !== "string") return fallback;
+  const cleaned = value
+    .replace(/\p{Cc}/gu, "")
+    .replace(/[\\/<>"|?*:]/g, "_")
+    .replace(/\.{2,}/g, ".")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/^\.+/, "")
+    .slice(0, MAX_ATTACHMENT_NAME_LEN)
+    .trim();
+  return cleaned || fallback;
+}
+
+/** The MIME type implied by a stored path's extension. The upload handler has
+ *  already checked the bytes against it, so this is trusted where the
+ *  client-sent value is not. */
+export function attachmentMimeFromPath(path: string): string | null {
+  const ext = path.slice(path.lastIndexOf(".") + 1).toLowerCase();
+  for (const [mime, e] of Object.entries(ALLOWED_ATTACHMENT_TYPES)) if (e === ext) return mime;
+  return null;
+}
+
 function startsWithBytes(bytes: Uint8Array, sig: number[], offset = 0): boolean {
   return bytes.length >= offset + sig.length && sig.every((b, i) => bytes[offset + i] === b);
 }
@@ -192,11 +256,14 @@ export function attachmentBytesMatchType(bytes: Uint8Array, contentType: string)
 export const REDACTED_ATTACHMENT_NAME = "Attachment";
 
 /** Why an employer may not download an attachment from this match's thread.
- *  Stricter than sending: a candidate-sent file (e.g. a resume) carries contact
- *  details, so it needs a paid unlock, not just the candidate's interest. */
+ *  Stricter than sending: a candidate-uploaded file (e.g. a resume) carries
+ *  contact details, so it needs a paid unlock, not just the candidate's
+ *  interest. `uploaderRole` is who uploaded the file (see
+ *  attachmentUploaderRole), not who sent the message; null (a legacy path) is
+ *  treated as the candidate's. */
 export function employerAttachmentBlock(
   access: EmployerMatchAccess,
-  senderRole: MessageSenderRole,
+  uploaderRole: MessageRole | null,
 ): ThreadBlock | null {
   if (access.candidateWithdrew) {
     return { status: 409, error: "This candidate has withdrawn from employer contact.", code: "candidate_withdrew" };
@@ -204,7 +271,7 @@ export function employerAttachmentBlock(
   if (access.match.candidate_response === "declined") {
     return { status: 409, error: "This candidate declined contact for this job.", code: "candidate_declined" };
   }
-  if (senderRole !== "employer" && !access.unlocked) {
+  if (uploaderRole !== "employer" && !access.unlocked) {
     return { status: 403, error: "Unlock this candidate to download their attachments", code: "unlock_required" };
   }
   return null;
@@ -242,6 +309,38 @@ const PHONE_RE =
 const SPELLED_DIGIT_RE =
   /\b(?:zero|one|two|three|four|five|six|seven|eight|nine)\b(?:[\s,.-]+\b(?:zero|one|two|three|four|five|six|seven|eight|nine)\b){6,}/i;
 
+// Phone numbers typed with separators the plain PHONE_RE misses: "98765-43210"
+// is caught there, but "9 8 7 6 5 4 3 2 1 0", "98.76.54.32.10", "(+91) 98765 43210"
+// and Devanagari digits are not. Ten digits, the first being 6-9, with at most
+// two separator characters between any two digits. Not preceded or followed by
+// another digit, so a long id or a lakh-formatted salary ("9,00,000") is left alone.
+const SEPARATED_PHONE_RE =
+  /(?<![\d०-९])(?:(?:\+|00)?91[\s.()-]*|0)?[6-9६-९](?:[\s.()-]{0,2}[\d०-९]){9}(?![\d०-९])/;
+
+// "name at gmail dot com", "name (at) gmail (dot) com", "name[at]gmail[dot]com",
+// "name @ gmail dot com". A literal "." never takes surrounding spaces, so
+// "see you @ 5. Thanks" and "at cafe. Then" are not mistaken for an address.
+const MAIL_LABEL = "[a-z][a-z0-9-]*";
+const MAIL_DOT = String.raw`(?:\s*[(\[{]\s*dot\s*[)\]}]\s*|\s+dot\s+|\.)`;
+const MAIL_LOCAL = "[a-z0-9._%+-]+";
+const OBFUSCATED_EMAIL_RE = new RegExp(
+  `${MAIL_LOCAL}(?:\\s*[(\\[{]\\s*at\\s*[)\\]}]\\s*|\\s*@\\s*)${MAIL_LABEL}(?:${MAIL_DOT}${MAIL_LABEL})*${MAIL_DOT}[a-z]{2,}\\b` +
+    // The bare word "at" is only an address when the dot is spoken as well.
+    `|${MAIL_LOCAL}\\s+at\\s+${MAIL_LABEL}(?:\\s+dot\\s+${MAIL_LABEL})*\\s+dot\\s+[a-z]{2,}\\b`,
+  "i",
+);
+
+// @handle (Instagram, Telegram, X): letter first, so "@5pm" is not one. The
+// lookbehind skips the middle of an address, which is redacted as an email.
+const SOCIAL_HANDLE_RE = /(?<![\w@.])@[a-z][a-z0-9._]{2,29}\b/i;
+
+// A link of any kind hands the employer a way to find the candidate (a
+// profile, a portfolio, a calendar page) without paying. Scheme/www links, and
+// bare domains on the TLDs people actually share; a short TLD list keeps
+// "Node.js" and "e.g." out.
+const LINK_RE =
+  /\b(?:https?:\/\/|www\.)[^\s<>"']+|(?<![@\w.-])(?:[a-z0-9-]+\.)+(?:com|in|io|me|co|net|org|dev|app|ai|xyz|ly|gg|us)\b(?:\/[^\s<>"']*)?/i;
+
 // Mentioning any of these app names, or a "DM/text/call/contact me on/at"
 // construction, is itself the off-platform-diversion signal regardless of
 // word order — not trying to parse full sentences, just flag for review.
@@ -254,9 +353,11 @@ const OFF_PLATFORM_PHRASE_RE =
  *  Deliberately never blocks the send — see file header. */
 export function detectContactInfoFlag(body: string): string | null {
   if (!body) return null;
-  if (EMAIL_RE.test(body)) return "email_detected";
-  if (PHONE_RE.test(body)) return "phone_number_detected";
+  if (EMAIL_RE.test(body) || OBFUSCATED_EMAIL_RE.test(body)) return "email_detected";
+  if (PHONE_RE.test(body) || SEPARATED_PHONE_RE.test(body)) return "phone_number_detected";
   if (SPELLED_DIGIT_RE.test(body)) return "spelled_out_number_detected";
+  if (LINK_RE.test(body)) return "link_detected";
+  if (SOCIAL_HANDLE_RE.test(body)) return "social_handle_detected";
   if (OFF_PLATFORM_PHRASE_RE.test(body)) return "off_platform_contact_phrase";
   return null;
 }
@@ -265,7 +366,8 @@ export const CONTACT_REDACTION_MARK = "[contact details hidden until unlock]";
 export const CONTACT_WITHHELD_NOTICE = "This candidate has chosen not to share contact details with you.";
 export const CONTACT_REDACTED_NOTICE = "Contact details unlock after you unlock this candidate.";
 
-/** Replaces emails, phone numbers and spelled-out digit runs with a visible
+/** Replaces emails (including "x at y dot com"), phone numbers (including
+ *  spaced-out digits), spelled-out digit runs, links and @handles with a visible
  *  mark. Applied to message bodies an employer reads while the match is still
  *  Locked: a candidate who shares a number in an "interested" reply must not
  *  hand the employer the contact the unlock fee pays for. The stored body is
@@ -274,8 +376,12 @@ export function redactContactInfo(body: string): { text: string; redacted: boole
   if (!body) return { text: body, redacted: false };
   const text = body
     .replace(new RegExp(EMAIL_RE.source, "gi"), CONTACT_REDACTION_MARK)
+    .replace(new RegExp(OBFUSCATED_EMAIL_RE.source, "gi"), CONTACT_REDACTION_MARK)
+    .replace(new RegExp(SEPARATED_PHONE_RE.source, "gu"), CONTACT_REDACTION_MARK)
     .replace(new RegExp(PHONE_RE.source, "g"), CONTACT_REDACTION_MARK)
-    .replace(new RegExp(SPELLED_DIGIT_RE.source, "gi"), CONTACT_REDACTION_MARK);
+    .replace(new RegExp(SPELLED_DIGIT_RE.source, "gi"), CONTACT_REDACTION_MARK)
+    .replace(new RegExp(LINK_RE.source, "gi"), CONTACT_REDACTION_MARK)
+    .replace(new RegExp(SOCIAL_HANDLE_RE.source, "gi"), CONTACT_REDACTION_MARK);
   return { text, redacted: text !== body };
 }
 
