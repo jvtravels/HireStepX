@@ -17,7 +17,7 @@ const { default: handler } = await import("../../server-handlers/employer-candid
 interface MatchOpts { employerId?: string; unlocked?: boolean; withdrew?: boolean; missing?: boolean; response?: string | null; blocked?: boolean }
 function matchRow(o: MatchOpts) {
   return [{
-    id: "m1", requirement_id: "r1", candidate_user_id: "cand-1", match_score: 80, unlocked: o.unlocked ?? false, candidate_response: o.response ?? null,
+    id: MATCH_ID, requirement_id: "r1", candidate_user_id: "cand-1", match_score: 80, unlocked: o.unlocked ?? false, candidate_response: o.response ?? null,
     employer_requirements: { employer_id: o.employerId ?? "emp-1", status: "ready", title: "Dev", employers: { company_name: "Acme", website: "acme.com", suspended_at: null, verification_tier: "basic" } },
     profiles: { name: "C", employer_visibility: o.withdrew ? "off" : "on" },
   }];
@@ -41,7 +41,8 @@ function installFetch(opts: MatchOpts & { files?: unknown[]; signOk?: boolean })
   return fetchMock;
 }
 
-const get = (qs = "?matchId=m1") => handler(new Request(`https://x.test/api/employer-candidate-resume-url${qs}`));
+const MATCH_ID = "11111111-1111-4111-8111-111111111111";
+const get = (qs = `?matchId=${MATCH_ID}`) => handler(new Request(`https://x.test/api/employer-candidate-resume-url${qs}`));
 
 beforeEach(() => {
   withAuthAndRateLimit.mockReset();
@@ -116,6 +117,8 @@ describe("employer-candidate-resume-url", () => {
   it("400s without a matchId and 401s without a user", async () => {
     installFetch({ unlocked: true });
     expect((await get("")).status).toBe(400);
+    expect((await get("?matchId=m1")).status).toBe(400);
+    expect((await get("?matchId=1;drop")).status).toBe(400);
     withAuthAndRateLimit.mockResolvedValue({ auth: { userId: null }, headers: {} });
     expect((await get()).status).toBe(401);
   });
