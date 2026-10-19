@@ -411,8 +411,10 @@ export const SessionReport = memo(function SessionReport({
   const cachedReport = session.cachedReport as SessionReportData | undefined;
   const cachedVersion = session.cachedReportVersion;
   const hasAnyCachedReport = Boolean(cachedReport);
+  /* The server stores a composite "<schema>:<identity hash>" (see
+     buildReportCacheVersion), so compare the schema part only. */
   const hasCurrentCachedReport = Boolean(
-    cachedReport && cachedVersion === CLIENT_REPORT_VERSION
+    cachedReport && cachedVersion?.split(":")[0] === CLIENT_REPORT_VERSION
   );
   /* Stale-while-revalidate: if we have ANY cached report (even an older
      version) hydrate it immediately so the user sees their report rather
