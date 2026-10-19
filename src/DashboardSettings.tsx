@@ -5,7 +5,7 @@ import { useDocTitle } from "./useDocTitle";
 import { authHeaders, getPaymentHistory, type PaymentRecord } from "./supabase";
 import { useDashboardUIActions } from "./DashboardContext";
 import EmployerVisibilityCard from "./EmployerVisibilityCard";
-import CandidatePageHeader, { CandidatePageContainer } from "./CandidatePageHeader";
+import CandidatePageHeader, { CandidatePagePanel } from "./CandidatePageHeader";
 import {
   FlatSection,
   AccountSection,
@@ -14,14 +14,6 @@ import {
   EmailPreferencesSection,
   DangerZoneSection,
 } from "./settingsSections";
-
-/* Cream-mode tokens — derive from the single source of truth so a WCAG
- * fix in auth/_tokens.ts can never silently undo itself here. */
-import { tokens as T } from "./auth/_tokens";
-const c = {
-  border: T.line,
-  graphite: T.creamRaised,
-} as const;
 
 export default function SettingsPage() {
   useDocTitle("Settings");
@@ -81,9 +73,9 @@ export default function SettingsPage() {
   const tierLabel = TIER_DISPLAY_NAMES[tierId] || (tierId.charAt(0).toUpperCase() + tierId.slice(1));
 
   return (
-    <CandidatePageContainer>
-      <div style={{ background: c.graphite, border: `1px solid ${c.border}`, borderRadius: 16, overflow: "hidden" }}>
+    <CandidatePagePanel>
         <CandidatePageHeader title="Settings" subtitle="Manage your subscription, payments, privacy, and account security." padding="20px 28px" />
+        <div style={{ flex: 1, minHeight: 0, overflowY: "auto" }}>
 
         <FlatSection title="Plan & Usage">
           <PlanUsageSection
@@ -129,7 +121,7 @@ export default function SettingsPage() {
             authHeaders={authHeaders}
           />
         </FlatSection>
-      </div>
-    </CandidatePageContainer>
+        </div>
+    </CandidatePagePanel>
   );
 }
