@@ -26,7 +26,7 @@ interface LedgerRow {
 }
 const json = (body: unknown, status = 200) => (status === 204 ? new Response(null, { status }) : new Response(JSON.stringify(body), { status }));
 
-/** employer_credit_ledger + spend RPC with the real unique indexes (refund per match, one row per kind+ref, one adjustment per ref). */
+/** employer_credit_ledger + spend RPC with the real unique indexes (refund per match and order, one row per kind+ref, one adjustment per ref). */
 class FakeCredit {
   rows: LedgerRow[] = [];
   /** Simulates migration 0042 not applied: clawback/conversion hit the old check constraint. */
@@ -64,7 +64,7 @@ class FakeCredit {
             return new Response('new row violates check constraint "employer_credit_ledger_kind_check" 23514', { status: 400 });
           }
           const dup = this.rows.some((r) =>
-            (b.kind === "refund" && r.kind === "refund" && r.match_id === b.match_id) ||
+            (b.kind === "refund" && r.kind === "refund" && r.match_id === b.match_id && r.order_ref === b.order_ref) ||
             (["spend", "release"].includes(b.kind) && r.kind === b.kind && r.order_ref === b.order_ref) ||
             (["clawback", "conversion"].includes(b.kind) && ["clawback", "conversion"].includes(r.kind) && r.order_ref === b.order_ref));
           if (dup) return json({ code: "23505" }, 409);
@@ -79,6 +79,7 @@ class FakeCredit {
         else if (kind?.startsWith("eq.")) rows = rows.filter((r) => r.kind === kind.slice(3));
         const ref = q.get("order_ref");
         if (ref?.startsWith("in.(")) { const refs = [...ref.matchAll(/"([^"]+)"/g)].map((m) => m[1]); rows = rows.filter((r) => r.order_ref && refs.includes(r.order_ref)); }
+        if (ref?.startsWith("eq.")) rows = rows.filter((r) => r.order_ref === ref.slice(3));
         const mid = q.get("match_id");
         if (mid?.startsWith("eq.")) rows = rows.filter((r) => r.match_id === mid.slice(3));
         return json(rows);
@@ -92,7 +93,7 @@ class FakeCredit {
   }
 }
 
-const PAY = { id: "pay_1", status: "captured", amount: 5900, orderId: "order_1" };
+const PAY = { id: "pay_1", status: "captured", currency: "INR", amount: 5900, orderId: "order_1" };
 const NOW = new Date("2026-10-10T09:00:00.000Z");
 type Partial3 = Partial<Parameters<typeof fulfillUnlockOrder>[0]>;
 
@@ -254,7 +255,7 @@ describe("receipt email on fulfilment", () => {
 
     const zero = new FakeUnlockDb().seed({ orders: [order({ razorpay_order_id: "credit_1", amount: 0 })], matches: [match("m1")] });
     await fulfillUnlockOrder({
-      supabaseUrl: SUPABASE, headers: HEADERS, razorpayOrderId: "credit_1", payment: { id: "credit_1", status: "captured", amount: 0, orderId: "credit_1" },
+      supabaseUrl: SUPABASE, headers: HEADERS, razorpayOrderId: "credit_1", payment: { id: "credit_1", status: "captured", currency: "INR", amount: 0, orderId: "credit_1" },
       fetchImpl: credit.wrap(zero), notifyImpl, now: () => NOW,
     });
     await new Promise((r) => setTimeout(r, 10));
@@ -281,7 +282,7 @@ describe("receipt email on fulfilment", () => {
 
 describe("webhook: refunds and disputes claw back credit", () => {
   const capturedEvent = {
-    payload: { payment: { entity: { id: "pay_1", status: "captured", amount: 5900, order_id: "order_1" } } },
+    payload: { payment: { entity: { id: "pay_1", status: "captured", currency: "INR", amount: 5900, order_id: "order_1" } } },
   };
   const refundEvent = { payload: { refund: { entity: { id: "rfnd_1", payment_id: "pay_1", amount: 5900 } } } };
   const disputeEvent = { payload: { dispute: { entity: { id: "disp_1", payment_id: "pay_1" } } } };
@@ -399,6 +400,49 @@ describe("reconciler credit handling", () => {
   });
 });
 
+describe("reconciler: credit stranded on expired orders", () => {
+  const AT = new Date("2026-10-12T12:00:00.000Z");
+  const run = (wrap: typeof fetch) =>
+    reconcileUnlockOrders({
+      supabaseUrl: SUPABASE, headers: HEADERS, razorpayKeyId: "k", razorpayKeySecret: "s",
+      fetchImpl: ((input: RequestInfo | URL, init?: RequestInit) =>
+        (String(input).includes("api.razorpay.com") ? Promise.resolve(json({ items: [] })) : wrap(input, init))) as typeof fetch,
+      notifyImpl, now: () => AT,
+    });
+  const failingReleases = (): typeof fetch => {
+    const f = credit.wrap(db);
+    return ((input: RequestInfo | URL, init?: RequestInit) =>
+      (init?.method === "POST" && String(input).includes("employer_credit_ledger") && String(init.body).includes('"release"')
+        ? Promise.resolve(json({ message: "boom" }, 500))
+        : f(input, init))) as typeof fetch;
+  };
+
+  it("a failed release at expiry is reported as an error, and the next sweep releases the credit from the expired order", async () => {
+    db.seed({ orders: [order({ created_at: "2026-10-10T08:00:00.000Z", amount: 3900 })] });
+    credit.rows.push(topUp(2000), spentRow("order_1", 2000));
+    const first = await run(failingReleases());
+    expect(first.expired).toBe(0);
+    expect(first.errors).toBe(1);
+    expect(db.orders.get("order_1")?.status).toBe("expired");
+    expect(credit.ofKind("release")).toHaveLength(0);
+
+    const second = await run(credit.wrap(db));
+    expect(second.creditSwept).toBe(1);
+    expect(credit.ofKind("release")).toEqual([expect.objectContaining({ amount: 2000, order_ref: "order_1" })]);
+    expect(credit.balance()).toBe(2000);
+
+    await run(credit.wrap(db));
+    expect(credit.ofKind("release")).toHaveLength(1);
+  });
+
+  it("does not release a late re-spend while sweeping an expired order", async () => {
+    db.seed({ orders: [order({ status: "expired", amount: 3900, updated_at: "2026-10-12T08:00:00.000Z" })] });
+    credit.rows.push(topUp(5000), spentRow("order_1", 2000), releaseRow("order_1", 2000), spentRow("order_1:late", 2000));
+    await run(credit.wrap(db));
+    expect(credit.ofKind("release").map((r) => r.order_ref)).toEqual(["order_1"]);
+  });
+});
+
 /* ── audit fixes: credit return is retriable, suspended employers, refund notes, expiry race, invoice back-fill ── */
 
 describe("partial fulfilment: a failed credit return is retried, never stranded", () => {
@@ -508,7 +552,7 @@ describe("reconciler: expiry vs late fulfilment", () => {
   it("a payment captured after the order expired is still fulfilled by the next sweep (credit re-spent, late)", async () => {
     db.seed({ orders: [creditOrder({ created_at: "2026-10-10T08:00:00.000Z", amount: 3900, credit_applied_paise: 2000, status: "expired", updated_at: "2026-10-12T08:00:00.000Z" })], matches: [match("m1")] });
     credit.rows.push(topUp(5000), spentRow("order_1", 2000), releaseRow("order_1", 2000));
-    const s = await sweepWith({ payments: [{ id: "pay_1", status: "captured", amount: 3900, order_id: "order_1" }] });
+    const s = await sweepWith({ payments: [{ id: "pay_1", status: "captured", currency: "INR", amount: 3900, order_id: "order_1" }] });
     expect(s.fulfilled).toBe(1);
     expect(db.orders.get("order_1")?.status).toBe("fulfilled");
     expect(db.matches.get("m1")?.unlocked).toBe(true);
@@ -575,5 +619,69 @@ describe("reconciler: invoice back-fill", () => {
     expect(s.invoicesBackfilled).toBe(0);
     expect(s.invoiceBackfillErrors).toBe(1);
     expect(s.errors).toBeGreaterThanOrEqual(1);
+  });
+});
+
+
+describe("credit-only purchases get a tax invoice at redemption", () => {
+  const CREDIT_PAY = { id: "credit_pay_1", status: "captured", currency: "INR", amount: 0, orderId: "credit_1" };
+  const seedCreditOrder = () => {
+    db.applied0045 = true;
+    db.applied0047 = true;
+    db.employers.set("emp-1", { company_name: "Acme", billing_name: "Acme Pvt Ltd", gstin: "" });
+    db.seed({ orders: [order({ razorpay_order_id: "credit_1", amount: 0 })], matches: [match("m1")] });
+    credit.rows.push({ employer_id: "emp-1", amount: -5900, kind: "spend", order_ref: "credit_1", created_at: "2026-10-10T08:00:00.000Z" });
+  };
+  const redeem = (over: Partial3 = {}) =>
+    fulfillUnlockOrder({ supabaseUrl: SUPABASE, headers: HEADERS, razorpayOrderId: "credit_1", payment: CREDIT_PAY, fetchImpl: credit.wrap(db), notifyImpl, now: () => NOW, ...over });
+
+  it("numbers the purchase and freezes a snapshot whose taxable base is the credit spent", async () => {
+    seedCreditOrder();
+    const r = await redeem();
+    expect(r.kind).toBe("fulfilled");
+    expect(r.kind === "fulfilled" && r.invoiceNo).toMatch(/^HSX-/);
+    expect(db.ledger[0]).toMatchObject({ amount: 0, razorpay_payment_id: "credit_pay_1" });
+    expect(db.ledger[0].invoice_snapshot).toMatchObject({ cashPaise: 0, creditPaise: 5900, breakup: { taxablePaise: 5000, taxPaise: 900 } });
+    expect(db.invoiceSeq).toBe(1);
+  });
+
+  it("a replay returns the same number and burns none", async () => {
+    seedCreditOrder();
+    const first = await redeem();
+    const second = await redeem();
+    expect(second.kind === "fulfilled" && second.invoiceNo).toBe(first.kind === "fulfilled" && first.invoiceNo);
+    expect(db.invoiceSeq).toBe(1);
+  });
+
+  it("an order where nobody could be unlocked gets no invoice", async () => {
+    seedCreditOrder();
+    db.blockedCandidates.add("cand-m1");
+    const r = await redeem();
+    expect(r.kind === "partial" && r.invoiceNo).toBeNull();
+    expect(db.invoiceSeq).toBe(0);
+  });
+
+  it("the reconciler back-fills a credit-only purchase whose number was lost", async () => {
+    seedCreditOrder();
+    db.orders.set("credit_1", { ...(db.orders.get("credit_1") as FakeOrder), status: "fulfilled", razorpay_payment_id: "credit_pay_1" });
+    db.matches.set("m1", { ...(db.matches.get("m1") as ReturnType<typeof match>), unlocked: true, unlocked_at: "2026-10-10T08:01:00.000Z" });
+    db.ledger.push({ razorpay_payment_id: "credit_pay_1", razorpay_order_id: "credit_1", employer_id: "emp-1", amount: 0, invoice_no: null, refunded_at: null, created_at: "2026-10-10T08:01:00.000Z" });
+    const s = await reconcileUnlockOrders({
+      supabaseUrl: SUPABASE, headers: HEADERS, razorpayKeyId: "k", razorpayKeySecret: "s",
+      fetchImpl: ((input: RequestInfo | URL, init?: RequestInit) =>
+        (String(input).includes("api.razorpay.com") ? Promise.resolve(json({ items: [] })) : credit.wrap(db)(input, init))) as typeof fetch,
+      notifyImpl, now: () => new Date("2026-10-12T12:00:00.000Z"),
+    });
+    expect(s.invoicesBackfilled).toBe(1);
+    expect(db.ledger[0].invoice_no).toMatch(/^HSX-/);
+    expect(db.ledger[0].invoice_snapshot).toMatchObject({ creditPaise: 5900 });
+  });
+
+  it("an admin grant (zero amount, not a credit_pay_ id) is never numbered", async () => {
+    db.applied0045 = true;
+    db.ledger.push({ razorpay_payment_id: "admin_grant_1", razorpay_order_id: "admin_order_1", employer_id: "emp-1", amount: 0, invoice_no: null, refunded_at: null });
+    const f = credit.wrap(db);
+    const res = await f(`${SUPABASE}/rest/v1/rpc/assign_unlock_invoice_no`, { method: "POST", body: JSON.stringify({ p_payment_id: "admin_grant_1" }) });
+    expect(await res.json()).toBeNull();
   });
 });

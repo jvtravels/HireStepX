@@ -19,6 +19,15 @@ export type PlaceOfSupplyBasis = "buyer_gstin" | "supplier_state" | "unknown";
  *  Open question for the CA; change it here and nowhere else. */
 export const PLACE_OF_SUPPLY_WITHOUT_BUYER_GSTIN: Exclude<PlaceOfSupplyBasis, "buyer_gstin" | "unknown"> = "supplier_state";
 
+/** Tax treatments implemented as working assumptions that a chartered accountant has not signed off.
+ *  Remove an entry only with that sign-off; the test pins the list so one cannot be dropped silently. */
+export const TAX_TREATMENTS_PENDING_CA_REVIEW = [
+  "place_of_supply_defaults_to_supplier_state_without_buyer_gstin",
+  "account_credit_is_a_prepayment_so_taxable_base_is_cash_plus_credit",
+  "credit_only_redemption_is_invoiced_when_the_unlock_happens",
+  "refund_as_credit_is_reversed_by_a_credit_note",
+] as const;
+
 export function resolvePlaceOfSupply(supplierGstin: string, buyerGstin: string): { code: string | null; basis: PlaceOfSupplyBasis } {
   const buyerState = gstinStateCode(buyerGstin);
   if (buyerState) return { code: buyerState, basis: "buyer_gstin" };

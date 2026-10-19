@@ -159,13 +159,20 @@ describe("credit note", () => {
   });
 
   it("is offered only for refunded cash purchases with a tax invoice", () => {
-    const p = { invoiceNo: "HSX-1", amount: 5900, refundedAt: "2026-10-09" };
+    const p = { invoiceNo: "HSX-1", refundedAt: "2026-10-09" };
     expect(canIssueCreditNote(p, taxSupplier)).toBe(true);
     expect(canIssueCreditNote({ ...p, refundedAt: null, orderStatus: "refunded" }, taxSupplier)).toBe(true);
     expect(canIssueCreditNote({ ...p, refundedAt: null }, taxSupplier)).toBe(false);
-    expect(canIssueCreditNote({ ...p, amount: 0 }, taxSupplier)).toBe(false);
     expect(canIssueCreditNote({ ...p, invoiceNo: null }, taxSupplier)).toBe(false);
     expect(canIssueCreditNote(p, { ...taxSupplier, gstin: "" })).toBe(false);
+  });
+
+  it("is also offered for a standing purchase that has a credit note on file (a match refunded as credit)", () => {
+    const p = { invoiceNo: "HSX-1", refundedAt: null };
+    expect(canIssueCreditNote(p, taxSupplier)).toBe(false);
+    expect(canIssueCreditNote({ ...p, creditNotes: [] }, taxSupplier)).toBe(false);
+    expect(canIssueCreditNote({ ...p, creditNotes: [{}] }, taxSupplier)).toBe(true);
+    expect(canIssueCreditNote({ ...p, invoiceNo: null, creditNotes: [{}] }, taxSupplier)).toBe(false);
   });
 
   it("points a refunded tax invoice at its credit note", () => {
@@ -174,7 +181,7 @@ describe("credit note", () => {
 });
 
 describe("credit-only purchases", () => {
-  const redemption: InvoiceInput = { ...taxBase, cashPaise: 0, creditPaise: 5900, orderId: "credit_1" };
+  const redemption: InvoiceInput = { ...taxBase, invoiceNo: null, cashPaise: 0, creditPaise: 5900, orderId: "credit_1" };
 
   it("is a credit redemption receipt without a document number", () => {
     expect(invoiceDocKind(redemption)).toBe("credit_redemption");
@@ -186,8 +193,20 @@ describe("credit-only purchases", () => {
     expect(html).not.toContain("Tax invoice");
   });
 
-  it("never becomes a credit note", () => {
+  it("never becomes a credit note while it has no invoice number", () => {
     expect(invoiceDocKind({ ...redemption, document: "credit_note" })).toBe("credit_redemption");
+  });
+
+  it("is a GST tax invoice once redemption has an invoice number, and can carry a credit note", () => {
+    const numbered: InvoiceInput = { ...redemption, invoiceNo: "HSX-2610-0008" };
+    expect(invoiceDocKind(numbered)).toBe("tax_invoice");
+    const html = buildInvoiceHtml(numbered);
+    expect(html).toContain("<h1>Tax invoice</h1>");
+    expect(html).toContain("No. HSX-2610-0008");
+    expect(html).toContain("CGST @ 9%");
+    expect(html).toContain("Of which paid from account credit (not cash)");
+    expect(invoiceDocKind({ ...numbered, document: "credit_note" })).toBe("credit_note");
+    expect(invoiceDocKind({ ...numbered, supplier: { ...taxSupplier, gstin: "" } })).toBe("receipt");
   });
 });
 

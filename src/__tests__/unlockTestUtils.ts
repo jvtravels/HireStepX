@@ -163,6 +163,7 @@ export class FakeUnlockDb {
       if (q.get("refunded_at") === "is.null") rows = rows.filter((l) => !l.refunded_at);
       if (q.get("invoice_no") === "is.null") rows = rows.filter((l) => !l.invoice_no);
       if (q.get("amount") === "gt.0") rows = rows.filter((l) => l.amount > 0);
+      if (q.get("or") === "(amount.gt.0,razorpay_payment_id.like.credit_pay_*)") rows = rows.filter((l) => l.amount > 0 || l.razorpay_payment_id.startsWith("credit_pay_"));
       const lcreated = q.get("created_at");
       if (lcreated?.startsWith("gte.")) rows = rows.filter((l) => !l.created_at || l.created_at >= lcreated.slice(4));
       if (q.get("invoice_snapshot") === "is.null") rows = rows.filter((l) => l.invoice_snapshot == null);
@@ -179,7 +180,8 @@ export class FakeUnlockDb {
 
     if (table === "rpc/assign_unlock_invoice_no") {
       if (!this.applied0045) return json({ code: "PGRST202", message: "function not found" }, 404);
-      const row = this.ledger.find((l) => l.razorpay_payment_id === body.p_payment_id && l.amount > 0);
+      // Mirrors 0053: a cash order or one paid wholly from credit is numbered; anything else is not.
+      const row = this.ledger.find((l) => l.razorpay_payment_id === body.p_payment_id && (l.amount > 0 || l.razorpay_payment_id.startsWith("credit_pay_")));
       if (!row) return json(null);
       if (!row.invoice_no) row.invoice_no = this.nextInvoiceNo();
       return json(row.invoice_no);

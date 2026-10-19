@@ -52,7 +52,7 @@ import { buildInvoiceHtml, type InvoiceInput } from "../employer/_invoiceHtml";
 import type { UnlockWebhookEvent } from "../../server-handlers/_employer-unlock-webhook";
 
 const NOW = new Date("2026-10-10T09:00:00.000Z");
-const PAY = { id: "pay_1", status: "captured", amount: 5900, orderId: "order_1" };
+const PAY = { id: "pay_1", status: "captured", currency: "INR", amount: 5900, orderId: "order_1" };
 
 let db: FakeUnlockDb;
 const notifyImpl = vi.fn(async (_i: NotifyInput) => {});
@@ -72,7 +72,7 @@ const refundEvent = (refundId: string, amount: number, paymentExtra: Record<stri
   payload: { refund: { entity: { id: refundId, payment_id: "pay_1", amount } }, payment: { entity: { id: "pay_1", amount: 5900, order_id: "order_1", ...paymentExtra } } },
 });
 const capturedEvent = (entity: Record<string, unknown> = {}): UnlockWebhookEvent => ({
-  payload: { payment: { entity: { id: "pay_1", status: "captured", amount: 5900, order_id: "order_1", notes: {}, ...entity } } },
+  payload: { payment: { entity: { id: "pay_1", status: "captured", currency: "INR", amount: 5900, order_id: "order_1", notes: {}, ...entity } } },
 });
 
 beforeEach(() => {
@@ -167,7 +167,7 @@ describe("a refund that beats the capture", () => {
 
 describe("captured after refund, via the live Razorpay view", () => {
   const creds = { razorpayKeyId: "k", razorpayKeySecret: "s" };
-  const live = (over: Record<string, unknown> = {}) => ({ id: "pay_1", status: "captured", amount: 5900, order_id: "order_1", ...over });
+  const live = (over: Record<string, unknown> = {}) => ({ id: "pay_1", status: "captured", currency: "INR", amount: 5900, order_id: "order_1", ...over });
 
   it("a stale payload says nothing about a refund, Razorpay says it is fully refunded: order closed, nothing unlocked", async () => {
     const fetchImpl = combineFetch(db, fakeRazorpay({ payments: [live({ refund_status: "full", amount_refunded: 5900 })] }));
@@ -198,6 +198,14 @@ describe("captured after refund, via the live Razorpay view", () => {
     expect(db.matches.get("m1")?.unlocked).toBe(false);
     expect(db.ledger).toHaveLength(0);
     expect(sendOpsAlert).toHaveBeenCalledTimes(1);
+  });
+
+  it("a payment entity with no currency at all is rejected, not waved through", async () => {
+    redisPipeline.mockResolvedValue(["OK"]);
+    const r = await hook("payment.captured", capturedEvent({ currency: undefined }));
+    expect(r).toMatchObject({ handled: true, status: 200, body: { skipped: "unlock_currency_mismatch" } });
+    expect(db.matches.get("m1")?.unlocked).toBe(false);
+    expect(db.ledger).toHaveLength(0);
   });
 
   it("the live currency is what counts, not the payload's", async () => {
@@ -344,7 +352,7 @@ describe("razorpay-webhook handler", () => {
     redisPipeline.mockResolvedValue(["OK"]);
     const res = mockRes();
     await webhookHandler(post({
-      event: "payment.captured", payload: { payment: { entity: { id: "pay_mm", status: "captured", amount: 100, order_id: "order_1", notes: {} } } },
+      event: "payment.captured", payload: { payment: { entity: { id: "pay_mm", status: "captured", currency: "INR", amount: 100, order_id: "order_1", notes: {} } } },
     }), res);
     expect(res.statusCode).toBe(200);
     expect(res.body).toMatchObject({ skipped: "unlock_amount_mismatch" });
@@ -356,7 +364,7 @@ describe("razorpay-webhook handler", () => {
     db.failWhen = (m, url) => m === "PATCH" && url.includes("requirement_matches");
     const res = mockRes();
     await webhookHandler(post({
-      event: "payment.captured", payload: { payment: { entity: { id: "pay_db", status: "captured", amount: 5900, order_id: "order_1", notes: {} } } },
+      event: "payment.captured", payload: { payment: { entity: { id: "pay_db", status: "captured", currency: "INR", amount: 5900, order_id: "order_1", notes: {} } } },
     }), res);
     expect(res.statusCode).toBe(500);
     expect(sendOpsAlert).toHaveBeenCalledWith("Payment captured but not fulfilled", expect.stringContaining("order_1"));

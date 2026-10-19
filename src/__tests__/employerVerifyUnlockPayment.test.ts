@@ -85,7 +85,7 @@ let rzpDown: boolean;
 let paymentLookups: number;
 
 const capturedPayment = (over: Partial<FakeRzpPayment> = {}): FakeRzpPayment =>
-  ({ id: PAYMENT_ID, status: "captured", amount: 5900, order_id: ORDER_ID, ...over });
+  ({ id: PAYMENT_ID, status: "captured", currency: "INR", amount: 5900, order_id: ORDER_ID, ...over });
 
 function installFetch() {
   global.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {

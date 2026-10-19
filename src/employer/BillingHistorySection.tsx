@@ -119,14 +119,14 @@ export default function BillingHistorySection() {
           <TableRow key={p.id}>
             <TableCell className="whitespace-nowrap tabular-nums">{new Date(p.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</TableCell>
             <TableCell className="max-w-[260px] truncate">{describe(p)}</TableCell>
-            <TableCell className="tabular-nums text-hx-ink-soft">{purchaseAmounts(p).cashPaise === 0 ? "Credit redemption" : p.invoiceNo ?? "None"}</TableCell>
+            <TableCell className="tabular-nums text-hx-ink-soft">{p.invoiceNo ?? (purchaseAmounts(p).cashPaise === 0 ? "Credit redemption" : "None")}</TableCell>
             <TableCell className="text-right tabular-nums">
               {purchaseAmountLabel(p)}
               {isRefundedPurchase(p) ? <span className="ml-1.5 text-hx-ink-soft">(refunded)</span> : isPartiallyRefundedPurchase(p) ? <span className="ml-1.5 text-hx-ink-soft">(partially refunded)</span> : null}
             </TableCell>
             <TableCell className="whitespace-nowrap text-right">
               {purchaseAmounts(p).totalPaise > 0 && (p.invoiceNo || purchaseAmounts(p).cashPaise === 0) ? (
-                <button type="button" className={linkClass} onClick={() => showDocument(p, "invoice")}>{purchaseAmounts(p).cashPaise === 0 || !supplierFor(p).gstin ? "View receipt" : "View invoice"}</button>
+                <button type="button" className={linkClass} onClick={() => showDocument(p, "invoice")}>{!p.invoiceNo || !supplierFor(p).gstin ? "View receipt" : "View invoice"}</button>
               ) : null}
               {canIssueCreditNote(p, supplierFor(p)) ? (
                 (p.creditNotes?.length ?? 0) > 0 ? (

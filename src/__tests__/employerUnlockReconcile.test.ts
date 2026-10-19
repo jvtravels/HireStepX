@@ -26,7 +26,7 @@ function sweep(rzp: Parameters<typeof fakeRazorpay>[0], extra: { batchSize?: num
     fetchImpl: combineFetch(db, fakeRazorpay(rzp)), notifyImpl, now: () => NOW, ...extra,
   });
 }
-const pay = (orderId: string, id = "pay_1", amount = 5900) => ({ id, status: "captured", amount, order_id: orderId });
+const pay = (orderId: string, id = "pay_1", amount = 5900) => ({ id, status: "captured", currency: "INR", amount, order_id: orderId });
 
 beforeEach(() => {
   db = new FakeUnlockDb();

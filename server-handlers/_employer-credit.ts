@@ -7,7 +7,8 @@
  * RELOCKED when the credit lands: money back means the contact is no longer
  * the employer's, so a candidate can't be both refunded and still reachable.
  * (A candidate who later turns visibility back on stays locked until the
- * employer pays again; one refund per match, ever, via the unique index.)
+ * employer pays again; one refund per match per order via the unique index,
+ * so a repurchased match can be refunded again.)
  *
  * Money model: employer_credit_ledger holds signed paise rows; balance = sum.
  * Kinds: refund (+), spend (-), release (+, an unfinished order's spend coming
@@ -210,14 +211,20 @@ export async function creditSpentOnOrders(
 }
 
 /** Returns credit spent on an order that never completed. Idempotent: one
- *  release per physical spend (the original and the late re-spend each get theirs). */
+ *  release per physical spend (the original and the late re-spend each get theirs).
+ *  `includeLate: false` leaves the `<ref>:late` spend alone: an expired order's late
+ *  re-spend belongs to a payment still being fulfilled, and releasing it would let the
+ *  retry (whose idempotent spend call sees the old row) fulfil without holding credit.
+ *  Resolves false when a read or write failed, so callers can keep the order retriable. */
 export async function releaseCredit(
   base: string, headers: Headers, employerId: string, orderRef: string, f: typeof fetch = fetch,
-): Promise<void> {
+  opts: { includeLate?: boolean } = {},
+): Promise<boolean> {
   try {
-    const refs = [orderRef, `${orderRef}${LATE_SUFFIX}`];
+    const refs = opts.includeLate === false ? [orderRef] : [orderRef, `${orderRef}${LATE_SUFFIX}`];
     const physical = await ledgerSpentByRef(base, headers, employerId, refs, f);
-    if (!physical) return;
+    if (!physical) return false;
+    let ok = true;
     for (const ref of refs) {
       const spent = physical.get(ref) ?? 0;
       if (spent <= 0) continue;
@@ -226,10 +233,15 @@ export async function releaseCredit(
         headers: { ...headers, "Content-Type": "application/json", Prefer: "return=minimal" },
         body: JSON.stringify({ employer_id: employerId, amount: spent, kind: "release", order_ref: ref }),
       });
-      if (!res.ok && res.status !== 409) slog.error("credit release failed", { status: res.status, orderRef: ref });
+      if (!res.ok && res.status !== 409) {
+        ok = false;
+        slog.error("credit release failed", { status: res.status, orderRef: ref });
+      }
     }
+    return ok;
   } catch (err) {
     slog.error("credit release threw", { orderRef, err: err instanceof Error ? err.message : String(err) });
+    return false;
   }
 }
 
@@ -253,6 +265,58 @@ export async function loadOrderCreditApplied(
 
 function rupees(paise: number): string {
   return `₹${(paise / 100).toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
+}
+
+/** Orders paid purely from credit carry this ref prefix (no Razorpay order exists for them). */
+export const CREDIT_ORDER_PREFIX = "credit_";
+
+export function isCreditOrderRef(ref: string): boolean {
+  return ref.startsWith(CREDIT_ORDER_PREFIX);
+}
+
+export interface CreditNoteRow { credit_note_no: string; amount_paise: number; refund_id: string; created_at?: string }
+
+/** Writes (once per refundId) the numbered credit note for a refund or a returned share
+ *  (assign_employer_credit_note, migration 0047). null when the migration is unapplied (callers then
+ *  fall back to the derived CN number) or the call failed; safe to repeat. */
+export async function assignCreditNote(
+  supabaseUrl: string, headers: Headers, orderId: string, refundId: string, amountPaise: number, f: typeof fetch,
+): Promise<CreditNoteRow | null> {
+  if (!(amountPaise > 0)) return null;
+  try {
+    const res = await f(`${supabaseUrl}/rest/v1/rpc/assign_employer_credit_note`, {
+      method: "POST",
+      headers: { ...headers, "Content-Type": "application/json" },
+      body: JSON.stringify({ p_order_id: orderId, p_refund_id: refundId, p_amount_paise: Math.round(amountPaise) }),
+    });
+    if (res.ok) {
+      const v = (await res.json().catch(() => null)) as Partial<CreditNoteRow> | null;
+      return v && typeof v.credit_note_no === "string" && v.credit_note_no ? (v as CreditNoteRow) : null;
+    }
+    // 404 / PGRST202 = function absent (migration 0047 unapplied): expected, silent.
+    if (res.status !== 404) slog.warn("credit note assignment failed", { code: "credit_note_assign_failed", orderId, refundId, status: res.status });
+  } catch { /* the derived credit-note number still renders */ }
+  return null;
+}
+
+/** A refund-as-credit reverses part of a taxed purchase, so it needs the same credit note a cash refund gets;
+ *  otherwise the later redemption invoice taxes that value a second time. Ref is per order and match, so a
+ *  repurchased match gets its own note. A credit-only order from before invoices existed for them has no
+ *  tax invoice to credit against, so it is skipped. Best effort: the next trigger repeats it (idempotent). */
+async function creditNoteForCreditRefund(
+  base: string, headers: Headers, order: PaidOrder, matchId: string, amountPaise: number, f: typeof fetch,
+): Promise<void> {
+  try {
+    if (order.amount <= 0) {
+      const res = await f(
+        `${base}/rest/v1/employer_unlock_payments?razorpay_order_id=eq.${encodeURIComponent(order.razorpay_order_id)}&invoice_no=not.is.null&select=invoice_no&limit=1`,
+        { headers },
+      );
+      const rows = res.ok ? ((await res.json().catch(() => [])) as unknown[]) : [];
+      if (!Array.isArray(rows) || rows.length === 0) return;
+    }
+    await assignCreditNote(base, headers, order.razorpay_order_id, `credit:${order.razorpay_order_id}:${matchId}`, amountPaise, f);
+  } catch { /* repeated on the next trigger */ }
 }
 
 async function insertLedger(
@@ -577,6 +641,7 @@ export async function creditRefundForMatches(p: RefundParams): Promise<RefundRes
     }
 
     const toRelock: string[] = [];
+    const noteTargets: Array<{ order: PaidOrder; matchId: string; amountPaise: number }> = [];
     for (const matchId of eligibleIds) {
       const order = orders.find((o) => o.match_ids.includes(matchId));
       if (!order) continue;
@@ -591,18 +656,29 @@ export async function creditRefundForMatches(p: RefundParams): Promise<RefundRes
       if (state === "inserted") {
         result.credited.push({ employerId: order.employer_id, matchId, amountPaise });
         toRelock.push(matchId);
+        noteTargets.push({ order, matchId, amountPaise });
       } else if (state === "duplicate") {
         // Credit already landed; finish a relock that a crash may have skipped, but only
-        // when the existing refund belongs to THIS order (a repurchased match is live again).
-        const prior = await f(`${p.base}/rest/v1/employer_credit_ledger?match_id=eq.${encodeURIComponent(matchId)}&kind=eq.refund&select=order_ref&limit=1`, { headers: p.headers });
+        // when a refund exists for THIS order (a repurchased match is live again). Under the
+        // pre-0051 index a refund for an earlier order also lands here and is not matched.
+        const prior = await f(
+          `${p.base}/rest/v1/employer_credit_ledger?match_id=eq.${encodeURIComponent(matchId)}&kind=eq.refund` +
+            `&order_ref=eq.${encodeURIComponent(order.razorpay_order_id)}&select=order_ref&limit=1`,
+          { headers: p.headers },
+        );
         const rows = prior.ok ? ((await prior.json().catch(() => [])) as Array<{ order_ref: string | null }>) : [];
-        if (Array.isArray(rows) && rows[0]?.order_ref === order.razorpay_order_id) toRelock.push(matchId);
+        if (Array.isArray(rows) && rows[0]?.order_ref === order.razorpay_order_id) {
+          toRelock.push(matchId);
+          noteTargets.push({ order, matchId, amountPaise });
+        }
       }
     }
 
     if (toRelock.length > 0 && !(await relockMatches(p.base, p.headers, toRelock, f))) {
       slog.error("credit refunded but relock failed — will retry on the next trigger", { code: "credit_relock_failed", matchIds: toRelock });
     }
+
+    for (const t of noteTargets) await creditNoteForCreditRefund(p.base, p.headers, t.order, t.matchId, t.amountPaise, f);
 
     const byEmployer = new Map<string, { total: number; count: number }>();
     for (const c of result.credited) {

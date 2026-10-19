@@ -47,7 +47,11 @@ import { razorpayBasicAuth } from "./_razorpay-auth";
 import { slog, redisPipeline } from "./_shared";
 import { captureServerEvent, captureServerException } from "./_posthog";
 import { sendOpsAlert } from "./_ops-alert";
-import { returnCreditForUnavailableDetailed, splitPaise, ensureCreditSpent, clawbackOrderCredit } from "./_employer-credit";
+import {
+  returnCreditForUnavailableDetailed, splitPaise, ensureCreditSpent, clawbackOrderCredit, assignCreditNote, creditSpentOnOrders, isCreditOrderRef,
+} from "./_employer-credit";
+
+export { assignCreditNote, type CreditNoteRow } from "./_employer-credit";
 import { maskedCandidateName, isSuspended } from "./_employer-trust";
 import { sendUnlockReceiptEmail } from "./_unlock-receipt-email";
 import { buildInvoiceSnapshot } from "./_unlock-tax";
@@ -86,7 +90,7 @@ export interface CapturedPayment {
   refundStatus?: string | null;
   /** Paise already refunded (amount_refunded). */
   amountRefunded?: number;
-  /** ISO currency code; only INR is ever sold, so anything else is rejected (currency_mismatch). */
+  /** ISO currency code; only INR is ever sold, so anything else, including absent, is rejected (currency_mismatch). */
   currency?: string | null;
 }
 
@@ -491,7 +495,8 @@ export async function fulfillUnlockOrder(p: FulfillParams): Promise<FulfillResul
     });
     return { kind: "error", code: "amount_mismatch", message: "payment amount does not match the order" };
   }
-  if (p.payment.currency && p.payment.currency.toUpperCase() !== "INR") {
+  // A missing currency is rejected too: the entity is only ever INR, so absence means a malformed payload.
+  if ((p.payment.currency ?? "").toUpperCase() !== "INR") {
     slog.error("unlock payment currency is not INR", {
       code: "unlock_currency_mismatch", orderId: order.razorpay_order_id, currency: p.payment.currency,
     });
@@ -524,7 +529,7 @@ export async function fulfillUnlockOrder(p: FulfillParams): Promise<FulfillResul
       .filter((id) => !byId.get(id)?.unlocked)
       .map((matchId) => ({ matchId, reason: byId.has(matchId) ? "candidate_opted_out" : "gone" }));
     let replayInvoiceNo = await invoiceFor(p.supabaseUrl, p.headers, p.payment.id, f);
-    if (!replayInvoiceNo && order.amount > 0 && unlockedRows.length > 0) {
+    if (!replayInvoiceNo && invoiceEligible(order) && unlockedRows.length > 0) {
       replayInvoiceNo = await assignInvoiceNo(p.supabaseUrl, p.headers, p.payment.id, f);
     }
     // An order closed 'partial' by an older build may never have had its share returned (the return ran after the
@@ -669,13 +674,19 @@ export async function fulfillUnlockOrder(p: FulfillParams): Promise<FulfillResul
   }
   const firstFulfilment = closed > 0;
 
-  // Only a cash purchase that really unlocked someone is a tax invoice: no number for credit-only rows,
-  // 409 replays or an order where every candidate turned out to be unavailable.
+  // A purchase that really unlocked someone is a tax invoice, cash or credit-only (the credit was never taxed
+  // at purchase, so redemption is the supply). No number for 409 replays or an order where every candidate
+  // turned out to be unavailable.
   let invoiceNo = ledger.invoiceNo;
-  if (order.amount > 0 && unlockedRows.length > 0) {
+  if (invoiceEligible(order) && unlockedRows.length > 0) {
+    let creditForInvoice = creditApplied;
+    if (order.amount === 0) {
+      const spent = await creditSpentOnOrders(p.supabaseUrl, p.headers, order.employer_id, [order.razorpay_order_id], f);
+      creditForInvoice = spent?.get(order.razorpay_order_id) ?? 0;
+    }
     if (!invoiceNo) invoiceNo = await assignInvoiceNo(p.supabaseUrl, p.headers, p.payment.id, f);
     await writeInvoiceSnapshot({
-      supabaseUrl: p.supabaseUrl, headers: p.headers, order, paymentId: p.payment.id, creditPaise: creditApplied, now: now(), f,
+      supabaseUrl: p.supabaseUrl, headers: p.headers, order, paymentId: p.payment.id, creditPaise: creditForInvoice, now: now(), f,
     });
     // The returned share is a credit against this invoice. Best effort: a missing note is repaired on the next replay.
     if (invoiceNo && returnedPaise > 0) {
@@ -755,6 +766,11 @@ export async function fulfillUnlockOrder(p: FulfillParams): Promise<FulfillResul
   };
 }
 
+/** A cash order, or an order paid wholly from credit. Admin grants never reach here. */
+export function invoiceEligible(order: Pick<UnlockOrderRow, "amount" | "razorpay_order_id">): boolean {
+  return order.amount > 0 || isCreditOrderRef(order.razorpay_order_id);
+}
+
 async function invoiceFor(
   supabaseUrl: string, headers: Record<string, string>, paymentId: string, f: typeof fetch,
 ): Promise<string | null> {
@@ -794,31 +810,6 @@ export async function assignInvoiceNo(
     }
     if (res.status !== 404) slog.warn("unlock invoice number assignment failed", { code: "unlock_invoice_assign_failed", paymentId, status: res.status });
   } catch { /* retried by the reconciler's invoice back-fill */ }
-  return null;
-}
-
-export interface CreditNoteRow { credit_note_no: string; amount_paise: number; refund_id: string; created_at?: string }
-
-/** Writes (once per refundId) the numbered credit note for a refund or a returned share
- *  (assign_employer_credit_note, migration 0047). null when the migration is unapplied (callers then
- *  fall back to the derived CN number) or the call failed; safe to repeat. */
-export async function assignCreditNote(
-  supabaseUrl: string, headers: Record<string, string>, orderId: string, refundId: string, amountPaise: number, f: typeof fetch,
-): Promise<CreditNoteRow | null> {
-  if (!(amountPaise > 0)) return null;
-  try {
-    const res = await f(`${supabaseUrl}/rest/v1/rpc/assign_employer_credit_note`, {
-      method: "POST",
-      headers: { ...headers, "Content-Type": "application/json" },
-      body: JSON.stringify({ p_order_id: orderId, p_refund_id: refundId, p_amount_paise: Math.round(amountPaise) }),
-    });
-    if (res.ok) {
-      const v = (await res.json().catch(() => null)) as Partial<CreditNoteRow> | null;
-      return v && typeof v.credit_note_no === "string" && v.credit_note_no ? (v as CreditNoteRow) : null;
-    }
-    // 404 / PGRST202 = function absent (migration 0047 unapplied): expected, silent.
-    if (res.status !== 404) slog.warn("credit note assignment failed", { code: "credit_note_assign_failed", orderId, refundId, status: res.status });
-  } catch { /* the derived credit-note number still renders */ }
   return null;
 }
 

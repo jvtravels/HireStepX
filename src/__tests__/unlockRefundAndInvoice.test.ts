@@ -18,7 +18,7 @@ import { buildInvoiceHtml, type InvoiceInput } from "../employer/_invoiceHtml";
 import type { UnlockWebhookEvent } from "../../server-handlers/_employer-unlock-webhook";
 
 const NOW = new Date("2026-10-10T09:00:00.000Z");
-const PAY = { id: "pay_1", status: "captured", amount: 5900, orderId: "order_1" };
+const PAY = { id: "pay_1", status: "captured", currency: "INR", amount: 5900, orderId: "order_1" };
 const FULL_REFUND = { ...PAY, refundStatus: "full", amountRefunded: 5900 };
 const GSTIN_KARNATAKA = "29AABCT1332L1ZA";
 const ENV_KEYS = ["NEXT_PUBLIC_LEGAL_GSTIN", "NEXT_PUBLIC_LEGAL_ENTITY_NAME", "NEXT_PUBLIC_LEGAL_ADDRESS", "NEXT_PUBLIC_LEGAL_SAC"];
@@ -39,7 +39,7 @@ function hook(eventType: string, event: UnlockWebhookEvent) {
   });
 }
 const capturedEvent = (entity: Record<string, unknown> = {}) => ({
-  payload: { payment: { entity: { id: "pay_1", status: "captured", amount: 5900, order_id: "order_1", notes: {}, ...entity } } },
+  payload: { payment: { entity: { id: "pay_1", status: "captured", currency: "INR", amount: 5900, order_id: "order_1", notes: {}, ...entity } } },
 });
 const refundEvent = (amount: number, paymentExtra: Record<string, unknown> = {}) => ({
   payload: { refund: { entity: { id: "rfnd_1", payment_id: "pay_1", amount } }, payment: { entity: { id: "pay_1", amount: 5900, ...paymentExtra } } },
@@ -109,7 +109,7 @@ describe("a fully refunded payment never fulfils an order", () => {
     db.orders.get("order_1")!.created_at = "2026-10-09T08:00:00.000Z";
     const s = await reconcileUnlockOrders({
       supabaseUrl: SUPABASE, headers: HEADERS, razorpayKeyId: "k", razorpayKeySecret: "s", notifyImpl, now: () => new Date("2026-10-10T12:00:00.000Z"),
-      fetchImpl: combineFetch(db, fakeRazorpay({ payments: [{ id: "pay_1", status: "captured", amount: 5900, order_id: "order_1", refund_status: "full", amount_refunded: 5900 }] })),
+      fetchImpl: combineFetch(db, fakeRazorpay({ payments: [{ id: "pay_1", status: "captured", currency: "INR", amount: 5900, order_id: "order_1", refund_status: "full", amount_refunded: 5900 }] })),
     });
     expect(s).toMatchObject({ scanned: 1, fulfilled: 0, expired: 0, skipped: 1, errors: 0 });
     expect(db.orders.get("order_1")?.status).toBe("refunded");
@@ -120,7 +120,7 @@ describe("a fully refunded payment never fulfils an order", () => {
     Object.assign(db.orders.get("order_1")!, { status: "paid", razorpay_payment_id: "pay_1", created_at: "2026-10-09T08:00:00.000Z" });
     const s = await reconcileUnlockOrders({
       supabaseUrl: SUPABASE, headers: HEADERS, razorpayKeyId: "k", razorpayKeySecret: "s", notifyImpl, now: () => new Date("2026-10-10T12:00:00.000Z"),
-      fetchImpl: combineFetch(db, fakeRazorpay({ payments: [{ id: "pay_1", status: "captured", amount: 5900, order_id: "order_1", refund_status: "full" }] })),
+      fetchImpl: combineFetch(db, fakeRazorpay({ payments: [{ id: "pay_1", status: "captured", currency: "INR", amount: 5900, order_id: "order_1", refund_status: "full" }] })),
     });
     expect(s.fulfilled).toBe(0);
     expect(db.orders.get("order_1")?.status).toBe("refunded");
@@ -275,6 +275,15 @@ describe("supplier GSTIN has a single source", () => {
 /* ── 4. place of supply default ── */
 
 describe("place of supply for a buyer with no GSTIN", () => {
+  it("lists every tax treatment still awaiting CA review", () => {
+    expect(tax.TAX_TREATMENTS_PENDING_CA_REVIEW).toEqual([
+      "place_of_supply_defaults_to_supplier_state_without_buyer_gstin",
+      "account_credit_is_a_prepayment_so_taxable_base_is_cash_plus_credit",
+      "credit_only_redemption_is_invoiced_when_the_unlock_happens",
+      "refund_as_credit_is_reversed_by_a_credit_note",
+    ]);
+  });
+
   it("is one named constant, currently the supplier's state (behaviour unchanged)", () => {
     expect(tax.PLACE_OF_SUPPLY_WITHOUT_BUYER_GSTIN).toBe("supplier_state");
     expect(tax.resolvePlaceOfSupply(GSTIN_KARNATAKA, "")).toEqual({ code: "29", basis: "supplier_state" });

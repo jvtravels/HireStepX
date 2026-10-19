@@ -7,22 +7,20 @@
  * ledger (spend rows keyed by that order ref), so "was this order paid?" is
  * answered by the ledger, which also makes retries and the reconciler safe. */
 
-import { creditSpentOnOrders } from "./_employer-credit";
+import { creditSpentOnOrders, CREDIT_ORDER_PREFIX, isCreditOrderRef } from "./_employer-credit";
 import { fulfillUnlockOrder, type CapturedPayment, type FulfillResult, type UnlockOrderRow } from "./_unlock-fulfillment";
 import type { NotifyInput } from "./_notify";
 
-const PREFIX = "credit_";
+const PREFIX = CREDIT_ORDER_PREFIX;
 
-export function isCreditOrderRef(ref: string): boolean {
-  return ref.startsWith(PREFIX);
-}
+export { isCreditOrderRef };
 
 export function newCreditOrderRef(): string {
   return `${PREFIX}${crypto.randomUUID()}`;
 }
 
 export function creditPayment(orderRef: string): CapturedPayment {
-  return { id: `credit_pay_${orderRef.slice(PREFIX.length)}`, status: "captured", amount: 0, orderId: orderRef };
+  return { id: `credit_pay_${orderRef.slice(PREFIX.length)}`, status: "captured", amount: 0, orderId: orderRef, currency: "INR" };
 }
 
 export type SettleResult = FulfillResult | { kind: "no_credit" } | { kind: "ledger_unavailable" };

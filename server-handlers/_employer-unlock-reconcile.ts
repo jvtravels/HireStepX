@@ -10,7 +10,7 @@
  *                                    the daily-limit accounting)
  *   - Razorpay unreachable       -> left untouched, retried next run
  * 'paid' orders are the retry case: payment recorded but unlock writes failed.
- * A second pass releases credit still held by recently 'failed' orders (a
+ * A second pass releases credit still held by recently 'failed' or 'expired' orders (a
  * release that failed at the time must not leave the employer's credit stuck).
  * Recently 'expired'/'failed' orders are also checked against Razorpay: a payment
  * captured after the order lapsed (the expiry race) is fulfilled or converted to
@@ -48,7 +48,7 @@ export interface ReconcileSummary {
   errors: number;
   /** Orders that were already refunded/disputed or had payment mismatches. */
   skipped: number;
-  /** Failed orders whose held credit was (re)released by the second pass. */
+  /** Failed/expired orders whose held credit was (re)released by the second pass. */
   creditSwept?: number;
   /** 'paid' orders for which Razorpay shows no live captured payment (needs a human; not an error). */
   paidWithoutCapture?: number;
@@ -143,11 +143,12 @@ async function reconcileOne(order: UnlockOrderRow, p: ReconcileParams, f: typeof
       const moved: unknown = await res.json().catch(() => null);
       if (!Array.isArray(moved)) return "error";
       if (moved.length === 0) return "pending"; // lost the race to a payment; the next run reads the real state
-      await releaseCredit(p.supabaseUrl, p.headers, order.employer_id, order.razorpay_order_id, f);
+      const released = await releaseCredit(p.supabaseUrl, p.headers, order.employer_id, order.razorpay_order_id, f);
       void captureServerEvent("employer_unlock_abandoned", order.employer_id, {
         requirementId: order.requirement_id, orderId: order.razorpay_order_id, amountPaise: order.amount, mode: order.mode,
       });
-      return "expired";
+      // The order is already 'expired', so the credit sweep (which covers expired orders) retries a failed release.
+      return released ? "expired" : "error";
     } catch {
       return "error";
     }
@@ -251,7 +252,7 @@ async function sweepClosedQuery(p: ReconcileParams, f: typeof fetch, since: stri
 const BACKFILL_DAYS = 14;
 const BACKFILL_LIMIT = 50;
 
-/** Numbers fulfilled/partial cash orders whose ledger row has no invoice_no (the assignment RPC failed when the order
+/** Numbers fulfilled/partial cash and credit-only orders whose ledger row has no invoice_no (the assignment RPC failed when the order
  *  closed). A cash order that unlocked nobody legitimately has no invoice and is skipped. Soft-fails to
  *  nothing when the invoice columns are missing (migration 0032/0045 unapplied). */
 async function backfillMissingInvoices(p: ReconcileParams, f: typeof fetch, now: Date): Promise<{ filled: number; errors: number }> {
@@ -259,7 +260,7 @@ async function backfillMissingInvoices(p: ReconcileParams, f: typeof fetch, now:
   try {
     const since = new Date(now.getTime() - BACKFILL_DAYS * 86_400_000).toISOString();
     const res = await f(
-      `${p.supabaseUrl}/rest/v1/employer_unlock_payments?invoice_no=is.null&amount=gt.0&refunded_at=is.null` +
+      `${p.supabaseUrl}/rest/v1/employer_unlock_payments?invoice_no=is.null&or=(amount.gt.0,razorpay_payment_id.like.credit_pay_*)&refunded_at=is.null` +
         `&created_at=gte.${encodeURIComponent(since)}&select=razorpay_payment_id,razorpay_order_id,employer_id&order=created_at.desc&limit=${BACKFILL_LIMIT}`,
       { headers: p.headers },
     );
@@ -321,21 +322,24 @@ async function backfillMissingInvoices(p: ReconcileParams, f: typeof fetch, now:
 
 const FAILED_SWEEP_DAYS = 7;
 
-/** Releases credit still attached to recently failed orders. releaseCredit is
+/** Releases credit still attached to recently failed or expired orders. releaseCredit is
  *  idempotent (nets the ledger), so re-running it on an already-released order
- *  writes nothing. Never throws into the main sweep. */
+ *  writes nothing. Expired orders leave a late re-spend alone (see releaseCredit).
+ *  Never throws into the main sweep. */
 async function sweepFailedOrderCredit(p: ReconcileParams, f: typeof fetch, now: Date): Promise<number> {
   try {
     const since = new Date(now.getTime() - FAILED_SWEEP_DAYS * 86_400_000).toISOString();
     const res = await f(
-      `${p.supabaseUrl}/rest/v1/employer_unlock_orders?status=eq.failed&updated_at=gte.${encodeURIComponent(since)}` +
-        `&select=razorpay_order_id,employer_id&order=updated_at.desc&limit=100`,
+      `${p.supabaseUrl}/rest/v1/employer_unlock_orders?status=in.(failed,expired)&updated_at=gte.${encodeURIComponent(since)}` +
+        `&select=razorpay_order_id,employer_id,status&order=updated_at.desc&limit=100`,
       { headers: p.headers },
     );
     if (!res.ok) return 0;
-    const rows = (await res.json().catch(() => null)) as Array<{ razorpay_order_id: string; employer_id: string }> | null;
+    const rows = (await res.json().catch(() => null)) as Array<{ razorpay_order_id: string; employer_id: string; status?: string }> | null;
     if (!Array.isArray(rows)) return 0;
-    for (const r of rows) await releaseCredit(p.supabaseUrl, p.headers, r.employer_id, r.razorpay_order_id, f);
+    for (const r of rows) {
+      await releaseCredit(p.supabaseUrl, p.headers, r.employer_id, r.razorpay_order_id, f, { includeLate: r.status !== "expired" });
+    }
     return rows.length;
   } catch (err) {
     slog.error("failed-order credit sweep threw", { code: "unlock_failed_credit_sweep", err: err instanceof Error ? err.message : String(err) });

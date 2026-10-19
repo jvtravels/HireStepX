@@ -79,15 +79,21 @@ export function isPartiallyRefundedPurchase(p: { refundedAt?: string | null; ord
 export type InvoiceDocKind = "tax_invoice" | "credit_note" | "receipt" | "credit_redemption";
 
 export function invoiceDocKind(i: Pick<InvoiceInput, "invoiceNo" | "cashPaise" | "supplier" | "document" | "snapshot">): InvoiceDocKind {
-  if (i.cashPaise <= 0) return "credit_redemption";
+  // A credit-only purchase carries an invoice number once redemption became a taxed supply; older ones have none.
+  if (i.cashPaise <= 0 && !i.invoiceNo) return "credit_redemption";
   if (!isTaxInvoice(i.snapshot?.supplier ?? i.supplier)) return "receipt";
   return i.document === "credit_note" && i.invoiceNo ? "credit_note" : "tax_invoice";
 }
 
-/** A credit note exists only for a (fully or partly) refunded cash purchase that carries a real tax invoice.
+/** A credit note exists for a refunded purchase, or one with a credit note on file (a match refunded as
+ *  credit leaves the purchase standing), that carries a real tax invoice. Credit-only purchases qualify
+ *  too: their invoice number is the proof they were taxed.
  *  Pass the snapshot's supplier when the row has one, so the decision matches what was issued. */
-export function canIssueCreditNote(p: { invoiceNo?: string | null; amount: number; refundedAt?: string | null; orderStatus?: string | null; partialRefundPaise?: number | null }, supplier: InvoiceSupplier): boolean {
-  return !!p.invoiceNo && p.amount > 0 && isTaxInvoice(supplier) && (isRefundedPurchase(p) || isPartiallyRefundedPurchase(p));
+export function canIssueCreditNote(
+  p: { invoiceNo?: string | null; refundedAt?: string | null; orderStatus?: string | null; partialRefundPaise?: number | null; creditNotes?: readonly unknown[] | null },
+  supplier: InvoiceSupplier,
+): boolean {
+  return !!p.invoiceNo && isTaxInvoice(supplier) && (isRefundedPurchase(p) || isPartiallyRefundedPurchase(p) || (p.creditNotes?.length ?? 0) > 0);
 }
 
 const ESCAPES: Record<string, string> = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };

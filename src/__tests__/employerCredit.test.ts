@@ -156,7 +156,7 @@ describe("creditRefundForMatches", () => {
     const notifyImpl = vi.fn();
     const r0 = router(
       matchesRoute([{ id: "m1", candidate_status: "interview_invited" }]), ordersRoute([order]), ledgerPost(409),
-      (u) => (u.includes("kind=eq.refund&select=order_ref") ? ok([{ order_ref: "order_OLD" }]) : undefined),
+      (u) => (u.includes("kind=eq.refund&order_ref=eq.order_1&select=order_ref") ? ok([]) : undefined),
     );
     const r = await creditRefundForMatches({ base: BASE, headers: H, matchIds: ["m1"], reason: "withdrew", fetchImpl: r0.f as never, notifyImpl });
     expect(r.credited).toEqual([]);
@@ -168,11 +168,61 @@ describe("creditRefundForMatches", () => {
     const notifyImpl = vi.fn();
     const r0 = router(
       matchesRoute([{ id: "m1", candidate_status: "shortlisted" }]), ordersRoute([order]), ledgerPost(409),
-      (u) => (u.includes("kind=eq.refund&select=order_ref") ? ok([{ order_ref: "order_1" }]) : undefined),
+      (u) => (u.includes("kind=eq.refund&order_ref=eq.order_1&select=order_ref") ? ok([{ order_ref: "order_1" }]) : undefined),
     );
     const r = await creditRefundForMatches({ base: BASE, headers: H, matchIds: ["m1"], reason: "withdrew", fetchImpl: r0.f as never, notifyImpl });
     expect(r.credited).toEqual([]);
     expect(notifyImpl).not.toHaveBeenCalled();
+    expect(relocks(r0.calls)).toHaveLength(1);
+  });
+
+  it("a repurchased match is refunded again against the newer order, keyed by that order's ref", async () => {
+    const notifyImpl = vi.fn();
+    const newer = { razorpay_order_id: "order_2", employer_id: "e1", amount: 5_900, match_ids: ["m1"] };
+    const r0 = router(matchesRoute([{ id: "m1", candidate_status: "shortlisted" }]), ordersRoute([newer, { ...order, match_ids: ["m1"] }]));
+    const r = await creditRefundForMatches({ base: BASE, headers: H, matchIds: ["m1"], reason: "withdrew", fetchImpl: r0.f as never, notifyImpl });
+    expect(r.credited).toEqual([{ employerId: "e1", matchId: "m1", amountPaise: 5_900 }]);
+    expect(r0.ledgerPosts()[0].body).toMatchObject({ kind: "refund", match_id: "m1", order_ref: "order_2", amount: 5_900 });
+    expect(relocks(r0.calls)).toHaveLength(1);
+  });
+
+  const noteCalls = (calls: Array<{ method: string; url: string; body: Record<string, unknown> | null }>) =>
+    calls.filter((c) => c.method === "POST" && c.url.includes("/rpc/assign_employer_credit_note"));
+
+  it("issues a credit note for a cash order's refund-as-credit, keyed by order and match", async () => {
+    const r0 = router(matchesRoute([{ id: "m1", candidate_status: "shortlisted" }]), ordersRoute([{ razorpay_order_id: "order_2", employer_id: "e1", amount: 5_900, match_ids: ["m1"] }]));
+    await creditRefundForMatches({ base: BASE, headers: H, matchIds: ["m1"], reason: "declined", fetchImpl: r0.f as never, notifyImpl: vi.fn() });
+    expect(noteCalls(r0.calls).map((c) => c.body)).toEqual([{ p_order_id: "order_2", p_refund_id: "credit:order_2:m1", p_amount_paise: 5_900 }]);
+  });
+
+  it("does not issue a note when the ledger refund did not land", async () => {
+    const r0 = router(ledgerPost(500), matchesRoute([{ id: "m1", candidate_status: "shortlisted" }]), ordersRoute([{ razorpay_order_id: "order_2", employer_id: "e1", amount: 5_900, match_ids: ["m1"] }]));
+    await creditRefundForMatches({ base: BASE, headers: H, matchIds: ["m1"], reason: "declined", fetchImpl: r0.f as never, notifyImpl: vi.fn() });
+    expect(noteCalls(r0.calls)).toHaveLength(0);
+  });
+
+  it("issues the note for a credit-only order only when it carries an invoice number", async () => {
+    const creditOrder = { razorpay_order_id: "credit_1", employer_id: "e1", amount: 0, match_ids: ["m1"] };
+    const routes = (invoiced: boolean) => router(
+      matchesRoute([{ id: "m1", candidate_status: "shortlisted" }]), ordersRoute([creditOrder]),
+      spentRoute([{ amount: -5_900, order_ref: "credit_1" }]),
+      (u) => (u.includes("/employer_unlock_payments?razorpay_order_id=eq.credit_1") ? ok(invoiced ? [{ invoice_no: "HSX-2610-000009" }] : []) : undefined),
+    );
+    const withInvoice = routes(true);
+    await creditRefundForMatches({ base: BASE, headers: H, matchIds: ["m1"], reason: "withdrew", fetchImpl: withInvoice.f as never, notifyImpl: vi.fn() });
+    expect(noteCalls(withInvoice.calls).map((c) => c.body?.p_refund_id)).toEqual(["credit:credit_1:m1"]);
+    const legacy = routes(false);
+    await creditRefundForMatches({ base: BASE, headers: H, matchIds: ["m1"], reason: "withdrew", fetchImpl: legacy.f as never, notifyImpl: vi.fn() });
+    expect(noteCalls(legacy.calls)).toHaveLength(0);
+  });
+
+  it("a failing credit-note RPC never breaks the refund", async () => {
+    const r0 = router(
+      (u) => (u.includes("/rpc/assign_employer_credit_note") ? ok(null, 500) : undefined),
+      matchesRoute([{ id: "m1", candidate_status: "shortlisted" }]), ordersRoute([{ razorpay_order_id: "order_2", employer_id: "e1", amount: 5_900, match_ids: ["m1"] }]),
+    );
+    const r = await creditRefundForMatches({ base: BASE, headers: H, matchIds: ["m1"], reason: "declined", fetchImpl: r0.f as never, notifyImpl: vi.fn() });
+    expect(r.credited).toHaveLength(1);
     expect(relocks(r0.calls)).toHaveLength(1);
   });
 

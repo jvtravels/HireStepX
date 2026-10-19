@@ -13,7 +13,7 @@ const { fulfillUnlockOrder, backfillLegacyUnlockOrder, findCapturedPaymentForOrd
 const { handleEmployerUnlockWebhook } = await import("../../server-handlers/_employer-unlock-webhook");
 import type { UnlockWebhookEvent } from "../../server-handlers/_employer-unlock-webhook";
 
-const PAY = { id: "pay_1", status: "captured", amount: 5900, orderId: "order_1" };
+const PAY = { id: "pay_1", status: "captured", currency: "INR", amount: 5900, orderId: "order_1" };
 
 function run(db: FakeUnlockDb, over: Partial<Parameters<typeof fulfillUnlockOrder>[0]> = {}) {
   const notifyImpl = vi.fn(async (_input: NotifyInput) => {});
@@ -210,13 +210,13 @@ describe("razorpay reads", () => {
 
   it("findCapturedPaymentForOrder prefers a live capture, still returns a fully refunded one (so the refund guard closes the order), and surfaces Razorpay errors", async () => {
     const f = fakeRazorpay({ payments: [
-      { id: "pay_a", status: "captured", amount: 5900, order_id: "order_1", refund_status: "full" },
+      { id: "pay_a", status: "captured", currency: "INR", amount: 5900, order_id: "order_1", refund_status: "full" },
       { id: "pay_b", status: "failed", amount: 5900, order_id: "order_1" },
     ] }) as unknown as typeof fetch;
     expect(await findCapturedPaymentForOrder("order_1", "k", "s", f)).toMatchObject({ id: "pay_a", refundStatus: "full" });
     const live = fakeRazorpay({ payments: [
-      { id: "pay_a", status: "captured", amount: 5900, order_id: "order_1", refund_status: "full", amount_refunded: 5900 },
-      { id: "pay_c", status: "captured", amount: 5900, order_id: "order_1" },
+      { id: "pay_a", status: "captured", currency: "INR", amount: 5900, order_id: "order_1", refund_status: "full", amount_refunded: 5900 },
+      { id: "pay_c", status: "captured", currency: "INR", amount: 5900, order_id: "order_1" },
     ] }) as unknown as typeof fetch;
     expect(await findCapturedPaymentForOrder("order_1", "k", "s", live)).toMatchObject({ id: "pay_c" });
     const none = fakeRazorpay({ payments: [{ id: "pay_b", status: "failed", amount: 5900, order_id: "order_1" }] }) as unknown as typeof fetch;
@@ -256,7 +256,7 @@ function hook(eventType: string, event: UnlockWebhookEvent | undefined, d = db, 
 }
 const capturedEvent = (eventType: string) => ({
   event: eventType,
-  payload: { payment: { entity: { id: "pay_1", status: "captured", amount: 5900, order_id: "order_1", notes: {} } } },
+  payload: { payment: { entity: { id: "pay_1", status: "captured", currency: "INR", amount: 5900, order_id: "order_1", notes: {} } } },
 });
 const refundEvent = (amount: number) => ({ payload: { refund: { entity: { id: "rfnd_1", payment_id: "pay_1", amount } } } });
 const disputeEvent = { payload: { dispute: { entity: { id: "disp_1", payment_id: "pay_1" } } } };
