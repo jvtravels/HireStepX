@@ -76,5 +76,8 @@ export const CREDIT_ON_DELETION_SENTENCE =
 /* Mirrors the billing code: unlock prices are GST-inclusive totals that
    server-handlers/_unlock-tax.ts splits into taxable value and tax. Never word
    this as "GST is added on top". */
+export const GST_SHORT_LINE =
+  "This is the total you pay. GST is included once we are GST-registered; until then none is charged.";
+
 export const GST_STATEMENT =
   "Prices are GST-inclusive once we are GST-registered: the price shown at checkout is the total you pay, and your tax invoice shows the GST within it. Until we are registered we do not charge GST and receipts are not GST tax invoices.";

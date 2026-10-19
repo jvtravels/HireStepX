@@ -21,7 +21,7 @@ import {
   UpcomingInterviewsCard, KeyInsightsCard, RecentActivityCard, NextActionCard, DashboardSkeleton,
 } from "@/employer/DashboardSections";
 import { buildInsights, buildNextAction, buildRecommendedCards, type DashboardRange, type EmployerDashboardData } from "@/employer/dashboardData";
-import { deriveOnboardingSteps, hasProgressedCandidate, type ChecklistStep } from "@/employer/onboardingSteps";
+import { deriveOnboardingSteps, hasOpenedProfile, hasProgressedCandidate, type ChecklistStep } from "@/employer/onboardingSteps";
 import { useJobRowActions } from "./jobs/_components/useJobRowActions";
 
 const ONBOARDING_HIDDEN_KEY = "hirestepx-employer-onboarding-hidden";
@@ -216,7 +216,7 @@ function EmployerDashboard() {
   // Refreshed on each dashboard load so "quiet for N days" and "interview
   // within 48h" stay current without a ticking clock re-rendering the page.
   const [now, setNow] = useState(() => Date.now());
-  const { rowActions, dialogs } = useJobRowActions();
+  const { rowActions, dialogs } = useJobRowActions(dashboard?.jobs);
 
   useEffect(() => {
     let cancelled = false;
@@ -253,10 +253,15 @@ function EmployerDashboard() {
 
   const [unlocked, setUnlocked] = useState<boolean | null>(null);
   const [checklistHidden, setChecklistHidden] = useState(false);
+  // The reminder renders nothing until the stored choice is read, so it never flashes in and then disappears.
+  const [prefsRead, setPrefsRead] = useState(false);
+  const [openedProfile, setOpenedProfile] = useState(false);
   useEffect(() => {
     try {
       setChecklistHidden(localStorage.getItem(ONBOARDING_HIDDEN_KEY) === "1");
     } catch { /* storage blocked: show the checklist */ }
+    setOpenedProfile(hasOpenedProfile());
+    setPrefsRead(true);
   }, []);
   const hasJobs = requirements.length > 0;
   useEffect(() => {
@@ -267,16 +272,17 @@ function EmployerDashboard() {
     });
     return () => { cancelled = true; };
   }, [hasJobs, fetchUnlockHistory]);
-  const onboardingSteps: ChecklistStep[] = deriveOnboardingSteps({ jobs: requirements, reviewed: hasProgressedCandidate(dashboard), unlocked });
+  const onboardingSteps: ChecklistStep[] = deriveOnboardingSteps({ jobs: requirements, reviewed: hasProgressedCandidate(dashboard, openedProfile), unlocked });
   const hideChecklist = () => {
     setChecklistHidden(true);
     try {
       localStorage.setItem(ONBOARDING_HIDDEN_KEY, "1");
     } catch { /* storage blocked: hidden for this visit only */ }
   };
-  // Once a job exists the checklist is a reminder above the dashboard, only while the unlock
-  // state is known and a step is still open; it can be hidden for good.
-  const showSetupReminder = !suspended && statsReady && hasJobs && unlocked === false && !checklistHidden;
+  // Once a job exists the checklist is a reminder above the dashboard, only once everything its
+  // steps read has loaded (so the done count and the card never change after it appears) and a
+  // step is still open; it can be hidden for good.
+  const showSetupReminder = !suspended && statsReady && hasJobs && unlocked === false && prefsRead && (dashboard !== null || dashboardState === "failed") && !checklistHidden;
   // The checklist stands in for the dashboard only while there is nothing to
   // show. Once a job exists the real dashboard renders, even if the employer
   // hasn't unlocked a candidate yet.

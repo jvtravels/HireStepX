@@ -12,18 +12,27 @@ const cand = (id: string, candidateStatus: CandidateStatus) => ({ id, name: `Nam
 const ok: EmployerApiResult<null> = { ok: true, status: 200, data: null, error: null } as EmployerApiResult<null>;
 
 describe("SelectionBar", () => {
-  const baseProps = { canChangeStage: true, eligible: { rejected: 2, shortlisted: 0 }, busy: false, onCompare: vi.fn(), onBulk: vi.fn(), onClear: vi.fn() };
+  const baseProps = { offPage: 0, canChangeStage: true, eligible: { rejected: 2, shortlisted: 0 }, busy: false, onCompare: vi.fn(), onBulk: vi.fn(), onClear: vi.fn() };
 
-  it("renders nothing with no selection", () => {
-    const { container } = render(<SelectionBar {...baseProps} count={0} />);
-    expect(container.firstChild).toBeNull();
+  it("shows no bar with no selection, but keeps an empty live region mounted so the first selection is announced", () => {
+    render(<SelectionBar {...baseProps} count={0} />);
+    expect(screen.queryByRole("region", { name: "Selected candidates" })).toBeNull();
+    expect(screen.getByRole("status").textContent).toBe("");
+  });
+
+  it("announces the count, candidates on other pages, and the limit", () => {
+    const { rerender } = render(<SelectionBar {...baseProps} count={0} />);
+    rerender(<SelectionBar {...baseProps} count={3} offPage={1} />);
+    const live = screen.getByRole("status").textContent ?? "";
+    expect(live).toContain("3 selected, 1 on other pages");
+    expect(live).toContain("Select up to 20 at a time.");
   });
 
   it("disables Compare until two are selected, then fires it", () => {
     const onCompare = vi.fn();
     const { rerender } = render(<SelectionBar {...baseProps} onCompare={onCompare} count={1} />);
     expect((screen.getByRole("button", { name: /compare/i }) as HTMLButtonElement).disabled).toBe(true);
-    expect(screen.getByText("Select 1 more to compare")).toBeTruthy();
+    expect(screen.getByText(/Select 1 more to compare/)).toBeTruthy();
     rerender(<SelectionBar {...baseProps} onCompare={onCompare} count={2} />);
     expect(screen.getByText("2 selected")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: /compare/i }));
@@ -33,7 +42,7 @@ describe("SelectionBar", () => {
   it("turns Compare off again above three", () => {
     render(<SelectionBar {...baseProps} count={4} />);
     expect((screen.getByRole("button", { name: /compare/i }) as HTMLButtonElement).disabled).toBe(true);
-    expect(screen.getByText("Compare up to 3 candidates")).toBeTruthy();
+    expect(screen.getByText(/Compare up to 3 candidates/)).toBeTruthy();
   });
 
   it("disables a bulk move nobody in the selection qualifies for and reports the others", () => {
@@ -70,7 +79,7 @@ describe("useStageActions", () => {
     expect(moved.sort()).toEqual(["1", "2", "3"]);
     expect(s.statuses()).toEqual(["1:rejected", "2:rejected", "3:rejected"]);
     const [message, type, options] = s.toast.mock.calls[0];
-    expect(message).toBe("Rejected 3 candidates.");
+    expect(message).toBe("Rejected 3 candidates. They've been notified.");
     expect(type).toBe("success");
     expect(options.action.label).toBe("Undo");
 
@@ -113,7 +122,7 @@ describe("useStageActions", () => {
 });
 
 describe("useShortlistShortcuts", () => {
-  const handlers = () => ({ onNext: vi.fn(), onPrev: vi.fn(), onToggleSelect: vi.fn(), onOpen: vi.fn(), onHelp: vi.fn(), onEscape: vi.fn() });
+  const handlers = () => ({ onUndo: vi.fn(), onNext: vi.fn(), onPrev: vi.fn(), onToggleSelect: vi.fn(), onOpen: vi.fn(), onHelp: vi.fn(), onEscape: vi.fn() });
 
   it("maps j k x e ? and Escape to their handlers", () => {
     const h = handlers();
@@ -125,6 +134,15 @@ describe("useShortlistShortcuts", () => {
     expect(h.onOpen).toHaveBeenCalledTimes(1);
     expect(h.onHelp).toHaveBeenCalledTimes(1);
     expect(h.onEscape).toHaveBeenCalledTimes(1);
+  });
+
+  it("maps z to undo and ignores a held key", () => {
+    const h = handlers();
+    renderHook(() => useShortlistShortcuts(h, true));
+    fireEvent.keyDown(window, { key: "z" });
+    fireEvent.keyDown(window, { key: "x", repeat: true });
+    expect(h.onUndo).toHaveBeenCalledTimes(1);
+    expect(h.onToggleSelect).not.toHaveBeenCalled();
   });
 
   it("ignores keys typed into an input and keys with a modifier", () => {
@@ -153,6 +171,49 @@ describe("useShortlistShortcuts", () => {
 });
 
 describe("Toast action", () => {
+  function Shortcut({ onUndo }: { onUndo: () => void }) {
+    const { toast, triggerToastAction } = useToast();
+    return (
+      <>
+        <button onClick={() => toast("Rejected 2.", "success", { action: { label: "Undo", onClick: onUndo } })}>go</button>
+        <button onClick={() => { void triggerToastAction(); }}>press z</button>
+      </>
+    );
+  }
+
+  it("runs the newest Undo from the keyboard path and dismisses it", () => {
+    const onUndo = vi.fn();
+    render(<ToastProvider><Shortcut onUndo={onUndo} /></ToastProvider>);
+    fireEvent.click(screen.getByText("go"));
+    fireEvent.click(screen.getByText("press z"));
+    expect(onUndo).toHaveBeenCalledTimes(1);
+  });
+
+  it("reports false when no toast has an action", () => {
+    let result: boolean | null = null;
+    function Probe() {
+      const { triggerToastAction } = useToast();
+      return <button onClick={() => { result = triggerToastAction(); }}>probe</button>;
+    }
+    render(<ToastProvider><Probe /></ToastProvider>);
+    fireEvent.click(screen.getByText("probe"));
+    expect(result).toBe(false);
+  });
+
+  it("stays on screen while hovered, past the normal action time", () => {
+    vi.useFakeTimers();
+    try {
+      render(<ToastProvider><Shortcut onUndo={vi.fn()} /></ToastProvider>);
+      fireEvent.click(screen.getByText("go"));
+      const undo = screen.getByRole("button", { name: "Undo" });
+      fireEvent.mouseEnter(undo);
+      act(() => { vi.advanceTimersByTime(60_000); });
+      expect(screen.queryByRole("button", { name: "Undo" })).not.toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   function Trigger({ onUndo }: { onUndo: () => void }) {
     const { toast } = useToast();
     return <button onClick={() => toast("Rejected 2 candidates.", "success", { action: { label: "Undo", onClick: onUndo } })}>go</button>;

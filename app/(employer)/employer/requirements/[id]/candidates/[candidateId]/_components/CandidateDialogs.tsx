@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "cn";
 import { REJECT_REASONS, composeRejectNote } from "@/employer/_passReasons";
+import { REJECT_NOTIFY_NOTE } from "../../../_components/requirementFormat";
 import { ActionNoticeAlert } from "./Notices";
 import type { ActionNotice } from "./useCandidateDetail";
 
@@ -54,7 +55,7 @@ export function RejectDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Reject this candidate?</DialogTitle>
-          <DialogDescription>Marks {displayName} as rejected for {requirementTitle}. You can reopen a rejected candidate later from the Stage menu.</DialogDescription>
+          <DialogDescription>Marks {displayName} as rejected for {requirementTitle}. {REJECT_NOTIFY_NOTE}</DialogDescription>
         </DialogHeader>
         {notice && <ActionNoticeAlert notice={notice} shortlistHref={shortlistHref} />}
         <div className="grid gap-4 py-1">

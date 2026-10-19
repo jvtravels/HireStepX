@@ -40,8 +40,10 @@ import SelectionBar from "./_components/SelectionBar";
 import ShortcutsDialog from "./_components/ShortcutsDialog";
 import ViewMenu from "./_components/ViewMenu";
 import { useStageActions } from "./_components/useStageActions";
-import { rowAnnouncement, useShortlistShortcuts } from "./_components/useShortlistShortcuts";
-import { BULK_COPY, compareHref, planBulkMove, pruneSelection, toggleId, type BulkTarget } from "./_components/shortlistSelection";
+import { useShortlistShortcuts } from "./_components/useShortlistShortcuts";
+import { useShortlistSelection } from "./_components/useShortlistSelection";
+import BulkRejectDialog from "./_components/BulkRejectDialog";
+import { MAX_SELECTION, compareHref, planBulkMove, type BulkTarget } from "./_components/shortlistSelection";
 import { parseShortlistView, writeShortlistView } from "./_components/shortlistUrlState";
 import {
   CONTACT_FILTER_OPTIONS,
@@ -92,9 +94,6 @@ export default function RequirementDetailPage() {
   const [tabChoice, setTabChoice] = useState<CandidateTab | null>(initialView.tab);
   const [insightId, setInsightId] = useState<string | null>(initialView.insight);
   const [sort, setSort] = useState<Sort<SortColumn>>(initialView.sort);
-  const [selected, setSelected] = useState<Set<string>>(() => new Set());
-  const [activeId, setActiveId] = useState<string | null>(null);
-  const [announcement, setAnnouncement] = useState("");
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [pendingBulk, setPendingBulk] = useState<BulkTarget | null>(null);
   const [bulkBusy, setBulkBusy] = useState(false);
@@ -104,7 +103,7 @@ export default function RequirementDetailPage() {
   const [evidenceId, setEvidenceId] = useState<string | null>(null);
   const [messagesId, setMessagesId] = useState<string | null>(null);
   const [inviteId, setInviteId] = useState<string | null>(null);
-  const { toast } = useToast();
+  const { toast, triggerToastAction } = useToast();
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -306,10 +305,9 @@ export default function RequirementDetailPage() {
     window.history.replaceState(window.history.state, "", `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`);
   }, [tabChoice, search, contactFilter, locationFilter, sort, insightId]);
 
-  // A candidate that left the shortlist (refresh, stage change) can't stay selected.
-  useEffect(() => {
-    setSelected((prev) => pruneSelection(prev, candidates));
-  }, [candidates]);
+  const openCandidate = useCallback((id: string) => router.push(`/employer/requirements/${params.id}/candidates/${id}`), [router, params.id]);
+  const sel = useShortlistSelection({ filtered: filteredSorted, pageRows, onOpen: openCandidate });
+  const { selected } = sel;
 
   const bulkEligible = useMemo<Record<BulkTarget, number>>(
     () => ({
@@ -319,12 +317,17 @@ export default function RequirementDetailPage() {
     [candidates, selected],
   );
 
+  // The confirm names exactly who the move will touch, from the same plan the move runs.
+  const bulkPlan = pendingBulk ? planBulkMove(candidates, selected, pendingBulk) : null;
+  const bulkIds = new Set((bulkPlan?.changes ?? []).map((ch) => ch.id));
+  const bulkNames = candidates.filter((c) => bulkIds.has(c.id)).map(candidateDisplayName);
+
   const runBulk = async (target: BulkTarget) => {
     setBulkBusy(true);
     const moved = await bulkMove(selected, target);
     setBulkBusy(false);
     setPendingBulk(null);
-    if (moved.length > 0) setSelected((prev) => new Set([...prev].filter((id) => !moved.includes(id))));
+    if (moved.length > 0) sel.deselect(moved);
   };
 
   // Rejecting many at once asks first; moving back to To review is the safe direction.
@@ -334,30 +337,10 @@ export default function RequirementDetailPage() {
   };
 
   const listVisible = requirement?.status === "ready" || requirement?.status === "partial" || requirement?.status === "closed";
-  const moveActive = useCallback((step: 1 | -1) => {
-    if (pageRows.length === 0) return;
-    const at = pageRows.findIndex((c) => c.id === activeId);
-    const index = at === -1 ? (step === 1 ? 0 : pageRows.length - 1) : Math.min(pageRows.length - 1, Math.max(0, at + step));
-    const row = pageRows[index];
-    setActiveId(row.id);
-    setAnnouncement(rowAnnouncement(candidateDisplayName(row), index + 1, pageRows.length, selected.has(row.id)));
-  }, [pageRows, activeId, selected]);
-  const toggleActive = useCallback(() => {
-    const row = pageRows.find((c) => c.id === activeId);
-    if (!row) return;
-    const nowSelected = !selected.has(row.id);
-    setSelected((prev) => toggleId(prev, row.id));
-    setAnnouncement(`${candidateDisplayName(row)} ${nowSelected ? "selected" : "not selected"}`);
-  }, [pageRows, activeId, selected]);
-  const openActive = useCallback(() => {
-    if (activeId) router.push(`/employer/requirements/${params.id}/candidates/${activeId}`);
-  }, [activeId, router, params.id]);
-  const nextRow = useCallback(() => moveActive(1), [moveActive]);
-  const prevRow = useCallback(() => moveActive(-1), [moveActive]);
   const showShortcuts = useCallback(() => setShortcutsOpen(true), []);
-  const clearSelection = useCallback(() => setSelected(new Set()), []);
+  const undoLast = useCallback(() => void triggerToastAction(), [triggerToastAction]);
   useShortlistShortcuts(
-    { onNext: nextRow, onPrev: prevRow, onToggleSelect: toggleActive, onOpen: openActive, onHelp: showShortcuts, onEscape: clearSelection },
+    { onNext: sel.next, onPrev: sel.prev, onToggleSelect: sel.toggleActive, onOpen: sel.openActive, onHelp: showShortcuts, onEscape: sel.clear, onUndo: undoLast },
     listVisible,
   );
 
@@ -409,6 +392,9 @@ export default function RequirementDetailPage() {
   // itself (employer-requirement-detail.ts); the page only displays that quote,
   // so the button can never disagree with what the order charges.
   const nextLockedBatch = requirement.nextUnlockBatch ?? null;
+  const nextBatchTarget: Extract<UnlockTarget, { mode: "batch" }> | null = nextLockedBatch && nextLockedBatch.count > 1
+    ? { mode: "batch", requirementId: requirement.id, count: nextLockedBatch.count, amountPaise: nextLockedBatch.amountPaise, start: nextLockedBatch.start, end: nextLockedBatch.end, remaining: Math.max(0, nextLockedBatch.lockedRemaining - nextLockedBatch.count) }
+    : null;
 
   const batchNote = nextLockedBatch ? unlockRateNote(nextLockedBatch.count, nextLockedBatch.amountPaise) : null;
   const requiredSkills = Array.from(new Set([...requirement.skills, ...requirement.customSkillSets]));
@@ -541,7 +527,7 @@ export default function RequirementDetailPage() {
               </ul>
             )}
   
-            <div aria-live="polite" role="status" className="sr-only">{announcement}</div>
+            <div aria-live="polite" role="status" className="sr-only">{sel.announcement}</div>
             <div aria-live="polite" className={refreshNote ? "mb-3" : undefined}>
               {refreshNote && <InlineNotice tone={refreshNote.tone} live={false}>{refreshNote.text}</InlineNotice>}
             </div>
@@ -623,22 +609,26 @@ export default function RequirementDetailPage() {
                     totalPages={totalPages}
                     onPageChange={setPage}
                     selectedIds={selected}
-                    onSelectedChange={(c, checked) => setSelected((prev) => (prev.has(c.id) === checked ? prev : toggleId(prev, c.id)))}
-                    activeId={activeId}
+                    onSelectedChange={sel.toggle}
+                    pageState={sel.pageState}
+                    onTogglePage={sel.togglePage}
+                    selectionFull={selected.size >= MAX_SELECTION}
+                    activeId={sel.activeId}
                   />
                   <SelectionBar
                     count={selected.size}
+                    offPage={sel.offPage}
                     canChangeStage={!readOnly && !suspended}
                     eligible={bulkEligible}
                     busy={bulkBusy}
                     onCompare={() => router.push(compareHref(requirement.id, [...selected]))}
                     onBulk={requestBulk}
-                    onClear={clearSelection}
+                    onClear={sel.clear}
                   />
                   </>
                 )}
   
-                <UnlockDialog target={unlockTarget} access={access} onClose={() => setUnlockTarget(null)} onUnlocked={handleUnlocked} />
+                <UnlockDialog target={unlockTarget} access={access} onClose={() => setUnlockTarget(null)} onUnlocked={handleUnlocked} nextBatch={nextBatchTarget} onChooseBatch={setUnlockTarget} />
                 <EvidenceDialog
                   matchId={evidenceCandidate?.id ?? null}
                   displayName={evidenceCandidate ? candidateDisplayName(evidenceCandidate) : "Candidate"}
@@ -669,24 +659,14 @@ export default function RequirementDetailPage() {
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>
-                <AlertDialog open={pendingBulk != null} onOpenChange={(o) => { if (!o && !bulkBusy) setPendingBulk(null); }}>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>
-                        {pendingBulk ? `${BULK_COPY[pendingBulk].action} ${bulkEligible[pendingBulk]} candidate${bulkEligible[pendingBulk] === 1 ? "" : "s"}?` : ""}
-                      </AlertDialogTitle>
-                      <AlertDialogDescription>
-                        You can undo this right after, or reopen a rejected candidate later from the Stage menu.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel disabled={bulkBusy}>Cancel</AlertDialogCancel>
-                      <AlertDialogAction onClick={(e) => { e.preventDefault(); if (pendingBulk) void runBulk(pendingBulk); }} disabled={bulkBusy}>
-                        {bulkBusy ? "Saving…" : "Confirm"}
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+                <BulkRejectDialog
+                  open={pendingBulk != null}
+                  names={bulkNames}
+                  skipped={bulkPlan?.skipped ?? 0}
+                  busy={bulkBusy}
+                  onConfirm={() => pendingBulk && void runBulk(pendingBulk)}
+                  onCancel={() => setPendingBulk(null)}
+                />
                 <ShortcutsDialog open={shortcutsOpen} onOpenChange={setShortcutsOpen} />
                 <MessagesDialog
                   matchId={messagesCandidate?.id ?? null}

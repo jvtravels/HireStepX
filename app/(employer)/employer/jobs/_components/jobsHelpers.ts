@@ -60,6 +60,30 @@ export const ACTIVITY_LABEL: Record<RequirementActivity["action"], string> = {
 export const DUE_OPTIONS = ["Overdue", "Due within 7 days", "No due date"];
 export const ARCHIVE_REASONS = ["Position filled", "Budget cut", "Role on hold", "Other"];
 
+/** The archive's bulk reject only changes status; it sends no message, unlike rejecting one candidate. */
+export const ARCHIVE_REJECT_NOTE = "Their status becomes rejected. Archiving doesn't send them a message. You can undo this right after.";
+
+const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
+
+/** "Up to" because the count includes people already hired or rejected, which the bulk reject skips. */
+export function rejectRemainingScope(total: number, interviewing: number | null): string {
+  if (total <= 0) return "No candidates are in this job yet, so nothing will be rejected.";
+  const base = `Up to ${plural(total, "candidate")} will be rejected`;
+  return interviewing && interviewing > 0 ? `${base}, including ${interviewing} in interviews.` : `${base}.`;
+}
+
+export function archiveConfirmLabel(rejecting: boolean, total: number): string {
+  return rejecting && total > 0 ? `Archive and reject up to ${total}` : "Archive";
+}
+
+export function archiveDoneMessage(rejected: number): string {
+  return rejected > 0 ? `Job archived. ${plural(rejected, "candidate")} marked rejected.` : "Job archived.";
+}
+
+export function archiveUndoneMessage(restored: number): string {
+  return `Restored ${plural(restored, "candidate")} to their earlier status.`;
+}
+
 export interface NumberRange {
   min: string;
   max: string;

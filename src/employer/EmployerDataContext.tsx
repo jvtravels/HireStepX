@@ -270,6 +270,10 @@ interface EmployerDataContextValue {
    *  pass `{ firstPageOnly: true }` when only job fields are needed. `total` is the true count. */
   fetchRequirementDetail: (id: string, options?: { firstPageOnly?: boolean }) => Promise<Requirement | null>;
   archiveRequirement: (id: string, options?: { archiveReason?: string; archiveDisposition?: ArchiveDisposition }) => Promise<boolean>;
+  /** Same as archiveRequirement but also returns the candidates "reject_remaining" changed, so the caller can offer Undo. */
+  archiveRequirementResult: (id: string, options?: { archiveReason?: string; archiveDisposition?: ArchiveDisposition }) => Promise<{ ok: boolean; rejectedMatches: ArchivedMatchRecord[] }>;
+  /** Puts candidates rejected by an archive back to the status they held. Resolves to how many were restored, or null on failure. */
+  restoreArchivedMatches: (id: string, matches: readonly ArchivedMatchRecord[]) => Promise<number | null>;
   reopenRequirement: (id: string) => Promise<boolean>;
   updateRequirementStage: (id: string, stage: RequirementStage) => Promise<boolean>;
   updateCandidateStatus: (matchId: string, payload: StatusPayload) => Promise<boolean>;
@@ -292,6 +296,20 @@ interface EmployerDataContextValue {
   uploadMessageAttachment: (matchId: string, file: { fileName: string; contentType: string; fileBase64: string }) => Promise<{ attachmentPath: string; attachmentName: string; attachmentMime: string } | { error: string }>;
   flagMessage: (messageId: string, reason: string, note?: string) => Promise<boolean>;
   fetchMessageAttachmentUrl: (messageId: string) => Promise<string | null>;
+}
+
+export interface ArchivedMatchRecord {
+  id: string;
+  previousStatus: string;
+}
+
+function parseArchivedMatches(data: Record<string, unknown>): ArchivedMatchRecord[] {
+  if (!Array.isArray(data.rejectedMatches)) return [];
+  const out: ArchivedMatchRecord[] = [];
+  for (const m of data.rejectedMatches) {
+    if (isRecord(m) && typeof m.id === "string" && typeof m.previousStatus === "string") out.push({ id: m.id, previousStatus: m.previousStatus });
+  }
+  return out;
 }
 
 const EmployerDataContext = createContext<EmployerDataContextValue | null>(null);
@@ -539,17 +557,30 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
     return { ...detail, candidates, nextPage: next };
   }, []);
 
-  const archiveRequirement = useCallback(async (id: string, options?: { archiveReason?: string; archiveDisposition?: ArchiveDisposition }) => {
+  const archiveRequirementResult = useCallback(async (id: string, options?: { archiveReason?: string; archiveDisposition?: ArchiveDisposition }) => {
     const res = await apiFetch<{ status: string }>(
       `/api/employer-requirement-detail?id=${encodeURIComponent(id)}`,
       { action: "archive", archiveReason: options?.archiveReason, archiveDisposition: options?.archiveDisposition },
       { method: "PATCH" },
     );
-    if (res.ok) {
-      refreshRequirements();
-      return true;
-    }
-    return false;
+    if (!res.ok) return { ok: false, rejectedMatches: [] };
+    refreshRequirements();
+    return { ok: true, rejectedMatches: isRecord(res.data) ? parseArchivedMatches(res.data) : [] };
+  }, [refreshRequirements]);
+
+  const archiveRequirement = useCallback(async (id: string, options?: { archiveReason?: string; archiveDisposition?: ArchiveDisposition }) => {
+    return (await archiveRequirementResult(id, options)).ok;
+  }, [archiveRequirementResult]);
+
+  const restoreArchivedMatches = useCallback(async (id: string, matches: readonly ArchivedMatchRecord[]) => {
+    const res = await apiFetch<{ restored: number }>(
+      `/api/employer-requirement-detail?id=${encodeURIComponent(id)}`,
+      { action: "restore", matches },
+      { method: "PATCH" },
+    );
+    if (!res.ok) return null;
+    refreshRequirements();
+    return isRecord(res.data) && typeof res.data.restored === "number" ? res.data.restored : matches.length;
   }, [refreshRequirements]);
 
   const reopenRequirement = useCallback(async (id: string) => {
@@ -727,6 +758,8 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
     verifyUnlockPayment,
     fetchRequirementDetail,
     archiveRequirement,
+    archiveRequirementResult,
+    restoreArchivedMatches,
     reopenRequirement,
     updateRequirementStage,
     updateCandidateStatus,
@@ -750,7 +783,7 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
     companyStatus, companyStatusLoading, companyStatusError, companyLogoUrl, companyName, companyWebsite, companyGstin, companyBillingName,
     verificationTier, limits, suspended, deletionPending, requirements, requirementsLoading, requirementsError,
     refreshCompanyStatus, submitCompanyProfile, submitCompanyProfileResult, addRequirement, updateRequirement,
-    createUnlockOrder, createUnlockOrderResult, verifyUnlockPayment, fetchRequirementDetail, archiveRequirement,
+    createUnlockOrder, createUnlockOrderResult, verifyUnlockPayment, fetchRequirementDetail, archiveRequirement, archiveRequirementResult, restoreArchivedMatches,
     reopenRequirement, updateRequirementStage, updateCandidateStatus, updateCandidateStatusResult,
     fetchCandidateRequests, createCandidateRequest, cancelCandidateRequest, fetchCandidateEvidence, fetchCandidateResumeUrl, fetchRequirementActivity, fetchUnlockHistory, fetchCredit, fetchDashboard, refreshRequirements, listConversations,
     fetchMessages, sendMessage, sendMessageResult, uploadMessageAttachment, flagMessage, fetchMessageAttachmentUrl,

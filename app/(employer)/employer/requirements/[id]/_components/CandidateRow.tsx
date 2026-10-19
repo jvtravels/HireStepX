@@ -142,6 +142,7 @@ export default function CandidateRow({
   onMessage,
   onStageChange,
   selected,
+  selectDisabled,
   onSelectedChange,
   active,
 }: {
@@ -155,12 +156,16 @@ export default function CandidateRow({
   onMessage: () => void;
   onStageChange: (status: CandidateStatus) => void;
   selected: boolean;
-  onSelectedChange: (checked: boolean) => void;
+  /** The selection limit is reached, so this unselected row can't be added. */
+  selectDisabled: boolean;
+  /** `range` is true for a shift-click, which selects everything between the last click and this row. */
+  onSelectedChange: (checked: boolean, range: boolean) => void;
   /** The row the j/k keyboard cursor is on. */
   active: boolean;
 }) {
   const name = candidateDisplayName(candidate);
   const rowRef = useRef<HTMLTableRowElement | null>(null);
+  const shiftHeld = useRef(false);
   useEffect(() => {
     if (active) rowRef.current?.scrollIntoView({ block: "nearest" });
   }, [active]);
@@ -223,7 +228,10 @@ export default function CandidateRow({
         <div className="flex min-w-0 items-center gap-3">
           <Checkbox
             checked={selected}
-            onCheckedChange={(v) => onSelectedChange(v === true)}
+            disabled={selectDisabled && !selected}
+            // Radix reports the change without the event, so the modifier is read from the click that causes it.
+            onClick={(e) => { shiftHeld.current = e.shiftKey; }}
+            onCheckedChange={(v) => onSelectedChange(v === true, shiftHeld.current)}
             aria-label={`Select ${name}`}
             className="shrink-0 pointer-coarse:size-6 pointer-coarse:after:-inset-3"
           />

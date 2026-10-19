@@ -3,6 +3,7 @@ import {
   CREDIT_BACK_SENTENCE,
   CREDIT_NO_RESPONSE_DAYS,
   CREDIT_ON_DELETION_SENTENCE,
+  GST_SHORT_LINE,
   GST_STATEMENT,
   HIDDEN_BEFORE_UNLOCK,
   PAY_AS_YOU_GO_SENTENCE,
@@ -37,6 +38,12 @@ describe("employer offer copy", () => {
   it("says prices are GST-inclusive and never that GST is added on top", () => {
     expect(GST_STATEMENT).toMatch(/GST-inclusive/);
     expect(GST_STATEMENT).not.toMatch(/GST is added|added or included|plus GST/i);
+  });
+
+  it("keeps the short GST line in step with the full statement", () => {
+    expect(GST_SHORT_LINE).toMatch(/total you pay/);
+    expect(GST_SHORT_LINE).toMatch(/included/);
+    expect(GST_SHORT_LINE).not.toMatch(/GST is added|plus GST|—/i);
   });
 
   it("builds the worked pricing example from the real price table", () => {

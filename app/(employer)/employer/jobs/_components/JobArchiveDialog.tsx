@@ -9,13 +9,17 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import type { RequirementSummary, ArchiveDisposition } from "@/employer/mockData";
 import { tokens as t, fonts as f, textSize } from "@/auth/_tokens";
-import { ARCHIVE_REASONS } from "./jobsHelpers";
+import { ARCHIVE_REASONS, ARCHIVE_REJECT_NOTE, archiveConfirmLabel, rejectRemainingScope } from "./jobsHelpers";
 
 export default function JobArchiveDialog({
-  target, busy, reason, onReasonChange, disposition, onDispositionChange, onConfirm, onClose,
+  target, busy, candidateCount, interviewingCount, reason, onReasonChange, disposition, onDispositionChange, onConfirm, onClose,
 }: {
   target: RequirementSummary | null;
   busy: boolean;
+  /** Candidates on this job, from the job list. */
+  candidateCount: number;
+  /** Candidates in interviews, or null while the pipeline numbers are still loading. */
+  interviewingCount: number | null;
   reason: string;
   onReasonChange: (v: string) => void;
   disposition: ArchiveDisposition;
@@ -24,6 +28,7 @@ export default function JobArchiveDialog({
   onClose: () => void;
 }) {
   const isClosed = target?.status === "closed";
+  const rejecting = disposition === "reject_remaining";
   return (
     <AlertDialog open={!!target} onOpenChange={(open) => { if (!open) onClose(); }}>
       <AlertDialogContent>
@@ -63,6 +68,8 @@ export default function JobArchiveDialog({
                     <Label htmlFor="disposition-reject" style={{ fontWeight: 400 }}>Reject all remaining candidates</Label>
                     <p id="disposition-reject-help" style={{ fontFamily: f.sans, fontSize: textSize.sm, color: t.inkSoft, margin: "2px 0 0" }}>
                       Marks every candidate who isn&apos;t already hired, rejected, or marked not a fit as rejected.
+                      {rejecting && <strong className="mt-1 block font-semibold text-hx-coal">{rejectRemainingScope(candidateCount, interviewingCount)}</strong>}
+                      {rejecting && <span className="mt-0.5 block">{ARCHIVE_REJECT_NOTE}</span>}
                     </p>
                   </div>
                 </div>
@@ -73,7 +80,7 @@ export default function JobArchiveDialog({
         <AlertDialogFooter>
           <AlertDialogCancel disabled={busy}>Cancel</AlertDialogCancel>
           <AlertDialogAction onClick={(e) => { e.preventDefault(); onConfirm(); }} disabled={busy}>
-            {busy ? "Working…" : isClosed ? "Reopen" : "Archive"}
+            {busy ? "Working…" : isClosed ? "Reopen" : archiveConfirmLabel(rejecting, candidateCount)}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

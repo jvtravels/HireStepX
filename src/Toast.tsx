@@ -24,9 +24,11 @@ interface Toast {
 
 interface ToastContextValue {
   toast: (message: string, type?: ToastType, options?: ToastOptions) => void;
+  /** Runs the newest visible toast's action (Undo) from the keyboard. Returns false when there is none. */
+  triggerToastAction: () => boolean;
 }
 
-const ToastContext = createContext<ToastContextValue>({ toast: () => {} });
+const ToastContext = createContext<ToastContextValue>({ toast: () => {}, triggerToastAction: () => false });
 export const useToast = () => useContext(ToastContext);
 
 /* ─── Banner-stacking tunables ───────────────────────────────────────────
@@ -76,6 +78,10 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [isSpread, setIsSpread] = useState(false);
   const timersRef = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map());
+  // Auto-dismiss clocks, kept apart from the leave timers so they can be paused while the pointer or focus is on a toast.
+  const autoRef = useRef<Map<number, { timer: ReturnType<typeof setTimeout> | null; endsAt: number; left: number }>>(new Map());
+  const holdRef = useRef({ hover: false, focus: false });
+  const toastsRef = useRef<Toast[]>([]);
   const leavingScheduledRef = useRef<Set<number>>(new Set());
   const stackRef = useRef<HTMLDivElement | null>(null);
   const reducedMotion = usePrefersReducedMotion();
@@ -85,6 +91,9 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   const dismiss = useCallback((id: number) => {
     const timer = timersRef.current.get(id);
     if (timer) { clearTimeout(timer); timersRef.current.delete(id); }
+    const auto = autoRef.current.get(id);
+    if (auto?.timer) clearTimeout(auto.timer);
+    autoRef.current.delete(id);
     setToasts(prev => prev.map(t => (t.id === id ? { ...t, leaving: true } : t)));
   }, []);
 
@@ -106,8 +115,13 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       });
     });
 
-    const timer = setTimeout(() => dismiss(id), options?.action ? ACTION_TOAST_MS : 4000);
-    timersRef.current.set(id, timer);
+    const ms = options?.action ? ACTION_TOAST_MS : 4000;
+    const held = holdRef.current.hover || holdRef.current.focus;
+    autoRef.current.set(id, {
+      timer: held ? null : setTimeout(() => dismiss(id), ms),
+      endsAt: Date.now() + ms,
+      left: ms,
+    });
 
     // Flush the pre-open (is-enter) state, then release it in the same
     // task — a single rAF hop is skipped whenever the frame clock is
@@ -138,8 +152,44 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   // Cleanup timers on unmount
   useEffect(() => {
     const timers = timersRef.current;
-    return () => { timers.forEach(timer => clearTimeout(timer)); };
+    const auto = autoRef.current;
+    return () => {
+      timers.forEach(timer => clearTimeout(timer));
+      auto.forEach(a => { if (a.timer) clearTimeout(a.timer); });
+    };
   }, []);
+
+  // WCAG 2.2.1: a toast the reader is pointing at or has focus in must not vanish. Pausing keeps the time that was
+  // left, and leaving restarts the clock from there.
+  const syncHold = useCallback(() => {
+    const held = holdRef.current.hover || holdRef.current.focus;
+    autoRef.current.forEach((a, id) => {
+      if (held && a.timer) {
+        clearTimeout(a.timer);
+        a.timer = null;
+        a.left = Math.max(1500, a.endsAt - Date.now());
+      } else if (!held && !a.timer) {
+        a.endsAt = Date.now() + a.left;
+        a.timer = setTimeout(() => dismiss(id), a.left);
+      }
+    });
+  }, [dismiss]);
+
+  // Removing the toast under the pointer or focus fires no leave or blur event, so the hold is re-checked as toasts change.
+  useEffect(() => {
+    const hold = holdRef.current;
+    if (!stackRef.current?.contains(document.activeElement)) hold.focus = false;
+    if (toasts.length === 0) hold.hover = false;
+    syncHold();
+  }, [toasts, syncHold]);
+
+  const triggerToastAction = useCallback((): boolean => {
+    const target = toastsRef.current.find(t => !t.leaving && t.action);
+    if (!target?.action) return false;
+    target.action.onClick();
+    dismiss(target.id);
+    return true;
+  }, [dismiss]);
 
   // Hover spread is geometry, not :hover — the gaps between fanned-out
   // banners belong to no element, and a plain mouseleave on the collapsed
@@ -168,6 +218,8 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener("pointermove", onPointerMove);
   }, [toasts.length]);
 
+  toastsRef.current = toasts;
+
   // Rank among non-leaving toasts gives each one its stacking depth
   // (0 = front); leaving toasts animate out from wherever they were.
   const depthById = new Map<number, number>();
@@ -177,7 +229,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   });
 
   return (
-    <ToastContext.Provider value={{ toast }}>
+    <ToastContext.Provider value={{ toast, triggerToastAction }}>
       {children}
       <div
         aria-live="polite"
@@ -185,7 +237,18 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
         role="status"
         style={{ position: "fixed", bottom: "max(24px, calc(env(safe-area-inset-bottom, 0px) + 12px))", right: "max(24px, env(safe-area-inset-right, 0px))", zIndex: 9999, pointerEvents: "none" }}
       >
-        <div ref={stackRef} style={{ position: "relative", width: `min(${STACK_WIDTH}px, calc(100vw - 48px))` }}>
+        <div
+          ref={stackRef}
+          style={{ position: "relative", width: `min(${STACK_WIDTH}px, calc(100vw - 48px))` }}
+          onMouseEnter={() => { holdRef.current.hover = true; syncHold(); }}
+          onMouseLeave={() => { holdRef.current.hover = false; syncHold(); }}
+          onFocus={() => { holdRef.current.focus = true; syncHold(); }}
+          onBlur={(e) => {
+            if (e.currentTarget.contains(e.relatedTarget)) return;
+            holdRef.current.focus = false;
+            syncHold();
+          }}
+        >
           {toasts.map((t) => {
             const depth = t.leaving ? MAX_DEPTH + 1 : (depthById.get(t.id) ?? 0);
             const color = t.type === "success" ? c.sage : t.type === "error" ? c.ember : T.indigo;

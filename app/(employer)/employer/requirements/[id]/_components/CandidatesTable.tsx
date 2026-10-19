@@ -7,7 +7,9 @@ import { TablePaginationFooter } from "@/components/TablePaginationFooter";
 import { Table, TableBody, TableCaption, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { InfoTip } from "@/employer/_panelParts";
 import type { Candidate, CandidateStatus } from "@/employer/mockData";
+import { Checkbox } from "@/components/ui/checkbox";
 import CandidateRow from "./CandidateRow";
+import { MAX_SELECTION } from "./shortlistSelection";
 import { CAND_TABLE_CSS } from "./candidateTableStyles";
 import { COLUMN_LABEL, SORT_OPTIONS, type SortColumn } from "./candidateTableModel";
 
@@ -28,6 +30,9 @@ export default function CandidatesTable({
   onStageChange,
   selectedIds,
   onSelectedChange,
+  pageState,
+  onTogglePage,
+  selectionFull,
   activeId,
   totalCount,
   filteredCount,
@@ -49,7 +54,10 @@ export default function CandidatesTable({
   onMessage: (c: Candidate) => void;
   onStageChange: (c: Candidate, status: CandidateStatus) => void;
   selectedIds: ReadonlySet<string>;
-  onSelectedChange: (c: Candidate, checked: boolean) => void;
+  onSelectedChange: (c: Candidate, checked: boolean, range: boolean) => void;
+  pageState: "none" | "some" | "all";
+  onTogglePage: () => void;
+  selectionFull: boolean;
   activeId: string | null;
   totalCount: number;
   filteredCount: number;
@@ -104,6 +112,21 @@ export default function CandidatesTable({
         </select>
       </div>
       <div className="cand-shell flex flex-none flex-col overflow-clip rounded-xl border border-hx-line bg-white">
+        {!readOnly && !suspended && (
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-hx-line bg-hx-row px-3 py-1.5">
+            <label htmlFor="select-page" className="flex cursor-pointer items-center gap-2.5 text-[13px] font-semibold text-hx-coal pointer-coarse:min-h-11">
+              <Checkbox
+                id="select-page"
+                checked={pageState === "all"}
+                onCheckedChange={onTogglePage}
+                disabled={rows.length === 0 || (selectionFull && pageState === "none")}
+                className="shrink-0 pointer-coarse:size-6"
+              />
+              Select all on this page
+            </label>
+            <span className="text-[13px] text-hx-ink-soft">Up to {MAX_SELECTION} at a time. Shift-click selects a range.</span>
+          </div>
+        )}
         <div className="relative">
         <div
           ref={scrollRef}
@@ -187,7 +210,8 @@ export default function CandidatesTable({
                   onMessage={() => onMessage(c)}
                   onStageChange={(status) => onStageChange(c, status)}
                   selected={selectedIds.has(c.id)}
-                  onSelectedChange={(checked) => onSelectedChange(c, checked)}
+                  selectDisabled={selectionFull}
+                  onSelectedChange={(checked, range) => onSelectedChange(c, checked, range)}
                   active={activeId === c.id}
                 />
               ))}

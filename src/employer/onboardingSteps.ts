@@ -9,10 +9,30 @@ export interface ChecklistStep {
   cta: string;
 }
 
-/** Whether any candidate has moved past To review, from the dashboard feed. Null while it is unknown. */
-export function hasProgressedCandidate(dashboard: EmployerDashboardData | null): boolean | null {
+const PROFILE_OPENED_KEY = "hirestepx-employer-profile-opened";
+
+/** Remembers, on this device, that the employer has opened a candidate's profile. */
+export function markProfileOpened(): void {
+  try {
+    localStorage.setItem(PROFILE_OPENED_KEY, "1");
+  } catch { /* storage blocked: the dashboard feed still covers stage changes */ }
+}
+
+export function hasOpenedProfile(): boolean {
+  try {
+    return localStorage.getItem(PROFILE_OPENED_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+/** Whether the employer has reviewed a match: opened a profile on this device, or changed any candidate's stage (shortlist, reject, interview and so on). Null while the dashboard feed is unknown and nothing local says yes. */
+export function hasProgressedCandidate(dashboard: EmployerDashboardData | null, openedProfile = false): boolean | null {
+  if (openedProfile) return true;
   if (!dashboard) return null;
-  return dashboard.jobs.some((j) => j.interviewing > 0 || j.hired > 0) || dashboard.upcomingInterviews.length > 0;
+  return dashboard.jobs.some((j) => j.interviewing > 0 || j.hired > 0)
+    || dashboard.upcomingInterviews.length > 0
+    || dashboard.activity.some((a) => a.actor === "You");
 }
 
 /** The job whose shortlist is worth opening first: the one with the most strong matches, else the one with the most candidates. */

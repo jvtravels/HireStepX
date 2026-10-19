@@ -1,10 +1,10 @@
 import { describe, it, expect } from "vitest";
 import type { RequirementSummary } from "../employer/mockData";
 import type { EmployerDashboardData } from "../employer/dashboardData";
-import { deriveOnboardingSteps, firstShortlistJob, hasProgressedCandidate } from "../employer/onboardingSteps";
+import { deriveOnboardingSteps, firstShortlistJob, hasOpenedProfile, hasProgressedCandidate, markProfileOpened } from "../employer/onboardingSteps";
 
 const job = (id: string, topMatches: number, candidateCount: number) => ({ id, candidateCount, aiScreening: { topMatches } }) as RequirementSummary;
-const dash = (over: Partial<EmployerDashboardData>) => ({ jobs: [], upcomingInterviews: [], ...over }) as EmployerDashboardData;
+const dash = (over: Partial<EmployerDashboardData>) => ({ jobs: [], upcomingInterviews: [], activity: [], ...over }) as EmployerDashboardData;
 
 describe("onboarding steps", () => {
   it("starts with nothing done and points the first step at the job form", () => {
@@ -42,6 +42,25 @@ describe("onboarding steps", () => {
     expect(hasProgressedCandidate(null)).toBeNull();
     expect(hasProgressedCandidate(dash({ jobs: [{ requirementId: "a", interviewing: 0, hired: 0, lastUpdatedAt: null }] }))).toBe(false);
     expect(hasProgressedCandidate(dash({ jobs: [{ requirementId: "a", interviewing: 1, hired: 0, lastUpdatedAt: null }] }))).toBe(true);
+  });
+
+  it("counts any stage change the employer made, even a reject or a shortlist", () => {
+    const you = { id: "1", actor: "You" as const, text: "You rejected A", createdAt: "2026-01-01", href: null };
+    expect(hasProgressedCandidate(dash({ activity: [you] }))).toBe(true);
+    expect(hasProgressedCandidate(dash({ activity: [{ ...you, actor: "Candidate" }] }))).toBe(false);
+  });
+
+  it("counts opening a profile, including before the dashboard has loaded", () => {
+    expect(hasProgressedCandidate(null, true)).toBe(true);
+    expect(hasProgressedCandidate(dash({}), true)).toBe(true);
+    expect(hasProgressedCandidate(dash({}), false)).toBe(false);
+  });
+
+  it("remembers an opened profile on this device", () => {
+    localStorage.removeItem("hirestepx-employer-profile-opened");
+    expect(hasOpenedProfile()).toBe(false);
+    markProfileOpened();
+    expect(hasOpenedProfile()).toBe(true);
   });
 
   it("picks the job with the most strong matches, then the most candidates", () => {

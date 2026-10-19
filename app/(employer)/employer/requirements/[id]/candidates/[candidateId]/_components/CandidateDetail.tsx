@@ -6,6 +6,7 @@ import StatusTabs from "@/components/StatusTabs";
 import { useEmployerData } from "@/employer/EmployerDataContext";
 import { useEmployerBreadcrumb } from "@/employer/EmployerShell";
 import { useToast } from "@/Toast";
+import { markProfileOpened } from "@/employer/onboardingSteps";
 import { useEmployerAccess } from "@/employer/_useEmployerAccess";
 import { ErrorRetry, EmptyNote, LinkCta, PageSkeleton, SuspendedBanner } from "@/employer/_requirementAtoms";
 import UnlockDialog from "../../../_components/UnlockDialog";
@@ -57,6 +58,9 @@ export default function CandidateDetail({ requirementId, matchId }: { requiremen
   const { requirement, candidate } = d;
   const shortlistHref = `/employer/requirements/${requirementId}`;
   const ready = !!candidate && !d.unavailable;
+  useEffect(() => {
+    if (ready) markProfileOpened();
+  }, [ready]);
 
   // A link with #evidence or #resume opens on that tab.
   useEffect(() => {
@@ -155,6 +159,8 @@ export default function CandidateDetail({ requirementId, matchId }: { requiremen
         notice={d.notice}
         shortlistHref={shortlistHref}
         changeStatus={d.changeStatus}
+        candidateId={candidate.id}
+        currentStatus={candidate.candidateStatus}
       />
 
       <UnlockDialog

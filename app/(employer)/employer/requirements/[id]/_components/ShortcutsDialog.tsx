@@ -8,6 +8,7 @@ export const SHORTLIST_SHORTCUTS: ReadonlyArray<{ keys: string; does: string }> 
   { keys: "k", does: "Previous candidate" },
   { keys: "x", does: "Select or deselect the candidate" },
   { keys: "e", does: "Open the candidate's profile" },
+  { keys: "z", does: "Undo the last stage change while its notice is showing" },
   { keys: "Esc", does: "Clear the selection" },
   { keys: "?", does: "Show this list" },
 ];

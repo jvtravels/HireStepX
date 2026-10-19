@@ -10,13 +10,17 @@ import type { Candidate } from "@/employer/mockData";
 import { tokens as t, fonts as f, textSize } from "@/auth/_tokens";
 import { Card, CandidateStatusChip, Eyebrow, ScoreChip, SkillTag } from "@/employer/_atoms";
 import { EmptyNote, ErrorRetry, LinkCta, PageSkeleton } from "@/employer/_requirementAtoms";
+import { interviewScore, scoreTone } from "@/employer/_jobDetailHelpers";
 import { candidateDisplayName } from "../_components/requirementFormat";
 import { MIN_COMPARE, parseCompareIds } from "../_components/shortlistSelection";
 import { displaySkillName } from "../candidates/[candidateId]/_components/helpers";
 
 const COMPARE_CSS = `
 .cmp-back:focus-visible { outline: 2px solid ${t.indigo}; outline-offset: 2px; border-radius: 4px; }
-.cmp-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.cmp-table { width: 100%; min-width: 560px; border-collapse: collapse; table-layout: fixed; }
+.cmp-name-link { color: inherit; text-decoration: none; }
+.cmp-name-link:hover { text-decoration: underline; }
+.cmp-name-link:focus-visible { outline: 2px solid ${t.indigo}; outline-offset: 2px; border-radius: 4px; }
 .cmp-table th, .cmp-table td { padding: 12px; text-align: left; vertical-align: top; border-bottom: 1px solid ${t.line}; overflow-wrap: anywhere; }
 .cmp-table tbody tr:last-child th, .cmp-table tbody tr:last-child td { border-bottom: 0; }
 .cmp-table thead th { background: ${t.rowTint}; }
@@ -28,6 +32,8 @@ const COMPARE_CSS = `
 `;
 
 const cellText = { fontFamily: f.sans, fontSize: textSize.base, color: t.coal } as const;
+const faintText = { ...cellText, color: t.inkFaint } as const;
+const SCORE_TEXT = { success: "text-hx-success-ink", warning: "text-hx-warning-ink", error: "text-hx-error-ink" } as const;
 const mutedText = { fontFamily: f.sans, fontSize: textSize.sm, color: t.inkFaint, marginTop: 4 } as const;
 
 function BackLink({ requirementId }: { requirementId: string }) {
@@ -42,11 +48,13 @@ function BackLink({ requirementId }: { requirementId: string }) {
   );
 }
 
-function NameCell({ candidate }: { candidate: Candidate }) {
+function NameCell({ candidate, requirementId }: { candidate: Candidate; requirementId: string }) {
   return (
-    <>
-      <div style={{ fontFamily: f.sans, fontSize: textSize.lg, fontWeight: 700, color: t.coal }}>{candidateDisplayName(candidate)}</div>
-    </>
+    <div style={{ fontFamily: f.sans, fontSize: textSize.lg, fontWeight: 700, color: t.coal }}>
+      <Link href={`/employer/requirements/${requirementId}/candidates/${candidate.id}`} className="cmp-name-link">
+        {candidateDisplayName(candidate)}
+      </Link>
+    </div>
   );
 }
 
@@ -78,12 +86,17 @@ const ROWS: CompareRow[] = [
     ),
   },
   {
-    label: "Practice score (lifetime)",
-    render: (c) => (
-      <span style={cellText}>
-        <strong>{c.rosterScore}</strong>
-      </span>
-    ),
+    // The same figure and rule as the shortlist's evidence column: a never-practised candidate has no score, not a default 50.
+    label: "Interview score",
+    render: (c) => {
+      const score = interviewScore(c);
+      if (score == null) return <span style={faintText}>No graded interviews</span>;
+      return (
+        <span className={SCORE_TEXT[scoreTone(score)]} style={{ fontFamily: cellText.fontFamily, fontSize: cellText.fontSize }}>
+          <strong>{score}</strong>/100
+        </span>
+      );
+    },
   },
   {
     label: "Practice sessions",
@@ -194,6 +207,9 @@ export default function ComparePage() {
         </p>
       )}
       <Card pad={0} aria-label={`Comparison of ${namesLabel}`} style={{ overflow: "hidden", boxShadow: "none" }}>
+        {/* Keyboard users can only scroll an overflow region they can focus. */}
+        {/* eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex */}
+        <div className="overflow-x-auto focus-visible:outline-2 focus-visible:-outline-offset-2" tabIndex={0} role="region" aria-label="Comparison table. Scroll sideways to see every candidate.">
         <table className="cmp-table">
           <caption className="sr-only">
             Side-by-side comparison of {namesLabel} for {requirement.title}
@@ -205,7 +221,7 @@ export default function ComparePage() {
               </td>
               {chosen.map((c) => (
                 <th key={c.id} scope="col">
-                  <NameCell candidate={c} />
+                  <NameCell candidate={c} requirementId={requirement.id} />
                 </th>
               ))}
             </tr>
@@ -223,6 +239,7 @@ export default function ComparePage() {
             ))}
           </tbody>
         </table>
+        </div>
       </Card>
     </div>
   );

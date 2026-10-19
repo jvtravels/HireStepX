@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import type { Candidate, CandidateStatus } from "../employer/mockData";
 import {
-  bulkSummary, canCompare, compareHint, compareHref, mapWithConcurrency, parseCompareIds, planBulkMove,
-  pruneSelection, reverse, toggleId, undoable,
+  MAX_SELECTION, bulkSummary, canCompare, compareHint, compareHref, idsBetween, mapWithConcurrency, parseCompareIds, planBulkMove,
+  pruneSelection, reverse, selectionLimitHint, setChecked, setManyChecked, singleSummary, toggleId, undoable,
 } from "../../app/(employer)/employer/requirements/[id]/_components/shortlistSelection";
 import { DEFAULT_VIEW, parseShortlistView, writeShortlistView } from "../../app/(employer)/employer/requirements/[id]/_components/shortlistUrlState";
 
@@ -23,6 +23,38 @@ describe("selection", () => {
     expect([...pruneSelection(sel, [{ id: "1" }, { id: "2" }])]).toEqual(["1"]);
     const same = new Set(["1"]);
     expect(pruneSelection(same, [{ id: "1" }])).toBe(same);
+  });
+
+  it("refuses to check past the limit and says so", () => {
+    const full = new Set(Array.from({ length: MAX_SELECTION }, (_, i) => `id${i}`));
+    expect(setChecked(full, "extra", true)).toEqual({ next: full, capped: true });
+    expect(setChecked(full, "id0", false).next.size).toBe(MAX_SELECTION - 1);
+    expect(setChecked(new Set(["a"]), "a", true).capped).toBe(false);
+  });
+
+  it("fills a range up to the limit and reports how many were refused", () => {
+    const ids = Array.from({ length: 25 }, (_, i) => `r${i}`);
+    const { next, capped } = setManyChecked(new Set(), ids, true);
+    expect(next.size).toBe(MAX_SELECTION);
+    expect(capped).toBe(5);
+    expect(setManyChecked(next, ids, false).next.size).toBe(0);
+  });
+
+  it("finds the rows between two clicks in either direction, and none when one is off the page", () => {
+    const rows = ["a", "b", "c", "d"].map((id) => ({ id }));
+    expect(idsBetween(rows, "b", "d")).toEqual(["b", "c", "d"]);
+    expect(idsBetween(rows, "d", "b")).toEqual(["b", "c", "d"]);
+    expect(idsBetween(rows, "b", "zzz")).toEqual([]);
+  });
+
+  it("tells the employer about the limit, firmer once it is reached", () => {
+    expect(selectionLimitHint(3)).toBe("Select up to 20 at a time.");
+    expect(selectionLimitHint(20)).toContain("reached the limit of 20");
+  });
+
+  it("says a rejection notified the candidate, and a move to another stage does not", () => {
+    expect(singleSummary("Asha", "rejected")).toBe("Asha moved to Rejected. They've been notified.");
+    expect(singleSummary("Asha", "shortlisted")).not.toContain("notified");
   });
 
   it("allows comparing two or three and explains why not otherwise", () => {
@@ -66,7 +98,7 @@ describe("bulk moves and undo", () => {
   });
 
   it("summarises partial results in words", () => {
-    expect(bulkSummary("rejected", 2, 1, 1)).toBe("Rejected 2 candidates. 1 didn't save. 1 skipped because they can't be rejected from their stage.");
+    expect(bulkSummary("rejected", 2, 1, 1)).toBe("Rejected 2 candidates. They've been notified. 1 didn't save. 1 skipped because they can't be rejected from their stage.");
     expect(bulkSummary("shortlisted", 0, 0, 2)).toContain("Couldn't update any candidates.");
   });
 

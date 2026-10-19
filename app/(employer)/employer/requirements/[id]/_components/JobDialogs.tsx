@@ -11,6 +11,8 @@ import { HelpText, OutlineCta } from "@/employer/_atoms";
 import { useEmployerData, type Requirement, type UnlockPurchase } from "@/employer/EmployerDataContext";
 import type { ArchiveDisposition } from "@/employer/mockData";
 import { InlineNotice } from "@/employer/_requirementAtoms";
+import { useToast } from "@/Toast";
+import { ARCHIVE_REJECT_NOTE, archiveConfirmLabel, archiveDoneMessage, archiveUndoneMessage, rejectRemainingScope } from "../../../jobs/_components/jobsHelpers";
 import { formatPaise } from "../../../../../../server-handlers/_unlock-pricing";
 
 function formatPrice(paise: number, creditPaise = 0): string {
@@ -110,17 +112,34 @@ export function ArchiveDialog({
   requirement: Requirement;
   onArchived: () => void;
 }) {
-  const { archiveRequirement } = useEmployerData();
+  const { archiveRequirementResult, restoreArchivedMatches } = useEmployerData();
+  const { toast } = useToast();
   const [reason, setReason] = useState("");
   const [disposition, setDisposition] = useState<ArchiveDisposition>("keep_candidates");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const total = requirement.total ?? requirement.candidates.length;
+  // Only exact when the whole shortlist is loaded; otherwise the dialog just omits it.
+  const interviewing = requirement.candidates.length >= total ? requirement.candidates.filter((c) => c.candidateStatus === "interviewing").length : null;
+
   const submit = async () => {
     setSaving(true);
     setError(null);
-    const ok = await archiveRequirement(requirement.id, { archiveReason: reason.trim() || undefined, archiveDisposition: disposition });
+    const { ok, rejectedMatches } = await archiveRequirementResult(requirement.id, { archiveReason: reason.trim() || undefined, archiveDisposition: disposition });
     setSaving(false);
+    if (ok && rejectedMatches.length > 0) {
+      toast(archiveDoneMessage(rejectedMatches.length), "success", {
+        action: {
+          label: "Undo",
+          onClick: async () => {
+            const restored = await restoreArchivedMatches(requirement.id, rejectedMatches);
+            toast(restored === null ? "Couldn't restore those candidates. Please try again." : archiveUndoneMessage(restored), restored === null ? "error" : "success");
+            if (restored !== null) onArchived();
+          },
+        },
+      });
+    }
     if (!ok) {
       setError("Couldn't archive this job. Check your connection and try again. If your account is suspended, archiving is turned off.");
       return;
@@ -164,7 +183,7 @@ export function ArchiveDialog({
               </div>
             </RadioGroup>
             {disposition === "reject_remaining" && (
-              <HelpText>Rejected candidates can&apos;t be moved back into the pipeline.</HelpText>
+              <HelpText>{rejectRemainingScope(total, interviewing)} {ARCHIVE_REJECT_NOTE}</HelpText>
             )}
           </div>
           {error && <InlineNotice tone="error">{error}</InlineNotice>}
@@ -172,7 +191,7 @@ export function ArchiveDialog({
         <DialogFooter>
           <OutlineCta onClick={() => onOpenChange(false)} disabled={saving}>Cancel</OutlineCta>
           <Button type="button" variant="destructive" onClick={submit} disabled={saving} className="pointer-coarse:h-11">
-            {saving ? "Archiving…" : "Archive job"}
+            {saving ? "Archiving…" : disposition === "reject_remaining" ? archiveConfirmLabel(true, total) : "Archive job"}
           </Button>
         </DialogFooter>
       </DialogContent>

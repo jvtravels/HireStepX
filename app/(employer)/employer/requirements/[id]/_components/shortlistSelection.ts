@@ -9,12 +9,44 @@ export const MIN_COMPARE = 2;
 export const MAX_COMPARE = 3;
 /** How many status calls run at once. Low enough to stay inside the per-user rate limit. */
 export const BULK_CONCURRENCY = 3;
+/** The status endpoint allows 20 calls a minute per employer and a bulk move is one call per candidate, so a
+    selection past this would fail partway. Undo of a full bulk move is one call per candidate as well. */
+export const MAX_SELECTION = 20;
 
 export function toggleId(selected: ReadonlySet<string>, id: string): Set<string> {
   const next = new Set(selected);
   if (next.has(id)) next.delete(id);
   else next.add(id);
   return next;
+}
+
+/** Checks or unchecks one id; checking past MAX_SELECTION is refused and reported so the caller can say why. */
+export function setChecked(selected: Set<string>, id: string, checked: boolean): { next: Set<string>; capped: boolean } {
+  if (selected.has(id) === checked) return { next: selected, capped: false };
+  if (checked && selected.size >= MAX_SELECTION) return { next: selected, capped: true };
+  return { next: toggleId(selected, id), capped: false };
+}
+
+/** Checks or unchecks many ids at once (select-all, shift-click range), stopping at MAX_SELECTION. `capped` is
+    how many checks were refused. */
+export function setManyChecked(selected: ReadonlySet<string>, ids: readonly string[], checked: boolean): { next: Set<string>; capped: number } {
+  const next = new Set(selected);
+  let capped = 0;
+  for (const id of ids) {
+    if (!checked) next.delete(id);
+    else if (next.has(id)) continue;
+    else if (next.size >= MAX_SELECTION) capped += 1;
+    else next.add(id);
+  }
+  return { next, capped };
+}
+
+/** The ids between two rows, both included, in table order. Empty when either row is not on the page. */
+export function idsBetween(rows: ReadonlyArray<Pick<Candidate, "id">>, fromId: string, toId: string): string[] {
+  const a = rows.findIndex((r) => r.id === fromId);
+  const b = rows.findIndex((r) => r.id === toId);
+  if (a === -1 || b === -1) return [];
+  return rows.slice(Math.min(a, b), Math.max(a, b) + 1).map((r) => r.id);
 }
 
 /** Selection never keeps an id whose candidate has left the shortlist. */
@@ -27,6 +59,11 @@ export function pruneSelection(selected: Set<string>, candidates: ReadonlyArray<
 
 export function canCompare(count: number): boolean {
   return count >= MIN_COMPARE && count <= MAX_COMPARE;
+}
+
+/** What the bar says about the selection limit. */
+export function selectionLimitHint(count: number): string {
+  return count >= MAX_SELECTION ? `You've reached the limit of ${MAX_SELECTION}. Act on these or clear some first.` : `Select up to ${MAX_SELECTION} at a time.`;
 }
 
 /** Why Compare is off, in words the bar can show; null when it is on. */
@@ -88,14 +125,14 @@ export function reverse(changes: readonly StageChange[]): StageChange[] {
 
 export function bulkSummary(target: BulkTarget, done: number, failed: number, skipped: number): string {
   const noun = done === 1 ? "candidate" : "candidates";
-  const parts = [done > 0 ? `${BULK_COPY[target].done} ${done} ${noun}.` : `Couldn't update any candidates.`];
+  const parts = [done > 0 ? `${BULK_COPY[target].done} ${done} ${noun}.${target === "rejected" ? " They've been notified." : ""}` : `Couldn't update any candidates.`];
   if (failed > 0 && done > 0) parts.push(`${failed} didn't save.`);
   if (skipped > 0) parts.push(`${skipped} skipped because ${target === "rejected" ? "they can't be rejected from their stage" : "they are not rejected"}.`);
   return parts.join(" ");
 }
 
 export function singleSummary(name: string, to: CandidateStatus): string {
-  return `${name} moved to ${CANDIDATE_STATUS_LABEL[to]}`;
+  return `${name} moved to ${CANDIDATE_STATUS_LABEL[to]}${to === "rejected" ? ". They've been notified." : ""}`;
 }
 
 /** Runs `fn` over `items` with at most `limit` in flight, keeping result order. */

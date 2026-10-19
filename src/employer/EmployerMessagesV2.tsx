@@ -26,6 +26,7 @@ import LoadingScreen from "@/_LoadingScreen";
 import { tokens as t, fonts as f } from "../auth/_tokens";
 import { useEmployerData, type ConversationContext, type ConversationMessage, type ConversationSummary, type CandidateEvidence } from "./EmployerDataContext";
 import { useToast } from "../Toast";
+import { REJECT_NOTIFY_NOTE } from "../../app/(employer)/employer/requirements/[id]/_components/requirementFormat";
 import { playUiSound } from "../uiSounds";
 import { OutlineCta, PrimaryCta, Pill, ScoreChip, CANDIDATE_STATUS_LABEL } from "./_atoms";
 import { MaskedIdentity, isMaskedName } from "./_atoms2";
@@ -348,7 +349,7 @@ export default function EmployerMessagesV2() {
       setRejectError(statusErrorCopy(res.error));
       return;
     }
-    toast("Candidate marked as rejected", "success");
+    toast("Candidate marked as rejected. They've been notified.", "success");
     setRejectOpen(false);
     setRejectNote("");
     loadThread(activeMatchId, false);
@@ -562,7 +563,7 @@ export default function EmployerMessagesV2() {
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Reject this candidate?</DialogTitle>
-                  <DialogDescription>Marks {activeName} as rejected for {active.roleTitle}. You can reopen a rejected candidate later from the Stage menu.</DialogDescription>
+                  <DialogDescription>Marks {activeName} as rejected for {active.roleTitle}. {REJECT_NOTIFY_NOTE}</DialogDescription>
                 </DialogHeader>
                 <div style={{ display: "grid", gap: 8, padding: "4px 0" }}>
                   <Label htmlFor="msg-reject-note">Private note (optional)</Label>

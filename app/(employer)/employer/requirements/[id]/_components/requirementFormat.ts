@@ -188,9 +188,12 @@ export function isFinalStatus(status: Candidate["candidateStatus"]): boolean {
 
 /** One sentence on whether a status change can be walked back, used by every
     confirm dialog so the copy can't drift from the server transition table. */
+/** Rejecting posts to the candidate's thread and notifies them as it saves, and reopening can't take that back. */
+export const REJECT_NOTIFY_NOTE = "The candidate is notified right away. Undo or reopening restores your pipeline but doesn't unsend that notification.";
+
 export function reversibilityNote(status: Candidate["candidateStatus"]): string {
   return status === "rejected"
-    ? "You can reopen a rejected candidate later from the Stage menu."
+    ? REJECT_NOTIFY_NOTE
     : isFinalStatus(status)
       ? "This is a final status. It can't be changed afterwards."
       : "You can keep moving them through the pipeline afterwards.";
