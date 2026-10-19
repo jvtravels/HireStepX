@@ -95,7 +95,8 @@ export default function EmployerMessagesV2() {
   const [messages, setMessages] = useState<ConversationMessage[]>([]);
   const [context, setContext] = useState<ConversationContext | null>(null);
   const [threadLoading, setThreadLoading] = useState(false);
-  const [draft, setDraft] = useState("");
+  /* Drafts are keyed by match id so typing to one candidate can never be sent to another. */
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [sending, setSending] = useState(false);
   const [attaching, setAttaching] = useState(false);
   const [composerError, setComposerError] = useState<string | null>(null);
@@ -105,6 +106,21 @@ export default function EmployerMessagesV2() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const threadHeadingRef = useRef<HTMLDivElement>(null);
   const activeMatchRef = useRef<string | null>(activeMatchId);
+  const draft = activeMatchId ? drafts[activeMatchId] ?? "" : "";
+  const setDraftFor = useCallback((matchId: string, value: string) => {
+    setDrafts((prev) => {
+      if ((prev[matchId] ?? "") === value) return prev;
+      if (value === "") {
+        const next = { ...prev };
+        delete next[matchId];
+        return next;
+      }
+      return { ...prev, [matchId]: value };
+    });
+  }, []);
+  const setDraft = (value: string) => {
+    if (activeMatchId) setDraftFor(activeMatchId, value);
+  };
   const restoreFocusRef = useRef<string | null>(null);
 
   const [evidence, setEvidence] = useState<CandidateEvidence | null>(null);
@@ -187,6 +203,10 @@ export default function EmployerMessagesV2() {
     setComposerError(null);
     setUnlockBlocked(false);
     setAnnouncement({ n: 0, text: "" });
+    // The reject dialog belongs to one candidate: its note and error must not follow the user to the next.
+    setRejectOpen(false);
+    setRejectNote("");
+    setRejectError(null);
     if (!activeMatchId) return;
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout>;
@@ -247,7 +267,9 @@ export default function EmployerMessagesV2() {
   }, [activeMatchId]);
 
   /* 402 becomes a persistent composer block (with an unlock CTA); anything else is a recoverable inline error. */
-  const handleSendFailure = (err: { error: string; status?: number; code?: string }) => {
+  const handleSendFailure = (matchId: string, err: { error: string; status?: number; code?: string }) => {
+    // A slow failure for a thread the user already left must not block or annotate the one they are in now.
+    if (activeMatchRef.current !== matchId) return;
     if (err.code === "unlock_required" || err.status === 402) {
       setUnlockBlocked(true);
       return;
@@ -256,24 +278,27 @@ export default function EmployerMessagesV2() {
   };
 
   const handleSend = async () => {
+    const matchId = activeMatchId;
     const text = draft.trim();
-    if (!text || !activeMatchId || sending || attaching) return;
+    if (!text || !matchId || sending || attaching) return;
     setSending(true);
     setComposerError(null);
-    const sent = await sendMessageResult(activeMatchId, { body: text });
+    const sent = await sendMessageResult(matchId, { body: text });
     setSending(false);
     if (!sent.ok) {
-      handleSendFailure(sent.error);
+      handleSendFailure(matchId, sent.error);
       return;
     }
     playUiSound("send");
-    setDraft("");
-    loadThread(activeMatchId, false);
+    // Clear the draft of the thread that was sent to, even if the user has since moved to another thread.
+    setDraftFor(matchId, "");
+    loadThread(matchId, false);
     loadConversations();
   };
 
   const handleAttach = async (file: File) => {
-    if (!activeMatchId) return;
+    const matchId = activeMatchId;
+    if (!matchId) return;
     setComposerError(null);
     if (file.size > ATTACHMENT_MAX_BYTES) {
       setComposerError(`"${file.name}" is too large. Attachments can be 8 MB at most.`);
@@ -292,25 +317,25 @@ export default function EmployerMessagesV2() {
       return;
     }
     const fileBase64 = dataUrl.slice(dataUrl.indexOf(",") + 1);
-    const uploaded = await uploadMessageAttachment(activeMatchId, { fileName: file.name, contentType: file.type, fileBase64 });
+    const uploaded = await uploadMessageAttachment(matchId, { fileName: file.name, contentType: file.type, fileBase64 });
     if ("error" in uploaded) {
       setAttaching(false);
       setComposerError(uploaded.error || `Couldn't upload "${file.name}". Please try again.`);
       return;
     }
-    const sent = await sendMessageResult(activeMatchId, {
+    const sent = await sendMessageResult(matchId, {
       attachmentPath: uploaded.attachmentPath,
       attachmentName: uploaded.attachmentName,
       attachmentMime: uploaded.attachmentMime,
     });
     setAttaching(false);
     if (!sent.ok) {
-      if (sent.error.code === "unlock_required" || sent.error.status === 402) handleSendFailure(sent.error);
-      else setComposerError(`"${file.name}" uploaded but wasn't sent. ${sent.error.error || "Please try again."}`);
+      if (sent.error.code === "unlock_required" || sent.error.status === 402) handleSendFailure(matchId, sent.error);
+      else if (activeMatchRef.current === matchId) setComposerError(`"${file.name}" uploaded but wasn't sent. ${sent.error.error || "Please try again."}`);
       return;
     }
     playUiSound("send");
-    loadThread(activeMatchId, false);
+    loadThread(matchId, false);
     loadConversations();
   };
 
@@ -339,20 +364,31 @@ export default function EmployerMessagesV2() {
     return { ok: true };
   };
 
+  const closeReject = () => {
+    setRejectOpen(false);
+    setRejectNote("");
+    setRejectError(null);
+  };
+
   const handleReject = async () => {
-    if (!activeMatchId) return;
+    const matchId = activeMatchId;
+    if (!matchId) return;
     setRejectSubmitting(true);
     setRejectError(null);
-    const res = await updateCandidateStatusResult(activeMatchId, { candidateStatus: "rejected", note: rejectNote.trim() || undefined, candidateMessage: "" });
+    const res = await updateCandidateStatusResult(matchId, { candidateStatus: "rejected", note: rejectNote.trim() || undefined, candidateMessage: "" });
     setRejectSubmitting(false);
+    if (activeMatchRef.current !== matchId) {
+      if (res.ok) toast("Candidate marked as rejected. They've been notified.", "success");
+      loadConversations();
+      return;
+    }
     if (!res.ok) {
       setRejectError(statusErrorCopy(res.error));
       return;
     }
     toast("Candidate marked as rejected. They've been notified.", "success");
-    setRejectOpen(false);
-    setRejectNote("");
-    loadThread(activeMatchId, false);
+    closeReject();
+    loadThread(matchId, false);
     loadConversations();
   };
 
@@ -451,7 +487,7 @@ export default function EmployerMessagesV2() {
               </PrimaryCta>
             )}
             {!["hired", "rejected", "not_a_fit"].includes(active.candidateStatus) && (
-              <OutlineCta size="sm" disabled={suspended} title={suspendedTitle} onClick={() => { setRejectError(null); setRejectOpen(true); }}>
+              <OutlineCta size="sm" disabled={suspended} title={suspendedTitle} onClick={() => { setRejectNote(""); setRejectError(null); setRejectOpen(true); }}>
                 Reject
               </OutlineCta>
             )}
@@ -559,7 +595,7 @@ export default function EmployerMessagesV2() {
               onSubmit={handleSendInvite}
             />
 
-            <Dialog open={rejectOpen} onOpenChange={setRejectOpen}>
+            <Dialog open={rejectOpen} onOpenChange={(open) => { if (open) setRejectOpen(true); else closeReject(); }}>
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Reject this candidate?</DialogTitle>
@@ -571,7 +607,7 @@ export default function EmployerMessagesV2() {
                   {rejectError && <DialogError unlock={rejectError.startsWith("Unlock")}>{rejectError}</DialogError>}
                 </div>
                 <DialogFooter>
-                  <OutlineCta onClick={() => setRejectOpen(false)}>Cancel</OutlineCta>
+                  <OutlineCta onClick={closeReject}>Cancel</OutlineCta>
                   <Button type="button" variant="destructive" onClick={handleReject} disabled={rejectSubmitting}>
                     {rejectSubmitting ? "Rejecting…" : "Reject candidate"}
                   </Button>
