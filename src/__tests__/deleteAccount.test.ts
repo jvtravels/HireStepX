@@ -24,6 +24,7 @@ process.env.APP_URL = "https://hirestepx.vercel.app";
 const withNodeAuthAndRateLimit = vi.fn();
 const supabaseUrl = vi.fn();
 const supabaseAnonKey = vi.fn();
+const isRateLimited = vi.fn(async () => false);
 
 vi.mock("../../server-handlers/_shared", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../../server-handlers/_shared")>();
@@ -31,6 +32,7 @@ vi.mock("../../server-handlers/_shared", async (importOriginal) => {
     ...actual,
     withNodeAuthAndRateLimit: (...args: unknown[]) =>
       withNodeAuthAndRateLimit(...(args as Parameters<typeof actual.withNodeAuthAndRateLimit>)),
+    isRateLimited: (...args: unknown[]) => isRateLimited(...(args as [])),
     supabaseUrl: (...args: unknown[]) => supabaseUrl(...(args as Parameters<typeof actual.supabaseUrl>)),
     supabaseAnonKey: (...args: unknown[]) => supabaseAnonKey(...(args as Parameters<typeof actual.supabaseAnonKey>)),
   };
@@ -97,6 +99,19 @@ beforeEach(() => {
   supabaseUrl.mockReturnValue("https://example.supabase.co");
   supabaseAnonKey.mockReturnValue("anon-key");
   withNodeAuthAndRateLimit.mockResolvedValue(authOk());
+  isRateLimited.mockResolvedValue(false);
+});
+
+describe("delete-account — per-user limit", () => {
+  it("429s a user who keeps retrying, before touching any data", async () => {
+    isRateLimited.mockResolvedValue(true);
+    global.fetch = vi.fn();
+    const res = mockRes();
+    await handler(mockReq({}), res);
+    expect(res.statusCode).toBe(429);
+    expect(global.fetch).not.toHaveBeenCalled();
+    expect(isRateLimited).toHaveBeenCalledWith(USER_ID, "delete-account-user", 3, 60_000);
+  });
 });
 
 describe("delete-account — preamble", () => {

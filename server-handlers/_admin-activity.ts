@@ -208,14 +208,23 @@ export async function getOverview() {
 
 const USERS_SCAN_PAGE = 1000;
 
+/* PostgREST splits an or=(...) group on commas and parentheses after URL
+   decoding, so a term carrying them (or a quote, backslash, wildcard or
+   colon) would add filters of its own. Only characters a name or email
+   fragment needs are kept. */
+export function safeSearchTerm(raw: string | undefined): string {
+  return (raw ?? "").replace(/[^\p{L}\p{N} @._+-]/gu, "").trim().slice(0, 100);
+}
+
 /* Candidates only — employer accounts share the profiles table but belong to
  * the Employers tab. Walks ids in signup order, skipping employers, so the page
  * and total are exact for any number of employers. Only ids are scanned; full
  * rows are fetched for the final page. */
 export async function getUsers(search?: string, offset = 0, limit = 50) {
   const employerIds = await fetchEmployerIds();
-  const searchFilter = search
-    ? `&or=(name.ilike.*${encodeURIComponent(search)}*,email.ilike.*${encodeURIComponent(search)}*)`
+  const term = safeSearchTerm(search);
+  const searchFilter = term
+    ? `&or=(name.ilike.*${encodeURIComponent(term)}*,email.ilike.*${encodeURIComponent(term)}*)`
     : "";
 
   const wanted = offset + limit;

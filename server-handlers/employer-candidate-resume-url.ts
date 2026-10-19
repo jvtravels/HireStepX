@@ -12,6 +12,7 @@ export const config = { runtime: "edge" };
 
 import { withAuthAndRateLimit, corsHeaders, withRequestId, slog } from "./_shared";
 import { loadEmployerMatchAccess, loadAuthIdentity, contactWithheldFor, DENIED_STATUS } from "./_entitlements";
+import { MATCH_ID_RE } from "./_messages-helpers";
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
@@ -52,7 +53,7 @@ export default async function handler(req: Request): Promise<Response> {
   }
 
   const matchId = new URL(req.url).searchParams.get("matchId") || "";
-  if (!matchId) {
+  if (!MATCH_ID_RE.test(matchId)) {
     return new Response(JSON.stringify({ error: "matchId is required" }), { status: 400, headers });
   }
 

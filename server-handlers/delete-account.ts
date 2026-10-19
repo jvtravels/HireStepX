@@ -6,6 +6,7 @@ import {
   supabaseUrl,
   supabaseAnonKey,
   slog,
+  isRateLimited,
 } from "./_shared";
 import { captureServerEvent } from "./_posthog";
 import { eraseUserData, posthogConfigFromEnv, pseudonymousId, sha256Hex } from "./_erase-user";
@@ -27,6 +28,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   });
   if (pre.handled) return;
   const { userId, userData, userEmail } = pre;
+  if (await isRateLimited(userId, "delete-account-user", 3, 60_000)) {
+    return res.status(429).json({ error: "Too many requests. Please wait a minute and try again." });
+  }
 
   const SUPABASE_URL = supabaseUrl();
   const SUPABASE_ANON_KEY = supabaseAnonKey();

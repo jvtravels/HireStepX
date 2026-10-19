@@ -162,10 +162,17 @@ export function evaluateCronHeartbeats(
   return alerts;
 }
 
-/** Heartbeat alerts, or [] when Redis is not configured (nothing could have
-    been recorded, so "missing" would be a permanent false alarm). */
+/** Heartbeat alerts. Without Redis nothing can be recorded, so the one alert is
+    that monitoring itself is off rather than a "missing" alarm per cron. */
 export async function getCronHeartbeatAlerts(now = Date.now()): Promise<CronHeartbeatAlert[]> {
-  if (!redisUrl() || !redisToken()) return [];
+  if (!redisUrl() || !redisToken()) {
+    return [{
+      severity: "warning",
+      code: "cron_heartbeat_unconfigured",
+      message: "Cron heartbeats cannot be recorded or read because Redis is not configured.",
+      action: "Set the Upstash Redis URL and token so stalled settlement and cleanup crons are noticed.",
+    }];
+  }
   const entries = await Promise.all(Object.keys(CRON_MAX_SILENCE_MS).map(async (n) => [n, await redisGet(key(n))] as const));
   return evaluateCronHeartbeats(Object.fromEntries(entries), now);
 }
