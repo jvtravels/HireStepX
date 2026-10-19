@@ -18,6 +18,7 @@
 export const config = { runtime: "edge" };
 
 import { verifyCronAuth } from "./_cron-auth";
+import { recordCronResult } from "./_cron-heartbeat";
 import { emailShell, title, para, b, button, dataCard, escapeHtml, type EmailFooterOptions } from "./_email-theme";
 import { filterSuppressed, marketingEmailParts } from "./_unsubscribe";
 
@@ -214,6 +215,7 @@ export default async function handler(req: Request): Promise<Response> {
   const sendable = await filterSuppressed({ supabaseUrl: SUPABASE_URL, serviceKey: SUPABASE_SERVICE_KEY }, candidates, "marketing");
   const users = sendable.slice(0, MAX_EMAILS_PER_RUN);
   const { sent, skipped } = await processInBatches(users);
+  await recordCronResult("weekly-summary", { errors: 0 });
 
   return new Response(
     JSON.stringify({ sent, skipped, suppressed: candidates.length - sendable.length, total: users.length, emailEnabled: !!RESEND_API_KEY }),

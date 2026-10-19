@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { evaluateCronHeartbeats, recordCronResult, CRON_MAX_SILENCE_MS } from "../../server-handlers/_cron-heartbeat";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { evaluateCronHeartbeats, recordCronResult, CRON_MAX_SILENCE_MS, CRON_PATH_HEARTBEAT } from "../../server-handlers/_cron-heartbeat";
 import { evaluateUnlockOrders, type OpenOrderRow } from "../../server-handlers/_employer-health-signals";
 
 const NOW = Date.UTC(2026, 9, 17, 10, 0, 0);
@@ -14,8 +16,8 @@ describe("evaluateCronHeartbeats", () => {
     expect(evaluateCronHeartbeats(fresh, NOW)).toEqual([]);
   });
 
-  it("raises a critical when a cron's last success is older than 25h", () => {
-    const alerts = evaluateCronHeartbeats({ ...fresh, "cron-credit-no-response": ago(26) }, NOW);
+  it("raises a critical when a cron's last success is older than its limit", () => {
+    const alerts = evaluateCronHeartbeats({ ...fresh, "cron-credit-no-response": ago(27) }, NOW);
     expect(alerts).toHaveLength(1);
     expect(alerts[0]).toMatchObject({ severity: "critical", code: "cron_stale" });
     expect(alerts[0].message).toContain("cron-credit-no-response");
@@ -27,12 +29,52 @@ describe("evaluateCronHeartbeats", () => {
     expect(alerts[0]).toMatchObject({ severity: "warning", code: "cron_heartbeat_missing" });
   });
 
-  it("covers every employer cron plus the subscription/erasure crons with a 25h limit", () => {
-    expect(Object.keys(CRON_MAX_SILENCE_MS).sort()).toEqual([
-      "cleanup-deleted-accounts", "cron-credit-no-response", "cron-reconcile-unlock-orders", "cron-rematch-requirements",
-      "reset-expired-subscriptions", "send-employer-nudges", "send-employer-winback", "send-renewal-reminders",
-    ]);
-    for (const ms of Object.values(CRON_MAX_SILENCE_MS)) expect(ms).toBe(25 * HOUR);
+  it("is critical (not a warning) when a money-path cron has never recorded a heartbeat", () => {
+    for (const name of ["cron-reconcile-unlock-orders", "cron-credit-no-response"]) {
+      const alerts = evaluateCronHeartbeats({ ...fresh, [name]: null }, NOW);
+      expect(alerts).toHaveLength(1);
+      expect(alerts[0]).toMatchObject({ severity: "critical", code: "cron_heartbeat_missing" });
+    }
+  });
+});
+
+describe("vercel.json cron coverage", () => {
+  const root = join(__dirname, "..", "..");
+  const crons = (JSON.parse(readFileSync(join(root, "vercel.json"), "utf8")) as { crons: { path: string; schedule: string }[] }).crons;
+
+  it("maps every vercel.json cron path to a heartbeat (or an explicit null) and has no stale mapping", () => {
+    const missing = crons.map((c) => c.path).filter((p) => !(p in CRON_PATH_HEARTBEAT));
+    expect(missing, `cron paths with no CRON_PATH_HEARTBEAT entry: ${missing.join(", ")}`).toEqual([]);
+    const stale = Object.keys(CRON_PATH_HEARTBEAT).filter((p) => !crons.some((c) => c.path === p));
+    expect(stale, `CRON_PATH_HEARTBEAT paths no longer in vercel.json: ${stale.join(", ")}`).toEqual([]);
+  });
+
+  it("has a silence limit for every mapped heartbeat and no orphan limits", () => {
+    const names = Object.values(CRON_PATH_HEARTBEAT).filter((n): n is string => n !== null);
+    expect(names.filter((n) => !(n in CRON_MAX_SILENCE_MS))).toEqual([]);
+    expect(Object.keys(CRON_MAX_SILENCE_MS).filter((n) => !names.includes(n))).toEqual([]);
+  });
+
+  it("sizes each limit to its schedule: daily crons 25-36h, weekly crons 7-9 days", () => {
+    for (const c of crons) {
+      const name = CRON_PATH_HEARTBEAT[c.path];
+      if (!name) continue;
+      const weekly = /^\d+$/.test(c.schedule.split(" ")[4]);
+      const hours = CRON_MAX_SILENCE_MS[name] / HOUR;
+      if (weekly) expect(hours, name).toBeGreaterThanOrEqual(7 * 24);
+      else {
+        expect(hours, name).toBeGreaterThanOrEqual(25);
+        expect(hours, name).toBeLessThanOrEqual(36);
+      }
+      if (weekly) expect(hours, name).toBeLessThanOrEqual(9 * 24);
+    }
+  });
+
+  it("every heartbeat name is actually recorded by its handler (else it would alert forever)", () => {
+    for (const name of Object.keys(CRON_MAX_SILENCE_MS)) {
+      const src = readFileSync(join(root, "server-handlers", `${name}.ts`), "utf8");
+      expect(src, `${name}.ts must call recordCronResult("${name}", ...)`).toContain(`recordCronResult("${name}"`);
+    }
   });
 });
 

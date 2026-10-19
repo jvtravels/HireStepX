@@ -10,6 +10,7 @@
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { verifyCronAuth } from "./_cron-auth";
+import { recordCronResult } from "./_cron-heartbeat";
 import { escapeHtml } from "./_shared";
 import { emailShell, title, para, button, type EmailFooterOptions } from "./_email-theme";
 import { filterSuppressed, marketingEmailParts, preferenceDepsFromEnv } from "./_unsubscribe";
@@ -159,5 +160,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
   }
 
+  await recordCronResult("send-activation-emails", { errors: 0 });
   return res.status(200).json({ sent, skipped, total: profiles.length });
 }

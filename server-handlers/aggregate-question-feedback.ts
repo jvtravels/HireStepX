@@ -16,6 +16,7 @@
  */
 
 import { verifyCronAuth } from "./_cron-auth";
+import { recordCronResult } from "./_cron-heartbeat";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { supabaseUrl } from "./_shared";
 import {
@@ -80,6 +81,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   /* Quiet weeks — no findings worth a digest, no email send.
      Vercel logs still show the run completed cleanly. */
   if (!report.hasFindings) {
+    await recordCronResult("aggregate-question-feedback", { errors: 0 });
     return res.status(200).json({
       sent: false, reason: "no findings", totalRowsAnalysed: report.totalRowsAnalysed,
     });
@@ -112,6 +114,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(500).json({ error: "Email send failed", report });
   }
 
+  await recordCronResult("aggregate-question-feedback", { errors: 0 });
   return res.status(200).json({
     sent: true,
     totalRowsAnalysed: report.totalRowsAnalysed,

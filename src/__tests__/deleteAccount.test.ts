@@ -196,29 +196,53 @@ describe("delete-account — soft delete (default)", () => {
     expect(fetchMock.mock.calls.some(([u]) => String(u).includes("/rest/v1/sessions"))).toBe(false);
   });
 
-  it("falls through to hard delete when the deleted_at column is missing", async () => {
+  it("500s and never hard-erases when the soft-delete PATCH is rejected (even for a missing column)", async () => {
     const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
       const u = String(url);
       if (u.includes("grant_type=password")) return { ok: true } as Response;
-      if (u.includes("/rest/v1/profiles") && init?.method === "PATCH" && JSON.parse((init.body as string)).deleted_at === null) {
-        // not reached for soft-delete (deleted_at is a timestamp, not null) — guard unused
-        return { ok: true } as Response;
-      }
       if (u.includes("/rest/v1/profiles") && init?.method === "PATCH") {
-        return { ok: false, text: async () => "column \"deleted_at\" does not exist" } as unknown as Response;
+        return { ok: false, status: 400, text: async () => "column \"deleted_at\" does not exist" } as unknown as Response;
       }
-      if (u.includes("select=email,name")) return { ok: true, json: async () => [] } as unknown as Response;
-      if (u.includes("api.resend.com")) return { ok: true } as Response;
-      if (u.includes("/rest/v1/service_usage")) return { ok: true } as unknown as Response;
-      if (u.includes("/auth/v1/admin/users/")) return { ok: true } as unknown as Response;
-      return { ok: true } as unknown as Response;
+      return { ok: true, json: async () => [] } as unknown as Response;
     });
     global.fetch = fetchMock as unknown as typeof fetch;
     const res = mockRes();
     await handler(mockReq({ password: "correct" }), res);
+    expect(res.statusCode).toBe(500);
+    expect(captureServerEvent).not.toHaveBeenCalled();
+    expect(fetchMock.mock.calls.some(([u]) => String(u).includes("/auth/v1/admin/users/"))).toBe(false);
+  });
+
+  it("500s and never hard-erases when the soft-delete request throws", async () => {
+    const fetchMock = vi.fn(async (url: string) => {
+      const u = String(url);
+      if (u.includes("grant_type=password")) return { ok: true } as Response;
+      if (u.includes("/rest/v1/profiles")) throw new Error("network down");
+      return { ok: true, json: async () => [] } as unknown as Response;
+    });
+    global.fetch = fetchMock as unknown as typeof fetch;
+    const res = mockRes();
+    await handler(mockReq({ password: "correct" }), res);
+    expect(res.statusCode).toBe(500);
+    expect(captureServerEvent).not.toHaveBeenCalled();
+    expect(fetchMock.mock.calls.some(([u]) => String(u).includes("/auth/v1/admin/users/") || String(u).includes("/rest/v1/sessions"))).toBe(false);
+  });
+
+  it("switches employer_visibility off at soft-delete time, and a failure there does not block the deletion", async () => {
+    const calls: Array<{ url: string; body: string }> = [];
+    global.fetch = vi.fn(async (url: string, init?: RequestInit) => {
+      const u = String(url);
+      calls.push({ url: u, body: String(init?.body ?? "") });
+      if (init?.body && String(init.body).includes("employer_visibility")) return { ok: false, status: 400 } as Response;
+      return { ok: true, json: async () => [] } as unknown as Response;
+    }) as unknown as typeof fetch;
+    const res = mockRes();
+    await handler(mockReq({ password: "correct" }), res);
     expect(res.statusCode).toBe(200);
-    expect(res.body).toEqual({ success: true });
-    expect(captureServerEvent).toHaveBeenCalledWith("account_deleted", PSEUDONYM, { mode: "hard", $process_person_profile: false });
+    expect((res.body as { scheduled: boolean }).scheduled).toBe(true);
+    const vis = calls.find((c) => c.body.includes("employer_visibility"));
+    expect(vis?.url).toContain(`profiles?id=eq.${USER_ID}`);
+    expect(JSON.parse(vis!.body)).toMatchObject({ employer_visibility: "off" });
   });
 });
 

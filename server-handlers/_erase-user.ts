@@ -46,7 +46,7 @@ export interface EraseDeps {
   fetchImpl: typeof fetch;
   supabaseUrl: string;
   serviceKey: string;
-  trigger: "user_hard" | "scheduled";
+  trigger: "user_hard" | "scheduled" | "admin";
   /** Email/name already known to the caller (the profile read fills gaps). */
   contact?: { email?: string; name?: string };
   posthog?: PostHogErasureConfig | null;
@@ -428,10 +428,12 @@ export async function eraseUserData(deps: EraseDeps, userId: string): Promise<Er
 
   // Audit trail: pseudonymous hash + counts, no PII. Tolerates the table being absent (migration 0038).
   try {
-    await sb("/rest/v1/account_erasure_log", {
+    const logRes = await sb("/rest/v1/account_erasure_log", {
       method: "POST",
       body: JSON.stringify({ user_hash: await sha256Hex(userId), trigger: deps.trigger, retained_financial: retainEmployer, counts, processors }),
     });
+    // A rejected row (e.g. the trigger CHECK predates a new trigger value) must not vanish silently.
+    if (logRes && logRes.ok === false) log("erase-user: audit row rejected", { trigger: deps.trigger, httpStatus: logRes.status });
   } catch { /* best effort */ }
   log("erase-user: completed", { userHash: (await sha256Hex(userId)).slice(0, 12), trigger: deps.trigger, counts, retained: retainEmployer, processors });
 

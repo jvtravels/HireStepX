@@ -14,6 +14,7 @@
  * and duplicate runs. */
 
 import { verifyCronAuth } from "./_cron-auth";
+import { recordCronResult } from "./_cron-heartbeat";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { escapeHtml } from "./_shared";
 import { emailShell, title, para, b, button, dataCard, type EmailFooterOptions } from "./_email-theme";
@@ -192,6 +193,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     ? await filterSuppressed(preferenceDepsFromEnv(), allProfiles, "marketing")
     : [];
   if (profiles.length === 0) {
+    await recordCronResult("send-onboarding-drip", { errors: 0 });
     return res.status(200).json({ sent: 0, skipped: 0, message: "No candidates" });
   }
 
@@ -226,5 +228,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
   }
 
+  await recordCronResult("send-onboarding-drip", { errors: 0 });
   return res.status(200).json({ sent, skipped, total: profiles.length });
 }

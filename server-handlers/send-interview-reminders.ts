@@ -8,6 +8,7 @@
  */
 
 import { verifyCronAuth } from "./_cron-auth";
+import { recordCronResult } from "./_cron-heartbeat";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { escapeHtml } from "./_shared";
 import { emailShell, title, para, b, button, dataCard } from "./_email-theme";
@@ -67,6 +68,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     const events: ReminderEvent[] = await eventsRes.json();
     if (!Array.isArray(events) || events.length === 0) {
+      await recordCronResult("send-interview-reminders", { errors: 0 });
       return res.status(200).json({ sent: 0, message: "No upcoming events with reminders" });
     }
 
@@ -87,6 +89,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const due = dueReminders(events, { now: now.toISOString(), sentKeys });
     if (due.length === 0) {
+      await recordCronResult("send-interview-reminders", { errors: 0 });
       return res.status(200).json({ sent: 0, message: "No reminders due", scanned: events.length });
     }
 
@@ -183,6 +186,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
+    // Only a run where every send failed counts as unhealthy; one bad address must not page.
+    await recordCronResult("send-interview-reminders", { errors: sent === 0 ? failed : 0 });
     return res.status(200).json({ sent, failed, skipped, due: due.length, scanned: events.length });
   } catch (err) {
     console.error("[cron:interview-reminders] fatal:", err);

@@ -14,6 +14,7 @@ export const config = { runtime: "nodejs" };
 import { slog, supabaseUrl, supabaseServiceHeaders } from "./_shared";
 import { reconcileUnlockOrders } from "./_employer-unlock-reconcile";
 import { recordCronResult } from "./_cron-heartbeat";
+import { verifyCronAuth } from "./_cron-auth";
 
 declare const process: { env: Record<string, string | undefined> };
 
@@ -22,8 +23,7 @@ function jsonResponse(body: unknown, status = 200): Response {
 }
 
 export default async function handler(req: Request): Promise<Response> {
-  const cronSecret = (process.env.CRON_SECRET || "").trim();
-  if (!cronSecret || (req.headers.get("authorization") || "") !== `Bearer ${cronSecret}`) {
+  if (!verifyCronAuth(req)) {
     return jsonResponse({ error: "Unauthorized" }, 401);
   }
 

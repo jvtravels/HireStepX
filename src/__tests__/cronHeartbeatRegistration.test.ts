@@ -13,20 +13,21 @@ vi.mock("../../server-handlers/_cron-heartbeat", async (orig) => ({
   recordCronResult: (...a: unknown[]) => recordCronResult(...a),
 }));
 
-const { CRON_MAX_SILENCE_MS } = await import("../../server-handlers/_cron-heartbeat");
+const { CRON_MAX_SILENCE_MS, CRON_PATH_HEARTBEAT } = await import("../../server-handlers/_cron-heartbeat");
 
 const vercel = JSON.parse(readFileSync(resolve(__dirname, "../../vercel.json"), "utf8")) as { crons: Array<{ path: string; schedule: string }> };
 
 describe("heartbeat registry", () => {
   it("only watches crons that are actually scheduled in vercel.json (a watched cron that never runs alerts forever)", () => {
-    // Heartbeat names are the path after /api with slashes as dashes (/api/cron/rematch-requirements -> cron-rematch-requirements).
-    const scheduled = new Set(vercel.crons.map((c) => c.path.replace(/^\/api\//, "").replace(/\//g, "-")));
+    // Names do not always follow the path (weekly-summary lives at /api/cron/weekly-summary), so the explicit
+    // CRON_PATH_HEARTBEAT map is the link between vercel.json and the registry.
+    const scheduled = new Set(vercel.crons.map((c) => CRON_PATH_HEARTBEAT[c.path]).filter(Boolean));
     for (const name of Object.keys(CRON_MAX_SILENCE_MS)) expect(scheduled.has(name), `${name} is not in vercel.json`).toBe(true);
   });
 
-  it("watches renewal reminders, subscription resets and account erasure with a 25h limit", () => {
+  it("watches renewal reminders, subscription resets and account erasure with a daily limit", () => {
     for (const name of ["send-renewal-reminders", "reset-expired-subscriptions", "cleanup-deleted-accounts"]) {
-      expect(CRON_MAX_SILENCE_MS[name]).toBe(25 * 3_600_000);
+      expect(CRON_MAX_SILENCE_MS[name]).toBe(26 * 3_600_000);
     }
   });
 });

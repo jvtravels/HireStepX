@@ -6,6 +6,7 @@
  * Only targets free-tier users who have at least 1 session but haven't returned. */
 
 import { verifyCronAuth } from "./_cron-auth";
+import { recordCronResult } from "./_cron-heartbeat";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { escapeHtml } from "./_shared";
 import { emailShell, title, para, b, button, dataCard, type EmailFooterOptions } from "./_email-theme";
@@ -282,6 +283,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const profiles: UserRow[] = await profilesRes.json();
     if (!Array.isArray(profiles) || profiles.length === 0) {
+      await recordCronResult("re-engage-users", { errors: 0 });
       return res.status(200).json({ sent: 0, message: "No users to re-engage" });
     }
 
@@ -459,6 +461,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       for (const r of results) { if (r === "sent") sent++; else failed++; }
     }
 
+    // Only a run where every send failed counts as unhealthy; one bad address must not page.
+    await recordCronResult("re-engage-users", { errors: sent === 0 ? failed : 0 });
     return res.status(200).json({
       sent,
       skipped,

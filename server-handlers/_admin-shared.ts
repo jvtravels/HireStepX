@@ -1,9 +1,8 @@
 /* Shared substrate for the admin-data handler: env, auth, Supabase REST helpers. */
 
-import { createHmac, timingSafeEqual } from "crypto";
 import type { VercelRequest } from "@vercel/node";
 import { verifyAdminToken } from "./_admin-auth";
-import { getClientIp, isRateLimited, slog } from "./_shared";
+import { slog } from "./_shared";
 import { readAllPages } from "./_paged-fetch";
 
 /* ─── Config ─── */
@@ -17,7 +16,6 @@ export class ValidationError extends Error {}
 
 export const SUPABASE_URL = process.env.SUPABASE_URL || "";
 export const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
-export const ADMIN_PASSWORD = (process.env.ADMIN_PASSWORD || "").trim();
 export const RESEND_API_KEY = (process.env.RESEND_API_KEY || "").trim();
 export const RAZORPAY_KEY_ID = (process.env.RAZORPAY_KEY_ID || "").trim();
 export const RAZORPAY_KEY_SECRET = (process.env.RAZORPAY_KEY_SECRET || "").trim();
@@ -32,20 +30,11 @@ export const LIMIT_RECENT = 30;
 
 /* ─── Auth ─── */
 
-export function verifyPassword(input: string): boolean {
-  if (!ADMIN_PASSWORD || !input) return false;
-  // HMAC both sides to a fixed-length 32-byte digest. This eliminates
-  // length-based timing leaks (the comparison itself sees only equal-
-  // length buffers) and we use the comparison result directly so static
-  // analyzers don't flag a discarded timingSafeEqual return.
-  const a = createHmac("sha256", "hsx-admin-pw-v1").update(input).digest();
-  const b = createHmac("sha256", "hsx-admin-pw-v1").update(ADMIN_PASSWORD).digest();
-  return timingSafeEqual(a, b);
-}
-
-/** Check auth: either password (for login) or token (for subsequent requests) */
-export async function verifyAuth(req: VercelRequest): Promise<{ ok: boolean; isLogin?: boolean }> {
-  // Check x-admin-token header (in-memory token from client state)
+/** Check auth. Only the signed session token (header or HttpOnly cookie) is accepted.
+ * The raw admin password is deliberately NOT a credential here: it is verified, together
+ * with the TOTP second factor, solely by /api/admin-login, which mints the token. Accepting
+ * it on this endpoint would let anyone holding the shared password skip TOTP. */
+export async function verifyAuth(req: VercelRequest): Promise<{ ok: boolean }> {
   const token = req.headers["x-admin-token"];
   if (token && typeof token === "string" && verifyAdminToken(token)) {
     return { ok: true };
@@ -61,22 +50,6 @@ export async function verifyAuth(req: VercelRequest): Promise<{ ok: boolean; isL
       ?.slice("admin_token=".length);
     if (cookieToken && verifyAdminToken(cookieToken)) {
       return { ok: true };
-    }
-  }
-  // Check for password (login attempt). This is a second path into the same
-  // password check admin-login.ts exposes, so it shares that endpoint's
-  // "admin-login" rate-limit bucket — otherwise it'd be a brute-force
-  // bypass of the 5-attempts/15-min limit enforced there.
-  const key = req.headers["x-admin-key"];
-  if (key && typeof key === "string") {
-    // getClientIp is typed against the standard Request; this handler is Node
-    // runtime (VercelRequest), but both expose the same .headers reads.
-    const ip = getClientIp(req as unknown as Request);
-    if (await isRateLimited(ip, "admin-login", 5, 900_000)) {
-      return { ok: false };
-    }
-    if (verifyPassword(key)) {
-      return { ok: true, isLogin: true };
     }
   }
   return { ok: false };

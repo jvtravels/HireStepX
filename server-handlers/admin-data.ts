@@ -1,5 +1,5 @@
 /* Admin Dashboard API — returns aggregated metrics for the admin panel.
- * Security: timing-safe password comparison, rate limiting, session tokens with expiry. */
+ * Security: every call needs a signed, expiring session token minted by /api/admin-login (password + TOTP). */
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { verifyAuth, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, ValidationError, RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET, RESEND_API_KEY, fetchJSON } from "./_admin-shared";
@@ -13,6 +13,7 @@ import { listUnlockRequirements, getUnlockMatches, adminUnlockCandidates } from 
 import { razorpayBasicAuth } from "./_razorpay-auth";
 import { createAdminToken } from "./_admin-auth";
 import { slog } from "./_shared";
+import { eraseUserData, posthogConfigFromEnv } from "./_erase-user";
 
 
 /* ─── Handler ─── */
@@ -22,7 +23,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // which is the only other place this endpoint's credentials are usable from.
   res.setHeader("Access-Control-Allow-Origin", "https://admin.hirestepx.com");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, x-admin-token, x-admin-key");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, x-admin-token");
   res.setHeader("Access-Control-Allow-Credentials", "true");
 
   if (req.method === "OPTIONS") return res.status(204).end();
@@ -181,43 +182,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
         case "delete-user": {
           if (!body?.userId) throw new ValidationError("userId required");
-          const encoded2 = encodeURIComponent(body.userId);
-          // service_usage.user_id is declared `on delete set null` in
-          // supabase-schema.sql, but the live constraint predates that and
-          // still blocks the cascade (23503 on profiles via
-          // service_usage_user_id_fkey). Null it out explicitly first so the
-          // auth-user delete below can cascade through profiles regardless
-          // of which constraint version is actually deployed.
-          const clearUsageRes = await fetch(
-            `${SUPABASE_URL}/rest/v1/service_usage?user_id=eq.${encoded2}`,
+          // Same routine as the account-deletion cron: retains GST payment records
+          // (anonymised), erases storage / processors, writes account_erasure_log, and
+          // bans instead of deleting an employer whose ledger must be kept. A raw auth
+          // delete would cascade away the financial rows and leave no audit trail.
+          const result = await eraseUserData(
             {
-              method: "PATCH",
-              headers: {
-                apikey: SUPABASE_SERVICE_ROLE_KEY,
-                Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-                "Content-Type": "application/json",
-                Prefer: "return=minimal",
-              },
-              body: JSON.stringify({ user_id: null }),
+              fetchImpl: fetch,
+              supabaseUrl: SUPABASE_URL,
+              serviceKey: SUPABASE_SERVICE_ROLE_KEY,
+              trigger: "admin",
+              posthog: posthogConfigFromEnv(process.env),
+              log: (msg, fields) => slog.info(msg, fields),
             },
+            body.userId,
           );
-          if (!clearUsageRes.ok) {
-            const txt = await clearUsageRes.text().catch(() => "");
-            return { ok: false, error: `Failed to clear service_usage references: HTTP ${clearUsageRes.status}: ${txt.slice(0, 200)}` };
+          if (!result.ok) {
+            return { ok: false, error: `Erasure incomplete (failed steps: ${result.failedSteps.join(", ")}). Safe to retry.` };
           }
-          // Hard-delete auth user; FK cascades delete sessions, payments, etc.
-          const delRes = await fetch(
-            `${SUPABASE_URL}/auth/v1/admin/users/${encoded2}`,
-            {
-              method: "DELETE",
-              headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` },
-            },
-          );
-          if (!delRes.ok) {
-            const txt = await delRes.text().catch(() => "");
-            return { ok: false, error: `Delete failed: HTTP ${delRes.status}: ${txt.slice(0, 200)}` };
-          }
-          return { ok: true };
+          return result.retainedFinancialRecords ? { ok: true, retainedFinancialRecords: true } : { ok: true };
         }
         case "refund-payment": {
           if (!body?.paymentId) throw new ValidationError("paymentId required");

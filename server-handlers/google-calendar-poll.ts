@@ -11,6 +11,7 @@
  */
 
 import { verifyCronAuth } from "./_cron-auth";
+import { recordCronResult } from "./_cron-heartbeat";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { googleConfigured } from "./_google-calendar";
 import { runIncrementalSync, ensureWatchChannel, type SyncRow } from "./_google-sync-runner";
@@ -43,6 +44,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     const rows: SyncRow[] = await rowsRes.json().catch(() => []);
     if (!Array.isArray(rows) || rows.length === 0) {
+      await recordCronResult("google-calendar-poll", { errors: 0 });
       return res.status(200).json({ synced: 0, message: "No connected calendars" });
     }
 
@@ -69,6 +71,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
+    await recordCronResult("google-calendar-poll", { errors: 0 });
     return res.status(200).json({ connections: rows.length, synced, renewed, reconnectNeeded });
   } catch (err) {
     console.error("[cron:google-poll] fatal:", err);

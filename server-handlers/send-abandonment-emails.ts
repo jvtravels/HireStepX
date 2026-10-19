@@ -6,6 +6,7 @@
  */
 
 import { verifyCronAuth } from "./_cron-auth";
+import { recordCronResult } from "./_cron-heartbeat";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { escapeHtml } from "./_shared";
 import { emailShell, title, para, b, button, dataCard, mono, type EmailFooterOptions } from "./_email-theme";
@@ -134,6 +135,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
       if (cursor === "0") break; // SCAN finished
     }
+    await recordCronResult("send-abandonment-emails", { errors: 0 });
     return res.status(200).json({ sent, skipped, scanned });
   } catch (err) {
     console.error("[send-abandonment-emails] Error:", err);

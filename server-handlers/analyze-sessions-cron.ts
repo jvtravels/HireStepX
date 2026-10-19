@@ -28,6 +28,7 @@
 export const config = { runtime: "nodejs" };
 
 import { verifyCronAuth } from "./_cron-auth";
+import { recordCronResult } from "./_cron-heartbeat";
 import { pickAnalyzer, registeredFocuses } from "./analyzers/_dispatch";
 import type { SessionRowForAnalysis } from "./analyzers/_types";
 import { llmRescore, isRescoreEnabled } from "./analyzers/_llm-rescore";
@@ -432,6 +433,7 @@ export default async function handler(req: Request): Promise<Response> {
     });
   }
 
+  await recordCronResult("analyze-sessions-cron", { errors: writeRes.failed });
   return jsonResponse({
     ok: true,
     scanned: sessions.length,

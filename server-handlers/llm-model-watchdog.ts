@@ -7,6 +7,7 @@
  * GEMINI_MODELS / GROQ_MODEL (env change + redeploy, no code change). */
 
 import { verifyCronAuth } from "./_cron-auth";
+import { recordCronResult } from "./_cron-heartbeat";
 import { cloudflareModel, geminiLadder, geminiThinkingConfig, groqModel } from "./_llm-models";
 import { sendOpsAlert } from "./_ops-alert";
 import { buildReport, ladderIsThin, needsAction, type ModelReport } from "./_llm-watchdog-helpers";
@@ -118,5 +119,7 @@ export default async function handler(req: Request): Promise<Response> {
     console.warn(`[LLM-WATCHDOG] all models healthy: ${reports.map((r) => `${r.model}=${r.status}`).join(", ")}`);
   }
 
+  // Heartbeat means "the watchdog ran"; findings are alerted through sendOpsAlert above.
+  await recordCronResult("llm-model-watchdog", { errors: 0 });
   return new Response(JSON.stringify({ ok: actionable.length === 0 && !thin, reports }), { status: 200, headers: { "Content-Type": "application/json" } });
 }

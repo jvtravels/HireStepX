@@ -188,7 +188,7 @@ batch lifts the measured numbers.
 - **Edge runtime** — no Node APIs. Use `crypto.subtle`, `fetch`, etc.
   Files in `server-handlers/` marked `runtime: "edge"` must be
   WinterCG-compliant.
-- **CSP** — all external origins live in `next.config.js`. Adding a
+- **CSP** — all external origins live in `proxy.ts` (built per request). Adding a
   new LLM/TTS/STT provider means updating `connect-src`.
 - **Cartesia TTS** — returns raw PCM via WebSocket; AudioContext must
   be resumed after mobile tab backgrounding (see

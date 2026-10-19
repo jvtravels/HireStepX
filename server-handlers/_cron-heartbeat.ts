@@ -40,23 +40,70 @@ const HOUR_MS = 3_600_000;
 // Long enough that "key missing" means the cron has not succeeded in weeks.
 const HEARTBEAT_TTL_SEC = 14 * 24 * 3600;
 
-/** Max silence before alerting. Daily crons get 25h (one missed run + jitter).
-    Tighten the reconcile entry to 60 min when its vercel.json schedule becomes hourly.
-    Timing invariant: the uptime-check cron (vercel.json, 10:30 UTC) must run AFTER every
-    cron listed here, so a failed run is already >25h stale when it is read and alerts the
-    same morning. The earlier 06:00 slot ran before the 05:20/05:40 money crons, which
-    surfaced a failure only ~24h40m later (just under the limit) and alerted ~48h late.
-    Keep the entry schedules in vercel.json in sync (all are daily). */
+const DAILY_MS = 26 * HOUR_MS; // one missed run plus scheduler jitter; a 10:00 UTC cron is 24.5h old at the 10:30 check
+const WEEKLY_MS = 180 * HOUR_MS; // 7d plus the gap to the next 10:30 UTC check
+
+/** Max silence before alerting, one entry per cron in vercel.json (cronHeartbeatHealth.test.ts
+    fails when one is missing, and when a listed handler never records its heartbeat).
+    Timing invariant: the uptime-check cron (vercel.json, 10:30 UTC) reads these, so a failed run
+    surfaces at the first check after it goes stale. Tighten an entry when its schedule changes. */
 export const CRON_MAX_SILENCE_MS: Record<string, number> = {
-  "reset-expired-subscriptions": 25 * HOUR_MS, // 00:00 UTC, downgrades lapsed paid plans
-  "cleanup-deleted-accounts": 25 * HOUR_MS, // 03:00 UTC, account-erasure (DPDP) SLA
-  "send-renewal-reminders": 25 * HOUR_MS, // 09:00 UTC
-  "cron-reconcile-unlock-orders": 25 * HOUR_MS,
-  "cron-credit-no-response": 25 * HOUR_MS,
-  "cron-rematch-requirements": 25 * HOUR_MS,
-  "send-employer-nudges": 25 * HOUR_MS,
-  "send-employer-winback": 25 * HOUR_MS,
+  "reset-expired-subscriptions": DAILY_MS, // 00:00 UTC, downgrades lapsed paid plans
+  "cleanup-deleted-accounts": DAILY_MS, // 03:00 UTC, account-erasure (DPDP) SLA
+  "send-renewal-reminders": DAILY_MS, // 09:00 UTC
+  "cron-reconcile-unlock-orders": DAILY_MS, // money path
+  "cron-credit-no-response": DAILY_MS, // money path
+  "cron-rematch-requirements": DAILY_MS,
+  "send-employer-nudges": DAILY_MS,
+  "send-employer-winback": DAILY_MS,
+  "send-interview-reminders": DAILY_MS,
+  "re-engage-users": DAILY_MS,
+  "send-abandonment-emails": DAILY_MS,
+  "weekly-summary": DAILY_MS, // runs daily despite the name
+  "aggregate-question-feedback": WEEKLY_MS, // Mondays 09:00 UTC
+  "analyze-sessions-cron": DAILY_MS,
+  "google-calendar-poll": DAILY_MS,
+  "llm-model-watchdog": DAILY_MS,
+  "llm-quality-drift": DAILY_MS,
+  "prune-llm-usage": DAILY_MS,
+  "prune-notifications": DAILY_MS,
+  "send-onboarding-drip": DAILY_MS,
+  "send-winback-emails": DAILY_MS,
+  "send-activation-emails": DAILY_MS,
 };
+
+/** vercel.json cron path -> heartbeat name. null = deliberately has none: uptime-check is the
+    reader of these heartbeats, so it cannot attest to its own liveness. */
+export const CRON_PATH_HEARTBEAT: Record<string, string | null> = {
+  "/api/send-renewal-reminders": "send-renewal-reminders",
+  "/api/send-interview-reminders": "send-interview-reminders",
+  "/api/reset-expired-subscriptions": "reset-expired-subscriptions",
+  "/api/uptime-check": null,
+  "/api/re-engage-users": "re-engage-users",
+  "/api/cleanup-deleted-accounts": "cleanup-deleted-accounts",
+  "/api/send-abandonment-emails": "send-abandonment-emails",
+  "/api/cron/weekly-summary": "weekly-summary",
+  "/api/aggregate-question-feedback": "aggregate-question-feedback",
+  "/api/cron/analyze-sessions": "analyze-sessions-cron",
+  "/api/calendar/google/poll": "google-calendar-poll",
+  "/api/cron/llm-model-watchdog": "llm-model-watchdog",
+  "/api/cron/llm-quality-drift": "llm-quality-drift",
+  "/api/prune-llm-usage": "prune-llm-usage",
+  "/api/send-onboarding-drip": "send-onboarding-drip",
+  "/api/send-winback-emails": "send-winback-emails",
+  "/api/send-activation-emails": "send-activation-emails",
+  "/api/cron/rematch-requirements": "cron-rematch-requirements",
+  "/api/prune-notifications": "prune-notifications",
+  "/api/cron-reconcile-unlock-orders": "cron-reconcile-unlock-orders",
+  "/api/cron-credit-no-response": "cron-credit-no-response",
+  "/api/send-employer-nudges": "send-employer-nudges",
+  "/api/send-employer-winback": "send-employer-winback",
+};
+
+/** Crons whose silence strands customer money or legal deadlines: a never-recorded heartbeat is
+    critical here (they have reported for weeks, so it is not first-deploy noise); other crons
+    only warn. */
+export const CRITICAL_WHEN_MISSING = new Set(["cron-reconcile-unlock-orders", "cron-credit-no-response"]);
 
 const key = (name: string) => `cron_hb:${name}`;
 
@@ -91,11 +138,14 @@ export function evaluateCronHeartbeats(
     const iso = lastSuccess[name];
     const at = iso ? new Date(iso).getTime() : NaN;
     if (!Number.isFinite(at)) {
+      const critical = CRITICAL_WHEN_MISSING.has(name);
       alerts.push({
-        severity: "warning",
+        severity: critical ? "critical" : "warning",
         code: "cron_heartbeat_missing",
         message: `${name} has no recorded successful run in the last 14 days.`,
-        action: `Check the ${name} cron in the Vercel dashboard (Crons tab) and its logs. Ignore on the first day after this check was deployed.`,
+        action: critical
+          ? `Check the ${name} cron in the Vercel dashboard (Crons tab) and its logs now: it settles customer payments.`
+          : `Check the ${name} cron in the Vercel dashboard (Crons tab) and its logs. Ignore on the first day after this check was deployed.`,
       });
       continue;
     }

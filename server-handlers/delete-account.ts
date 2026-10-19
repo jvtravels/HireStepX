@@ -136,41 +136,48 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           headers,
           body: JSON.stringify({ deleted_at: new Date().toISOString() }),
         });
+        // Every failure here returns 500: falling through to the irreversible erasure below
+        // would turn a transient error into permanent data loss the user never confirmed
+        // (they asked for the 7-day grace period). Hard erase only runs for { hard: true }.
         if (!softRes.ok) {
-          // If column is missing, fall through to hard delete
-          const msg = await softRes.text().catch(() => "");
-          if (msg.includes("deleted_at")) {
-            console.warn("[delete-account] deleted_at column missing, falling back to hard delete");
-          } else {
-            return res.status(500).json({ error: "Failed to schedule account deletion" });
-          }
-        } else {
-          // An employer must stop being live NOW, not in 7 days: block them through the
-          // suspension gate every employer handler already enforces. No-op for candidates
-          // (no employers row) and for an already-suspended employer.
-          const block = await fetch(`${SUPABASE_URL}/rest/v1/employers?id=eq.${encodedId}&suspended_at=is.null`, {
-            method: "PATCH",
-            headers,
-            body: JSON.stringify(deletionPendingPatch(new Date().toISOString())),
-          });
-          if (!block.ok) {
-            slog.error("delete-account: employer block failed on soft delete", { code: "delete_account_employer_block_failed", httpStatus: block.status });
-            await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodedId}`, {
-              method: "PATCH", headers, body: JSON.stringify({ deleted_at: null }),
-            }).catch(() => null);
-            return res.status(500).json({ error: "Failed to schedule account deletion" });
-          }
-          const deletionDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-          return res.status(200).json({
-            success: true,
-            scheduled: true,
-            deletionDate: deletionDate.toISOString(),
-            message: `Your account is scheduled for deletion on ${deletionDate.toDateString()}. Log in any time before then to cancel.`,
-          });
+          return res.status(500).json({ error: "Failed to schedule account deletion" });
         }
+        // An employer must stop being live NOW, not in 7 days: block them through the
+        // suspension gate every employer handler already enforces. No-op for candidates
+        // (no employers row) and for an already-suspended employer.
+        const block = await fetch(`${SUPABASE_URL}/rest/v1/employers?id=eq.${encodedId}&suspended_at=is.null`, {
+          method: "PATCH",
+          headers,
+          body: JSON.stringify(deletionPendingPatch(new Date().toISOString())),
+        });
+        if (!block.ok) {
+          slog.error("delete-account: employer block failed on soft delete", { code: "delete_account_employer_block_failed", httpStatus: block.status });
+          await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodedId}`, {
+            method: "PATCH", headers, body: JSON.stringify({ deleted_at: null }),
+          }).catch(() => null);
+          return res.status(500).json({ error: "Failed to schedule account deletion" });
+        }
+        // Stop employer matching right away (belt and braces with the deleted_at filter in
+        // matching). Separate best-effort call: the column ships in a later migration than
+        // deleted_at, and a missing column must not block the deletion itself. Restore does
+        // not flip it back, so a restored candidate re-enables visibility in Settings.
+        await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodedId}`, {
+          method: "PATCH",
+          headers,
+          body: JSON.stringify({ employer_visibility: "off", employer_visibility_updated_at: new Date().toISOString() }),
+        }).then((r) => {
+          if (!r.ok) slog.warn("delete-account: could not switch employer visibility off", { httpStatus: r.status });
+        }).catch(() => null);
+        const deletionDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+        return res.status(200).json({
+          success: true,
+          scheduled: true,
+          deletionDate: deletionDate.toISOString(),
+          message: `Your account is scheduled for deletion on ${deletionDate.toDateString()}. Log in any time before then to cancel.`,
+        });
       } catch (err) {
         slog.error("delete-account: soft-delete failed", { error: err instanceof Error ? err.message : String(err) });
-        // Fall through to hard delete
+        return res.status(500).json({ error: "Failed to schedule account deletion" });
       }
     }
 

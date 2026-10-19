@@ -12,6 +12,7 @@
  */
 
 import { verifyCronAuth } from "./_cron-auth";
+import { recordCronResult } from "./_cron-heartbeat";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { supabaseUrl } from "./_shared";
 
@@ -55,6 +56,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const range = delRes.headers.get("content-range") || "";
     const pruned = parseInt(range.split("/")[1] || "0", 10) || 0;
     console.log(`[cron:prune-notifications] pruned ${pruned} rows older than ${RETENTION_DAYS}d (< ${cutoff})`);
+    await recordCronResult("prune-notifications", { errors: 0 });
     return res.status(200).json({ pruned, retentionDays: RETENTION_DAYS, cutoff });
   } catch (err) {
     console.error("[cron:prune-notifications] threw:", err);

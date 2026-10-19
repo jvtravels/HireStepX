@@ -35,6 +35,12 @@ vi.mock("../../server-handlers/_shared", async (importOriginal) => {
   };
 });
 
+const eraseUserData = vi.fn();
+vi.mock("../../server-handlers/_erase-user", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../../server-handlers/_erase-user")>();
+  return { ...actual, eraseUserData: (...a: unknown[]) => eraseUserData(...a) };
+});
+
 const { default: handler } = await import("../../server-handlers/admin-data");
 const { createAdminToken } = await import("../../server-handlers/_admin-auth");
 const { razorpayBasicAuth } = await import("../../server-handlers/_razorpay-auth");
@@ -94,11 +100,13 @@ describe("admin-data — auth gate", () => {
     expect(res.statusCode).toBe(401);
   });
 
-  it("401s once the admin-login bucket is rate-limited", async () => {
-    isRateLimited.mockResolvedValue(true);
+  it("401s on the CORRECT admin password sent as x-admin-key (password is login-only, TOTP cannot be skipped)", async () => {
     const res = mockRes();
-    await handler(mockReq({ section: "overview" }, { "x-admin-key": "correct-horse-battery-staple" }), res);
+    await handler(mockReq({ action: "delete-user", userId: "u1" }, { "x-admin-key": "correct-horse-battery-staple" }), res);
     expect(res.statusCode).toBe(401);
+    expect(global.fetch).not.toHaveBeenCalled();
+    expect(eraseUserData).not.toHaveBeenCalled();
+    expect((res.body as { _token?: string })._token).toBeUndefined();
   });
 
   it("401s on a forged/garbage token", async () => {
@@ -216,38 +224,32 @@ describe("admin-data — ban-user / unban-user", () => {
 });
 
 describe("admin-data — delete-user", () => {
-  it("clears service_usage references then hard-deletes the auth user", async () => {
-    const fetchMock = global.fetch as ReturnType<typeof vi.fn>;
-    fetchMock
-      .mockResolvedValueOnce({ ok: true }) // PATCH service_usage
-      .mockResolvedValueOnce({ ok: true, json: async () => ({}) }); // DELETE auth user
+  const okErase = { ok: true, failedSteps: [], retainedFinancialRecords: false, auth: "deleted", counts: {}, processors: { posthog: "skipped", google: "none" } };
+
+  it("routes through eraseUserData with the admin trigger and never issues a raw auth delete", async () => {
+    eraseUserData.mockResolvedValue(okErase);
     const res = mockRes();
     await handler(authedReq({ action: "delete-user", userId: "u1" }), res);
     expect((res.body as { ok: boolean }).ok).toBe(true);
-    expect(fetchMock).toHaveBeenCalledTimes(2);
-    expect(String(fetchMock.mock.calls[0][0])).toContain("service_usage?user_id=eq.u1");
-    expect(String(fetchMock.mock.calls[1][0])).toContain("/auth/v1/admin/users/u1");
+    expect(eraseUserData).toHaveBeenCalledTimes(1);
+    expect(eraseUserData.mock.calls[0][0]).toMatchObject({ trigger: "admin", supabaseUrl: "https://example.supabase.co" });
+    expect(eraseUserData.mock.calls[0][1]).toBe("u1");
+    expect(global.fetch).not.toHaveBeenCalled();
   });
 
-  it("stops and reports failure if clearing service_usage fails (never attempts the auth delete)", async () => {
-    const fetchMock = global.fetch as ReturnType<typeof vi.fn>;
-    fetchMock.mockResolvedValueOnce({ ok: false, status: 409, text: async () => "fk violation" });
+  it("flags retained financial records in the response", async () => {
+    eraseUserData.mockResolvedValue({ ...okErase, retainedFinancialRecords: true });
     const res = mockRes();
     await handler(authedReq({ action: "delete-user", userId: "u1" }), res);
-    expect((res.body as { ok: boolean; error: string }).ok).toBe(false);
-    expect((res.body as { error: string }).error).toContain("service_usage");
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(res.body).toMatchObject({ ok: true, retainedFinancialRecords: true });
   });
 
-  it("reports failure when the auth-user delete itself fails", async () => {
-    const fetchMock = global.fetch as ReturnType<typeof vi.fn>;
-    fetchMock
-      .mockResolvedValueOnce({ ok: true })
-      .mockResolvedValueOnce({ ok: false, status: 500, text: async () => "boom" });
+  it("reports the failed steps when erasure is incomplete", async () => {
+    eraseUserData.mockResolvedValue({ ...okErase, ok: false, failedSteps: ["sessions"] });
     const res = mockRes();
     await handler(authedReq({ action: "delete-user", userId: "u1" }), res);
-    expect((res.body as { ok: boolean; error: string }).ok).toBe(false);
-    expect((res.body as { error: string }).error).toContain("Delete failed");
+    expect((res.body as { ok: boolean }).ok).toBe(false);
+    expect((res.body as { error: string }).error).toContain("sessions");
   });
 });
 

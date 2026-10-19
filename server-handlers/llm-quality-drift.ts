@@ -3,6 +3,7 @@
  * `model` and `overallScore` already stored in sessions.report_json. */
 
 import { verifyCronAuth } from "./_cron-auth";
+import { recordCronResult } from "./_cron-heartbeat";
 import { analyzeDrift, parseSessionRows } from "./_llm-drift-helpers";
 import { sendOpsAlert } from "./_ops-alert";
 
@@ -41,5 +42,6 @@ export default async function handler(req: Request): Promise<Response> {
   } else {
     console.warn(`[LLM-DRIFT] no drift across ${sessions.length} scored reports`);
   }
+  await recordCronResult("llm-quality-drift", { errors: 0 });
   return new Response(JSON.stringify({ ok: findings.length === 0, sessions: sessions.length, findings }), { status: 200, headers: { "Content-Type": "application/json" } });
 }
