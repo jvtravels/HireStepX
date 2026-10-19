@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { extractResumeDetail, redactResumeDetailForLock, coarsenLockedCity } from "../../server-handlers/_resume-detail-helpers";
+import { extractResumeDetail, redactResumeDetailForLock, coarsenLockedCity, coarsenPeriod } from "../../server-handlers/_resume-detail-helpers";
 import { scrubLockedResume } from "../../server-handlers/_employer-matching-helpers";
 
 describe("extractResumeDetail", () => {
@@ -283,5 +283,27 @@ describe("coarsenLockedCity", () => {
     expect(coarsenLockedCity("Vikaspuri, West Delhi near metro")).toBe("");
     expect(coarsenLockedCity("Jodhpur")).toBe("");
     expect(coarsenLockedCity("")).toBe("");
+  });
+});
+
+describe("locked resume aliasing and period coarsening", () => {
+  it("coarsens periods to years", () => {
+    expect(coarsenPeriod("Jan 2020 – Mar 2022")).toBe("2020 – 2022");
+    expect(coarsenPeriod("03/2020 - Present")).toBe("2020 - Present");
+    expect(coarsenPeriod("September 2019 to present")).toBe("2019 to present");
+    expect(coarsenPeriod("2021 - 2023")).toBe("2021 - 2023");
+  });
+
+  it("scrubs a suffix-stripped name and an acronym of the employer from the prose", () => {
+    const base = extractResumeDetail({
+      summary: "Spent four years at Infosys and then TCS building payments.",
+      experience: [
+        { title: "Engineer", company: "Infosys Ltd", period: "Jan 2018 – Dec 2021" },
+        { title: "Lead", company: "Tata Consultancy Services", period: "2022 – Present" },
+      ],
+    } as never);
+    const locked = redactResumeDetailForLock(base, "Jane Doe");
+    expect(locked.summary).not.toMatch(/infosys|tcs/i);
+    expect(locked.experience[0].period).toBe("2018 – 2021");
   });
 });

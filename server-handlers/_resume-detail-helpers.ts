@@ -95,11 +95,41 @@ const MIN_ENTITY_NAME_LEN = 3;
  *  employer can search for the person). They are also written into the
  *  AI-generated prose, so the names from the structured fields are scrubbed
  *  from the free text too. Whole-word, case-insensitive. */
+const CORPORATE_SUFFIX_RE = /[\s,]+(?:pvt\.?|private|ltd\.?|limited|inc\.?|llp|llc|corp(?:oration)?|co\.?|technologies|technology|solutions|services|systems|labs|software|india|global)\.?$/i;
+
+/** The forms a CV and its AI summary use for one employer: "Infosys Ltd" is
+ *  written "Infosys", "Tata Consultancy Services" is written "TCS". */
+function entityAliases(name: string): string[] {
+  const out: string[] = [];
+  let base = name;
+  while (CORPORATE_SUFFIX_RE.test(base)) base = base.replace(CORPORATE_SUFFIX_RE, "").trim();
+  if (base !== name && base.length >= MIN_ENTITY_NAME_LEN) out.push(base);
+  for (const form of new Set([name, base])) {
+    const words = form.split(/\s+/).filter((w) => /^[A-Za-z]/.test(w));
+    if (words.length >= 3) out.push(words.map((w) => w[0].toUpperCase()).join(""));
+  }
+  return out;
+}
+
+const MONTH_WORD_RE = /\b(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|june?|july?|aug(?:ust)?|sept?(?:ember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\b\.?,?\s*/gi;
+
+/** "Jan 2020 – Mar 2022" and "03/2020" narrow a person down far more than the
+ *  year does; a locked candidate keeps the year and nothing finer. */
+export function coarsenPeriod(period: string): string {
+  return period
+    .replace(/\b\d{1,2}[/.-](?=\d{4}\b)/g, "")
+    .replace(MONTH_WORD_RE, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function lockedEntityNames(detail: ResumeDetail): string[] {
   const names = new Set<string>();
   const add = (v: string | undefined) => {
     const t = (v ?? "").trim();
-    if (t.length >= MIN_ENTITY_NAME_LEN) names.add(t);
+    if (t.length < MIN_ENTITY_NAME_LEN) return;
+    names.add(t);
+    for (const alias of entityAliases(t)) names.add(alias);
   };
   for (const e of detail.experience) {
     add(e.company);
@@ -138,7 +168,7 @@ export function redactResumeDetailForLock(detail: ResumeDetail, realName: string
     experience: detail.experience.map((e) => ({
       title: clean(e.title),
       company: "",
-      period: e.period,
+      period: coarsenPeriod(e.period),
       ...(e.scope ? { scope: clean(e.scope) } : {}),
       ...(e.teamSize !== undefined ? { teamSize: e.teamSize } : {}),
     })),

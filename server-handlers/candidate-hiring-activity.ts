@@ -16,7 +16,7 @@ import { withAuthAndRateLimit, corsHeaders, withRequestId, slog } from "./_share
 import { describeMatch } from "./_requirement-match-helpers";
 import { asBoundedSalaryType } from "./_employer-requirements-helpers";
 import { isSuspended } from "./_employer-trust";
-import { requestHeadline, type CandidateRequestRow } from "./_candidate-request-helpers";
+import { maskLockedPostingText, requestHeadline, type CandidateRequestRow } from "./_candidate-request-helpers";
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
@@ -169,9 +169,11 @@ export default async function handler(req: Request): Promise<Response> {
       const req = m.employer_requirements;
       const skills = req?.skills || [];
       const locations = req?.locations?.length ? req.locations : req?.location ? [req.location] : [];
+      const mask = (v: string | null | undefined) => (m.unlocked ? v ?? null : maskLockedPostingText(v, req?.employers));
+      const description = mask(req?.description);
       return {
         id: m.id,
-        roleTitle: req?.title || "Open role",
+        roleTitle: mask(req?.title) || "Open role",
         companyName: m.unlocked ? req?.employers?.company_name || "A HireStepX employer" : CONFIDENTIAL_COMPANY_NAME,
         companyLogoPath: m.unlocked ? logoUrl(req?.employers?.logo_path || null) : null,
         companyWebsite: m.unlocked ? req?.employers?.website || null : null,
@@ -187,17 +189,17 @@ export default async function handler(req: Request): Promise<Response> {
         skills: full ? skills : skills.slice(0, 6),
         noticePeriodPref: req?.notice_period_pref || null,
         openPositions: req?.open_positions ?? null,
-        description: req?.description || null,
-        responsibilities: req?.responsibilities || null,
-        niceToHave: req?.nice_to_have || null,
-        perksAndBenefits: req?.perks_and_benefits || [],
+        description: description || null,
+        responsibilities: mask(req?.responsibilities) || null,
+        niceToHave: mask(req?.nice_to_have) || null,
+        perksAndBenefits: (req?.perks_and_benefits || []).map((x) => mask(x) ?? ""),
         preferredIndustry: req?.preferred_industry || null,
         dueDate: req?.due_date || null,
         status: req?.status || null,
         employmentType: req?.employment_type || null,
         matchScore: m.match_score ?? 0,
         matchReason: req
-          ? describeMatch(candidateProfile, { title: req.title, location: req.location, description: req.description || "" }, skills)
+          ? describeMatch(candidateProfile, { title: mask(req.title) || req.title, location: req.location, description: description || "" }, skills)
           : "Matched on your overall profile and practice history.",
         unlocked: m.unlocked,
         requirementId: m.requirement_id,

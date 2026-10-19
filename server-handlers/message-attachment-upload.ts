@@ -107,8 +107,9 @@ export default async function handler(req: Request): Promise<Response> {
     }
     const employerId = row.employer_requirements.employer_id;
     const role = resolveRole(auth.userId, employerId, row.candidate_user_id);
+    // Same answer as a missing row, so a stranger cannot probe which ids exist.
     if (!role) {
-      return new Response(JSON.stringify({ error: "Not authorized for this conversation" }), { status: 403, headers });
+      return new Response(JSON.stringify({ error: "Candidate match not found" }), { status: 404, headers });
     }
     uploaderRole = role;
     let block;
@@ -176,7 +177,7 @@ export default async function handler(req: Request): Promise<Response> {
       const isMissingBucket = uploadRes.status === 404 || /bucket.*not.*found/i.test(errText);
       slog.warn("message-attachment-upload: storage upload failed", { httpStatus: uploadRes.status, body: errText.slice(0, 200) });
       return new Response(JSON.stringify({
-        error: isMissingBucket ? "File sharing isn't configured yet." : `Upload failed: ${errText.slice(0, 100)}`,
+        error: isMissingBucket ? "File sharing isn't configured yet." : "Upload failed. Please try again.",
         bucketMissing: isMissingBucket,
       }), { status: isMissingBucket ? 503 : 502, headers });
     }

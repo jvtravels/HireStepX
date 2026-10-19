@@ -14,12 +14,14 @@
 
 export const config = { runtime: "edge" };
 
-import { withAuthAndRateLimit, corsHeaders, withRequestId, slog } from "./_shared";
+import { withAuthAndRateLimit, corsHeaders, withRequestId, slog, isRateLimited, rateLimitResponse } from "./_shared";
 import { asFlagReason, asFlagNote, resolveRole, MESSAGE_ID_RE } from "./_messages-helpers";
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+
+const DAILY_FLAG_CAP = 40;
 
 function serviceHeaders(): Record<string, string> {
   return { apikey: SUPABASE_SERVICE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_KEY}` };
@@ -84,8 +86,9 @@ export default async function handler(req: Request): Promise<Response> {
     }
     const message = msgRows[0];
     const role = resolveRole(auth.userId, message.employer_id, message.candidate_user_id);
+    // Same answer as a missing row, so a stranger cannot probe which ids exist.
     if (!role) {
-      return new Response(JSON.stringify({ error: "Not authorized for this conversation" }), { status: 403, headers });
+      return new Response(JSON.stringify({ error: "Message not found" }), { status: 404, headers });
     }
 
     // Idempotent per reporter: a repeat report of the same message by the same
@@ -103,6 +106,11 @@ export default async function handler(req: Request): Promise<Response> {
       if (dups.length > 0) {
         return new Response(JSON.stringify({ ok: true, duplicate: true }), { status: 200, headers });
       }
+    }
+
+    // The review queue is read by a human: cap new reports per person per day so one account cannot bury it.
+    if (await isRateLimited(auth.userId, "flag-message-day", DAILY_FLAG_CAP, 24 * 60 * 60_000)) {
+      return rateLimitResponse(headers, 3600);
     }
 
     const insertRes = await fetch(`${SUPABASE_URL}/rest/v1/message_flags`, {

@@ -144,10 +144,10 @@ describe("message-attachment-url gating", () => {
     expect(signed(f)).toBe(true);
   });
 
-  it("403s a stranger", async () => {
+  it("404s a stranger, same as a missing message", async () => {
     asUser("someone-else");
     const f = installFetch({ unlocked: true });
-    expect((await get()).status).toBe(403);
+    expect((await get()).status).toBe(404);
     expect(signed(f)).toBe(false);
   });
 });

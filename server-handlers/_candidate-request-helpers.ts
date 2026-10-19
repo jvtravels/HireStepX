@@ -4,7 +4,7 @@
    by both consoles. */
 
 import { asContactRequestFields, joinFieldLabels, type ContactRequestField } from "./_employer-contact-request-helpers";
-import { detectContactInfoFlag } from "./_messages-helpers";
+import { detectContactInfoFlag, redactContactInfo } from "./_messages-helpers";
 import {
   REQUEST_KINDS,
   REQUEST_STATUSES,
@@ -146,4 +146,23 @@ export function isMissingTableResponse(status: number, bodyText: string): boolea
 
 export function isUniqueViolation(status: number, bodyText: string): boolean {
   return status === 409 || /23505|duplicate key/i.test(bodyText);
+}
+
+const escapeRegExp = (v: string) => v.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const COMPANY_MASK = "the company";
+
+/** Employer-authored posting text shown to a candidate on a Locked match: the
+ *  company name, its website host and any contact details are masked so the
+ *  free text cannot name the employer the unlock fee protects. */
+export function maskLockedPostingText(
+  text: string | null | undefined,
+  employer: { company_name?: string | null; website?: string | null } | null | undefined,
+): string | null {
+  if (!text) return text ?? null;
+  let out = text;
+  const needles = [employer?.company_name, employer?.website?.replace(/^https?:\/\//i, "").replace(/^www\./i, "").replace(/\/.*$/, "")]
+    .map((n) => n?.trim())
+    .filter((n): n is string => !!n && n.length >= 3);
+  for (const n of needles) out = out.replace(new RegExp(escapeRegExp(n), "gi"), COMPANY_MASK);
+  return redactContactInfo(out).text;
 }

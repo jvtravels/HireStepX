@@ -310,7 +310,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                 <button
                   onClick={() => dismiss(t.id)}
                   aria-label="Dismiss notification"
-                  style={{ background: "none", border: "none", color: c.stone, cursor: "pointer", padding: 2, flexShrink: 0 }}
+                  style={{ background: "none", border: "none", color: c.stone, cursor: "pointer", padding: 0, flexShrink: 0, width: 28, height: 28, display: "inline-flex", alignItems: "center", justifyContent: "center", margin: "-4px -8px -4px 0" }}
                 >
                   <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>

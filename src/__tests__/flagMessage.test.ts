@@ -4,8 +4,11 @@ process.env.SUPABASE_URL = "https://example.supabase.co";
 process.env.SUPABASE_SERVICE_ROLE_KEY = "service-role-key";
 
 const withAuthAndRateLimit = vi.fn();
+const isRateLimited = vi.fn(async () => false);
 vi.mock("../../server-handlers/_shared", () => ({
   withAuthAndRateLimit: (...a: unknown[]) => withAuthAndRateLimit(...a),
+  isRateLimited: (...a: unknown[]) => isRateLimited(...(a as [])),
+  rateLimitResponse: (h: Record<string, string>) => new Response("{}", { status: 429, headers: h }),
   corsHeaders: () => ({}),
   withRequestId: (h: Record<string, string>) => h,
   slog: { error: vi.fn(), warn: vi.fn(), info: vi.fn() },
@@ -33,6 +36,25 @@ const inserted = (f: ReturnType<typeof installFetch>) => f.mock.calls.some(([, i
 beforeEach(() => {
   withAuthAndRateLimit.mockReset();
   withAuthAndRateLimit.mockResolvedValue({ auth: { userId: "cand-1" }, headers: {} });
+  isRateLimited.mockReset();
+  isRateLimited.mockResolvedValue(false);
+});
+
+describe("flag-message daily cap", () => {
+  it("429s a new report once the day's cap is spent, without inserting", async () => {
+    isRateLimited.mockResolvedValue(true);
+    const f = installFetch(false);
+    const res = await flag();
+    expect(res.status).toBe(429);
+    expect(inserted(f)).toBe(false);
+  });
+
+  it("does not spend the cap on a repeat report of the same message", async () => {
+    isRateLimited.mockResolvedValue(true);
+    const res = await (installFetch(true), flag());
+    expect(res.status).toBe(200);
+    expect(isRateLimited).not.toHaveBeenCalled();
+  });
 });
 
 describe("flag-message idempotency", () => {
@@ -71,10 +93,10 @@ describe("flag-message idempotency", () => {
     expect(dupCall).toContain("flagged_by_role=neq.system");
   });
 
-  it("403s a stranger before any flag is written", async () => {
+  it("404s a stranger before any flag is written", async () => {
     withAuthAndRateLimit.mockResolvedValue({ auth: { userId: "stranger" }, headers: {} });
     const f = installFetch(false);
-    expect((await flag()).status).toBe(403);
+    expect((await flag()).status).toBe(404);
     expect(inserted(f)).toBe(false);
   });
 });

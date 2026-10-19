@@ -77,8 +77,9 @@ export default async function handler(req: Request): Promise<Response> {
     }
     const message = msgRows[0];
     const role = resolveRole(auth.userId, message.employer_id, message.candidate_user_id);
+    // Same answer as a missing row, so a stranger cannot probe which ids exist.
     if (!role) {
-      return new Response(JSON.stringify({ error: "Not authorized for this conversation" }), { status: 403, headers });
+      return new Response(JSON.stringify({ error: "Message not found" }), { status: 404, headers });
     }
     if (role === "employer") {
       const matchId = message.conversations?.match_id;
