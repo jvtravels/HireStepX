@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { generateICS } from "../dashboardHelpers";
-import { inviteEvent, invitePracticeHref, isInterviewInvite } from "../interviewInvite";
+import { inviteEvent, invitePracticeHref, isInterviewInvite, inviteJobDescription } from "../interviewInvite";
 
 describe("isInterviewInvite", () => {
   it("is true for invited and interviewing", () => {
@@ -30,7 +30,18 @@ describe("inviteEvent", () => {
 
 describe("invitePracticeHref", () => {
   it("includes the company only once revealed", () => {
-    expect(invitePracticeHref({ roleTitle: "SDE II", companyName: "Acme", unlocked: true })).toBe("/session/new?role=SDE+II&company=Acme");
-    expect(invitePracticeHref({ roleTitle: "SDE II", companyName: "Confidential company", unlocked: false })).toBe("/session/new?role=SDE+II");
+    expect(invitePracticeHref({ id: "m1", roleTitle: "SDE II", companyName: "Acme", unlocked: true })).toBe("/session/new?role=SDE+II&invite=m1&company=Acme");
+    expect(invitePracticeHref({ id: "m1", roleTitle: "SDE II", companyName: "Confidential company", unlocked: false })).toBe("/session/new?role=SDE+II&invite=m1");
+  });
+});
+
+describe("inviteJobDescription", () => {
+  it("joins skills, description and responsibilities and caps the length", () => {
+    const text = inviteJobDescription({ roleTitle: "SDE II", skills: ["React", "SQL"], description: "Build  things.\nFast.", responsibilities: "Own the roadmap" });
+    expect(text).toBe("Key skills: React, SQL. Build things. Fast. Responsibilities: Own the roadmap");
+    expect(inviteJobDescription({ roleTitle: "x", skills: [], description: "a".repeat(5000), responsibilities: null }).length).toBe(1200);
+  });
+  it("is empty when the posting has nothing to tailor to", () => {
+    expect(inviteJobDescription({ roleTitle: "x", skills: [], description: null, responsibilities: null })).toBe("");
   });
 });

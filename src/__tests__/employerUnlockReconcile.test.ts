@@ -42,7 +42,7 @@ describe("reconcileUnlockOrders", () => {
     expect(s).toMatchObject({ scanned: 1, fulfilled: 1, errors: 0 });
     expect(db.orders.get("order_1")?.status).toBe("fulfilled");
     expect(db.matches.get("m1")?.unlocked).toBe(true);
-    expect(notifyImpl).toHaveBeenCalledTimes(1);
+    expect((notifyImpl.mock.calls as unknown as Array<[{ type: string }]>).filter((c) => c[0].type === "unlock_confirmed")).toHaveLength(1);
   });
 
   it("retries an order left 'paid' by a failed fulfilment", async () => {
@@ -158,7 +158,7 @@ describe("reconcileUnlockOrders", () => {
     await sweep({ payments: [pay("order_1")] });
     const s2 = await sweep({ payments: [pay("order_1")] });
     expect(s2.scanned).toBe(0);
-    expect(notifyImpl).toHaveBeenCalledTimes(1);
+    expect((notifyImpl.mock.calls as unknown as Array<[{ type: string }]>).filter((c) => c[0].type === "unlock_confirmed")).toHaveLength(1);
   });
 
   it("throws when the order query itself fails so the cron reports 500", async () => {

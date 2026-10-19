@@ -18,6 +18,7 @@
    SessionsV2.tsx (Table, Input, Select, DropdownMenu-based FilterPill,
    Button) rather than hand-rolled table/select/button markup. */
 
+import type { MatchFactors } from "./MatchFactorsCard";
 import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -74,6 +75,7 @@ export interface JobMatch {
   employmentType: string | null;
   matchScore: number;
   matchReason: string;
+  matchFactors?: MatchFactors | null;
   unlocked: boolean;
   matchedAt: string;
   unlockedAt: string | null;

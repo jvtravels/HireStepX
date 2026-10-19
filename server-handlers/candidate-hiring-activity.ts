@@ -13,7 +13,7 @@
 export const config = { runtime: "edge" };
 
 import { withAuthAndRateLimit, corsHeaders, withRequestId, slog } from "./_shared";
-import { describeMatch } from "./_requirement-match-helpers";
+import { describeMatch, describeMatchFactors } from "./_requirement-match-helpers";
 import { asBoundedSalaryType } from "./_employer-requirements-helpers";
 import { isSuspended } from "./_employer-trust";
 import { maskLockedPostingText, requestHeadline, type CandidateRequestRow } from "./_candidate-request-helpers";
@@ -201,6 +201,12 @@ export default async function handler(req: Request): Promise<Response> {
         matchReason: req
           ? describeMatch(candidateProfile, { title: mask(req.title) || req.title, location: req.location, description: description || "" }, skills)
           : "Matched on your overall profile and practice history.",
+        matchFactors: req
+          ? describeMatchFactors(candidateProfile, {
+              title: mask(req.title) || req.title, location: req.location, description: description || "",
+              skills, experienceMin: req.experience_min, experienceMax: req.experience_max,
+            }, skills)
+          : null,
         unlocked: m.unlocked,
         requirementId: m.requirement_id,
         candidateStatus: m.candidate_status,

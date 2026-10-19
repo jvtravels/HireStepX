@@ -43,7 +43,9 @@ class FakeCredit {
       const url = String(input);
       const method = (init?.method || "GET").toUpperCase();
       if (url.startsWith("https://api.resend.com/")) {
-        this.resend.push({ headers: (init?.headers ?? {}) as Record<string, string>, body: JSON.parse(String(init?.body)) });
+        const body = JSON.parse(String(init?.body));
+        // The candidate "employer is interested" mail is not the buyer's receipt.
+        if (!String(body.subject).startsWith("An employer is interested")) this.resend.push({ headers: (init?.headers ?? {}) as Record<string, string>, body });
         return json({ id: "em_1" });
       }
       if (!url.startsWith(SUPABASE)) return json({}, 404);

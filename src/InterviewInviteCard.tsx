@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { tokens as t, fonts as f } from "./auth/_tokens";
 import { generateICS } from "./dashboardHelpers";
 import type { JobMatch } from "./DashboardJobs";
-import { inviteEvent, invitePracticeHref } from "./interviewInvite";
+import { inviteEvent, invitePracticeHref, stashInviteJd } from "./interviewInvite";
 import { formatInterviewWhen, isDateOnlyInstant, isInterviewPast } from "./interviewWhen";
 
 const CARD_STYLE = { background: t.white, border: `1px solid ${t.line}`, borderRadius: 16, padding: 24, minWidth: 0 } as const;
@@ -45,7 +45,7 @@ export default function InterviewInviteCard({ job }: { job: JobMatch }) {
       <h2 id="job-invite-heading" style={HEADING_STYLE}>{past ? "Interview date has passed" : "You're invited to interview"}</h2>
       <p style={BODY_STYLE}>{body}</p>
       <div style={ACTIONS_STYLE}>
-        {!past && <Button type="button" onClick={() => router.push(invitePracticeHref(job))}>Practise for this interview</Button>}
+        {!past && <Button type="button" onClick={() => { stashInviteJd(job); router.push(invitePracticeHref(job)); }}>Practise for this interview</Button>}
         {hasTime && !past && <Button type="button" variant="outline" onClick={() => downloadIcs(job)}>Add to calendar</Button>}
         <Button type="button" variant={past ? "default" : "outline"} onClick={() => router.push(`/messages?matchId=${encodeURIComponent(job.id)}`)}>Open messages</Button>
       </div>

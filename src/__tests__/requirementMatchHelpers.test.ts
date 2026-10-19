@@ -7,6 +7,7 @@ import {
   extractResumeLocation,
   extractSkills,
   describeMatch,
+  describeMatchFactors,
   MIN_MATCH_SCORE_FLOOR,
   STRONG_MATCH_THRESHOLD,
   skillsSupportStrong,
@@ -674,5 +675,30 @@ describe("model score provenance", () => {
     expect(llmProfileStamp(a)).toBe(llmProfileStamp({ ...a, id: "other" }));
     expect(llmProfileStamp({ ...a, resume_data: { skills: ["React", "Go"], location: "Bengaluru" } })).not.toBe(llmProfileStamp(a));
     expect(llmProfileStamp({ ...a, target_role: "Backend Engineer" })).not.toBe(llmProfileStamp(a));
+  });
+});
+
+describe("describeMatchFactors", () => {
+  it("separates matched from missing skills and never invents one", () => {
+    const candidate = { target_role: "Senior Frontend Engineer", resume_data: { skills: ["React", "Figma"], location: "Bengaluru" } };
+    const f = describeMatchFactors(candidate, req, ["React", "Kubernetes"]);
+    expect(f.matchedSkills).toEqual(["React"]);
+    expect(f.missingSkills).toEqual(["Kubernetes"]);
+    expect(f.factors.find((x) => x.key === "skills")?.level).toBe("partial");
+  });
+
+  it("flags a gap on a different role instead of hiding it", () => {
+    const candidate = { target_role: "Product Designer", resume_data: { skills: ["Figma"], location: "Mumbai" } };
+    const f = describeMatchFactors(candidate, req, ["React"]);
+    expect(f.factors.find((x) => x.key === "role")?.level).toBe("gap");
+  });
+
+  it("includes experience only when the band and the resume years are both known", () => {
+    const withYears = { target_role: "Senior Frontend Engineer", resume_data: { skills: ["React"], yearsExperience: 5 } };
+    const band = { ...req, experienceMin: 3, experienceMax: 7 };
+    expect(describeMatchFactors(withYears, band, ["React"]).factors.some((x) => x.key === "experience")).toBe(true);
+    expect(describeMatchFactors(withYears, req, ["React"]).factors.some((x) => x.key === "experience")).toBe(false);
+    const noYears = { target_role: "Senior Frontend Engineer", resume_data: { skills: ["React"] } };
+    expect(describeMatchFactors(noYears, band, ["React"]).factors.some((x) => x.key === "experience")).toBe(false);
   });
 });

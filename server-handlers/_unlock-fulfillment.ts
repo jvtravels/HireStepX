@@ -43,6 +43,7 @@
 
 import { patchMatchUnlocked } from "./_unlock-apply";
 import { notify as defaultNotify, type NotifyInput } from "./_notify";
+import { notifyCandidatesOfInterest } from "./_employer-interest-notify";
 import { razorpayBasicAuth } from "./_razorpay-auth";
 import { slog, redisPipeline } from "./_shared";
 import { captureServerEvent, captureServerException } from "./_posthog";
@@ -795,6 +796,13 @@ export async function fulfillUnlockOrder(p: FulfillParams): Promise<FulfillResul
           : `Payment confirmed — the candidate's contact details are ready.${invoice}`,
       link: requirementId ? `/employer/requirements/${requirementId}` : undefined,
     });
+    if (!suspended && toUnlock.length > 0) {
+      void notifyCandidatesOfInterest({
+        notifyFn,
+        fetchImpl: f,
+        targets: toUnlock.map((m) => ({ matchId: m.id, candidateUserId: m.candidate_user_id, name: m.profiles?.name ?? null, email: m.profiles?.email ?? null })),
+      });
+    }
     if (!creditOnly && n > 0) {
       void sendUnlockReceiptEmail({
         supabaseUrl: p.supabaseUrl, headers: p.headers, fetchImpl: f,

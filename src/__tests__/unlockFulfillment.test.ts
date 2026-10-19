@@ -29,6 +29,8 @@ beforeEach(() => {
   db = new FakeUnlockDb().seed({ orders: [order()], matches: [match("m1")] });
 });
 
+const buyerCalls = (fn: { mock: { calls: Array<[{ type: string }]> } }) => fn.mock.calls.filter((c) => c[0].type === "unlock_confirmed");
+
 describe("fulfillUnlockOrder — happy path", () => {
   it("marks paid, records the ledger row, unlocks the match, closes the order and notifies once", async () => {
     const { p, notifyImpl } = run(db);
@@ -41,8 +43,9 @@ describe("fulfillUnlockOrder — happy path", () => {
     expect(db.orders.get("order_1")).toMatchObject({ status: "fulfilled", razorpay_payment_id: "pay_1" });
     expect(db.matches.get("m1")).toMatchObject({ unlocked: true, unlocked_candidate_email: "m1@example.com" });
     expect(db.ledger).toHaveLength(1);
-    expect(notifyImpl).toHaveBeenCalledTimes(1);
-    expect(notifyImpl.mock.calls[0]?.[0]).toMatchObject({ userId: "emp-1", type: "unlock_confirmed" });
+    expect(buyerCalls(notifyImpl)).toHaveLength(1);
+    expect(buyerCalls(notifyImpl)[0]?.[0]).toMatchObject({ userId: "emp-1", type: "unlock_confirmed" });
+    expect(notifyImpl.mock.calls.filter((c) => c[0].type === "employer_contact_request")).toHaveLength(1);
   });
 
   it("is idempotent: a second call re-reports the result, writes nothing and does not notify again", async () => {
@@ -67,7 +70,7 @@ describe("fulfillUnlockOrder — happy path", () => {
     const [ra, rb] = await Promise.all([a.p, b.p]);
     expect([ra.kind, rb.kind].every((k) => k === "fulfilled")).toBe(true);
     expect(db.ledger).toHaveLength(1);
-    expect(a.notifyImpl.mock.calls.length + b.notifyImpl.mock.calls.length).toBe(1);
+    expect(buyerCalls(a.notifyImpl).length + buyerCalls(b.notifyImpl).length).toBe(1);
     expect(db.matches.get("m1")?.unlocked).toBe(true);
     expect(db.orders.get("order_1")?.status).toBe("fulfilled");
   });
@@ -81,7 +84,7 @@ describe("fulfillUnlockOrder — happy path", () => {
     expect(db.matches.get("m1")?.unlocked).toBe(true);
     // The notification belongs to whichever call closes the order (the CAS winner), not to the ledger insert:
     // here an earlier attempt left the ledger row but never closed the order, so this call must tell the buyer.
-    expect(notifyImpl).toHaveBeenCalledTimes(1);
+    expect(buyerCalls(notifyImpl)).toHaveLength(1);
   });
 });
 
@@ -189,7 +192,7 @@ describe("fulfillUnlockOrder — refusals and failure handling", () => {
     expect(db.matches.get("m1")?.unlocked).toBe(true);
     expect(db.ledger).toHaveLength(1);
     // The first attempt never closed the order (so never notified); the retry that closes it notifies exactly once.
-    expect(retry.notifyImpl).toHaveBeenCalledTimes(1);
+    expect(buyerCalls(retry.notifyImpl)).toHaveLength(1);
   });
 
   it("returns db_error when the ledger insert fails for a reason other than a duplicate", async () => {

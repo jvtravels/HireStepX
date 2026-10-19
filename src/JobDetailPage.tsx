@@ -26,6 +26,7 @@ import EmployerActionsMenu, { EmployerResponseBadge } from "./EmployerActionsMen
 import { normalizeResponse, readStoredResponse, type EmployerResponse } from "./employerActions";
 import { useToast } from "./Toast";
 import CandidateRequestsCard from "./CandidateRequestsCard";
+import { MatchFactorsCard, EmployerVisibilityCard } from "./MatchFactorsCard";
 import InterviewInviteCard from "./InterviewInviteCard";
 import { isInterviewInvite } from "./interviewInvite";
 
@@ -303,6 +304,8 @@ export default function JobDetailPage() {
           )}
 
           <div style={{ marginTop: 20, paddingTop: 20, borderTop: `1px solid ${t.line}`, display: "flex", flexDirection: "column", gap: 20 }}>
+            {job.matchFactors && job.matchFactors.factors.length > 0 && <MatchFactorsCard data={job.matchFactors} />}
+            <EmployerVisibilityCard unlocked={job.unlocked} />
             <section aria-label="Skills">
               <h2 style={SECTION_HEADING_STYLE}>Skills</h2>
               {job.skills.length > 0 ? (

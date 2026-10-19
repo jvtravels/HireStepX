@@ -664,6 +664,76 @@ export function describeMatch(
   return `Matched because ${parts.join(" and ")}.`;
 }
 
+export type MatchFactorLevel = "strong" | "partial" | "gap";
+export interface MatchFactor {
+  key: "role" | "skills" | "location" | "experience";
+  label: string;
+  level: MatchFactorLevel;
+  detail: string;
+}
+export interface MatchFactors {
+  factors: MatchFactor[];
+  matchedSkills: string[];
+  missingSkills: string[];
+}
+
+const levelOf = (pct: number): MatchFactorLevel => (pct >= 80 ? "strong" : pct >= 40 ? "partial" : "gap");
+
+/** Structured "why you matched" for the candidate job page: the same inputs as
+    describeMatch, but per factor so a gap is shown rather than hidden. Only
+    the candidate's own data and the posting's visible fields are used. */
+export function describeMatchFactors(
+  candidate: Pick<CandidatePoolRow, "target_role" | "resume_data">,
+  req: RequirementInput,
+  reqSkills: string[],
+): MatchFactors {
+  const years = (() => {
+    const r = candidate.resume_data;
+    const y = r && typeof r === "object" ? (r as Record<string, unknown>).yearsExperience : null;
+    return typeof y === "number" && Number.isFinite(y) ? y : null;
+  })();
+  const b = explainMatch(candidate, req, { yearsExperience: years });
+  const have = extractSkills(candidate.resume_data);
+  const haveSet = new Set(have.map((x) => x.toLowerCase()));
+  const matchedSkills = reqSkills.filter((x) => haveSet.has(x.toLowerCase()));
+  const missingSkills = reqSkills.filter((x) => !haveSet.has(x.toLowerCase()));
+
+  const factors: MatchFactor[] = [];
+  factors.push({
+    key: "role",
+    label: "Role",
+    level: levelOf(b.roleMatch),
+    detail: b.roleMatch >= 80 ? "Matches your target role" : b.roleMatch >= 40 ? "Close to your target role" : "Different from your target role",
+  });
+  if (reqSkills.length > 0) {
+    const pct = Math.round((matchedSkills.length / reqSkills.length) * 100);
+    factors.push({
+      key: "skills",
+      label: "Skills",
+      level: levelOf(pct),
+      detail: `You list ${matchedSkills.length} of ${reqSkills.length} skills they asked for`,
+    });
+  }
+  factors.push({
+    key: "location",
+    label: "Location",
+    level: levelOf(b.locationMatch),
+    detail: b.locationMatch >= 80 ? "Fits your location" : b.locationMatch >= 40 ? "Partly fits your location" : "Outside your usual location",
+  });
+  if (b.experienceMatch != null && years != null) {
+    const band = req.experienceMin != null && req.experienceMax != null
+      ? `${req.experienceMin}-${req.experienceMax} years`
+      : req.experienceMin != null ? `${req.experienceMin}+ years` : `up to ${req.experienceMax} years`;
+    factors.push({
+      key: "experience",
+      label: "Experience",
+      level: levelOf(b.experienceMatch),
+      detail: b.experienceMatch >= 80 ? `Your ${years} years sits in their ${band} range` : `They want ${band}; your resume shows ${years}`,
+    });
+  }
+  return { factors, matchedSkills, missingSkills };
+}
+
 export type RequirementMatchStatus = "ready" | "partial" | "zero";
 
 /** A candidate is a "strong match" for a requirement at this matchScore or

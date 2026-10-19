@@ -1,4 +1,5 @@
 "use client";
+import { readInviteJd } from "./interviewInvite";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -723,6 +724,7 @@ export default function SessionSetup() {
   const prefillRole = searchParams.get("role") || "";
   const prefillCompany = searchParams.get("company") || "";
   const warnFlag = searchParams.get("warn");
+  const inviteJd = readInviteJd(searchParams.get("invite"));
   /* Drill mode (v1) — when the dashboard "Your next move" CTA fires
      from a known gap (see nextMove.GAP_CTA_MAP), the user lands here
      with `?drill=<key>` (e.g. ?drill=comp_floor). We:
@@ -1512,7 +1514,7 @@ export default function SessionSetup() {
          hand the engine its text-only hatch so it doesn't try to acquire a
          mic the user never gave and doesn't render a dead "Listening" state. */
       const micParam = micStatus === "granted" ? "" : "&nomic=1";
-      router.push(`/interview?type=${interviewTypeParam}${focusParam}&difficulty=standard&new=1${targetCompany ? `&company=${encodeURIComponent(targetCompany)}` : ""}&role=${encodeURIComponent(targetRole)}&length=${SESSION_LENGTH}${cameraParam}${drillParam}${micParam}`);
+      router.push(`/interview?type=${interviewTypeParam}${focusParam}&difficulty=standard&new=1${targetCompany ? `&company=${encodeURIComponent(targetCompany)}` : ""}&role=${encodeURIComponent(targetRole)}&length=${SESSION_LENGTH}${cameraParam}${drillParam}${micParam}${inviteJd ? `&jd=${encodeURIComponent(inviteJd)}` : ""}`);
     }, 1900);
   };
 

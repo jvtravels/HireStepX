@@ -29,8 +29,36 @@ export function inviteEvent(job: Pick<JobMatch, "id" | "roleTitle" | "companyNam
   };
 }
 
-export function invitePracticeHref(job: Pick<JobMatch, "roleTitle" | "companyName" | "unlocked">): string {
-  const params = new URLSearchParams({ role: job.roleTitle });
+export function invitePracticeHref(job: Pick<JobMatch, "id" | "roleTitle" | "companyName" | "unlocked">): string {
+  const params = new URLSearchParams({ role: job.roleTitle, invite: job.id });
   if (job.unlocked && job.companyName) params.set("company", job.companyName);
   return `/session/new?${params.toString()}`;
+}
+
+const JD_MAX_CHARS = 1200;
+const JD_KEY_PREFIX = "hsx-invite-jd:";
+
+/** Compact posting text the question generator tailors a prep session to. */
+export function inviteJobDescription(job: Pick<JobMatch, "roleTitle" | "skills" | "description" | "responsibilities">): string {
+  const parts = [
+    job.skills.length > 0 ? `Key skills: ${job.skills.join(", ")}.` : "",
+    job.description ?? "",
+    job.responsibilities ? `Responsibilities: ${job.responsibilities}` : "",
+  ];
+  return parts.map((p) => p.replace(/\s+/g, " ").trim()).filter(Boolean).join(" ").slice(0, JD_MAX_CHARS);
+}
+
+export function stashInviteJd(job: Pick<JobMatch, "id" | "roleTitle" | "skills" | "description" | "responsibilities">): void {
+  try {
+    sessionStorage.setItem(`${JD_KEY_PREFIX}${job.id}`, inviteJobDescription(job));
+  } catch { /* private mode: the practice session simply is not tailored */ }
+}
+
+export function readInviteJd(inviteId: string | null): string {
+  if (!inviteId) return "";
+  try {
+    return sessionStorage.getItem(`${JD_KEY_PREFIX}${inviteId}`) ?? "";
+  } catch {
+    return "";
+  }
 }
