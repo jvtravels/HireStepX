@@ -127,6 +127,13 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   outline: 2px solid oklch(0.555 0.163 48.998);
   outline-offset: 2px;
 }
+/* Menu rows already show a filled highlight on focus; the ring would be a
+   second heavy border on top of it. */
+[role="menuitem"]:focus-visible,
+[role="menuitemcheckbox"]:focus-visible,
+[role="menuitemradio"]:focus-visible {
+  outline: none;
+}
 /* Chip / tag fields: the wrapper is the visible "input", so it carries the
    single focus ring, drawn over its own 1px border. The inner input's ring is
    suppressed so a nested box never appears inside the field. */
