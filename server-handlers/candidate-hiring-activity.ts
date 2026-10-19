@@ -42,6 +42,10 @@ function logoUrl(logoPath: string | null): string | null {
 
 interface MatchRow {
   id: string;
+  requirement_id: string | null;
+  candidate_status: string | null;
+  candidate_response: string | null;
+  interview_scheduled_at: string | null;
   unlocked: boolean;
   unlocked_at: string | null;
   match_score: number;
@@ -107,7 +111,7 @@ export default async function handler(req: Request): Promise<Response> {
       ),
       fetch(
         `${SUPABASE_URL}/rest/v1/requirement_matches?candidate_user_id=eq.${encodeURIComponent(auth.userId)}` +
-          `&select=id,unlocked,unlocked_at,match_score,created_at,` +
+          `&select=id,requirement_id,unlocked,unlocked_at,match_score,created_at,candidate_status,candidate_response,interview_scheduled_at,` +
           `employer_requirements(title,location,locations,status,work_mode,salary_type,budget_min,budget_max,experience_min,experience_max,skills,` +
           `notice_period_pref,open_positions,description,responsibilities,nice_to_have,perks_and_benefits,preferred_industry,due_date,employment_type,` +
           `employers(company_name,logo_path,website,suspended_at))` +
@@ -196,6 +200,10 @@ export default async function handler(req: Request): Promise<Response> {
           ? describeMatch(candidateProfile, { title: req.title, location: req.location, description: req.description || "" }, skills)
           : "Matched on your overall profile and practice history.",
         unlocked: m.unlocked,
+        requirementId: m.requirement_id,
+        candidateStatus: m.candidate_status,
+        candidateResponse: m.candidate_response,
+        interviewScheduledAt: m.interview_scheduled_at,
         // Full ISO timestamp — callers that only need day-granularity (daysAgo)
         // still work fine off the full string; the dashboard teaser's
         // hour-granular relative time (hoursOrDaysAgo) needs the precision

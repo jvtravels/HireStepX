@@ -77,8 +77,13 @@ export interface JobMatch {
   unlocked: boolean;
   matchedAt: string;
   unlockedAt: string | null;
-  /** The candidate's own answer to this employer, when the API echoes it. */
+  requirementId?: string | null;
+  /** Pipeline stage the employer has moved this candidate to. */
+  candidateStatus?: string | null;
+  /** The candidate's own answer to this employer. */
   candidateResponse?: string | null;
+  /** Interview time the employer proposed, ISO. */
+  interviewScheduledAt?: string | null;
   /** Pending employer requests (evidence, documents, clarifications). */
   requests?: JobRequest[];
 }

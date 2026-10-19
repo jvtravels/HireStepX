@@ -26,6 +26,8 @@ import EmployerActionsMenu, { EmployerResponseBadge } from "./EmployerActionsMen
 import { normalizeResponse, readStoredResponse, type EmployerResponse } from "./employerActions";
 import { useToast } from "./Toast";
 import CandidateRequestsCard from "./CandidateRequestsCard";
+import InterviewInviteCard from "./InterviewInviteCard";
+import { isInterviewInvite } from "./interviewInvite";
 
 /* Same surface as the employer console's <Card> (white, 1px line, 16px
    radius, 24px padding, flat) so the two detail screens read as one product. */
@@ -414,6 +416,7 @@ export default function JobDetailPage() {
               />
             </div>
           </section>
+          {!closed && isInterviewInvite(job) && <InterviewInviteCard job={job} />}
           {closed ? (
             <section aria-labelledby="job-closed-heading" style={PANEL_STYLE}>
               <h2 id="job-closed-heading" style={HEADING_FLUSH_STYLE}>This role is closed</h2>

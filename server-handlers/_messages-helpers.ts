@@ -83,18 +83,23 @@ export function employerSendBlock(match: MatchAccessRow, access: EmployerMatchAc
   return null;
 }
 
+/** Pipeline stages that mean the employer has reached out, even if the thread
+ *  was never opened by a paid unlock. */
+const CANDIDATE_CONTACTED_STATUSES = new Set(["interview_invited", "interviewing", "hired"]);
+
 /** Why a candidate may not send into this match's thread, or null when allowed.
  *  A candidate can always reply on a closed requirement; only a suspended /
- *  deleted employer is a dead end. Opening a NEW thread needs a real
- *  relationship (the employer paid to unlock, or the candidate has said
- *  "interested"): an algorithmic match alone is not a licence to cold-message
- *  an employer who never engaged. Replies in an existing thread are unaffected. */
+ *  deleted employer is a dead end. Opening a NEW thread needs the employer to
+ *  have reached out (paid unlock, or an interview invite or later stage): an
+ *  algorithmic match, or the candidate's own "interested", is not a licence to
+ *  cold-message an employer who never engaged. Replies in an existing thread
+ *  are unaffected. */
 export function candidateSendBlock(match: MatchAccessRow, hasConversation: boolean): ThreadBlock | null {
   if (isSuspended(match.employer_requirements?.employers)) {
     return { status: 409, error: "This employer is no longer available on HireStepX, so you can't send new messages.", code: "employer_unavailable" };
   }
-  if (!hasConversation && !match.unlocked && match.candidate_response !== "interested") {
-    return { status: 403, error: "You can only start a conversation once the employer has contacted you or you have shown interest in this job.", code: "no_relationship" };
+  if (!hasConversation && !match.unlocked && !CANDIDATE_CONTACTED_STATUSES.has(match.candidate_status)) {
+    return { status: 403, error: "You can start a conversation once the employer has contacted you.", code: "no_relationship" };
   }
   return null;
 }

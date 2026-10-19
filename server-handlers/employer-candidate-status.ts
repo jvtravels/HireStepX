@@ -77,6 +77,7 @@ async function sendInterviewInviteEmail(opts: {
   roleTitle: string;
   companyName: string;
   interviewScheduledAt: string | null;
+  matchId: string;
 }): Promise<void> {
   if (!RESEND_API_KEY) return;
   try {
@@ -96,7 +97,7 @@ async function sendInterviewInviteEmail(opts: {
       ? new Date(opts.interviewScheduledAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })
       : null;
     const headline = `${company} wants to move forward with you for ${role}.`;
-    const link = `${APP_URL}/jobs`;
+    const link = `${APP_URL}/jobs/${encodeURIComponent(opts.matchId)}`;
     const html = emailShell({
       preview: headline,
       body:
@@ -310,12 +311,13 @@ export default async function handler(req: Request): Promise<Response> {
         type: "candidate_status_change",
         title: notifText.title,
         body: notifText.body,
-        link: "/jobs",
+        link: `/jobs/${matchId}`,
       }).catch(() => {});
     }
 
     if (candidateStatus === "interview_invited") {
       await sendInterviewInviteEmail({
+        matchId,
         candidateUserId: matchRows[0].candidate_user_id,
         roleTitle: reqRows[0].title || "a role",
         companyName: reqRows[0].employers?.company_name || "An employer",

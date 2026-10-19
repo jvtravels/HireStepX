@@ -214,12 +214,15 @@ describe("attachmentBytesMatchType", () => {
 
 describe("candidateSendBlock new-thread rule", () => {
   const match = (over: Record<string, unknown>) => ({
-    employer_requirements: { employers: { suspended_at: null } }, unlocked: false, candidate_response: null, ...over,
+    employer_requirements: { employers: { suspended_at: null } }, unlocked: false, candidate_response: null, candidate_status: "shortlisted", ...over,
   }) as unknown as Parameters<typeof candidateSendBlock>[0];
-  it("blocks a cold new thread but not a reply, nor a thread after unlock or interest", () => {
+  it("blocks a cold new thread, even when the candidate is interested, but not a reply or a thread after contact", () => {
     expect(candidateSendBlock(match({}), false)?.code).toBe("no_relationship");
     expect(candidateSendBlock(match({}), true)).toBeNull();
     expect(candidateSendBlock(match({ unlocked: true }), false)).toBeNull();
-    expect(candidateSendBlock(match({ candidate_response: "interested" }), false)).toBeNull();
+    expect(candidateSendBlock(match({ candidate_response: "interested" }), false)?.code).toBe("no_relationship");
+    for (const candidate_status of ["interview_invited", "interviewing", "hired"]) {
+      expect(candidateSendBlock(match({ candidate_status }), false)).toBeNull();
+    }
   });
 });

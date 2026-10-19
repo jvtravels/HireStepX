@@ -24,6 +24,7 @@ interface Opts {
   senderRole?: "employer" | "candidate";
   attachmentPath?: string;
   noConversation?: boolean;
+  status?: string;
 }
 
 const EMP = "emp-1";
@@ -47,7 +48,7 @@ function installFetch(o: Opts) {
         ok: true,
         json: async () => [{
           id: MATCH, requirement_id: "r1", candidate_user_id: CAND, match_score: 80, unlocked: o.unlocked ?? true,
-          candidate_status: "shortlisted", candidate_response: o.response ?? null,
+          candidate_status: o.status ?? "shortlisted", candidate_response: o.response ?? null,
           employer_requirements: {
             employer_id: EMP, status: o.reqStatus ?? "ready", title: "Dev",
             employers: { company_name: "Acme", website: "acme.com", suspended_at: o.suspended ? "t" : null, verification_tier: "basic" },
@@ -187,7 +188,7 @@ describe("message-attachment-upload gating", () => {
 
   it("lets a candidate upload, except into a suspended employer's thread", async () => {
     asUser(CAND);
-    installFetch({ unlocked: false });
+    installFetch({ unlocked: false, status: "interview_invited" });
     expect((await upload()).status).toBe(200);
     const f = installFetch({ unlocked: true, suspended: true });
     const res = await upload();
@@ -214,6 +215,12 @@ describe("message-attachment-upload gating", () => {
     expect((await send("application/vnd.openxmlformats-officedocument.wordprocessingml.document", b64([0x50, 0x4b, 0x03, 0x04]))).status).toBe(200);
     expect((await send("text/plain", btoa("hello world"))).status).toBe(200);
     expect((await send("text/plain", b64([0x4d, 0x5a, 0x00, 0x01]))).status).toBe(415);
+  });
+
+  it("lets a candidate open a thread by upload once the employer has invited them", async () => {
+    asUser(CAND);
+    installFetch({ unlocked: false, status: "interview_invited", noConversation: true });
+    expect((await upload()).status).toBe(200);
   });
 
   it("403s a candidate who would be cold-opening a thread", async () => {

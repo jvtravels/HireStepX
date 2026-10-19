@@ -117,6 +117,25 @@ describe("candidate-hiring-activity handler", () => {
     expect(body.recent[1].companyWebsite).toBeNull();
   });
 
+  it("returns pipeline status, response and interview time for each match", async () => {
+    vi.stubGlobal("fetch", vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => [{ target_role: null, resume_data: null }] })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => [{
+          id: "m9", requirement_id: "r9", unlocked: true, unlocked_at: null, match_score: 80, created_at: "2026-07-01T00:00:00Z",
+          candidate_status: "interview_invited", candidate_response: "interested", interview_scheduled_at: "2026-11-02T09:30:00Z",
+          employer_requirements: { title: "SDE", location: "Pune", status: "open", skills: [], employers: { company_name: "Acme" } },
+        }],
+      })
+      .mockResolvedValue({ ok: true, json: async () => [] }));
+    const res = await handler(new Request("https://x.test/api/candidate-hiring-activity?full=1"));
+    const body = await res.json();
+    expect(body.recent[0]).toMatchObject({
+      requirementId: "r9", candidateStatus: "interview_invited", candidateResponse: "interested", interviewScheduledAt: "2026-11-02T09:30:00Z",
+    });
+  });
+
   it("returns 500 and logs when the profile read fails", async () => {
     global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 500 }) as unknown as typeof fetch;
     const res = await handler(req());

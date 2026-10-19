@@ -157,6 +157,14 @@ describe("messages POST gating", () => {
     expect(sent(f)).toBe(true);
   });
 
+  it.each(["interview_invited", "interviewing", "hired"])("lets a candidate open a thread once invited, even without a paid unlock (%s)", async (candidateStatus) => {
+    asUser(CAND);
+    const f = installFetch({ unlocked: false, candidateStatus, noConversation: true });
+    const res = await post();
+    expect(res.status).toBe(201);
+    expect(sent(f)).toBe(true);
+  });
+
   it("409s employer_unavailable when a candidate posts into a suspended employer's thread", async () => {
     asUser(CAND);
     const f = installFetch({ unlocked: true, suspended: true });
@@ -234,10 +242,13 @@ describe("messages: a candidate cannot cold-open a thread", () => {
     expect(sent(f)).toBe(false);
   });
 
-  it("lets the candidate open a thread once they are interested or the employer unlocked", async () => {
+  it("does not let interest alone open a thread, but an unlock does", async () => {
     asUser(CAND);
-    installFetch({ unlocked: false, response: "interested", noConversation: true });
-    expect((await post()).status).toBe(201);
+    const f = installFetch({ unlocked: false, response: "interested", noConversation: true });
+    const res = await post();
+    expect(res.status).toBe(403);
+    expect((await res.json()).code).toBe("no_relationship");
+    expect(sent(f)).toBe(false);
     installFetch({ unlocked: true, noConversation: true });
     expect((await post()).status).toBe(201);
   });
