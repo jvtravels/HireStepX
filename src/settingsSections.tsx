@@ -64,6 +64,8 @@ const shadow = {
 };
 
 /* ─── Section Icons (shared) ─── */
+const paymentHeadStyle = { padding: "0 20px", fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.inkSoft } as const;
+
 export const icons = {
   account: <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
   interview: <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>,
@@ -956,10 +958,10 @@ export const PlanUsageSection = memo(function PlanUsageSection(props: PlanUsageS
             <Table>
               <TableHeader>
                 <TableRow style={{ background: c.rowTint }}>
-                  <TableHead style={{ padding: "0 20px", fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.inkSoft }}>Description</TableHead>
-                  <TableHead style={{ padding: "0 20px", fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.inkSoft }}>Transaction Date</TableHead>
-                  <TableHead style={{ padding: "0 20px", fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.inkSoft }}>Amount</TableHead>
-                  <TableHead style={{ padding: "0 20px", fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.inkSoft }}>Status</TableHead>
+                  <TableHead style={paymentHeadStyle}>Description</TableHead>
+                  <TableHead className="max-[640px]:hidden" style={paymentHeadStyle}>Transaction Date</TableHead>
+                  <TableHead className="max-[640px]:hidden" style={paymentHeadStyle}>Amount</TableHead>
+                  <TableHead className="max-[640px]:hidden" style={paymentHeadStyle}>Status</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody className="mx-stagger">
@@ -970,10 +972,19 @@ export const PlanUsageSection = memo(function PlanUsageSection(props: PlanUsageS
                       <TableCell style={{ padding: "12px 20px" }}>
                         <div style={{ fontFamily: font.ui, fontSize: 13, color: c.ink, fontWeight: 500 }}>{purchaseTitle}</div>
                         {subLine && <div style={{ fontFamily: font.ui, fontSize: 12, color: c.inkSoft, marginTop: 2 }}>{subLine}</div>}
+                        <div className="min-[641px]:hidden" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8, marginTop: 6, fontFamily: font.ui, fontSize: 12, color: c.inkSoft }}>
+                          <span>{dateLabel}</span>
+                          <span style={{ fontFamily: font.mono, fontWeight: 600, color: c.ink }}>{amountDisplay}</span>
+                          <span style={{
+                            fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
+                            color: tone.fg, background: tone.bg, border: `1px solid ${tone.border}`,
+                            borderRadius: 6, padding: "2px 6px",
+                          }}>{tone.label}</span>
+                        </div>
                       </TableCell>
-                      <TableCell style={{ padding: "12px 20px", fontFamily: font.ui, fontSize: 13, color: c.ink, whiteSpace: "nowrap" }}>{dateLabel}</TableCell>
-                      <TableCell style={{ padding: "12px 20px", fontFamily: font.mono, fontSize: 13, fontWeight: 600, color: c.ink }}>{amountDisplay}</TableCell>
-                      <TableCell style={{ padding: "12px 20px" }}>
+                      <TableCell className="max-[640px]:hidden" style={{ padding: "12px 20px", fontFamily: font.ui, fontSize: 13, color: c.ink, whiteSpace: "nowrap" }}>{dateLabel}</TableCell>
+                      <TableCell className="max-[640px]:hidden" style={{ padding: "12px 20px", fontFamily: font.mono, fontSize: 13, fontWeight: 600, color: c.ink }}>{amountDisplay}</TableCell>
+                      <TableCell className="max-[640px]:hidden" style={{ padding: "12px 20px" }}>
                         <div style={{
                           fontFamily: font.ui, fontSize: 12, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
                           color: tone.fg, background: tone.bg, border: `1px solid ${tone.border}`,

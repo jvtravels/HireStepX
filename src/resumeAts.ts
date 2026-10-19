@@ -42,6 +42,17 @@ export interface ATSStructuredHints {
   education?: boolean;
 }
 
+/* The rubric matches English section headings and action verbs, and
+ * interviews run in English only. A resume written mostly in another
+ * script (Devanagari, Tamil, ...) would score near zero for the wrong
+ * reason, so callers should show "not available" instead of a number. */
+export function isMostlyEnglishScript(text: string): boolean {
+  const letters = text.match(/\p{L}/gu);
+  if (!letters || letters.length < 40) return true;
+  const latin = letters.filter((c) => /[A-Za-z\u00C0-\u024F]/.test(c)).length;
+  return latin / letters.length >= 0.6;
+}
+
 export function computeATSScore(resumeText: string, _targetRole?: string, hints?: ATSStructuredHints): ATSResult {
   const text = resumeText.toLowerCase();
   const lines = resumeText.split("\n").filter(l => l.trim().length > 0);

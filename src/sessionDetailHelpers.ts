@@ -1,3 +1,4 @@
+import { SCORE_BAND_LABEL, SCORE_BAND_TIP, scoreBandKey } from "./scoreBands";
 import { c } from "./tokens";
 import { tokens as T } from "./auth/_tokens";
 import type { DashboardSession } from "./dashboardTypes";
@@ -28,15 +29,11 @@ export function scoreLabelColor(score: number) {
 }
 
 export function scoreLabel(score: number) {
-  if (score >= 85) return "Strong";
-  if (score >= 75) return "Good";
-  return "Needs work";
+  return SCORE_BAND_LABEL[scoreBandKey(score)];
 }
 
 export function scoreTip(score: number) {
-  if (score >= 85) return "Strong: Interview-ready performance";
-  if (score >= 75) return "Good: Solid foundation, minor areas to refine";
-  return "Needs work: Key areas need practice before interviews";
+  return SCORE_BAND_TIP[scoreBandKey(score)];
 }
 
 /** What each skill score measures — shown as tooltips in score breakdown */

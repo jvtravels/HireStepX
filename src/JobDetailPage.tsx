@@ -290,10 +290,11 @@ export default function JobDetailPage() {
               </div>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-              {job.unlocked
-                ? <StatusChip label="Employer interested" color={t.indigoDeep} background={t.indigo100} />
-                : <StatusChip label="Matched" color={t.successInk} background={t.success100} />}
-              {closed && <StatusChip label="Role closed" color={t.inkSoft} background={t.creamSoft} />}
+              {closed
+                ? <StatusChip label="Role closed" color={t.inkSoft} background={t.creamSoft} />
+                : job.unlocked
+                  ? <StatusChip label="Employer interested" color={t.indigoDeep} background={t.indigo100} />
+                  : <StatusChip label="Matched" color={t.successInk} background={t.success100} />}
             </div>
           </div>
 

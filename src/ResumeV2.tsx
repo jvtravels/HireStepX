@@ -21,7 +21,7 @@ import { PortfolioLinksSection } from "./settingsSections";
 import LoadingScreen from "./_LoadingScreen";
 import { SkeletonReveal } from "./SkeletonReveal";
 import { Skeleton } from "@/components/ui/skeleton";
-import { computeATSScore } from "./resumeAts";
+import { computeATSScore, isMostlyEnglishScript } from "./resumeAts";
 import { computeAllFitness, type InterviewType, type FitnessBand } from "./resumeFitness";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -265,7 +265,7 @@ export default function ResumeV2Screen() {
 
   const atsResult = useMemo(() => {
     const source = resumeText || user?.resumeText || "";
-    if (!source) return null;
+    if (!source || !isMostlyEnglishScript(source)) return null;
     return computeATSScore(source, user?.targetRole, {
       experience: (profile?.experiences?.length ?? 0) > 0,
       skills: (profile?.topSkills.length ?? 0) > 0,
@@ -729,7 +729,9 @@ export default function ResumeV2Screen() {
                 </div>
               ) : (
                 <p style={{ fontFamily: font.ui, fontSize: S.sm, color: T.inkFaint, margin: 0 }}>
-                  Re-upload your resume to see an ATS readiness score.
+                  {(resumeText || user?.resumeText) && !isMostlyEnglishScript(resumeText || user?.resumeText || "")
+                    ? "ATS readiness is only scored for English resumes. Interviews run in English, so an English version works best."
+                    : "Re-upload your resume to see an ATS readiness score."}
                 </p>
               )}
             </div>

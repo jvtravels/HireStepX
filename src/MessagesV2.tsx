@@ -238,7 +238,9 @@ export default function MessagesV2() {
     return shell(<MessagesRouteSkeleton />);
   }
 
-  if (listError) {
+  /* A failed background refresh must not wipe an inbox that already loaded;
+     the poll retries on its own. Only block the page when nothing ever loaded. */
+  if (listError && conversations === null) {
     return shell(
       <div className="flex flex-1 flex-col items-center justify-center gap-3 px-5 py-16" role="alert">
         <AlertCircleIcon aria-hidden="true" className="size-6 text-muted-foreground" />

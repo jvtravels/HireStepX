@@ -231,8 +231,9 @@ function JobCard({ r, onOpen, opening }: { r: JobMatch; onOpen: () => void; open
         </div>
         <div style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.4, display: "flex", flexWrap: "wrap", columnGap: 6 }}>{meta.map((m, i) => <span key={i} style={{ whiteSpace: "nowrap" }}>{m}{i < meta.length - 1 && <span aria-hidden="true"> ·</span>}</span>)}</div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-          {r.unlocked ? <Badge tone="brand" title="This employer unlocked your profile and can reach out directly">Employer interested</Badge> : <Badge tone="success" title="Your profile matched this role's requirements">Matched</Badge>}
-          {closed && <Badge tone="neutral">Role closed</Badge>}
+          {closed
+            ? <Badge tone="neutral" title="This role is no longer accepting candidates">Role closed</Badge>
+            : r.unlocked ? <Badge tone="brand" title="This employer unlocked your profile and can reach out directly">Employer interested</Badge> : <Badge tone="success" title="Your profile matched this role's requirements">Matched</Badge>}
           {isNew && <Badge tone="info">New</Badge>}
           {jobType && <Badge tone="neutral">{jobType}</Badge>}
         </div>
@@ -603,18 +604,17 @@ export default function DashboardJobs() {
                     </TableCell>
                     <TableCell style={{ padding: "12px 20px", verticalAlign: "top", maxWidth: 220, whiteSpace: "normal" }}>
                       <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 4 }}>
-                        {r.unlocked ? (
+                        {closed ? (
+                          <Badge tone="neutral" title="This role is no longer accepting candidates">
+                            Role closed
+                          </Badge>
+                        ) : r.unlocked ? (
                           <Badge tone="brand" title="This employer unlocked your profile and can reach out directly">
                             Employer interested
                           </Badge>
                         ) : (
                           <Badge tone="success" title="Your profile matched this role's requirements">
                             Matched
-                          </Badge>
-                        )}
-                        {closed && (
-                          <Badge tone="neutral" title="This role is no longer accepting candidates">
-                            Role closed
                           </Badge>
                         )}
                       </div>

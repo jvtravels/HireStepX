@@ -157,6 +157,7 @@ export default function Onboarding() {
   const [resumeText, setResumeText] = useState("");
   const [resumeParsed, setResumeParsed] = useState<ParsedResume | null>(null);
   const [resumeParsing, setResumeParsing] = useState(false);
+  const [resumeTruncated, setResumeTruncated] = useState(false);
   const [resumeError, setResumeError] = useState("");
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [isDragging, setIsDragging] = useState(false);
@@ -485,7 +486,7 @@ export default function Onboarding() {
     setResumeError("");
     setResumeParsing(true);
     try {
-      const { extractResumeText, parseResumeDataAsync } = await import("./resumeParser");
+      const { extractResumeTextWithMeta, parseResumeDataAsync } = await import("./resumeParser");
       const { analyzeResumeWithAI } = await import("./dashboardData");
       // Compute file-byte hash in parallel with text extraction. Used
       // by the server-side resume cache as a stable file-identity key
@@ -493,7 +494,9 @@ export default function Onboarding() {
       // on the same cached analysis even when pdf.js versions tweak
       // whitespace. Best-effort — null on browsers without SubtleCrypto.
       const fileHashPromise = computeFileHash(file);
-      let text = await extractResumeText(file);
+      const extracted = await extractResumeTextWithMeta(file);
+      let text = extracted.text;
+      setResumeTruncated(extracted.truncated);
       if (!text || text.trim().length < 30) {
         const fileExt = file.name.split(".").pop()?.toLowerCase();
         if (fileExt && ["jpg", "jpeg", "png", "gif", "webp", "bmp"].includes(fileExt)) {
@@ -681,7 +684,7 @@ export default function Onboarding() {
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to parse resume";
       setResumeError(msg);
-      setResumeText(""); setResumeParsed(null);
+      setResumeText(""); setResumeTruncated(false); setResumeParsed(null);
       track("resume_upload_failed", { reason: "parse_error", message: msg.slice(0, 100) });
     } finally {
       setResumeParsing(false);
@@ -827,7 +830,7 @@ export default function Onboarding() {
 
   const handleRemoveResume = () => {
     undoRef.current = { fileName, resumeText, resumeParsed, aiProfile, aiPhase, targetRole, userName, aiSuccess: aiSuccessRef.current };
-    setFileName(""); setResumeText(""); setResumeParsed(null); setResumeError(""); setAiProfile(null); setAiPhase("idle"); setTargetRole(""); setUserName("");
+    setFileName(""); setResumeText(""); setResumeTruncated(false); setResumeParsed(null); setResumeError(""); setAiProfile(null); setAiPhase("idle"); setTargetRole(""); setUserName("");
     aiSuccessRef.current = false;
     try { localStorage.removeItem("hirestepx_resume"); } catch { /* noop */ }
     setShowUndo(true); clearTimeout(undoTimerRef.current);
@@ -949,6 +952,7 @@ export default function Onboarding() {
               onStartInterview={handleStartInterview}
               onGoToDashboard={handleGoToDashboard}
               starting={starting}
+              truncated={resumeTruncated}
             />
           )}
 

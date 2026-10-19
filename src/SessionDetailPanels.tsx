@@ -1,3 +1,4 @@
+import { SCORE_BAND_LABEL, SCORE_BAND_TIP, scoreBandKey } from "./scoreBands";
 import React, { memo } from "react";
 import { c, font, shadow, gradient } from "./tokens";
 import { tokens as T } from "./auth/_tokens";
@@ -16,20 +17,16 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 // c.gilt alias.
 export function scoreLabelColor(score: number) {
   if (score >= 85) return c.sage;
-  if (score >= 70) return T.copper;
+  if (score >= 75) return T.copper;
   return c.ember;
 }
 
 export function scoreLabel(score: number) {
-  if (score >= 85) return "Strong";
-  if (score >= 70) return "Good";
-  return "Developing";
+  return SCORE_BAND_LABEL[scoreBandKey(score)];
 }
 
 function scoreTip(score: number) {
-  if (score >= 85) return "Strong: Interview-ready performance";
-  if (score >= 70) return "Good: Solid foundation, minor areas to refine";
-  return "Developing: Key areas need practice before interviews";
+  return SCORE_BAND_TIP[scoreBandKey(score)];
 }
 
 export function normalizeType(type: string): string {

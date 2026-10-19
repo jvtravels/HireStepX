@@ -85,7 +85,7 @@ export function TopBar({
         marginTop: emailUnverified ? 44 : 0,
       }}
     >
-      <div style={{ justifySelf: "start" }}>
+      <div className="justify-self-start">
         <Button
           type="button"
           variant="ghost"
@@ -96,7 +96,7 @@ export function TopBar({
           <Wordmark />
         </Button>
       </div>
-      <div style={{ justifySelf: "center" }}>
+      <div className="justify-self-center">
         <OnboardingStepper current={stepperCurrent} />
       </div>
       <div ref={menuRef} style={{ justifySelf: "end", position: "relative" }}>
@@ -658,6 +658,8 @@ export interface ProfileReadyStateProps {
       render a "Dashboard" outline button next to the primary. */
   onGoToDashboard?: () => void;
   starting?: boolean;
+  /** True when the resume was long enough that only a shortened version was analysed. */
+  truncated?: boolean;
 }
 
 export function ProfileReadyState({
@@ -672,6 +674,7 @@ export function ProfileReadyState({
   onStartInterview,
   onGoToDashboard,
   starting,
+  truncated,
 }: ProfileReadyStateProps) {
   void resumeParsed; // kept for parity with the production interface
   // Inline editable target-role — drafts locally so the user can revise before
@@ -791,6 +794,12 @@ export function ProfileReadyState({
                   Try again
                 </Button>
               </div>
+            )}
+
+            {truncated && (
+              <p className="mb-3 text-[13px] leading-5" style={{ color: t.warningInk }}>
+                Your resume is long, so we analysed a shortened version that keeps the start of every section. Content past that point was not scored.
+              </p>
             )}
 
             <h1

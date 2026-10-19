@@ -10,18 +10,17 @@ import { FREE_SESSION_LIMIT } from "./dashboardData";
 import { captureClientEvent } from "./posthogClient";
 import LoadingScreen from "./_LoadingScreen";
 import { Button } from "@/components/ui/button";
+import { SCORE_BAND_LABEL, scoreBandKey } from "./scoreBands";
 
 // Session score ring/chip color — reward/score visual, stays copper.
 function scoreLabelColor(score: number) {
   if (score >= 85) return c.sage;
-  if (score >= 70) return T.copper;
+  if (score >= 75) return T.copper;
   return c.ember;
 }
 
 function scoreLabel(score: number) {
-  if (score >= 85) return "Strong";
-  if (score >= 70) return "Good";
-  return "Keep Practicing";
+  return SCORE_BAND_LABEL[scoreBandKey(score)];
 }
 
 export default function OnboardingComplete() {

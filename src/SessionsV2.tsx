@@ -10,6 +10,7 @@
    backing API yet, so those stay disabled stubs — see the comments at
    each site. */
 
+import { SCORE_BAND_LABEL, scoreBandKey, type ScoreBandKey } from "./scoreBands";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { tokens as T, fonts as F } from "./auth/_tokens";
@@ -42,7 +43,7 @@ import { SearchWithSuggestions } from "@/components/SearchWithSuggestions";
 
 const font = { ui: F.sans, mono: F.mono };
 
-type ScoreBand = "developing" | "needsFocus" | "good";
+type ScoreBand = ScoreBandKey;
 
 type TakeawayPoint = { tone: "good" | "next"; text: string };
 
@@ -67,11 +68,7 @@ type SessionRow = {
    of hand-rolling a second table that silently drifts from this one. */
 export type FlatRow = SessionRow;
 
-const bandLabel: Record<ScoreBand, string> = {
-  developing: "Developing",
-  needsFocus: "Needs focus",
-  good: "Good",
-};
+const bandLabel = SCORE_BAND_LABEL;
 
 // Band badges used to carry a full traffic-light palette (red/blue/green)
 // on every single row — since "Needs focus" is the majority default, not an
@@ -85,11 +82,7 @@ const ALARM_SCORE = 50;
 // Same 85/75 breakpoints as the app's canonical scoreLabel()/
 // scoreLabelColor() (src/dashboardTypes.ts) — reused rather than
 // invented, just relabeled onto this screen's 3-band vocabulary.
-function bandFor(score: number): ScoreBand {
-  if (score >= 85) return "good";
-  if (score >= 75) return "developing";
-  return "needsFocus";
-}
+const bandFor = scoreBandKey;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const GROUP_ORDER = ["Today", "This week", "Earlier"];
@@ -142,9 +135,9 @@ export function toRow(d: DashboardSession, now: number): FlatRow {
 
 const SCORE_OPTIONS: { value: "All" | ScoreBand; label: string }[] = [
   { value: "All", label: "All" },
+  { value: "strong", label: "Strong" },
   { value: "good", label: "Good" },
-  { value: "developing", label: "Developing" },
-  { value: "needsFocus", label: "Needs focus" },
+  { value: "needsWork", label: "Needs work" },
 ];
 
 type SortColumn = "title" | "score" | "progress" | "date";

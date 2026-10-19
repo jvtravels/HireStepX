@@ -146,3 +146,20 @@ export function focusTopicLabel(value: string | null | undefined): string {
   if (!isRawKey(value)) return value;
   return TOPIC_VOCAB[value] || skillLabel(value);
 }
+
+/* Card headline from a full coaching sentence: keep the first clause, cap
+ * the length at a word boundary, and drop trailing connectives so the cut
+ * never reads as a sentence that stopped mid-thought ("... on the"). */
+const DANGLING = new Set(["a", "an", "and", "or", "but", "the", "of", "to", "in", "on", "at", "for", "with", "by", "your", "you", "is", "are", "that", "as", "from", "into"]);
+
+export function clipHeadline(text: string, max = 55): string {
+  const first = text.split(/[:\u2014]|(?<=[.!?])\s/)[0].trim().replace(/[.,;]$/, "");
+  let clip = first;
+  if (clip.length > max) {
+    const cut = clip.slice(0, max).lastIndexOf(" ");
+    clip = clip.slice(0, cut > 15 ? cut : max);
+  }
+  const words = clip.split(/\s+/);
+  while (words.length > 2 && DANGLING.has(words[words.length - 1].toLowerCase().replace(/[^a-z]/g, ""))) words.pop();
+  return words.join(" ").replace(/[.,;:\u2013-]$/, "");
+}

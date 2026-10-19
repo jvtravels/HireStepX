@@ -18,6 +18,7 @@ import {
   generateReport,
   computeBadges, getDailyChallenge, getPracticeReminder,
 } from "./dashboardData";
+import { clipHeadline } from "./skillCopy";
 import { getCurriculumState, type CurriculumState } from "./curriculum";
 import type { SessionCoaching } from "./dashboardTypes";
 import type { SessionRecord } from "./supabase";
@@ -38,12 +39,7 @@ function cardCoachingFromWinsFixes(
   const win = wins?.[0]?.text;
   const fix = fixes?.[0]?.text;
   if (!win || !fix) return undefined;
-  const headline = (s: string): string => {
-    const clip = s.split(/[:—]/)[0].trim().replace(/[.,]$/, "");
-    if (clip.length <= 55) return clip;
-    const cut = clip.slice(0, 55).lastIndexOf(" ");
-    return clip.slice(0, cut > 15 ? cut : 55).replace(/[.,]$/, "");
-  };
+  const headline = clipHeadline;
   return { strength: { headline: headline(win), meaning: win }, gap: { headline: headline(fix), meaning: fix, example: "" } };
 }
 

@@ -1,3 +1,4 @@
+import { SCORE_BAND_LABEL, scoreBandKey } from "./scoreBands";
 import { c } from "./tokens";
 import { tokens as T } from "./auth/_tokens";
 
@@ -197,9 +198,7 @@ export interface PersistedState {
 export const sessionTypes = ["All", "Behavioral", "Strategic", "Technical Leadership", "Case Study", "Campus Placement", "HR Round", "Management", "Government & PSU"];
 
 export function scoreLabel(score: number) {
-  if (score >= 85) return "Strong";
-  if (score >= 75) return "Good";
-  return "Needs work";
+  return SCORE_BAND_LABEL[scoreBandKey(score)];
 }
 
 // Score-band color: the middling band is gamification-domain (session
