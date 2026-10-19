@@ -332,7 +332,7 @@ export default function ResumeV2Screen() {
     const coverageTotal = practiceCoverage.totalAreas;
     const coverageTone: MetricTone = coverageStatus.status === "not_started" ? "error" : coverageStatus.status === "in_progress" ? "warning" : "good";
     const coverageChip = coverageStatus.label;
-    const fitTone: MetricTone = strongFitCount === 0 ? "error" : strongFitCount < coverageRows.length ? "warning" : "good";
+    const fitTone: MetricTone = strongFitCount === coverageRows.length ? "good" : "warning";
 
     const scoreBreakdownRows = SCORE_BREAKDOWN_META.map((meta) => {
       const value = profile.scoreBreakdown?.[meta.key] ?? 0;
@@ -847,12 +847,12 @@ export default function ResumeV2Screen() {
                 <div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <MicIcon size={16} color={T.coal} aria-hidden="true" />
-                    <h2 style={{ fontFamily: font.ui, fontSize: S.lg, fontWeight: 700, color: T.coal, margin: 0 }}>Practice next</h2>
+                    <h2 style={{ fontFamily: font.ui, fontSize: S.lg, fontWeight: 700, color: T.coal, margin: 0 }}>Resume fit by round</h2>
                   </div>
-                  <p style={{ fontFamily: font.ui, fontSize: S.base, color: T.inkFaint, margin: "2px 0 0" }}>Questions matched to resume</p>
+                  <p style={{ fontFamily: font.ui, fontSize: S.base, color: T.inkFaint, margin: "2px 0 0" }}>How well your resume supports each interview type</p>
                 </div>
                 <Badge style={{ background: metricColor[fitTone].chipBg, color: metricColor[fitTone].chipText, borderRadius: 999, fontFamily: font.ui, fontWeight: 600, fontSize: S.sm, padding: "4px 10px" }}>
-                  {strongFitCount} / {coverageRows.length} strong fits
+                  {strongFitCount} of {coverageRows.length} strong
                 </Badge>
               </div>
               <Divider />

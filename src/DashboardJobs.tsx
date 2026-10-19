@@ -252,7 +252,7 @@ function JobCard({ r, onOpen, opening }: { r: JobMatch; onOpen: () => void; open
 export default function DashboardJobs() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const isNarrow = useMaxWidth(1280);
+  const isNarrow = useMaxWidth(1440);
   const { user: authUser } = useAuth();
   // Cache-first like DashboardContext's sessions/events: a tab switch back
   // into Jobs shows the last-known list instantly instead of a spinner,

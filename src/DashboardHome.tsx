@@ -480,6 +480,7 @@ export default function DashboardHome() {
       <ResumeFreshnessStrip parsedAt={resumeData?.parsedAt} onRefresh={goToResume} />
 
       <StatCardsRow
+        loading={sessions.sessionsLoading}
         hasData={sessions.hasData}
         readinessScore={sessions.readinessScore}
         readinessDelta={sessions.readinessDelta}

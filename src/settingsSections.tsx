@@ -774,7 +774,7 @@ export const PlanUsageSection = memo(function PlanUsageSection(props: PlanUsageS
   const capLine = sessionsCap == null
     ? "Interview sessions"
     : `${sessionsCap} Interview Session${sessionsCap === 1 ? "" : "s"}${authUser?.hasRecurringSubscription ? " / Month" : ""}`;
-  const sessionsUsedLabel = sessionsCap == null ? `${sessionsUsed} sessions used` : `${Math.min(sessionsUsed, sessionsCap)} of ${sessionsCap} sessions used`;
+  const sessionsUsedLabel = usage == null ? "Loading usage…" : sessionsCap == null ? `${sessionsUsed} sessions used` : `${Math.min(sessionsUsed, sessionsCap)} of ${sessionsCap} sessions used`;
 
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [page, setPage] = useState(1);
@@ -868,11 +868,11 @@ export const PlanUsageSection = memo(function PlanUsageSection(props: PlanUsageS
         <div style={{ flex: "1 1 320px", minWidth: 0, background: c.graphite, padding: "24px 28px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 6, flexWrap: "wrap" }}>
             <span style={{ fontFamily: font.ui, fontSize: 22, fontWeight: 700, color: c.ink }}>{tierLabel}</span>
-            <PlanStatusChip label={statusLabel} tone={statusTone} />
+            {isPaid && <PlanStatusChip label={statusLabel} tone={statusTone} />}
           </div>
           <div style={{ fontFamily: font.ui, fontSize: 13, color: c.inkSoft, marginBottom: 18 }}>{capLine}</div>
           <div style={{ height: 8, borderRadius: 999, background: c.border, overflow: "hidden" }}>
-            <div style={{ width: sessionsCap == null ? "100%" : `${sessionsPct}%`, height: "100%", background: c.ink, transition: "width 0.4s ease" }} />
+            <div style={{ width: usage == null ? "0%" : sessionsCap == null ? "100%" : `${sessionsPct}%`, height: "100%", background: sessionsPct >= 100 ? `color-mix(in oklch, ${c.inkSoft} 45%, transparent)` : c.ink, transition: "width 0.4s ease" }} />
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", marginTop: 12, flexWrap: "wrap", gap: 8 }}>
             <span style={{ fontFamily: font.ui, fontSize: 12, color: c.inkSoft }}>{cycleLabel}</span>
@@ -892,8 +892,8 @@ export const PlanUsageSection = memo(function PlanUsageSection(props: PlanUsageS
           )}
         </div>
 
-        <div style={{
-          flex: "0 1 300px", minWidth: 240, background: c.creamSoft, borderLeft: `1px solid ${c.border}`,
+        <div className="max-[640px]:!flex-[1_1_100%] max-[640px]:!border-l-0 min-[641px]:!border-t-0" style={{
+          flex: "0 1 300px", minWidth: 240, background: c.creamSoft, borderLeft: `1px solid ${c.border}`, borderTop: `1px solid ${c.border}`,
           padding: "24px 28px", display: "flex", flexDirection: "column", justifyContent: "center", gap: 10,
         }}>
           <div style={{ fontFamily: font.ui, fontSize: 17, fontWeight: 700, color: c.ink }}>{creditBalance} Extra Session{creditBalance === 1 ? "" : "s"}</div>

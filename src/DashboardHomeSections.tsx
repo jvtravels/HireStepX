@@ -103,8 +103,9 @@ export function DashboardHeader({
 
 export function StatCardsRow({
   hasData, readinessScore, readinessDelta, resumeScore, improvementsCount,
-  practiceCoverage, totalSessions, onViewResume, onViewJobs,
+  practiceCoverage, totalSessions, onViewResume, onViewJobs, loading = false,
 }: {
+  loading?: boolean;
   hasData: boolean;
   readinessScore: number;
   readinessDelta: number | null;
@@ -124,9 +125,9 @@ export function StatCardsRow({
       <StatCard>
         <div style={{ fontFamily: f.sans, fontSize: textSize.sm, color: t.inkSoft, fontWeight: 600 }}>Interview Readiness</div>
         <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-          <span style={{ fontFamily: f.sans, fontSize: textSize["2xl"], fontWeight: 700, color: t.coal }}><AnimatedNumber value={hasData ? readinessScore : 0} /></span>
+          <span style={{ fontFamily: f.sans, fontSize: textSize["2xl"], fontWeight: 700, color: t.coal }}>{loading ? "–" : <AnimatedNumber value={hasData ? readinessScore : 0} />}</span>
           <span style={{ fontFamily: f.sans, fontSize: textSize.sm, color: t.inkFaint }}>/ 100</span>
-          {readinessDelta != null && readinessDelta !== 0 && (
+          {!loading && readinessDelta != null && readinessDelta !== 0 && (
             <Tag
               tone={readinessDelta > 0 ? "success" : "error"}
               label={`${readinessDelta > 0 ? "+" : ""}${readinessDelta}`}
@@ -134,17 +135,17 @@ export function StatCardsRow({
             />
           )}
         </div>
-        <ProgressBar value={hasData ? readinessScore : 0} color={t.coal} />
+        <ProgressBar value={!loading && hasData ? readinessScore : 0} color={t.coal} />
       </StatCard>
 
       <StatCard>
         <div style={{ fontFamily: f.sans, fontSize: textSize.sm, color: t.inkSoft, fontWeight: 600 }}>Resume Strength</div>
         <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-          <span style={{ fontFamily: f.sans, fontSize: textSize["2xl"], fontWeight: 700, color: t.coal }}><AnimatedNumber value={resumeScore ?? 0} /></span>
+          <span style={{ fontFamily: f.sans, fontSize: textSize["2xl"], fontWeight: 700, color: t.coal }}>{loading ? "–" : <AnimatedNumber value={resumeScore ?? 0} />}</span>
           <span style={{ fontFamily: f.sans, fontSize: textSize.sm, color: t.inkFaint }}>/ 100</span>
-          {improvementsCount > 0 && <Tag label={`${improvementsCount} to improve`} />}
+          {!loading && improvementsCount > 0 && <Tag label={`${improvementsCount} to improve`} />}
         </div>
-        <ProgressBar value={resumeScore ?? 0} color={t.coal} />
+        <ProgressBar value={loading ? 0 : resumeScore ?? 0} color={t.coal} />
         <Button type="button" variant="ghost" onClick={onViewResume} style={{
           alignSelf: "flex-start", background: "none", border: "none", padding: 0, height: "auto", cursor: "pointer",
           fontFamily: f.sans, fontSize: textSize.sm, fontWeight: 600, color: t.indigo,
@@ -155,24 +156,24 @@ export function StatCardsRow({
         <div style={{ fontFamily: f.sans, fontSize: textSize.sm, color: t.inkSoft, fontWeight: 600 }}>Practice Coverage</div>
         <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
           <span style={{ fontFamily: f.sans, fontSize: textSize["2xl"], fontWeight: 700, color: t.coal }}>
-            <AnimatedNumber value={practiceCoverage.practicedCount} suffix={`/${practiceCoverage.totalAreas}`} />
+            {loading ? "–" : <AnimatedNumber value={practiceCoverage.practicedCount} suffix={`/${practiceCoverage.totalAreas}`} />}
           </span>
           <span style={{ fontFamily: f.sans, fontSize: textSize.sm, color: t.inkFaint }}>areas</span>
         </div>
         <div style={{ display: "flex", gap: 4 }}>
           {Array.from({ length: practiceCoverage.totalAreas }, (_, i) => (
-            <div key={i} className={i < practiceCoverage.practicedCount ? "mx-pop" : undefined} style={{
+            <div key={i} className={!loading && i < practiceCoverage.practicedCount ? "mx-pop" : undefined} style={{
               flex: 1, height: 6, borderRadius: 999,
-              background: i < practiceCoverage.practicedCount ? t.coal : t.line,
+              background: !loading && i < practiceCoverage.practicedCount ? t.coal : t.line,
             }} />
           ))}
         </div>
-        {practiceCoverage.biggestGapLabel && <Tag tone="error" label={`Biggest Gap: ${practiceCoverage.biggestGapLabel}`} />}
+        {!loading && practiceCoverage.biggestGapLabel && <Tag tone="error" label={`Biggest Gap: ${practiceCoverage.biggestGapLabel}`} />}
         {/* practicedCount tracks the 5 scored competency areas, not session
             count — a long history of pre-skill-tracking sessions can leave
             this at 0 even with plenty of total sessions. Spell that out so
             it doesn't read as a contradiction/bug. */}
-        {practiceCoverage.practicedCount === 0 && totalSessions > 0 && (
+        {!loading && practiceCoverage.practicedCount === 0 && totalSessions > 0 && (
           <div style={{ fontFamily: f.sans, fontSize: textSize.sm, color: t.inkFaint }}>
             Your {totalSessions} session{totalSessions === 1 ? "" : "s"} predate skill-area scoring — practice once more to start tracking coverage.
           </div>

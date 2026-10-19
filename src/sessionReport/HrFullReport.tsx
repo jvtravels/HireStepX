@@ -1040,8 +1040,8 @@ export default function HrFullReport({
         label="01 · Diagnose"
         title="Where you stand right now"
         subtitle="Your scores across every axis HR actually grades on."
-        accent={ERROR}
-        bg={ERROR_SOFT}
+        accent={failingDims === 0 ? SUCCESS : failingDims <= 2 ? COPPER : ERROR}
+        bg={failingDims === 0 ? SUCCESS_SOFT : failingDims <= 2 ? COPPER_SOFT : ERROR_SOFT}
       />
       <DimensionGate skills={skills} />
       <WinsPanel wins={wins} />
