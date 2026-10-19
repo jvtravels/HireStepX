@@ -1065,7 +1065,7 @@ export interface ResumeProfile {
   industries: string[];
   interviewStrengths: string[];
   interviewGaps: string[];
-  careerTrajectory: string;
+  careerTrajectory: string; phone?: string; linkedin?: string;
   resumeScore?: number;
   /** Six-axis breakdown from the AI resume analyzer (computed once at
    *  upload time). Keys: quantifiedAchievements (0-20), relevantSkills

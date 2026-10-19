@@ -322,3 +322,14 @@ describe("locked resume aliasing and period coarsening", () => {
     expect(locked.experience[0].period).toBe("2018 – 2021");
   });
 });
+
+describe("extractResumeDetail contact details on an AI resume", () => {
+  it("carries the phone and LinkedIn a candidate shared, and redaction still strips them for a locked view", () => {
+    const detail = extractResumeDetail({ topSkills: ["SQL"], experiences: [], phone: "+91 98765 43210", linkedin: "https://linkedin.com/in/jay" });
+    expect(detail.phone).toBe("+91 98765 43210");
+    expect(detail.linkedin).toBe("https://linkedin.com/in/jay");
+    const locked = redactResumeDetailForLock(detail, "Jay Vyas");
+    expect(locked.phone).toBeNull();
+    expect(locked.linkedin).toBeNull();
+  });
+});

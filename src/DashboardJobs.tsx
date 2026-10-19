@@ -94,6 +94,8 @@ export interface JobRequest {
   id: string;
   kind: "contact" | "document" | "practice" | "clarification";
   headline: string;
+  /** Contact-detail requests: which of phone / email / linkedin / portfolio were asked for. */
+  fields?: string[] | null;
   note: string | null;
   createdAt: string;
 }

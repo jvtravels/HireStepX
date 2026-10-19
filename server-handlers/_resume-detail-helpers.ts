@@ -288,6 +288,8 @@ export function extractResumeDetail(resumeData: unknown): ResumeDetail {
     return {
       ...empty,
       summary: asString(r.summary) || "",
+      linkedin: asString(r.linkedin),
+      phone: asString(r.phone),
       headline: asString(r.headline),
       seniorityLevel: asString(r.seniorityLevel),
       yearsExperience: typeof r.yearsExperience === "number" ? r.yearsExperience : null,

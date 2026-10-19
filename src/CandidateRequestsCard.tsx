@@ -1,13 +1,14 @@
 "use client";
 
 /* Candidate-side inbox for employer requests on one match: share a reply,
-   mark a contact-detail request done, or decline. Backed by the
+   fill in the contact details asked for, or decline. Backed by the
    resolve_request action in /api/candidate-employer-actions. */
 
 import { useState } from "react";
-import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { useAuth } from "./AuthContext";
 import { daysAgo } from "./hiringMatchFormat";
 import { REQUEST_REPLY_MAX, resolveCandidateRequest } from "./employerActions";
 import type { JobRequest } from "./DashboardJobs";
@@ -19,6 +20,84 @@ const PLACEHOLDER: Record<JobRequest["kind"], string> = {
   clarification: "Write your answer",
 };
 
+type ContactField = "phone" | "linkedin" | "portfolio";
+type ContactValues = Record<ContactField, string>;
+
+const CONTACT_INPUTS: Record<ContactField, { label: string; placeholder: string; type: string; autoComplete: string }> = {
+  phone: { label: "Phone number", placeholder: "+91 98765 43210", type: "tel", autoComplete: "tel" },
+  linkedin: { label: "LinkedIn profile", placeholder: "linkedin.com/in/your-name", type: "url", autoComplete: "url" },
+  portfolio: { label: "Portfolio or GitHub link", placeholder: "github.com/your-name", type: "url", autoComplete: "url" },
+};
+
+/** Inputs to show: everything the employer asked for except email, which is
+ *  the account email and is shared automatically on unlock. A legacy request
+ *  with no field list asks for all three. */
+export function contactInputsFor(fields: readonly string[] | null | undefined): ContactField[] {
+  const all: ContactField[] = ["phone", "linkedin", "portfolio"];
+  if (!fields || fields.length === 0) return all;
+  return all.filter((f) => fields.includes(f));
+}
+
+const withScheme = (v: string) => (/^https?:\/\//i.test(v) ? v : `https://${v}`);
+
+/** Returns the cleaned value, or an error message for the field. */
+export function validateContactValue(field: ContactField, raw: string): { value: string } | { error: string } {
+  const v = raw.trim();
+  if (!v) return { error: `Add your ${CONTACT_INPUTS[field].label.toLowerCase()}, or decline.` };
+  if (field === "phone") {
+    const digits = v.replace(/\D/g, "");
+    if (!/^\+?[\d\s().-]+$/.test(v) || digits.length < 7 || digits.length > 15) return { error: "Enter a valid phone number." };
+    return { value: v.slice(0, 30) };
+  }
+  const url = withScheme(v);
+  try {
+    const u = new URL(url);
+    if (!u.hostname.includes(".")) return { error: "Enter a valid link." };
+    if (field === "linkedin" && !/(^|\.)linkedin\.com$/i.test(u.hostname)) return { error: "Enter your linkedin.com profile link." };
+    return { value: url.slice(0, 500) };
+  } catch {
+    return { error: "Enter a valid link." };
+  }
+}
+
+function ContactForm({ values, errors, onChange, inputs, includesEmail }: {
+  values: ContactValues;
+  errors: Partial<ContactValues>;
+  onChange: (field: ContactField, value: string) => void;
+  inputs: ContactField[];
+  includesEmail: boolean;
+}) {
+  return (
+    <div className="mt-2.5 flex flex-col gap-2.5">
+      {inputs.map((field) => {
+        const meta = CONTACT_INPUTS[field];
+        const id = `contact-${field}`;
+        return (
+          <div key={field}>
+            <label htmlFor={id} className="mb-1 block text-[12.5px] font-medium text-hx-coal">{meta.label}</label>
+            <Input
+              id={id}
+              type={meta.type}
+              inputMode={field === "phone" ? "tel" : "url"}
+              autoComplete={meta.autoComplete}
+              placeholder={meta.placeholder}
+              value={values[field]}
+              onChange={(e) => onChange(field, e.target.value)}
+              aria-invalid={errors[field] ? true : undefined}
+              aria-describedby={errors[field] ? `${id}-error` : undefined}
+              className="h-9"
+            />
+            {errors[field] && <p id={`${id}-error`} role="alert" className="m-0 mt-1 text-[12px] text-hx-error-ink">{errors[field]}</p>}
+          </div>
+        );
+      })}
+      <p className="m-0 text-[12px] leading-normal text-hx-ink-soft">
+        {includesEmail ? "Your account email is shared too. " : ""}Employers only see these once they unlock your profile.
+      </p>
+    </div>
+  );
+}
+
 function RequestRow({ matchId, request, unlocked, onResolved, onError }: {
   matchId: string;
   request: JobRequest;
@@ -26,13 +105,47 @@ function RequestRow({ matchId, request, unlocked, onResolved, onError }: {
   onResolved: (id: string, resolution: "fulfilled" | "declined") => void;
   onError: (message: string) => void;
 }) {
+  const { user, updateUser } = useAuth();
   const [reply, setReply] = useState("");
   const [busy, setBusy] = useState<"fulfilled" | "declined" | null>(null);
   const isContact = request.kind === "contact";
   const needsReply = request.kind === "clarification";
+  const contactInputs = isContact ? contactInputsFor(request.fields) : [];
+  const [contact, setContact] = useState<ContactValues>(() => ({
+    phone: user?.resumeData?.phone ?? "",
+    linkedin: user?.resumeData?.linkedin ?? "",
+    portfolio: user?.portfolioLinks?.[0]?.url ?? "",
+  }));
+  const [contactErrors, setContactErrors] = useState<Partial<ContactValues>>({});
+
+  const saveContact = async (): Promise<boolean> => {
+    const cleaned: Partial<ContactValues> = {};
+    const errors: Partial<ContactValues> = {};
+    for (const field of contactInputs) {
+      const r = validateContactValue(field, contact[field]);
+      if ("error" in r) errors[field] = r.error; else cleaned[field] = r.value;
+    }
+    setContactErrors(errors);
+    if (Object.keys(errors).length > 0) return false;
+    const updates: Parameters<typeof updateUser>[0] = {};
+    if (cleaned.phone || cleaned.linkedin) {
+      if (!user?.resumeData) { onError("Add your resume first, then share your details."); return false; }
+      updates.resumeData = { ...user.resumeData, ...(cleaned.phone ? { phone: cleaned.phone } : {}), ...(cleaned.linkedin ? { linkedin: cleaned.linkedin } : {}) };
+    }
+    if (cleaned.portfolio) {
+      const url = cleaned.portfolio;
+      const host = new URL(url).hostname.replace(/^www\./, "");
+      updates.portfolioLinks = [...(user?.portfolioLinks ?? []).filter((l) => l.url !== url), { title: host, url }].slice(-5);
+    }
+    if (Object.keys(updates).length > 0) {
+      try { await updateUser(updates); } catch { onError("Could not save your details. Try again."); return false; }
+    }
+    return true;
+  };
 
   const submit = async (resolution: "fulfilled" | "declined") => {
     setBusy(resolution);
+    if (isContact && resolution === "fulfilled" && !(await saveContact())) { setBusy(null); return; }
     const res = await resolveCandidateRequest(matchId, request.id, resolution, reply);
     setBusy(null);
     if (res.ok) onResolved(request.id, resolution);
@@ -47,9 +160,13 @@ function RequestRow({ matchId, request, unlocked, onResolved, onError }: {
         <p className="m-0 mt-2 text-[13.5px] leading-normal whitespace-pre-line text-hx-coal [overflow-wrap:anywhere]">{request.note}</p>
       )}
       {isContact ? (
-        <p className="m-0 mt-2 text-[13px] leading-normal text-hx-ink-soft">
-          Add these to your <Link href="/resume" className="text-hx-coal underline">resume</Link>, then mark this done. Employers only see them once they unlock your profile.
-        </p>
+        <ContactForm
+          values={contact}
+          errors={contactErrors}
+          onChange={(field, value) => { setContact((c) => ({ ...c, [field]: value })); setContactErrors((e) => ({ ...e, [field]: undefined })); }}
+          inputs={contactInputs}
+          includesEmail={!request.fields || request.fields.includes("email")}
+        />
       ) : (
         <>
           <Textarea
@@ -69,7 +186,7 @@ function RequestRow({ matchId, request, unlocked, onResolved, onError }: {
       )}
       <div className="mt-3 flex flex-wrap gap-2">
         <Button type="button" size="sm" disabled={busy !== null || (needsReply && !reply.trim())} onClick={() => void submit("fulfilled")}>
-          {busy === "fulfilled" ? "Saving…" : isContact ? "Mark done" : "Send reply"}
+          {busy === "fulfilled" ? "Saving…" : isContact ? "Share details" : "Send reply"}
         </Button>
         <Button type="button" size="sm" variant="outline" disabled={busy !== null} onClick={() => void submit("declined")}>
           {busy === "declined" ? "Saving…" : "Decline"}

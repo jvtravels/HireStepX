@@ -222,6 +222,7 @@ export default async function handler(req: Request): Promise<Response> {
           id: r.id,
           kind: r.kind,
           headline: requestHeadline(r),
+          fields: r.fields,
           note: r.note,
           createdAt: r.created_at,
         })),

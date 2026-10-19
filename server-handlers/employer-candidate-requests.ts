@@ -183,7 +183,7 @@ export default async function handler(req: Request): Promise<Response> {
       title: text.title,
       body: text.body,
       link: `/jobs/${matchId}`,
-      actionLabel: "View request",
+      actionLabel: input.kind === "contact" ? "Share details" : "View request",
       groupKey: `candidate_request:${matchId}`,
     }).catch(() => {});
 
