@@ -198,7 +198,8 @@ export default async function handler(req: Request): Promise<Response> {
           body: "An employer looked at your practice evidence. Your identity stays hidden until you respond.",
           link: "/jobs",
         }).catch(() => {}),
-        sendProfileViewedEmail({ candidateUserId }),
+        // A free, locked view must not be a way to put mail in a candidate's inbox.
+        unlocked ? sendProfileViewedEmail({ candidateUserId }) : Promise.resolve(),
       ]);
     }
 
