@@ -25,7 +25,6 @@ import { computeReadinessGap } from "./dashboardData";
 import { isAiResume } from "./resumeParser";
 import { hasVisitedAnalytics } from "./dashboardHelpers";
 import HiringActivityCard from "./HiringActivityCard";
-import EmployerNoticeBanner from "./EmployerNoticeBanner";
 import { authHeaders } from "./supabase";
 import { apiFetch } from "./apiClient";
 import {
@@ -491,8 +490,6 @@ export default function DashboardHome() {
         onViewResume={goToResume}
         onViewJobs={goToJobs}
       />
-
-      {sessions.hasData && <EmployerNoticeBanner />}
 
       {sessions.sessionsLoading ? (
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", gap: 16 }}>
