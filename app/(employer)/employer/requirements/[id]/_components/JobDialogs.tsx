@@ -112,7 +112,7 @@ export function ArchiveDialog({
   requirement: Requirement;
   onArchived: () => void;
 }) {
-  const { archiveRequirementResult, restoreArchivedMatches } = useEmployerData();
+  const { archiveRequirementResult, restoreArchivedMatches, reopenRequirement } = useEmployerData();
   const { toast } = useToast();
   const [reason, setReason] = useState("");
   const [disposition, setDisposition] = useState<ArchiveDisposition>("keep_candidates");
@@ -128,14 +128,19 @@ export function ArchiveDialog({
     setError(null);
     const { ok, rejectedMatches } = await archiveRequirementResult(requirement.id, { archiveReason: reason.trim() || undefined, archiveDisposition: disposition });
     setSaving(false);
-    if (ok && rejectedMatches.length > 0) {
+    if (ok) {
       toast(archiveDoneMessage(rejectedMatches.length), "success", {
         action: {
           label: "Undo",
           onClick: async () => {
-            const restored = await restoreArchivedMatches(requirement.id, rejectedMatches);
-            toast(restored === null ? "Couldn't restore those candidates. Please try again." : archiveUndoneMessage(restored), restored === null ? "error" : "success");
-            if (restored !== null) onArchived();
+            const reopened = await reopenRequirement(requirement.id);
+            if (!reopened) {
+              toast("Couldn't reopen this job. Please try again.", "error");
+              return;
+            }
+            const restored = rejectedMatches.length > 0 ? await restoreArchivedMatches(requirement.id, rejectedMatches) : 0;
+            toast(restored === null ? "Job reopened, but we couldn't restore its candidates. Please try again." : rejectedMatches.length > 0 ? `Job reopened. ${archiveUndoneMessage(restored)}` : "Job reopened.", restored === null ? "error" : "success");
+            onArchived();
           },
         },
       });

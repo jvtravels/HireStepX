@@ -1,5 +1,6 @@
 "use client";
 
+import { useUnsavedNavGuard } from "@/employer/useUnsavedNavGuard";
 import { useMaxWidth } from "../hooks/useMaxWidth";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
@@ -240,6 +241,9 @@ export function RequirementForm({
     window.addEventListener("beforeunload", warn);
     return () => window.removeEventListener("beforeunload", warn);
   }, [dirty]);
+
+  // A create draft is saved on this device, so only an edit can lose work to an in-app link.
+  useUnsavedNavGuard(() => !isCreate && dirty && !submittedRef.current);
 
   /* ── Navigation + submit ── */
 

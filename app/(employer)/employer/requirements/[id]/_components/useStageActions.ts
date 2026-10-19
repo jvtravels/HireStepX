@@ -15,6 +15,8 @@ interface Options {
   toast: (message: string, type?: ToastType, options?: ToastOptions) => void;
 }
 
+const RATE_LIMIT_RETRY_MS = 3000;
+
 interface RunResult {
   done: StageChange[];
   failed: StageChange[];
@@ -38,7 +40,11 @@ export function useStageActions({ candidates, patchCandidates, update, toast }: 
     const failed: StageChange[] = [];
     let firstError: EmployerApiError | null = null;
     await mapWithConcurrency(changes, BULK_CONCURRENCY, async (c) => {
-      const res = await update(c.id, { candidateStatus: c.to });
+      let res = await update(c.id, { candidateStatus: c.to });
+      if (!res.ok && res.error.status === 429) {
+        await new Promise((resolve) => setTimeout(resolve, RATE_LIMIT_RETRY_MS));
+        res = await update(c.id, { candidateStatus: c.to });
+      }
       if (res.ok) done.push(c);
       else {
         failed.push(c);
@@ -53,8 +59,10 @@ export function useStageActions({ candidates, patchCandidates, update, toast }: 
     const back = reverse(undoable(done));
     const result = await run(back);
     const noun = result.done.length === 1 ? "candidate" : "candidates";
-    if (result.failed.length > 0) toast(result.done.length > 0 ? `Restored ${result.done.length} ${noun}. ${result.failed.length} couldn't be restored.` : "Couldn't undo that. Please try again.", "error");
-    else toast(`Restored ${result.done.length} ${noun}.`, "success");
+    if (result.failed.length > 0) {
+      const retry: ToastOptions = { action: { label: "Retry", onClick: () => void undo(result.failed.map((c) => ({ id: c.id, from: c.to, to: c.from }))) } };
+      toast(result.done.length > 0 ? `Restored ${result.done.length} ${noun}. ${result.failed.length} couldn't be restored.` : "Couldn't undo that. Please try again.", "error", retry);
+    } else toast(`Restored ${result.done.length} ${noun}.`, "success");
   }, [run, toast]);
 
   const undoOption = useCallback(

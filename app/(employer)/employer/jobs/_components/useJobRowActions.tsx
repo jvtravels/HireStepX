@@ -70,13 +70,24 @@ export function useJobRowActions(pipeline?: readonly DashboardJobPipeline[] | nu
     setArchiveBusy(false);
     if (ok) {
       setArchiveTarget(null);
-      if (rejected.length > 0) {
+      if (isClosed) {
+        toast("Job reopened.", "success");
+      } else {
         toast(archiveDoneMessage(rejected.length), "success", {
           action: {
             label: "Undo",
             onClick: async () => {
+              const reopened = await reopenRequirement(jobId);
+              if (!reopened) {
+                toast("Couldn't reopen this job. Please try again.", "error");
+                return;
+              }
+              if (rejected.length === 0) {
+                toast("Job reopened.", "success");
+                return;
+              }
               const restored = await restoreArchivedMatches(jobId, rejected);
-              toast(restored === null ? "Couldn't restore those candidates. Please try again." : archiveUndoneMessage(restored), restored === null ? "error" : "success");
+              toast(restored === null ? "Job reopened, but we couldn't restore its candidates. Please try again." : `Job reopened. ${archiveUndoneMessage(restored)}`, restored === null ? "error" : "success");
             },
           },
         });

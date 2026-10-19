@@ -1,5 +1,6 @@
 "use client";
 
+import { useUnsavedNavGuard } from "@/employer/useUnsavedNavGuard";
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/AuthContext";
 import { useToast } from "@/Toast";
@@ -48,6 +49,8 @@ export default function EmployerSettingsPage() {
     window.addEventListener("beforeunload", warn);
     return () => window.removeEventListener("beforeunload", warn);
   }, [dirty]);
+
+  useUnsavedNavGuard(() => dirty);
 
   // The deletion warning quotes the unspent credit, so read it before the owner opens that panel.
   useEffect(() => {

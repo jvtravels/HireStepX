@@ -75,7 +75,7 @@ export default function MessagesDialog({
     setReportingId(null);
     setReportResult(null);
     load(matchId, true);
-    const interval = setInterval(() => load(matchId, false), MESSAGE_POLL_MS);
+    const interval = setInterval(() => { if (document.visibilityState !== "hidden") load(matchId, false); }, MESSAGE_POLL_MS);
     return () => clearInterval(interval);
   }, [matchId, load]);
 

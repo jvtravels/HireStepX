@@ -6,6 +6,7 @@
    module. Reachable via the header MessagesBell (AppShellFrame.tsx) and
    deep-links via ?matchId=... the same way the candidate page does. */
 
+import { waitUntilVisible } from "@/employer/waitUntilVisible";
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { useMaxWidth } from "../hooks/useMaxWidth";
@@ -162,6 +163,8 @@ export default function EmployerMessagesV2() {
     let timer: ReturnType<typeof setTimeout>;
     let failures = 0;
     const tick = async () => {
+      await waitUntilVisible();
+      if (cancelled) return;
       const ok = await loadConversations();
       if (cancelled) return;
       failures = ok ? 0 : failures + 1;
@@ -212,6 +215,8 @@ export default function EmployerMessagesV2() {
     let timer: ReturnType<typeof setTimeout>;
     let failures = 0;
     const tick = async (showSpinner: boolean) => {
+      await waitUntilVisible();
+      if (cancelled) return;
       const ok = await loadThread(activeMatchId, showSpinner);
       if (cancelled) return;
       failures = ok ? 0 : failures + 1;

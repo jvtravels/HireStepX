@@ -183,7 +183,7 @@ export default function ComparePage() {
           title="Pick two or three candidates to compare"
           action={<LinkCta variant="outline" href={`/employer/requirements/${requirement.id}`}>Back to shortlist</LinkCta>}
         >
-          {chosen.length < wantedIds.length ? "Some candidates in this link are no longer on the shortlist. " : ""}
+          {chosen.length < wantedIds.length ? "Some candidates in this link could not be loaded for this job. They may have been removed, or they are not in the part of the list that has loaded." : ""}
           Tick the box next to two or three candidates on the shortlist, then choose Compare in the bar that appears.
         </EmptyNote>
       </>
