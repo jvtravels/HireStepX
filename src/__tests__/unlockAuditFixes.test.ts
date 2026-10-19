@@ -412,13 +412,13 @@ describe("credit note rendering", () => {
     expect(html).toContain("No. CN-2610-000042");
     expect(html).toContain("&minus;₹10");
     expect(html).not.toContain("&minus;₹29.50");
-    expect(html).not.toContain("CN-2610-000001");
+    expect(html).not.toContain("CND-2610-000001");
     expect(html).toMatch(/7 Oct(ober)? 2026/);
   });
 
   it("falls back to the derived number when there is no credit note row (legacy refunds)", () => {
     const html = buildInvoiceHtml({ ...base, document: "credit_note", partialRefundPaise: 2950, partialRefundAt: "2026-10-07T00:00:00Z" });
-    expect(html).toContain("No. CN-2610-000001");
+    expect(html).toContain("No. CND-2610-000001");
     expect(html).toContain("&minus;₹29.50");
   });
 

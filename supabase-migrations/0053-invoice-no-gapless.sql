@@ -52,10 +52,17 @@ begin
   if not exists (select 1 from public.employer_invoice_counters where fy = v_fy) then
     v_from := (v_start_year % 100) * 100 + 4;
     v_to := ((v_start_year + 1) % 100) * 100 + 3;
-    select coalesce(max((substring(invoice_no from '^HSX-[0-9]{4}-([0-9]+)$'))::bigint), 0) into v_seed
-      from public.employer_unlock_payments
-     where invoice_no ~ '^HSX-[0-9]{4}-[0-9]+$'
-       and substring(invoice_no from 5 for 4)::int between v_from and v_to;
+    -- The casts sit inside CASE so the shape guard is guaranteed to run first (a WHERE clause gives no
+    -- evaluation-order guarantee, and a malformed invoice_no would raise on the ::int cast).
+    select coalesce(max(s.n), 0) into v_seed
+      from (
+        select case when invoice_no ~ '^HSX-[0-9]{4}-[0-9]+$' then
+                 case when substring(invoice_no from 5 for 4)::int between v_from and v_to
+                      then substring(invoice_no from '^HSX-[0-9]{4}-([0-9]+)$')::bigint
+                 end
+               end as n
+          from public.employer_unlock_payments
+      ) s;
   end if;
 
   insert into public.employer_invoice_counters (fy, last_no) values (v_fy, v_seed + 1)

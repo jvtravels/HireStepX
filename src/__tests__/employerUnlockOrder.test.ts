@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import {
   isUuid, isFreshOpenOrder, decideUnlockLimit, pendingOrderMatchCount, findReusableOrder, findOverlappingOrder,
-  insertUnlockOrder, loadOpenOrders, countUnlocksLast24h, tryCreateLock, STALE_CREATED_ORDER_MS,
+  insertUnlockOrder, loadOpenOrders, findOlderOverlap, noOlderOverlap, countUnlocksLast24h, tryCreateLock, STALE_CREATED_ORDER_MS,
 } from "../../server-handlers/_employer-unlock-order";
 import { TIER_LIMITS } from "../../server-handlers/_employer-trust";
 import { FakeUnlockDb, HEADERS, SUPABASE, order, match } from "./unlockTestUtils";
@@ -149,3 +149,77 @@ describe("tryCreateLock", () => {
 });
 
 void match;
+
+describe("findOlderOverlap", () => {
+  const mine = { razorpay_order_id: "order_b", match_ids: ["m1", "m2"], created_at: ago(1000) };
+  const other = (over: Partial<ReturnType<typeof order>> = {}) => order({ razorpay_order_id: "order_a", match_ids: ["m2", "m3"], created_at: ago(5000), status: "created", ...over });
+
+  it("returns the older live order that shares a match", () => {
+    expect(findOlderOverlap([other()], mine, NOW)?.razorpay_order_id).toBe("order_a");
+  });
+
+  it("ignores a younger overlapping order, so only one of two racing orders backs out", () => {
+    expect(findOlderOverlap([other({ created_at: ago(10) })], mine, NOW)).toBeNull();
+    const olderMine = { ...mine, created_at: ago(9000), razorpay_order_id: "order_z" };
+    expect(findOlderOverlap([other()], olderMine, NOW)).toBeNull();
+  });
+
+  it("breaks an exact created_at tie by order id, deterministically on both sides", () => {
+    const t = ago(2000);
+    const a = other({ created_at: t });
+    expect(findOlderOverlap([a], { ...mine, created_at: t }, NOW)?.razorpay_order_id).toBe("order_a");
+    expect(findOlderOverlap([order({ ...a, razorpay_order_id: "order_c" })], { ...mine, created_at: t }, NOW)).toBeNull();
+  });
+
+  it("ignores itself, disjoint orders and stale abandoned unpaid orders", () => {
+    expect(findOlderOverlap([order({ razorpay_order_id: "order_b", match_ids: ["m1"], created_at: ago(9000) })], mine, NOW)).toBeNull();
+    expect(findOlderOverlap([other({ match_ids: ["m9"] })], mine, NOW)).toBeNull();
+    expect(findOlderOverlap([other({ created_at: ago(STALE_CREATED_ORDER_MS + 1000) })], mine, NOW)).toBeNull();
+  });
+
+  it("a paid order always counts, however old", () => {
+    expect(findOlderOverlap([other({ status: "paid", created_at: ago(STALE_CREATED_ORDER_MS * 4) })], mine, NOW)?.razorpay_order_id).toBe("order_a");
+  });
+});
+
+describe("noOlderOverlap", () => {
+  const mineRow = order({ razorpay_order_id: "order_b", match_ids: ["m1"], created_at: ago(1000) });
+
+  it("is false when an older live order covers the match", async () => {
+    const f = vi.fn(async () => new Response(JSON.stringify([order({ razorpay_order_id: "order_a", match_ids: ["m1"], created_at: ago(5000) })]), { status: 200 }));
+    expect(await noOlderOverlap(SUPABASE, HEADERS, mineRow, NOW, f as unknown as typeof fetch)).toBe(false);
+  });
+
+  it("is true when nothing older overlaps", async () => {
+    const f = vi.fn(async () => new Response("[]", { status: 200 }));
+    expect(await noOlderOverlap(SUPABASE, HEADERS, mineRow, NOW, f as unknown as typeof fetch)).toBe(true);
+  });
+
+  it("lets the order proceed when the read fails (the DB guard and fulfilment are the other layers)", async () => {
+    const bad = vi.fn(async () => new Response("x", { status: 500 }));
+    expect(await noOlderOverlap(SUPABASE, HEADERS, mineRow, NOW, bad as unknown as typeof fetch)).toBe(true);
+    const boom = vi.fn(async () => { throw new Error("net"); });
+    expect(await noOlderOverlap(SUPABASE, HEADERS, mineRow, NOW, boom as unknown as typeof fetch)).toBe(true);
+  });
+});
+
+describe("insertUnlockOrder: migration 0054 claim guard", () => {
+  const batch = { razorpayOrderId: "order_x", employerId: "emp-1", requirementId: "req-1", mode: "batch" as const, matchIds: ["m1", "m2"], amount: 11800, currency: "INR" };
+  const conflictFetch = (existing: unknown[]) => vi.fn(async (_u: RequestInfo | URL, init?: RequestInit) =>
+    init?.method === "POST"
+      ? new Response('{"code":"23505","message":"unlock_match_claim_conflict"}', { status: 409 })
+      : new Response(JSON.stringify(existing), { status: 200 }));
+
+  it("flags an overlap with a different purchase instead of handing back someone else's order", async () => {
+    const other = order({ razorpay_order_id: "order_single", mode: "single", match_ids: ["m1"] });
+    const r = await insertUnlockOrder(SUPABASE, HEADERS, batch, conflictFetch([other]) as unknown as typeof fetch);
+    expect(r).toEqual({ kind: "conflict", order: null, overlap: true });
+  });
+
+  it("still returns the winner when an identical batch won the race", async () => {
+    const winner = order({ razorpay_order_id: "order_winner", mode: "batch", match_ids: ["m1", "m2"] });
+    const r = await insertUnlockOrder(SUPABASE, HEADERS, batch, conflictFetch([winner]) as unknown as typeof fetch);
+    expect(r).toMatchObject({ kind: "conflict", order: { razorpay_order_id: "order_winner" } });
+    expect(r.kind === "conflict" && r.overlap).toBeFalsy();
+  });
+});

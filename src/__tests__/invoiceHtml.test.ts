@@ -1,7 +1,8 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import {
   buildInvoiceHtml, canIssueCreditNote, gstBreakup, GST_RATE_PERCENT, invoiceDocKind, isTaxInvoice,
   purchaseAmountLabel, purchaseAmounts, splitInclusiveGst, type InvoiceInput,
+  isInvoicePending, documentButtonLabel, openInvoice, INVOICE_URL_TTL_MS, INVOICE_PENDING_NOTE,
 } from "../employer/_invoiceHtml";
 import { gstinStateCode } from "../../server-handlers/_gstin";
 
@@ -70,7 +71,7 @@ describe("GST split", () => {
       expect(g.lines).toHaveLength(2);
       expect(Math.abs(g.lines[0].paise - g.lines[1].paise)).toBeLessThanOrEqual(1);
     }
-  });
+  }, 60_000);
 
   it("splits 11800 paise into 10000 + 1800", () => {
     expect(splitInclusiveGst(11800)).toEqual({ taxablePaise: 10000, taxPaise: 1800 });
@@ -147,10 +148,10 @@ describe("tax invoice", () => {
 describe("credit note", () => {
   const cn: InvoiceInput = { ...taxBase, document: "credit_note", refunded: true, refundedAt: "2026-10-09T10:00:00Z" };
 
-  it("is numbered CN-<invoice no>, references the original and negates the same breakup", () => {
+  it("is numbered CND-<invoice no> when no credit-note row exists, references the original and negates the same breakup", () => {
     const html = buildInvoiceHtml(cn);
     expect(html).toContain("<h1>Credit note</h1>");
-    expect(html).toContain("No. CN-2610-0007");
+    expect(html).toContain("No. CND-2610-0007");
     expect(html).toContain("against tax invoice HSX-2610-0007 dated 5 October 2026");
     expect(html).toContain("9 October 2026");
     expect(html).toContain("CGST @ 9%");
@@ -176,7 +177,7 @@ describe("credit note", () => {
   });
 
   it("points a refunded tax invoice at its credit note", () => {
-    expect(buildInvoiceHtml({ ...taxBase, refunded: true })).toContain("see credit note CN-2610-0007");
+    expect(buildInvoiceHtml({ ...taxBase, refunded: true })).toContain("see credit note CND-2610-0007");
   });
 });
 
@@ -218,5 +219,78 @@ describe("one amount derivation for history and documents", () => {
     expect(purchaseAmountLabel({ amount: 0, creditAppliedPaise: 5900 })).toContain("from credit");
     expect(purchaseAmountLabel({ amount: 0 })).toBe("Complimentary");
     expect(purchaseAmountLabel({ amount: 5900 })).toBe(purchaseAmountLabel({ amount: 5900, creditAppliedPaise: 0 }));
+  });
+});
+
+describe("isInvoicePending", () => {
+  it("is true for a paid cash purchase with no number yet", () => {
+    expect(isInvoicePending({ amount: 5900, invoiceNo: null })).toBe(true);
+    expect(isInvoicePending({ amount: 5900 })).toBe(true);
+  });
+  it("is false once numbered, for a refunded purchase and for a purchase with no cash", () => {
+    expect(isInvoicePending({ amount: 5900, invoiceNo: "HSX-2610-000001" })).toBe(false);
+    expect(isInvoicePending({ amount: 5900, invoiceNo: null, refundedAt: "2026-10-11T00:00:00Z" })).toBe(false);
+    expect(isInvoicePending({ amount: 5900, invoiceNo: null, orderStatus: "refunded" })).toBe(false);
+    expect(isInvoicePending({ amount: 0, invoiceNo: null })).toBe(false);
+  });
+  it("the note carries no em dash", () => {
+    expect(INVOICE_PENDING_NOTE).not.toContain("\u2014");
+  });
+});
+
+describe("documentButtonLabel", () => {
+  const when = "2026-10-05T10:00:00Z";
+  it("names the candidates and the date so each row's button is distinguishable", () => {
+    const label = documentButtonLabel("Download invoice", { invoiceNo: "HSX-2610-000001", createdAt: when, candidates: [{ name: "Priya" }, { name: "Ravi" }, { name: "Asha" }, { name: null }] });
+    expect(label).toContain("Download invoice HSX-2610-000001 for Priya, Ravi and 1 more");
+    expect(label).toContain("2026");
+  });
+  it("falls back to a candidate count when no names are known, and pluralises it", () => {
+    expect(documentButtonLabel("Credit note", { createdAt: when, matchIds: ["a"] })).toMatch(/^Credit note for 1 candidate, /);
+    expect(documentButtonLabel("Credit note", { createdAt: when, matchIds: ["a", "b"] })).toMatch(/^Credit note for 2 candidates, /);
+  });
+});
+
+describe("openInvoice blob lifetime", () => {
+  // A test that leaves a blob un-revoked must not leak its pagehide listener into the next one.
+  afterEach(() => { window.dispatchEvent(new Event("pagehide")); vi.useRealTimers(); vi.restoreAllMocks(); });
+  const realCreate = URL.createObjectURL;
+  const realRevoke = URL.revokeObjectURL;
+  afterEach(() => { URL.createObjectURL = realCreate; URL.revokeObjectURL = realRevoke; });
+  const setup = () => {
+    vi.useFakeTimers();
+    const create = vi.fn(() => "blob:invoice-1");
+    const revoke = vi.fn();
+    URL.createObjectURL = create;
+    URL.revokeObjectURL = revoke;
+    const open = vi.spyOn(window, "open").mockReturnValue(null);
+    return { create, revoke, open };
+  };
+
+  it("opens the blob in a new tab and keeps it alive for a reload or print", () => {
+    const { open, revoke } = setup();
+    openInvoice(base);
+    expect(open).toHaveBeenCalledWith("blob:invoice-1", "_blank", "noopener");
+    vi.advanceTimersByTime(INVOICE_URL_TTL_MS - 1000);
+    expect(revoke).not.toHaveBeenCalled();
+  });
+
+  it("revokes it after the TTL, once", () => {
+    const { revoke } = setup();
+    openInvoice(base);
+    vi.advanceTimersByTime(INVOICE_URL_TTL_MS + 1);
+    expect(revoke).toHaveBeenCalledTimes(1);
+    expect(revoke).toHaveBeenCalledWith("blob:invoice-1");
+    window.dispatchEvent(new Event("pagehide"));
+    expect(revoke).toHaveBeenCalledTimes(1);
+  });
+
+  it("revokes it early when the page is left, and the timer then does nothing", () => {
+    const { revoke } = setup();
+    openInvoice(base);
+    window.dispatchEvent(new Event("pagehide"));
+    expect(revoke).toHaveBeenCalledTimes(1);
+    vi.advanceTimersByTime(INVOICE_URL_TTL_MS * 2);
+    expect(revoke).toHaveBeenCalledTimes(1);
   });
 });

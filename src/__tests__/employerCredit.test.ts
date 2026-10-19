@@ -533,6 +533,8 @@ describe("sweepUnreachableCredits", () => {
       if (url.includes("/requirement_matches?id=in.")) return ok([{ id: "silent", candidate_status: "interview_invited" }]);
       if (url.includes("/employer_unlock_orders?")) return ok([{ razorpay_order_id: "order_1", employer_id: "e1", amount: 5_900, match_ids: ["silent"] }]);
       if (url.includes("kind=in.(spend,release)")) return ok([]);
+      if (url.includes("employer_credit_ledger?kind=eq.refund&")) return ok([]); // not-delivered keys, credit already returned
+      if (url.includes("/employer_unlock_payments?razorpay_order_id=")) return ok([]); // no cash partial refund
       return ok(null, 201);
     });
     const summary = await sweepUnreachableCredits({ base: BASE, headers: H, fetchImpl: f as never, notifyImpl: vi.fn(), now: () => new Date("2026-10-17T00:00:00Z") });

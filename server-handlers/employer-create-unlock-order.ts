@@ -44,6 +44,7 @@ import {
   loadOpenOrders,
   countUnlocksLast24h,
   insertUnlockOrder,
+  noOlderOverlap,
   tryCreateLock,
   releaseCreateLock,
 } from "./_employer-unlock-order";
@@ -378,9 +379,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           : { status: 200, body: orderResponse(inserted.order, { reused: true }) };
         return res.status(done.status).json(done.body);
       }
+      if (inserted.kind === "conflict" && inserted.overlap) return res.status(409).json({ error: "Another unlock order covering this candidate is already open. Complete or wait for it to expire.", code: "order_in_progress" });
       if (inserted.kind !== "inserted") {
         slog.error("credit unlock order insert failed", { code: "unlock_create_credit_order_insert_failed", requestId, employerId, detail: inserted.kind === "error" ? inserted.detail : "conflict without winner" });
         return res.status(500).json({ error: "Could not start the unlock. Please try again." });
+      }
+      if (!(await noOlderOverlap(SUPABASE_URL, sh, inserted.order, nowMs))) {
+        await markOrderFailed(SUPABASE_URL, sh, inserted.order.razorpay_order_id, employerId, "overlapping_order");
+        return res.status(409).json({ error: "Another unlock order covering this candidate is already open. Complete or wait for it to expire.", code: "order_in_progress" });
       }
       const spent = await spendCreditDetailed(SUPABASE_URL, sh, employerId, price.amountPaise, inserted.order.razorpay_order_id);
       if (spent.outcome !== "spent") {
@@ -443,6 +449,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       creditAppliedPaise: creditPaise,
     });
     if (inserted.kind === "inserted") {
+      if (!(await noOlderOverlap(SUPABASE_URL, sh, inserted.order, nowMs))) {
+        // The Razorpay order stays unpaid (the client never receives its id) and lapses on its own.
+        await markOrderFailed(SUPABASE_URL, sh, inserted.order.razorpay_order_id, employerId, "overlapping_order");
+        return res.status(409).json({ error: "Another unlock order covering this candidate is already open. Complete or wait for it to expire.", code: "order_in_progress" });
+      }
       if (creditPaise > 0) {
         const spent = await spendCreditDetailed(SUPABASE_URL, sh, employerId, creditPaise, inserted.order.razorpay_order_id);
         if (spent.outcome !== "spent") {
@@ -458,6 +469,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (inserted.kind === "conflict" && inserted.order) {
       return res.status(200).json(orderResponse(inserted.order, { reused: true }));
     }
+    if (inserted.kind === "conflict" && inserted.overlap) return res.status(409).json({ error: "Another unlock order covering this candidate is already open. Complete or wait for it to expire.", code: "order_in_progress" });
     slog.error("employer_unlock_orders insert failed", { code: "unlock_create_order_insert_failed", requestId, employerId, detail: inserted.kind === "error" ? inserted.detail : "conflict without winner" });
     return res.status(500).json({ error: "Could not start the payment. Please try again." });
   } catch (err) {

@@ -32,7 +32,8 @@
  */
 
 import { slog } from "./_shared";
-import { clawbackOrderCredit, creditSpentOnOrders } from "./_employer-credit";
+import { clawbackOrderCredit, clawbackRefundOverlap, creditReturnedOnOrder, creditSpentOnOrders } from "./_employer-credit";
+import { creditNoteAmountForCashRefund, loadOwnership, relockableMatchIds } from "./_unlock-ownership";
 import {
   alertUnlockProblem,
   assignCreditNote,
@@ -104,15 +105,19 @@ async function setOrderStatus(
   return res.ok;
 }
 
-/** Relocks only matches this order unlocked (unlocked_at on/after the order
- *  was created) — a candidate the employer already had unlocked, or one
- *  unlocked by a different order, stays unlocked. */
+/** Relocks only matches this order delivered (unlocked_at on/after the order was created) and that no other
+ *  live order also owns: a candidate the employer already had unlocked, or one a different order paid for
+ *  (an overlapping batch, a later purchase), stays unlocked. Ownership is read fail-closed; false = retry. */
 async function relockOrderMatches(
   supabaseUrl: string, headers: Record<string, string>, order: UnlockOrderRow, f: typeof fetch,
 ): Promise<boolean> {
   if (order.match_ids.length === 0) return true;
+  const ownership = await loadOwnership(supabaseUrl, headers, order, f);
+  if (!ownership) return false;
+  const ids = relockableMatchIds(order, ownership.others, ownership.notDelivered);
+  if (ids.length === 0) return true;
   const url =
-    `${supabaseUrl}/rest/v1/requirement_matches?id=in.(${order.match_ids.map(encodeURIComponent).join(",")})` +
+    `${supabaseUrl}/rest/v1/requirement_matches?id=in.(${ids.map(encodeURIComponent).join(",")})` +
     `&unlocked=eq.true&unlocked_at=gte.${encodeURIComponent(order.created_at)}`;
   const patchHeaders = { ...headers, "Content-Type": "application/json", Prefer: "return=minimal" };
   const full = await f(url, {
@@ -283,7 +288,22 @@ export async function handleEmployerUnlockWebhook(p: UnlockWebhookParams): Promi
       // One numbered credit note per refund (idempotent on the refund id). Best effort: without the table
       // the document falls back to the derived credit-note number.
       if (refundId && refundAmount > 0) {
-        await assignCreditNote(p.supabaseUrl, p.headers, order.razorpay_order_id, refundId, refundAmount, f);
+        // If candidate-decline credit already went back on this order, the cash and the credit together can exceed
+        // what the order was worth: take the excess credit back and cap the note, so the value is refunded once.
+        const spentMap = await creditSpentOnOrders(p.supabaseUrl, p.headers, order.employer_id, [order.razorpay_order_id], f);
+        const returned = await creditReturnedOnOrder(p.supabaseUrl, p.headers, order.razorpay_order_id, f);
+        if (!spentMap || returned === null) return retry("credit state read failed");
+        const spent = spentMap.get(order.razorpay_order_id) ?? 0;
+        const overlap = await clawbackRefundOverlap({
+          base: p.supabaseUrl, headers: p.headers, employerId: order.employer_id, orderRef: order.razorpay_order_id, refundId,
+          cashPaise: order.amount, creditSpentPaise: spent, cashRefundedTotalPaise: refundedTotal, fetchImpl: f,
+        });
+        if (!overlap.ok) return retry("credit overlap clawback failed");
+        const noteAmount = creditNoteAmountForCashRefund({
+          refundPaise: refundAmount, cashPaise: order.amount, creditSpentPaise: spent,
+          cashRefundedBeforePaise: Math.max(0, refundedTotal - refundAmount), creditReturnedPaise: returned,
+        });
+        if (noteAmount > 0) await assignCreditNote(p.supabaseUrl, p.headers, order.razorpay_order_id, refundId, noteAmount, f);
       }
       slog.warn("partial refund on employer unlock order — matches left unlocked, manual review", {
         code: "unlock_partial_refund", orderId: order.razorpay_order_id, paymentId, refundAmount, refundedTotal, orderAmount: order.amount, recordedOnLedger: recorded === "recorded",
@@ -300,7 +320,15 @@ export async function handleEmployerUnlockWebhook(p: UnlockWebhookParams): Promi
       // about to be released, so the spend is read BEFORE the clawback below nets it to zero. Idempotent on the
       // refund id, so a retry after a later failure keeps the first (correct) amount.
       const spent = (await creditSpentOnOrders(p.supabaseUrl, p.headers, order.employer_id, [order.razorpay_order_id], f))?.get(order.razorpay_order_id) ?? 0;
-      await assignCreditNote(p.supabaseUrl, p.headers, order.razorpay_order_id, refundId, (refundAmount > 0 ? refundAmount : order.amount) + Math.max(0, spent), f);
+      // Credit already returned for declined candidates has its own note; counting it again here would credit-note
+      // the same value twice, so the note is capped at what the order could still give back.
+      const returned = await creditReturnedOnOrder(p.supabaseUrl, p.headers, order.razorpay_order_id, f);
+      if (returned === null) return retry("credit state read failed");
+      const noteAmount = creditNoteAmountForCashRefund({
+        refundPaise: (refundAmount > 0 ? refundAmount : order.amount) + Math.max(0, spent), cashPaise: order.amount, creditSpentPaise: Math.max(0, spent),
+        cashRefundedBeforePaise: refundAmount > 0 ? Math.max(0, refundedTotal - refundAmount) : 0, creditReturnedPaise: returned,
+      });
+      if (noteAmount > 0) await assignCreditNote(p.supabaseUrl, p.headers, order.razorpay_order_id, refundId, noteAmount, f);
     }
     // Cash went back to the card, so credit minted from it (candidate-decline refunds, a late-payment
     // conversion) is reversed and credit spent on the order is returned. May leave a negative balance.

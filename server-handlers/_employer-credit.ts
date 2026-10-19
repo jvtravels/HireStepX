@@ -28,6 +28,7 @@
 import { slog } from "./_shared";
 import { notify as defaultNotify, type NotifyInput } from "./_notify";
 import { captureServerEvent } from "./_posthog";
+import { incrementalOverlapPaise, loadNotDeliveredKeys, ownershipKey, refundOverlapPaise, remainingReturnablePaise } from "./_unlock-ownership";
 
 export type CreditReason =
   | "declined" | "withdrew" | "blocked" | "no_response" | "unavailable"
@@ -377,16 +378,24 @@ export async function clawbackOrderCredit(p: ClawbackParams): Promise<ClawbackRe
     const rows = (await res.json().catch(() => null)) as Array<{ amount: number; match_id: string | null }> | null;
     if (!Array.isArray(rows)) return { ...result, ok: false };
 
+    // Credit already taken back for a cash partial refund that overlapped these rows must not be taken twice.
+    const overlap = await overlapClawedBack(p.base, p.headers, employerId, ref, f);
+    if (overlap === null) return { ...result, ok: false };
+    let overlapLeft = overlap;
     for (const row of rows) {
       if (!Number.isInteger(row.amount) || row.amount <= 0) continue;
+      const offset = Math.min(row.amount, overlapLeft);
+      overlapLeft -= offset;
+      const owed = row.amount - offset;
+      if (owed <= 0) continue;
       const state = await insertLedger(p.base, p.headers, {
-        employer_id: employerId, amount: -row.amount, kind: "clawback", reason: p.reason,
+        employer_id: employerId, amount: -owed, kind: "clawback", reason: p.reason,
         match_id: row.match_id, order_ref: `clawback:${ref}:${row.match_id ?? "convert"}`,
       }, f);
-      if (state === "inserted") { result.clawedBackPaise += row.amount; result.rows += 1; }
+      if (state === "inserted") { result.clawedBackPaise += owed; result.rows += 1; }
       else if (state === "unsupported") {
-        slog.error("credit clawback skipped: migration 0042 not applied — reverse this credit manually", {
-          code: "credit_clawback_unsupported", orderId: ref, employerId, amountPaise: row.amount,
+        slog.error("credit clawback skipped: migration 0042 not applied; reverse this credit manually", {
+          code: "credit_clawback_unsupported", orderId: ref, employerId, amountPaise: owed,
         });
       } else if (state === "error") result.ok = false;
     }
@@ -402,6 +411,106 @@ export async function clawbackOrderCredit(p: ClawbackParams): Promise<ClawbackRe
     });
   }
   return result;
+}
+
+const OVERLAP_REF = (orderRef: string) => `clawback:${orderRef}:overlap:`;
+
+/** Paise already clawed back for cash-partial-refund overlap on an order. null on a failed read. */
+async function overlapClawedBack(base: string, headers: Headers, employerId: string, orderRef: string, f: typeof fetch): Promise<number | null> {
+  try {
+    const res = await f(
+      `${base}/rest/v1/employer_credit_ledger?employer_id=eq.${encodeURIComponent(employerId)}&kind=eq.clawback` +
+        `&order_ref=like.${encodeURIComponent(OVERLAP_REF(orderRef))}*&select=amount&limit=1000`,
+      { headers },
+    );
+    if (!res.ok) return isMissing(res.status, await res.text().catch(() => "")) ? 0 : null;
+    const rows = (await res.json().catch(() => null)) as Array<{ amount: number }> | null;
+    if (!Array.isArray(rows)) return null;
+    return rows.reduce((n, r) => n + (Number.isInteger(r.amount) && r.amount < 0 ? -r.amount : 0), 0);
+  } catch {
+    return null;
+  }
+}
+
+/** Paise already returned as credit on an order (refund rows, any reason). 0 when the ledger is absent;
+ *  null when the read fails, which callers must not mistake for "nothing returned". */
+export async function creditReturnedOnOrder(base: string, headers: Headers, orderRef: string, f: typeof fetch = fetch): Promise<number | null> {
+  try {
+    const res = await f(
+      `${base}/rest/v1/employer_credit_ledger?kind=eq.refund&order_ref=eq.${encodeURIComponent(orderRef)}&select=amount&limit=1000`,
+      { headers },
+    );
+    if (!res.ok) return isMissing(res.status, await res.text().catch(() => "")) ? 0 : null;
+    const rows = (await res.json().catch(() => null)) as Array<{ amount: number }> | null;
+    if (!Array.isArray(rows)) return null;
+    return rows.reduce((n, r) => n + (Number.isInteger(r.amount) && r.amount > 0 ? r.amount : 0), 0);
+  } catch {
+    return null;
+  }
+}
+
+/** A cash partial refund on an order that already returned credit can hand back more than the order was worth
+ *  (the same match refunded twice). The cash is gone, so the excess credit is taken back: one clawback row per
+ *  refund (`clawback:<order>:overlap:<refundId>`), sized to what that refund added to the overlap. Idempotent.
+ *  `cashRefundedTotalPaise` is the running total including this refund. May leave a negative balance, like any clawback. */
+export async function clawbackRefundOverlap(p: {
+  base: string; headers: Headers; employerId: string; orderRef: string; refundId: string;
+  cashPaise: number; creditSpentPaise: number; cashRefundedTotalPaise: number; fetchImpl?: typeof fetch;
+}): Promise<{ ok: boolean; clawedBackPaise: number }> {
+  const f = p.fetchImpl ?? fetch;
+  try {
+    const returned = await creditReturnedOnOrder(p.base, p.headers, p.orderRef, f);
+    if (returned === null) return { ok: false, clawedBackPaise: 0 };
+    const overlap = refundOverlapPaise({
+      cashPaise: p.cashPaise, creditSpentPaise: p.creditSpentPaise, cashRefundedTotalPaise: p.cashRefundedTotalPaise, creditReturnedPaise: returned,
+    });
+    if (overlap <= 0) return { ok: true, clawedBackPaise: 0 };
+    const taken = await overlapClawedBack(p.base, p.headers, p.employerId, p.orderRef, f);
+    if (taken === null) return { ok: false, clawedBackPaise: 0 };
+    const owed = Math.min(incrementalOverlapPaise(overlap, taken), returned);
+    if (owed <= 0) return { ok: true, clawedBackPaise: 0 };
+    const state = await insertLedger(p.base, p.headers, {
+      employer_id: p.employerId, amount: -owed, kind: "clawback", reason: "payment_refunded",
+      order_ref: `${OVERLAP_REF(p.orderRef)}${p.refundId}`,
+    }, f);
+    if (state === "error") return { ok: false, clawedBackPaise: 0 };
+    if (state === "unsupported") {
+      slog.error("credit overlap clawback skipped: migration 0042 not applied; reverse this credit manually", {
+        code: "credit_clawback_unsupported", orderId: p.orderRef, employerId: p.employerId, amountPaise: owed,
+      });
+      return { ok: true, clawedBackPaise: 0 };
+    }
+    if (state === "inserted") {
+      slog.warn("cash partial refund overlapped credit already returned: excess credit clawed back", {
+        code: "credit_refund_overlap_clawback", orderId: p.orderRef, employerId: p.employerId, paise: owed,
+      });
+      return { ok: true, clawedBackPaise: owed };
+    }
+    return { ok: true, clawedBackPaise: 0 };
+  } catch (err) {
+    slog.error("credit overlap clawback threw", { orderId: p.orderRef, err: err instanceof Error ? err.message : String(err) });
+    return { ok: false, clawedBackPaise: 0 };
+  }
+}
+
+/** Cash partial refund and credit-spent already on an order, for the clamp on a credit refund. null = unreadable. */
+async function cashRefundedOnOrder(base: string, headers: Headers, orderRef: string, f: typeof fetch): Promise<number | null> {
+  try {
+    const res = await f(
+      `${base}/rest/v1/employer_unlock_payments?razorpay_order_id=eq.${encodeURIComponent(orderRef)}&select=partial_refund_paise&limit=1`,
+      { headers },
+    );
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      return res.status === 400 && /PGRST204|42703|column/i.test(text) ? 0 : null; // pre-0045: no partial refunds are recorded
+    }
+    const rows = (await res.json().catch(() => null)) as Array<{ partial_refund_paise?: number | null }> | null;
+    if (!Array.isArray(rows)) return null;
+    const v = rows[0]?.partial_refund_paise;
+    return typeof v === "number" && v > 0 ? v : 0;
+  } catch {
+    return null;
+  }
 }
 
 /* ── Late payment (order expired, credit released, then the cash arrived) ── */
@@ -640,20 +749,47 @@ export async function creditRefundForMatches(p: RefundParams): Promise<RefundRes
       spentByEmployer.set(employerId, spent);
     }
 
+    // The owner of a match is the order that delivered it: an order that handed it back as "unavailable" never
+    // owned it, and pricing the refund against that order would return value that was never charged.
+    const notDelivered = await loadNotDeliveredKeys(p.base, p.headers, eligibleIds, orders.map((o) => o.razorpay_order_id), f);
+    if (!notDelivered) return result;
+    // What each order can still give back: cash + credit it took, less cash already refunded and credit already returned.
+    const roomByOrder = new Map<string, number>();
+    for (const o of orders) {
+      const returned = await creditReturnedOnOrder(p.base, p.headers, o.razorpay_order_id, f);
+      const cashRefunded = await cashRefundedOnOrder(p.base, p.headers, o.razorpay_order_id, f);
+      if (returned === null || cashRefunded === null) return result; // fail closed: the next trigger retries
+      roomByOrder.set(o.razorpay_order_id, remainingReturnablePaise({
+        cashPaise: o.amount, creditSpentPaise: spentByEmployer.get(o.employer_id)?.get(o.razorpay_order_id) ?? 0,
+        cashRefundedPaise: cashRefunded, creditReturnedPaise: returned,
+      }));
+    }
+
     const toRelock: string[] = [];
     const noteTargets: Array<{ order: PaidOrder; matchId: string; amountPaise: number }> = [];
     for (const matchId of eligibleIds) {
-      const order = orders.find((o) => o.match_ids.includes(matchId));
+      const order = orders.find((o) => o.match_ids.includes(matchId) && !notDelivered.has(ownershipKey(matchId, o.razorpay_order_id)));
       if (!order) continue;
-      const amountPaise = creditShare(
+      const share = creditShare(
         order.amount, spentByEmployer.get(order.employer_id)?.get(order.razorpay_order_id) ?? 0, order.match_ids.length, order.match_ids.indexOf(matchId),
       );
-      if (amountPaise <= 0) continue;
+      if (share <= 0) continue;
+      // A cash partial refund already took part of this order back; never credit more than is left.
+      const amountPaise = Math.min(share, roomByOrder.get(order.razorpay_order_id) ?? share);
+      if (amountPaise < share) {
+        slog.warn("credit refund clamped to what the order can still return", {
+          code: "credit_refund_clamped", orderId: order.razorpay_order_id, matchId, sharePaise: share, creditedPaise: amountPaise,
+        });
+      }
 
-      const state = await insertLedger(p.base, p.headers, {
-        employer_id: order.employer_id, amount: amountPaise, kind: "refund", reason: p.reason, match_id: matchId, order_ref: order.razorpay_order_id,
-      }, f);
+      // Nothing left to credit: the prior-row check below still finishes a relock/note a crash skipped.
+      const state = amountPaise > 0
+        ? await insertLedger(p.base, p.headers, {
+          employer_id: order.employer_id, amount: amountPaise, kind: "refund", reason: p.reason, match_id: matchId, order_ref: order.razorpay_order_id,
+        }, f)
+        : "duplicate";
       if (state === "inserted") {
+        roomByOrder.set(order.razorpay_order_id, Math.max(0, (roomByOrder.get(order.razorpay_order_id) ?? 0) - amountPaise));
         result.credited.push({ employerId: order.employer_id, matchId, amountPaise });
         toRelock.push(matchId);
         noteTargets.push({ order, matchId, amountPaise });
@@ -663,13 +799,15 @@ export async function creditRefundForMatches(p: RefundParams): Promise<RefundRes
         // pre-0051 index a refund for an earlier order also lands here and is not matched.
         const prior = await f(
           `${p.base}/rest/v1/employer_credit_ledger?match_id=eq.${encodeURIComponent(matchId)}&kind=eq.refund` +
-            `&order_ref=eq.${encodeURIComponent(order.razorpay_order_id)}&select=order_ref&limit=1`,
+            `&order_ref=eq.${encodeURIComponent(order.razorpay_order_id)}&select=order_ref,amount&limit=1`,
           { headers: p.headers },
         );
-        const rows = prior.ok ? ((await prior.json().catch(() => [])) as Array<{ order_ref: string | null }>) : [];
+        const rows = prior.ok ? ((await prior.json().catch(() => [])) as Array<{ order_ref: string | null; amount?: number }>) : [];
         if (Array.isArray(rows) && rows[0]?.order_ref === order.razorpay_order_id) {
           toRelock.push(matchId);
-          noteTargets.push({ order, matchId, amountPaise });
+          // The credit note describes the credit that really landed, not a recomputed share.
+          const landed = typeof rows[0].amount === "number" && rows[0].amount > 0 ? rows[0].amount : amountPaise;
+          noteTargets.push({ order, matchId, amountPaise: landed });
         }
       }
     }

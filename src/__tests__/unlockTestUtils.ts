@@ -131,6 +131,10 @@ export class FakeUnlockDb {
       if (lt && q.get("created_at")?.startsWith("lt.")) rows = rows.filter((r) => r.created_at < lt);
       const upd = q.get("updated_at");
       if (upd?.startsWith("gte.")) rows = rows.filter((r) => (r.updated_at ?? r.created_at) >= upd.slice(4));
+      const neq = q.get("razorpay_order_id")?.match(/^neq\.(.*)$/);
+      if (neq) rows = rows.filter((r) => r.razorpay_order_id !== decodeURIComponent(neq[1]));
+      const ov = q.get("match_ids")?.match(/^ov\.\{(.*)\}$/);
+      if (ov) { const want = ov[1].split(",").map(decodeURIComponent); rows = rows.filter((r) => r.match_ids.some((m) => want.includes(m))); }
       if (q.get("razorpay_payment_id") === "is.null") rows = rows.filter((r) => r.razorpay_payment_id == null);
       if (q.get("employer_id")) rows = rows.filter((r) => r.employer_id === eq(q.get("employer_id")));
       if (method === "GET") {
@@ -159,7 +163,10 @@ export class FakeUnlockDb {
         return json([row], 201);
       }
       const pid = eq(q.get("razorpay_payment_id"));
-      let rows = this.ledger.filter((l) => !pid || l.razorpay_payment_id === pid);
+      const poid = eq(q.get("razorpay_order_id"));
+      let rows = this.ledger.filter((l) => (!pid || l.razorpay_payment_id === pid) && (!poid || l.razorpay_order_id === poid));
+      const refundedOr = q.get("or")?.match(/^\(refunded_at\.gte\.([^,]+),partial_refund_at\.gte\.([^)]+)\)$/);
+      if (refundedOr) rows = rows.filter((l) => (l.refunded_at && l.refunded_at >= refundedOr[1]) || (l.partial_refund_at && l.partial_refund_at >= refundedOr[2]));
       if (q.get("refunded_at") === "is.null") rows = rows.filter((l) => !l.refunded_at);
       if (q.get("invoice_no") === "is.null") rows = rows.filter((l) => !l.invoice_no);
       if (q.get("amount") === "gt.0") rows = rows.filter((l) => l.amount > 0);
@@ -190,13 +197,13 @@ export class FakeUnlockDb {
     if (table === "rpc/assign_employer_credit_note") {
       if (!this.applied0047) return json({ code: "PGRST202", message: "function not found" }, 404);
       const found = this.creditNotes.find((c) => c.refund_id === body.p_refund_id);
-      if (found) return json(found.credit_note_no);
+      if (found) return json(found);
       const note: FakeCreditNote = {
         id: `cn-${this.creditNotes.length + 1}`, order_id: body.p_order_id, refund_id: body.p_refund_id, amount_paise: body.p_amount_paise,
-        credit_note_no: `CN-2610-${String(++this.creditNoteSeq).padStart(6, "0")}`, created_at: new Date().toISOString(),
+        credit_note_no: `HCN-2627-${String(++this.creditNoteSeq).padStart(6, "0")}`, created_at: new Date().toISOString(),
       };
       this.creditNotes.push(note);
-      return json(note.credit_note_no);
+      return json(note);
     }
 
     if (table === "employer_credit_notes") {
@@ -215,6 +222,7 @@ export class FakeUnlockDb {
       const ids = inList(q.get("id")) ?? (eq(q.get("id")) ? [eq(q.get("id")) as string] : null);
       let rows = [...this.matches.values()].filter((m) => !ids || ids.includes(m.id));
       if (q.get("unlocked") === "eq.true") rows = rows.filter((m) => m.unlocked);
+      if (q.get("unlocked") === "eq.false") rows = rows.filter((m) => !m.unlocked);
       const gte = q.get("unlocked_at");
       if (gte?.startsWith("gte.")) rows = rows.filter((m) => !!m.unlocked_at && m.unlocked_at >= gte.slice(4));
       if (method === "PATCH") { for (const r of rows) Object.assign(r, body); return json(null, 204); }
@@ -231,7 +239,9 @@ export class FakeUnlockDb {
 
 export interface FakeRzpPayment { id: string; status: string; amount: number; order_id: string; refund_status?: string | null; amount_refunded?: number; currency?: string }
 
-export function fakeRazorpay(cfg: { orders?: Record<string, { amount: number; notes?: Record<string, unknown> }>; payments?: FakeRzpPayment[]; down?: boolean }) {
+export interface FakeRzpRefund { id: string; payment_id: string; amount: number; created_at?: number; status?: string }
+
+export function fakeRazorpay(cfg: { orders?: Record<string, { amount: number; notes?: Record<string, unknown> }>; payments?: FakeRzpPayment[]; refunds?: FakeRzpRefund[]; down?: boolean }) {
   return async (input: RequestInfo | URL): Promise<Response> => {
     const url = String(input);
     if (cfg.down) throw new Error("razorpay unreachable");
@@ -240,6 +250,8 @@ export function fakeRazorpay(cfg: { orders?: Record<string, { amount: number; no
     if (m) return json({ items: (cfg.payments ?? []).filter((p) => p.order_id === m![1]) });
     m = path.match(/^\/orders\/([^/]+)$/);
     if (m) { const o = cfg.orders?.[m[1]]; return o ? json({ id: m[1], amount: o.amount, notes: o.notes ?? {} }) : json({}, 404); }
+    m = path.match(/^\/payments\/([^/]+)\/refunds(\?.*)?$/);
+    if (m) return json({ items: (cfg.refunds ?? []).filter((r) => r.payment_id === m![1]) });
     m = path.match(/^\/payments\/([^/]+)$/);
     if (m) { const p = (cfg.payments ?? []).find((x) => x.id === m![1]); return p ? json(p) : json({}, 404); }
     return json({}, 404);

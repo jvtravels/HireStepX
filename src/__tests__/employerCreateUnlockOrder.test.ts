@@ -475,6 +475,73 @@ describe("employer-create-unlock-order — open order reuse and overlap", () => 
   });
 });
 
+describe("employer-create-unlock-order: overlapping orders are never both payable", () => {
+  /** Serves a different open-order list on the pre-check read than on the post-insert re-check. */
+  const withLists = (lists: Array<Array<Record<string, unknown>>>, insert?: () => Response) => {
+    const real = global.fetch;
+    let n = 0;
+    global.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      const method = (init?.method || "GET").toUpperCase();
+      if (url.includes("employer_unlock_orders?employer_id=eq.") && method === "GET") return json(lists[Math.min(n++, lists.length - 1)]);
+      if (insert && url.endsWith("/rest/v1/employer_unlock_orders") && method === "POST") return insert();
+      return real(input, init);
+    }) as unknown as typeof fetch;
+  };
+  const claimConflict = () => new Response('{"code":"23505","message":"unlock_match_claim_conflict"}', { status: 409 });
+  const older = () => openOrder({ razorpay_order_id: "order_older", created_at: new Date(Date.now() - 60_000).toISOString() });
+
+  it("single: a claim-guard conflict with another purchase answers 409 order_in_progress", async () => {
+    withLists([[]], claimConflict);
+    const res = mockRes();
+    await handler(mockReq({ mode: "single", matchId: M1 }), res);
+    expect(res.statusCode).toBe(409);
+    expect(res.body).toMatchObject({ code: "order_in_progress" });
+  });
+
+  it("single: backs out when an older live order appears after the insert, failing the new order before any credit is spent", async () => {
+    world.creditBalance = 2000;
+    withLists([[], [older()]]);
+    const res = mockRes();
+    await handler(mockReq({ mode: "single", matchId: M1 }), res);
+    expect(res.statusCode).toBe(409);
+    expect(res.body).toMatchObject({ code: "order_in_progress" });
+    expect(calls.some((c) => c.url.endsWith("/rpc/spend_employer_credit"))).toBe(false);
+    const patch = calls.find((c) => c.method === "PATCH" && c.url.includes("employer_unlock_orders?razorpay_order_id=eq."));
+    expect(patch).toBeTruthy();
+  });
+
+  it("batch: a claim-guard conflict answers 409 and creates nothing else", async () => {
+    world.matches = [{ id: M1 }, { id: uid(2) }];
+    withLists([[]], claimConflict);
+    const res = mockRes();
+    await handler(mockReq({ mode: "batch", requirementId: REQ }), res);
+    expect(res.statusCode).toBe(409);
+    expect(res.body).toMatchObject({ code: "order_in_progress" });
+  });
+
+  it("batch: backs out of an older overlapping order found after the insert", async () => {
+    world.matches = [{ id: M1 }, { id: uid(2) }];
+    withLists([[], [older()]]);
+    const res = mockRes();
+    await handler(mockReq({ mode: "batch", requirementId: REQ }), res);
+    expect(res.statusCode).toBe(409);
+    expect(res.body).toMatchObject({ code: "order_in_progress" });
+  });
+
+  it("a failed re-check read does not block the purchase", async () => {
+    const real = global.fetch;
+    let lists = 0;
+    global.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      if (String(input).includes("employer_unlock_orders?employer_id=eq.") && (init?.method || "GET") === "GET") return ++lists === 1 ? json([]) : json({}, 500);
+      return real(input, init);
+    }) as unknown as typeof fetch;
+    const res = mockRes();
+    await handler(mockReq({ mode: "single", matchId: M1 }), res);
+    expect(res.statusCode).toBe(200);
+  });
+});
+
 describe("employer-create-unlock-order — batch mode", () => {
   const ids = (n: number) => Array.from({ length: n }, (_, i) => uid(100 + i));
 

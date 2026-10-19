@@ -199,8 +199,36 @@ ${notes}
 </main></body></html>`;
 }
 
+/** Long enough for a slow device to open the tab and for a reload or print from it; the page is a one-off blob. */
+export const INVOICE_URL_TTL_MS = 10 * 60_000;
+
 export function openInvoice(input: InvoiceInput): void {
   const url = URL.createObjectURL(new Blob([buildInvoiceHtml(input)], { type: "text/html" }));
   window.open(url, "_blank", "noopener");
-  setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  const revoke = () => {
+    clearTimeout(timer);
+    window.removeEventListener("pagehide", revoke);
+    URL.revokeObjectURL(url);
+  };
+  const timer = setTimeout(revoke, INVOICE_URL_TTL_MS);
+  // Leaving the app also frees it, rather than holding the blob until the timer would have fired.
+  window.addEventListener("pagehide", revoke, { once: true });
+}
+
+/** A paid cash purchase that has no invoice number yet: the number is assigned right after fulfilment and, if that
+ *  step failed, by a background pass, so the row says so instead of reading "None". */
+export function isInvoicePending(p: { amount: number; invoiceNo?: string | null; refundedAt?: string | null; orderStatus?: string | null }): boolean {
+  return p.amount > 0 && !p.invoiceNo && !isRefundedPurchase(p);
+}
+
+export const INVOICE_PENDING_NOTE = "Your invoice is being prepared and usually appears within a few minutes. If it is still missing tomorrow, write to support@hirestepx.com.";
+
+/** Accessible name for a per-row document button, so a screen reader hears which purchase it opens. */
+export function documentButtonLabel(
+  action: string, p: { invoiceNo?: string | null; createdAt: string; candidates?: ReadonlyArray<{ name?: string | null }>; matchIds?: readonly unknown[] },
+): string {
+  const names = (p.candidates ?? []).map((c) => c.name).filter((n): n is string => !!n);
+  const what = names.length > 0 ? names.slice(0, 2).join(", ") + (names.length > 2 ? ` and ${names.length - 2} more` : "") : `${p.matchIds?.length ?? 1} candidate${(p.matchIds?.length ?? 1) === 1 ? "" : "s"}`;
+  const date = new Date(p.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+  return `${action}${p.invoiceNo ? ` ${p.invoiceNo}` : ""} for ${what}, ${date}`;
 }

@@ -54,6 +54,7 @@ import {
 export { assignCreditNote, type CreditNoteRow } from "./_employer-credit";
 import { maskedCandidateName, isSuspended } from "./_employer-trust";
 import { sendUnlockReceiptEmail } from "./_unlock-receipt-email";
+import { heldByOtherOrders, loadOwnership, ownershipKey } from "./_unlock-ownership";
 import { buildInvoiceSnapshot } from "./_unlock-tax";
 import { readLegalEntity } from "../data/legal-entity";
 
@@ -96,7 +97,8 @@ export interface CapturedPayment {
 
 export interface FailedMatch {
   matchId: string;
-  reason: "gone" | "blocked" | "candidate_opted_out" | "employer_suspended";
+  /** "already_unlocked": another order of this employer unlocked the match first, so this order's share goes back as credit. */
+  reason: "gone" | "blocked" | "candidate_opted_out" | "employer_suspended" | "already_unlocked";
 }
 
 /** Why an unlocked candidate's contact must not reach the employer right now. */
@@ -231,6 +233,23 @@ export async function fetchRazorpayPayment(
   paymentId: string, keyId: string, keySecret: string, fetchImpl: typeof fetch = fetch,
 ): Promise<CapturedPayment | null> {
   return toCapturedPayment(await razorpayGet(`/payments/${encodeURIComponent(paymentId)}`, keyId, keySecret, fetchImpl));
+}
+
+/** Refunds Razorpay has issued on a payment, oldest first. null when Razorpay could not be reached or answered
+ *  unexpectedly (callers retry later rather than assume there are none). */
+export async function fetchRazorpayRefunds(
+  paymentId: string, keyId: string, keySecret: string, fetchImpl: typeof fetch = fetch,
+): Promise<Array<{ id: string; amount: number }> | null> {
+  const data = await razorpayGet(`/payments/${encodeURIComponent(paymentId)}/refunds?count=100`, keyId, keySecret, fetchImpl);
+  if (!isRecord(data) || !Array.isArray(data.items)) return null;
+  const out: Array<{ id: string; amount: number; createdAt: number }> = [];
+  for (const item of data.items) {
+    if (!isRecord(item) || typeof item.id !== "string" || typeof item.amount !== "number" || !(item.amount > 0)) continue;
+    // A failed refund moved no money and gets no credit note.
+    if (typeof item.status === "string" && item.status === "failed") continue;
+    out.push({ id: item.id, amount: item.amount, createdAt: typeof item.created_at === "number" ? item.created_at : 0 });
+  }
+  return out.sort((x, y) => x.createdAt - y.createdAt).map(({ id, amount }) => ({ id, amount }));
 }
 
 export async function fetchRazorpayOrder(
@@ -524,10 +543,26 @@ export async function fulfillUnlockOrder(p: FulfillParams): Promise<FulfillResul
   /* Replay of a finished order: report, never re-write contact. A candidate who has since
    * withdrawn, declined or blocked this employer (or a suspended employer) gets no contact back. */
   if (alreadyDone) {
-    const unlockedRows = order.match_ids.map((id) => byId.get(id)).filter((m): m is MatchRowLite => !!m && m.unlocked);
+    // A 'partial' order may have returned a match another order had already unlocked. That match reads as
+    // unlocked, so it is told apart by the ledger (a not-delivered refund row) or, when the winner crashed before
+    // writing the credit, by another live order still holding it.
+    const replayHeld = new Set<string>();
+    if (order.status === "partial") {
+      const own = await loadOwnership(p.supabaseUrl, p.headers, order, f);
+      if (!own) return { kind: "error", code: "db_error", message: "ownership lookup failed" };
+      const heldElsewhere = heldByOtherOrders(order.match_ids, own.others, own.notDelivered);
+      for (const id of order.match_ids) {
+        if (!byId.get(id)?.unlocked) continue; // a locked match is simply a failed one
+        if (heldElsewhere.has(id) || own.notDelivered.has(ownershipKey(id, order.razorpay_order_id))) replayHeld.add(id);
+      }
+    }
+    const unlockedRows = order.match_ids.map((id) => byId.get(id)).filter((m): m is MatchRowLite => !!m && m.unlocked && !replayHeld.has(m.id));
     const failed: FailedMatch[] = order.match_ids
-      .filter((id) => !byId.get(id)?.unlocked)
-      .map((matchId) => ({ matchId, reason: byId.has(matchId) ? "candidate_opted_out" : "gone" }));
+      .filter((id) => !unlockedRows.some((m) => m.id === id))
+      .map((matchId): FailedMatch => ({
+        matchId,
+        reason: replayHeld.has(matchId) ? "already_unlocked" : byId.has(matchId) ? "candidate_opted_out" : "gone",
+      }));
     let replayInvoiceNo = await invoiceFor(p.supabaseUrl, p.headers, p.payment.id, f);
     if (!replayInvoiceNo && invoiceEligible(order) && unlockedRows.length > 0) {
       replayInvoiceNo = await assignInvoiceNo(p.supabaseUrl, p.headers, p.payment.id, f);
@@ -607,7 +642,14 @@ export async function fulfillUnlockOrder(p: FulfillParams): Promise<FulfillResul
     return { kind: "error", code: "db_error", message: "failed to record payment" };
   }
 
-  /* 3. decide + unlock. */
+  /* 3. decide + unlock. A match another order of this employer already unlocked (two overlapping orders
+   * were both paid) is charged once: it is not this order's to unlock, and its share goes back as credit. */
+  let heldElsewhere = new Set<string>();
+  if (!suspended && order.match_ids.some((id) => byId.get(id)?.unlocked)) {
+    const own = await loadOwnership(p.supabaseUrl, p.headers, order, f);
+    if (!own) return { kind: "error", code: "db_error", message: "ownership lookup failed" };
+    heldElsewhere = heldByOtherOrders(order.match_ids, own.others, own.notDelivered);
+  }
   const failed: FailedMatch[] = [];
   const toUnlock: MatchRowLite[] = [];
   const alreadyUnlocked: MatchRowLite[] = [];
@@ -615,7 +657,10 @@ export async function fulfillUnlockOrder(p: FulfillParams): Promise<FulfillResul
     const m = byId.get(id) as MatchRowLite | undefined;
     if (suspended) failed.push({ matchId: id, reason: "employer_suspended" });
     else if (!m) failed.push({ matchId: id, reason: "gone" });
-    else if (m.unlocked) alreadyUnlocked.push(m);
+    else if (m.unlocked) {
+      if (heldElsewhere.has(id)) failed.push({ matchId: id, reason: "already_unlocked" });
+      else alreadyUnlocked.push(m);
+    }
     else if (state.blockedCandidateIds.has(m.candidate_user_id)) failed.push({ matchId: id, reason: "blocked" });
     else if (m.profiles?.employer_visibility === "off") failed.push({ matchId: id, reason: "candidate_opted_out" });
     else toUnlock.push(m);
@@ -635,7 +680,7 @@ export async function fulfillUnlockOrder(p: FulfillParams): Promise<FulfillResul
     ),
   );
   if (results.some((r) => !r || !r.ok)) {
-    slog.error("unlock patch failed — order left 'paid' for the reconciler", { code: "unlock_patch_failed", orderId: order.razorpay_order_id });
+    slog.error("unlock patch failed, order left 'paid' for the reconciler", { code: "unlock_patch_failed", orderId: order.razorpay_order_id });
     return { kind: "error", code: "db_error", message: "failed to unlock candidate" };
   }
 
@@ -644,35 +689,42 @@ export async function fulfillUnlockOrder(p: FulfillParams): Promise<FulfillResul
   const failedIndexes = failedIndexesOf(order, failed.map((x) => x.matchId));
   const refundDueEstimatePaise = refundShare(order, failedIndexes);
 
-  /* 3b. return the unavailable share BEFORE closing the order. If this fails the order stays 'paid'
-   * and the reconciler retries (the ledger's unique indexes make the credit land once). Doing it after
-   * the status flip would strand the credit forever: a closed order is never revisited. */
+  /* 4. close the order. Only the call whose CAS matched a row decides what happens next: it alone returns
+   * credit and sends the notifications. Deciding from a pre-CAS read let a verify, a webhook and a reconcile
+   * run each return credit (or skip it) from their own, possibly different, view of the matches. */
+  const closed = await patchOrderRows(p.supabaseUrl, p.headers, order.razorpay_order_id, OPEN_STATUSES, {
+    status: kind, fulfilled_at: unlockedAt, razorpay_payment_id: p.payment.id,
+  }, f);
+  if (closed === null) {
+    slog.error("unlock order close failed, order left 'paid' for the reconciler", { code: "unlock_order_close_failed", orderId: order.razorpay_order_id });
+    return { kind: "error", code: "db_error", message: "failed to close the order" };
+  }
+  const firstFulfilment = closed > 0;
+
+  /* 4b. return the unavailable share. The order is already closed 'partial', so a failure here is retried by the
+   * next replay of this order and by the reconciler's partial-order sweep (the ledger's unique indexes make the
+   * credit land once); it is alerted, not surfaced as a failed fulfilment, because the unlocks did succeed. */
   let returnedPaise = 0;
-  if (failed.length > 0) {
+  if (firstFulfilment && failed.length > 0) {
     const back = await returnCreditForUnavailableDetailed({
       base: p.supabaseUrl, headers: p.headers, employerId: order.employer_id, orderRef: order.razorpay_order_id,
       orderMatchCount: order.match_ids.length, failedMatchIds: failed.map((x) => x.matchId),
       orderMatchIds: order.match_ids, orderCashPaise: order.amount,
       reason: suspended ? "employer_suspended" : "unavailable", fetchImpl: f,
     });
-    if (!back.ok) {
-      slog.error("unlock credit return failed — order left 'paid' for the reconciler", {
+    if (back.ok) returnedPaise = back.creditedPaise;
+    else {
+      slog.error("unlock credit return failed, order closed 'partial'; the reconciler retries", {
         code: "unlock_credit_return_failed", orderId: order.razorpay_order_id, employerId: order.employer_id,
       });
-      return { kind: "error", code: "db_error", message: "failed to return credit for unavailable candidates" };
+      await alertUnlockProblem({
+        kind: "unlock_credit_return_failed", key: order.razorpay_order_id,
+        subject: "Credit return failed on a partial unlock order",
+        detail: `Order ${order.razorpay_order_id} closed partial but the credit for ${failed.length} unavailable candidate(s) was not written. The reconciler retries it.`,
+        distinctId: order.employer_id,
+      });
     }
-    returnedPaise = back.creditedPaise;
   }
-
-  /* 4. close the order. The call whose CAS matches a row owns the notifications. */
-  const closed = await patchOrderRows(p.supabaseUrl, p.headers, order.razorpay_order_id, OPEN_STATUSES, {
-    status: kind, fulfilled_at: unlockedAt, razorpay_payment_id: p.payment.id,
-  }, f);
-  if (closed === null) {
-    slog.error("unlock order close failed — order left 'paid' for the reconciler", { code: "unlock_order_close_failed", orderId: order.razorpay_order_id });
-    return { kind: "error", code: "db_error", message: "failed to close the order" };
-  }
-  const firstFulfilment = closed > 0;
 
   // A purchase that really unlocked someone is a tax invoice, cash or credit-only (the credit was never taxed
   // at purchase, so redemption is the supply). No number for 409 replays or an order where every candidate
@@ -764,6 +816,29 @@ export async function fulfillUnlockOrder(p: FulfillParams): Promise<FulfillResul
     refundDueEstimatePaise,
     returnedCreditPaise: returnedPaise,
   };
+}
+
+/** Retries the credit return of a 'partial' order whose first attempt failed after the order closed.
+ *  `failedMatchIds` are the order's matches that were never delivered (still locked). `creditedPaise` is what the ledger holds for them; `returnedPaise` is what this call newly wrote.
+ *  Idempotent: the ledger's unique indexes make the credit land once, and the credit note once per refund id. */
+export async function returnPartialOrderCredit(p: {
+  supabaseUrl: string; headers: Record<string, string>; order: UnlockOrderRow; failedMatchIds: string[]; fetchImpl?: typeof fetch;
+}): Promise<{ ok: boolean; creditedPaise: number; returnedPaise: number }> {
+  const f = p.fetchImpl ?? fetch;
+  if (p.failedMatchIds.length === 0) return { ok: true, creditedPaise: 0, returnedPaise: 0 };
+  const back = await returnCreditForUnavailableDetailed({
+    base: p.supabaseUrl, headers: p.headers, employerId: p.order.employer_id, orderRef: p.order.razorpay_order_id,
+    orderMatchCount: p.order.match_ids.length, failedMatchIds: p.failedMatchIds,
+    orderMatchIds: p.order.match_ids, orderCashPaise: p.order.amount, fetchImpl: f,
+  });
+  if (!back.ok) return { ok: false, creditedPaise: 0, returnedPaise: 0 };
+  if (back.creditedPaise > 0 && p.order.razorpay_payment_id) {
+    const invoiceNo = await invoiceFor(p.supabaseUrl, p.headers, p.order.razorpay_payment_id, f);
+    if (invoiceNo) {
+      await assignCreditNote(p.supabaseUrl, p.headers, p.order.razorpay_order_id, `unavailable:${p.order.razorpay_order_id}`, back.creditedPaise, f);
+    }
+  }
+  return { ok: true, creditedPaise: back.creditedPaise, returnedPaise: back.returnedPaise };
 }
 
 /** A cash order, or an order paid wholly from credit. Admin grants never reach here. */

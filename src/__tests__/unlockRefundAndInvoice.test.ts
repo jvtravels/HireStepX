@@ -301,7 +301,7 @@ describe("place of supply for a buyer with no GSTIN", () => {
 
 describe("credit note numbers and partial refunds", () => {
   it("creditNoteNumber stays within the 16-character GST rule 46 cap", () => {
-    expect(tax.creditNoteNumber("HSX-2610-000001")).toBe("CN-2610-000001");
+    expect(tax.creditNoteNumber("HSX-2610-000001")).toBe("CND-2610-000001");
     expect(tax.creditNoteNumber("HSX-2610-000001").length).toBeLessThanOrEqual(16);
     expect(tax.creditNoteNumber("HSX-2610-9999999999999").length).toBe(16);
   });
@@ -347,7 +347,7 @@ describe("credit note numbers and partial refunds", () => {
 
   it("renders a partial credit note for the refunded amount only, with its own GST split", () => {
     const html = buildInvoiceHtml({ ...taxBase, document: "credit_note", partialRefundPaise: 2950, refundedAt: "2026-10-07T00:00:00Z" });
-    expect(html).toContain("No. CN-2610-000001");
+    expect(html).toContain("No. CND-2610-000001");
     expect(html).toContain("Credit note total (GST inclusive)");
     expect(html).toContain("&minus;₹29.50");
     expect(html).toContain("IGST @ 18%");

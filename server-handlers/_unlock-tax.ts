@@ -75,10 +75,13 @@ export function gstBreakup(totalPaise: number, supplierGstin: string, buyerGstin
   };
 }
 
-/** GST rule 46 caps a document number at 16 characters, so the credit note drops
- *  the "HSX-" series prefix instead of stacking "CN-" on a 15-character invoice number. */
+/** Fallback number for a credit note that has no numbered row yet (migration 0047/0054 unapplied, or the
+ *  assignment has not succeeded yet). Numbered notes come from the gap-free HCN-<FY>-NNNNNN series (0054) or,
+ *  for notes issued earlier, the legacy CN-YYMM-NNNNNN sequence; this derived form uses its own CND- prefix so
+ *  it can never equal either. GST rule 46 caps a document number at 16 characters, so the invoice's "HSX-"
+ *  series prefix is dropped rather than stacked. */
 export function creditNoteNumber(invoiceNo: string): string {
-  return `CN-${invoiceNo.replace(/^HSX-/, "")}`.slice(0, 16);
+  return `CND-${invoiceNo.replace(/^HSX-/, "")}`.slice(0, 16);
 }
 
 /* ── Snapshot ── */

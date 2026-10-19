@@ -66,6 +66,21 @@ export function findOverlappingOrder(
   return openOrders.find((o) => isFreshOpenOrder(o, nowMs) && o.match_ids.some((id) => wanted.has(id))) ?? null;
 }
 
+/** An older, still-live order for this employer that overlaps `mine`. Orders are ranked by creation time with the
+ *  order id as the tie-break, so when two overlapping orders race each other exactly one (the younger) sees the
+ *  other as older and backs out: the same candidate is never charged by both. */
+export function findOlderOverlap(
+  openOrders: UnlockOrderRow[], mine: Pick<UnlockOrderRow, "razorpay_order_id" | "match_ids" | "created_at">, nowMs: number,
+): UnlockOrderRow | null {
+  const wanted = new Set(mine.match_ids);
+  const rank = (o: Pick<UnlockOrderRow, "razorpay_order_id" | "created_at">) => `${new Date(o.created_at).toISOString()}|${o.razorpay_order_id}`;
+  const myRank = rank(mine);
+  return openOrders.find((o) =>
+    o.razorpay_order_id !== mine.razorpay_order_id && isFreshOpenOrder(o, nowMs) &&
+    o.match_ids.some((id) => wanted.has(id)) && rank(o) < myRank,
+  ) ?? null;
+}
+
 /* ── I/O ── */
 
 export async function loadOpenOrders(
@@ -98,7 +113,9 @@ export async function countUnlocksLast24h(
 
 export type InsertOrderResult =
   | { kind: "inserted"; order: UnlockOrderRow }
-  | { kind: "conflict"; order: UnlockOrderRow | null }
+  /** `overlap`: another live order already claims one of the matches (migration 0054's claim guard), so there is
+   *  no order to reuse and the purchase must be refused rather than charged twice. */
+  | { kind: "conflict"; order: UnlockOrderRow | null; overlap?: boolean }
   | { kind: "error"; detail: string };
 
 /** Written right after Razorpay returns the order id. A 409 is the unique
@@ -140,8 +157,12 @@ export async function insertUnlockOrder(
     return { kind: "error", detail: "insert returned no row" };
   }
   if (res.status === 409) {
+    const text = await res.text().catch(() => "");
+    const claimConflict = /unlock_match_claim_conflict/.test(text);
     const existing = await loadOpenOrders(supabaseUrl, headers, row.employerId, fetchImpl);
     const winner = existing && findReusableOrder(existing, row.mode, row.matchIds);
+    // A claim conflict is an overlap with a DIFFERENT purchase: never hand back a single order as this batch.
+    if (claimConflict) return { kind: "conflict", order: winner || null, overlap: !winner };
     return { kind: "conflict", order: winner || existing?.find((o) => o.mode === "single" && o.match_ids[0] === row.matchIds[0]) || null };
   }
   const t = await res.text().catch(() => "");
@@ -180,4 +201,16 @@ export async function releaseCreateLock(
       signal: AbortSignal.timeout(1_500),
     });
   } catch { /* the lock expires on its own */ }
+}
+
+/** After inserting an order, confirms no older live order covers the same matches. Defence in depth for the
+ *  claim guard (migration 0054), which fails open: without it, or before it is applied, two overlapping batches
+ *  created at once would both be payable. true = this order may proceed; false = back out. A failed read lets the
+ *  order proceed (fulfilment also refuses to charge a match another order already delivered). */
+export async function noOlderOverlap(
+  supabaseUrl: string, headers: Record<string, string>, order: UnlockOrderRow, nowMs: number, fetchImpl: typeof fetch = fetch,
+): Promise<boolean> {
+  const open = await loadOpenOrders(supabaseUrl, headers, order.employer_id, fetchImpl).catch(() => null);
+  if (!open) return true;
+  return findOlderOverlap(open, order, nowMs) === null;
 }
