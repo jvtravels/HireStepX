@@ -17,8 +17,8 @@ export default function SetupTopbarLeft() {
       <Link href="/dashboard" aria-label="HireStepX, go to dashboard" style={LOGO_STYLE}>
         <Image src="/wordmark.png" alt="HireStepX" width={387} height={108} priority style={LOGO_IMG_STYLE} />
       </Link>
-      <Breadcrumb className="max-[480px]:hidden">
-        <BreadcrumbList style={LIST_STYLE}>
+      <Breadcrumb className="max-[560px]:hidden">
+        <BreadcrumbList className="whitespace-nowrap" style={LIST_STYLE}>
           <BreadcrumbItem>
             <BreadcrumbLink href="/dashboard" style={LINK_STYLE}>Dashboard</BreadcrumbLink>
           </BreadcrumbItem>
