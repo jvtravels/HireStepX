@@ -20,7 +20,7 @@ export default function NotificationPreferences({ audience }: { audience: Audien
   useEffect(() => {
     let live = true;
     apiFetch<{ prefs: NotificationPrefs }>("/api/notifications/preferences", {}).then((res) => {
-      if (live) setPrefs(res.ok && res.data ? res.data.prefs : DEFAULT_PREFS);
+      if (live) setPrefs(res.ok && res.data?.prefs?.inApp ? res.data.prefs : DEFAULT_PREFS);
     });
     return () => { live = false; };
   }, []);

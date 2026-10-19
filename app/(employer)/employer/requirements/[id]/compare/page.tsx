@@ -28,6 +28,7 @@ const COMPARE_CSS = `
 @media (max-width: 480px) {
   .cmp-table th, .cmp-table td { padding: 10px 8px; }
   .cmp-table tbody th { width: 30%; }
+  .cmp-table[data-cols="2"] { min-width: 0; }
 }
 `;
 
@@ -210,7 +211,7 @@ export default function ComparePage() {
         {/* Keyboard users can only scroll an overflow region they can focus. */}
         {/* eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex */}
         <div className="overflow-x-auto focus-visible:outline-2 focus-visible:-outline-offset-2" tabIndex={0} role="region" aria-label="Comparison table. Scroll sideways to see every candidate.">
-        <table className="cmp-table">
+        <table className="cmp-table" data-cols={chosen.length}>
           <caption className="sr-only">
             Side-by-side comparison of {namesLabel} for {requirement.title}
           </caption>

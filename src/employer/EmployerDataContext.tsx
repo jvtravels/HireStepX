@@ -636,7 +636,8 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
   const fetchCandidateEvidence = useCallback(async (matchId: string): Promise<CandidateEvidence | null> => {
     const res = await getWithRetry(`/api/employer-candidate-evidence?matchId=${encodeURIComponent(matchId)}`);
     if (!res || !res.ok || !res.data) return null;
-    return res.data as CandidateEvidence;
+    const evidence = res.data as CandidateEvidence;
+    return Array.isArray(evidence.skills) ? evidence : null;
   }, []);
 
   const fetchCandidateResumeUrl = useCallback(async (matchId: string): Promise<{ url: string; fileName: string } | null> => {
