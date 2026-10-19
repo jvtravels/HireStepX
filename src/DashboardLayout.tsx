@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useContext, createContext } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import { listConversations } from "./messagesApi";
 import { useAuth } from "./AuthContext";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -276,7 +277,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
       }))}
       activeId={activeNav}
       onNavigate={(path) => nav.push(path)}
-      showNotifications={false}
+      messaging={{ fetchConversations: listConversations, basePath: "/messages" }}
       audience="candidate"
       onNavHover={(id) => {
         const path = navItems.find((item) => item.id === id)?.path;

@@ -79,16 +79,14 @@ interface AppShellFrameProps {
   /** Extra account-menu entries rendered above "Log out". */
   accountMenuItems?: React.ReactNode;
   onLogout: () => void;
-  /** Powers the header's message icon (next to the notification bell). Omit to hide the icon. */
-  messaging?: { fetchConversations: () => Promise<ConversationSummary[] | null>; basePath: string };
+  /** Powers the header's message icon (next to the notification bell). */
+  messaging: { fetchConversations: () => Promise<ConversationSummary[] | null>; basePath: string };
   /** Which console this shell is — scopes the notification bell so an
    *  employer-only notification (e.g. "New strong match found") never shows
    *  up on the candidate side and vice versa, which matters for any account
    *  that is both (dual-role test accounts, or a future employer-who-also-
    *  interviews feature). */
   audience: "candidate" | "employer";
-  /** Set false to hide the header notification bell. */
-  showNotifications?: boolean;
   breadcrumbRoot: { label: string; path: string };
   pageLabel: string;
   /** Where pageLabel navigates to when extraCrumbs make it a clickable
@@ -115,7 +113,7 @@ interface AppShellFrameProps {
 
 export default function AppShellFrame({
   homeHref, navAriaLabel, navItems, activeId, onNavigate, onNavHover,
-  sidebarFooterExtra, account, accountMenuItems, onLogout, messaging, audience, showNotifications = true,
+  sidebarFooterExtra, account, accountMenuItems, onLogout, messaging, audience,
   breadcrumbRoot, pageLabel, pageLabelPath, extraCrumbs, isMobile, mainId, pageKey, headerActionsRef, banners, overlays, children,
 }: AppShellFrameProps) {
   const initial = (account.name || "?")[0].toUpperCase();
@@ -347,8 +345,8 @@ export default function AppShellFrame({
             </BreadcrumbList>
           </Breadcrumb>
           <div ref={headerActionsRef} className="contents" />
-          {messaging && <MessagesBell onNavigate={onNavigate} fetchConversations={messaging.fetchConversations} basePath={messaging.basePath} />}
-          {showNotifications && <NotificationBell onNavigate={onNavigate} audience={audience} />}
+          <MessagesBell onNavigate={onNavigate} fetchConversations={messaging.fetchConversations} basePath={messaging.basePath} />
+          <NotificationBell onNavigate={onNavigate} audience={audience} />
         </header>
 
         <div ref={scrollRef} style={{ flex: 1, minHeight: 0, minWidth: 0, display: "flex", flexDirection: "column", overflowY: "auto", overflowX: "hidden", paddingBottom: isMobile ? 16 : 24 }}>

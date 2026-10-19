@@ -281,10 +281,10 @@ if you need to confirm readiness — do not re-trigger.
 ## Candidate product rules (from the maintainer, repeated — do not re-ask)
 
 - **Candidate sidebar** is exactly: Dashboard, Sessions, Analytics, Your Profile,
-  Jobs, Referrals. No Messages, no Settings in the sidebar, and no Messages or
-  Notifications icons in the candidate header. Settings lives in the account menu.
-  (`navItems` / `offNavRoutes` in `src/DashboardLayout.tsx`; header icons are opt-in
-  props on `AppShellFrame`, still on for the employer shell.)
+  Jobs, Referrals. No Messages and no Settings in the sidebar; Settings lives in the
+  account menu. The header Messages and Notifications icons STAY: they are how a
+  candidate learns about an invite. (`navItems` / `offNavRoutes` in
+  `src/DashboardLayout.tsx`.)
 - Candidates cannot apply to jobs. Only matched jobs are visible to them.
 - Candidates can chat only with employers who contacted them or sent an interview invite.
 - Interviews are always in English. No replay, no peer/human mocks in the MVP.
