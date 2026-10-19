@@ -281,8 +281,8 @@ if you need to confirm readiness — do not re-trigger.
 ## Candidate product rules (from the maintainer, repeated — do not re-ask)
 
 - **Candidate sidebar** is exactly: Dashboard, Sessions, Analytics, Your Profile,
-  Jobs, Referrals. No Messages and no Settings in the sidebar; Settings lives in the
-  account menu. The header Messages and Notifications icons STAY: they are how a
+  Jobs. No Messages, Settings or Referrals in the sidebar; Settings and Referrals live
+  in the account menu. The header Messages and Notifications icons STAY: they are how a
   candidate learns about an invite. (`navItems` / `offNavRoutes` in
   `src/DashboardLayout.tsx`.)
 - Candidates cannot apply to jobs. Only matched jobs are visible to them.

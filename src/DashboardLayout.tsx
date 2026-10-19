@@ -75,14 +75,14 @@ const navItems = [
   { id: "analytics", path: "/analytics", label: "Analytics" },
   { id: "resume", path: "/resume", label: "Your Profile" },
   { id: "jobs", path: "/jobs", label: "Jobs" },
-  { id: "referrals", path: "/referrals", label: "Referrals" },
 ];
 
-/* Routes that exist but are deliberately not in the sidebar (Settings is in
-   the account menu, Messages is reached from an interview invite). Kept here
+/* Routes that exist but are deliberately not in the sidebar (Settings and
+   Referrals are in the account menu, Messages is reached from an interview invite). Kept here
    so the breadcrumb label resolves and no sidebar item is falsely highlighted. */
 const offNavRoutes = [
   { id: "messages", path: "/messages", label: "Messages" },
+  { id: "referrals", path: "/referrals", label: "Referrals" },
   { id: "settings", path: "/settings", label: "Settings" },
 ];
 const routeItems = [...navItems, ...offNavRoutes];
