@@ -69,9 +69,9 @@ export function ProgressTrendPanel({ trends }: { trends: SkillTrend[] }) {
     <SrSectionShell
       anchorId="ir-section-progress-trend"
       headingId="ir-progress-trend-heading"
-      label="Skill progress"
-      title="Progress over time"
-      subtitle="Each skill out of 100, and how it changed since your previous session of this type."
+      label="Core skills"
+      title="Core skills over time"
+      subtitle="Skills we track in every session, so they can be compared. The change is since your previous session of this type."
     >
       {hasAnyHistory && trends.length > 0 ? (
         <ul className="ir-trend-grid m-0 list-none p-0">

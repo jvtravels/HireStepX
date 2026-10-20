@@ -551,7 +551,7 @@ export function sessionReportToInterviewResult(
     })),
     thoughtBubble: collapseThoughtBubble(report.thoughtBubble),
     readinessSentence: report.readiness
-      ? `~${report.readiness.estimatedHours} hours over ~${report.readiness.estimatedSessions} sessions to reach the ${formatBand(report.readiness.targetBand)} band — ${report.readiness.confidence} confidence. ${report.readiness.rationale}`
+      ? `About ${report.readiness.estimatedHours} hours over ${report.readiness.estimatedSessions} sessions to reach the ${formatBand(report.readiness.targetBand)} band. ${report.readiness.rationale}`
       : undefined,
     biasFindings: buildBiasFindings(report.perQuestion, ctx.nonNativeEnglish),
     reverseInterview: report.reverseInterview

@@ -13,7 +13,7 @@ export function SkillsSection({ skills, weakest, onDrillSkill }: { skills: Skill
   const legend = hasAvg ? (
     <div style={{ display: "flex", alignItems: "center", gap: 16, fontFamily: f.sans, fontSize: size.sm, color: t.inkSoft }}>
       <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-        <span style={{ width: 16, height: 4, background: t.indigo, borderRadius: radius.micro }} />
+        <span style={{ width: 16, height: 4, background: t.coal, borderRadius: radius.micro }} />
         You
       </span>
       <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
@@ -26,9 +26,9 @@ export function SkillsSection({ skills, weakest, onDrillSkill }: { skills: Skill
     <SrSectionShell
       anchorId="ir-section-skills"
       headingId="ir-skills-heading"
-      label="Skills"
-      title="Skills"
-      subtitle="Each score is out of 100. Your lowest skill is highlighted in amber."
+      label="This session"
+      title="Skills for this role"
+      subtitle="Scored out of 100 for this session. Your lowest skill is highlighted."
       aside={legend}
     >
       <div className="ir-skills-grid" style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) 280px", gap: 28, alignItems: "start" }}>
@@ -55,7 +55,7 @@ export function SkillsSection({ skills, weakest, onDrillSkill }: { skills: Skill
                   }
                 >
                   <div className="ir-skill-bar-bg" style={{ background: t.line }} />
-                  <div className="ir-skill-bar-fg" style={{ width: `${pct}%`, background: s.name === weakest.name ? t.warning : t.indigo }} />
+                  <div className="ir-skill-bar-fg" style={{ width: `${pct}%`, background: s.name === weakest.name ? t.warning : t.coal }} />
                   {avgPct !== null && (
                     <div className="ir-skill-bar-marker" style={{ left: `calc(${avgPct}% - 1px)` }} aria-hidden="true" />
                   )}

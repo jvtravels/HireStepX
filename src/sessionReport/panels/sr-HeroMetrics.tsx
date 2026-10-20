@@ -134,8 +134,9 @@ export function ReadinessHeadline({
           style={{
             padding: "3px 10px",
             borderRadius: radius.pill,
-            background: t.indigoWash,
-            color: t.indigo,
+            background: t.creamSoft,
+            border: `1px solid ${t.line}`,
+            color: t.coal,
             fontFamily: f.sans,
             fontSize: size.sm,
             fontWeight: 600,
@@ -150,20 +151,17 @@ export function ReadinessHeadline({
 
 export function CalibrationBanner({ calibration }: { calibration: Calibration }) {
   return (
-    <span className="ir-calibration" role="region" aria-label="Calibration context">
+    <span
+      className="ir-calibration"
+      role="region"
+      aria-label="Calibration context"
+      title={calibration.bands.map((b) => `${b.label} ≥ ${b.minScore}`).join(" · ")}
+    >
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
         <path d="M12 2v20M2 12h20" />
       </svg>
       <span>
         Calibrated to <strong style={{ fontWeight: 600 }}>{calibration.companyLabel}</strong>
-      </span>
-      <span className="ir-calibration-bands">
-        {calibration.bands.map((b, i) => (
-          <span key={b.label}>
-            {i > 0 ? " · " : " — "}
-            {b.label} ≥ {b.minScore}
-          </span>
-        ))}
       </span>
     </span>
   );

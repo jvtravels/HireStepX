@@ -416,6 +416,7 @@ function GenericReport({
                   weakestSkill={data.weakestSkill?.name}
                   resumeImprovements={data.resumeImprovements}
                   weakestQuestionIndex={weakestQuestion?.index}
+                  weakestQuestionScore={weakestQuestion?.score}
                   onTryWeakestQuestion={
                     onTryQuestionAgain && weakestQuestion
                       ? () => onTryQuestionAgain(weakestQuestion.index)

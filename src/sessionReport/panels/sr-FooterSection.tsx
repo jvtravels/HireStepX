@@ -54,7 +54,7 @@ export function FooterSection({
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: f.sans, fontSize: size.sm, color: t.inkSoft }}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={t.copper} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={t.inkFaint} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M12 2 4 6v6c0 5 3.5 9 8 10 4.5-1 8-5 8-10V6l-8-4z" />
             <polyline points="9 12 11 14 15 10" />
           </svg>
@@ -103,7 +103,7 @@ export function FooterSection({
           </ToggleGroup>
           {reason && (
             <span style={{ fontFamily: f.sans, fontSize: size.xs, color: t.success, fontWeight: 500 }}>
-              ✓ Thanks — recorded
+              ✓ Thanks, recorded
             </span>
           )}
         </div>

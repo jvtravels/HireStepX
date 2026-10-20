@@ -38,7 +38,7 @@ const REVERSE_VERDICT_COPY: Record<"strong" | "neutral" | "weak" | "red_flag", {
 }> = {
   strong: {
     title: "Strong close",
-    oneLiner: "You asked at least one substantive role / team question — that's the senior-judgement signal Indian hiring managers look for here.",
+    oneLiner: "You asked at least one substantive role / team question. That's the senior-judgement signal Indian hiring managers look for here.",
     tone: "good",
   },
   neutral: {
@@ -53,7 +53,7 @@ const REVERSE_VERDICT_COPY: Record<"strong" | "neutral" | "weak" | "red_flag", {
   },
   red_flag: {
     title: "Closing-turn red flag",
-    oneLiner: "One of your questions is a documented offer-killer in Indian loops at this stage. Reshape it for round 2 — these belong with HR after the offer, not with the panel before.",
+    oneLiner: "One of your questions is a documented offer-killer in Indian loops at this stage. Reshape it for round 2: these belong with HR after the offer, not with the panel before.",
     tone: "bad",
   },
 };
@@ -66,7 +66,7 @@ export function ReverseInterviewSection({
   const copy = REVERSE_VERDICT_COPY[reverse.verdict];
   const accent =
     copy.tone === "good" ? t.success
-    : copy.tone === "ok" ? t.indigo
+    : copy.tone === "ok" ? t.coal
     : copy.tone === "warn" ? t.warning
     : t.error;
   return (

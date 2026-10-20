@@ -83,7 +83,7 @@ function KernelTacticsPanel({ m }: { m: KernelMetrics }) {
             Questions you raised
           </h3>
           <p style={{ fontFamily: f.sans, fontSize: size.sm, color: t.inkSoft, margin: "0 0 6px" }}>
-            Specific levers you pried open — each is a number-mover most candidates skip.
+            Specific levers you pried open. Each is a number-mover most candidates skip.
           </p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
             {asked.map((k) => <Chip key={k} tone="good">{INFO_LABELS[k]}</Chip>)}
@@ -94,12 +94,12 @@ function KernelTacticsPanel({ m }: { m: KernelMetrics }) {
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {m.marketMode === "soft" && (
             <div style={{ padding: "8px 12px", background: t.creamSoft, border: `1px solid ${t.line}`, borderRadius: radius.lg, fontFamily: f.sans, fontSize: size.sm, color: t.inkSoft }}>
-              Simulated <strong style={{ color: t.coal }}>soft market</strong> — recruiters concede ~30% less than baseline. Cash gains here are harder-won than the % suggests.
+              Simulated <strong style={{ color: t.coal }}>soft market</strong>: recruiters concede ~30% less than baseline. Cash gains here are harder-won than the % suggests.
             </div>
           )}
           {m.marketMode === "hot" && (
             <div style={{ padding: "8px 12px", background: t.creamSoft, border: `1px solid ${t.line}`, borderRadius: radius.lg, fontFamily: f.sans, fontSize: size.sm, color: t.inkSoft }}>
-              Simulated <strong style={{ color: t.coal }}>hot market</strong> — recruiters concede ~30% more than baseline. Match this anchoring discipline in a normal market.
+              Simulated <strong style={{ color: t.coal }}>hot market</strong>: recruiters concede ~30% more than baseline. Match this anchoring discipline in a normal market.
             </div>
           )}
           {m.hardBandCap && (

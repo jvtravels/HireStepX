@@ -13,7 +13,7 @@ export function BiasSection({ findings }: { findings: BiasFinding[] }) {
       headingId="ir-bias-heading"
       label="Perception optimizer"
       title="Language patterns to watch"
-      subtitle="Research-backed patterns that tend to lower hiring perception. Not a judgment — a perception optimizer."
+      subtitle="Research-backed patterns that tend to lower hiring perception. Not a judgment, just a way to sound more confident."
     >
       <div className="ir-bias-grid">
         {findings.map((b) => (

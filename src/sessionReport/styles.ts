@@ -47,7 +47,7 @@ export const SESSION_REPORT_STYLES = `
     padding: 14px 18px; display: flex; align-items: center; gap: 12px;
     text-align: left; font-family: inherit; color: inherit;
   }
-  .ir-q-card-trigger:hover { background: rgba(180, 83, 9, 0.04); }
+  .ir-q-card-trigger:hover { background: oklch(0.985 0.001 286); }
   .ir-highlight-filler { background: rgba(212, 179, 127, 0.30); padding: 1px 3px; border-radius: 3px; }
   .ir-highlight-hedge  { background: rgba(110, 103, 89, 0.18); padding: 1px 3px; border-radius: 3px; }
   .ir-highlight-quant  { background: rgba(21, 128, 61, 0.18); padding: 1px 3px; border-radius: 3px; color: #15803D; font-weight: 600; }
@@ -404,7 +404,7 @@ export const SESSION_REPORT_STYLES = `
   /* ─── Sparkline ─── */
   .ir-spark { vertical-align: middle; }
   .ir-spark-line { stroke: var(--foreground); stroke-opacity: 0.55; stroke-width: 1.75; fill: none; stroke-linejoin: round; stroke-linecap: round; }
-  .ir-spark-area { fill: var(--foreground); fill-opacity: 0.06; }
+  .ir-spark-area { display: none; }
   .ir-spark-dot { fill: var(--foreground); fill-opacity: 0.4; }
   .ir-spark-dot-current { fill: var(--foreground); r: 3.5; }
 
@@ -550,12 +550,12 @@ export const SESSION_REPORT_STYLES = `
     align-items: center;
     gap: 8px;
     padding: 6px 12px;
-    background: rgba(49,46,129,0.05);
-    border: 1px solid rgba(49,46,129,0.12);
+    background: oklch(0.985 0.001 286);
+    border: 1px solid oklch(0.92 0.004 286);
     border-radius: 8px;
     font-family: 'Geist Sans', sans-serif;
     font-size: 12px;
-    color: #312E81;
+    color: oklch(0.35 0.02 213.5);
     line-height: 1.4;
   }
   .ir-calibration-bands {
@@ -574,14 +574,13 @@ export const SESSION_REPORT_STYLES = `
     gap: 6px;
     padding: 4px 10px;
     border-radius: 999px;
-    background: rgba(180,83,9,0.08);
-    color: #B45309;
-    border: 1px solid rgba(180,83,9,0.40);
+    background: oklch(0.97 0.002 286);
+    color: oklch(0.45 0.02 213.5);
+    border: 1px solid oklch(0.92 0.004 286);
     font-family: 'Geist Sans', sans-serif;
     font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 0.02em;
   }
 
   /* ─── Trend strip ───
@@ -710,9 +709,10 @@ export const SESSION_REPORT_STYLES = `
   /* ─── Coach's Notes section (cross-session aggregator) ─── */
   .ir-coach-notes-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 14px;
   }
+  .ir-coach-notes-grid > :last-child:nth-child(odd) { grid-column: 1 / -1; }
   .ir-coach-note-card {
     background: #FAFAFA;
     border: 1px solid #ECECEF;
@@ -805,15 +805,15 @@ export const SESSION_REPORT_STYLES = `
     margin-top: 14px;
   }
   .ir-bias-card {
-    background: rgba(49,46,129,0.04);
-    border: 1px solid rgba(49,46,129,0.12);
+    background: oklch(0.985 0.001 286);
+    border: 1px solid oklch(0.92 0.004 286);
     border-radius: 10px;
     padding: 12px 14px;
   }
   .ir-bias-card-head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; }
   .ir-bias-count {
     font-family: 'Geist Sans', sans-serif;
-    font-size: 18px; font-weight: 700; color: #312E81; line-height: 1;
+    font-size: 18px; font-weight: 700; color: var(--foreground); line-height: 1;
   }
   .ir-bias-label {
     font-family: 'Geist Sans', system-ui, sans-serif;
@@ -827,7 +827,7 @@ export const SESSION_REPORT_STYLES = `
   }
   .ir-bias-tip {
     font-family: 'Geist Sans', system-ui, sans-serif;
-    font-size: 12px; color: #312E81; line-height: 1.4;
+    font-size: 12px; color: oklch(0.45 0.02 213.5); line-height: 1.4;
   }
 
   /* ─── Trust + useful dual polls (footer) ─── */

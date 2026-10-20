@@ -68,7 +68,7 @@ export function PerQuestionSection({ questions, onTryQuestionAgain }: { question
             variant="link"
             size="sm"
             onClick={() => setOpenIdx(null)}
-            style={{ color: t.indigo, fontFamily: f.sans, height: "auto" }}
+            style={{ color: t.inkSoft, fontFamily: f.sans, height: "auto" }}
           >
             Collapse all
           </Button>
@@ -108,7 +108,7 @@ export function PerQuestionSection({ questions, onTryQuestionAgain }: { question
                     width: 28,
                     height: 28,
                     borderRadius: radius.lg,
-                    background: open ? t.indigo : t.creamSoft,
+                    background: open ? t.coal : t.creamSoft,
                     color: open ? t.white : t.coal,
                     display: "flex",
                     alignItems: "center",

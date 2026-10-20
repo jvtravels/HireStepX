@@ -69,13 +69,13 @@ export function ReferralInviteSection({
     <section
       aria-label="Invite a friend"
       style={{
-        background: t.copperWash,
-        border: `1px solid ${t.copperBorder}`,
+        background: t.creamSoft,
+        border: `1px solid ${t.line}`,
         borderRadius: 16,
         padding: "22px clamp(18px, 3vw, 28px)",
       }}
     >
-      <span style={{ fontFamily: f.sans, fontSize: size.xs, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: t.copper }}>
+      <span style={{ fontFamily: f.sans, fontSize: size.xs, fontWeight: 600, color: t.inkSoft }}>
         Bring a friend
       </span>
       <h2 style={{ fontFamily: f.serif, fontSize: size["2xl"], fontWeight: 400, color: t.coal, marginTop: 6, marginBottom: 0 }}>
@@ -83,10 +83,10 @@ export function ReferralInviteSection({
       </h2>
       <div style={{ fontFamily: f.sans, fontSize: size.md, color: t.inkSoft, marginTop: 6, lineHeight: 1.55, maxWidth: 560 }}>
         Send your link to someone prepping for interviews. When they sign up, you
-        each get a free practice session — credited instantly, no purchase needed.
+        each get a free practice session, credited instantly with no purchase needed.
       </div>
       <div style={{ display: "flex", gap: 10, marginTop: 18, flexWrap: "wrap" }}>
-        <Button type="button" onClick={onWhatsApp} style={{ ...btnBase, background: t.copper, color: t.white }}>
+        <Button type="button" onClick={onWhatsApp} style={btnBase}>
           Share on WhatsApp
         </Button>
         {/* LinkedIn share — opens the sharing dialog pre-populated with
@@ -109,7 +109,7 @@ export function ReferralInviteSection({
           </svg>
           Share on LinkedIn
         </Button>
-        <Button type="button" variant="outline" onClick={onCopy} style={{ ...btnBase, color: t.copper, borderColor: t.copperBorder }}>
+        <Button type="button" variant="outline" onClick={onCopy} style={btnBase}>
           {copied ? "Link copied!" : "Copy link"}
         </Button>
       </div>

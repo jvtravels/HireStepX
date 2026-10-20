@@ -19,6 +19,7 @@ export function NextStepsSection({
   readinessSentence,
   weakestSkill,
   weakestQuestionIndex,
+  weakestQuestionScore,
   onTryWeakestQuestion,
   onDrillSkill,
   resumeImprovements,
@@ -30,6 +31,7 @@ export function NextStepsSection({
    *  lowest-scored question — used in the CTA copy so it matches
    *  what the user sees in the report (e.g. "Q5", not "Q1"). */
   weakestQuestionIndex?: number;
+  weakestQuestionScore?: number;
   onTryWeakestQuestion?: () => void;
   onDrillSkill?: () => void;
   /** Resume polish bullets from the AI analysis — shown when present
@@ -57,7 +59,7 @@ export function NextStepsSection({
       }
     : {
         title: "Try your weakest question again",
-        desc: `Improve your answer for Q${weakestQuestionIndex ?? 1} and see your score go up.`,
+        desc: `Question ${weakestQuestionIndex ?? 1} scored lowest${typeof weakestQuestionScore === "number" ? ` (${weakestQuestionScore}/100)` : ""}. Redo it and see your score go up.`,
         cta: "Retry this question",
       };
 

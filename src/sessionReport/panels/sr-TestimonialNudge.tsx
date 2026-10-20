@@ -60,10 +60,8 @@ export function TestimonialNudge({
         style={{
           fontFamily: f.sans,
           fontSize: size.sm,
-          fontWeight: 700,
-          letterSpacing: "0.10em",
-          textTransform: "uppercase",
-          color: t.copper,
+          fontWeight: 600,
+          color: t.inkSoft,
           margin: "0 0 8px",
         }}
       >
@@ -79,7 +77,7 @@ export function TestimonialNudge({
           lineHeight: 1.4,
         }}
       >
-        {score}/100 after {priorSessionCount! + 1} sessions — tell someone
+        {score}/100 after {priorSessionCount! + 1} sessions. Tell someone
       </h2>
       <p
         style={{

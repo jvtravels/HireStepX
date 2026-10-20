@@ -187,12 +187,12 @@ export function CredibilitySection({
                   }}
                   aria-label={
                     disputed.has(item.flag)
-                      ? "Thanks — feedback recorded"
+                      ? "Thanks, feedback recorded"
                       : "Report that this flag doesn't apply to you"
                   }
                 >
                   {disputed.has(item.flag)
-                    ? "✓ Thanks — feedback recorded"
+                    ? "✓ Thanks, feedback recorded"
                     : "Doesn't apply to me?"}
                 </Button>
               </div>
