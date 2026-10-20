@@ -391,13 +391,14 @@ export const SESSION_REPORT_STYLES = `
     .ir-strengths-improvements { grid-template-columns: 1fr !important; gap: 18px !important; }
     .ir-skills-grid { grid-template-columns: 1fr !important; gap: 20px !important; }
     .ir-skill-row {
-      grid-template-columns: 1fr 50px 50px !important;
+      grid-template-columns: 1fr auto auto !important;
       grid-template-areas:
-        "name name name"
-        "bar bar bar"
-        ".  score delta" !important;
-      row-gap: 6px !important;
+        "name score delta"
+        "bar bar bar" !important;
+      row-gap: 8px !important;
+      column-gap: 10px !important;
     }
+    .ir-skill-row .ir-skill-score { flex-direction: row !important; align-items: baseline !important; gap: 8px; }
     .ir-skill-row .ir-skill-name { grid-area: name; }
     .ir-skill-row .ir-skill-bar-wrap { grid-area: bar; }
     .ir-skill-row .ir-skill-score { grid-area: score; }
@@ -410,10 +411,6 @@ export const SESSION_REPORT_STYLES = `
     .ir-pill-bar { gap: 6px !important; }
   }
   @media (max-width: 420px) {
-    .ir-skill-row {
-      grid-template-columns: 1fr 42px 42px !important;
-      column-gap: 6px !important;
-    }
     .ir-cta-primary, .ir-cta-ghost { padding: 9px 12px !important; font-size: 12px !important; }
     .ir-pill { padding: 5px 10px !important; font-size: 11px !important; }
     .ir-tab-btn { margin-right: 12px !important; font-size: 12px !important; }
