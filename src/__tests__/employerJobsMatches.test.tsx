@@ -60,6 +60,26 @@ describe("DueCell", () => {
   });
 });
 
+describe("DueCell urgency", () => {
+  const inDays = (n: number) => new Date(Date.now() + n * 86400000).toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
+  it("shows only the date while the deadline is comfortably away", () => {
+    const { container } = render(<DueCell dueDate={inDays(11)} />);
+    expect(container.textContent).not.toMatch(/left|overdue|today/);
+  });
+  it("adds one flag when the deadline is within a week", () => {
+    const { container } = render(<DueCell dueDate={inDays(3)} />);
+    expect(container.textContent).toMatch(/3d left/);
+  });
+  it("flags a passed deadline on an open job", () => {
+    const { container } = render(<DueCell dueDate="2000-01-01" />);
+    expect(container.textContent).toMatch(/overdue/);
+  });
+  it("shows no flag on a closed job", () => {
+    const { container } = render(<DueCell dueDate="2000-01-01" closed />);
+    expect(container.textContent).not.toMatch(/overdue/);
+  });
+});
+
 describe("DueCell date", () => {
   it("shows a readable date, not the raw ISO string", () => {
     const { container } = render(<DueCell dueDate="2026-11-01" />);

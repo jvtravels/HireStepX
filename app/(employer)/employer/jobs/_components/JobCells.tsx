@@ -47,12 +47,12 @@ export function DueCell({ dueDate, closed = false }: { dueDate: string | null; c
     );
   }
   const left = daysUntil(dueDate);
-  const tone: BadgeTone = left < 0 ? "error" : left <= 7 ? "warning" : "neutral";
+  const tone: BadgeTone = left < 0 ? "error" : "warning";
   const label = left < 0 ? `${Math.abs(left)}d overdue` : left === 0 ? "Due today" : `${left}d left`;
   return (
     <div>
       <div style={{ fontFamily: f.sans, fontSize: textSize.md, fontWeight: 500, color: closed ? t.inkSoft : t.coal }}>{formatDueDate(dueDate)}</div>
-      {!closed && (
+      {!closed && left <= 7 && (
         <div style={{ marginTop: 4, width: "fit-content" }}>
           <Badge tone={tone}>{label}</Badge>
         </div>
