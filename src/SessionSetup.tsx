@@ -843,7 +843,7 @@ export default function SessionSetup() {
        - Case study / technical leadership: structured deep-dives
        - Panel: 3 interviewers, each gets a turn → longest
      The engine still computes step-count from the script — these
-     minutes only drive the time-pill copy + the `&length=` URL param
+     minutes only drive the `&length=` URL param
      (analytics + mini-mode threshold at "10m"). Table lives in
      data/session-length.ts so other surfaces (dashboard Next Move card)
      can preview the same real number instead of guessing. */
@@ -1658,7 +1658,6 @@ export default function SessionSetup() {
           .hsx-setup-content { padding: 12px 32px 32px !important; }
           .hsx-setup-hero-h1 { font-size: clamp(1.5rem, 3vw, 2rem) !important; line-height: 1.1 !important; }
           .hsx-setup-hero { margin-bottom: 14px !important; }
-          .hsx-setup-time-pill { font-size: 12px !important; padding: 4px 10px !important; }
           .hsx-setup-form-sections { gap: 16px !important; }
           .hsx-setup-cta-zone { margin-top: 16px !important; padding-top: 12px !important; gap: 8px !important; }
           .ob-focus-card { padding: 10px !important; }
@@ -1804,13 +1803,6 @@ export default function SessionSetup() {
                   Let&apos;s get you{" "}
                   <em style={{ fontStyle: "normal", fontWeight: 600, color: T.indigo }}>ready</em>
                 </h1>
-                <div className="hsx-setup-time-pill" style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "5px 12px", borderRadius: 999, background: T.indigo100, color: T.indigo, fontFamily: F.sans, fontSize: 13, fontWeight: 500 }}>
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                    <circle cx="12" cy="12" r="10" />
-                    <polyline points="12 6 12 12 16 14" />
-                  </svg>
-                  ~{sessionMinutes} minutes
-                </div>
               </div>
 
               <div className="hsx-setup-form-sections" style={{ display: "flex", flexDirection: "column", gap: 28 }}>
@@ -2030,60 +2022,6 @@ export default function SessionSetup() {
               </div>
             </div>
 
-
-          {/* ─── Resume coaching brief — shown when AI resume exists.
-                A 2-line card surfacing interviewStrengths / interviewGaps
-                so the candidate knows what to lean on and watch for before
-                the first question fires. Data already exists on the profile;
-                zero extra network calls. */}
-          {(() => {
-            const rd = user?.resumeData as Record<string, unknown> | undefined;
-            const ap = rd?.aiProfile as { interviewStrengths?: string[]; interviewGaps?: string[] } | undefined;
-            const strengths = Array.isArray(ap?.interviewStrengths) ? ap.interviewStrengths.slice(0, 2) : [];
-            const gaps = Array.isArray(ap?.interviewGaps) ? ap.interviewGaps.slice(0, 2) : [];
-            if (strengths.length === 0 && gaps.length === 0) return null;
-            return (
-              <div
-                style={{
-                  background: T.warning100,
-                  border: `1px solid oklch(0.359 0.135 278.697 / 0.18)`,
-                  borderLeft: `3px solid ${T.indigo}`,
-                  borderRadius: 10,
-                  padding: "14px 18px",
-                  marginTop: 28,
-                  maxWidth: 560,
-                  width: "100%",
-                  margin: "28px auto 0",
-                }}
-              >
-                <p style={{ fontFamily: F.sans, fontSize: 11, fontWeight: 700, color: T.indigo, margin: "0 0 10px", textTransform: "uppercase", letterSpacing: "0.07em" }}>
-                  Your resume coaching brief
-                </p>
-                <div style={{ display: "grid", gridTemplateColumns: strengths.length > 0 && gaps.length > 0 ? "1fr 1fr" : "1fr", gap: 12 }}>
-                  {strengths.length > 0 && (
-                    <div>
-                      <p style={{ fontFamily: F.sans, fontSize: 11, fontWeight: 600, color: T.success, margin: "0 0 4px" }}>✓ Lean on these</p>
-                      <ul style={{ margin: 0, padding: "0 0 0 14px" }}>
-                        {strengths.map((s, i) => (
-                          <li key={i} style={{ fontFamily: F.sans, fontSize: 12, color: T.coal, lineHeight: 1.5, marginBottom: 2 }}>{s}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                  {gaps.length > 0 && (
-                    <div>
-                      <p style={{ fontFamily: F.sans, fontSize: 11, fontWeight: 600, color: T.indigo, margin: "0 0 4px" }}>⚡ Prepare for these</p>
-                      <ul style={{ margin: 0, padding: "0 0 0 14px" }}>
-                        {gaps.map((g, i) => (
-                          <li key={i} style={{ fontFamily: F.sans, fontSize: 12, color: T.coal, lineHeight: 1.5, marginBottom: 2 }}>{g}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })()}
 
           {/* ─── Single canvas-style "Start practice" CTA + trust line.
                 The CTA stays clickable when only the mic is missing — it
