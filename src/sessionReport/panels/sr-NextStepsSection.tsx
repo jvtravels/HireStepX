@@ -1,5 +1,4 @@
-/* Next session: the one thing to work on, how far the Hire band is, and a
- * link into setup. Resume fixes follow when the AI resume analysis has any.
+/* Next session: how far the Hire band is, and a link into setup. Resume fixes follow when the AI resume analysis has any.
  * Pure presentation. */
 
 import Link from "next/link";
@@ -17,34 +16,25 @@ function planLine(plan: Plan): string {
 
 export function NextStepsSection({
   plan,
-  focusFirst,
   practiceHref,
   resumeImprovements,
 }: {
   plan?: Plan;
-  /** The top improvement from this session. */
-  focusFirst?: string;
   /** Setup link prefilled with this session's type, role and company. */
   practiceHref?: string;
   /** Resume polish bullets from the AI analysis. Max 3. */
   resumeImprovements?: string[];
 }) {
   const hasResume = !!resumeImprovements && resumeImprovements.length > 0;
-  if (!plan && !focusFirst && !practiceHref && !hasResume) return null;
+  if (!plan && !practiceHref && !hasResume) return null;
 
   return (
     <ReportCardShell id="ir-section-next" ariaLabelledBy="ir-next-heading">
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 20, flexWrap: "wrap" }}>
         <div style={{ minWidth: 0, flex: 1, maxWidth: "65ch" }}>
-          <h2 id="ir-next-heading" style={{ fontFamily: f.sans, fontSize: size.xl, fontWeight: 600, color: t.coal, margin: "0 0 12px", letterSpacing: "-0.01em" }}>
+          <h2 id="ir-next-heading" style={{ fontFamily: f.sans, fontSize: size.xl, fontWeight: 600, color: t.coal, margin: "0 0 8px", letterSpacing: "-0.01em" }}>
             Next session
           </h2>
-          {focusFirst && (
-            <p style={{ fontFamily: f.sans, fontSize: size.base, color: t.coal, margin: "0 0 8px", lineHeight: 1.5 }}>
-              <span style={{ color: t.inkSoft }}>Focus first: </span>
-              {focusFirst}
-            </p>
-          )}
           {plan && (
             <p style={{ fontFamily: f.sans, fontSize: size.base, color: t.inkSoft, margin: 0, lineHeight: 1.5 }}>
               {planLine(plan)}

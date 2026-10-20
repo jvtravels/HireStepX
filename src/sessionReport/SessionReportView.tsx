@@ -344,7 +344,6 @@ function GenericReport({
                 {campusPlacementMeta && <CampusCgpaCalibrationNote meta={campusPlacementMeta} />}
                 <NextStepsSection
                   plan={data.readinessPlan}
-                  focusFirst={data.improvements[0]}
                   practiceHref={practiceHref}
                   resumeImprovements={data.resumeImprovements}
                 />
