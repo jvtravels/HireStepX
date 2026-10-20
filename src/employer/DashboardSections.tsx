@@ -3,7 +3,7 @@
 /* Presentational sections for the employer dashboard (app/(employer)/employer/
    page.tsx). One white container (drawn by the page) holding hairline-separated
    sections, so nothing is a card inside a card; neutral pills, indigo reserved for
-   actions. Built on the shared primitives (ui/table, ui/avatar, NativeSelect,
+   actions. Built on the shared primitives (ui/table, ui/avatar, Select,
    the command palette pieces, EmptyState, _atoms Badge/Pill/ScoreChip) rather than local
    copies. Everything is driven by props; data wiring stays in the page. */
 
@@ -14,7 +14,7 @@ import { LightbulbIcon, ClockIcon, TrendingUpIcon, ArrowDownIcon, ArrowUpIcon, C
 import { hoursOrDaysAgo } from "@/hiringMatchFormat";
 import AnimatedNumber from "@/AnimatedNumber";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { NativeSelect } from "@/components/ui/native-select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { EmptyState } from "@/components/EmptyState";
@@ -92,12 +92,12 @@ export function DashboardHeader({
       </div>
       <div className="flex w-full flex-wrap items-center gap-2.5 min-[900px]:w-auto min-[900px]:flex-nowrap">
         <DashboardSearch jobs={jobs} candidates={recommended} />
-        <label className="inline-flex shrink-0 items-center">
-          <span className="sr-only">Date range</span>
-          <NativeSelect value={range} onChange={(e) => onRangeChange(Number(e.target.value) as DashboardRange)} className="[&_select]:h-9 [&_select]:cursor-pointer">
-            {RANGE_OPTIONS.map((r) => <option key={r} value={r}>{RANGE_LABEL[r]}</option>)}
-          </NativeSelect>
-        </label>
+        <Select value={String(range)} onValueChange={(v) => onRangeChange(Number(v) as DashboardRange)}>
+          <SelectTrigger aria-label="Date range" className="h-9 shrink-0 border-hx-line bg-white text-[13px] text-hx-coal"><SelectValue /></SelectTrigger>
+          <SelectContent align="end">
+            {RANGE_OPTIONS.map((r) => <SelectItem key={r} value={String(r)}>{RANGE_LABEL[r]}</SelectItem>)}
+          </SelectContent>
+        </Select>
       </div>
     </header>
   );

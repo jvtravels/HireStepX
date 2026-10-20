@@ -81,10 +81,16 @@ const toRow = (r: Requirement) => ({
 
 beforeAll(() => {
   Element.prototype.scrollIntoView = vi.fn();
+  Element.prototype.hasPointerCapture = () => false;
+  Element.prototype.releasePointerCapture = () => {};
 });
 
 const label = (re: RegExp | string) => screen.getByLabelText(re) as HTMLInputElement;
 const change = (re: RegExp | string, value: string) => fireEvent.change(label(re), { target: { value } });
+const pick = (re: RegExp | string, optionName: string) => {
+  fireEvent.keyDown(label(re), { key: "Enter" });
+  fireEvent.click(screen.getByRole("option", { name: optionName }));
+};
 const addTag = (re: RegExp | string, value: string) => {
   const el = label(re);
   fireEvent.change(el, { target: { value } });
@@ -119,7 +125,7 @@ describe("edit form shows every stored value", () => {
     expect(label(/nice to have/i)).toHaveValue("Go");
     expect(screen.getByText("IIT Bombay")).toBeInTheDocument();
     expect(screen.getByText("Razorpay")).toBeInTheDocument();
-    expect(label(/notice period/i)).toHaveValue("Up to 30 days");
+    expect(label(/notice period/i)).toHaveTextContent("Up to 30 days");
     expect(screen.getByText("Insurance")).toBeInTheDocument();
     expect(label(/preferred industry/i)).toHaveValue("Fintech");
     expect(label(/preferred domain/i)).toHaveValue("Payments");
@@ -128,7 +134,7 @@ describe("edit form shows every stored value", () => {
     expect(label(/availability/i)).toHaveValue("Immediate");
     expect(label(/relevant experience/i)).toHaveValue("3+ years");
     expect(screen.getByRole("checkbox", { name: /portfolio required/i })).toHaveAttribute("aria-checked", "false");
-    expect(label(/minimum readiness/i)).toHaveValue("hire");
+    expect(label(/minimum readiness/i)).toHaveTextContent("Hire or better");
     expect(label(/minimum star/i)).toHaveValue("60");
   });
 });
@@ -156,7 +162,7 @@ describe("edit form → PATCH handler → stored columns", () => {
     change(/nice to have/i, "Rust");
     addTag(/preferred colleges/i, "NIT Trichy");
     addTag(/target companies/i, "Zerodha");
-    change(/notice period/i, "Up to 60 days");
+    pick(/notice period/i, "Up to 60 days");
     addTag(/perks and benefits/i, "ESOPs");
     change(/preferred industry/i, "SaaS");
     change(/preferred domain/i, "Growth");
@@ -165,7 +171,7 @@ describe("edit form → PATCH handler → stored columns", () => {
     change(/availability/i, "2 weeks");
     change(/relevant experience/i, "5+ years");
     fireEvent.click(screen.getByRole("checkbox", { name: /portfolio required/i }));
-    change(/minimum readiness/i, "strongHire");
+    pick(/minimum readiness/i, "Strong hire only");
     change(/minimum star/i, "75");
 
     fireEvent.click(screen.getByRole("button", { name: "Save changes" }));

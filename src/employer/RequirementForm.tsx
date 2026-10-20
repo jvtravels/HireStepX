@@ -4,6 +4,7 @@ import { useUnsavedNavGuard } from "@/employer/useUnsavedNavGuard";
 import { useMaxWidth } from "../hooks/useMaxWidth";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useCallback, useEffect, useMemo, useRef, useState, Dispatch, SetStateAction, type CSSProperties, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
@@ -48,6 +49,8 @@ import { CITY_SUGGESTIONS } from "../../data/city-tiers";
 import { ROLE_SUGGESTIONS } from "@/onboardingData";
 import { COMPANY_SUGGESTIONS } from "../../data/company-suggestions";
 import { COLLEGE_SUGGESTIONS, DOMAIN_SUGGESTIONS, INDUSTRY_SUGGESTIONS, SKILL_SUGGESTIONS } from "../../data/requirement-suggestions";
+
+const SELECT_FIELD = "h-11 w-full rounded-[10px] border-hx-line bg-white px-3.5 text-[15px] text-hx-coal max-md:text-[16px]";
 
 const baseInputStyle: CSSProperties = {
   width: "100%",
@@ -133,7 +136,6 @@ export function RequirementForm({
   const phone = useMaxWidth(768);
   // iOS zooms any focused input under 16px.
   const inputStyle: CSSProperties = phone ? { ...baseInputStyle, fontSize: 16 } : baseInputStyle;
-  const selectStyle: CSSProperties = { ...inputStyle, background: t.white };
   const longTextStyle: CSSProperties = { ...inputStyle, ...textareaStyle };
   const isCreate = mode === "create";
 
@@ -470,9 +472,12 @@ export function RequirementForm({
       <div style={flexRow}>
         <div style={cell(1, 220)}>
           <FieldLabel htmlFor="rf-notice">Notice period</FieldLabel>
-          <select id="rf-notice" value={draft.noticePeriodPref} onChange={(e) => set("noticePeriodPref", e.target.value)} style={selectStyle}>
-            {noticeOptions.map((o) => <option key={o} value={o}>{o}</option>)}
-          </select>
+          <Select value={draft.noticePeriodPref} onValueChange={(v) => set("noticePeriodPref", v)}>
+            <SelectTrigger id="rf-notice" className={SELECT_FIELD}><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {noticeOptions.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+            </SelectContent>
+          </Select>
           <HelpText id="rf-notice-help" live={false}>Shown to candidates, not used for matching.</HelpText>
         </div>
 
@@ -540,12 +545,15 @@ export function RequirementForm({
           <div style={grid2}>
             <div>
               <FieldLabel htmlFor="rf-readiness">Minimum readiness</FieldLabel>
-              <select id="rf-readiness" value={draft.minReadinessBand} onChange={(e) => set("minReadinessBand", e.target.value as RequirementDraft["minReadinessBand"])} style={selectStyle}>
-                <option value="">No minimum</option>
-                <option value="leanHire">Lean hire or better</option>
-                <option value="hire">Hire or better</option>
-                <option value="strongHire">Strong hire only</option>
-              </select>
+              <Select value={draft.minReadinessBand || "none"} onValueChange={(v) => set("minReadinessBand", (v === "none" ? "" : v) as RequirementDraft["minReadinessBand"])}>
+                <SelectTrigger id="rf-readiness" className={SELECT_FIELD}><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No minimum</SelectItem>
+                  <SelectItem value="leanHire">Lean hire or better</SelectItem>
+                  <SelectItem value="hire">Hire or better</SelectItem>
+                  <SelectItem value="strongHire">Strong hire only</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <FieldLabel htmlFor="rf-star">Minimum STAR completeness (%)</FieldLabel>

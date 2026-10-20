@@ -9,6 +9,7 @@ import { InfoTip } from "@/employer/_panelParts";
 import { availabilityOf } from "@/employer/_jobDetailHelpers";
 import type { Candidate, CandidateStatus } from "@/employer/mockData";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AnimatePresence } from "motion/react";
 import CandidateRow from "./CandidateRow";
 import { MAX_SELECTION } from "./shortlistSelection";
@@ -98,21 +99,22 @@ export default function CandidatesTable({
         <label htmlFor="cand-mobile-sort" className="mb-1 block text-[13px] text-hx-ink-soft">
           Sort candidates
         </label>
-        <select
-          id="cand-mobile-sort"
+        <Select
           value={mobileKnown ? mobileValue : "match-desc"}
-          onChange={(e) => {
-            const next = SORT_OPTIONS.find((s) => s.value === e.target.value);
+          onValueChange={(v) => {
+            const next = SORT_OPTIONS.find((o) => o.value === v);
             if (next) onSortChange(next.sort);
           }}
-          className="min-h-11 w-full rounded-lg border border-hx-line bg-white px-3 text-[14px] text-hx-coal"
         >
-          {SORT_OPTIONS.map((s) => (
-            <option key={s.value} value={s.value}>
-              {s.label}
-            </option>
-          ))}
-        </select>
+          <SelectTrigger id="cand-mobile-sort" className="h-11 w-full border-hx-line bg-white px-3 text-[14px] text-hx-coal"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {SORT_OPTIONS.map((o) => (
+              <SelectItem key={o.value} value={o.value}>
+                {o.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         {!readOnly && !suspended && (
           <label htmlFor="select-page-mobile" className="mt-2 flex min-h-11 cursor-pointer items-center gap-2.5 text-[13px] font-semibold text-hx-coal">
             <Checkbox

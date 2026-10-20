@@ -8,7 +8,7 @@ import type { Candidate } from "@/employer/mockData";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Kbd } from "@/components/ui/kbd";
-import { NativeSelect } from "@/components/ui/native-select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CandidateStatusChip } from "@/employer/_atoms";
 import { maskedName, type ShortlistPosition } from "./helpers";
 
@@ -85,20 +85,18 @@ export function CandidateNav({
 
       <div className="ml-auto flex shrink-0 items-center gap-2">
         {others.length > 0 && !condensed && (
-          <NativeSelect
-            size="sm"
-            aria-label="Compare with another candidate"
-            value=""
-            onChange={(e) => e.target.value && onCompare(e.target.value)}
-            className="max-sm:hidden [&_select]:border-hx-line [&_select]:bg-white [&_select]:text-[13px]"
-          >
-            <option value="">Compare with…</option>
-            {others.map((o) => (
-              <option key={o.id} value={o.id}>
-                {maskedName(o)} ({o.matchScore})
-              </option>
-            ))}
-          </NativeSelect>
+          <Select value="" onValueChange={(v) => v && onCompare(v)}>
+            <SelectTrigger size="sm" aria-label="Compare with another candidate" className="border-hx-line bg-white text-[13px] max-sm:hidden">
+              <SelectValue placeholder="Compare with…" />
+            </SelectTrigger>
+            <SelectContent align="end">
+              {others.map((o) => (
+                <SelectItem key={o.id} value={o.id}>
+                  {maskedName(o)} ({o.matchScore})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         )}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
