@@ -74,7 +74,7 @@ const SUMMARY_LABEL = { fontFamily: f.sans, fontSize: 12, fontWeight: 600, color
 
 function SummaryRow({ label, value }: { label: string; value: string }) {
   return (
-    <div style={{ display: "grid", gap: 2 }}>
+    <div className="grid gap-0.5">
       <dt style={SUMMARY_LABEL}>{label}</dt>
       <dd style={{ fontFamily: f.sans, fontSize: textSize.md, fontWeight: 500, color: t.coal, margin: 0, overflowWrap: "anywhere" }}>{value}</dd>
     </div>
@@ -183,7 +183,7 @@ export default function OutcomeFeedbackPage() {
 
   if (savedStatus) {
     return (
-      <div style={{ width: "100%", minWidth: 0 }}>
+      <div className="w-full min-w-0">
         <style>{OUTCOME_CSS}</style>
         <section aria-label="Outcome saved" style={{ background: t.white, border: `1px solid ${t.line}`, borderRadius: 16, overflow: "hidden" }}>
           <div role="status" aria-live="polite" style={{ maxWidth: 520, margin: "0 auto", padding: "64px 28px", textAlign: "center" }}>
@@ -202,10 +202,10 @@ export default function OutcomeFeedbackPage() {
   }
 
   return (
-    <div style={{ width: "100%", minWidth: 0 }}>
+    <div className="w-full min-w-0">
       <style>{OUTCOME_CSS}</style>
       {access.suspended && (
-        <div style={{ marginBottom: 16 }}>
+        <div className="mb-4">
           <SuspendedBanner />
         </div>
       )}
@@ -234,7 +234,7 @@ export default function OutcomeFeedbackPage() {
                   {withdrew ? "They withdrew from employer contact" : "They chose not to be contacted for this job"}, so you can&apos;t invite them. You can still close them out.
                 </InlineNotice>
               )}
-              <fieldset style={{ border: 0, margin: 0, padding: 0, minWidth: 0 }}>
+              <fieldset className="m-0 min-w-0 border-0 p-0">
                 <legend style={{ fontFamily: f.sans, fontSize: textSize.base, fontWeight: 600, color: t.coal, marginBottom: 8, padding: 0 }}>
                   Outcome <span aria-hidden="true">*</span>
                   <span className="sr-only"> (required)</span>
@@ -247,7 +247,7 @@ export default function OutcomeFeedbackPage() {
                     return (
                       <label key={key} htmlFor={id} className="out-opt" data-checked={choice === key} data-disabled={locked || blocked}>
                         <RadioGroupItem id={id} value={key} disabled={locked || blocked} aria-describedby={`${id}-hint`} />
-                        <span style={{ display: "grid", gap: 2, minWidth: 0 }}>
+                        <span className="grid min-w-0 gap-0.5">
                           <span style={{ fontFamily: f.sans, fontSize: textSize.md, fontWeight: 600, color: t.coal }}>{o.label}</span>
                           <span id={`${id}-hint`} style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.inkSoft }}>
                             {locked ? "Unlock this candidate from the shortlist first." : o.hint}
@@ -258,7 +258,7 @@ export default function OutcomeFeedbackPage() {
                   })}
                 </RadioGroup>
               </fieldset>
-              <div style={{ display: "grid", gap: 8 }}>
+              <div className="grid gap-2">
                 <Label htmlFor="outcome-notes">Private note (optional)</Label>
                 <Textarea
                   id="outcome-notes"
@@ -281,7 +281,7 @@ export default function OutcomeFeedbackPage() {
                 </p>
               )}
               {canMessage && (
-                <div style={{ display: "grid", gap: 8 }}>
+                <div className="grid gap-2">
                   <label htmlFor="outcome-tell" className="flex cursor-pointer items-center gap-2 text-sm font-medium">
                     <Checkbox id="outcome-tell" checked={tellCandidate} onCheckedChange={(v) => setTellCandidate(v === true)} disabled={blocked} />
                     Also send a message to the candidate
@@ -311,15 +311,15 @@ export default function OutcomeFeedbackPage() {
               </div>
             </div>
             <aside className="out-aside" aria-label="Candidate summary">
-              <dl style={{ margin: 0, display: "grid", gap: 16 }}>
+              <dl className="m-0 grid gap-4">
                 <SummaryRow label="Current status" value={CANDIDATE_STATUS_LABEL[current]} />
                 {candidate.targetRole && <SummaryRow label="Target role" value={candidate.targetRole} />}
                 {candidate.city && <SummaryRow label="Location" value={candidate.city} />}
                 <SummaryRow label="Match score" value={`${candidate.matchScore} / 100`} />
                 {candidate.skills.length > 0 && (
-                  <div style={{ display: "grid", gap: 6 }}>
+                  <div className="grid gap-1.5">
                     <dt style={SUMMARY_LABEL}>Skills</dt>
-                    <dd style={{ margin: 0, display: "flex", flexWrap: "wrap", gap: 6 }}>
+                    <dd className="m-0 flex flex-wrap gap-1.5">
                       {candidate.skills.slice(0, 6).map((skill) => (
                         <span key={skill} style={{ fontFamily: f.sans, fontSize: 12, color: t.coal, background: t.white, border: `1px solid ${t.line}`, borderRadius: 6, padding: "2px 8px" }}>{skill}</span>
                       ))}

@@ -149,13 +149,13 @@ export function PageSkeleton({ label, variant = "default", flat = false }: { lab
       <div role="status" aria-busy="true" className="grid gap-6 px-7 py-6">
         <span className="sr-only">{label}</span>
         <div aria-hidden="true" className="grid gap-3">
-          <Skeleton style={{ height: 28, width: "45%" }} />
-          <Skeleton style={{ height: 16, width: "70%" }} />
-          <Skeleton style={{ height: 16, width: "55%" }} />
+          <Skeleton className="h-7 w-[45%]" />
+          <Skeleton className="h-4 w-[70%]" />
+          <Skeleton className="h-4 w-[55%]" />
         </div>
         <div aria-hidden="true" className="grid gap-3">
           {[0, 1, 2, 3].map((i) => (
-            <Skeleton key={i} style={{ height: 44, width: "100%" }} />
+            <Skeleton key={i} className="h-11 w-full" />
           ))}
         </div>
       </div>

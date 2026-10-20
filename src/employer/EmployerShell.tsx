@@ -74,15 +74,10 @@ function CreditChip({ balancePaise }: { balancePaise: number }) {
   return (
     <Link
       href="/employer/settings#billing"
-      className="group-data-[collapsible=icon]:hidden"
-      style={{
-        display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8, margin: "0 4px",
-        padding: "8px 10px", borderRadius: 8, border: `1px solid ${t.line}`, background: t.white, textDecoration: "none",
-        fontFamily: f.sans, color: t.coal,
-      }}
+      className="mx-1 flex items-baseline justify-between gap-2 rounded-lg border border-hx-line bg-white px-2.5 py-2 text-hx-coal no-underline transition-colors duration-150 hover:bg-hx-row motion-reduce:transition-none group-data-[collapsible=icon]:hidden"
     >
-      <span style={{ fontSize: 12, color: t.inkSoft }}>Account credit</span>
-      <span style={{ fontSize: 14, fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>{rupees.format(balancePaise / 100)}</span>
+      <span className="text-[12px] text-hx-ink-soft">Account credit</span>
+      <span className="text-[14px] font-semibold tabular-nums">{rupees.format(balancePaise / 100)}</span>
     </Link>
   );
 }
