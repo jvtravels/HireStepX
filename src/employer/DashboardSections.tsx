@@ -137,7 +137,7 @@ function DashboardSearch({ jobs, candidates }: { jobs: RequirementSummary[]; can
         className="h-auto overflow-visible bg-transparent p-0"
       >
         <CommandInput value={q} onValueChange={setQ} placeholder="Search jobs and candidates" />
-        <div hidden={!term} className="mx-swap absolute inset-x-0 top-11 z-20 min-w-0 rounded-xl border border-hx-line bg-white shadow-lg">
+        <div hidden={!term} className="mx-swap absolute inset-x-0 top-11 z-20 min-w-0 rounded-xl border border-hx-line bg-white">
           <CommandList>
             {jobHits.length > 0 && (
               <CommandGroup heading="Jobs">

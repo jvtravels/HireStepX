@@ -173,7 +173,7 @@ export function ArchiveDialog({
         <div className="grid gap-3.5 py-1">
           <div className="grid gap-2">
             <Label htmlFor="archive-reason">Reason (optional)</Label>
-            <Textarea id="archive-reason" rows={2} value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Role filled, put on hold, etc." />
+            <Textarea id="archive-reason" rows={2} value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Job filled, put on hold, etc." />
           </div>
           <div role="group" aria-labelledby="archive-disposition-label" className="grid gap-2">
             <Label id="archive-disposition-label">Candidates still in the pipeline</Label>

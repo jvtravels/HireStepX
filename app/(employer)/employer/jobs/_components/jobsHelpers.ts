@@ -58,7 +58,7 @@ export const ACTIVITY_LABEL: Record<RequirementActivity["action"], string> = {
 };
 
 export const DUE_OPTIONS = ["Overdue", "Due within 7 days", "No due date"];
-export const ARCHIVE_REASONS = ["Position filled", "Budget cut", "Role on hold", "Other"];
+export const ARCHIVE_REASONS = ["Position filled", "Budget cut", "Job on hold", "Other"];
 
 /** The archive's bulk reject only changes status; it sends no message, unlike rejecting one candidate. */
 export const ARCHIVE_REJECT_NOTE = "Their status becomes rejected. Archiving doesn't send them a message. You can undo this right after.";

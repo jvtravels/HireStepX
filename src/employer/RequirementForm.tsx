@@ -334,7 +334,7 @@ export function RequirementForm({
       <div>
         <FieldLabel>Work mode</FieldLabel>
         <SegmentedControl ariaLabel="Work mode" options={WORK_MODES} value={draft.workMode} onChange={(v) => set("workMode", v)} />
-        <HelpText id="rf-workmode-help" live={false}>Remote roles ignore candidate location when matching.</HelpText>
+        <HelpText id="rf-workmode-help" live={false}>Remote jobs ignore candidate location when matching.</HelpText>
       </div>
       </div>
 
@@ -342,7 +342,7 @@ export function RequirementForm({
       <div style={cell(3, 300)}>
         <FieldLabel required htmlFor="rf-locations">Location</FieldLabel>
         <TagAutocompleteInput id="rf-locations" values={draft.locations} onChange={(v) => set("locations", v)} onBlur={() => touch("locations")} invalid={!!shown("locations")} describedBy={describe("locations", "rf-locations-help")} placeholder="Mumbai, Bengaluru, Remote…" suggestions={CITY_SUGGESTIONS} />
-        <HelpText id="rf-locations-help" live={false}>Pick a suggestion or type a city and press Enter. Add more than one if the role is open in several.</HelpText>
+        <HelpText id="rf-locations-help" live={false}>Pick a suggestion or type a city and press Enter. Add more than one if the job is open in several.</HelpText>
         {fieldError("locations")}
       </div>
 
@@ -509,7 +509,7 @@ export function RequirementForm({
           <div>
             <FieldLabel htmlFor="rf-custom-skills">Other skills</FieldLabel>
             <TagInput id="rf-custom-skills" describedBy="rf-custom-skills-help" values={draft.customSkillSets} onChange={(v) => set("customSkillSets", v)} placeholder="Domain-specific or bespoke skills…" />
-            <HelpText id="rf-custom-skills-help" live={false}>For anything role-specific that doesn't fit the Required skills list. Adds a small boost (up to 3 points) for candidates who already match the role.</HelpText>
+            <HelpText id="rf-custom-skills-help" live={false}>For anything job-specific that doesn't fit the Required skills list. Adds a small boost (up to 3 points) for candidates who already match the job.</HelpText>
           </div>
 
           <div style={grid2}>

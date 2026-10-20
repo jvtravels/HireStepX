@@ -36,7 +36,7 @@ export default function SelectionBar({
     <div
       role="region"
       aria-label="Selected candidates"
-      className="sticky bottom-3 z-30 mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border border-hx-line bg-white px-3 py-2 shadow-lg"
+      className="sticky bottom-3 z-30 mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border border-hx-line bg-white px-3 py-2"
     >
       <span className="text-[14px] font-semibold text-hx-coal tabular-nums">{summary}</span>
       <div className="flex flex-wrap items-center gap-2">

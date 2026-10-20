@@ -220,10 +220,10 @@ export function buildRoleFit(candidate: Candidate, requirement: Requirement, mat
     const inCity = requirement.locations.some((l) => l.toLowerCase().includes(candidate.city.toLowerCase()) || candidate.city.toLowerCase().includes(l.toLowerCase()));
     const remote = requirement.workMode === "remote";
     const reason = remote
-      ? "The role is remote, so location does not limit them."
+      ? "The job is remote, so location does not limit them."
       : inCity
-        ? `Based in ${candidate.city}, where the role is hiring.`
-        : `Based in ${candidate.city}; the role is hiring in ${requirement.locations.slice(0, 2).join(" or ")}.`;
+        ? `Based in ${candidate.city}, where the job is hiring.`
+        : `Based in ${candidate.city}; the job is hiring in ${requirement.locations.slice(0, 2).join(" or ")}.`;
     rows.push({
       id: "location",
       label: "Location",

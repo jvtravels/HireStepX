@@ -246,7 +246,7 @@ describe("fit row reasons and order", () => {
     const reason = Object.fromEntries(rows.map((r) => [r.id, r.reason]));
     expect(reason.skills).toBe("Has 2 of 4; missing SQL, R.");
     expect(reason.experience).toBe("2 years short of the 4 years asked.");
-    expect(reason.location).toBe("Based in Delhi; the role is hiring in Pune.");
+    expect(reason.location).toBe("Based in Delhi; the job is hiring in Pune.");
     expect(reason.notice).toBe("Can join within the notice asked.");
   });
 

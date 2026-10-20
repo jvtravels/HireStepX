@@ -24,7 +24,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useToast } from "@/Toast";
-import { CANDIDATE_STATUS_LABEL } from "@/employer/_atoms";
+import { CANDIDATE_STATUS_LABEL, matchBand } from "@/employer/_atoms";
 import { useEmployerData } from "@/employer/EmployerDataContext";
 import { availabilityOf, evidenceLabels, evidenceLinks, evidenceSources, interviewScore, scoreTone, candidateSkillFit, type ScoreTone } from "@/employer/_jobDetailHelpers";
 import { DotLabel } from "@/employer/_panelParts";
@@ -50,6 +50,9 @@ const SCORE_TEXT: Record<ScoreTone, string> = {
   error: "text-hx-error-ink",
 };
 
+/* The match number uses the same bands as the match chip and badge, so the colours never disagree. */
+const MATCH_TEXT = { strong: "text-hx-success-ink", fair: "text-hx-warning-ink", low: "text-hx-ink-soft" } as const;
+
 const VISIBLE_CHIPS = 3;
 
 const CHIP = "inline-flex min-w-0 max-w-24 items-center gap-1 rounded-full px-2 py-0.5 text-[12px] leading-4";
@@ -64,7 +67,7 @@ function SkillMatch({ score, matched, gaps }: { score: number; matched: string[]
   return (
     <div className="flex min-w-0 flex-col gap-1">
       <span className="text-[13px] text-hx-ink-soft tabular-nums">
-        <span className={cn("text-[15px] font-semibold", SCORE_TEXT[scoreTone(rounded)])}>{rounded}</span>/100
+        <span className={cn("text-[15px] font-semibold", MATCH_TEXT[matchBand(rounded)])}>{rounded}</span>/100
       </span>
       {total > 0 && (
         <Tooltip>

@@ -53,7 +53,7 @@ export function deriveOnboardingSteps({ jobs, reviewed, unlocked }: { jobs: read
   return [
     {
       label: "Post your first job",
-      body: "Tell us the role, location, and notice-period preference, and we'll start matching candidates against it.",
+      body: "Tell us the job title, location, and notice-period preference, and we'll start matching candidates against it.",
       done: jobs.length > 0,
       href: "/employer/requirements/new",
       cta: "Post a job",

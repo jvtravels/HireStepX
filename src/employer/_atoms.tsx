@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import AnimatedNumber from "../AnimatedNumber";
 import { cn } from "@/lib/utils";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { tokens as t, fonts as f, shadows, textSize } from "../auth/_tokens";
+import { tokens as t, fonts as f, textSize } from "../auth/_tokens";
 import type { RequirementStage, CandidateStatus } from "./mockData";
 import { STRONG_MATCH_THRESHOLD, FAIR_MATCH_SCORE, matchBandLabel } from "../../server-handlers/_requirement-match-helpers";
 import { STAGE_TRANSITIONS } from "../../server-handlers/_employer-requirements-helpers";
@@ -41,7 +41,6 @@ const dropdownStyle: React.CSSProperties = {
   background: t.white,
   border: `1px solid ${t.line}`,
   borderRadius: 10,
-  boxShadow: shadows.card,
   maxHeight: 200,
   overflowY: "auto",
 };
@@ -1024,10 +1023,9 @@ export function SegmentedControl<T extends string>({
               padding: "8px 16px",
               minHeight: "max(36px, var(--coarse-min, 0px))",
               borderRadius: 8,
-              border: "none",
+              border: selected ? `1px solid ${t.line}` : "1px solid transparent",
               background: selected ? t.white : "transparent",
               color: selected ? t.indigoDeep : t.neutralInk,
-              boxShadow: selected ? shadows.card : "none",
               fontFamily: f.sans,
               fontSize: 13,
               fontWeight: 600,
