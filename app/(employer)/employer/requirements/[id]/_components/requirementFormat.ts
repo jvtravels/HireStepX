@@ -3,6 +3,7 @@
 import type { Requirement } from "@/employer/EmployerDataContext";
 import type { Candidate, RequirementStage } from "@/employer/mockData";
 import { formatNumber } from "@/utils";
+import { calendarDaysUntil } from "@/employer/dueDate";
 
 export function experienceLabel(min: number | null, max: number | null): string | null {
   if (min == null && max == null) return null;
@@ -11,12 +12,8 @@ export function experienceLabel(min: number | null, max: number | null): string 
   return `Up to ${max} yrs experience`;
 }
 
-function daysUntil(dueDate: string): number {
-  return Math.round((new Date(`${dueDate}T00:00:00Z`).getTime() - Date.now()) / 86_400_000);
-}
-
 export function dueLabel(dueDate: string): { text: string; overdue: boolean } {
-  const days = daysUntil(dueDate);
+  const days = calendarDaysUntil(dueDate);
   if (days < 0) {
     const late = Math.abs(days);
     return { text: `Overdue by ${late} ${late === 1 ? "day" : "days"}`, overdue: true };

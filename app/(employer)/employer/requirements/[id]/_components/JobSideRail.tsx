@@ -80,7 +80,7 @@ function Rows({
 }
 
 const dueText = (r: Requirement) => {
-  const due = r.dueDate ? dueLabel(r.dueDate) : null;
+  const due = r.dueDate && r.status !== "closed" ? dueLabel(r.dueDate) : null;
   return due ? <span className={cn(due.overdue && "text-hx-error-ink")}>{due.text}</span> : null;
 };
 

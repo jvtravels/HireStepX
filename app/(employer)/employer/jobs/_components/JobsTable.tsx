@@ -214,7 +214,7 @@ export default function JobsTable({
                     )}
                   </TableCell>
                   <TableCell style={{ padding: "12px 20px", verticalAlign: "top", whiteSpace: "normal" }}>
-                    <DueCell dueDate={r.dueDate} />
+                    <DueCell dueDate={r.dueDate} closed={r.status === "closed"} />
                   </TableCell>
                   <TableCell className="jobs-col-act" style={{ padding: "12px 10px", verticalAlign: "top", textAlign: "right" }} onClick={(e) => e.stopPropagation()}>
                     {rowActions(r)}

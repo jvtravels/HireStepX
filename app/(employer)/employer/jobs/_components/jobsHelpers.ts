@@ -1,4 +1,5 @@
 import type { Sort } from "@/components/SortableHead";
+import { calendarDaysUntil } from "@/employer/dueDate";
 import type { RequirementActivity } from "@/employer/EmployerDataContext";
 import type { RequirementSummary } from "@/employer/mockData";
 import { STAGE_LABEL } from "@/employer/_atoms";
@@ -41,9 +42,7 @@ export function budgetLabel(req: RequirementSummary): string | null {
   return `Up to ${fmt(budgetMax as number)}${suffix}`;
 }
 
-export function daysUntil(dueDate: string): number {
-  return Math.round((new Date(`${dueDate}T00:00:00Z`).getTime() - Date.now()) / 86_400_000);
-}
+export const daysUntil = calendarDaysUntil;
 
 export function locationText(req: RequirementSummary): string {
   return req.locations.length > 0 ? req.locations.join(", ") : req.location;
@@ -146,6 +145,8 @@ export function matchesDueFilter(req: RequirementSummary, filter: string): boole
   if (!filter) return true;
   if (filter === "No due date") return !req.dueDate;
   if (!req.dueDate) return false;
+  // A closed job has no deadline left to miss, so it is never overdue or due soon.
+  if (req.status === "closed") return false;
   const left = daysUntil(req.dueDate);
   if (filter === "Overdue") return left < 0;
   return left >= 0 && left <= 7;

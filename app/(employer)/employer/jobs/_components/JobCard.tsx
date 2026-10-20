@@ -42,7 +42,7 @@ export default function JobCard({ r, readOnly, onStage, actions }: { r: Requirem
         </div>
         <div>
           <div style={label}>Due date</div>
-          <DueCell dueDate={r.dueDate} />
+          <DueCell dueDate={r.dueDate} closed={r.status === "closed"} />
         </div>
         <div style={{ minWidth: 0, gridColumn: "1 / -1" }}>
           <div style={label}>Matches</div>

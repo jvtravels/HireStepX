@@ -39,7 +39,7 @@ export function formatDueDate(dueDate: string): string {
   return Number.isNaN(d.getTime()) ? dueDate : DUE_FORMAT.format(d);
 }
 
-export function DueCell({ dueDate }: { dueDate: string | null }) {
+export function DueCell({ dueDate, closed = false }: { dueDate: string | null; closed?: boolean }) {
   if (!dueDate) {
     return (
       <span className="text-[14px] text-hx-ink-soft">Not set</span>
@@ -50,10 +50,12 @@ export function DueCell({ dueDate }: { dueDate: string | null }) {
   const label = left < 0 ? `${Math.abs(left)}d overdue` : left === 0 ? "Due today" : `${left}d left`;
   return (
     <div>
-      <div style={{ fontFamily: f.sans, fontSize: textSize.md, fontWeight: 500, color: t.coal }}>{formatDueDate(dueDate)}</div>
-      <div style={{ marginTop: 4, width: "fit-content" }}>
-        <Badge tone={tone}>{label}</Badge>
-      </div>
+      <div style={{ fontFamily: f.sans, fontSize: textSize.md, fontWeight: 500, color: closed ? t.inkSoft : t.coal }}>{formatDueDate(dueDate)}</div>
+      {!closed && (
+        <div style={{ marginTop: 4, width: "fit-content" }}>
+          <Badge tone={tone}>{label}</Badge>
+        </div>
+      )}
     </div>
   );
 }
