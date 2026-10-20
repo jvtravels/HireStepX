@@ -146,6 +146,7 @@ export default function CandidateRow({
   onStageChange,
   selected,
   selectDisabled,
+  showAvailability,
   onSelectedChange,
   active,
 }: {
@@ -161,6 +162,7 @@ export default function CandidateRow({
   selected: boolean;
   /** The selection limit is reached, so this unselected row can't be added. */
   selectDisabled: boolean;
+  showAvailability: boolean;
   /** `range` is true for a shift-click, which selects everything between the last click and this row. */
   onSelectedChange: (checked: boolean, range: boolean) => void;
   /** The row the j/k keyboard cursor is on. */
@@ -270,9 +272,11 @@ export default function CandidateRow({
       <TableCell role="cell" className="cand-td cand-td-fit px-3 py-3 align-middle" data-label="Role match for this job">
         <SkillMatch score={candidate.matchScore} matched={matched} gaps={gaps} />
       </TableCell>
-      <TableCell role="cell" className="cand-td px-3 py-3 align-middle whitespace-normal" data-label="Availability">
-        <DotLabel tone={availability.tone}>{availability.label}</DotLabel>
-      </TableCell>
+      {showAvailability && (
+        <TableCell role="cell" className="cand-td px-3 py-3 align-middle whitespace-normal" data-label="Availability">
+          <DotLabel tone={availability.tone}>{availability.label}</DotLabel>
+        </TableCell>
+      )}
       <TableCell role="cell" className="cand-td px-3 py-3 align-middle" data-label="Evidence">
         {evidence.total === 0 ? (
           <span className="text-[13px] text-hx-ink-soft">No sources yet</span>

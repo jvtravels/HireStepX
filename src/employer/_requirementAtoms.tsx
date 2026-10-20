@@ -6,7 +6,7 @@
    inline notices, suspended banner, skeletons, retry panel — without growing
    the general atom file. */
 
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import Link from "next/link";
 import { AlertTriangleIcon, CheckCircle2Icon, InfoIcon, ShieldAlertIcon, RefreshCwIcon } from "lucide-react";
 import { tokens as t, fonts as f, textSize } from "@/auth/_tokens";
@@ -99,13 +99,18 @@ export function SuspendedBanner() {
 
 /* ── Loading / error / empty ── */
 
+/** Stands in for Card when the page already sits inside the shell's white container. */
+function FlatBox({ style, children }: { style?: CSSProperties; children: ReactNode }) {
+  return <div style={style}>{children}</div>;
+}
+
 /** Page-level loading placeholder. The visually hidden label gives screen
     readers something to announce; the skeleton blocks are decorative.
     `job` mirrors the job detail page: header, tab row, toolbar, candidate rows. */
-export function PageSkeleton({ label, variant = "default" }: { label: string; variant?: "default" | "job" }) {
+export function PageSkeleton({ label, variant = "default", flat = false }: { label: string; variant?: "default" | "job"; flat?: boolean }) {
   if (variant === "job") {
     return (
-      <div role="status" aria-busy="true" className="flex min-w-0 flex-col gap-5 pb-6">
+      <div role="status" aria-busy="true" className="flex min-w-0 flex-col gap-5 px-7 py-6">
         <span className="sr-only">{label}</span>
         <div aria-hidden="true" className="grid min-w-0 gap-5 min-[1440px]:grid-cols-[minmax(0,1fr)_320px]">
           <div className="flex flex-col gap-3">
@@ -139,6 +144,23 @@ export function PageSkeleton({ label, variant = "default" }: { label: string; va
       </div>
     );
   }
+  if (flat) {
+    return (
+      <div role="status" aria-busy="true" className="grid gap-6 px-7 py-6">
+        <span className="sr-only">{label}</span>
+        <div aria-hidden="true" className="grid gap-3">
+          <Skeleton style={{ height: 28, width: "45%" }} />
+          <Skeleton style={{ height: 16, width: "70%" }} />
+          <Skeleton style={{ height: 16, width: "55%" }} />
+        </div>
+        <div aria-hidden="true" className="grid gap-3">
+          {[0, 1, 2, 3].map((i) => (
+            <Skeleton key={i} style={{ height: 44, width: "100%" }} />
+          ))}
+        </div>
+      </div>
+    );
+  }
   return (
     <div role="status" aria-busy="true" style={{ display: "grid", gap: 16 }}>
       <span className="sr-only">{label}</span>
@@ -167,16 +189,19 @@ export function ErrorRetry({
   message,
   onRetry,
   retrying = false,
+  flat = false,
   children,
 }: {
   title: string;
   message: string;
   onRetry?: () => void;
   retrying?: boolean;
+  flat?: boolean;
   children?: ReactNode;
 }) {
+  const Shell = flat ? FlatBox : Card;
   return (
-    <Card style={{ textAlign: "center", padding: 40, boxShadow: "none" }}>
+    <Shell style={{ textAlign: "center", padding: 40, boxShadow: "none" }}>
       <div
         aria-hidden="true"
         style={{ width: 40, height: 40, borderRadius: 10, background: t.error100, color: t.errorInk, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}
@@ -195,18 +220,19 @@ export function ErrorRetry({
         )}
         {children}
       </div>
-    </Card>
+    </Shell>
   );
 }
 
 /** Empty-state panel: one heading, one sentence of why, optional next step. */
-export function EmptyNote({ title, children, action }: { title: string; children: ReactNode; action?: ReactNode }) {
+export function EmptyNote({ title, children, action, flat = false }: { title: string; children: ReactNode; action?: ReactNode; flat?: boolean }) {
+  const Shell = flat ? FlatBox : Card;
   return (
-    <Card style={{ textAlign: "center", padding: 40 }}>
+    <Shell style={{ textAlign: "center", padding: 40 }}>
       <h2 style={{ fontFamily: f.sans, fontSize: textSize["2xl"], fontWeight: 600, color: t.coal, margin: "0 0 8px" }}>{title}</h2>
       <p style={{ fontFamily: f.sans, fontSize: textSize.md, color: t.inkFaint, margin: "0 auto", maxWidth: 520, lineHeight: 1.6 }}>{children}</p>
       {action && <div style={{ marginTop: 18, display: "flex", justifyContent: "center" }}>{action}</div>}
-    </Card>
+    </Shell>
   );
 }
 

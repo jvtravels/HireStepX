@@ -7,7 +7,7 @@ import { EmptyNote, LinkCta } from "@/employer/_requirementAtoms";
 
 export function GeneratingState({ stalled, onRetry }: { stalled: boolean; onRetry: () => void }) {
   return (
-    <div className="rounded-xl border border-hx-line bg-white p-10 text-center">
+    <div className="border-t border-hx-line p-10 text-center">
       <div role="status" aria-live="polite" className="grid justify-items-center gap-2.5">
         {!stalled && <Spinner aria-hidden="true" />}
         <h2 className="m-0 text-[20px] font-semibold text-hx-coal">{stalled ? "Matching is taking longer than usual" : "Matching candidates…"}</h2>
@@ -29,6 +29,7 @@ export function GeneratingState({ stalled, onRetry }: { stalled: boolean; onRetr
 export function ZeroMatchState({ canEdit, requirementId }: { canEdit: boolean; requirementId: string }) {
   return (
     <EmptyNote
+      flat
       title="No matches yet"
       action={
         canEdit ? (
@@ -47,6 +48,7 @@ export function ZeroMatchState({ canEdit, requirementId }: { canEdit: boolean; r
 export function FailedState({ requirementId, canEdit }: { requirementId: string; canEdit: boolean }) {
   return (
     <EmptyNote
+      flat
       title="Matching failed"
       action={
         canEdit ? (

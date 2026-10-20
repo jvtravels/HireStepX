@@ -15,23 +15,20 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 export function Panel({
   id,
   title,
-  icon,
   action,
   children,
   className,
 }: {
   id: string;
   title: string;
-  icon?: ReactNode;
   action?: ReactNode;
   children: ReactNode;
   className?: string;
 }) {
   return (
-    <section aria-labelledby={id} className={cn("min-w-0 rounded-xl border border-hx-line bg-white p-[18px]", className)}>
+    <section aria-labelledby={id} className={cn("min-w-0 px-7 py-6", className)}>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-        <h2 id={id} className="m-0 flex items-center gap-2 text-base font-semibold tracking-[-0.01em] text-hx-coal">
-          {icon && <span aria-hidden="true" className="inline-flex text-hx-ink-soft">{icon}</span>}
+        <h2 id={id} className="m-0 text-[15px] font-semibold text-hx-coal">
           {title}
         </h2>
         {action}

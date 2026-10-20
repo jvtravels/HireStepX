@@ -97,11 +97,11 @@ export default function CandidateDetail({ requirementId, matchId }: { requiremen
 
   const back = <LinkCta href={shortlistHref} variant="outline">Back to shortlist</LinkCta>;
 
-  if (d.loading) return <PageSkeleton label="Loading candidate…" />;
+  if (d.loading) return <PageSkeleton label="Loading candidate…" flat />;
 
   if (d.loadFailed || !requirement) {
     return (
-      <ErrorRetry title="We couldn't load this candidate" message="Check your connection and try again." onRetry={() => void d.reload()}>
+      <ErrorRetry flat title="We couldn't load this candidate" message="Check your connection and try again." onRetry={() => void d.reload()}>
         {back}
       </ErrorRetry>
     );
@@ -109,7 +109,7 @@ export default function CandidateDetail({ requirementId, matchId }: { requiremen
 
   if (!candidate || d.unavailable) {
     return (
-      <EmptyNote title={d.unavailable ? "This candidate is no longer available" : "Candidate not found"} action={back}>
+      <EmptyNote flat title={d.unavailable ? "This candidate is no longer available" : "Candidate not found"} action={back}>
         They may have withdrawn or been removed from this shortlist.
       </EmptyNote>
     );
@@ -150,9 +150,9 @@ export default function CandidateDetail({ requirementId, matchId }: { requiremen
   };
 
   return (
-    <div className="flex min-w-0 flex-[1_0_auto] flex-col pb-6">
-      {suspended && <div className="mb-4"><SuspendedBanner /></div>}
-      {d.notice && !dialog && <div className="mb-4"><ActionNoticeAlert notice={d.notice} shortlistHref={shortlistHref} /></div>}
+    <div className="flex min-w-0 flex-[1_0_auto] flex-col">
+      {suspended && <div className="border-b border-hx-line px-7 py-4"><SuspendedBanner /></div>}
+      {d.notice && !dialog && <div className="border-b border-hx-line px-7 py-4"><ActionNoticeAlert notice={d.notice} shortlistHref={shortlistHref} /></div>}
 
       <CandidateDialogsHost
         dialog={dialog}
@@ -221,9 +221,9 @@ export default function CandidateDetail({ requirementId, matchId }: { requiremen
         />
         </div>
 
-        <section aria-labelledby="candidate-sections-heading" className="mt-5 flex min-w-0 flex-col">
+        <section aria-labelledby="candidate-sections-heading" className="flex min-w-0 flex-col">
           <h2 id="candidate-sections-heading" className="sr-only">Candidate details</h2>
-          <div className="mb-4 flex flex-wrap items-center gap-x-5 gap-y-3">
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-3 border-b border-hx-line px-7">
             <StatusTabs tabs={tabs} value={tab} onChange={selectTab} label="Candidate sections" idPrefix="candtab" panelId="candtab-panel" className="shrink-0" />
           </div>
           <div key={tab} id="candtab-panel" role="tabpanel" aria-labelledby={`candtab-tab-${tab}`} className="mx-swap">

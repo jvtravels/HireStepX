@@ -116,15 +116,15 @@ export function CandidateHeader({
   ) : null;
 
   return (
-    <header className="min-w-0 rounded-xl border border-hx-line bg-white p-5">
+    <header className="min-w-0 border-b border-hx-line px-7 py-5">
       <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
         <div className="min-w-0 flex-1 basis-80">
           <div className="flex items-center gap-3">
-            <div aria-hidden="true" className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-hx-indigo-100 text-[13px] font-semibold text-hx-indigo">
+            <div aria-hidden="true" className="flex size-9 shrink-0 items-center justify-center rounded-full bg-hx-indigo-100 text-[13px] font-semibold text-hx-indigo">
               {candidate.unlocked ? initials(displayName) : <LockIcon size={19} />}
             </div>
             <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
-              <h1 className="m-0 text-[clamp(22px,5vw,26px)] leading-tight font-bold tracking-[-0.02em] text-hx-coal [overflow-wrap:anywhere]">{displayName}</h1>
+              <h1 className="m-0 text-[20px] leading-tight font-semibold text-hx-coal [overflow-wrap:anywhere]">{displayName}</h1>
               <CandidateStatusChip status={candidate.candidateStatus} />
               {response === "interested" && <Badge tone="success">Candidate is interested</Badge>}
               {response === "declined" && !withdrew && <Badge tone="error">Declined contact</Badge>}

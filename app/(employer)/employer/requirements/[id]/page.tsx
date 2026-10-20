@@ -359,11 +359,12 @@ export default function RequirementDetailPage() {
     setInsightId(null);
   };
 
-  if (loading && !requirement) return <PageSkeleton label="Loading job" variant="job" />;
+  if (loading && !requirement) return <PageSkeleton label="Loading job" variant="job" flat />;
 
   if (!requirement) {
     return (
       <ErrorRetry
+        flat
         title="Couldn't open this job"
         message={
           loadFailed
@@ -403,14 +404,14 @@ export default function RequirementDetailPage() {
   const tabs = visibleTabs(counts, tab).map((key) => ({ key, label: TAB_LABEL[key], count: counts[key] }));
 
   return (
-    <div className="flex min-w-0 flex-[1_0_auto] flex-col pb-6">
+    <div className="flex min-w-0 flex-[1_0_auto] flex-col">
       {suspended && (
-        <div className="mb-4">
+        <div className="px-7 pt-4">
           <SuspendedBanner />
         </div>
       )}
 
-      <div className="grid min-w-0 gap-5 min-[1440px]:grid-cols-[minmax(0,1fr)_320px]">
+      <div className="grid min-w-0 min-[1440px]:grid-cols-[minmax(0,1fr)_320px]">
       <JobHeader
         requirement={requirement}
         suspended={suspended}
@@ -425,12 +426,12 @@ export default function RequirementDetailPage() {
       <JobSideRail requirement={requirement} readOnly={readOnly} suspended={suspended} onStageChange={changeStage} />
       </div>
 
-      <div className="mt-5 flex min-w-0 flex-col gap-5">
+      <div className="flex min-w-0 flex-col border-t border-hx-line">
           <section aria-labelledby="candidates-heading" className="flex min-w-0 flex-col">
             <h2 id="candidates-heading" className="sr-only">
               Candidates
             </h2>
-            <div ref={trackToolbarHeight} className="-mt-3 flex flex-wrap items-center gap-x-4 gap-y-3 bg-white pt-3 pb-4 min-[1280px]:flex-nowrap md:sticky md:top-0 md:z-20">
+            <div ref={trackToolbarHeight} className="flex flex-wrap items-center gap-x-4 gap-y-3 bg-white px-7 py-3 min-[1280px]:flex-nowrap md:sticky md:top-0 md:z-20">
             {hasList && (
               <StatusTabs
                 tabs={tabs}
@@ -478,7 +479,7 @@ export default function RequirementDetailPage() {
             </div>
 
             {hasList && !readOnly && nextLockedBatch && (
-              <div className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-2">
+              <div className="mx-7 mb-4 flex flex-wrap items-center gap-x-4 gap-y-2">
                 <PrimaryCta
                   size="sm"
                   icon={<LockIcon size={13} aria-hidden="true" />}
@@ -507,7 +508,7 @@ export default function RequirementDetailPage() {
             )}
 
             {hasList && hasActiveFilters && (
-              <ul aria-label="Applied filters" className="m-0 mb-4 flex list-none flex-wrap items-center gap-2 p-0">
+              <ul aria-label="Applied filters" className="m-0 mx-7 mb-4 flex list-none flex-wrap items-center gap-2 p-0">
                 {appliedChips.map((chip) => (
                   <li key={chip.key}>
                     <button
@@ -530,7 +531,7 @@ export default function RequirementDetailPage() {
             )}
   
             <div aria-live="polite" role="status" className="sr-only">{sel.announcement}</div>
-            <div aria-live="polite" className={refreshNote ? "mb-3" : undefined}>
+            <div aria-live="polite" className={refreshNote ? "mx-7 mb-3" : undefined}>
               {refreshNote && <InlineNotice tone={refreshNote.tone} live={false}>{refreshNote.text}</InlineNotice>}
             </div>
   
@@ -549,18 +550,19 @@ export default function RequirementDetailPage() {
             {hasList && (
               <div id="cand-panel" role="tabpanel" aria-labelledby={`cand-tab-${tab}`}>
                 {readOnly && (
-                  <div className="mb-4">
+                  <div className="mx-7 mb-4">
                     <InlineNotice tone="info" live={false}>{closedSummary(requirement)}</InlineNotice>
                   </div>
                 )}
   
                 {candidates.length === 0 ? (
-                  <EmptyNote title="No candidates yet">
+                  <EmptyNote flat title="No candidates yet">
                     Nobody is on this shortlist right now. New matches appear here as candidates practise, and this page refreshes when you come back to it.
                   </EmptyNote>
                 ) : filteredSorted.length === 0 ? (
                   hasActiveFilters ? (
                     <EmptyNote
+                      flat
                       title="No candidates match"
                       action={
                         <Button type="button" variant="outline" className="pointer-coarse:h-11" onClick={clearFilters}>
@@ -572,6 +574,7 @@ export default function RequirementDetailPage() {
                     </EmptyNote>
                   ) : (
                     <EmptyNote
+                      flat
                       title={`No candidates in ${TAB_LABEL[tab]}`}
                       action={
                         <Button type="button" variant="outline" className="gap-1.5 pointer-coarse:h-11" onClick={() => setTabChoice("all")}>
@@ -585,7 +588,7 @@ export default function RequirementDetailPage() {
                 ) : (
                   <>
                   {(requirement.total ?? candidates.length) > candidates.length && (
-                    <div className="mb-3">
+                    <div className="mx-7 mb-3">
                       <InlineNotice tone="info" live={false}>
                         Showing {candidates.length} of {requirement.total} candidates. Narrow the shortlist with search and filters, or close out candidates you have already decided on.
                       </InlineNotice>

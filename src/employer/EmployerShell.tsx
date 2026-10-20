@@ -94,10 +94,11 @@ function CreditChip({ balancePaise }: { balancePaise: number }) {
    double-carded; the shell wraps everything else. */
 const SELF_CARDED_ROUTES = ["/employer", "/employer/jobs", "/employer/requirements/new", "/employer/settings", "/employer/messages"];
 
-/* Job detail, candidate, compare and outcome are working surfaces made of
-   their own sections and tables. Wrapping them in the bordered card nested a
-   card around cards, so they sit directly on the page background instead. */
-const BARE_ROUTE = /^\/employer\/requirements\/[^/]+(\/(candidates\/[^/]+|compare|outcome))?$/;
+/* Compare and outcome draw their own container. Job detail and candidate
+   detail are flat, hairline-separated sections that the shell wraps in the one
+   white container (overflow-clip, not hidden, so their sticky bars still work). */
+const BARE_ROUTE = /^\/employer\/requirements\/[^/]+\/(compare|outcome)$/;
+const DETAIL_ROUTE = /^\/employer\/requirements\/[^/]+(\/candidates\/[^/]+)?$/;
 
 function isBareRoute(pathname: string): boolean {
   return BARE_ROUTE.test(pathname);
@@ -336,6 +337,10 @@ export default function EmployerShell({ children }: { children: React.ReactNode 
         <div className={isMessagesRoute ? "flex min-h-0 w-full min-w-0 flex-1 flex-col" : "mx-auto flex min-h-0 w-full max-w-[1360px] min-w-0 flex-1 flex-col"}>
           {isSelfCardedRoute(pathname ?? "") ? pageBody : isBareRoute(pathname ?? "") ? (
             <div className="mb-16 flex min-h-full w-full min-w-0 flex-none flex-col">{pageBody}</div>
+          ) : DETAIL_ROUTE.test(pathname ?? "") ? (
+            <div className="mb-16 box-border flex min-h-full w-full min-w-0 flex-none flex-col overflow-clip rounded-2xl border border-hx-line bg-white">
+              {pageBody}
+            </div>
           ) : (
             <div className="mb-16 box-border flex min-h-full w-full min-w-0 flex-none flex-col rounded-2xl border border-hx-line bg-white p-4">
               {pageBody}

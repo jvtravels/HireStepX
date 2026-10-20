@@ -108,10 +108,8 @@ describe("EmployerShell page container", () => {
   const cardOf = (text: string) => screen.getByText(text).parentElement as HTMLElement;
 
   it.each([
-    "/employer/requirements/r1",
     "/employer/requirements/r1/compare",
     "/employer/requirements/r1/outcome",
-    "/employer/requirements/r1/candidates/m1",
   ])("does not wrap %s in a bordered card", (path) => {
     pathname = path;
     data = { companyStatus: "approved", companyStatusLoading: false, companyStatusError: false };
@@ -119,6 +117,19 @@ describe("EmployerShell page container", () => {
     expect(cardOf("Page").className).not.toContain("border");
     expect(cardOf("Page").className).not.toContain("bg-white");
   });
+
+  it.each(["/employer/requirements/r1", "/employer/requirements/r1/candidates/m1"])(
+    "wraps %s in one flat container with no inner padding",
+    (path) => {
+      pathname = path;
+      data = { companyStatus: "approved", companyStatusLoading: false, companyStatusError: false };
+      render(<EmployerShell><p>Page</p></EmployerShell>);
+      const cls = cardOf("Page").className;
+      expect(cls).toContain("border-hx-line");
+      expect(cls).toContain("overflow-clip");
+      expect(cls).not.toContain("p-4");
+    },
+  );
 
   it("leaves the dashboard card to the page itself", () => {
     pathname = "/employer";

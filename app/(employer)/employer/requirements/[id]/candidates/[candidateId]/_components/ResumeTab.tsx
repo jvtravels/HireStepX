@@ -86,7 +86,7 @@ export function ResumeTab({ candidate }: { candidate: Candidate }) {
   const strengths = (resume?.interviewStrengths ?? []).filter((t) => t.trim());
 
   return (
-    <div className="grid min-w-0 gap-4">
+    <div className="grid min-w-0">
       <BalancedColumns
         items={[
           {

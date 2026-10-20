@@ -58,9 +58,9 @@ export function BalancedColumns({ items }: { items: Array<ColumnItem | false | n
     }
   }
   return (
-    <div className="grid min-w-0 gap-4 lg:grid-cols-2 lg:items-start">
+    <div className="grid min-w-0 divide-y divide-hx-line lg:grid-cols-2 lg:divide-x lg:divide-y-0">
       {[left, right].map((col, i) => (
-        <div key={i} className="grid min-w-0 content-start gap-4 empty:hidden">
+        <div key={i} className="grid min-w-0 content-start divide-y divide-hx-line empty:hidden">
           {col.map((c) => (
             <div key={c.key} className="min-w-0">{c.node}</div>
           ))}

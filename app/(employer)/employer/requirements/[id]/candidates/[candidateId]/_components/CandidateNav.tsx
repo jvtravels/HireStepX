@@ -56,8 +56,8 @@ export function CandidateNav({
     <nav
       aria-label="Shortlist navigation"
       className={cn(
-        "sticky top-0 z-20 mb-3 flex min-h-12 min-w-0 items-center gap-3 rounded-xl border px-2 py-1.5 transition-colors",
-        condensed ? "border-hx-line bg-white" : "border-transparent bg-background",
+        "sticky top-0 z-20 flex min-h-12 min-w-0 items-center gap-3 border-b border-hx-line bg-white px-5 py-1.5",
+        condensed && "shadow-[0_1px_0_0_var(--hx-line,rgba(0,0,0,0.06))]",
       )}
     >
       {shortlist.total > 1 && (

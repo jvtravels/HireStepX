@@ -6,6 +6,7 @@ import { SortableHead, type Sort } from "@/components/SortableHead";
 import { TablePaginationFooter } from "@/components/TablePaginationFooter";
 import { Table, TableBody, TableCaption, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { InfoTip } from "@/employer/_panelParts";
+import { availabilityOf } from "@/employer/_jobDetailHelpers";
 import type { Candidate, CandidateStatus } from "@/employer/mockData";
 import { Checkbox } from "@/components/ui/checkbox";
 import CandidateRow from "./CandidateRow";
@@ -86,6 +87,7 @@ export default function CandidatesTable({
     return () => observer.disconnect();
   }, [measure, rows.length]);
 
+  const showAvailability = rows.some((c) => availabilityOf(c.resume?.noticePeriod).label !== "Not stated");
   const mobileValue = `${sort.column}-${sort.direction}`;
   const mobileKnown = SORT_OPTIONS.some((s) => s.value === mobileValue);
 
@@ -111,9 +113,9 @@ export default function CandidatesTable({
           ))}
         </select>
       </div>
-      <div className="cand-shell flex flex-none flex-col overflow-clip rounded-xl border border-hx-line bg-white">
+      <div className="cand-shell flex flex-none flex-col overflow-clip border-t border-hx-line bg-white">
         {!readOnly && !suspended && (
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-hx-line bg-hx-row px-3 py-1.5">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-hx-line px-3 py-1">
             <label htmlFor="select-page" className="flex cursor-pointer items-center gap-2.5 text-[13px] font-semibold text-hx-coal pointer-coarse:min-h-11">
               <Checkbox
                 id="select-page"
@@ -124,7 +126,9 @@ export default function CandidatesTable({
               />
               Select all on this page
             </label>
-            <span className="text-[13px] text-hx-ink-soft">Up to {MAX_SELECTION} at a time. Shift-click selects a range.</span>
+            {(selectedIds.size > 0 || selectionFull) && (
+              <span className="text-[13px] text-hx-ink-soft">Up to {MAX_SELECTION} at a time. Shift-click selects a range.</span>
+            )}
           </div>
         )}
         <div className="relative">
@@ -160,12 +164,14 @@ export default function CandidatesTable({
                 >
                   Role match
                 </SortableHead>
-                <TableHead className={`${PLAIN_HEAD} w-[13%] min-w-[120px]`}>
-                  <span className="inline-flex items-center gap-0.5">
-                    Availability
-                    <InfoTip label="About Availability">The candidate's own notice period, as written on their resume. We show their words when we can't read a number.</InfoTip>
-                  </span>
-                </TableHead>
+                {showAvailability && (
+                  <TableHead className={`${PLAIN_HEAD} w-[13%] min-w-[120px]`}>
+                    <span className="inline-flex items-center gap-0.5">
+                      Availability
+                      <InfoTip label="About Availability">The candidate's own notice period, as written on their resume. We show their words when we can't read a number.</InfoTip>
+                    </span>
+                  </TableHead>
+                )}
                 <SortableHead
                   inset={12}
                   column="interview"
@@ -211,6 +217,7 @@ export default function CandidatesTable({
                   onStageChange={(status) => onStageChange(c, status)}
                   selected={selectedIds.has(c.id)}
                   selectDisabled={selectionFull}
+                  showAvailability={showAvailability}
                   onSelectedChange={(checked, range) => onSelectedChange(c, checked, range)}
                   active={activeId === c.id}
                 />

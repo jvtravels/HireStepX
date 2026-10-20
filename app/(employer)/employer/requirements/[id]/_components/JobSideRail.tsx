@@ -100,20 +100,17 @@ export default function JobSideRail({
 }) {
   const r = requirement;
   const canEdit = !readOnly && !suspended;
-  const notSet = <span className="font-normal text-hx-ink-soft">Not set</span>;
   const preferences = [
-    { label: "Industry", value: r.preferredIndustry || notSet },
-    { label: "Domain", value: r.preferredDomain || notSet },
-    { label: "Availability", value: r.availability && r.availability !== "Any" ? r.availability : notSet },
-    { label: "Notice period", value: r.noticePeriodPref && r.noticePeriodPref !== "Any" ? r.noticePeriodPref : notSet },
-    {
-      label: "Portfolio / GitHub",
-      value: r.portfolioRequired ? <Badge tone="success">Preferred</Badge> : <span className="font-normal text-hx-ink-soft">Not preferred</span>,
-    },
+    { label: "Industry", value: r.preferredIndustry || null },
+    { label: "Domain", value: r.preferredDomain || null },
+    { label: "Availability", value: r.availability && r.availability !== "Any" ? r.availability : null },
+    { label: "Notice period", value: r.noticePeriodPref && r.noticePeriodPref !== "Any" ? r.noticePeriodPref : null },
+    { label: "Portfolio / GitHub", value: r.portfolioRequired ? <Badge tone="success">Preferred</Badge> : null },
   ];
+  const hasPreferences = preferences.some((p) => p.value != null);
 
   return (
-    <aside aria-label="Job summary" className="grid min-w-0 content-start gap-4 sm:max-[1439px]:grid-cols-2">
+    <aside aria-label="Job summary" className="grid min-w-0 content-start divide-y divide-hx-line border-t border-hx-line sm:max-[1439px]:grid-cols-2 sm:max-[1439px]:divide-x sm:max-[1439px]:divide-y-0 min-[1440px]:border-t-0 min-[1440px]:border-l">
       <Panel id="details-heading" title="Job details">
         <KeyValueList>
           <Rows
@@ -137,9 +134,13 @@ export default function JobSideRail({
         title="Candidate preferences"
         action={canEdit ? <PanelLink href={`/employer/requirements/${r.id}/edit`}>Edit</PanelLink> : undefined}
       >
-        <KeyValueList>
-          <Rows rows={preferences} />
-        </KeyValueList>
+        {hasPreferences ? (
+          <KeyValueList>
+            <Rows rows={preferences} />
+          </KeyValueList>
+        ) : (
+          <p className="m-0 text-[13px] text-hx-ink-soft">No preferences set. Anyone who matches the requirements can appear.</p>
+        )}
       </Panel>
     </aside>
   );

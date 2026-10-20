@@ -112,8 +112,8 @@ const requiredStar: CSSProperties = { color: t.indigo };
 const errorText: CSSProperties = { fontFamily: f.sans, fontSize: textSize.base, color: t.errorInk, margin: 0 };
 const cardStyle: CSSProperties = { background: t.white, borderRadius: 16, border: `1px solid ${t.line}`, overflow: "clip" };
 const actionRow: CSSProperties = { display: "flex", alignItems: "center", gap: 12, flexShrink: 0 };
-const cardHeader: CSSProperties = { position: "sticky", top: 0, zIndex: 20, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", columnGap: 28, rowGap: 10, padding: "14px 20px", background: t.white, borderBottom: `1px solid ${t.line}` };
-const formTitle: CSSProperties = { outline: "none", fontFamily: f.sans, fontSize: 22, fontWeight: 700, color: t.coal, margin: 0, letterSpacing: "-0.01em", lineHeight: "28px" };
+const cardHeader: CSSProperties = { position: "sticky", top: 0, zIndex: 20, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", columnGap: 28, rowGap: 10, padding: "20px 28px", background: t.white, borderBottom: `1px solid ${t.line}` };
+const formTitle: CSSProperties = { outline: "none", fontFamily: f.sans, fontSize: 20, fontWeight: 600, color: t.coal, margin: 0, lineHeight: "28px" };
 const stackedSections: CSSProperties = { display: "flex", flexDirection: "column", gap: 26 };
 
 export function RequirementForm({
@@ -567,7 +567,7 @@ export function RequirementForm({
     </p>
   );
 
-  const bodyPadding: CSSProperties = { width: "100%", maxWidth: 1056, margin: "0 auto", boxSizing: "border-box", padding: "24px 28px", display: "flex", flexDirection: "column", gap: 26 };
+  const bodyPadding: CSSProperties = { width: "100%", maxWidth: 1112, margin: 0, boxSizing: "border-box", padding: "24px 28px", display: "flex", flexDirection: "column", gap: 26 };
   const section = (title: string | undefined, children: ReactNode) => <FormSection title={title}>{children}</FormSection>;
   const submitErrorEl = submitError && (
     <p role="alert" style={errorText}>{submitError}</p>

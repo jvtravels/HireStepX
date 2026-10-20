@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ActivityIcon, CheckIcon, FileSearchIcon, MessageSquareQuoteIcon, MinusIcon, SparklesIcon, TargetIcon, TrendingUpIcon, UserRoundIcon, XIcon } from "lucide-react";
+import { CheckIcon, MinusIcon, TargetIcon, TrendingUpIcon, XIcon } from "lucide-react";
 import { cn } from "cn";
 import AnimatedNumber from "@/AnimatedNumber";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -68,7 +68,7 @@ function MatchPanel({ candidate, requirement, matched, unmatched, evidence, requ
     analysisClear && "No concerns flagged on the resume.",
   ].filter(Boolean).join(" ");
   return (
-    <Panel id="match-heading" title="Fit for this job" icon={<TargetIcon size={15} />} action={<Badge tone={SIGNAL_TONE[signal.key]}>{signal.label}</Badge>}>
+    <Panel id="match-heading" title="Fit for this job" action={<Badge tone={SIGNAL_TONE[signal.key]}>{signal.label}</Badge>}>
       <div className="grid gap-5">
         <div className="@container">
           <div className="grid gap-5 @xl:grid-cols-[auto_minmax(0,1fr)] @xl:items-center @xl:gap-10">
@@ -187,7 +187,7 @@ function ProfilePanel({ candidate, onOpenResume }: { candidate: Candidate; onOpe
   const summary = r.summary?.trim();
   if (!summary && !r.headline && facts.length === 0) return null;
   return (
-    <Panel id="profile-heading" title="Profile" icon={<UserRoundIcon size={15} />} action={<PanelButton onClick={onOpenResume}>Full resume</PanelButton>}>
+    <Panel id="profile-heading" title="Profile" action={<PanelButton onClick={onOpenResume}>Full resume</PanelButton>}>
       <div className="grid gap-4">
         {r.headline && <p className="m-0 text-[14px] font-semibold leading-snug text-hx-coal">{r.headline}</p>}
         {facts.length > 0 && (
@@ -236,7 +236,7 @@ function PracticeSnapshot({ candidate, state, onOpenPractice, requirementTitle, 
   );
 
   return (
-    <Panel id="evidence-heading" title="Practice snapshot" icon={<ActivityIcon size={15} />} action={action}>
+    <Panel id="evidence-heading" title="Practice snapshot" action={action}>
       <EvidenceStatus state={state}>
         {hasEvidence ? (
           <div className="@container">
@@ -281,7 +281,7 @@ function StandoutPanel({ evidence, onOpenPractice }: { evidence: CandidateEviden
   const picked = [...quotes.filter((q) => q.kind === "win").slice(0, 2), ...quotes.filter((q) => q.kind === "redFlag").slice(0, 1)];
   if (picked.length === 0) return null;
   return (
-    <Panel id="standout-heading" title="Standout answers" icon={<MessageSquareQuoteIcon size={15} />} action={<PanelButton onClick={onOpenPractice}>All answers</PanelButton>}>
+    <Panel id="standout-heading" title="Standout answers" action={<PanelButton onClick={onOpenPractice}>All answers</PanelButton>}>
       <ul aria-label="Quoted moments from practice interviews" className="m-0 flex list-none flex-col p-0">
         {picked.map((q, i) => (
           <li key={`${q.kind}-${i}`} className="grid gap-1.5 border-b border-hx-line py-3 first:pt-0 last:border-b-0 last:pb-0">
@@ -305,7 +305,7 @@ function HighlightsPanel({ candidate }: { candidate: Candidate }) {
   const items = [...ordered, ...growth];
   if (items.length === 0) return null;
   return (
-    <Panel id="highlights-heading" title="Career highlights" icon={<SparklesIcon size={15} />}>
+    <Panel id="highlights-heading" title="Career highlights">
       <IconList label="Career highlights" items={items} icon={TrendingUpIcon} iconClassName="size-4 text-hx-success" />
     </Panel>
   );
@@ -350,7 +350,7 @@ function AnalysisPanel({ candidate, insights, requestUi }: { candidate: Candidat
   const empties = columns.filter((c) => c.items.length === 0);
   if (filled.length === 0) return null;
   return (
-    <Panel id="analysis-heading" title="Resume analysis" icon={<FileSearchIcon size={15} />}>
+    <Panel id="analysis-heading" title="Resume analysis">
       <div className="@container">
         {filled.length > 0 && (
           <div className={cn("grid gap-6 @2xl:gap-8", COLUMNS_CLS[filled.length])}>
@@ -412,14 +412,14 @@ export function OverviewTab({
   const insights = buildResumeInsights(candidate, unmatched);
   const analysisClear = insights.strengths.length + insights.concerns.length + insights.validate.length === 0;
   return (
-    <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:items-start">
-      <div className="flex min-w-0 flex-col gap-4">
+    <div className="grid min-w-0 divide-y divide-hx-line lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:divide-x lg:divide-y-0">
+      <div className="flex min-w-0 flex-col divide-y divide-hx-line">
         <MatchPanel candidate={candidate} requirement={requirement} matched={matched} unmatched={unmatched} evidence={state.evidence} requestUi={requestUi} analysisClear={analysisClear} />
         <PracticeSnapshot candidate={candidate} state={state} onOpenPractice={onOpenPractice} requirementTitle={requirement.title} requestUi={requestUi} />
         <StandoutPanel evidence={state.evidence} onOpenPractice={onOpenPractice} />
         <RequestsPanel state={requestUi.state} disabled={requestUi.disabled} />
       </div>
-      <div className="flex min-w-0 flex-col gap-4">
+      <div className="flex min-w-0 flex-col divide-y divide-hx-line">
         <ProfilePanel candidate={candidate} onOpenResume={onOpenResume} />
         <HighlightsPanel candidate={candidate} />
         <SkillsPanel candidate={candidate} onOpenResume={onOpenResume} />

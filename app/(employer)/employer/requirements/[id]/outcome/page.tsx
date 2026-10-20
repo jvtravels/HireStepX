@@ -51,6 +51,10 @@ const OPTIONS: Record<CandidateStatus, OutcomeOption> = {
 
 const OUTCOME_CSS = `
 .out-opt { display: flex; gap: 12px; align-items: flex-start; padding: 12px; border: 1px solid ${t.line}; border-radius: 10px; cursor: pointer; min-height: 44px; }
+.out-opt { transition: border-color 150ms ease-out, background-color 150ms ease-out; }
+.out-opt:hover:not([data-disabled="true"]) { border-color: ${t.inkSoft}; background: ${t.rowTint}; }
+.out-opt [data-slot="radio-group-item"]:not([data-state="checked"]) { border-color: ${t.inkSoft}; }
+@media (prefers-reduced-motion: reduce) { .out-opt { transition: none; } }
 .out-opt[data-checked="true"] { border-color: ${t.indigo}; background: ${t.indigo100}; }
 .out-opt[data-disabled="true"] { cursor: not-allowed; opacity: 0.75; }
 .out-opt:focus-within { outline: 2px solid ${t.indigo}; outline-offset: 2px; }
@@ -66,7 +70,7 @@ const OUTCOME_CSS = `
 .out-link:focus-visible { outline: 2px solid ${t.indigo}; outline-offset: 2px; border-radius: 4px; }
 `;
 
-const SUMMARY_LABEL = { fontFamily: f.sans, fontSize: 12, fontWeight: 600, letterSpacing: 0.4, textTransform: "uppercase", color: t.inkSoft, margin: 0 } as const;
+const SUMMARY_LABEL = { fontFamily: f.sans, fontSize: 12, fontWeight: 600, color: t.inkSoft, margin: 0 } as const;
 
 function SummaryRow({ label, value }: { label: string; value: string }) {
   return (
@@ -331,6 +335,11 @@ export default function OutcomeFeedbackPage() {
               </div>
             </aside>
             <div className="out-foot">
+              {!selected && !blocked && (
+                <span id="outcome-save-hint" style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.inkSoft, marginRight: "auto" }}>
+                  Pick an outcome to save.
+                </span>
+              )}
               <LinkCta variant="outline" href={backHref}>Cancel</LinkCta>
               <PrimaryCta disabled={!selected || submitting || blocked} loading={submitting} onClick={onSubmit}>
                 {submitting ? "Saving…" : "Save outcome"}

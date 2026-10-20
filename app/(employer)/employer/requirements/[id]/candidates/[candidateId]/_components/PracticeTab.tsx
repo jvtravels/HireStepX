@@ -152,7 +152,7 @@ export function PracticeTab({
 
   if (!state.loading && !state.failed && !hasAnything) {
     return (
-      <EmptyNote title="No practice evidence yet">
+      <EmptyNote flat title="No practice evidence yet">
         This candidate hasn&apos;t completed a graded mock interview, so there are no answers, scores or delivery measurements to show. The Resume tab has everything else we know.
       </EmptyNote>
     );
@@ -160,7 +160,7 @@ export function PracticeTab({
 
   return (
     <EvidenceStatus state={state}>
-      <div className="grid min-w-0 gap-4">
+      <div className="flex min-w-0 flex-col divide-y divide-hx-line">
         {questions.length > 0 && <QuestionBreakdown questions={questions} candidate={candidate} requestUi={requestUi} />}
         <BalancedColumns
           items={[

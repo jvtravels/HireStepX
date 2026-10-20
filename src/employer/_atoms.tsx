@@ -978,14 +978,14 @@ export function TagAutocompleteInput({
   );
 }
 
-/** Groups related fields under a small-caps label with a hairline rule,
+/** Groups related fields under a sentence-case heading with a hairline rule,
  *  so a long form reads as scannable sections instead of one flat list. */
 export function FormSection({ title, children }: { title?: string; children: React.ReactNode }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       {title && (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          <h2 style={{ margin: 0, fontFamily: f.mono, fontSize: 12, letterSpacing: 1, textTransform: "uppercase", color: t.inkFaint, fontWeight: 600 }}>
+          <h2 style={{ margin: 0, fontFamily: f.sans, fontSize: 15, color: t.coal, fontWeight: 600 }}>
             {title}
           </h2>
           <Divider />

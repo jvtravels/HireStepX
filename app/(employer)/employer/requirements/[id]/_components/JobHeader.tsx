@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
-import { ArchiveIcon, BriefcaseIcon, ChevronDownIcon, ClockIcon, HistoryIcon, IndianRupeeIcon, LayersIcon, MapPinIcon, MoreVerticalIcon, PencilIcon, TrendingUpIcon, type LucideIcon } from "lucide-react";
+import { ArchiveIcon, ChevronDownIcon, ClockIcon, HistoryIcon, IndianRupeeIcon, LayersIcon, MapPinIcon, MoreVerticalIcon, PencilIcon, TrendingUpIcon, type LucideIcon } from "lucide-react";
 import { cn } from "cn";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -76,22 +76,17 @@ export default function JobHeader({
   const shownDescription = expanded || !preview.truncated ? description.trim() : `${preview.text.replace(/\n{2,}/g, "\n")}…`;
 
   return (
-    <header className="flex min-w-0 flex-col rounded-xl border border-hx-line bg-white p-5">
+    <header className="flex min-w-0 flex-col px-7 py-5">
       <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
         <div className="min-w-0 flex-1 basis-80">
-          <div className="flex items-center gap-3">
-            <div aria-hidden="true" className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-hx-indigo-100 text-hx-indigo">
-              <BriefcaseIcon size={19} />
-            </div>
-            <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
-              <h1 className="m-0 text-[clamp(22px,5vw,26px)] leading-tight font-bold tracking-[-0.02em] text-hx-coal [overflow-wrap:anywhere]">
-                {requirement.title}
-              </h1>
-              <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[12px] font-semibold", STATUS_TONE[status.tone])}>
-                <span aria-hidden="true" className="size-1.5 rounded-full bg-current" />
-                {status.label}
-              </span>
-            </div>
+          <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+            <h1 className="m-0 text-[20px] leading-tight font-semibold text-hx-coal [overflow-wrap:anywhere]">
+              {requirement.title}
+            </h1>
+            <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[12px] font-semibold", STATUS_TONE[status.tone])}>
+              <span aria-hidden="true" className="size-1.5 rounded-full bg-current" />
+              {status.label}
+            </span>
           </div>
           <MetaLine parts={meta} className="mt-3" />
         </div>
@@ -140,7 +135,7 @@ export default function JobHeader({
 
       <div
         className={cn(
-          "mt-4 grid min-w-0 flex-1 content-start gap-x-8 gap-y-5 border-t border-hx-line pt-4",
+          "mt-4 grid min-w-0 content-start gap-x-8 gap-y-5 border-t border-hx-line pt-4",
           requirementsSlot && "lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]",
         )}
       >
