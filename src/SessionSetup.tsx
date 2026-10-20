@@ -195,6 +195,11 @@ function AutocompleteInput({
           else if (e.key === "Enter" && selectedIdx >= 0) { e.preventDefault(); onChange(filtered[selectedIdx]); setFocused(false); }
         }}
         placeholder={placeholder} autoComplete="off"
+        role="combobox" aria-autocomplete="list" aria-haspopup="listbox"
+        aria-expanded={filtered.length > 0 && !!dropdownPos}
+        aria-controls={`${id}-listbox`}
+        aria-activedescendant={selectedIdx >= 0 && filtered[selectedIdx] ? `${id}-opt-${selectedIdx}` : undefined}
+        aria-required={required || undefined}
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? `${id}-error` : undefined}
         style={{
@@ -209,13 +214,13 @@ function AutocompleteInput({
       />
       {error && <p id={`${id}-error`} role="alert" style={{ fontFamily: F.sans, fontSize: 11, color: T.error, marginTop: 4 }}>{error}</p>}
       {filtered.length > 0 && dropdownPos && createPortal(
-        <div role="listbox" style={{
+        <div role="listbox" id={`${id}-listbox`} style={{
           position: "fixed", top: dropdownPos.top, left: dropdownPos.left, width: dropdownPos.width, zIndex: 9999,
           background: T.white, border: `1px solid ${T.line}`, borderRadius: 10,
           boxShadow: "0 2px 4px rgba(20,17,10,.06), 0 32px 64px -16px rgba(20,17,10,.24)", maxHeight: 260, overflowY: "auto",
         }}>
           {filtered.map((s, i) => (
-            <button key={s} role="option" aria-selected={i === selectedIdx} onMouseDown={() => { onChange(s); setFocused(false); }}
+            <button key={s} id={`${id}-opt-${i}`} role="option" tabIndex={-1} aria-selected={i === selectedIdx} onMouseDown={() => { onChange(s); setFocused(false); }}
               className={`hsx-option-row${i === selectedIdx ? " hsx-option-row--selected" : ""}`}
               style={{
                 display: "block", width: "100%", padding: "10px 16px", border: "none", textAlign: "left",
@@ -1587,8 +1592,6 @@ export default function SessionSetup() {
            so the CTA visually owns the page. Hovering or focusing inside
            a section restores full opacity — users can still change
            selections without fighting the dim. */
-        .hsx-completed-zone { transition: opacity 320ms ease; }
-        .hsx-completed-zone:hover, .hsx-completed-zone:focus-within { opacity: 1 !important; }
 
         /* ─── Focus rings (a11y) ─────────────────────────────────────────
            Default browser :focus-visible is inconsistent across browsers
@@ -1758,7 +1761,7 @@ export default function SessionSetup() {
 
       {/* ─── Content ─── */}
       <div className="hsx-setup-content" style={{ flex: 1, display: "flex", alignItems: "flex-start", justifyContent: "center", overflow: "auto" }}>
-        <div id="hsx-setup-form" style={{ width: "100%", maxWidth: "min(1080px, calc(100vw - 32px))", animation: "fadeUp 0.3s ease" }}>
+        <main id="hsx-setup-form" tabIndex={-1} style={{ width: "100%", maxWidth: "min(1080px, calc(100vw - 32px))", animation: "fadeUp 0.3s ease", outline: "none" }}>
 
           <div>
               {/* Drill mode banner — shown when the user arrived from a
@@ -1854,12 +1857,12 @@ export default function SessionSetup() {
                 </div>
 
                 {/* ── Interview Focus — canvas-style: clean label, 5-col grid ── */}
-                <div className="fade-up-2 hsx-completed-zone" style={{ opacity: canProceed ? 0.88 : 1 }}>
+                <div className="fade-up-2">
                   <div style={{ marginBottom: 14 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: F.sans, fontSize: 13, fontWeight: 500, color: T.coal }}>
+                    <h2 style={{ display: "flex", alignItems: "center", gap: 6, margin: 0, fontFamily: F.sans, fontSize: 13, fontWeight: 500, color: T.coal }}>
                       <span>Interview focus</span>
                       <span style={{ color: T.indigo, fontSize: 12 }}>*</span>
-                    </div>
+                    </h2>
                     <div style={{ fontFamily: F.sans, fontSize: 12, color: T.inkSoft, marginTop: 4 }}>
                       {relevantFocusSet && targetRole.trim()
                         ? `Matched to "${targetRole.trim()}" interviews.${recommendedFocus && recommendedFocus !== "Behavioral" && !COMING_SOON_FOCUSES.has(recommendedFocus as InterviewFocus) && relevantFocusSet.has(recommendedFocus as InterviewFocus) ? " Recommended pick highlighted." : ""}`
@@ -1981,9 +1984,9 @@ export default function SessionSetup() {
                 </div>
 
                 {/* ── Permissions — mic compulsory, camera optional ── */}
-                <div className="fade-up-3 hsx-completed-zone" style={{ opacity: canProceed ? 0.88 : 1 }}>
+                <div className="fade-up-3">
                   <div style={{ marginBottom: 14 }}>
-                    <div style={{ fontFamily: F.sans, fontSize: 13, fontWeight: 500, color: T.coal }}>Permissions</div>
+                    <h2 style={{ margin: 0, fontFamily: F.sans, fontSize: 13, fontWeight: 500, color: T.coal }}>Permissions</h2>
                     <div style={{ fontFamily: F.sans, fontSize: 12, color: T.inkSoft, marginTop: 4 }}>
                       Used live for this session only — audio and video are never recorded. Only your session transcript is saved, so you can review your report.
                     </div>
@@ -2140,7 +2143,7 @@ export default function SessionSetup() {
             </div>
             <span className="sr-only" aria-live="polite">{micStatus === "granted" && (cameraStatus === "granted" ? "Mic and camera ready." : "Mic ready. Camera is optional.")}</span>
           </div>
-        </div>
+        </main>
       </div>
 
       {/* Countdown overlay */}
