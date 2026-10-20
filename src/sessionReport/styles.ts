@@ -52,6 +52,7 @@ export const SESSION_REPORT_STYLES = `
   .ir-highlight-hedge  { background: rgba(110, 103, 89, 0.18); padding: 1px 3px; border-radius: 3px; }
   .ir-highlight-quant  { background: rgba(21, 128, 61, 0.18); padding: 1px 3px; border-radius: 3px; color: #15803D; font-weight: 600; }
   .ir-highlight-first  { background: rgba(49, 46, 129, 0.10); padding: 1px 3px; border-radius: 3px; color: #312E81; }
+  .ir-tab-panel > .ir-flat-section:first-child { border-top: 0 !important; }
   .ir-legend { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-top: 12px; }
   .ir-legend-item { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: oklch(0.55 0.02 213.5); }
   .ir-legend-swatch { display: inline-block; width: 12px; height: 12px; padding: 0; border-radius: 4px; border: 1px solid oklch(0 0 0 / 0.22); filter: saturate(1.6); }
