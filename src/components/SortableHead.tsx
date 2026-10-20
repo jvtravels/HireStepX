@@ -23,6 +23,7 @@ export function SortableHead<C extends string>({
   after,
   inset = 20,
   fit = false,
+  leading,
   children,
 }: {
   column: C;
@@ -41,6 +42,8 @@ export function SortableHead<C extends string>({
   inset?: number;
   /* Never truncate the label: the column grows to fit it (needs an auto-layout table). */
   fit?: boolean;
+  /* Control rendered before the sort button, outside it (e.g. a select-all checkbox). */
+  leading?: React.ReactNode;
   children: React.ReactNode;
 }) {
   const active = sort.column === column;
@@ -48,6 +51,7 @@ export function SortableHead<C extends string>({
   return (
     <TableHead aria-sort={ariaSort} style={{ width, minWidth, fontFamily: F.sans, fontSize: 13, fontWeight: 600, color: T.inkSoft, padding: 0, overflow: "hidden" }}>
       <div style={{ display: "flex", alignItems: "center", minWidth: 0, overflow: "hidden" }}>
+        {leading && <span className="flex shrink-0 items-center pl-3">{leading}</span>}
         <button
           type="button"
           onClick={() => onSortChange({ column, direction: active && sort.direction === "asc" ? "desc" : active ? "asc" : defaultDirection })}

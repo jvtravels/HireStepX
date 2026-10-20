@@ -113,25 +113,20 @@ export default function CandidatesTable({
             </option>
           ))}
         </select>
+        {!readOnly && !suspended && (
+          <label htmlFor="select-page-mobile" className="mt-2 flex min-h-11 cursor-pointer items-center gap-2.5 text-[13px] font-semibold text-hx-coal">
+            <Checkbox
+              id="select-page-mobile"
+              checked={pageState === "all"}
+              onCheckedChange={onTogglePage}
+              disabled={rows.length === 0 || (selectionFull && pageState === "none")}
+              className="shrink-0 size-6"
+            />
+            Select all on this page
+          </label>
+        )}
       </div>
       <div className="cand-shell flex flex-none flex-col overflow-clip border-t border-hx-line bg-white">
-        {!readOnly && !suspended && (
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-hx-line px-3 py-1">
-            <label htmlFor="select-page" className="flex cursor-pointer items-center gap-2.5 text-[13px] font-semibold text-hx-coal pointer-coarse:min-h-11">
-              <Checkbox
-                id="select-page"
-                checked={pageState === "all"}
-                onCheckedChange={onTogglePage}
-                disabled={rows.length === 0 || (selectionFull && pageState === "none")}
-                className="shrink-0 pointer-coarse:size-6"
-              />
-              Select all on this page
-            </label>
-            {(selectedIds.size > 0 || selectionFull) && (
-              <span className="text-[13px] text-hx-ink-soft">Up to {MAX_SELECTION} at a time. Shift-click selects a range.</span>
-            )}
-          </div>
-        )}
         <div className="relative">
         <div
           ref={scrollRef}
@@ -150,7 +145,21 @@ export default function CandidatesTable({
             </TableCaption>
             <TableHeader className="cand-thead">
               <TableRow className="h-10 bg-hx-row hover:bg-hx-row">
-                <SortableHead inset={12} column="name" columnLabel={COLUMN_LABEL.name} defaultDirection="asc" width="29%" minWidth={200} sort={sort} onSortChange={onSortChange}>
+                <SortableHead
+                  inset={12}
+                  leading={
+                    !readOnly && !suspended ? (
+                      <Checkbox
+                        checked={pageState === "all"}
+                        onCheckedChange={onTogglePage}
+                        disabled={rows.length === 0 || (selectionFull && pageState === "none")}
+                        aria-label="Select all candidates on this page"
+                        title={`Select all on this page. Up to ${MAX_SELECTION} at a time; shift-click selects a range.`}
+                        className="shrink-0 pointer-coarse:size-6 pointer-coarse:after:-inset-3"
+                      />
+                    ) : undefined
+                  }
+                  column="name" columnLabel={COLUMN_LABEL.name} defaultDirection="asc" width="29%" minWidth={200} sort={sort} onSortChange={onSortChange}>
                   Candidate
                 </SortableHead>
                 <SortableHead
