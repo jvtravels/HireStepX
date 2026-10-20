@@ -324,7 +324,7 @@ export default function EmployerJobsPage() {
         <TooltipProvider delayDuration={200}>
           {/* Table on wide screens, cards on phones. Switched in CSS so the first
               paint is right on any viewport (no JS media-query flash). */}
-          <ul aria-label="Posted jobs" className="m-0 hidden list-none p-0 max-sm:block">
+          <ul aria-label="Posted jobs" className="mx-stagger m-0 hidden list-none p-0 max-sm:block">
             {pageRows.length === 0 && (
               <li style={{ padding: "32px 16px", textAlign: "center", fontFamily: f.sans, fontSize: textSize.base, color: t.inkSoft }}>
                 {search.trim() ? `No results for "${search.trim()}"` : "No jobs match these filters"}

@@ -120,7 +120,7 @@ export default function JobsTable({
               </TableHead>
             </TableRow>
           </TableHeader>
-          <TableBody>
+          <TableBody className="mx-stagger">
             {pageRows.length === 0 && (
               <TableRow>
                 <TableCell colSpan={hasAnyDepartment ? 8 : 7} style={{ padding: "40px 14px" }}>
