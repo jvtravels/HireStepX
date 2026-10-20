@@ -209,7 +209,10 @@ export default async function handler(req: Request): Promise<Response> {
       // this response is returned — a bare fire-and-forget promise has no
       // guaranteed lifetime past the response on Vercel's Edge runtime, so
       // the rescore could silently never run.
-      if ("resume_data" in updates) after(() => rematchOpenRequirementsForNewResume(auth.userId));
+      // target_role and industry feed the same score and the relevance gate, so
+      // changing either (a role switch with the resume untouched) must also
+      // re-score, and drop the candidate from jobs that no longer fit.
+      if ("resume_data" in updates || "target_role" in updates || "industry" in updates) after(() => rematchOpenRequirementsForNewResume(auth.userId));
       return new Response(JSON.stringify({ profile, strippedColumns: stripped }), { status: 200, headers });
     }
 

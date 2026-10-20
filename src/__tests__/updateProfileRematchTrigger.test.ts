@@ -55,6 +55,14 @@ describe("update-profile — incremental rematch trigger", () => {
     expect(rematchOpenRequirementsForNewResume).toHaveBeenCalledTimes(1);
   });
 
+  it.each(["target_role", "industry"])("also registers the rematch when %s changes without a resume write", async (field) => {
+    const res = await handler(updateReq({ [field]: "Data Analyst" }));
+    expect(res.status).toBe(200);
+    expect(after).toHaveBeenCalledTimes(1);
+    await after.mock.calls[0][0]();
+    expect(rematchOpenRequirementsForNewResume).toHaveBeenCalledWith("cand-1");
+  });
+
   it("does not register a rematch when the write carries no resume_data", async () => {
     const res = await handler(updateReq({ name: "Jay" }));
 

@@ -123,3 +123,54 @@ export function pickRequirementsToRematch<T extends RematchableRequirement>(
   });
   return sorted.slice(0, Math.max(0, limit));
 }
+
+/** A requirement nobody has touched and no candidate has changed for is still
+    re-scored this often, because inputs the change stamp does not see (new
+    graded sessions, a candidate who unlocked elsewhere, expiring hires) move
+    scores slowly. */
+export const REMATCH_MAX_AGE_MS = 7 * 86_400_000;
+
+/** Latest time any candidate input to matching changed (migration 0057):
+    a number, null when nothing has changed yet, or "unknown" when the column is
+    not applied or the read failed, in which case every requirement counts as due. */
+export type MatchingInputChange = number | null | "unknown";
+
+export async function fetchLatestMatchingInputChange(params: {
+  supabaseUrl: string;
+  headers: Record<string, string>;
+  fetchImpl?: typeof fetch;
+}): Promise<MatchingInputChange> {
+  const f = params.fetchImpl ?? fetch;
+  try {
+    const res = await f(
+      `${params.supabaseUrl}/rest/v1/profiles?select=matching_inputs_changed_at&matching_inputs_changed_at=not.is.null&order=matching_inputs_changed_at.desc&limit=1`,
+      { headers: params.headers },
+    );
+    if (!res.ok) return "unknown";
+    const rows = (await res.json().catch(() => null)) as Array<{ matching_inputs_changed_at?: string | null }> | null;
+    if (!Array.isArray(rows)) return "unknown";
+    const at = rows[0]?.matching_inputs_changed_at ? new Date(rows[0].matching_inputs_changed_at).getTime() : NaN;
+    return Number.isFinite(at) ? at : null;
+  } catch {
+    return "unknown";
+  }
+}
+
+/** Whether the nightly sweep should re-score this requirement: never matched,
+    older than the max age, or a candidate input changed after the pass began.
+    The baseline is the earlier of the last attempt and the last success, so a
+    profile edit that landed while a scan was running is not lost. */
+export function isRematchDue(
+  r: Pick<RematchableRequirement, "last_matched_at" | "last_rematch_attempt_at">,
+  latestInputChange: MatchingInputChange,
+  nowMs: number = Date.now(),
+): boolean {
+  if (latestInputChange === "unknown") return true;
+  const matched = r.last_matched_at ? new Date(r.last_matched_at).getTime() : NaN;
+  if (!Number.isFinite(matched)) return true;
+  if (nowMs - matched > REMATCH_MAX_AGE_MS) return true;
+  if (latestInputChange === null) return false;
+  const attempt = r.last_rematch_attempt_at ? new Date(r.last_rematch_attempt_at).getTime() : NaN;
+  const baseline = Number.isFinite(attempt) ? Math.min(attempt, matched) : matched;
+  return latestInputChange > baseline;
+}

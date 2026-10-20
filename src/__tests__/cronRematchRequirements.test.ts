@@ -187,6 +187,67 @@ describe("cron-rematch-requirements", () => {
     expect(String(fetchMock.mock.calls[1][0])).not.toContain("last_rematch_attempt_at");
   });
 
+  describe("only requirements whose inputs changed or that are stale", () => {
+    const day = 86_400_000;
+    const agoIso = (d: number) => new Date(Date.now() - d * day).toISOString();
+    const installProbe = (rows: unknown[], probe: { ok: boolean; body: unknown }) => {
+      const fetchMock = vi.fn(async (input: unknown) => {
+        const url = String(input);
+        if (url.includes("matching_inputs_changed_at")) return { ok: probe.ok, status: probe.ok ? 200 : 400, headers: { get: () => null }, json: async () => probe.body };
+        return { ok: true, status: 200, headers: { get: () => null }, json: async () => rows };
+      });
+      global.fetch = fetchMock as unknown as typeof fetch;
+      return fetchMock;
+    };
+
+    it("skips unchanged recent requirements and runs changed, never-matched and over-age ones", async () => {
+      installProbe(
+        [
+          row(1, { last_matched_at: agoIso(1) }), // matched after the last change: skipped
+          row(2, { last_matched_at: agoIso(3) }), // a candidate changed since: due
+          row(3, { last_matched_at: null }), // never matched: due
+          row(4, { last_matched_at: agoIso(20) }), // over the max age: due
+          row(5, { last_matched_at: agoIso(0.5) }), // matched after the last change: skipped
+        ],
+        { ok: true, body: [{ matching_inputs_changed_at: agoIso(2) }] },
+      );
+      const body = await (await call()).json();
+      expect(runMatching.mock.calls.map((c) => c[0]).sort()).toEqual(["req-2", "req-3", "req-4"]);
+      expect(body).toMatchObject({ processed: 3, skipped_unchanged: 2, failed: 0 });
+    });
+
+    it("skips every recent requirement when no candidate input has ever changed", async () => {
+      installProbe([row(1, { last_matched_at: agoIso(1) }), row(2, { last_matched_at: agoIso(2) })], { ok: true, body: [] });
+      const body = await (await call()).json();
+      expect(runMatching).not.toHaveBeenCalled();
+      expect(body).toMatchObject({ processed: 0, skipped_unchanged: 2 });
+      expect(recordCronResult).toHaveBeenCalledWith("cron-rematch-requirements", { errors: 0 });
+    });
+
+    it("runs every open requirement, as before, when migration 0057 is not applied", async () => {
+      installProbe([row(1, { last_matched_at: agoIso(1) }), row(2, { last_matched_at: agoIso(2) })], { ok: false, body: { code: "42703" } });
+      const body = await (await call()).json();
+      expect(runMatching).toHaveBeenCalledTimes(2);
+      expect(body).toMatchObject({ processed: 2, skipped_unchanged: 0 });
+    });
+
+    it("does not probe for candidate changes when there are no open requirements", async () => {
+      const f = installProbe([], { ok: true, body: [] });
+      const body = await (await call()).json();
+      expect(f.mock.calls.some((c) => String(c[0]).includes("matching_inputs_changed_at"))).toBe(false);
+      expect(body.processed).toBe(0);
+    });
+
+    it("keeps the stalest-attempt-first order among the due requirements", async () => {
+      installProbe(
+        [row(1, { last_matched_at: agoIso(10), last_rematch_attempt_at: agoIso(1) }), row(2, { last_matched_at: agoIso(12), last_rematch_attempt_at: agoIso(5) })],
+        { ok: true, body: [] },
+      );
+      await call();
+      expect(runMatching.mock.calls.map((c) => c[0])).toEqual(["req-2", "req-1"]);
+    });
+  });
+
   it("returns 502 when the open-requirement read fails", async () => {
     installFetch([], { ok: false });
     expect((await call()).status).toBe(502);

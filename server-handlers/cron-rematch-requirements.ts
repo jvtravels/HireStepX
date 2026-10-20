@@ -3,8 +3,12 @@
  * Backstop for the incremental path fired from update-profile.ts
  * (rematchOpenRequirementsForNewResume in employer-requirements.ts), which
  * only re-scores a bounded burst of requirements per candidate resume save.
- * This cron re-runs `runMatching` for every open requirement (stage
- * ai_matching/ready_for_review, not closed) once a day, so:
+ * This cron re-runs `runMatching` for open requirements (stage
+ * ai_matching/ready_for_review, not closed) that are due, once a day. A
+ * requirement is due when it was never matched, when a candidate input
+ * (profile role, resume, visibility) changed since its last pass, or when it
+ * is older than REMATCH_MAX_AGE_MS; unchanged recent ones are skipped. Without
+ * migration 0057 every open requirement is due, as before. So:
  *   - requirements beyond the incremental path's per-call cap still get
  *     covered within 24h,
  *   - a requirement an employer never touches still picks up candidates who
@@ -25,7 +29,7 @@
 export const config = { runtime: "nodejs" };
 
 import { runMatching, SUSPENDED_MATCHING_STATUS } from "./employer-requirements";
-import { pickRequirementsToRematch, fetchRematchBacklog, type OpenRequirementForRematch } from "./_incremental-rematch-helpers";
+import { pickRequirementsToRematch, fetchRematchBacklog, fetchLatestMatchingInputChange, isRematchDue, type OpenRequirementForRematch } from "./_incremental-rematch-helpers";
 import { canStartBatch } from "./_employer-matching-helpers";
 import { isSuspended } from "./_employer-trust";
 import { slog } from "./_shared";
@@ -89,7 +93,13 @@ export default async function handler(req: Request): Promise<Response> {
   const allRows = (await res.json().catch(() => [])) as CronRow[];
   const totalOpen = Number(res.headers.get("content-range")?.split("/")[1]);
   const rows = allRows.filter((r) => !isSuspended(r.employers));
-  const due = pickRequirementsToRematch(rows, MAX_REQUIREMENTS_PER_RUN);
+  // Only probe for candidate changes when there is something to decide on.
+  const latestInputChange = rows.length > 0
+    ? await fetchLatestMatchingInputChange({ supabaseUrl: SUPABASE_URL, headers: serviceHeaders() })
+    : "unknown";
+  const dueRows = rows.filter((r) => isRematchDue(r, latestInputChange, t0));
+  const skippedUnchanged = rows.length - dueRows.length;
+  const due = pickRequirementsToRematch(dueRows, MAX_REQUIREMENTS_PER_RUN);
 
   let matched = 0;
   let failed = 0;
@@ -163,6 +173,7 @@ export default async function handler(req: Request): Promise<Response> {
     matched,
     failed,
     skipped_suspended: skippedSuspended,
+    skipped_unchanged: skippedUnchanged,
     skipped_stale: skippedStale,
     deferred: due.length - attempted,
     budget_exhausted: budgetExhausted,
