@@ -32,10 +32,10 @@ export default function ShortcutsDialog({ open, onOpenChange }: { open: boolean;
             </div>
           ))}
         </dl>
-        <label className="flex items-center justify-between gap-4 border-t border-hx-line pt-4 text-[14px] text-hx-coal">
-          Use keyboard shortcuts
-          <Switch checked={enabled} onCheckedChange={setShortcutsEnabled} aria-label="Use keyboard shortcuts" />
-        </label>
+        <div className="flex items-center justify-between gap-4 border-t border-hx-line pt-4 text-[14px] text-hx-coal">
+          <label htmlFor="shortcuts-enabled">Use keyboard shortcuts</label>
+          <Switch id="shortcuts-enabled" checked={enabled} onCheckedChange={setShortcutsEnabled} />
+        </div>
       </DialogContent>
     </Dialog>
   );
