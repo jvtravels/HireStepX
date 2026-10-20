@@ -116,7 +116,6 @@ export default function JobSideRail({
           <Rows
             rows={[
               { label: "Posted", value: timeAgoLabel(r.createdAt) },
-              { label: "Last matched", value: timeAgoLabel(r.lastMatchedAt) },
               { label: "Openings", value: r.openPositions != null ? String(r.openPositions) : null },
               { label: "Due", value: dueText(r) },
             ]}

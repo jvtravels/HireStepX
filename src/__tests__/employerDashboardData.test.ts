@@ -69,20 +69,13 @@ describe("jobHealth", () => {
   it("stays quiet while matching is running", () => {
     expect(jobHealth(job("1", { status: "generating" }), undefined, NOW)).toBeNull();
   });
-  it("shows the best score against the strong bar when nobody reached it", () => {
+  it("adds no pill when nobody reached the strong bar; the column header explains it", () => {
     const j = job("1");
+    const fresh: DashboardJobPipeline = { requirementId: "1", interviewing: 0, hired: 0, lastUpdatedAt: new Date(NOW - DAY).toISOString() };
     j.aiScreening.scoreHigh = 38.6;
-    expect(jobHealth(j, undefined, NOW)?.label).toBe("Best score 39. Strong starts at 40");
-  });
-  it("still explains the bar when no score range is available", () => {
-    const j = job("1");
-    j.aiScreening.scoreHigh = null;
-    expect(jobHealth(j, undefined, NOW)?.label).toBe("Strong starts at 40");
-  });
-  it("says no candidates yet, not weak, when nobody was evaluated", () => {
-    const j = job("1");
+    expect(jobHealth(j, fresh, NOW)).toBeNull();
     j.aiScreening.evaluated = 0;
-    expect(jobHealth(j, undefined, NOW)?.label).toBe("No candidates yet");
+    expect(jobHealth(j, fresh, NOW)).toBeNull();
   });
   it("stays quiet while the stored stage is still AI matching", () => {
     expect(jobHealth(job("1", { stage: "ai_matching" }), undefined, NOW)).toBeNull();

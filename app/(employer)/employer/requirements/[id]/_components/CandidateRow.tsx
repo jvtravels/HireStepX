@@ -64,7 +64,7 @@ const CHIP = "inline-flex min-w-0 max-w-24 items-center gap-1 rounded-full px-2 
 /* One cell for the whole skills story: the overall score, then the required skills
    as chips (filled when the resume has them, dashed and muted when it does not).
    The tooltip lists every skill so the row stays scannable. */
-function SkillMatch({ score, matched, gaps }: { score: number; matched: string[]; gaps: string[] }) {
+function SkillMatch({ score, matched, gaps, noneMet }: { score: number; matched: string[]; gaps: string[]; noneMet: boolean }) {
   const total = matched.length + gaps.length;
   const rounded = Math.round(score);
   const slots = skillChipSlots(matched, gaps, VISIBLE_CHIPS);
@@ -103,6 +103,7 @@ function SkillMatch({ score, matched, gaps }: { score: number; matched: string[]
             <div>{matched.length} of {total} required skills</div>
             {matched.length > 0 && <div>Has: {matched.join(", ")}</div>}
             {gaps.length > 0 && <div>Missing: {gaps.join(", ")}</div>}
+            {noneMet && <div className="mt-1">Fits on role and location but lists none of the required skills, so it is not ranked as a strong match.</div>}
           </TooltipContent>
         </Tooltip>
       )}
@@ -261,18 +262,8 @@ export default function CandidateRow({
                 <div className="text-[13px] font-semibold text-hx-coal">{name}</div>
                 {subtitle && <div className="mt-0.5 text-[12px] text-hx-ink-soft">{subtitle}</div>}
                 <dl className="m-0 mt-2.5 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 text-[12px] tabular-nums">
-                  <dt className="text-hx-ink-soft">Match</dt>
-                  <dd className={cn("m-0 font-semibold", MATCH_TEXT[matchBand(Math.round(candidate.matchScore))])}>{Math.round(candidate.matchScore)}/100</dd>
-                  <dt className="text-hx-ink-soft">Skills</dt>
-                  <dd className="m-0 text-hx-coal">{matched.length} of {matched.length + gaps.length} required</dd>
-                  <dt className="text-hx-ink-soft">Interviews</dt>
-                  <dd className="m-0 text-hx-coal">
-                    {score != null ? `${score}/100 across ${evidence.interviews} ${evidence.interviews === 1 ? "interview" : "interviews"}` : "None yet"}
-                  </dd>
                   <dt className="text-hx-ink-soft">Last active</dt>
                   <dd className="m-0 text-hx-coal">{practised ? practised.replace(/^Practised /, "") : "Unknown"}</dd>
-                  <dt className="text-hx-ink-soft">Availability</dt>
-                  <dd className="m-0 text-hx-coal">{availability.label}</dd>
                 </dl>
               </HoverCardContent>
             </HoverCard>
@@ -281,23 +272,15 @@ export default function CandidateRow({
                 {subtitle}
               </div>
             )}
-            <div className="mt-1.5 flex flex-wrap items-center gap-1">
+            {(response === "interested" || response === "declined") && <div className="mt-1.5 flex flex-wrap items-center gap-1">
               {response === "interested" && <span className="rounded-full bg-hx-success-100 px-2 py-0.5 text-[11px] font-semibold text-hx-success-ink">Interested</span>}
               {response === "declined" && <span className="rounded-full bg-hx-soft px-2 py-0.5 text-[11px] font-semibold text-hx-neutral-ink">Declined</span>}
-              {candidate.requiredSkillsMet === 0 && (
-                <span
-                  className="rounded-full bg-hx-soft px-2 py-0.5 text-[11px] font-semibold text-hx-neutral-ink"
-                  title="This candidate fits the job on role and location but meets none of its required skills, so it is not ranked as a strong match."
-                >
-                  No required skills met
-                </span>
-              )}
-            </div>
+            </div>}
           </div>
         </div>
       </TableCell>
       <TableCell role="cell" className="cand-td cand-td-fit px-3 py-3 align-middle" data-label="Role match for this job">
-        <SkillMatch score={candidate.matchScore} matched={matched} gaps={gaps} />
+        <SkillMatch score={candidate.matchScore} matched={matched} gaps={gaps} noneMet={candidate.requiredSkillsMet === 0} />
       </TableCell>
       {showAvailability && (
         <TableCell role="cell" className="cand-td px-3 py-3 align-middle whitespace-normal" data-label="Availability">

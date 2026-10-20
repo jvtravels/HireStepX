@@ -19,7 +19,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { EmptyState } from "@/components/EmptyState";
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { Badge, Pill, ScoreChip, STAGE_LABEL, STAGE_TONE } from "./_atoms";
+import { InfoTip } from "./_panelParts";
+import { Badge, Pill, ScoreChip, STAGE_LABEL, STAGE_TONE, STRONG_MATCH_THRESHOLD } from "./_atoms";
 import { PrimaryLink, OutlineLink } from "./_consoleParts";
 import type { RequirementSummary } from "./mockData";
 import {
@@ -195,10 +196,10 @@ export function NextActionCard({ action }: { action: NextAction }) {
 
 function FunnelStepItem({ step, range, last }: { step: FunnelStep; range: DashboardRange; last: boolean }) {
   const added = step.added === null ? null
-    : step.added <= 0 ? `None new in last ${range} days`
+    : step.added <= 0 ? null
     : step.key === "recommended" ? `${step.added} new ${step.added === 1 ? "match" : "matches"} in last ${range} days`
     : `+${step.added} in last ${range} days`;
-  const short = step.added === null ? null : step.added <= 0 ? "None new" : `+${step.added} new`;
+  const short = step.added === null || step.added <= 0 ? null : `+${step.added} new`;
   return (
     <li className={`flex min-w-0 flex-col gap-1 px-4 py-4 min-[640px]:px-7 min-[640px]:py-5 ${last ? "" : "border-r border-hx-line"}`}>
       <p className="sr-only">{step.value} {step.label}{added ? `, ${added}` : ""}</p>
@@ -224,10 +225,10 @@ export function DashboardFunnel({ data, recommendedTotal, range, busy = false }:
 
 /* ─── Active jobs ─── */
 
-function JobMeta({ job, updatedAt }: { job: RequirementSummary; updatedAt: string | null }) {
+function JobMeta({ job }: { job: RequirementSummary }) {
   const where = job.workMode ? job.workMode[0].toUpperCase() + job.workMode.slice(1) : job.location;
   const type = job.employmentType ? job.employmentType.replace("-", " ").replace(/^./, (c) => c.toUpperCase()) : "";
-  const parts = [where, type, `Updated ${hoursOrDaysAgo(updatedAt ?? job.createdAt)}`].filter(Boolean);
+  const parts = [where, type ].filter(Boolean);
   return (
     <div className="mt-0.5 flex flex-wrap gap-x-1.5 text-[12px] text-hx-ink-soft">
       {parts.map((part, i) => (
@@ -260,7 +261,7 @@ export function ActiveJobsCard({
   const ordered = sort ? sortJobs(jobs, pipeline, sort.key, sort.dir) : jobsNeedingAttentionFirst(jobs);
   const shown = ordered.slice(0, JOBS_SHOWN);
   const toggleSort = (key: JobSortKey) => setSort((cur) => (cur?.key === key ? { key, dir: cur.dir === "desc" ? "asc" : "desc" } : { key, dir: key === "title" ? "asc" : "desc" }));
-  const sortHead = (key: JobSortKey, label: string, center: boolean) => {
+  const sortHead = (key: JobSortKey, label: string, center: boolean, hint?: string) => {
     const active = sort?.key === key;
     const Icon = !active ? ChevronsUpDownIcon : sort.dir === "asc" ? ArrowUpIcon : ArrowDownIcon;
     return (
@@ -269,6 +270,7 @@ export function ActiveJobsCard({
           {label}
           <Icon size={12} aria-hidden="true" className={active ? "" : "opacity-50"} />
         </button>
+        {hint && <InfoTip label={`About ${label}`}>{hint}</InfoTip>}
       </TableHead>
     );
   };
@@ -292,7 +294,7 @@ export function ActiveJobsCard({
                   {sortHead("title", "Job title", false)}
                   <TableHead className={TH}>Status</TableHead>
                   <TableHead className={`${TH} text-center`}>Evaluated</TableHead>
-                  {sortHead("recommended", "Strong matches", true)}
+                  {sortHead("recommended", "Strong matches", true, `A strong match scores ${STRONG_MATCH_THRESHOLD}% or higher against this job. When a job shows 0, the candidates evaluated so far scored lower.`)}
                   {sortHead("interviewing", "Interviewing", true)}
                   {sortHead("hired", "Hired", true)}
                   <TableHead className={`${TH} w-12`}><span className="sr-only">Actions</span></TableHead>
@@ -310,7 +312,7 @@ export function ActiveJobsCard({
                     >
                       <TableCell className={`${TD} whitespace-normal`}>
                         <Link href={`/employer/requirements/${j.id}`} className="inline-block py-0.5 font-semibold text-hx-coal no-underline hover:underline">{j.title}</Link>
-                        <JobMeta job={j} updatedAt={p?.lastUpdatedAt ?? null} />
+                        <JobMeta job={j} />
                         {health && <div className="mt-1.5"><Pill tone={health.tone}>{health.label}</Pill></div>}
                       </TableCell>
                       <TableCell className={TD}>
@@ -342,7 +344,7 @@ export function ActiveJobsCard({
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <Link href={`/employer/requirements/${j.id}`} className="inline-block py-0.5 text-[14px] font-semibold text-hx-coal no-underline [overflow-wrap:anywhere] hover:underline">{j.title}</Link>
-                      <JobMeta job={j} updatedAt={p?.lastUpdatedAt ?? null} />
+                      <JobMeta job={j} />
                     </div>
                     <div className="shrink-0">{rowActions(j)}</div>
                   </div>

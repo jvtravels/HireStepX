@@ -209,7 +209,7 @@ export default function JobsTable({
                     <div style={{ fontFamily: f.sans, fontSize: textSize.md, fontWeight: 500, color: t.coal }}>{locationText(r) || "Not specified"}</div>
                     {mode && mode !== locationText(r) && (
                       <div style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.inkSoft, marginTop: 1 }}>
-                        {mode === "Remote" ? `Remote · based in ${locationText(r)}` : mode}
+                        {mode}
                       </div>
                     )}
                   </TableCell>
