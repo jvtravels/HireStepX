@@ -48,7 +48,6 @@ import { Button } from "@/components/ui/button";
 import { ReportFrame, ReportBody } from "./panels/sr-ReportFrame";
 import { HeroSection } from "./panels/sr-HeroSection";
 import { TrendStrip } from "./panels/sr-TrendStrip";
-import { TopScoreDriversSection } from "./panels/sr-TopScoreDriversSection";
 import { KernelNegotiationQualitySection } from "./panels/sr-KernelNegotiationQualitySection";
 import { CoreMetricsSection } from "./panels/sr-CoreMetricsSection";
 import { SkillsSection } from "./panels/sr-SkillsSection";
@@ -392,7 +391,6 @@ function GenericReport({
                   <CredibilitySection summary={credibility} onDispute={onDisputeCredibility} />
                 )}
                 {campusPlacementMeta && <CampusCgpaCalibrationNote meta={campusPlacementMeta} />}
-                <TopScoreDriversSection questions={data.questions} />
                 <NextStepsSection
                   readinessSentence={data.readinessSentence}
                   resumeImprovements={data.resumeImprovements}
