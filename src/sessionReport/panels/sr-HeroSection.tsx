@@ -97,7 +97,7 @@ export function HeroSection({ data }: { data: InterviewResultData }) {
           </p>
           {data.calibration && (
             <div style={{ marginTop: 12 }}>
-              <CalibrationBanner calibration={data.calibration} />
+              {data.calibration.companyLabel.toLowerCase() !== "generic" && <CalibrationBanner calibration={data.calibration} />}
               {data.calibration.note && (
                 <p style={{ fontFamily: f.sans, fontSize: size.sm, color: t.inkSoft, lineHeight: 1.45, margin: "6px 0 0" }}>
                   {/* Notes may or may not already end in a period; collapse

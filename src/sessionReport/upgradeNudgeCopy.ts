@@ -27,7 +27,7 @@ export interface UpgradeNudgeCopy {
  * point to prove, and the beat-it framing is fair there. */
 const PERFECT_SCORE = 100;
 
-const SUBCOPY_SPRINT = "Get 5 more sessions for ₹39 — track your improvement across a Sprint Pack.";
+const SUBCOPY_SPRINT = "Get 5 more sessions for ₹39 and track your improvement across a Sprint Pack.";
 const SUBCOPY_SINGLE = "Grab one more session for ₹9, or get the Sprint Pack (₹39 · 5 sessions).";
 
 /**
@@ -42,9 +42,9 @@ export function upgradeNudgeCopy(score: number, priorSessionCount?: number): Upg
   // CTA goes to /session/new (not the upgrade modal) — free session hasn't been used yet.
   if (priorSessionCount === 0) {
     return {
-      headline: `You scored ${safe}. 1 free session left — make it count.`,
+      headline: `You scored ${safe}. 1 free session left. Make it count.`,
       subcopy: "Your second session is still free. After that, plans start at ₹9 per session.",
-      ctaLabel: "Start session 2 — it's free",
+      ctaLabel: "Start session 2, it's free",
       ctaHref: "/session/new",
     };
   }
@@ -54,7 +54,7 @@ export function upgradeNudgeCopy(score: number, priorSessionCount?: number): Upg
     return {
       headline: "You scored a perfect 100. Keep the streak going?",
       subcopy: SUBCOPY_SPRINT,
-      ctaLabel: "Get Sprint Pack — ₹39",
+      ctaLabel: "Get Sprint Pack, ₹39",
     };
   }
 
@@ -63,13 +63,13 @@ export function upgradeNudgeCopy(score: number, priorSessionCount?: number): Upg
     return {
       headline: `You scored ${safe}. The gap between this and 80+ closes fast with one more session.`,
       subcopy: SUBCOPY_SINGLE,
-      ctaLabel: "Get Sprint Pack — ₹39",
+      ctaLabel: "Get Sprint Pack, ₹39",
     };
   }
 
   return {
     headline: `You scored ${safe}. Want to see if you can beat it?`,
     subcopy: SUBCOPY_SPRINT,
-    ctaLabel: "Get Sprint Pack — ₹39",
+    ctaLabel: "Get Sprint Pack, ₹39",
   };
 }
