@@ -54,7 +54,7 @@ export const SESSION_REPORT_STYLES = `
   .ir-highlight-first  { background: rgba(49, 46, 129, 0.10); padding: 1px 3px; border-radius: 3px; color: #312E81; }
   .ir-legend { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-top: 12px; }
   .ir-legend-item { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: oklch(0.55 0.02 213.5); }
-  .ir-legend-swatch { display: inline-block; width: 12px; height: 12px; padding: 0; border-radius: 4px; border: 1px solid oklch(0 0 0 / 0.08); }
+  .ir-legend-swatch { display: inline-block; width: 12px; height: 12px; padding: 0; border-radius: 4px; border: 1px solid oklch(0 0 0 / 0.22); filter: saturate(1.6); }
   .ir-star-chip { display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 99px; border: 1px dashed oklch(0.9 0.004 265); font-size: 13px; font-weight: 500; color: oklch(0.65 0.015 213.5); }
   .ir-star-chip-on { border: 1px solid transparent; background: rgba(21,128,61,0.10); color: #15803D; }
   .ir-trend-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 48px; margin-top: 8px; }
