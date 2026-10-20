@@ -7,11 +7,10 @@
    the general atom file. */
 
 import type { ReactNode } from "react";
-import Link from "next/link";
 import { AlertTriangleIcon, CheckCircle2Icon, InfoIcon, ShieldAlertIcon, RefreshCwIcon } from "lucide-react";
 import { tokens as t, fonts as f, textSize } from "@/auth/_tokens";
-import { Button } from "@/components/ui/button";
 import { OutlineCta } from "@/employer/_atoms";
+import { CtaLink } from "@/employer/_consoleParts";
 import { StatePanel } from "@/employer/StatePanel";
 
 /* ── Inline notices ── */
@@ -143,35 +142,6 @@ export function EmptyNote({ title, children, action, flat = false, icon }: { tit
   return <StatePanel title={title} message={children} actions={action} icon={icon} contained={flat ? false : undefined} />;
 }
 
-/** A real link that looks like PrimaryCta/OutlineCta. Atoms render <button>,
-    and a button nested in an anchor is invalid, so navigation CTAs use this. */
-export function LinkCta({
-  href,
-  children,
-  icon,
-  variant = "primary",
-  size = "md",
-  ariaLabel,
-}: {
-  href: string;
-  children: ReactNode;
-  icon?: ReactNode;
-  variant?: "primary" | "outline";
-  size?: "sm" | "md";
-  ariaLabel?: string;
-}) {
-  return (
-    <Button
-      asChild
-      variant={variant === "primary" ? "default" : "outline"}
-      size="lg"
-      className={size === "sm" ? "gap-2 px-4 pointer-coarse:h-11" : "h-11 gap-2 px-5"}
-      style={{ fontFamily: f.sans, fontSize: size === "sm" ? textSize.base : textSize.md, fontWeight: 600 }}
-    >
-      <Link href={href} aria-label={ariaLabel}>
-        {icon}
-        {children}
-      </Link>
-    </Button>
-  );
+export function LinkCta({ ariaLabel, ...rest }: { href: string; children: ReactNode; icon?: ReactNode; variant?: "primary" | "outline"; size?: "sm" | "md"; ariaLabel?: string }) {
+  return <CtaLink {...rest} size={rest.size ?? "md"} ariaLabel={ariaLabel} />;
 }

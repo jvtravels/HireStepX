@@ -4,6 +4,7 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { LoaderCircleIcon, ClipboardListIcon, MessageSquareIcon, CheckCircle2Icon, ChevronDownIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge as UiBadge } from "@/components/ui/badge";
+import { Checkbox as UiCheckbox } from "@/components/ui/checkbox";
 import AnimatedNumber from "../AnimatedNumber";
 import { cn } from "@/lib/utils";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -207,6 +208,14 @@ type CtaCommon = {
   title?: string;
 };
 
+/** The one size scale for every employer CTA, button or link, so they never drift apart. */
+export const CTA_SIZE = {
+  sm: "h-9 px-4 text-[13px] pointer-coarse:h-11",
+  md: "h-11 px-5 text-sm",
+} as const;
+
+export const CTA_INDIGO_CLASS = "border-hx-indigo bg-hx-indigo-100 text-hx-indigo-deep hover:bg-hx-indigo-100";
+
 export function PrimaryCta({
   children,
   onClick,
@@ -219,47 +228,16 @@ export function PrimaryCta({
   ariaLabel,
   title,
 }: CtaCommon & { type?: "button" | "submit" }) {
-  const isDisabled = disabled || loading;
-  // Full-width CTAs (settings/outcome save bars) keep their own sizing —
-  // only the shape (radius/shadow) needs to track the shared Button.
-  if (full) {
-    return (
-      <Button
-        type={type}
-        variant="default"
-        onClick={onClick}
-        disabled={isDisabled}
-        aria-label={ariaLabel}
-        aria-busy={loading || undefined}
-        title={title}
-        className={cn("w-full gap-2", size === "sm" ? "h-9 px-[18px] pointer-coarse:h-11" : "h-11 px-5")}
-        style={{
-          fontFamily: f.sans,
-          fontSize: size === "sm" ? 13 : 15,
-          fontWeight: 600,
-          boxShadow: isDisabled ? "none" : `0px 2px 4px color-mix(in srgb, ${t.indigo} 20%, transparent)`,
-        }}
-      >
-        {children}
-        {icon}
-      </Button>
-    );
-  }
-
-  // Compact toolbar/card CTAs rely on the shared Button's canonical shape
-  // (radius/weight/font-size/shadow come from the `default` variant) instead
-  // of a bespoke inline style — same pattern as Sessions/Jobs CTAs.
   return (
     <Button
       type={type}
       variant="default"
-      size={size === "sm" ? "default" : "lg"}
-      className={cn("gap-2 pointer-coarse:h-11", size === "sm" ? "px-4 text-[13px]" : "px-4")}
       onClick={onClick}
-      disabled={isDisabled}
+      disabled={disabled || loading}
       aria-label={ariaLabel}
       aria-busy={loading || undefined}
       title={title}
+      className={cn("gap-2", CTA_SIZE[size], full && "w-full")}
     >
       {children}
       {icon}
@@ -288,17 +266,7 @@ export function OutlineCta({
       aria-label={ariaLabel}
       aria-busy={loading || undefined}
       title={title}
-      className={cn(
-        "gap-2",
-        full && "w-full",
-        size === "sm" ? "h-9 px-4 pointer-coarse:h-11" : "h-11 px-5",
-      )}
-      style={{
-        fontFamily: f.sans,
-        fontSize: size === "sm" ? 13 : 14,
-        fontWeight: 600,
-        ...(tone === "indigo" ? { background: t.indigo100, color: t.indigoDeep, borderColor: t.indigo } : {}),
-      }}
+      className={cn("gap-2", CTA_SIZE[size], full && "w-full", tone === "indigo" && CTA_INDIGO_CLASS)}
     >
       {icon}
       {children}
@@ -1010,50 +978,10 @@ export function Checkbox({
   disabled?: boolean;
 }) {
   return (
-    <button
-      type="button"
-      role="checkbox"
-      onClick={() => onChange(!checked)}
-      aria-checked={checked}
-      disabled={disabled}
-      className="min-h-6 pointer-coarse:min-h-11"
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 8,
-        cursor: disabled ? "not-allowed" : "pointer",
-        opacity: disabled ? 0.55 : 1,
-        background: "none",
-        border: "none",
-        padding: 0,
-        fontFamily: f.sans,
-        fontSize: 13,
-        fontWeight: 500,
-        color: t.coal,
-      }}
-    >
-      <span
-        aria-hidden="true"
-        style={{
-          width: 16,
-          height: 16,
-          borderRadius: 4,
-          border: `1.5px solid ${checked ? t.indigo : t.lineStrong}`,
-          background: checked ? t.indigo : "transparent",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          flexShrink: 0,
-        }}
-      >
-        {checked && (
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
-            <path d="M20 6L9 17l-5-5" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        )}
-      </span>
+    <label className="inline-flex min-h-6 cursor-pointer items-center gap-2 text-[13px] font-medium text-hx-coal has-disabled:cursor-not-allowed has-disabled:opacity-55 pointer-coarse:min-h-11">
+      <UiCheckbox checked={checked} onCheckedChange={(next) => onChange(next === true)} disabled={disabled} />
       {label}
-    </button>
+    </label>
   );
 }
 

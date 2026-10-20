@@ -4,49 +4,60 @@ import { StatePanel } from "@/employer/StatePanel";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { fonts as f } from "@/auth/_tokens";
-import { OutlineCta } from "@/employer/_atoms";
+import { OutlineCta, CTA_SIZE } from "@/employer/_atoms";
 
 /* Shared console building blocks for the pages that own their own layout
    (dashboard, jobs, settings) and the route-level loading/error boundaries.
    Kept apart from _atoms.tsx, which other surfaces own. */
 
-/** A real <a> that looks like PrimaryCta. Wrapping a <Button> in a <Link>
+/** A real <a> that looks like PrimaryCta/OutlineCta. Wrapping a <Button> in a <Link>
  *  nests an interactive element inside another (invalid, and two tab stops). */
-export function PrimaryLink({ href, children, icon, full = false, onClick }: { href: string; children: React.ReactNode; icon?: React.ReactNode; full?: boolean; onClick?: () => void }) {
+export function CtaLink({
+  href,
+  children,
+  icon,
+  variant = "primary",
+  size = "sm",
+  full = false,
+  ariaLabel,
+  onClick,
+}: {
+  href: string;
+  children: React.ReactNode;
+  icon?: React.ReactNode;
+  variant?: "primary" | "outline";
+  size?: keyof typeof CTA_SIZE;
+  full?: boolean;
+  ariaLabel?: string;
+  onClick?: () => void;
+}) {
   return (
-    <Button asChild variant="default" size="lg" className={cn("h-9 gap-2 px-4.5 pointer-coarse:h-11", full && "w-full")}>
-      <Link href={href} onClick={onClick}>
+    <Button asChild variant={variant === "primary" ? "default" : "outline"} className={cn("gap-2", CTA_SIZE[size], full && "w-full")}>
+      <Link href={href} aria-label={ariaLabel} onClick={onClick}>
+        {variant === "outline" && icon}
         {children}
-        {icon}
+        {variant === "primary" && icon}
       </Link>
     </Button>
   );
+}
+
+export function PrimaryLink(props: { href: string; children: React.ReactNode; icon?: React.ReactNode; full?: boolean; onClick?: () => void }) {
+  return <CtaLink {...props} />;
 }
 
 /** The one "Post a job" button for every employer surface, so it never differs between pages. */
 export function PostJobLink({ children = "Post a job", full = false }: { children?: React.ReactNode; full?: boolean }) {
   return (
-    <Button asChild variant="default" size="lg" className={cn("h-9 gap-2 px-4.5 pointer-coarse:h-11", full && "w-full")}>
-      <Link href="/employer/requirements/new">
-        <PlusIcon size={16} strokeWidth={2.5} aria-hidden="true" />
-        {children}
-      </Link>
-    </Button>
+    <CtaLink href="/employer/requirements/new" full={full}>
+      <PlusIcon size={16} strokeWidth={2.5} aria-hidden="true" />
+      {children}
+    </CtaLink>
   );
 }
 
 export function OutlineLink({ href, children, full = false, small = false, onClick }: { href: string; children: React.ReactNode; full?: boolean; small?: boolean; onClick?: () => void }) {
-  return (
-    <Button
-      asChild
-      variant="outline"
-      className={cn("gap-2 font-semibold pointer-coarse:h-11", small ? "h-9 px-4" : "h-11 px-5", full && "w-full")}
-      style={{ fontFamily: f.sans, fontSize: small ? 13 : 14 }}
-    >
-      <Link href={href} onClick={onClick}>{children}</Link>
-    </Button>
-  );
+  return <CtaLink href={href} variant="outline" size={small ? "sm" : "md"} full={full} onClick={onClick}>{children}</CtaLink>;
 }
 
 const SKELETON_ROWS = [0, 1, 2, 3, 4, 5];
