@@ -402,7 +402,6 @@ export const SESSION_REPORT_STYLES = `
     .ir-pill { padding: 5px 10px !important; font-size: 11px !important; }
     .ir-tab-btn { margin-right: 12px !important; font-size: 12px !important; }
     .ir-trend-strip { padding: 10px 12px !important; gap: 10px !important; }
-    .ir-thought-track { height: 22px !important; }
   }
 
   /* ─── Sparkline ─── */
@@ -755,48 +754,6 @@ export const SESSION_REPORT_STYLES = `
   .ir-coach-note-card.story-reuse .ir-coach-note-eyebrow { color: #312E81; }
   .ir-coach-note-card.blind-spot { border-left-color: #7C7C85; }
   .ir-coach-note-card.blind-spot .ir-coach-note-eyebrow { color: #63636B; }
-
-  /* ─── Thought-bubble timeline (collapsed by default) ─── */
-  .ir-thought-toggle {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: transparent;
-    border: 1px solid #D4D4D8;
-    border-radius: 8px;
-    padding: 8px 14px;
-    font-family: 'Geist Sans', sans-serif;
-    font-size: 12px;
-    color: #63636B;
-    cursor: pointer;
-    transition: border-color 160ms, color 160ms;
-  }
-  .ir-thought-toggle:hover { border-color: #312E81; color: #312E81; }
-  .ir-thought-track {
-    display: flex;
-    height: 28px;
-    border-radius: 6px;
-    overflow: hidden;
-    border: 1px solid #ECECEF;
-    margin-top: 12px;
-  }
-  .ir-thought-seg-engaged   { background: rgba(21,128,61,0.40); }
-  .ir-thought-seg-drifting  { background: rgba(212,179,127,0.55); }
-  .ir-thought-seg-concerned { background: rgba(196,112,90,0.50); }
-  .ir-thought-legend {
-    display: flex; gap: 18px; flex-wrap: wrap;
-    margin-top: 10px;
-    font-family: 'Geist Sans', sans-serif;
-    font-size: 11px;
-    color: #63636B;
-  }
-  .ir-thought-legend-swatch {
-    display: inline-block;
-    width: 12px; height: 12px;
-    border-radius: 3px;
-    margin-right: 6px;
-    vertical-align: -2px;
-  }
 
   /* ─── Anchor scroll spacing for inline jumps from wins/fixes ─── */
   .ir-q-anchor { scroll-margin-top: 80px; }

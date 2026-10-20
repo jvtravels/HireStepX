@@ -52,7 +52,6 @@ import { TopScoreDriversSection } from "./panels/sr-TopScoreDriversSection";
 import { KernelNegotiationQualitySection } from "./panels/sr-KernelNegotiationQualitySection";
 import { CoreMetricsSection } from "./panels/sr-CoreMetricsSection";
 import { SkillsSection } from "./panels/sr-SkillsSection";
-import { ThoughtBubbleSection } from "./panels/sr-ThoughtBubbleSection";
 import { PerQuestionSection } from "./panels/sr-PerQuestionSection";
 import { CoachNotesSection } from "./panels/sr-CoachNotesSection";
 import { BiasSection } from "./panels/sr-BiasSection";
@@ -420,12 +419,7 @@ function GenericReport({
               </>
             )}
             {tab === "answers" && (
-              <>
-                <PerQuestionSection questions={data.questions} />
-                {data.thoughtBubble && data.thoughtBubble.length > 0 && (
-                  <ThoughtBubbleSection segments={data.thoughtBubble} />
-                )}
-              </>
+              <PerQuestionSection questions={data.questions} />
             )}
             {tab === "skills" && (
               <>
