@@ -33,6 +33,7 @@ import {
 import { CLIENT_REPORT_VERSION, type DashboardSession } from "../dashboardTypes";
 import { useAuth } from "../AuthContext";
 import SessionReportView from "./SessionReportView";
+import { practiceHref } from "./practiceHref";
 import { sessionReportToInterviewResult, toBehavioralFullReportData, negotiationOutcomeDerivation } from "./adapter";
 import type { AnalyzerMeta } from "../../server-handlers/analyzers/_types";
 import { clawbackForCompany } from "../../server-handlers/_joining-bonus-clawback";
@@ -1104,6 +1105,7 @@ export const SessionReport = memo(function SessionReport({
       campusPlacementMeta={campusPlacementMeta}
       salaryNegotiationMeta={salaryNegotiationMeta}
       progressTrends={progressTrends}
+      practiceHref={practiceHref(session)}
       behavioralFullReportData={behavioralFullReportData}
       hrReportData={viewData?.hrReport}
       offerNetValue={offerNetValue}

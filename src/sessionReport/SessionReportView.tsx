@@ -219,6 +219,8 @@ export interface SessionReportViewProps {
    *  silently skips the panel (e.g. first-session render before the
    *  store is wired). */
   progressTrends?: SkillTrend[];
+  /** Setup link prefilled with this session's type, role and company. */
+  practiceHref?: string;
   /** Behavioral v2 report payload. When provided AND the env flag
    *  `NEXT_PUBLIC_BEHAVIORAL_REPORT_V2 === "true"` is set, the view
    *  short-circuits the existing panel stack and renders the new
@@ -298,6 +300,7 @@ function GenericReport({
   salaryNegotiationMeta,
   offerNetValue,
   progressTrends,
+  practiceHref,
 }: SessionReportViewProps) {
   const [tab, setTab] = useState<ReportTab>("overview");
   /* L-2 (2026-07-10, live staging, negotiation report cc0a7469): the behavioural
@@ -340,7 +343,9 @@ function GenericReport({
                 )}
                 {campusPlacementMeta && <CampusCgpaCalibrationNote meta={campusPlacementMeta} />}
                 <NextStepsSection
-                  readinessSentence={data.readinessSentence}
+                  plan={data.readinessPlan}
+                  focusFirst={data.improvements[0]}
+                  practiceHref={practiceHref}
                   resumeImprovements={data.resumeImprovements}
                 />
               </>

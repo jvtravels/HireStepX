@@ -234,7 +234,9 @@ export interface InterviewResultData {
   storyReuseFindings?: StoryReuseFinding[];
   blindSpots?: BlindSpot[];
   thoughtBubble?: ThoughtBubbleSegment[];
-  readinessSentence?: string;
+  /** Structured practice plan from the readiness model: sessions to reach
+   *  the target band. Drives the Next session card. */
+  readinessPlan?: { sessions: number; weeks: number; targetBand: string };
   /** Perception-optimizer findings — bias-pattern aggregates across the
    *  whole session. Empty / undefined = panel doesn't render. */
   biasFindings?: BiasFinding[];

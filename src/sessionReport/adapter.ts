@@ -445,15 +445,12 @@ export function sessionReportToInterviewResult(
       ? {
           pct: clamp(grounded.overallScore, 0, 100),
           /* R-9 (2026-07-10, live staging) — the hero's "~N weeks" ETA and the
-           * readinessSentence's "~H hours over ~S sessions" are two views of the
+           * readinessPlan's "~S sessions" are two views of the
            * SAME plan and must agree. Deriving weeks from hours (÷3) while the
            * sentence quoted an independent session count made them diverge
            * ("~13 weeks" beside "~8 sessions"). Derive the ETA from the same
            * session count the sentence shows, at ~3 focused sessions/week. */
-          etaWeeks: estimateWeeksFromSessions(
-            report.readiness.estimatedSessions,
-            report.readiness.estimatedHours,
-          ),
+          etaWeeks: estimateWeeksFromSessions(report.readiness.estimatedSessions, report.readiness.estimatedHours),
         }
       : undefined,
     daysUntilInterview: ctx.daysUntilInterview,
@@ -550,8 +547,8 @@ export function sessionReportToInterviewResult(
       body: b.note,
     })),
     thoughtBubble: collapseThoughtBubble(report.thoughtBubble),
-    readinessSentence: report.readiness
-      ? `About ${report.readiness.estimatedHours} hours over ${report.readiness.estimatedSessions} sessions to reach the ${formatBand(report.readiness.targetBand)} band. ${report.readiness.rationale}`
+    readinessPlan: report.readiness && report.readiness.estimatedSessions > 0
+      ? { sessions: report.readiness.estimatedSessions, weeks: estimateWeeksFromSessions(report.readiness.estimatedSessions, report.readiness.estimatedHours), targetBand: formatBand(report.readiness.targetBand) }
       : undefined,
     biasFindings: buildBiasFindings(report.perQuestion, ctx.nonNativeEnglish),
     reverseInterview: report.reverseInterview
@@ -1800,7 +1797,7 @@ function estimateWeeks(hours: number): number {
   // ~3 focused sessions/week × ~1hr each → 3hrs/week effective practice.
   return Math.max(1, Math.round(hours / 3));
 }
-/* R-9 — single ETA model shared with the readinessSentence. Sessions are the
+/* R-9 — single ETA model shared with the readinessPlan. Sessions are the
  * planning unit the sentence quotes ("~S sessions"), so pace the ETA off them
  * at ~3 focused sessions/week; fall back to the hours model when the session
  * count is missing so legacy readiness rows still get a sane number. */
