@@ -117,7 +117,7 @@ const itemCell: CSSProperties = { minHeight: 0 };
 const itemRowDivided: CSSProperties = { ...itemRow, borderRadius: 0, borderTop: `1px solid ${hairline}` };
 const itemMain: CSSProperties = { display: "flex", flexDirection: "column", gap: 4, flex: "1 1 240px", minWidth: 0 };
 const labelRow: CSSProperties = { display: "flex", alignItems: "center", gap: 8 };
-const labelText: CSSProperties = { fontFamily: f.sans, fontSize: textSize.xs, fontWeight: 600, color: t.inkFaint, textTransform: "uppercase", letterSpacing: "0.04em" };
+const labelText: CSSProperties = { fontFamily: f.sans, fontSize: textSize.xs, fontWeight: 600, color: t.inkFaint };
 const lowBadge: CSSProperties = {
   fontFamily: f.sans, fontSize: textSize.xs, fontWeight: 600, padding: "1px 7px", borderRadius: 999, background: t.warning100, color: t.warningInk, border: `1px solid ${t.warningLine}`,
 };

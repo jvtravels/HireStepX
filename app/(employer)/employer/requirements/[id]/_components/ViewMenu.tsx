@@ -9,7 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { CONTACT_FILTER_OPTIONS, SORT_OPTIONS, type ContactFilter, type SortColumn } from "./candidateTableModel";
 
-const SECTION = "mb-2 text-[12px] font-semibold tracking-[0.06em] text-hx-ink-soft uppercase";
+const SECTION = "mb-2 text-[12px] font-semibold text-hx-ink-soft";
 const OPTION = "flex min-h-8 cursor-pointer items-center gap-2 text-[14px] text-hx-coal pointer-coarse:min-h-11";
 const ACTION = "h-auto min-h-8 w-full justify-start gap-2 px-2 text-[14px] font-medium text-hx-coal pointer-coarse:min-h-11";
 

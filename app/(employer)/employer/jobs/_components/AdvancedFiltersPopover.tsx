@@ -13,8 +13,8 @@ import { tokens as t, fonts as f } from "@/auth/_tokens";
 import { EMPTY_RANGE, type NumberRange } from "./jobsHelpers";
 
 const legendStyle: React.CSSProperties = {
-  fontFamily: f.sans, fontSize: 12, fontWeight: 600, letterSpacing: "0.06em",
-  textTransform: "uppercase", color: t.inkSoft, marginBottom: 10, padding: 0,
+  fontFamily: f.sans, fontSize: 12, fontWeight: 600,
+  color: t.inkSoft, marginBottom: 10, padding: 0,
 };
 
 function CheckboxGroup({ legend, options, value, onChange }: { legend: string; options: string[]; value: string[]; onChange: (v: string[]) => void }) {

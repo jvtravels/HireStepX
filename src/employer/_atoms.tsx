@@ -75,7 +75,7 @@ export function EmployerWordmark() {
 export function Eyebrow({ children, tone = "ink" }: { children: React.ReactNode; tone?: "ink" | "copper" | "indigo" | "error" }) {
   const color = tone === "copper" ? t.copperDark : tone === "indigo" ? t.indigoDeep : tone === "error" ? t.errorInk : t.neutralInk;
   return (
-    <div style={{ fontFamily: f.mono, fontSize: 12, letterSpacing: 1.2, textTransform: "uppercase", color, fontWeight: 600 }}>
+    <div style={{ fontFamily: f.sans, fontSize: 12, color, fontWeight: 600 }}>
       {children}
     </div>
   );
@@ -150,7 +150,8 @@ export function ScoreChip({ score, label = "Match score" }: { score: number; lab
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        fontFamily: f.mono,
+        fontFamily: f.sans,
+        fontVariantNumeric: "tabular-nums",
         fontSize: 13,
         fontWeight: 700,
         flexShrink: 0,
@@ -1109,7 +1110,7 @@ export function Checkbox({
 export function StatCell({ label, value, unit }: { label: string; value: string; unit: string }) {
   return (
     <div style={{ padding: "16px 4px", borderRight: `1px solid ${t.line}` }}>
-      <dt style={{ fontFamily: f.mono, fontSize: 12, color: t.inkSoft, letterSpacing: 0.6, textTransform: "uppercase", margin: 0 }}>
+      <dt style={{ fontFamily: f.sans, fontSize: 12, fontWeight: 600, color: t.inkSoft, margin: 0 }}>
         {label}
       </dt>
       <dd style={{ margin: "6px 0 0", display: "flex", alignItems: "baseline", gap: 3 }}>
