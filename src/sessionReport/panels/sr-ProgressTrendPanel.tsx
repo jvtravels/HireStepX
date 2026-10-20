@@ -9,6 +9,29 @@ import type { SkillTrend } from "../progressTracking";
 
 type Shown = "up" | "down" | "flat" | "new";
 
+const SKILL_PLAIN: Record<string, { meaning: string; ifLow: string }> = {
+  "Communication": { meaning: "How clearly you say things.", ifLow: "Interviewers may struggle to follow you. Use shorter sentences and cut filler words like \"basically\" and \"you know\"." },
+  "Structure": { meaning: "Whether your answer has a clear start, middle and end.", ifLow: "Answers can feel like rambling. Try Situation, Task, Action, Result: one sentence each." },
+  "Technical Depth": { meaning: "How well you show you know your field.", ifLow: "You may sound surface level. Name the tools you used and explain why you chose them." },
+  "Leadership": { meaning: "Whether you show you took ownership, not just took part.", ifLow: "Say \"I decided\" and \"I led\" where it is true, and describe what you drove." },
+  "Problem Solving": { meaning: "How you break down a problem and reach a solution.", ifLow: "Walk through your thinking out loud: the cause, the options, and why you picked one." },
+  "Confidence": { meaning: "How sure and decisive you sound.", ifLow: "Hedging (\"maybe\", \"I think\") makes good answers sound weak. State your point first, then explain." },
+  "Specificity": { meaning: "Using real numbers and examples instead of general claims.", ifLow: "Answers sound vague. Add one number to each story, like a percentage, a team size or a time saved." },
+  "Adaptability": { meaning: "How well you handle follow-up and curveball questions.", ifLow: "Follow-ups may throw you. Pause, restate the question, then answer the new angle." },
+  "Business Impact": { meaning: "Whether you link your work to results the company cares about.", ifLow: "Finish each story with the outcome: revenue, cost saved, time saved or users gained." },
+  "Answer Completeness": { meaning: "Whether you answered every part of the question.", ifLow: "You may be skipping parts. Before you finish, check that you covered what was asked." },
+};
+
+function plainFor(skill: string) {
+  return SKILL_PLAIN[skill] ?? SKILL_PLAIN[skill.replace(/-/g, " ")];
+}
+
+function band(score: number): { label: string; weak: boolean } {
+  if (score >= 75) return { label: "Strong", weak: false };
+  if (score >= 55) return { label: "Okay", weak: false };
+  return { label: "Needs work", weak: true };
+}
+
 function Sparkline({ values, dotClass, width = 64, height = 22 }: { values: number[]; dotClass: string; width?: number; height?: number }) {
   if (values.length === 0) return null;
   const pad = 3;
@@ -48,11 +71,17 @@ function TrendRow({ trend }: { trend: SkillTrend }) {
   const cls = shown === "up" ? "ir-trend-delta-up" : shown === "down" ? "ir-trend-delta-down" : "ir-trend-delta-flat";
   return (
     <li className="ir-trend-row">
-      <span className="ir-trend-name">{trend.skill}</span>
+      <span className="ir-trend-name">
+        {trend.skill}
+        {plainFor(trend.skill) && <span className="ir-trend-desc">{plainFor(trend.skill)!.meaning}</span>}
+      </span>
       <span className="text-muted-foreground inline-flex">
         <Sparkline values={trend.sparkline} dotClass={cls} />
       </span>
-      <span className="ir-trend-score">{trend.latestScore.toFixed(0)}</span>
+      <span className="ir-trend-score">
+        {trend.latestScore.toFixed(0)}
+        <span className="ir-trend-band">{band(trend.latestScore).label}</span>
+      </span>
       <span
         className={`ir-trend-delta ${cls}`}
         title={shown === "new" ? "First session for this skill" : `Change since your last session: ${label}`}
@@ -65,20 +94,30 @@ function TrendRow({ trend }: { trend: SkillTrend }) {
 
 export function ProgressTrendPanel({ trends }: { trends: SkillTrend[] }) {
   const hasAnyHistory = trends.some((tr) => tr.sparkline.length > 0);
+  const weakest = trends.length > 0 ? trends.reduce((a, b) => (b.latestScore < a.latestScore ? b : a)) : null;
+  const weakestPlain = weakest && band(weakest.latestScore).weak ? plainFor(weakest.skill) : undefined;
   return (
     <SrSectionShell
       anchorId="ir-section-progress-trend"
       headingId="ir-progress-trend-heading"
       label="Core skills"
       title="Core skills over time"
-      subtitle="Skills we track in every session, so they can be compared. The change is since your previous session of this type."
+      subtitle="Ten things interviewers quietly judge. Each is scored out of 100. The line shows your last few sessions, and the change is versus your previous session."
     >
       {hasAnyHistory && trends.length > 0 ? (
-        <ul className="ir-trend-grid m-0 list-none p-0">
-          {trends.map((tr) => (
-            <TrendRow key={tr.skill} trend={tr} />
-          ))}
-        </ul>
+        <>
+          <ul className="ir-trend-grid m-0 list-none p-0">
+            {trends.map((tr) => (
+              <TrendRow key={tr.skill} trend={tr} />
+            ))}
+          </ul>
+          <p className="ir-trend-legend">75 and above is strong, 55 to 74 is okay, below 55 needs work.</p>
+          {weakest && weakestPlain && (
+            <p className="ir-trend-weakest">
+              <strong>Lowest right now: {weakest.skill} ({weakest.latestScore.toFixed(0)}).</strong> {weakestPlain.ifLow}
+            </p>
+          )}
+        </>
       ) : (
         <p className="mt-4 rounded-xl border border-dashed border-border px-5 py-4 text-sm text-muted-foreground">
           This is your first session. Progress shows up from session 2.

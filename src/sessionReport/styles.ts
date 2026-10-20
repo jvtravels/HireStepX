@@ -60,9 +60,13 @@ export const SESSION_REPORT_STYLES = `
   .ir-star-chip-on { border: 1px solid transparent; background: rgba(21,128,61,0.10); color: #15803D; }
   .ir-trend-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 48px; margin-top: 8px; }
   .ir-trend-row { display: flex; align-items: center; gap: 14px; padding: 12px 0; border-bottom: 1px solid oklch(0.955 0.004 265); }
-  .ir-trend-name { flex: 1; min-width: 0; font-size: 14px; color: var(--foreground); }
+  .ir-trend-name { flex: 1; min-width: 0; font-size: 14px; color: var(--foreground); display: flex; flex-direction: column; gap: 2px; }
+  .ir-trend-desc { font-size: 12px; line-height: 1.4; color: oklch(0.55 0.02 213.5); }
+  .ir-trend-band { display: block; font-size: 11px; font-weight: 500; color: oklch(0.55 0.02 213.5); white-space: nowrap; }
+  .ir-trend-legend { margin: 14px 0 0; font-size: 12px; color: oklch(0.55 0.02 213.5); }
+  .ir-trend-weakest { margin: 10px 0 0; padding: 12px 14px; border-radius: 10px; background: oklch(0.975 0.004 265); font-size: 13px; line-height: 1.5; color: var(--foreground); }
   .ir-trend-spark { flex-shrink: 0; }
-  .ir-trend-score { width: 28px; text-align: right; font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--foreground); }
+  .ir-trend-score { width: 72px; text-align: right; font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--foreground); }
   .ir-trend-delta { min-width: 64px; text-align: right; font-size: 13px; font-weight: 500; font-variant-numeric: tabular-nums; }
   .ir-trend-delta-up { color: #15803D; }
   .ir-trend-delta-down { color: #B91C1C; }
