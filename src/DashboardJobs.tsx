@@ -511,12 +511,12 @@ export default function DashboardJobs() {
             <TableHeader>
               <TableRow style={{ background: t.rowTint, height: 40, position: "sticky", top: 0, zIndex: 1 }}>
                 <SortableHead column="company" columnLabel={COLUMN_LABEL.company} defaultDirection="asc" width="15%" minWidth={150} sort={sort} onSortChange={setSort}>Company</SortableHead>
-                <SortableHead column="title" columnLabel={COLUMN_LABEL.title} defaultDirection="asc" width="23%" minWidth={220} sort={sort} onSortChange={setSort}>Job title</SortableHead>
+                <SortableHead column="title" columnLabel={COLUMN_LABEL.title} defaultDirection="asc" width="21%" minWidth={220} sort={sort} onSortChange={setSort}>Job title</SortableHead>
                 <SortableHead column="location" columnLabel={COLUMN_LABEL.location} defaultDirection="asc" width="10%" minWidth={110} sort={sort} onSortChange={setSort}>Location</SortableHead>
                 <SortableHead column="experience" columnLabel={COLUMN_LABEL.experience} width="9%" minWidth={110} sort={sort} onSortChange={setSort}>Experience</SortableHead>
                 <SortableHead column="jobType" columnLabel={COLUMN_LABEL.jobType} defaultDirection="asc" width="9%" minWidth={100} sort={sort} onSortChange={setSort}>Job type</SortableHead>
                 <SortableHead column="salary" columnLabel={COLUMN_LABEL.salary} width="13%" minWidth={140} sort={sort} onSortChange={setSort}>Salary</SortableHead>
-                <SortableHead column="interest" columnLabel={COLUMN_LABEL.interest} width="14%" minWidth={180} sort={sort} onSortChange={setSort}>Employer interest</SortableHead>
+                <SortableHead column="interest" columnLabel={COLUMN_LABEL.interest} width="16%" minWidth={190} sort={sort} onSortChange={setSort}>Employer interest</SortableHead>
                 <SortableHead column="date" columnLabel={COLUMN_LABEL.date} width="8%" minWidth={110} sort={sort} onSortChange={setSort}>Date</SortableHead>
               </TableRow>
             </TableHeader>

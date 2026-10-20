@@ -120,11 +120,11 @@
 
 /* ─── Global focus-visible styles (WCAG 2.1 AA) ─── */
 :focus-visible {
-  outline: 2px solid oklch(0.555 0.163 48.998);
+  outline: 2px solid oklch(0.359 0.135 278.697);
   outline-offset: 2px;
 }
 button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
-  outline: 2px solid oklch(0.555 0.163 48.998);
+  outline: 2px solid oklch(0.359 0.135 278.697);
   outline-offset: 2px;
 }
 /* Menu rows already show a filled highlight on focus; the ring would be a
@@ -138,7 +138,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
    single focus ring, drawn over its own 1px border. The inner input's ring is
    suppressed so a nested box never appears inside the field. */
 .rf-chipfield:focus-within {
-  outline: 2px solid oklch(0.555 0.163 48.998);
+  outline: 2px solid oklch(0.359 0.135 278.697);
   outline-offset: -1px;
 }
 .rf-chipfield[data-invalid]:focus-within {
@@ -154,7 +154,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   border-radius: 12px;
 }
 input[type="range"]:focus-visible {
-  outline: 2px solid oklch(0.555 0.163 48.998);
+  outline: 2px solid oklch(0.359 0.135 278.697);
   outline-offset: 4px;
 }
 
