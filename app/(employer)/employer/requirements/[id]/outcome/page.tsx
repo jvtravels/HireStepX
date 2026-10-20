@@ -172,7 +172,7 @@ export default function OutcomeFeedbackPage() {
   }
 
   return (
-    <div style={{ maxWidth: 520, margin: "0 auto", minWidth: 0 }}>
+    <div style={{ width: "100%", minWidth: 0 }}>
       <style>{OUTCOME_CSS}</style>
       {access.suspended && (
         <div style={{ marginBottom: 16 }}>
@@ -202,7 +202,7 @@ export default function OutcomeFeedbackPage() {
                 e.preventDefault();
                 onSubmit();
               }}
-              style={{ display: "flex", flexDirection: "column", gap: 18 }}
+              style={{ display: "flex", flexDirection: "column", gap: 18, maxWidth: 560 }}
             >
               <p style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.inkSoft, margin: 0 }}>
                 Current status: <strong style={{ color: t.coal }}>{CANDIDATE_STATUS_LABEL[current]}</strong>
