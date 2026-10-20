@@ -466,7 +466,7 @@ export function RecommendedCandidatesCard({ cards, total }: { cards: Recommended
             {cards.map((c) => {
               const waiting = waitingLabel(c.waitingDays);
               return (
-                <li key={c.matchId} className={`grid grid-cols-1 gap-x-8 gap-y-4 px-7 py-4 transition-colors duration-200 hover:bg-hx-row @min-[960px]:items-center ${REVIEW_COLS}`}>
+                <li key={c.matchId} className={`grid grid-cols-1 gap-x-8 gap-y-4 px-7 py-4 @min-[960px]:items-center ${REVIEW_COLS}`}>
                   <div className="flex min-w-0 items-start gap-3.5">
                     <PersonAvatar name={c.name} initials={c.initials} />
                     <div className="min-w-0">

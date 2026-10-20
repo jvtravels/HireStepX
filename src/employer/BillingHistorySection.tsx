@@ -121,7 +121,7 @@ export default function BillingHistorySection() {
     {creditPanel}
     <Table className="mx-fade">
       <TableHeader>
-        <TableRow>
+        <TableRow className="hover:bg-transparent">
           <TableHead>Date</TableHead>
           <TableHead>Candidates</TableHead>
           <TableHead>Invoice</TableHead>
@@ -131,7 +131,7 @@ export default function BillingHistorySection() {
       </TableHeader>
       <TableBody>
         {purchases.map((p) => (
-          <TableRow key={p.id}>
+          <TableRow key={p.id} className="hover:bg-transparent">
             <TableCell className="whitespace-nowrap tabular-nums">{new Date(p.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</TableCell>
             <TableCell className="max-w-[260px] truncate">{describe(p)}</TableCell>
             <TableCell className="tabular-nums text-hx-ink-soft">

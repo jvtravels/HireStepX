@@ -148,7 +148,7 @@ export default function CandidatesTable({
               Candidates for this job, {filteredCount} shown. Each row has a checkbox to select it. Column headers are buttons that sort the table.
             </TableCaption>
             <TableHeader className="cand-thead">
-              <TableRow className="h-10 bg-hx-row">
+              <TableRow className="h-10 bg-hx-row hover:bg-hx-row">
                 <SortableHead inset={12} column="name" columnLabel={COLUMN_LABEL.name} defaultDirection="asc" width="29%" minWidth={200} sort={sort} onSortChange={onSortChange}>
                   Candidate
                 </SortableHead>
