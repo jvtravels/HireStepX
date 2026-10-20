@@ -10,7 +10,7 @@
 
 export const config = { runtime: "edge" };
 
-import { withAuthAndRateLimit, corsHeaders, withRequestId, slog } from "./_shared";
+import { withAuthAndRateLimit, corsHeaders, withRequestId, slog, getClientIp } from "./_shared";
 import { loadEmployerMatchAccess, loadAuthIdentity, contactWithheldFor, DENIED_STATUS } from "./_entitlements";
 import { MATCH_ID_RE } from "./_messages-helpers";
 
@@ -116,6 +116,15 @@ export default async function handler(req: Request): Promise<Response> {
     }
     const sep = signData.signedURL.includes("?") ? "&" : "?";
     const url = `${SUPABASE_URL}/storage/v1${signData.signedURL}${sep}download=${encodeURIComponent(fileName)}`;
+
+    // Audit trail for a file that carries real contact details. The table arrives with migration
+    // 0056, and a missing table or a slow insert must never block the download.
+    await fetch(`${SUPABASE_URL}/rest/v1/resume_access_log`, {
+      method: "POST",
+      headers: { ...serviceHeaders(), "Content-Type": "application/json", Prefer: "return=minimal" },
+      body: JSON.stringify({ employer_id: auth.userId, candidate_user_id: candidateUserId, match_id: matchId, ip_address: getClientIp(req) }),
+      signal: AbortSignal.timeout(3_000),
+    }).catch(() => undefined);
 
     return new Response(JSON.stringify({ url, fileName }), { status: 200, headers });
   } catch (err) {

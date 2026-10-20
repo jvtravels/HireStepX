@@ -41,10 +41,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const encodedCutoff = encodeURIComponent(cutoff);
 
   try {
-    const findRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/profiles?deleted_at=not.is.null&deleted_at=lt.${encodedCutoff}&select=id&order=deleted_at.asc&limit=${BATCH_SIZE}`,
-      { headers, signal: AbortSignal.timeout(10_000) },
-    );
+    // Never-attempted accounts first, then the least recently attempted, so accounts whose erasure
+    // keeps failing rotate to the back instead of starving the queue. Falls back to deleted_at
+    // ordering until migration 0056 adds the column.
+    const queueQuery = (order: string) =>
+      fetch(
+        `${SUPABASE_URL}/rest/v1/profiles?deleted_at=not.is.null&deleted_at=lt.${encodedCutoff}&select=id&order=${order}&limit=${BATCH_SIZE}`,
+        { headers, signal: AbortSignal.timeout(10_000) },
+      );
+    let findRes = await queueQuery("erasure_attempted_at.asc.nullsfirst,deleted_at.asc");
+    if (findRes.status === 400) findRes = await queueQuery("deleted_at.asc");
     if (!findRes.ok) {
       console.error(`[cron:cleanup-deleted] CRITICAL: query failed (${findRes.status})`);
       return res.status(500).json({ error: "Failed to query profiles" });
@@ -58,10 +64,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     let deleted = 0;
     let retained = 0;
     let failed = 0;
+    let restored = 0;
     const started = Date.now();
+
+    // The batch was read a while ago and each erasure takes seconds: an owner can restore the
+    // account in between, and erasing a restored account is unrecoverable.
+    const stillScheduled = async (id: string): Promise<boolean> => {
+      const r = await fetch(
+        `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(id)}&deleted_at=not.is.null&deleted_at=lt.${encodedCutoff}&select=id`,
+        { headers, signal: AbortSignal.timeout(10_000) },
+      ).catch(() => null);
+      if (!r || !r.ok) return false;
+      const found = (await r.json().catch(() => [])) as { id?: string }[];
+      return Array.isArray(found) && found.some((row) => row.id === id);
+    };
+    // Best-effort; the column is optional until migration 0056 is applied.
+    const stampAttempt = (id: string) =>
+      fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(id)}&deleted_at=not.is.null`, {
+        method: "PATCH",
+        headers: { ...headers, Prefer: "return=minimal" },
+        body: JSON.stringify({ erasure_attempted_at: new Date().toISOString() }),
+        signal: AbortSignal.timeout(10_000),
+      }).catch(() => undefined);
 
     for (const { id } of rows) {
       if (Date.now() - started > TIME_BUDGET_MS) break; // remaining accounts are picked up tomorrow
+      if (!(await stillScheduled(id))) { restored++; continue; }
+      await stampAttempt(id);
       try {
         const result = await eraseUserData(
           {
@@ -89,7 +118,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
-    slog.info("cleanup-deleted-accounts: run complete", { erased: deleted, retainedFinancial: retained, failed });
+    slog.info("cleanup-deleted-accounts: run complete", { erased: deleted, retainedFinancial: retained, failed, skippedRestored: restored });
     // A stuck erasure is a DPDP deadline risk, so any failure keeps the heartbeat stale.
     await recordCronResult("cleanup-deleted-accounts", { errors: failed });
     return res.status(200).json({ deleted, retained, failed });

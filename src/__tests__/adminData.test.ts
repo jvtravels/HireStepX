@@ -176,7 +176,7 @@ describe("admin-data — input validation", () => {
     const res = mockRes();
     await handler(authedReq(body), res);
     expect(res.statusCode).toBe(400);
-    expect(res.body).toEqual({ error: "Bad request" });
+    expect(res.body).toMatchObject({ error: "Bad request", code: "bad_request" });
     expect(global.fetch).not.toHaveBeenCalled();
   });
 });

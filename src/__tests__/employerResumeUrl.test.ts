@@ -9,6 +9,7 @@ vi.mock("../../server-handlers/_shared", () => ({
   corsHeaders: () => ({}),
   withRequestId: (h: Record<string, string>) => h,
   slog: { error: vi.fn(), warn: vi.fn(), info: vi.fn() },
+  getClientIp: () => "203.0.113.9",
 }));
 
 // Real _entitlements: ownership/unlock rules are exercised through the network layer.
@@ -23,7 +24,7 @@ function matchRow(o: MatchOpts) {
   }];
 }
 
-function installFetch(opts: MatchOpts & { files?: unknown[]; signOk?: boolean }) {
+function installFetch(opts: MatchOpts & { files?: unknown[]; signOk?: boolean; logFails?: boolean }) {
   const fetchMock = vi.fn(async (url: string, _init?: RequestInit) => {
     const u = String(url);
     if (u.includes("/auth/v1/admin/users/")) return { ok: true, json: async () => ({ email: "a@acme.com", email_confirmed_at: "t" }) };
@@ -34,6 +35,10 @@ function installFetch(opts: MatchOpts & { files?: unknown[]; signOk?: boolean })
       return opts.signOk === false
         ? { ok: false, json: async () => ({}) }
         : { ok: true, json: async () => ({ signedURL: "/object/sign/resume-files/cand-1/cv.pdf?token=abc" }) };
+    }
+    if (u.includes("/rest/v1/resume_access_log")) {
+      if (opts.logFails) throw new Error("relation does not exist");
+      return { ok: true, json: async () => ({}) };
     }
     throw new Error(`unexpected fetch ${u}`);
   });
@@ -67,6 +72,29 @@ describe("employer-candidate-resume-url", () => {
     expect(body.url).toBe("https://example.supabase.co/storage/v1/object/sign/resume-files/cand-1/cv.pdf?token=abc&download=Priya%20CV.pdf");
     const signCall = f.mock.calls.find(([u]) => String(u).includes("/object/sign/"));
     expect(JSON.parse(String(signCall?.[1]?.body))).toEqual({ expiresIn: 120 });
+  });
+
+  it("records who downloaded which candidate's resume", async () => {
+    const f = installFetch({ unlocked: true });
+    await get();
+    const logCall = f.mock.calls.find(([u]) => String(u).includes("/rest/v1/resume_access_log"));
+    expect(logCall?.[1]?.method).toBe("POST");
+    expect(JSON.parse(String(logCall?.[1]?.body))).toEqual({
+      employer_id: "emp-1", candidate_user_id: "cand-1", match_id: MATCH_ID, ip_address: "203.0.113.9",
+    });
+  });
+
+  it("still returns the download link when the audit insert fails", async () => {
+    installFetch({ unlocked: true, logFails: true });
+    const res = await get();
+    expect(res.status).toBe(200);
+    expect((await res.json()).fileName).toBe("Priya CV.pdf");
+  });
+
+  it("writes no audit row when the candidate is still locked", async () => {
+    const f = installFetch({ unlocked: false });
+    await get();
+    expect(f.mock.calls.some(([u]) => String(u).includes("/resume_access_log"))).toBe(false);
   });
 
   it("404s for a match that does not exist", async () => {

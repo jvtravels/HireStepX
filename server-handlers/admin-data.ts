@@ -30,11 +30,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const auth = await verifyAuth(req);
   if (!auth.ok) {
-    return res.status(401).json({ error: "Unauthorized" });
+    return res.status(401).json({ error: "Unauthorized", code: "unauthorized" });
   }
 
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-    return res.status(503).json({ error: "Not configured" });
+    return res.status(503).json({ error: "Not configured", code: "not_configured" });
   }
 
   const body = req.body as { section?: string; action?: string; search?: string; offset?: number; userId?: string; sessionId?: string; id?: string; status?: string; tier?: string; days?: number; qty?: number; note?: string; paymentId?: string; amountPaise?: number; subject?: string; htmlBody?: string; month?: string; actualInvoiceInr?: number; flagId?: string; flagStatus?: string; requirementId?: string; matchIds?: string[]; employerId?: string; reportId?: string; reason?: string } | undefined;
@@ -268,8 +268,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json({ ...data as object, _token: createAdminToken() });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Failed to fetch admin data";
-    slog.error("admin-data: unexpected error", { error: msg });
-    const status = err instanceof ValidationError ? 400 : 500;
-    return res.status(status).json({ error: status === 400 ? "Bad request" : "Internal server error" });
+    if (err instanceof ValidationError) {
+      return res.status(400).json({ error: "Bad request", code: "bad_request", detail: msg });
+    }
+    slog.error("admin-data: unexpected error", { code: "admin_data_failed", error: msg });
+    return res.status(500).json({ error: "Internal server error", code: "internal_error" });
   }
 }

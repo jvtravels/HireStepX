@@ -59,6 +59,21 @@ async function redisDel(key: string): Promise<void> {
   } catch { /* best effort */ }
 }
 
+/* Claim before sending: SET NX so two overlapping cron runs can't both email the same intent.
+   The claim outlives a run (10 min) and is released when the send fails so the next run retries. */
+const CLAIM_TTL_SECONDS = 600;
+async function redisClaim(key: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${UPSTASH_URL}/SET/${encodeURIComponent(`claim:${key}`)}/1/NX/EX/${CLAIM_TTL_SECONDS}`, {
+      headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` },
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (!res.ok) return false;
+    const data = await res.json();
+    return data.result === "OK";
+  } catch { return false; }
+}
+
 function buildEmail(intent: PaymentIntent, footer?: EmailFooterOptions): { subject: string; html: string } {
   const safePlan = escapeHtml(intent.planName);
   const amount = (intent.amount / 100).toLocaleString("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 });
@@ -130,8 +145,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (!intent.email) { await redisDel(key); continue; }
         // Left in place (not deleted) when suppressed: a transient lookup failure must not lose the intent.
         if (await isSuppressed(preferenceDepsFromEnv(), intent.userId, "marketing")) { skipped++; continue; }
+        if (!(await redisClaim(key))) { skipped++; continue; }
         const ok = await sendEmail(intent);
-        if (ok) { sent++; await redisDel(key); }
+        if (ok) { sent++; await redisDel(key); } else { await redisDel(`claim:${key}`); }
       }
       if (cursor === "0") break; // SCAN finished
     }

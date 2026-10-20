@@ -758,13 +758,22 @@ async function recordMissedPasses(requirementId: string, misses: Array<{ id: str
   }
 }
 
-async function markStrongAlerted(requirementId: string, candidateIds: string[]): Promise<void> {
+/** Claims the announcement before it is sent: the PATCH only touches rows whose
+ *  strong_alerted_at is still null, so of two overlapping passes exactly one gets
+ *  each candidate back and sends the alert. A failed claim returns nothing, so a
+ *  candidate is announced at most once rather than twice. */
+async function claimStrongAlerts(requirementId: string, candidateIds: string[]): Promise<string[]> {
+  const claimed: string[] = [];
   for (const batch of chunk(candidateIds, 100)) {
-    await fetch(
-      `${SUPABASE_URL}/rest/v1/requirement_matches?requirement_id=eq.${encodeURIComponent(requirementId)}&candidate_user_id=in.(${inList(batch)})`,
-      { method: "PATCH", headers: { ...serviceHeaders(), "Content-Type": "application/json", Prefer: "return=minimal" }, body: JSON.stringify({ strong_alerted_at: new Date().toISOString() }) },
-    ).catch(() => {});
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/requirement_matches?requirement_id=eq.${encodeURIComponent(requirementId)}&candidate_user_id=in.(${inList(batch)})&strong_alerted_at=is.null&select=candidate_user_id`,
+      { method: "PATCH", headers: { ...serviceHeaders(), "Content-Type": "application/json", Prefer: "return=representation" }, body: JSON.stringify({ strong_alerted_at: new Date().toISOString() }) },
+    ).catch(() => null);
+    if (!res || !res.ok) continue;
+    const rows = (await res.json().catch(() => [])) as Array<{ candidate_user_id?: string }>;
+    if (Array.isArray(rows)) for (const row of rows) if (row.candidate_user_id) claimed.push(row.candidate_user_id);
   }
+  return claimed;
 }
 
 async function deleteLockedMatches(ids: string[], requirementId: string, opts: { untouchedOnly?: boolean } = {}): Promise<boolean> {
@@ -1012,26 +1021,27 @@ async function runMatchingInner(requirementId: string, req: RequirementInput, ow
   }
   const newStrongMatches = selectNewStrongMatches(ranked, previousScoreByCandidate, STRONG_MATCH_THRESHOLD, undefined, new Set([...alertedCandidateIds, ...sourceFlipIds]));
   stopIfAborted(signal);
-  if (newStrongMatches.length > 0) {
+  const claimedStrong = new Set(newStrongMatches.length > 0 ? await claimStrongAlerts(requirementId, newStrongMatches.map((m) => m.candidateId)) : []);
+  const announceStrong = newStrongMatches.filter((m) => claimedStrong.has(m.candidateId));
+  if (announceStrong.length > 0) {
     const title = req.title || "your requirement";
-    const topScore = Math.max(...newStrongMatches.map((m) => m.matchScore));
+    const topScore = Math.max(...announceStrong.map((m) => m.matchScore));
     await Promise.all([
       notify({
         userId: ownerUserId,
         type: "strong_match_found",
         title: "Strong match update",
-        body: strongMatchAlertBody(newStrongMatches.length, topScore, title),
+        body: strongMatchAlertBody(announceStrong.length, topScore, title),
         link: `/employer/requirements/${requirementId}`,
       }).catch(() => {}),
       sendStrongMatchEmail({
         ownerUserId,
         requirementId,
         requirementTitle: title,
-        matchCount: newStrongMatches.length,
+        matchCount: announceStrong.length,
         topScore,
       }).catch(() => {}),
     ]);
-    await markStrongAlerted(requirementId, newStrongMatches.map((m) => m.candidateId));
   }
 
   // Only live rows count: a preserved row the employer rejected or the
@@ -1289,7 +1299,7 @@ async function rematchCandidateForRequirement(
 
   // One announcement per candidate per requirement, ever (strong_alerted_at).
   const wasStrong = (existing?.match_score ?? 0) >= STRONG_MATCH_THRESHOLD;
-  if (score >= STRONG_MATCH_THRESHOLD && !wasStrong && !existing?.strong_alerted_at) {
+  if (score >= STRONG_MATCH_THRESHOLD && !wasStrong && !existing?.strong_alerted_at && (await claimStrongAlerts(r.id, [profile.id])).length === 1) {
     await Promise.all([
       notify({
         userId: r.employer_id, type: "strong_match_found", title: "Strong match update",
@@ -1297,7 +1307,6 @@ async function rematchCandidateForRequirement(
       }).catch(() => {}),
       sendStrongMatchEmail({ ownerUserId: r.employer_id, requirementId: r.id, requirementTitle: r.title || "your requirement", matchCount: 1, topScore: score }).catch(() => {}),
     ]);
-    await markStrongAlerted(r.id, [profile.id]);
   }
 }
 

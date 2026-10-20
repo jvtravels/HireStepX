@@ -52,6 +52,8 @@ interface Sim {
   poolFailImmediately?: boolean;
   /** Status the requirement row holds when a failed pass settles it. */
   currentStatus?: string;
+  /** Another overlapping pass already claimed every strong-match announcement. */
+  claimLost?: boolean;
 }
 
 /* Strong matches need the candidate to cover the requirement's listed skills. */
@@ -66,6 +68,7 @@ function dev(id: string, name = `Dev ${id}`, extra: Partial<SimProfile> = {}): S
 function makeSim(sim: Sim) {
   const calls = { upserts: [] as Array<Array<{ candidate_user_id: string }>>, deletes: [] as string[], patches: [] as Array<{ url: string; body: Record<string, unknown> }> };
   const json = (body: unknown, ok = true) => ({ ok, status: ok ? 200 : 500, json: async () => body, text: async () => "" });
+  const claimedIds = new Set<string>();
   const fetchMock = vi.fn(async (input: string, init?: RequestInit) => {
     const url = String(input);
     const method = init?.method || "GET";
@@ -74,6 +77,13 @@ function makeSim(sim: Sim) {
     if (url.includes("/rest/v1/requirement_matches?")) {
       if (method === "POST") { calls.upserts.push(JSON.parse(String(init?.body))); return json([]); }
       if (method === "DELETE") { calls.deletes.push(url); return json([]); }
+      if (method === "PATCH" && url.includes("strong_alerted_at=is.null")) {
+        const ids = decodeURIComponent(url.match(/candidate_user_id=in\.\(([^)]*)\)/)?.[1] || "").split(",").filter(Boolean);
+        const won = sim.claimLost ? [] : ids.filter((id) => !claimedIds.has(id) && !(sim.matches ?? []).some((m) => m.candidate_user_id === id && m.strong_alerted_at));
+        for (const id of won) claimedIds.add(id);
+        return json(won.map((id) => ({ candidate_user_id: id })));
+      }
+      if (method === "PATCH") return json([]);
       if (url.includes("candidate_status=eq.hired")) return json([]);
       return url.includes("id=gt.") ? json([]) : json(sim.matches ?? []);
     }
@@ -280,6 +290,13 @@ describe("runMatching — notifications", () => {
     expect(strong[0].userId).toBe(OWNER);
     expect(strong[0].body).not.toMatch(/Secret Name|Candidate #/);
     for (const [n] of notify.mock.calls) expect((n as { userId: string }).userId).toBe(OWNER);
+  });
+
+  it("stays silent when an overlapping pass already claimed the announcement", async () => {
+    const ids = ["a", "b"];
+    makeSim({ profiles: ids.map((i) => dev(i, `Dev ${i}`, SKILLED)), sessions: ids.map((i) => graded(i, 90)), claimLost: true });
+    await runMatching(REQ_ID, REQ, OWNER);
+    expect(notify.mock.calls.some((c) => (c[0] as { type: string }).type === "strong_match_found")).toBe(false);
   });
 
   it("does not re-alert for a candidate who was already a strong match", async () => {
