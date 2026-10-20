@@ -9,14 +9,14 @@ export function PipelineStepper({ status, className }: { status: CandidateStatus
   const negative = NEGATIVE_STATUSES.includes(status);
   const current = negative ? -1 : PIPELINE_STEPS.indexOf(status);
   return (
-    <ol aria-label="Hiring pipeline" className={cn("m-0 flex list-none flex-wrap items-center gap-x-1.5 gap-y-1 p-0", className)}>
+    <ol aria-label="Hiring pipeline" className={cn("m-0 grid list-none grid-cols-2 gap-x-4 gap-y-2 p-0 min-[640px]:flex min-[640px]:flex-wrap min-[640px]:items-center min-[640px]:gap-x-1.5 min-[640px]:gap-y-1", className)}>
       {PIPELINE_STEPS.map((step, i) => {
         const reached = !negative && i <= current;
         const isCurrent = i === current;
         const done = reached && !isCurrent;
         return (
           <Fragment key={step}>
-            {i > 0 && <li aria-hidden="true" className={cn("h-px w-4 shrink-0", i <= current ? "bg-hx-indigo" : "bg-hx-line")} />}
+            {i > 0 && <li aria-hidden="true" className={cn("hidden h-px w-4 shrink-0 min-[640px]:block", i <= current ? "bg-hx-indigo" : "bg-hx-line")} />}
             <li aria-current={isCurrent ? "step" : undefined} className="inline-flex items-center gap-1.5 text-[12px]">
               <span
                 aria-hidden="true"
@@ -37,7 +37,7 @@ export function PipelineStepper({ status, className }: { status: CandidateStatus
       })}
       {negative && (
         <>
-          <li aria-hidden="true" className="h-px w-4 shrink-0 bg-hx-line" />
+          <li aria-hidden="true" className="hidden h-px w-4 shrink-0 bg-hx-line min-[640px]:block" />
           <li aria-current="step" className="inline-flex items-center gap-1.5 text-[12px]">
             <span
               aria-hidden="true"
