@@ -22,6 +22,7 @@ import { matchRoleKey } from "../data/salaries";
 import { sessionMinutesForFocus } from "../data/session-length";
 import { Button } from "@/components/ui/button";
 import SetupTopbarLeft from "./SetupTopbarLeft";
+import { getRecommendedFocus, resolveFocusDefaults } from "./setupFocus";
 import { AUTH_STYLES } from "./auth/_styles";
 
 import { useAuth } from "./AuthContext";
@@ -297,22 +298,6 @@ const COMING_SOON_FOCUSES = {
   has: (f: InterviewFocus): boolean =>
     STATIC_COMING_SOON.has(f) || (f === "Salary Negotiation" && !isEnabled("SALARY_NEGOTIATION_MODE")),
 };
-
-function getRecommendedFocus(role?: string, experienceLevel?: string): string {
-  // Profile-level "fresher" setting wins over role-name heuristics so a user
-  // who calls themselves "Software Engineer" but is a fresh graduate still
-  // lands on the campus-placement flow by default.
-  if (experienceLevel === "fresher") return "Campus Placement";
-  if (!role) return "Behavioral";
-  const r = role.toLowerCase();
-  if (/engineer|developer|sde|swe|programmer|coder/i.test(r)) return "Technical Leadership";
-  if (/product\s*manager|pm\b/i.test(r)) return "Strategic";
-  if (/analyst|data/i.test(r)) return "Technical Leadership";
-  if (/intern|fresher|graduate|campus|entry/i.test(r)) return "Campus Placement";
-  if (/consult/i.test(r)) return "Case Study";
-  if (/manager|director|vp|head of|cto|ceo/i.test(r)) return "Management";
-  return "Behavioral";
-}
 
 /* ─── MicMeter ──────────────────────────────────────────────────────────
    3-bar live audio meter rendered inside the mic permission card once
@@ -794,14 +779,25 @@ export default function SessionSetup() {
     if (rd && rd._type === "fallback") return rd.experience?.[0]?.company || "";
     return "";
   });
-  const recommendedFocus = getRecommendedFocus(user?.targetRole, user?.experienceLevel);
+  const { recommended: recommendedFocus, defaultFocus } = resolveFocusDefaults({
+    role: targetRole.trim() || user?.targetRole,
+    experienceLevel: user?.experienceLevel,
+    relevant: relevantFocusSet,
+    isComingSoon: (f) => COMING_SOON_FOCUSES.has(f as InterviewFocus),
+  });
   const [interviewFocus, setInterviewFocus] = useState<string[]>(() => {
     if (preselectedFocus) {
       const match = Object.entries(focusToType).find(([, v]) => v === preselectedFocus);
       if (match) return [match[0]];
     }
-    return [getRecommendedFocus(user?.targetRole, user?.experienceLevel)];
+    return [defaultFocus];
   });
+  // Follows the recommendation as profile/role data loads, until the user picks a card.
+  const [focusPicked, setFocusPicked] = useState(false);
+  useEffect(() => {
+    if (focusPicked || preselectedFocus) return;
+    setInterviewFocus((cur) => (cur[0] === defaultFocus ? cur : [defaultFocus]));
+  }, [defaultFocus, focusPicked, preselectedFocus]);
 
   /* Auto-correct the focus selection when the user changes their role
      so the chip set and the selected chip stay coherent. If the
@@ -1943,7 +1939,7 @@ export default function SessionSetup() {
                       const isRecommended = opt.value === recommendedFocus && recommendedFocus !== "Behavioral";
                       return (
                         <button key={opt.value} className="ob-focus-card"
-                          onClick={() => setInterviewFocus([opt.value])}
+                          onClick={() => { setFocusPicked(true); setInterviewFocus([opt.value]); }}
                           type="button"
                           role="radio"
                           aria-checked={sel}
