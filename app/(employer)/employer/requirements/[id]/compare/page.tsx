@@ -10,7 +10,7 @@ import type { Candidate } from "@/employer/mockData";
 import { tokens as t, fonts as f, textSize } from "@/auth/_tokens";
 import { CandidateStatusChip, ScoreChip, SkillTag } from "@/employer/_atoms";
 import { EmptyNote, ErrorRetry, LinkCta, PageSkeleton } from "@/employer/_requirementAtoms";
-import { interviewScore, scoreTone } from "@/employer/_jobDetailHelpers";
+import { candidateSkillFit, interviewScore, scoreTone } from "@/employer/_jobDetailHelpers";
 import { candidateDisplayName } from "../_components/requirementFormat";
 import { MIN_COMPARE, parseCompareIds } from "../_components/shortlistSelection";
 import { displaySkillName } from "../candidates/[candidateId]/_components/helpers";
@@ -61,7 +61,7 @@ function NameCell({ candidate, requirementId }: { candidate: Candidate; requirem
 
 interface CompareRow {
   label: string;
-  render: (c: Candidate) => ReactNode;
+  render: (c: Candidate, requiredSkills: string[]) => ReactNode;
 }
 
 const ROWS: CompareRow[] = [
@@ -85,6 +85,20 @@ const ROWS: CompareRow[] = [
         )}
       </>
     ),
+  },
+  {
+    label: "Required skills",
+    render: (c, required) => {
+      const { matched, gaps } = candidateSkillFit(c, required);
+      return (
+        <>
+          <span style={cellText}>
+            <strong>{matched.length}</strong> of {matched.length + gaps.length}
+          </span>
+          {gaps.length > 0 && <div style={mutedText}>Missing: {gaps.join(", ")}</div>}
+        </>
+      );
+    },
   },
   {
     // The same figure and rule as the shortlist's evidence column: a never-practised candidate has no score, not a default 50.
@@ -229,13 +243,13 @@ export default function ComparePage() {
               </tr>
             </thead>
             <tbody>
-              {ROWS.map((row) => (
+              {ROWS.filter((row) => row.label !== "Required skills" || requirement.skills.length > 0).map((row) => (
                 <tr key={row.label}>
                   <th scope="row" style={{ fontFamily: f.sans, fontSize: textSize.base }}>
                     {row.label}
                   </th>
                   {chosen.map((c) => (
-                    <td key={c.id}>{row.render(c)}</td>
+                    <td key={c.id}>{row.render(c, requirement.skills)}</td>
                   ))}
                 </tr>
               ))}
