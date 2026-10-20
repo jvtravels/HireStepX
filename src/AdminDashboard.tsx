@@ -413,6 +413,9 @@ export default function AdminDashboard() {
   const [loginPassword, setLoginPassword] = useState("");
   const [loginError, setLoginError] = useState("");
   const [loginBusy, setLoginBusy] = useState(false);
+  // Second step, shown once the server asks for an authenticator code.
+  const [totpStep, setTotpStep] = useState(false);
+  const [loginTotp, setLoginTotp] = useState("");
 
   // Client-side cache
   const cache = useRef<Map<string, CacheEntry>>(new Map());
@@ -461,13 +464,19 @@ export default function AdminDashboard() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ password: loginPassword }),
+        body: JSON.stringify(totpStep ? { password: loginPassword, totp: loginTotp } : { password: loginPassword }),
       });
       if (!loginRes.ok) {
+        const info = await loginRes.json().catch(() => ({})) as { totp_required?: boolean; code?: string; error?: string };
         if (loginRes.status === 429) {
           setLoginError("Too many attempts. Try again in 15 minutes.");
+        } else if (info.totp_required) {
+          setTotpStep(true);
+          setLoginTotp("");
+        } else if (info.code === "mfa_required") {
+          setLoginError("Two-factor sign-in is required but not set up. Set ADMIN_TOTP_SECRET on the server, add it to your authenticator app, then sign in again.");
         } else {
-          setLoginError("Wrong password");
+          setLoginError(totpStep ? "Invalid authenticator code" : "Wrong password");
         }
         setLoginBusy(false);
         return;
@@ -489,6 +498,8 @@ export default function AdminDashboard() {
 
       setAuthed(true);
       setLoginPassword(""); // Clear password from memory
+      setTotpStep(false);
+      setLoginTotp("");
     } catch {
       setLoginError("Connection failed. Check your network.");
     }
@@ -497,10 +508,15 @@ export default function AdminDashboard() {
 
   const handleLogout = useCallback(() => {
     setAuthed(false);
-    clearToken();
     cache.current.clear();
     // Clear the HttpOnly admin_token cookie via the logout endpoint.
-    fetch("/api/admin-login", { method: "DELETE", credentials: "include" }).catch(() => { /* best-effort */ });
+    // The header token is sent too: the cookie can lapse before it does, and the server revokes by session id.
+    const logoutHeaders: Record<string, string> = {};
+    if (tokenRef.current) logoutHeaders["x-admin-token"] = tokenRef.current;
+    fetch("/api/admin-login", { method: "DELETE", headers: logoutHeaders, credentials: "include" }).catch(() => { /* best-effort */ });
+    clearToken();
+    setTotpStep(false);
+    setLoginTotp("");
   }, []);
 
   /* ── Dashboard state ── */
@@ -576,9 +592,21 @@ export default function AdminDashboard() {
         body: JSON.stringify({ section, ...extra }),
       });
 
-      if (res.status === 401) {
+      if (res.status === 401 || res.status === 403) {
+        const info = await res.json().catch(() => ({})) as { code?: string };
+        // handleLogout clears the token it would otherwise revoke by, so it runs first
+        // and the reason is shown on the login screen.
         handleLogout();
-        setError("Session expired. Please sign in again.");
+        setLoginError(
+          info.code === "session_revoked" ? "Your session was revoked. Please sign in again."
+          : info.code === "mfa_required" ? "Two-factor authentication is required. Set ADMIN_TOTP_SECRET on the server, then sign in with your authenticator code."
+          : "Session expired. Please sign in again.",
+        );
+        setLoading(false);
+        return null;
+      }
+      if (res.status === 503) {
+        setError("Could not verify your session right now. Try again shortly.");
         setLoading(false);
         return null;
       }
@@ -3883,21 +3911,25 @@ export default function AdminDashboard() {
 
           <form onSubmit={handleLogin}>
             <div style={{ marginBottom: 24 }}>
-              <label htmlFor="admin-password" style={{ display: "block", fontSize: 12, color: c.stone, marginBottom: 6, fontWeight: 500 }}>Password</label>
+              <label htmlFor={totpStep ? "admin-totp" : "admin-password"} style={{ display: "block", fontSize: 12, color: c.stone, marginBottom: 6, fontWeight: 500 }}>{totpStep ? "Authenticator code" : "Password"}</label>
               <input
-                id="admin-password"
-                type="password"
-                value={loginPassword}
-                onChange={e => setLoginPassword(e.target.value)}
+                id={totpStep ? "admin-totp" : "admin-password"}
+                key={totpStep ? "totp" : "password"}
+                type={totpStep ? "text" : "password"}
+                inputMode={totpStep ? "numeric" : undefined}
+                maxLength={totpStep ? 6 : undefined}
+                value={totpStep ? loginTotp : loginPassword}
+                onChange={e => (totpStep ? setLoginTotp(e.target.value.replace(/\D/g, "").slice(0, 6)) : setLoginPassword(e.target.value))}
                 required
-                autoComplete="off"
+                autoComplete={totpStep ? "one-time-code" : "off"}
                 style={{
                   width: "100%", padding: "11px 14px", background: c.onyx,
                   border: `1px solid ${c.border}`, borderRadius: radius.md,
                   color: c.ivory, fontSize: 14, fontFamily: font.ui,
                   boxSizing: "border-box",
+                  ...(totpStep ? { letterSpacing: "0.25em", textAlign: "center" as const } : {}),
                 }}
-                placeholder="Enter admin password"
+                placeholder={totpStep ? "000000" : "Enter admin password"}
               />
             </div>
 
@@ -3915,7 +3947,7 @@ export default function AdminDashboard() {
 
             <Button
               type="submit"
-              disabled={loginBusy}
+              disabled={loginBusy || (totpStep && loginTotp.length !== 6)}
               style={{
                 width: "100%", padding: "12px 0",
                 background: loginBusy ? c.onyx : `linear-gradient(135deg, ${T.indigo}, ${T.indigoDeep})`,
@@ -3924,7 +3956,7 @@ export default function AdminDashboard() {
                 fontSize: 14, fontWeight: 600, fontFamily: font.ui,
               }}
             >
-              {loginBusy ? "Verifying..." : "Sign In"}
+              {loginBusy ? "Verifying..." : totpStep ? "Verify code" : "Sign In"}
             </Button>
           </form>
         </div>

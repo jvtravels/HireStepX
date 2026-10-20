@@ -11,7 +11,8 @@
  * could forge a valid admin token and read the entire database. We now fail
  * closed: with no key configured, verifyAdminToken() rejects everything.
  */
-import { createHmac, timingSafeEqual } from "crypto";
+import { createHmac, timingSafeEqual, randomUUID } from "crypto";
+import { evaluateSession, NO_REVOCATIONS, parseAdminClaims, tokenExpiry, type AdminClaims } from "./_admin-session-helpers";
 
 const ADMIN_PASSWORD = (process.env.ADMIN_PASSWORD || "").trim();
 
@@ -33,34 +34,53 @@ export function adminAuthConfigured(): boolean {
   return ADMIN_TOKEN_SECRET.length > 0;
 }
 
+export interface MintOptions {
+  /** Reuse the session id on refresh; a new one is generated at sign-in. */
+  sid?: string;
+  /** Original sign-in time. Refreshes pass it through so the session cap can't be extended. */
+  authTime?: number;
+  /** A TOTP code was verified at sign-in. */
+  mfa?: boolean;
+}
+
 /** Mint a signed, expiring admin session token. */
-export function createAdminToken(now: number = Date.now()): string {
-  const data = JSON.stringify({ iat: now, exp: now + ADMIN_TOKEN_TTL_MS });
+export function createAdminToken(now: number = Date.now(), opts: MintOptions = {}): string {
+  const authTime = opts.authTime ?? now;
+  const data = JSON.stringify({
+    iat: now,
+    exp: tokenExpiry(now, authTime, ADMIN_TOKEN_TTL_MS),
+    ast: authTime,
+    sid: opts.sid ?? randomUUID(),
+    mfa: opts.mfa === true,
+  });
   const sig = createHmac("sha256", ADMIN_TOKEN_SECRET).update(data).digest("hex");
   return Buffer.from(data).toString("base64") + "." + sig;
 }
 
-/** Verify an admin session token. Fails closed when no signing key is
- *  configured, on malformed input, bad signatures, and expiry. */
-export function verifyAdminToken(token: string): boolean {
-  if (!ADMIN_TOKEN_SECRET) return false;
+/** Signature-checked claims of an admin token, or null. Expiry, revocation and MFA are
+ *  NOT judged here so callers can tell "expired" from "forged" (see evaluateSession). */
+export function readAdminTokenClaims(token: string): AdminClaims | null {
+  if (!ADMIN_TOKEN_SECRET) return null;
   try {
     const [dataB64, sig] = token.split(".");
-    if (!dataB64 || !sig) return false;
+    if (!dataB64 || !sig) return null;
     const data = Buffer.from(dataB64, "base64").toString();
     const expectedSig = createHmac("sha256", ADMIN_TOKEN_SECRET).update(data).digest("hex");
     const a = Buffer.from(sig);
     const b = Buffer.from(expectedSig);
-    if (a.length !== b.length) return false;
-    if (!timingSafeEqual(a, b)) return false;
-    const payload = JSON.parse(data);
-    if (typeof payload?.exp !== "number" || Date.now() > payload.exp) return false;
-    return true;
+    if (a.length !== b.length) return null;
+    if (!timingSafeEqual(a, b)) return null;
+    return parseAdminClaims(JSON.parse(data));
   } catch (err) {
     // A malformed admin token (bad base64/JSON) on an admin-only surface is
-    // worth a trace — it's either a tampering attempt or a client bug, and
-    // previously this failed silently with no record either way.
-    console.warn("[admin-auth] verifyAdminToken rejected a malformed token:", err);
-    return false;
+    // worth a trace — it's either a tampering attempt or a client bug.
+    console.warn("[admin-auth] readAdminTokenClaims rejected a malformed token:", err);
+    return null;
   }
+}
+
+/** Signature + expiry + session-cap check only (no revocation lookup, no MFA policy). */
+export function verifyAdminToken(token: string): boolean {
+  const claims = readAdminTokenClaims(token);
+  return claims !== null && evaluateSession(claims, { now: Date.now(), requireMfa: false, ...NO_REVOCATIONS }).ok;
 }

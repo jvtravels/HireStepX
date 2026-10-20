@@ -1,7 +1,9 @@
 /* Shared substrate for the admin-data handler: env, auth, Supabase REST helpers. */
 
 import type { VercelRequest } from "@vercel/node";
-import { verifyAdminToken } from "./_admin-auth";
+import { readAdminTokenClaims } from "./_admin-auth";
+import { evaluateSession, isMfaRequired, NO_REVOCATIONS, readCookie, type AdminClaims, type RevocationState, type SessionDenial } from "./_admin-session-helpers";
+import { loadRevocationState } from "./_admin-session-store";
 import { slog } from "./_shared";
 import { readAllPages } from "./_paged-fetch";
 
@@ -30,29 +32,53 @@ export const LIMIT_RECENT = 30;
 
 /* ─── Auth ─── */
 
+export type AdminAuthResult =
+  | { ok: true; claims: AdminClaims }
+  | { ok: false; status: 401 | 403 | 503; code: string; error: string; claims?: AdminClaims };
+
 /** Check auth. Only the signed session token (header or HttpOnly cookie) is accepted.
  * The raw admin password is deliberately NOT a credential here: it is verified, together
  * with the TOTP second factor, solely by /api/admin-login, which mints the token. Accepting
- * it on this endpoint would let anyone holding the shared password skip TOTP. */
-export async function verifyAuth(req: VercelRequest): Promise<{ ok: boolean }> {
-  const token = req.headers["x-admin-token"];
-  if (token && typeof token === "string" && verifyAdminToken(token)) {
-    return { ok: true };
-  }
-  // Fallback: read token from HttpOnly admin_token cookie (session resume on
-  // page refresh, when the client has no in-memory token yet).
+ * it on this endpoint would let anyone holding the shared password skip TOTP.
+ *
+ * On top of the signature it enforces the 8h session cap, the Redis revocation list and
+ * (when ADMIN_REQUIRE_MFA=1) the `mfa` claim. If the revocation list can't be read the
+ * request is refused (503): an unverifiable session is treated as an invalid one. */
+export async function verifyAuth(req: VercelRequest): Promise<AdminAuthResult> {
+  const candidates: string[] = [];
+  const header = req.headers["x-admin-token"];
+  if (header && typeof header === "string") candidates.push(header);
+  // Cookie fallback: session resume on page refresh, when the client has no in-memory token yet.
   const cookieHeader = typeof req.headers["cookie"] === "string" ? req.headers["cookie"] : "";
-  if (cookieHeader) {
-    const cookieToken = cookieHeader
-      .split(";")
-      .map((c) => c.trim())
-      .find((c) => c.startsWith("admin_token="))
-      ?.slice("admin_token=".length);
-    if (cookieToken && verifyAdminToken(cookieToken)) {
-      return { ok: true };
-    }
+  const cookieToken = cookieHeader ? readCookie(cookieHeader, "admin_token") : undefined;
+  if (cookieToken) candidates.push(cookieToken);
+
+  const signed = candidates.map(readAdminTokenClaims).filter((c): c is AdminClaims => c !== null);
+  if (signed.length === 0) return { ok: false, status: 401, code: "unauthorized", error: "Unauthorized" };
+
+  const ctx = { now: Date.now(), requireMfa: isMfaRequired(process.env.ADMIN_REQUIRE_MFA) };
+  let chosen: AdminClaims | null = null;
+  let firstDenial: { denial: SessionDenial; claims: AdminClaims } | null = null;
+  for (const claims of signed) {
+    const d = evaluateSession(claims, { ...ctx, ...NO_REVOCATIONS });
+    if (d.ok) { chosen = claims; break; }
+    firstDenial ??= { denial: d, claims };
   }
-  return { ok: false };
+  if (!chosen) {
+    const { denial, claims } = firstDenial!;
+    return { ok: false, status: denial.status, code: denial.code, error: denial.error, claims };
+  }
+
+  let state: RevocationState;
+  try {
+    state = await loadRevocationState(chosen.sid!);
+  } catch (err) {
+    slog.error("admin-auth: revocation lookup failed, refusing request", { error: err instanceof Error ? err.message : String(err) });
+    return { ok: false, status: 503, code: "session_check_unavailable", error: "Could not verify session. Try again shortly.", claims: chosen };
+  }
+  const d = evaluateSession(chosen, { ...ctx, ...state });
+  if (!d.ok) return { ok: false, status: d.status, code: d.code, error: d.error, claims: chosen };
+  return { ok: true, claims: chosen };
 }
 
 /* ─── Supabase Helpers ─── */

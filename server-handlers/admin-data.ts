@@ -12,7 +12,9 @@ import { listEmployers, setEmployerTier, suspendEmployer, unsuspendEmployer, lis
 import { listUnlockRequirements, getUnlockMatches, adminUnlockCandidates } from "./_admin-unlock";
 import { razorpayBasicAuth } from "./_razorpay-auth";
 import { createAdminToken } from "./_admin-auth";
-import { slog } from "./_shared";
+import { describeAdminAction, toWebHeaders, ADMIN_ACTOR } from "./_admin-session-helpers";
+import { recordAdminAudit, revokeAllSessions, revokeSession } from "./_admin-session-store";
+import { slog, getClientIp } from "./_shared";
 import { eraseUserData, posthogConfigFromEnv } from "./_erase-user";
 
 
@@ -28,17 +30,32 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (req.method === "OPTIONS") return res.status(204).end();
 
+  const ip = getClientIp(new Request("http://localhost", { headers: toWebHeaders(req.headers) }));
   const auth = await verifyAuth(req);
   if (!auth.ok) {
-    return res.status(401).json({ error: "Unauthorized", code: "unauthorized" });
+    // Only requests carrying a validly signed token are worth a row: unsigned garbage
+    // would let anyone fill the table.
+    if (auth.claims) {
+      await recordAdminAudit({
+        admin_user_id: ADMIN_ACTOR, session_id: auth.claims.sid, action: "auth_denied",
+        resource_type: null, resource_id: null, outcome: auth.code, ip, meta: {},
+      });
+    }
+    return res.status(auth.status).json({ error: auth.error, code: auth.code });
   }
+  const { claims } = auth;
 
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
     return res.status(503).json({ error: "Not configured", code: "not_configured" });
   }
 
-  const body = req.body as { section?: string; action?: string; search?: string; offset?: number; userId?: string; sessionId?: string; id?: string; status?: string; tier?: string; days?: number; qty?: number; note?: string; paymentId?: string; amountPaise?: number; subject?: string; htmlBody?: string; month?: string; actualInvoiceInr?: number; flagId?: string; flagStatus?: string; requirementId?: string; matchIds?: string[]; employerId?: string; reportId?: string; reason?: string } | undefined;
+  const body = req.body as { section?: string; action?: string; search?: string; offset?: number; userId?: string; sessionId?: string; id?: string; status?: string; tier?: string; days?: number; qty?: number; note?: string; paymentId?: string; amountPaise?: number; subject?: string; htmlBody?: string; month?: string; actualInvoiceInr?: number; flagId?: string; flagStatus?: string; requirementId?: string; matchIds?: string[]; employerId?: string; reportId?: string; reason?: string; scope?: string } | undefined;
   const section = body?.section || body?.action || "overview";
+
+  const audit = (outcome: string) => recordAdminAudit({
+    admin_user_id: ADMIN_ACTOR, session_id: claims.sid, ip, outcome,
+    ...describeAdminAction(String(section), body as Record<string, unknown> | undefined),
+  });
 
   try {
     const data = await (async () => {
@@ -253,6 +270,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           const emailData = await emailRes.json() as { id?: string };
           return { ok: true, emailId: emailData.id, to: toEmail };
         }
+        case "revoke-admin-sessions": {
+          const scope = body?.scope === "all" ? "all" : "current";
+          const done = scope === "all" ? await revokeAllSessions(Date.now()) : await revokeSession(claims.sid!);
+          return done ? { ok: true, scope, revoked: true } : { ok: false, error: "Session store unavailable" };
+        }
         case "live": {
           const since = new Date(Date.now() - 30 * 60 * 1000).toISOString();
           const liveSessions = await fetchJSON<{ id: string; user_id: string; type: string; difficulty: string; score: number | null; created_at: string }>(
@@ -264,13 +286,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     })();
 
-    // Include a fresh token in every response so the client stays authenticated
-    return res.status(200).json({ ...data as object, _token: createAdminToken() });
+    await audit((data as { ok?: boolean } | null)?.ok === false ? "failed" : "ok");
+    // A revoked session must not be handed a fresh token.
+    if (section === "revoke-admin-sessions" && (data as { ok?: boolean }).ok) return res.status(200).json(data);
+    // Include a fresh token in every response so the client stays authenticated. It inherits
+    // the original sign-in time, so activity never extends the 8h session cap.
+    return res.status(200).json({ ...data as object, _token: createAdminToken(Date.now(), { sid: claims.sid!, authTime: claims.ast, mfa: claims.mfa }) });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Failed to fetch admin data";
     if (err instanceof ValidationError) {
+      await audit("rejected");
       return res.status(400).json({ error: "Bad request", code: "bad_request", detail: msg });
     }
+    await audit("error");
     slog.error("admin-data: unexpected error", { code: "admin_data_failed", error: msg });
     return res.status(500).json({ error: "Internal server error", code: "internal_error" });
   }

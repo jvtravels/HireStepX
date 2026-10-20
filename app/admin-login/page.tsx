@@ -37,8 +37,10 @@ export default function AdminLoginPage() {
       } else if (res.status === 429) {
         setError("Too many attempts. Try again in 15 minutes.");
       } else {
-        const data = (await res.json().catch(() => ({}))) as { totp_required?: boolean };
-        if (data.totp_required) {
+        const data = (await res.json().catch(() => ({}))) as { totp_required?: boolean; code?: string };
+        if (data.code === "mfa_required") {
+          setError("Two-factor sign-in is required but not set up. Set ADMIN_TOTP_SECRET on the server first.");
+        } else if (data.totp_required) {
           // Password was correct; server now wants a TOTP code.
           setTotpRequired(true);
           setError("");

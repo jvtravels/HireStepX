@@ -35,6 +35,17 @@ vi.mock("../../server-handlers/_shared", async (importOriginal) => {
   };
 });
 
+const loadRevocationState = vi.fn();
+const recordAdminAudit = vi.fn();
+const revokeSession = vi.fn();
+const revokeAllSessions = vi.fn();
+vi.mock("../../server-handlers/_admin-session-store", () => ({
+  loadRevocationState: (...a: unknown[]) => loadRevocationState(...a),
+  recordAdminAudit: (...a: unknown[]) => recordAdminAudit(...a),
+  revokeSession: (...a: unknown[]) => revokeSession(...a),
+  revokeAllSessions: (...a: unknown[]) => revokeAllSessions(...a),
+}));
+
 const eraseUserData = vi.fn();
 vi.mock("../../server-handlers/_erase-user", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../../server-handlers/_erase-user")>();
@@ -78,6 +89,11 @@ beforeEach(() => {
   isRateLimited.mockResolvedValue(false);
   getClientIp.mockReturnValue("1.2.3.4");
   global.fetch = vi.fn();
+  delete process.env.ADMIN_REQUIRE_MFA;
+  loadRevocationState.mockResolvedValue({ sidRevoked: false, revokedBeforeMs: null });
+  recordAdminAudit.mockResolvedValue(undefined);
+  revokeSession.mockResolvedValue(true);
+  revokeAllSessions.mockResolvedValue(true);
 });
 
 describe("admin-data — auth gate", () => {
@@ -374,5 +390,144 @@ describe("admin-data — send-email", () => {
     const res = mockRes();
     await handler(authedReq({ action: "send-email", userId: "u1", subject: "Hi", htmlBody: "<p>hi</p>" }), res);
     expect((res.body as { ok: boolean; error: string }).error).toContain("email not found");
+  });
+});
+
+const H = 60 * 60 * 1000;
+const decode = (t: string) => JSON.parse(Buffer.from(t.split(".")[0], "base64").toString()) as { ast: number; sid: string; exp: number; mfa: boolean };
+
+describe("admin-data — session cap, revocation, MFA", () => {
+  it("401s session_expired once 8h have passed since sign-in, even though the idle window is fresh", async () => {
+    const old = createAdminToken(Date.now(), { authTime: Date.now() - 9 * H });
+    const res = mockRes();
+    await handler(mockReq({ section: "overview" }, { "x-admin-token": old }), res);
+    expect(res.statusCode).toBe(401);
+    expect((res.body as { code: string }).code).toBe("session_expired");
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  it("refreshed tokens keep the sign-in time and session id, so activity cannot extend the cap", async () => {
+    const authTime = Date.now() - 7 * H;
+    const t = createAdminToken(Date.now(), { authTime });
+    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({ ok: true, status: 200, json: async () => ({}), text: async () => "" });
+    const res = mockRes();
+    await handler(mockReq({ action: "unban-user", userId: "u1" }, { "x-admin-token": t }), res);
+    const fresh = decode((res.body as { _token: string })._token);
+    expect(fresh.ast).toBe(authTime);
+    expect(fresh.sid).toBe(decode(t).sid);
+    expect(fresh.exp).toBe(authTime + 8 * H);
+  });
+
+  it("401s session_revoked for a revoked session id and audits the denial", async () => {
+    loadRevocationState.mockResolvedValue({ sidRevoked: true, revokedBeforeMs: null });
+    const res = mockRes();
+    await handler(authedReq({ section: "overview" }), res);
+    expect(res.statusCode).toBe(401);
+    expect((res.body as { code: string }).code).toBe("session_revoked");
+    expect(global.fetch).not.toHaveBeenCalled();
+    expect(recordAdminAudit).toHaveBeenCalledWith(expect.objectContaining({ action: "auth_denied", outcome: "session_revoked", session_id: decode(VALID_TOKEN).sid }));
+  });
+
+  it("401s session_revoked when a revoke-all cutoff postdates the sign-in", async () => {
+    loadRevocationState.mockResolvedValue({ sidRevoked: false, revokedBeforeMs: Date.now() + 1000 });
+    const res = mockRes();
+    await handler(authedReq({ section: "overview" }), res);
+    expect((res.body as { code: string }).code).toBe("session_revoked");
+  });
+
+  it("fails closed with 503 when the revocation list cannot be read", async () => {
+    loadRevocationState.mockRejectedValue(new Error("redis down"));
+    const res = mockRes();
+    await handler(authedReq({ section: "overview" }), res);
+    expect(res.statusCode).toBe(503);
+    expect((res.body as { code: string }).code).toBe("session_check_unavailable");
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  it("does not audit unsigned garbage tokens", async () => {
+    const res = mockRes();
+    await handler(mockReq({ section: "overview" }, { "x-admin-token": "garbage.token" }), res);
+    expect(res.statusCode).toBe(401);
+    expect(recordAdminAudit).not.toHaveBeenCalled();
+  });
+
+  it("MFA off by default: a token without the mfa claim is accepted", async () => {
+    const res = mockRes();
+    await handler(authedReq({ action: "ban-user" }), res);
+    expect(res.statusCode).toBe(400);
+  });
+
+  it("ADMIN_REQUIRE_MFA=1 rejects a token minted without TOTP with 403 mfa_required", async () => {
+    process.env.ADMIN_REQUIRE_MFA = "1";
+    const res = mockRes();
+    await handler(authedReq({ action: "ban-user", userId: "u1" }), res);
+    expect(res.statusCode).toBe(403);
+    expect((res.body as { code: string }).code).toBe("mfa_required");
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  it("ADMIN_REQUIRE_MFA=1 accepts a token minted after a verified TOTP", async () => {
+    process.env.ADMIN_REQUIRE_MFA = "1";
+    const res = mockRes();
+    await handler(mockReq({ action: "ban-user" }, { "x-admin-token": createAdminToken(Date.now(), { mfa: true }) }), res);
+    expect(res.statusCode).toBe(400);
+  });
+
+  it("revoke-admin-sessions revokes the current sid and does not hand back a fresh token", async () => {
+    const res = mockRes();
+    await handler(authedReq({ action: "revoke-admin-sessions" }), res);
+    expect(revokeSession).toHaveBeenCalledWith(decode(VALID_TOKEN).sid);
+    expect(res.body).toEqual({ ok: true, scope: "current", revoked: true });
+  });
+
+  it("revoke-admin-sessions scope=all sets the revoke-all cutoff", async () => {
+    const res = mockRes();
+    await handler(authedReq({ action: "revoke-admin-sessions", scope: "all" }), res);
+    expect(revokeAllSessions).toHaveBeenCalledTimes(1);
+    expect((res.body as { scope: string }).scope).toBe("all");
+  });
+
+  it("reports ok:false (and still issues a token) when the session store is unavailable", async () => {
+    revokeSession.mockResolvedValue(false);
+    const res = mockRes();
+    await handler(authedReq({ action: "revoke-admin-sessions" }), res);
+    expect((res.body as { ok: boolean }).ok).toBe(false);
+  });
+});
+
+describe("admin-data — audit log", () => {
+  it("records who/what/where for a write, keeping only allow-listed fields", async () => {
+    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({ ok: true, status: 200, json: async () => 5, text: async () => "" });
+    const res = mockRes();
+    await handler(authedReq({ action: "grant-credits", userId: "u1", qty: 3, note: "pii: jane@example.com" }), res);
+    expect(res.statusCode).toBe(200);
+    expect(recordAdminAudit).toHaveBeenCalledTimes(1);
+    const row = recordAdminAudit.mock.calls[0][0];
+    expect(row).toMatchObject({
+      admin_user_id: "shared-admin", session_id: decode(VALID_TOKEN).sid, action: "grant-credits",
+      resource_type: "user", resource_id: "u1", outcome: "ok", ip: "1.2.3.4", meta: { qty: 3 },
+    });
+    expect(JSON.stringify(row)).not.toContain("jane@example.com");
+  });
+
+  it("audits reads too, without the search text", async () => {
+    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({ ok: true, status: 200, headers: { get: () => null }, json: async () => [], text: async () => "" });
+    const res = mockRes();
+    await handler(authedReq({ section: "users", search: "someone@example.com" }), res);
+    const row = recordAdminAudit.mock.calls[0][0];
+    expect(row.action).toBe("users");
+    expect(row.meta).toEqual({ hasSearch: true });
+    expect(JSON.stringify(row)).not.toContain("someone@example.com");
+  });
+
+  it("records rejected input as outcome=rejected", async () => {
+    await handler(authedReq({ action: "ban-user" }), mockRes());
+    expect(recordAdminAudit.mock.calls[0][0]).toMatchObject({ action: "ban-user", outcome: "rejected" });
+  });
+
+  it("records ok:false results as outcome=failed", async () => {
+    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({ ok: false, status: 500, text: async () => "boom" });
+    await handler(authedReq({ action: "ban-user", userId: "u1" }), mockRes());
+    expect(recordAdminAudit.mock.calls[0][0]).toMatchObject({ outcome: "failed" });
   });
 });

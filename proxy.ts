@@ -148,8 +148,9 @@ async function verifyAdminTokenCookie(token: string): Promise<boolean> {
     const valid = await crypto.subtle.verify("HMAC", key, sigBytes, new TextEncoder().encode(dataStr));
     if (!valid) return false;
 
-    const payload = JSON.parse(dataStr) as { exp?: unknown };
+    const payload = JSON.parse(dataStr) as { exp?: unknown; mfa?: unknown };
     if (typeof payload.exp !== "number" || Date.now() > payload.exp) return false;
+    if ((process.env.ADMIN_REQUIRE_MFA || "").trim() === "1" && payload.mfa !== true) return false;
 
     return true;
   } catch {
