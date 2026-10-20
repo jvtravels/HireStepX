@@ -36,11 +36,11 @@ export default function SelectionBar({
     <div
       role="region"
       aria-label="Selected candidates"
-      className="sticky bottom-3 z-30 mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border border-hx-line bg-white px-3 py-2"
+      className="sticky bottom-3 z-30 mx-auto mt-3 flex w-fit max-w-[calc(100%-1.5rem)] flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border border-hx-line bg-white px-3 py-2"
     >
       <span className="text-[14px] font-semibold text-hx-coal tabular-nums">{summary}</span>
       <div className="flex flex-wrap items-center gap-2">
-        <Button type="button" size="lg" disabled={!canCompare(count) || busy} onClick={onCompare} className="pointer-coarse:h-11">
+        <Button type="button" disabled={!canCompare(count) || busy} onClick={onCompare} className="pointer-coarse:h-11">
           <GitCompareArrowsIcon aria-hidden="true" /> Compare
         </Button>
         {canChangeStage &&
@@ -49,7 +49,6 @@ export default function SelectionBar({
               key={target}
               type="button"
               variant="outline"
-              size="lg"
               disabled={eligible[target] === 0 || busy}
               onClick={() => onBulk(target)}
               className="pointer-coarse:h-11"
@@ -57,11 +56,13 @@ export default function SelectionBar({
               {BULK_COPY[target].action}
             </Button>
           ))}
-        <Button type="button" variant="ghost" size="lg" onClick={onClear} disabled={busy} className="pointer-coarse:h-11">
+      </div>
+      <div className="ml-auto flex flex-wrap items-center gap-x-3">
+        <Button type="button" variant="ghost" onClick={onClear} disabled={busy} className="pointer-coarse:h-11">
           <XIcon aria-hidden="true" /> Clear
         </Button>
+        <span className="text-[13px] text-hx-ink-soft">{[hint, selectionLimitHint(count)].filter(Boolean).join(" ")}</span>
       </div>
-      <span className="text-[13px] text-hx-ink-soft">{[hint, selectionLimitHint(count)].filter(Boolean).join(" ")}</span>
     </div>
     )}
     </>
