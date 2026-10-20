@@ -15,7 +15,6 @@ import { tokens as t, fonts as f } from "@/auth/_tokens";
 import { Card as AtomCard, Eyebrow, EmployerIcon } from "@/employer/_atoms";
 import { PrimaryLink, ErrorPanel, InlineAlert } from "@/employer/_consoleParts";
 import CompanyProfileForm from "@/employer/CompanyProfileForm";
-import { Card, CardContent } from "@/components/ui/card";
 import {
   DashboardHeader, DashboardFunnel, ActiveJobsCard, RecommendedCandidatesCard,
   UpcomingInterviewsCard, KeyInsightsCard, RecentActivityCard, NextActionCard, DashboardSkeleton,
@@ -146,10 +145,9 @@ function OnboardingChecklist({ steps, onDismiss }: { steps: ChecklistStep[]; onD
   const nextStepIndex = steps.findIndex((s) => !s.done);
 
   return (
-    <Card>
-      <CardContent>
+    <section aria-label="Getting started" className="border-b border-hx-line px-7 py-6">
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, marginBottom: 14 }}>
-          <h2 style={{ margin: 0 }}><Eyebrow tone="indigo">Getting started</Eyebrow></h2>
+          <h2 className="m-0 text-[15px] font-semibold text-hx-coal">Getting started</h2>
           <span style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft }}>
             {doneCount} of {steps.length} done
             {onDismiss && (
@@ -194,8 +192,7 @@ function OnboardingChecklist({ steps, onDismiss }: { steps: ChecklistStep[]; onD
             </li>
           ))}
         </ol>
-      </CardContent>
-    </Card>
+    </section>
   );
 }
 
@@ -289,7 +286,7 @@ function EmployerDashboard() {
   const showOnboardingChecklist = !suspended && statsReady && requirements.length === 0;
 
   return (
-    <div className="mx-stagger" style={{ display: "flex", flexDirection: "column", gap: 16, width: "100%", minWidth: 0 }}>
+    <div style={{ minWidth: 0 }}>
       {canCreate && statsReady && (
         <EmployerHeaderAction>
           <Button asChild size="sm" className="h-9 gap-1.5">
@@ -300,41 +297,43 @@ function EmployerDashboard() {
           </Button>
         </EmployerHeaderAction>
       )}
-      <DashboardHeader companyName={companyName} range={range} onRangeChange={setRange} jobs={openRequirements} recommended={recommendedCards} />
+      <div className="mx-stagger overflow-hidden rounded-2xl border border-hx-line bg-white">
+        <DashboardHeader companyName={companyName} range={range} onRangeChange={setRange} jobs={openRequirements} recommended={recommendedCards} />
 
-      {suspended && (
-        <div role="status" style={{ padding: "12px 16px", border: `1px solid ${t.line}`, borderRadius: 12, background: t.cream, fontFamily: f.sans, fontSize: 14, color: t.inkSoft }}>
-          Your account is suspended and read-only.
-        </div>
-      )}
-
-      {requirementsLoading ? (
-        <DashboardSkeleton />
-      ) : requirementsError ? (
-        <InlineAlert message="We couldn't load your jobs just now." onRetry={() => { void refreshRequirements(); }} />
-      ) : showOnboardingChecklist ? (
-        <OnboardingChecklist steps={onboardingSteps} />
-      ) : (
-        <>
-          {dashboardState === "failed" && (
-            <InlineAlert message="Interview, hiring and activity figures didn't load." onRetry={() => setDashboardNonce((n) => n + 1)} />
-          )}
-          {showSetupReminder && <OnboardingChecklist steps={onboardingSteps} onDismiss={hideChecklist} />}
-          {nextAction && <NextActionCard action={nextAction} />}
-          <DashboardFunnel data={dashboard} recommendedTotal={recommendedTotal} range={range} busy={refreshing} />
-          <div aria-busy={refreshing} className="mx-busy grid grid-cols-1 gap-5 min-[1100px]:grid-cols-[minmax(0,1fr)_minmax(300px,380px)]">
-            <div style={{ display: "flex", flexDirection: "column", gap: 20, minWidth: 0 }}>
-              <ActiveJobsCard jobs={openRequirements} pipeline={dashboard?.jobs ?? null} now={now} rowActions={rowActions} />
-              <RecommendedCandidatesCard cards={recommendedCards} total={dashboard?.totals.awaitingReview ?? recommendedCards.length} />
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 20, minWidth: 0 }}>
-              <UpcomingInterviewsCard items={dashboard?.upcomingInterviews ?? []} />
-              <KeyInsightsCard insights={insights} />
-              <RecentActivityCard items={dashboard?.activity ?? []} />
-            </div>
+        {suspended && (
+          <div role="status" className="border-b border-hx-line bg-hx-soft px-7 py-3 text-[14px] text-hx-ink-soft">
+            Your account is suspended and read-only.
           </div>
-        </>
-      )}
+        )}
+
+        {requirementsLoading ? (
+          <DashboardSkeleton inline />
+        ) : requirementsError ? (
+          <div className="px-7 py-6"><InlineAlert message="We couldn't load your jobs just now." onRetry={() => { void refreshRequirements(); }} /></div>
+        ) : showOnboardingChecklist ? (
+          <OnboardingChecklist steps={onboardingSteps} />
+        ) : (
+          <>
+            {dashboardState === "failed" && (
+              <div className="border-b border-hx-line px-7 py-4"><InlineAlert message="Interview, hiring and activity figures didn't load." onRetry={() => setDashboardNonce((n) => n + 1)} /></div>
+            )}
+            {showSetupReminder && <OnboardingChecklist steps={onboardingSteps} onDismiss={hideChecklist} />}
+            {nextAction && <NextActionCard action={nextAction} />}
+            <DashboardFunnel data={dashboard} recommendedTotal={recommendedTotal} range={range} busy={refreshing} />
+            <div aria-busy={refreshing} className="mx-busy grid grid-cols-1 min-[1100px]:grid-cols-[minmax(0,1fr)_minmax(300px,380px)]">
+              <div className="min-w-0 divide-y divide-hx-line min-[1100px]:border-r min-[1100px]:border-hx-line">
+                <ActiveJobsCard jobs={openRequirements} pipeline={dashboard?.jobs ?? null} now={now} rowActions={rowActions} />
+                <RecommendedCandidatesCard cards={recommendedCards} total={dashboard?.totals.awaitingReview ?? recommendedCards.length} />
+              </div>
+              <div className="min-w-0 divide-y divide-hx-line border-t border-hx-line min-[1100px]:border-t-0">
+                <UpcomingInterviewsCard items={dashboard?.upcomingInterviews ?? []} />
+                <KeyInsightsCard insights={insights} />
+                <RecentActivityCard items={dashboard?.activity ?? []} />
+              </div>
+            </div>
+          </>
+        )}
+      </div>
       {dialogs}
     </div>
   );

@@ -1,8 +1,8 @@
 "use client";
 
 /* Presentational sections for the employer dashboard (app/(employer)/employer/
-   page.tsx). Styled after the candidate dashboard (src/DashboardHomeSections.tsx):
-   flat bordered 12px cards on the line token, neutral pills, indigo reserved for
+   page.tsx). One white container (drawn by the page) holding hairline-separated
+   sections, so nothing is a card inside a card; neutral pills, indigo reserved for
    actions. Built on the shared primitives (ui/table, ui/avatar, NativeSelect,
    the command palette pieces, EmptyState, _atoms Badge/Pill/ScoreChip) rather than local
    copies. Everything is driven by props; data wiring stays in the page. */
@@ -10,7 +10,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, type CSSProperties, type ReactNode } from "react";
-import { BriefcaseIcon, UsersIcon, CalendarDaysIcon, CircleCheckIcon, LightbulbIcon, ClockIcon, TrendingUpIcon, ArrowDownIcon, ArrowUpIcon, ChevronsUpDownIcon, SearchXIcon, ArrowRightIcon, SparklesIcon, UserIcon } from "lucide-react";
+import { LightbulbIcon, ClockIcon, TrendingUpIcon, ArrowDownIcon, ArrowUpIcon, ChevronsUpDownIcon, SearchXIcon, ArrowRightIcon, SparklesIcon, UserIcon } from "lucide-react";
 import { hoursOrDaysAgo } from "@/hiringMatchFormat";
 import AnimatedNumber from "@/AnimatedNumber";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -23,17 +23,20 @@ import { Badge, Pill, ScoreChip, STAGE_LABEL, STAGE_TONE } from "./_atoms";
 import { PrimaryLink, OutlineLink } from "./_consoleParts";
 import type { RequirementSummary } from "./mockData";
 import {
-  RANGE_LABEL, FUNNEL_SEGMENTS, buildFunnel, interviewSlot, jobHealth, pipelineStage, sortJobs, jobsNeedingAttentionFirst,
+  RANGE_LABEL, buildFunnel, interviewSlot, jobHealth, pipelineStage, sortJobs, jobsNeedingAttentionFirst,
   type DashboardRange, type DashboardJobPipeline, type FunnelStep, type JobSortKey, type SortDir, type DashboardUpcomingInterview,
   type DashboardActivityItem, type DashboardInsight, type InsightTone, type RecommendedCard, type EmployerDashboardData, type NextAction,
 } from "./dashboardData";
 
 const RANGE_OPTIONS: readonly DashboardRange[] = [7, 30, 90];
 
-const CARD = "min-w-0 rounded-xl border border-hx-line bg-white p-[18px]";
-const H2 = "m-0 flex items-center gap-2.5 text-[16px] font-bold text-hx-coal";
+/* Sections sit in the page's container; the parent draws the hairlines between them. */
+const CARD = "min-w-0 px-7 py-6";
+const H2 = "m-0 text-[15px] font-semibold text-hx-coal";
 const LIST = "m-0 list-none p-0";
-const EMPTY = "border border-hx-line p-4";
+const EMPTY = "py-6";
+/* Tables bleed to the container edge so rows read as lines, not a box in a box. */
+const BLEED = "-mx-7 [&_td:first-child]:pl-7 [&_th:first-child]:pl-7 [&_td:last-child]:pr-7 [&_th:last-child]:pr-7";
 const TH = "h-10 whitespace-nowrap bg-hx-soft px-3 text-[12px] font-semibold text-hx-ink-soft";
 const TD = "px-3 py-3 text-[13px] text-hx-coal";
 
@@ -50,13 +53,10 @@ function PersonAvatar({ name, initials }: { name: string; initials: string }) {
   );
 }
 
-function CardHeader({ id, icon, title, action }: { id: string; icon: ReactNode; title: string; action?: ReactNode }) {
+function CardHeader({ id, title, action }: { id: string; title: string; action?: ReactNode }) {
   return (
-    <div className="mb-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-      <h2 id={id} className={H2}>
-        <span aria-hidden="true" className="inline-flex text-hx-ink-soft">{icon}</span>
-        {title}
-      </h2>
+    <div className="mb-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+      <h2 id={id} className={H2}>{title}</h2>
       {action}
     </div>
   );
@@ -83,12 +83,12 @@ export function DashboardHeader({
   recommended: RecommendedCard[];
 }) {
   return (
-    <div className="flex flex-wrap items-start justify-between gap-4">
+    <header className="flex flex-wrap items-center justify-between gap-4 border-b border-hx-line px-7 py-5">
       <div className="min-w-0">
-        <h1 className="m-0 mb-1 text-[28px] font-bold tracking-[-0.01em] text-hx-coal [overflow-wrap:anywhere]">
+        <h1 className="m-0 text-[20px] font-semibold text-hx-coal [overflow-wrap:anywhere]">
           Welcome back
         </h1>
-        <p className="m-0 text-[14px] text-hx-ink-soft">{companyName ? `${companyName} hiring pipeline` : "Your hiring pipeline"}, {RANGE_LABEL[range].toLowerCase()}.</p>
+        <p className="m-0 mt-1 text-[14px] text-hx-ink-soft">{companyName ? `${companyName} hiring pipeline` : "Your hiring pipeline"}, {RANGE_LABEL[range].toLowerCase()}.</p>
       </div>
       <div className="flex w-full flex-wrap items-center gap-2.5 min-[900px]:w-auto min-[900px]:flex-nowrap">
         <DashboardSearch jobs={jobs} candidates={recommended} />
@@ -99,7 +99,7 @@ export function DashboardHeader({
           </NativeSelect>
         </label>
       </div>
-    </div>
+    </header>
   );
 }
 
@@ -176,7 +176,7 @@ function DashboardSearch({ jobs, candidates }: { jobs: RequirementSummary[]; can
 
 export function NextActionCard({ action }: { action: NextAction }) {
   return (
-    <section aria-labelledby="next-action-heading" className={`${CARD} flex flex-wrap items-center justify-between gap-x-6 gap-y-3`}>
+    <section aria-labelledby="next-action-heading" className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 border-b border-hx-line bg-hx-soft px-7 py-4">
       <div className="flex min-w-0 flex-[1_1_320px] items-start gap-3">
         <span aria-hidden="true" className="mx-pop inline-flex size-9 shrink-0 items-center justify-center rounded-lg bg-hx-indigo-100 text-hx-indigo">
           <SparklesIcon size={18} />
@@ -193,32 +193,18 @@ export function NextActionCard({ action }: { action: NextAction }) {
 
 /* ─── Hiring funnel ─── */
 
-const STEP_ICON: Record<FunnelStep["key"], ReactNode> = {
-  recommended: <UsersIcon size={18} />,
-  interviewing: <CalendarDaysIcon size={18} />,
-  hired: <CircleCheckIcon size={18} />,
-};
-
 function FunnelStepItem({ step, range, last }: { step: FunnelStep; range: DashboardRange; last: boolean }) {
   const added = step.added === null ? null
     : step.added <= 0 ? `None new in last ${range} days`
     : step.key === "recommended" ? `${step.added} new ${step.added === 1 ? "match" : "matches"} in last ${range} days`
     : `+${step.added} in last ${range} days`;
   return (
-    <li className={`flex min-w-0 flex-col gap-2.5 p-[18px] ${last ? "" : "border-b border-hx-line min-[640px]:border-b-0 min-[640px]:border-r"}`}>
+    <li className={`flex min-w-0 flex-col gap-1 px-7 py-5 ${last ? "" : "border-b border-hx-line min-[640px]:border-b-0 min-[640px]:border-r"}`}>
       <p className="sr-only">{step.value} {step.label}{added ? `, ${added}` : ""}</p>
-      <div aria-hidden="true" className="flex items-center gap-2.5 text-hx-ink-soft">
-        <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg bg-hx-soft text-hx-indigo">{STEP_ICON[step.key]}</span>
-        <span className="min-w-0 text-[14px]">{step.label}</span>
-      </div>
-      <div aria-hidden="true" className="text-[28px] font-bold leading-[1.1] text-hx-coal"><AnimatedNumber value={step.value} /></div>
-      <div aria-hidden="true" className="flex gap-0.5">
-        {Array.from({ length: FUNNEL_SEGMENTS }, (_, i) => (
-          <span key={i} style={i < step.filled ? segmentDelay(i) : undefined} className={`h-1.5 flex-1 rounded-full ${i < step.filled ? "mx-seg bg-hx-indigo" : "bg-hx-line"}`} />
-        ))}
-      </div>
+      <div aria-hidden="true" className="text-[13px] text-hx-ink-soft">{step.label}</div>
+      <div aria-hidden="true" className="text-[28px] font-semibold leading-[1.15] tabular-nums text-hx-coal"><AnimatedNumber value={step.value} /></div>
       <div aria-hidden="true" className="min-h-4 text-[12px] text-hx-ink-soft">
-        {added && <span className={step.added ? "font-semibold text-hx-success-ink" : ""}>{added}</span>}
+        {added && <span className={step.added ? "font-medium text-hx-success-ink" : ""}>{added}</span>}
       </div>
     </li>
   );
@@ -227,7 +213,7 @@ function FunnelStepItem({ step, range, last }: { step: FunnelStep; range: Dashbo
 export function DashboardFunnel({ data, recommendedTotal, range, busy = false }: { data: EmployerDashboardData | null; recommendedTotal: number; range: DashboardRange; busy?: boolean }) {
   const steps = buildFunnel(data, recommendedTotal);
   return (
-    <section aria-label="Hiring funnel" aria-busy={busy} className="mx-busy min-w-0 overflow-hidden rounded-xl border border-hx-line bg-white">
+    <section aria-label="Hiring funnel" aria-busy={busy} className="mx-busy min-w-0 border-b border-hx-line">
       <ol className={`${LIST} grid grid-cols-1 min-[640px]:grid-cols-3`}>
         {steps.map((step, i) => <FunnelStepItem key={step.key} step={step} range={range} last={i === steps.length - 1} />)}
       </ol>
@@ -289,7 +275,6 @@ export function ActiveJobsCard({
     <section aria-labelledby="active-jobs-heading" className={`${CARD} @container`}>
       <CardHeader
         id="active-jobs-heading"
-        icon={<BriefcaseIcon size={18} />}
         title="Active jobs"
         action={
           <TextLink href="/employer/jobs">View all jobs</TextLink>
@@ -299,7 +284,7 @@ export function ActiveJobsCard({
         <EmptyState className={EMPTY} title="No active jobs" description="Post a job and matched candidates will show up here." />
       ) : (
         <>
-          <div className="hidden rounded-lg border border-hx-line @min-[700px]:block">
+          <div className={`hidden border-y border-hx-line @min-[700px]:block ${BLEED}`}>
             <Table className="text-[13px]">
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
@@ -341,7 +326,7 @@ export function ActiveJobsCard({
               </TableBody>
             </Table>
           </div>
-          <ul className={`${LIST} rounded-lg border border-hx-line @min-[700px]:hidden`}>
+          <ul className={`${LIST} -mx-7 border-y border-hx-line @min-[700px]:hidden`}>
             {shown.map((j, i) => {
               const p = byId.get(j.id);
               const health = jobHealth(j, p, now);
@@ -352,7 +337,7 @@ export function ActiveJobsCard({
                 ["Hired", p ? p.hired : "n/a"],
               ];
               return (
-                <li key={j.id} className={`p-3 ${i > 0 ? "border-t border-hx-line" : ""}`}>
+                <li key={j.id} className={`px-7 py-3 ${i > 0 ? "border-t border-hx-line" : ""}`}>
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <Link href={`/employer/requirements/${j.id}`} className="inline-block py-0.5 text-[14px] font-semibold text-hx-coal no-underline [overflow-wrap:anywhere] hover:underline">{j.title}</Link>
@@ -459,7 +444,6 @@ export function RecommendedCandidatesCard({ cards, total }: { cards: Recommended
     <section aria-labelledby="recommended-heading" className={`${CARD} @container`}>
       <CardHeader
         id="recommended-heading"
-        icon={<UsersIcon size={18} />}
         title="Candidates to review"
         action={<TextLink href="/employer/jobs">View all</TextLink>}
       />
@@ -472,17 +456,17 @@ export function RecommendedCandidatesCard({ cards, total }: { cards: Recommended
         <EmptyState className={EMPTY} title="No candidates to review" description="Strong matches appear here as soon as a job finishes screening." />
       ) : (
         <>
-          <div aria-hidden="true" className={`mt-4 hidden gap-x-8 border-b border-hx-line px-1 pb-2.5 text-[12px] font-medium text-hx-ink-soft @min-[960px]:grid ${REVIEW_COLS}`}>
+          <div aria-hidden="true" className={`-mx-7 mt-4 hidden gap-x-8 border-y border-hx-line bg-hx-soft px-7 py-2.5 text-[12px] font-medium text-hx-ink-soft @min-[960px]:grid ${REVIEW_COLS}`}>
             <span>Candidate</span>
             <span>Skills</span>
             <span>Experience</span>
             <span>Match</span>
           </div>
-          <ul className={`${LIST} mx-stagger divide-y divide-hx-line`}>
+          <ul className={`${LIST} mx-stagger -mx-7 divide-y divide-hx-line`}>
             {cards.map((c) => {
               const waiting = waitingLabel(c.waitingDays);
               return (
-                <li key={c.matchId} className={`grid grid-cols-1 gap-x-8 gap-y-4 px-1 py-4 transition-colors duration-200 hover:bg-hx-row @min-[960px]:items-center ${REVIEW_COLS}`}>
+                <li key={c.matchId} className={`grid grid-cols-1 gap-x-8 gap-y-4 px-7 py-4 transition-colors duration-200 hover:bg-hx-row @min-[960px]:items-center ${REVIEW_COLS}`}>
                   <div className="flex min-w-0 items-start gap-3.5">
                     <PersonAvatar name={c.name} initials={c.initials} />
                     <div className="min-w-0">
@@ -529,7 +513,7 @@ export function RecommendedCandidatesCard({ cards, total }: { cards: Recommended
 export function UpcomingInterviewsCard({ items }: { items: DashboardUpcomingInterview[] }) {
   return (
     <section aria-labelledby="upcoming-heading" className={CARD}>
-      <CardHeader id="upcoming-heading" icon={<CalendarDaysIcon size={18} />} title="Upcoming interviews" action={<TextLink href="/employer/jobs">View all</TextLink>} />
+      <CardHeader id="upcoming-heading" title="Upcoming interviews" action={<TextLink href="/employer/jobs">View all</TextLink>} />
       {items.length === 0 ? (
         <EmptyState className={EMPTY} title="Nothing scheduled" description="Invite a candidate to interview and it will show up here." />
       ) : (
@@ -576,7 +560,7 @@ const INSIGHT_ICON: Record<string, ReactNode> = {
 export function KeyInsightsCard({ insights }: { insights: DashboardInsight[] }) {
   return (
     <section aria-labelledby="insights-heading" className={CARD}>
-      <CardHeader id="insights-heading" icon={<LightbulbIcon size={18} />} title="Key insights" />
+      <CardHeader id="insights-heading" title="Key insights" />
       {insights.length === 0 ? (
         <EmptyState className={EMPTY} title="No insights yet" description="Insights appear once your jobs have screened candidates." />
       ) : (
@@ -607,7 +591,7 @@ export function KeyInsightsCard({ insights }: { insights: DashboardInsight[] }) 
 export function RecentActivityCard({ items }: { items: DashboardActivityItem[] }) {
   return (
     <section aria-labelledby="activity-heading" className={CARD}>
-      <CardHeader id="activity-heading" icon={<ClockIcon size={18} />} title="Recent activity" />
+      <CardHeader id="activity-heading" title="Recent activity" />
       {items.length === 0 ? (
         <EmptyState className={EMPTY} title="No activity yet" description="Moves you make on candidates, like inviting or hiring, are logged here." />
       ) : (
@@ -657,46 +641,31 @@ function SkeletonCard({ rows, avatar }: { rows: number; avatar?: boolean }) {
   );
 }
 
-export function DashboardSkeleton({ withHeader = false }: { withHeader?: boolean }) {
+export function DashboardSkeleton({ withHeader = false, inline = false }: { withHeader?: boolean; inline?: boolean }) {
   return (
-    <div role="status" aria-live="polite" aria-busy="true" className="flex flex-col gap-5">
+    <div role="status" aria-live="polite" aria-busy="true" className={inline ? undefined : "overflow-hidden rounded-2xl border border-hx-line bg-white"}>
       <span className="sr-only">Loading your overview…</span>
       {withHeader && (
-        <div aria-hidden="true" className="flex flex-col gap-2">
-          <Skeleton className="h-8 w-56" />
+        <div aria-hidden="true" className="flex flex-col gap-2 border-b border-hx-line px-7 py-5">
+          <Skeleton className="h-6 w-44" />
           <Skeleton className="h-4 w-72 max-w-full" />
         </div>
       )}
-      {/* Next action */}
-      <div aria-hidden="true" className={`${CARD} flex flex-wrap items-center justify-between gap-x-6 gap-y-3`}>
-        <div className="flex min-w-0 flex-[1_1_320px] items-start gap-3">
-          <Skeleton className="size-9 shrink-0 rounded-lg" />
-          <div className="flex min-w-0 flex-1 flex-col gap-2">
-            <Skeleton className="h-4 w-2/3" />
-            <Skeleton className="h-3.5 w-full max-w-md" />
-          </div>
-        </div>
-        <Skeleton className="h-9 w-36 rounded-lg" />
-      </div>
-      {/* Funnel: three steps */}
-      <div aria-hidden="true" className="grid grid-cols-1 overflow-hidden rounded-xl border border-hx-line bg-white min-[640px]:grid-cols-3">
+      <div aria-hidden="true" className="grid grid-cols-1 border-b border-hx-line min-[640px]:grid-cols-3">
         {[0, 1, 2].map((i) => (
-          <div key={i} className={`flex flex-col gap-2.5 p-[18px] ${i < 2 ? "border-b border-hx-line min-[640px]:border-b-0 min-[640px]:border-r" : ""}`}>
-            <div className="flex items-center gap-2.5">
-              <Skeleton className="size-9 rounded-lg" />
-              <Skeleton className="h-4 w-28" />
-            </div>
+          <div key={i} className={`flex flex-col gap-2 px-7 py-5 ${i < 2 ? "border-b border-hx-line min-[640px]:border-b-0 min-[640px]:border-r" : ""}`}>
+            <Skeleton className="h-3.5 w-24" />
             <Skeleton className="h-7 w-14" />
-            <Skeleton className="h-1.5 w-full rounded-full" />
+            <Skeleton className="h-3 w-32" />
           </div>
         ))}
       </div>
-      <div className="grid grid-cols-1 gap-5 min-[1100px]:grid-cols-[minmax(0,1fr)_minmax(300px,380px)]">
-        <div className="flex min-w-0 flex-col gap-5">
+      <div className="grid grid-cols-1 min-[1100px]:grid-cols-[minmax(0,1fr)_minmax(300px,380px)]">
+        <div className="min-w-0 divide-y divide-hx-line min-[1100px]:border-r min-[1100px]:border-hx-line">
           <SkeletonCard rows={4} />
           <SkeletonCard rows={3} avatar />
         </div>
-        <div className="flex min-w-0 flex-col gap-5">
+        <div className="min-w-0 divide-y divide-hx-line border-t border-hx-line min-[1100px]:border-t-0">
           <SkeletonCard rows={2} />
           <SkeletonCard rows={2} />
           <SkeletonCard rows={3} />

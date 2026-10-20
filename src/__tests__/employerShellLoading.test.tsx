@@ -24,7 +24,7 @@ vi.mock("../employer/VerificationBanner", () => ({ default: () => null }));
 const refreshCompanyStatus = vi.fn();
 let data: Record<string, unknown> = {};
 vi.mock("../employer/EmployerDataContext", () => ({
-  useEmployerData: () => ({ companyName: "Acme", listConversations: vi.fn(), refreshCompanyStatus, ...data }),
+  useEmployerData: () => ({ companyName: "Acme", listConversations: vi.fn(), fetchCredit: vi.fn().mockResolvedValue(null), refreshCompanyStatus, ...data }),
 }));
 
 beforeEach(() => {
@@ -120,10 +120,10 @@ describe("EmployerShell page container", () => {
     expect(cardOf("Page").className).not.toContain("bg-white");
   });
 
-  it("keeps the card on the dashboard", () => {
+  it("leaves the dashboard card to the page itself", () => {
     pathname = "/employer";
     data = { companyStatus: "approved", companyStatusLoading: false, companyStatusError: false };
     render(<EmployerShell><p>Page</p></EmployerShell>);
-    expect(cardOf("Page").className).toContain("border");
+    expect(cardOf("Page").className).not.toContain("border");
   });
 });

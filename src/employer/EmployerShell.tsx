@@ -20,7 +20,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { LayoutDashboardIcon, BriefcaseIcon, SettingsIcon, ChevronDownIcon, LogOutIcon } from "lucide-react";
+import { LayoutDashboardIcon, BriefcaseIcon, MessageSquareIcon, SettingsIcon, ChevronDownIcon, LogOutIcon } from "lucide-react";
 import AppShellFrame, { type ShellNavItem } from "../AppShellFrame";
 
 export type BreadcrumbCrumb = { label: string; path?: string };
@@ -60,14 +60,39 @@ export function EmployerHeaderAction({ children }: { children: React.ReactNode }
 const navItems: ShellNavItem[] = [
   { id: "dashboard", label: "Dashboard", path: "/employer", icon: <LayoutDashboardIcon size={18} aria-hidden="true" /> },
   { id: "jobs", label: "Jobs", path: "/employer/jobs", icon: <BriefcaseIcon size={18} aria-hidden="true" /> },
+  { id: "messages", label: "Messages", path: "/employer/messages", icon: <MessageSquareIcon size={18} aria-hidden="true" /> },
+  { id: "settings", label: "Settings", path: "/employer/settings", icon: <SettingsIcon size={18} aria-hidden="true" /> },
 ];
+
+const rupees = new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 });
+
+/* Pay-as-you-go employers have no plan to show, so the only account figure
+   worth surfacing is unspent credit (refunds and released unlocks). Hidden at
+   zero so it never reads as a debt. */
+function CreditChip({ balancePaise }: { balancePaise: number }) {
+  if (balancePaise <= 0) return null;
+  return (
+    <Link
+      href="/employer/settings#billing"
+      className="group-data-[collapsible=icon]:hidden"
+      style={{
+        display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8, margin: "0 4px",
+        padding: "8px 10px", borderRadius: 8, border: `1px solid ${t.line}`, background: t.white, textDecoration: "none",
+        fontFamily: f.sans, color: t.coal,
+      }}
+    >
+      <span style={{ fontSize: 12, color: t.inkSoft }}>Account credit</span>
+      <span style={{ fontSize: 14, fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>{rupees.format(balancePaise / 100)}</span>
+    </Link>
+  );
+}
 
 /* Every console page sits in one white, bordered, 16px-radius main container,
    the same one the candidate dashboard draws (DashboardHome). Pages that are
    themselves a single full-bleed card (a table shell, the settings stack, the
    messages split pane, the requirement form) are listed here so they are not
    double-carded; the shell wraps everything else. */
-const SELF_CARDED_ROUTES = ["/employer/jobs", "/employer/requirements/new", "/employer/settings", "/employer/messages"];
+const SELF_CARDED_ROUTES = ["/employer", "/employer/jobs", "/employer/requirements/new", "/employer/settings", "/employer/messages"];
 
 /* Job detail, candidate, compare and outcome are working surfaces made of
    their own sections and tables. Wrapping them in the bordered card nested a
@@ -175,7 +200,7 @@ function AccountMenu({ name, email, onLogout }: { name?: string; email?: string;
    company profile exists. */
 export default function EmployerShell({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
-  const { companyStatus, companyStatusLoading, companyStatusError, refreshCompanyStatus, companyName, listConversations } = useEmployerData();
+  const { companyStatus, companyStatusLoading, companyStatusError, refreshCompanyStatus, companyName, listConversations, fetchCredit } = useEmployerData();
   const isMobile = useIsMobile();
   const router = useRouter();
   const pathname = usePathname();
@@ -187,6 +212,14 @@ export default function EmployerShell({ children }: { children: React.ReactNode 
     if (!user?.id || companyStatusLoading || companyStatusError) return;
     writeConsoleHint(user.id, companyStatus === "approved" ? companyName : null);
   }, [user?.id, companyStatus, companyStatusLoading, companyStatusError, companyName]);
+
+  const [creditPaise, setCreditPaise] = useState(0);
+  useEffect(() => {
+    if (companyStatus !== "approved") return;
+    let live = true;
+    void fetchCredit().then((c) => { if (live && c) setCreditPaise(c.balancePaise); }).catch(() => {});
+    return () => { live = false; };
+  }, [companyStatus, fetchCredit, pathname]);
 
   const [headerSlot, setHeaderSlot] = useState<HTMLElement | null>(null);
   const [breadcrumbState, setBreadcrumbState] = useState<BreadcrumbState>(null);
@@ -262,18 +295,13 @@ export default function EmployerShell({ children }: { children: React.ReactNode 
     );
   }
 
-  /* Settings has no navItems entry — it's only reachable via the account
-     menu dropdown, not the sidebar — so it must not fall through to
-     navItems[0] here, or the sidebar highlights "Dashboard" and the
-     breadcrumb reads "Dashboard" while the page itself says "Settings". */
-  const isSettingsRoute = pathname === "/employer/settings";
-  const isMessagesRoute = pathname === "/employer/messages";
   const activeItem =
     navItems.find((item) =>
       item.path === "/employer" ? pathname === item.path : pathname === item.path || pathname?.startsWith(`${item.path}/`)
     ) ??
     (pathname?.startsWith("/employer/requirements/") ? navItems.find((item) => item.id === "jobs") : undefined) ??
     navItems[0];
+  const isMessagesRoute = activeItem.id === "messages";
 
   const pageBody = companyStatusLoading ? <PageSkeleton label="Loading your workspace" /> : children;
 
@@ -284,7 +312,7 @@ export default function EmployerShell({ children }: { children: React.ReactNode 
         homeHref="/employer"
         navAriaLabel="Employer navigation"
         navItems={navItems}
-        activeId={isSettingsRoute || isMessagesRoute ? "" : activeItem.id}
+        activeId={activeItem.id}
         onNavigate={(path) => router.push(path)}
         messaging={{ fetchConversations: listConversations, basePath: "/employer/messages" }}
         audience="employer"
@@ -293,15 +321,10 @@ export default function EmployerShell({ children }: { children: React.ReactNode 
           subtitle: "Employer account",
           email: user?.email,
         }}
-        accountMenuItems={
-          <DropdownMenuItem onClick={() => router.push("/employer/settings")}>
-            <SettingsIcon size={14} aria-hidden="true" />
-            Settings
-          </DropdownMenuItem>
-        }
+        sidebarFooterExtra={<CreditChip balancePaise={creditPaise} />}
         onLogout={handleLogout}
         breadcrumbRoot={{ label: displayName || "HireStepX", path: "/employer" }}
-        pageLabel={isSettingsRoute ? "Settings" : isMessagesRoute ? "Messages" : activeItem.label}
+        pageLabel={activeItem.label}
         pageLabelPath={activeItem.path}
         extraCrumbs={breadcrumbExtra ?? leafCrumbs}
         isMobile={isMobile}

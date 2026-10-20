@@ -384,7 +384,7 @@ const BADGE_TONE: Record<BadgeTone, { color: string; background: string }> = {
 };
 
 export function Badge({ tone, children }: { tone: BadgeTone; children: React.ReactNode }) {
-  const { color, background } = BADGE_TONE[tone];
+  const { color, background } = BADGE_TONE[tone] ?? BADGE_TONE.neutral;
   return (
     <span style={{ fontFamily: f.sans, fontSize: textSize.sm, fontWeight: 600, color, background, padding: "3px 9px", borderRadius: 999, whiteSpace: "nowrap" }}>
       {children}
@@ -445,7 +445,7 @@ export const STAGE_ICON: Record<RequirementStage, React.ComponentType<{ size?: n
     longer hiring. Frozen renders the label plain and static — no spin,
     no dropdown — since the stage is stale by definition once closed. */
 export function StageCell({
-  stage,
+  stage: rawStage,
   hasEvaluatedCandidates,
   onChange,
   frozen,
@@ -461,6 +461,9 @@ export function StageCell({
   /** Matching finished with zero results, so the posting is idle rather than mid-run. */
   matchedOnce?: boolean;
 }) {
+  // A stage this build doesn't know (new server value, stale cache) falls back
+  // to "ai_matching" rather than taking the whole list down.
+  const stage: RequirementStage = STAGE_OPTIONS.includes(rawStage) ? rawStage : "ai_matching";
   // A posting whose matching found nobody can still carry a stale
   // ready_for_review stage; there is nothing to review, so say so.
   const idleMatching = !hasEvaluatedCandidates && !!matchedOnce && (stage === "ai_matching" || stage === "ready_for_review");

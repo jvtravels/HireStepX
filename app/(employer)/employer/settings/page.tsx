@@ -166,7 +166,7 @@ export default function EmployerSettingsPage() {
           <NotificationPreferences audience="employer" />
         </FlatSection>
 
-        <FlatSection title="Billing history">
+        <FlatSection title="Billing history" id="billing">
           <BillingHistorySection />
         </FlatSection>
 
