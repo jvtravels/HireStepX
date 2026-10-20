@@ -296,7 +296,10 @@ export interface SessionReportViewProps {
 type ReportTab = "overview" | "negotiation" | "answers" | "skills" | "coach";
 
 function reportSubtitle(data: InterviewResultData): string {
-  const parts = [data.role, data.company, data.level].map((p) => (p ?? "").trim()).filter(Boolean);
+  const role = (data.role ?? "").trim();
+  const level = (data.level ?? "").trim();
+  const levelInRole = level !== "" && role.toLowerCase().includes(level.toLowerCase());
+  const parts = [role, (data.company ?? "").trim(), level && !levelInRole ? `${level} level` : ""].filter(Boolean);
   return parts.join(" · ");
 }
 
