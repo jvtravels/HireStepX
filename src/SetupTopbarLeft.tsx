@@ -8,7 +8,7 @@ const WRAP_STYLE = { justifySelf: "start", display: "flex", alignItems: "center"
 const LOGO_STYLE = { textDecoration: "none", display: "inline-flex", flexShrink: 0 } as const;
 const LOGO_IMG_STYLE = { height: 32, width: "auto" } as const;
 const LIST_STYLE = { fontFamily: F.sans, fontSize: 13, flexWrap: "nowrap" } as const;
-const LINK_STYLE = { color: T.inkSoft } as const;
+const LINK_STYLE = { color: T.inkSoft, display: "inline-flex", alignItems: "center" } as const;
 const PAGE_STYLE = { fontSize: 13, fontWeight: 600, color: T.coal } as const;
 
 export default function SetupTopbarLeft() {

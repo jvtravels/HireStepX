@@ -1,6 +1,7 @@
 "use client";
 import { readInviteJd } from "./interviewInvite";
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, type CSSProperties } from "react";
+import { getCtaReason } from "./setupCtaReason";
 import { createPortal } from "react-dom";
 import { useRouter, useSearchParams } from "next/navigation";
 import { track } from "@vercel/analytics";
@@ -394,6 +395,12 @@ function PermissionCard({
       videoRef.current.srcObject = cameraStream;
     }
   }, [cameraStream]);
+  const [slowRequest, setSlowRequest] = useState(false);
+  useEffect(() => {
+    if (status !== "requesting") { setSlowRequest(false); return; }
+    const id = window.setTimeout(() => setSlowRequest(true), 6000);
+    return () => window.clearTimeout(id);
+  }, [status]);
   const isGranted = status === "granted";
   const isDenied = status === "denied";
   const isSkipped = status === "skipped";
@@ -531,11 +538,11 @@ function PermissionCard({
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontFamily: F.sans, fontSize: 13, fontWeight: 500, color: T.coal, display: "flex", alignItems: "center", gap: 8 }}>
           <span>{label}</span>
-          <span style={{ fontSize: 11, fontWeight: 500, color: sublabelTone === "indigo" ? T.indigo : T.inkFaint }}>· {sublabel}</span>
+          <span style={{ fontSize: 12, fontWeight: 500, color: sublabelTone === "indigo" ? T.indigo : T.inkFaint }}>· {sublabel}</span>
         </div>
-        <div style={{ fontFamily: F.sans, fontSize: 12, color: isDenied ? T.error : T.inkSoft, marginTop: 2, lineHeight: 1.4 }}>
+        <div style={{ fontFamily: F.sans, fontSize: 13, color: isDenied ? T.error : T.inkSoft, marginTop: 2, lineHeight: 1.4 }}>
           {status === "idle" && (kind === "mic" ? "Used to capture your answers." : "Practice eye contact and presence.")}
-          {status === "requesting" && "Waiting for your permission…"}
+          {status === "requesting" && (slowRequest ? "Taking a while? Check your browser's permission prompt." : "Waiting for your permission…")}
           {isGranted && kind === "camera" && cameraSignals && (() => {
             // Concrete per-signal sub-statuses. Replaces the static
             // "Centered, well-lit, in focus" claim that users called
@@ -615,8 +622,19 @@ function PermissionCard({
             Allow
           </Button>
         )}
-        {status === "requesting" && (
-          <span style={{ width: 16, height: 16, border: `2px solid ${T.indigoRing}`, borderTopColor: T.indigo, borderRadius: "50%", animation: "spin 1s linear infinite" }} />
+        {status === "requesting" && !slowRequest && (
+          <span role="status" aria-label="Waiting for permission" style={{ width: 16, height: 16, border: `2px solid ${T.indigoRing}`, borderTopColor: T.indigo, borderRadius: "50%", animation: "spin 1s linear infinite" }} />
+        )}
+        {status === "requesting" && slowRequest && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={onRequest}
+            style={{ background: T.white, color: T.coal, border: `1px solid ${T.lineStrong}`, cursor: "pointer" }}
+          >
+            Retry
+          </Button>
         )}
         {isGranted && (
           <span aria-hidden style={{ width: 22, height: 22, borderRadius: 999, background: T.success, color: T.cream, display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
@@ -1618,8 +1636,11 @@ export default function SessionSetup() {
           .ob-mic-pulse { animation: none !important; }
           .hsx-recommend-badge { animation: none !important; }
         }
+        .ob-focus-card:focus-visible, .hsx-setup-cta:focus-visible, .hsx-permission-actions button:focus-visible { outline: 2px solid ${T.indigo}; outline-offset: 2px; }
+        @media (max-width: 1024px), (pointer: coarse) { .hsx-permission-actions button { min-height: 44px; min-width: 44px; } }
+        @media (max-width: 860px) { .ob-permissions-grid { grid-template-columns: 1fr !important; } }
         .ob-s2-role-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
-        .ob-s2-focus-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+        .ob-s2-focus-grid { display: grid; grid-template-columns: repeat(var(--focus-cols, 3), 1fr); gap: 10px; }
         .ob-permissions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         .ob-s2-session-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
 
@@ -1637,16 +1658,13 @@ export default function SessionSetup() {
           .hsx-setup-content { padding: 12px 32px 32px !important; }
           .hsx-setup-hero-h1 { font-size: clamp(1.5rem, 3vw, 2rem) !important; line-height: 1.1 !important; }
           .hsx-setup-hero { margin-bottom: 14px !important; }
-          .hsx-setup-hero-sub { margin-top: 6px !important; font-size: 13px !important; line-height: 1.45 !important; }
-          .hsx-setup-hero-pillrow { margin-top: 8px !important; gap: 4px !important; }
-          .hsx-setup-hero-pillrow p { font-size: 12px !important; }
-          .hsx-setup-time-pill { font-size: 11px !important; padding: 4px 10px !important; }
+          .hsx-setup-time-pill { font-size: 12px !important; padding: 4px 10px !important; }
           .hsx-setup-form-sections { gap: 16px !important; }
           .hsx-setup-cta-zone { margin-top: 16px !important; padding-top: 12px !important; gap: 8px !important; }
           .ob-focus-card { padding: 10px !important; }
         }
         @media (max-width: 1024px) {
-          .ob-s2-focus-grid { grid-template-columns: repeat(3, 1fr) !important; }
+          .ob-s2-focus-grid { grid-template-columns: repeat(var(--focus-cols-md, 3), 1fr) !important; }
         }
         @media (max-width: 760px) {
           /* The hero clamp settles to its floor here and the nowrap
@@ -1657,7 +1675,7 @@ export default function SessionSetup() {
           .hsx-setup-topbar { padding: 16px 20px !important; }
           .hsx-setup-content { padding: 20px 20px 64px !important; }
           .ob-s2-role-grid { grid-template-columns: 1fr !important; gap: 16px !important; }
-          .ob-s2-focus-grid { grid-template-columns: 1fr 1fr !important; }
+          .ob-s2-focus-grid { grid-template-columns: repeat(var(--focus-cols-sm, 2), 1fr) !important; }
           .ob-s2-session-grid { grid-template-columns: 1fr !important; }
           .ob-permissions-grid { grid-template-columns: 1fr !important; }
           /* Keep the icon+copy+action row inline on mobile — wrapping made
@@ -1680,8 +1698,6 @@ export default function SessionSetup() {
              min-height 48 ensures Apple HIG touch target floor. */
           .hsx-setup-cta { width: 100% !important; min-height: 44px !important; }
           .hsx-setup-cta-zone { border-top: 1px solid ${T.line}; padding-top: 28px !important; margin-top: 32px !important; }
-          /* Time pill bumps to 13/regular for legibility on phones. */
-          .hsx-setup-time-pill { font-size: 13px !important; padding: 6px 14px !important; }
         }
         @media (max-width: 500px) {
           /* Drop the name to keep the right cluster from overflowing —
@@ -1782,40 +1798,24 @@ export default function SessionSetup() {
                   </div>
                 </div>
               )}
-              {/* Hero — centered, matches the canvas SetupEmpty storyboard. */}
-              <div style={{ marginBottom: 32, textAlign: "center" }} className="fade-up-1 hsx-setup-hero">
-                <h1 className="hsx-setup-hero-h1" style={{ fontFamily: F.sans, fontSize: "clamp(1.5rem, 3vw, 2rem)", fontWeight: 600, color: T.coal, letterSpacing: "-0.02em", lineHeight: 1.05, margin: 0 }}>
+              {/* Hero — left-aligned so the title shares an axis with the form. */}
+              <div style={{ marginBottom: 28, display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 14px" }} className="fade-up-1 hsx-setup-hero">
+                <h1 className="hsx-setup-hero-h1" style={{ fontFamily: F.sans, fontSize: "clamp(1.5rem, 3vw, 2rem)", fontWeight: 600, color: T.coal, letterSpacing: "-0.02em", lineHeight: 1.1, margin: 0 }}>
                   Let&apos;s get you{" "}
                   <em style={{ fontStyle: "normal", fontWeight: 600, color: T.indigo }}>ready</em>
                 </h1>
-                <p className="hsx-setup-hero-sub" style={{ fontFamily: F.sans, fontSize: 14, lineHeight: 1.55, color: T.inkSoft, marginTop: 8, marginBottom: 0, textWrap: "balance" }}>
-                  Tell us a few things and we&apos;ll personalize the experience for you.
-                </p>
-                {/* Time pill + value-reframe — answers "how long?" and ties
-                    the time investment to outcome in one breath. */}
-                <div className="hsx-setup-hero-pillrow" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, marginTop: 14 }}>
-                  <div className="hsx-setup-time-pill" style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "5px 12px", borderRadius: 999, background: T.indigo100, color: T.indigo, fontFamily: F.sans, fontSize: 12, fontWeight: 500 }}>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                      <circle cx="12" cy="12" r="10" />
-                      <polyline points="12 6 12 12 16 14" />
-                    </svg>
-                    ~{sessionMinutes} minutes
-                  </div>
+                <div className="hsx-setup-time-pill" style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "5px 12px", borderRadius: 999, background: T.indigo100, color: T.indigo, fontFamily: F.sans, fontSize: 13, fontWeight: 500 }}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    <circle cx="12" cy="12" r="10" />
+                    <polyline points="12 6 12 12 16 14" />
+                  </svg>
+                  ~{sessionMinutes} minutes
                 </div>
               </div>
 
               <div className="hsx-setup-form-sections" style={{ display: "flex", flexDirection: "column", gap: 28 }}>
-                {/* ── Role & Company — canvas-style: clean field rows, no card chrome ── */}
+                {/* ── Role & Company — field rows carry their own labels ── */}
                 <div className="fade-up-1">
-                  <div style={{ marginBottom: 14 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: F.sans, fontSize: 13, fontWeight: 500, color: T.coal }}>
-                      <span>About the role</span>
-                      <span style={{ color: T.indigo, fontSize: 12 }}>*</span>
-                    </div>
-                    <div style={{ fontFamily: F.sans, fontSize: 12, color: T.inkSoft, marginTop: 4 }}>
-                      We tailor questions to the role and company you're targeting.
-                    </div>
-                  </div>
                   <div className="ob-s2-role-grid">
                     <div>
                       <AutocompleteInput id="setup-role" value={targetRole} onChange={(v) => { setTargetRole(v); setRoleTouched(true); }} suggestions={ROLE_SUGGESTIONS} placeholder="e.g. Senior Engineering Manager..." label="Role" required error={roleTouched && !targetRole.trim() ? "Required to personalize your questions" : undefined} />
@@ -1870,7 +1870,7 @@ export default function SessionSetup() {
                     </div>
                     <div style={{ fontFamily: F.sans, fontSize: 12, color: T.inkSoft, marginTop: 4 }}>
                       {relevantFocusSet && targetRole.trim()
-                        ? `Showing the focuses real interviews for "${targetRole.trim()}" actually use.${recommendedFocus && recommendedFocus !== "Behavioral" && !COMING_SOON_FOCUSES.has(recommendedFocus as InterviewFocus) && relevantFocusSet.has(recommendedFocus as InterviewFocus) ? " Recommended pick highlighted." : ""}`
+                        ? `Matched to "${targetRole.trim()}" interviews.${recommendedFocus && recommendedFocus !== "Behavioral" && !COMING_SOON_FOCUSES.has(recommendedFocus as InterviewFocus) && relevantFocusSet.has(recommendedFocus as InterviewFocus) ? " Recommended pick highlighted." : ""}`
                         : recommendedFocus && recommendedFocus !== "Behavioral" && !COMING_SOON_FOCUSES.has(recommendedFocus as InterviewFocus) && targetRole.trim()
                           ? "Choose one area to focus on. The recommended pick for your role is highlighted."
                           : targetRole.trim()
@@ -1878,8 +1878,44 @@ export default function SessionSetup() {
                             : "Enter a role to see relevant focuses."}
                     </div>
                   </div>
+                    {(() => {
+                      const allOpts = [
+                        { value: "Behavioral", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>, desc: "Tell stories about how you handled past situations" },
+                        { value: "Strategic", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>, desc: "Show how you set vision and align teams" },
+                        { value: "Technical Leadership", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>, desc: "Walk through architecture and tech tradeoffs" },
+                        { value: "Case Study", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>, desc: "Solve real business problems out loud" },
+                        { value: "Campus Placement", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c0 1.66 2.69 3 6 3s6-1.34 6-3v-5"/></svg>, desc: "Talk projects, goals, and teamwork — fresher style" },
+                        { value: "HR Round", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>, desc: "Culture fit, motivation, salary expectations" },
+                        { value: "Management", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>, desc: "How you lead, hire, and handle change" },
+                        { value: "Panel Interview", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>, desc: "Field three angles at once — manager, peer, HR" },
+                        { value: "Salary Negotiation", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>, desc: "Negotiate offer, benefits, and counter-offers" },
+                        { value: "Government / PSU", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3"/></svg>, desc: "Ethics, current affairs, public-service motivation" },
+                      ];
+                      /* Role-aware filtering: when the user has typed a
+                         classifiable role, hide focuses that real interview
+                         loops for that role wouldn't include (e.g. don't
+                         show "Technical Leadership" to a Customer Success
+                         rep, don't show "Campus Placement" to a Senior
+                         Engineering Manager). When the role is empty or
+                         unclassified, show all 10 — see relevantFocusSet
+                         derivation above. */
+                      const filtered = relevantFocusSet
+                        ? allOpts.filter((o) => relevantFocusSet.has(o.value as InterviewFocus))
+                        : allOpts;
+                      const available = filtered.filter((o) => !COMING_SOON_FOCUSES.has(o.value as InterviewFocus));
+                      const soon = filtered.filter((o) => COMING_SOON_FOCUSES.has(o.value as InterviewFocus));
+                      const n = available.length;
+                      const cols = n <= 4 ? Math.max(n, 1) : n === 6 || n === 9 ? 3 : n === 7 || n === 8 ? 4 : 5;
+                      const gridVars = {
+                        "--focus-cols": cols,
+                        "--focus-cols-md": Math.min(cols, 3),
+                        "--focus-cols-sm": n <= 3 ? 1 : 2,
+                      } as CSSProperties;
+                      return (
+                        <>
                   <div
                     className="ob-s2-focus-grid"
+                    style={gridVars}
                     role="radiogroup"
                     aria-label="Interview focus"
                     /* tabIndex={-1} so the radiogroup is programmatically
@@ -1907,85 +1943,49 @@ export default function SessionSetup() {
                       arr[nextIdx]?.focus();
                     }}
                   >
-                    {(() => {
-                      const allOpts = [
-                        { value: "Behavioral", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>, desc: "Tell stories about how you handled past situations" },
-                        { value: "Strategic", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>, desc: "Show how you set vision and align teams" },
-                        { value: "Technical Leadership", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>, desc: "Walk through architecture and tech tradeoffs" },
-                        { value: "Case Study", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>, desc: "Solve real business problems out loud" },
-                        { value: "Campus Placement", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c0 1.66 2.69 3 6 3s6-1.34 6-3v-5"/></svg>, desc: "Talk projects, goals, and teamwork — fresher style" },
-                        { value: "HR Round", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>, desc: "Culture fit, motivation, salary expectations" },
-                        { value: "Management", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>, desc: "How you lead, hire, and handle change" },
-                        { value: "Panel Interview", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>, desc: "Field three angles at once — manager, peer, HR" },
-                        { value: "Salary Negotiation", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>, desc: "Negotiate offer, benefits, and counter-offers" },
-                        { value: "Government / PSU", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3"/></svg>, desc: "Ethics, current affairs, public-service motivation" },
-                      ];
-                      /* Role-aware filtering: when the user has typed a
-                         classifiable role, hide focuses that real interview
-                         loops for that role wouldn't include (e.g. don't
-                         show "Technical Leadership" to a Customer Success
-                         rep, don't show "Campus Placement" to a Senior
-                         Engineering Manager). When the role is empty or
-                         unclassified, show all 10 — see relevantFocusSet
-                         derivation above. */
-                      const filtered = relevantFocusSet
-                        ? allOpts.filter((o) => relevantFocusSet.has(o.value as InterviewFocus))
-                        : allOpts;
-                      return filtered.map(opt => {
-                        /* MVP gate: "Coming soon" focuses stay visible (so
-                           users see the roadmap) but aren't selectable. They
-                           drop role=radio so the roving-tabindex arrow nav
-                           skips them, and `disabled` blocks clicks. */
-                        const comingSoon = COMING_SOON_FOCUSES.has(opt.value as InterviewFocus);
-                        const sel = !comingSoon && interviewFocus[0] === opt.value;
-                        const isRecommended = !comingSoon && opt.value === recommendedFocus && recommendedFocus !== "Behavioral";
-                        return (
-                          <button key={opt.value} className="ob-focus-card"
-                            onClick={comingSoon ? undefined : () => setInterviewFocus([opt.value])}
-                            type="button"
-                            disabled={comingSoon}
-                            {...(comingSoon
-                              ? { "aria-disabled": true as const }
-                              : { role: "radio", "aria-checked": sel })}
-                            /* Roving tabindex: only the selected (or first
-                               if none selected) chip is in the tab order;
-                               arrow keys move between siblings. Coming-soon
-                               cards are never in the tab order. */
-                            tabIndex={comingSoon ? -1 : sel ? 0 : -1}
-                            title={comingSoon ? "Coming soon — not available yet" : undefined}
-                            style={{
-                              padding: 14, borderRadius: 12, cursor: comingSoon ? "not-allowed" : "pointer", transition: "background-color 0.22s cubic-bezier(.2,.7,.2,1), border-color 0.22s cubic-bezier(.2,.7,.2,1), color 0.22s cubic-bezier(.2,.7,.2,1), box-shadow 0.22s cubic-bezier(.2,.7,.2,1), opacity 0.22s cubic-bezier(.2,.7,.2,1), transform 0.22s cubic-bezier(.2,.7,.2,1)", textAlign: "left",
-                              background: comingSoon ? T.cream : sel ? `linear-gradient(180deg, ${T.indigo100}, ${T.white})` : T.white,
-                              border: `1px ${comingSoon ? "dashed" : "solid"} ${sel ? T.indigo : T.line}`,
-                              boxShadow: sel ? `inset 0 0 0 1px ${T.indigo}` : "none",
-                              opacity: comingSoon ? 0.65 : 1,
-                              display: "flex", alignItems: "center", gap: 10, color: T.coal,
-                              position: "relative", fontFamily: F.sans,
-                            }}>
-                            {isRecommended && (
-                              <span className="hsx-recommend-badge" style={{ position: "absolute", top: -8, right: 10, fontFamily: F.sans, fontSize: 11, fontWeight: 600, color: T.cream, background: T.indigo, padding: "2px 8px", borderRadius: 4, letterSpacing: "0.04em", textTransform: "uppercase" }}>For you</span>
-                            )}
-                            {comingSoon && (
-                              <span style={{ position: "absolute", top: -8, right: 10, fontFamily: F.sans, fontSize: 11, fontWeight: 600, color: T.inkSoft, background: T.white, border: `1px solid ${T.line}`, padding: "2px 8px", borderRadius: 4, letterSpacing: "0.04em", textTransform: "uppercase" }}>Coming soon</span>
-                            )}
-                            <span style={{ width: 32, height: 32, borderRadius: 6, background: comingSoon ? T.line : T.indigo100, color: T.coal, display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                              {opt.icon}
-                            </span>
-                            <span style={{ fontSize: 13, fontWeight: 500, color: T.coal, flex: 1, lineHeight: 1.2 }}>{opt.value}</span>
-                            {comingSoon ? (
-                              <span aria-hidden style={{ width: 18, height: 18, color: T.inkSoft, display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                              </span>
-                            ) : (
-                              <span aria-hidden style={{ width: 18, height: 18, borderRadius: 999, border: `1.5px solid ${sel ? T.indigo : T.line}`, background: sel ? T.indigo : "transparent", display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                                {sel && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={T.white} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>}
-                              </span>
-                            )}
-                          </button>
-                        );
-                      });
-                    })()}
+                    {available.map((opt) => {
+                      const sel = interviewFocus[0] === opt.value;
+                      const isRecommended = opt.value === recommendedFocus && recommendedFocus !== "Behavioral";
+                      return (
+                        <button key={opt.value} className="ob-focus-card"
+                          onClick={() => setInterviewFocus([opt.value])}
+                          type="button"
+                          role="radio"
+                          aria-checked={sel}
+                          /* Roving tabindex: only the selected chip is in the
+                             tab order; arrow keys move between siblings. */
+                          tabIndex={sel ? 0 : -1}
+                          style={{
+                            padding: 14, borderRadius: 12, cursor: "pointer", transition: "background-color 0.22s cubic-bezier(.2,.7,.2,1), border-color 0.22s cubic-bezier(.2,.7,.2,1), box-shadow 0.22s cubic-bezier(.2,.7,.2,1)", textAlign: "left",
+                            background: sel ? `linear-gradient(180deg, ${T.indigo100}, ${T.white})` : T.white,
+                            border: `1px solid ${sel ? T.indigo : T.line}`,
+                            boxShadow: sel ? `inset 0 0 0 1px ${T.indigo}` : "none",
+                            display: "flex", alignItems: "center", gap: 10, color: T.coal,
+                            position: "relative", fontFamily: F.sans,
+                          }}>
+                          {isRecommended && (
+                            <span className="hsx-recommend-badge" style={{ position: "absolute", top: -8, right: 10, fontFamily: F.sans, fontSize: 11, fontWeight: 600, color: T.cream, background: T.indigo, padding: "2px 8px", borderRadius: 4, letterSpacing: "0.04em", textTransform: "uppercase" }}>For you</span>
+                          )}
+                          <span style={{ width: 32, height: 32, borderRadius: 6, background: T.indigo100, color: T.coal, display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                            {opt.icon}
+                          </span>
+                          <span style={{ fontSize: 14, fontWeight: 500, color: T.coal, flex: 1, lineHeight: 1.2 }}>{opt.value}</span>
+                          <span aria-hidden style={{ width: 18, height: 18, borderRadius: 999, border: `1.5px solid ${sel ? T.indigo : T.line}`, background: sel ? T.indigo : "transparent", display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                            {sel && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={T.white} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>}
+                          </span>
+                        </button>
+                      );
+                    })}
                   </div>
+                  {soon.length > 0 && (
+                    <p style={{ display: "flex", alignItems: "center", gap: 6, margin: "12px 0 0", fontFamily: F.sans, fontSize: 13, color: T.inkSoft }}>
+                      <svg aria-hidden width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                      <span>Coming soon: {soon.map((o) => o.value).join(", ")}</span>
+                    </p>
+                  )}
+                        </>
+                      );
+                    })()}
                 </div>
 
                 {/* ── Permissions — mic compulsory, camera optional ── */}
@@ -2140,7 +2140,7 @@ export default function SessionSetup() {
               </div>
             );
           })()}
-          <div className="hsx-setup-cta-zone" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, marginTop: 48, paddingTop: 24 }}>
+          <div className="hsx-setup-cta-zone" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, marginTop: 40, paddingTop: 24 }}>
             {(() => {
               const needsMic = micRequired && formComplete && micStatus !== "granted" && micStatus !== "requesting";
               const isHardDisabled = !formComplete || starting || !isOnline || micStatus === "requesting";
@@ -2149,45 +2149,44 @@ export default function SessionSetup() {
                 : needsMic
                   ? "Allow microphone to start"
                   : "Start practice";
-              const shortcutHint = isIOS ? "" : " · ⌘/Ctrl + Enter";
-              const ctaTitle = !formComplete
-                ? "Pick a target role and interview focus to continue."
-                : needsMic
-                  ? micStatus === "denied"
-                    ? "Microphone is blocked. Open browser settings to allow it, then try again."
-                    : "We need microphone access to start a voice interview."
-                  : !isOnline
-                    ? "You're offline. Reconnect to start."
-                    : `Start your practice interview${shortcutHint}`;
+              const ctaReason = getCtaReason({
+                starting, formComplete, hasRole: !!targetRole.trim(), companyMissing,
+                roleCompanyMismatch: hardRoleCompanyMismatch, isOnline, micStatus, needsMic,
+              });
               const onCtaClick = () => {
                 if (needsMic) { void requestMic(); return; }
                 handleStart();
               };
               return (
-                <Button
-                  type="button"
-                  variant="default"
-                  size="lg"
-                  onClick={onCtaClick}
-                  disabled={isHardDisabled}
-                  title={ctaTitle}
-                  aria-label={ctaTitle ?? ctaLabel}
-                  className="hsx-setup-cta px-4"
-                  style={{ opacity: needsMic && !isHardDisabled ? 0.85 : undefined }}
-                >
-                  {starting ? (
-                    <span style={{ width: 16, height: 16, border: `2.5px solid ${T.indigoRing}`, borderTopColor: T.cream, borderRadius: "50%", animation: "spin 1s linear infinite" }} />
-                  ) : null}
-                  {ctaLabel}
-                  {!starting && (
-                    <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
-                  )}
-                </Button>
+                <>
+                  <Button
+                    type="button"
+                    variant="default"
+                    size="lg"
+                    onClick={onCtaClick}
+                    disabled={isHardDisabled}
+                    title={!isHardDisabled && !needsMic && !isIOS ? "⌘/Ctrl + Enter" : undefined}
+                    aria-describedby={ctaReason ? "hsx-cta-reason" : undefined}
+                    className="hsx-setup-cta px-4"
+                    style={{ opacity: needsMic && !isHardDisabled ? 0.85 : undefined }}
+                  >
+                    {starting ? (
+                      <span style={{ width: 16, height: 16, border: `2.5px solid ${T.indigoRing}`, borderTopColor: T.cream, borderRadius: "50%", animation: "spin 1s linear infinite" }} />
+                    ) : null}
+                    {ctaLabel}
+                    {!starting && (
+                      <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
+                    )}
+                  </Button>
+                  <div id="hsx-cta-reason" aria-live="polite" style={{ fontFamily: F.sans, fontSize: 13, color: micStatus === "denied" && needsMic ? T.error : T.inkSoft, textAlign: "center", margin: ctaReason ? "-4px 0 0" : "-12px 0 0", height: ctaReason ? undefined : 0, overflow: "hidden" }}>
+                    {ctaReason}
+                  </div>
+                </>
               );
             })()}
 
             {usingCredit && (
-              <div style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: F.sans, fontSize: 12, color: T.inkSoft }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: F.sans, fontSize: 13, color: T.inkSoft }}>
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={T.inkSoft} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                   <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
                 </svg>
@@ -2195,19 +2194,13 @@ export default function SessionSetup() {
               </div>
             )}
 
-            <div aria-live="polite" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 6, fontFamily: F.sans, fontSize: 12, color: T.inkSoft, minHeight: 18 }}>
-              {micStatus === "granted" && cameraStatus === "granted" && "Mic and camera ready — you're all set."}
-              {micStatus === "granted" && cameraStatus !== "granted" && "Mic ready. Camera is optional."}
-              {micStatus !== "granted" && (
-                <>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={T.success} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                  </svg>
-                  Your name and contact stay hidden from employers. Manage this in Settings.
-                </>
-              )}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: F.sans, fontSize: 13, color: T.inkSoft }}>
+              <svg aria-hidden width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={T.success} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              </svg>
+              Your name and contact stay hidden from employers. Manage this in Settings.
             </div>
-
+            <span className="sr-only" aria-live="polite">{micStatus === "granted" && (cameraStatus === "granted" ? "Mic and camera ready." : "Mic ready. Camera is optional.")}</span>
           </div>
         </div>
       </div>
