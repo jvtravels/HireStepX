@@ -16,6 +16,7 @@ import {
 } from "./InterviewCanvasAtoms";
 import { LiveCaptions } from "./InterviewComponents";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import { pickAccent } from "./_accent-parser";
 import { useInterviewEngine } from "./useInterviewEngine";
 import { isAutoplayBlocked, retryUnlockAudio, clearAutoplayBlock } from "./tts";
@@ -764,7 +765,7 @@ function InterviewInner() {
 
         {llmLoading && currentStep <= 1 && (
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <div style={{ width: 10, height: 10, border: `1.5px solid ${e.line}`, borderTopColor: e.indigo, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+            <Spinner aria-hidden="true" className="size-2.5" style={{ color: e.indigo }} />
             <span style={{ fontFamily: ef.sans, fontSize: 11, color: e.inkSoft }}>
               {llmSlow ? "Taking a bit longer — almost there…" : "Personalizing questions…"}
             </span>

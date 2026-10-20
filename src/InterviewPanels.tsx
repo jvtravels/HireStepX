@@ -155,7 +155,7 @@ export const InterviewHeader = memo(function InterviewHeader({ displayCompany, d
           <NetworkIndicator />
           {llmLoading && currentStep <= 1 && (
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <div style={{ width: 10, height: 10, border: "1.5px solid oklch(0.359 0.135 278.697 / 0.30)", borderTopColor: e.indigo, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+              <Spinner aria-hidden="true" className="size-2.5" style={{ color: e.indigo }} />
               <span style={{ fontFamily: ef.sans, fontSize: 11, color: e.inkSoft }}>Personalizing questions...</span>
             </div>
           )}

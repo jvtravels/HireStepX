@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import { Spinner } from "@/components/ui/spinner";
 import { tokens as t, fonts as f } from "./auth/_tokens";
 
 /* The one loading treatment for the whole product — every route
@@ -17,16 +18,7 @@ import { tokens as t, fonts as f } from "./auth/_tokens";
    (src/routeSkeletons.tsx); this is the fallback when there isn't one.
    The `spin` keyframes are frozen by the global prefers-reduced-motion rule. */
 
-const ring: CSSProperties = {
-  width: 40,
-  height: 40,
-  boxSizing: "border-box",
-  borderRadius: "50%",
-  border: `3px solid ${t.copperMid}`,
-  borderTopColor: t.copper,
-  animation: "spin 0.9s linear infinite",
-};
-
+const ring: CSSProperties = { color: t.copper };
 const frame: CSSProperties = { display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 24 };
 const fullFrame: CSSProperties = { ...frame, minHeight: "100vh", background: t.cream };
 const inlineFrame: CSSProperties = { ...frame, padding: "80px 20px" };
@@ -47,7 +39,7 @@ export default function LoadingScreen({
   return (
     <div role="status" aria-live="polite" aria-busy="true" style={fullScreen ? fullFrame : inlineFrame}>
       {fullScreen && <img src="/wordmark.png" alt="" style={wordmark} />}
-      <div aria-hidden="true" style={ring} />
+      <Spinner aria-hidden="true" className="size-10" style={ring} />
       {title && (
         <h1 style={{ margin: 0, fontSize: 28, color: t.coal, fontWeight: 400, letterSpacing: "-0.02em", textAlign: "center" }}>{title}</h1>
       )}

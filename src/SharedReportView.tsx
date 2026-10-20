@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import { Spinner } from "@/components/ui/spinner";
 import { c, font } from "./tokens";
 import { tokens as T } from "./auth/_tokens";
 import type { SessionReport } from "./dashboardData";
@@ -100,8 +101,7 @@ export default function SharedReportView({ token }: { token: string }) {
         {loading && (
           <div role="status" aria-live="polite" style={{ background: c.graphite, border: `1px solid ${c.border}`, borderRadius: 14, padding: "48px 32px", textAlign: "center" }}>
             {/* Decorative loading spinner — general chrome, not score-related, so indigo. */}
-            <div style={{ width: 40, height: 40, border: `3px solid rgba(49,46,129,0.18)`, borderTopColor: T.indigo, borderRadius: "50%", margin: "0 auto 16px", animation: "srspin 0.9s linear infinite" }} />
-            <style>{`@keyframes srspin { to { transform: rotate(360deg); } }`}</style>
+            <Spinner aria-hidden="true" className="size-10" style={{ color: T.indigo, margin: "0 auto 16px" }} />
             <p style={{ fontFamily: font.ui, fontSize: 13, color: c.stone, margin: 0 }}>Loading report…</p>
           </div>
         )}

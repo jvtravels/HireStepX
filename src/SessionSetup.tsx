@@ -21,6 +21,8 @@ import { getCompanyTier } from "../data/company-tiers";
 import { matchRoleKey } from "../data/salaries";
 import { sessionMinutesForFocus } from "../data/session-length";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Spinner } from "@/components/ui/spinner";
 import SetupTopbarLeft from "./SetupTopbarLeft";
 import AudioDevicePicker from "./AudioDevicePicker";
 import { micConstraints } from "./audioDevices";
@@ -615,7 +617,7 @@ function PermissionCard({
           </Button>
         )}
         {status === "requesting" && !slowRequest && (
-          <span role="status" aria-label="Waiting for permission" style={{ width: 16, height: 16, border: `2px solid ${T.indigoRing}`, borderTopColor: T.indigo, borderRadius: "50%", animation: "spin 1s linear infinite" }} />
+          <Spinner aria-label="Waiting for permission" style={{ color: T.indigo }} />
         )}
         {status === "requesting" && slowRequest && (
           <Button
@@ -1555,23 +1557,13 @@ export default function SessionSetup() {
       <style>{`
         /* Canonical fadeUp / spin / pulse live in src/index.css.
            Setup-local keyframes (launchIn, launchPulse, countdown*,
-           hsxAccent*, hsxShimmer) stay here — they're not reused. */
+           hsxAccent*) stay here — they're not reused. */
         @keyframes launchIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes launchPulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.08); opacity: 0.85; } }
         @keyframes countdownPop { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         @keyframes countdownFade { 0% { opacity: 1; transform: scale(1); } 80% { opacity: 1; } 100% { opacity: 0.6; transform: scale(0.95); } }
         @keyframes hsxAccentIn { 0% { opacity: 0; transform: translateY(6px); } 60% { opacity: 1; } 100% { opacity: 1; transform: translateY(0); } }
         @keyframes hsxBadgePulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(49,46,129,0.35); } 50% { box-shadow: 0 0 0 6px rgba(49,46,129,0); } }
-        @keyframes hsxShimmer { 0% { background-position: -200px 0; } 100% { background-position: calc(200px + 100%) 0; } }
-        /* Skeleton placeholder for elements that load async (identity
-           chip while useAuth resolves). Reserves space + telegraphs
-           "loading" without flashing or shifting. */
-        .hsx-shimmer {
-          background-image: linear-gradient(90deg, ${T.creamSoft} 0%, ${T.line} 40%, ${T.creamSoft} 80%);
-          background-size: 200px 100%;
-          background-repeat: no-repeat;
-          animation: hsxShimmer 1.4s ease-in-out infinite;
-        }
         .ob-card { background: ${T.white}; border: 1px solid ${T.line}; }
         /* Uses canonical 'pulse' from index.css (1.6s ease-in-out). */
         .ob-mic-pulse { animation: pulse 1.6s ease-in-out infinite; }
@@ -1750,8 +1742,8 @@ export default function SessionSetup() {
               // Shimmer placeholder — same dimensions as the loaded chip.
               return (
                 <div aria-hidden style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span className="hsx-shimmer" style={{ width: 30, height: 30, borderRadius: 999, background: T.creamSoft }} />
-                  <span className="hsx-shimmer hsx-setup-identity-name" style={{ width: 96, height: 14, borderRadius: 4, background: T.creamSoft }} />
+                  <Skeleton className="skeleton-circle" style={{ width: 30, height: 30, flexShrink: 0 }} />
+                  <Skeleton className="hsx-setup-identity-name" style={{ width: 96, height: 14, borderRadius: 4 }} />
                 </div>
               );
             }
@@ -2138,7 +2130,7 @@ export default function SessionSetup() {
                     style={{ opacity: needsMic && !isHardDisabled ? 0.85 : undefined }}
                   >
                     {starting ? (
-                      <span style={{ width: 16, height: 16, border: `2.5px solid ${T.indigoRing}`, borderTopColor: T.cream, borderRadius: "50%", animation: "spin 1s linear infinite" }} />
+                      <Spinner aria-hidden="true" style={{ color: T.cream }} />
                     ) : null}
                     {ctaLabel}
                     {!starting && (
