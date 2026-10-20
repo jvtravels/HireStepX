@@ -20,7 +20,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { EmptyState } from "@/components/EmptyState";
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { InfoTip, InsightList, InsightRow } from "./_panelParts";
-import { Badge, Pill, ScoreChip, STAGE_LABEL, STAGE_TONE, STRONG_MATCH_THRESHOLD } from "./_atoms";
+import { Badge, Pill, ScoreChip, STRONG_MATCH_THRESHOLD, StageCell } from "./_atoms";
 import { PrimaryLink, OutlineLink } from "./_consoleParts";
 import type { RequirementSummary } from "./mockData";
 import {
@@ -264,9 +264,15 @@ function JobMeta({ job, health }: { job: RequirementSummary; health?: { tone: "w
 
 function JobStatusBadge({ job, pipeline }: { job: RequirementSummary; pipeline: DashboardJobPipeline | undefined }) {
   if (job.status === "failed") return <Badge tone="error">Needs retry</Badge>;
-  const stage = pipelineStage(job, pipeline);
-  if ((stage === "ai_matching" || stage === "ready_for_review") && job.status === "zero") return <Badge tone="neutral">No matches yet</Badge>;
-  return <Badge tone={STAGE_TONE[stage]}>{STAGE_LABEL[stage]}</Badge>;
+  return (
+    <StageCell
+      stage={pipelineStage(job, pipeline)}
+      hasEvaluatedCandidates={job.aiScreening.evaluated > 0}
+      onChange={() => undefined}
+      frozen
+      matchedOnce={job.status === "zero"}
+    />
+  );
 }
 
 const JOBS_SHOWN = 5;
