@@ -453,34 +453,6 @@ export default function RequirementDetailPage() {
               />
             )}
             <div className="flex min-w-0 flex-[1_1_auto] flex-wrap items-center justify-end gap-2.5 min-[1100px]:flex-nowrap">
-              {hasList && !readOnly && nextLockedBatch && (
-                <span
-                  className="shrink-0"
-                  title={suspended
-                    ? "Unlocking is turned off while your account is suspended."
-                    : `Ranked ${nextLockedBatch.start} to ${nextLockedBatch.end}, at ${batchNote?.perCandidate} each.${batchNote?.savings ? ` ${batchNote.savings}` : ""}${nextLockedBatch.lockedRemaining > nextLockedBatch.count ? ` ${nextLockedBatch.lockedRemaining - nextLockedBatch.count} more stay locked further down; unlock those from their rows.` : ""} Names and contact details stay hidden until you pay.`}
-                >
-                  <PrimaryCta
-                    size="sm"
-                    icon={<LockIcon size={13} aria-hidden="true" />}
-                    disabled={suspended}
-                    ariaLabel={`Unlock ${nextLockedBatch.count} candidate${nextLockedBatch.count === 1 ? "" : "s"} for ${formatPaise(nextLockedBatch.amountPaise)}`}
-                    onClick={() =>
-                      setUnlockTarget({
-                        mode: "batch",
-                        requirementId: requirement.id,
-                        count: nextLockedBatch.count,
-                        amountPaise: nextLockedBatch.amountPaise,
-                        start: nextLockedBatch.start,
-                        end: nextLockedBatch.end,
-                        remaining: Math.max(0, nextLockedBatch.lockedRemaining - nextLockedBatch.count),
-                      })
-                    }
-                  >
-                    Unlock {nextLockedBatch.count} · {formatPaise(nextLockedBatch.amountPaise)}
-                  </PrimaryCta>
-                </span>
-              )}
               {hasList && (
                 <>
                   <div className="min-w-36 max-w-80 flex-[1_1_220px]">
@@ -511,6 +483,34 @@ export default function RequirementDetailPage() {
                     onShowShortcuts={showShortcuts}
                   />
                 </>
+              )}
+              {hasList && !readOnly && nextLockedBatch && (
+                <span
+                  className="shrink-0"
+                  title={suspended
+                    ? "Unlocking is turned off while your account is suspended."
+                    : `Ranked ${nextLockedBatch.start} to ${nextLockedBatch.end}, at ${batchNote?.perCandidate} each.${batchNote?.savings ? ` ${batchNote.savings}` : ""}${nextLockedBatch.lockedRemaining > nextLockedBatch.count ? ` ${nextLockedBatch.lockedRemaining - nextLockedBatch.count} more stay locked further down; unlock those from their rows.` : ""} Names and contact details stay hidden until you pay.`}
+                >
+                  <PrimaryCta
+                    size="sm"
+                    icon={<LockIcon size={13} aria-hidden="true" />}
+                    disabled={suspended}
+                    ariaLabel={`Unlock ${nextLockedBatch.count} candidate${nextLockedBatch.count === 1 ? "" : "s"} for ${formatPaise(nextLockedBatch.amountPaise)}`}
+                    onClick={() =>
+                      setUnlockTarget({
+                        mode: "batch",
+                        requirementId: requirement.id,
+                        count: nextLockedBatch.count,
+                        amountPaise: nextLockedBatch.amountPaise,
+                        start: nextLockedBatch.start,
+                        end: nextLockedBatch.end,
+                        remaining: Math.max(0, nextLockedBatch.lockedRemaining - nextLockedBatch.count),
+                      })
+                    }
+                  >
+                    Unlock {nextLockedBatch.count} · {formatPaise(nextLockedBatch.amountPaise)}
+                  </PrimaryCta>
+                </span>
               )}
             </div>
             </div>

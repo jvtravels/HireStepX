@@ -260,8 +260,8 @@ export function PrimaryCta({
     <Button
       type={type}
       variant="default"
-      size="lg"
-      className={cn("gap-2 pointer-coarse:h-11", size === "sm" ? "px-4.5" : "px-4")}
+      size={size === "sm" ? "default" : "lg"}
+      className={cn("gap-2 pointer-coarse:h-11", size === "sm" ? "px-4 text-[13px]" : "px-4")}
       onClick={onClick}
       disabled={isDisabled}
       aria-label={ariaLabel}
