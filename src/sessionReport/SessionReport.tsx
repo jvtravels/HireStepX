@@ -999,34 +999,6 @@ export const SessionReport = memo(function SessionReport({
   }, [session.negotiationMetrics, session.company]);
 
   /* ── Routing for action callbacks owned by the view ── */
-  const onTryQuestionAgain = useCallback(
-    (questionIdx: number) => {
-      track("report_action_clicked", {
-        action: "try_again",
-        sessionId: session.id,
-        questionIdx,
-        view: "main",
-      });
-      const params = new URLSearchParams();
-      const isCampus = session.focus === "campus-placement";
-      // Campus placement: route back to /session/new with the session's
-      // own role + company so the form is pre-populated correctly.
-      // Non-campus: carry the question text as a drill directive.
-      if (isCampus) {
-        params.set("type", "behavioral");
-        params.set("focus", "campus-placement");
-      } else {
-        params.set("type", session.type || "behavioral");
-        const q = report?.perQuestion[questionIdx - 1];
-        if (q?.question) params.set("focus", q.question.slice(0, 80));
-      }
-      if (session.role) params.set("role", session.role);
-      if (session.company) params.set("company", session.company);
-      router.push(`/session/new?${params.toString()}`);
-    },
-    [router, session.id, session.type, session.focus, session.role, session.company, report]
-  );
-
   const onTrustAnswer = useCallback(
     (value: "yes" | "no") => {
       track("report_trust_poll_submitted", {
@@ -1136,7 +1108,6 @@ export const SessionReport = memo(function SessionReport({
       sessionId={session.id}
       onBack={onBack}
       backLabel={backLabel}
-      onTryQuestionAgain={onTryQuestionAgain}
       onTrustAnswer={onTrustAnswer}
       onUsefulAnswer={onUsefulAnswer}
       credibility={credibility}

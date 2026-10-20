@@ -23,7 +23,7 @@ const BAND_META: Record<Question["band"], { label: string; tone: Tone }> = {
   strong:   { label: "Strong",   tone: "good" },
 };
 
-export function PerQuestionSection({ questions, onTryQuestionAgain }: { questions: Question[]; onTryQuestionAgain?: (questionIdx: number) => void }) {
+export function PerQuestionSection({ questions }: { questions: Question[] }) {
   const [openIdx, setOpenIdx] = useState<number | null>(0);
   const PRIMARY_COUNT = 3;
   /* R-7 (2026-07-10, live staging — Senior Product Designer @ Lollypop Design
@@ -172,7 +172,7 @@ export function PerQuestionSection({ questions, onTryQuestionAgain }: { question
                 </svg>
               </Button>
               <div id={panelId} role="region" hidden={!open}>
-                {open && <QuestionDetail q={q} onTryQuestionAgain={onTryQuestionAgain} />}
+                {open && <QuestionDetail q={q} />}
               </div>
             </li>
           );

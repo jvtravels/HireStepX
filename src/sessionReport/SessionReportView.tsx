@@ -202,10 +202,6 @@ export interface SessionReportViewProps {
    *  Header — overridden to "Back to Sessions" when the user arrived
    *  from /sessions so the affordance matches where they came from. */
   backLabel?: string;
-  /** "Try this question again" — invoked from the Next-Steps first
-   *  card. Production routes to /session/new with the weakest question
-   *  pre-loaded. */
-  onTryQuestionAgain?: (questionIdx: number) => void;
   /** Trust + usefulness 2-question polls. Both fire to analytics. */
   onTrustAnswer?: (value: "yes" | "no") => void;
   onUsefulAnswer?: (value: "yes" | "no") => void;
@@ -348,7 +344,6 @@ export default function SessionReportView(props: SessionReportViewProps) {
 
 function GenericReport({
   data,
-  onTryQuestionAgain,
   credibility,
   onDisputeCredibility,
   campusPlacementMeta,
@@ -368,9 +363,6 @@ function GenericReport({
   const behaviouralCrossSessionInsights = data.negotiationOutcome
     ? undefined
     : data.crossSessionInsights;
-  const weakestQuestion = data.questions.length > 0
-    ? data.questions.reduce((min, q) => (q.score < min.score ? q : min), data.questions[0])
-    : undefined;
 
   const tabs: { key: ReportTab; label: string; count?: number }[] = [
     { key: "overview", label: "Overview" },
@@ -403,16 +395,8 @@ function GenericReport({
                 {campusPlacementMeta && <CampusCgpaCalibrationNote meta={campusPlacementMeta} />}
                 <TopScoreDriversSection questions={data.questions} />
                 <NextStepsSection
-                  daysUntilInterview={data.daysUntilInterview}
                   readinessSentence={data.readinessSentence}
                   resumeImprovements={data.resumeImprovements}
-                  weakestQuestionIndex={weakestQuestion?.index}
-                  weakestQuestionScore={weakestQuestion?.score}
-                  onTryWeakestQuestion={
-                    onTryQuestionAgain && weakestQuestion
-                      ? () => onTryQuestionAgain(weakestQuestion.index)
-                      : undefined
-                  }
                 />
                 {isFreeUser && (
                   <UpgradeNudgeStrip score={data.overallScore} priorSessionCount={data.priorSessionCount} onUpgrade={onUpgrade} />
@@ -437,7 +421,7 @@ function GenericReport({
             )}
             {tab === "answers" && (
               <>
-                <PerQuestionSection questions={data.questions} onTryQuestionAgain={onTryQuestionAgain} />
+                <PerQuestionSection questions={data.questions} />
                 {data.thoughtBubble && data.thoughtBubble.length > 0 && (
                   <ThoughtBubbleSection segments={data.thoughtBubble} />
                 )}

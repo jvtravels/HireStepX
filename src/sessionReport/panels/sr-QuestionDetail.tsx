@@ -8,7 +8,6 @@ import { useState } from "react";
 import { t, f, radius, space, size } from "../tokens";
 import type { AnswerSpan, Question } from "../types";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
 
 function StarChip({ active, label }: { active: boolean; label: string }) {
   return (
@@ -82,7 +81,7 @@ function AnswerBody({
 
 const LABEL: React.CSSProperties = { fontFamily: f.sans, fontSize: size.sm, fontWeight: 600, color: t.inkSoft };
 
-export function QuestionDetail({ q, onTryQuestionAgain }: { q: Question; onTryQuestionAgain?: (questionIdx: number) => void }) {
+export function QuestionDetail({ q }: { q: Question }) {
   const [tab, setTab] = useState<"answer" | "restructured" | "exemplar">("answer");
   const isStrong = q.band === "strong" || q.band === "complete";
   const coachHeading = isStrong ? "Why it landed" : "Why it scored low";
@@ -210,11 +209,6 @@ export function QuestionDetail({ q, onTryQuestionAgain }: { q: Question; onTryQu
                   {q.idealAnswerSnippet.whyBetter}
                 </p>
               </div>
-            )}
-            {onTryQuestionAgain && (
-              <Button type="button" variant={isStrong ? "outline" : "default"} size="sm" className="self-start" onClick={() => onTryQuestionAgain(q.index)}>
-                Try this question again
-              </Button>
             )}
           </div>
         </div>
