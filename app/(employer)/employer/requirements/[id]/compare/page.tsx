@@ -106,7 +106,7 @@ const ROWS: CompareRow[] = [
         <span style={cellText}>
           <strong>{c.sessionsCompleted}</strong>
         </span>
-        <div style={mutedText}>Last active {c.lastActiveDaysAgo === 0 ? "today" : `${c.lastActiveDaysAgo}d ago`}</div>
+        <div style={mutedText}>Last active {c.lastActiveDaysAgo < 0 ? "unknown" : c.lastActiveDaysAgo === 0 ? "today" : `${c.lastActiveDaysAgo}d ago`}</div>
       </>
     ),
   },
