@@ -476,10 +476,11 @@ export function RecommendedCandidatesCard({ cards, total }: { cards: Recommended
                       {c.traits.length > 0 && (
                         <div className="mt-1 text-[13px] leading-[1.45] text-hx-coal [overflow-wrap:anywhere]">{c.traits.join(" · ")}</div>
                       )}
-                      <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1.5">
-                        {c.createdAt && <span className="text-[12px] text-hx-ink-soft">Matched {hoursOrDaysAgo(c.createdAt)}</span>}
-                        {waiting && <Pill tone="warning">{waiting}</Pill>}
-                      </div>
+                      {waiting && (
+                        <div className="mt-2">
+                          <Pill tone="warning">{waiting}</Pill>
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div className="min-w-0 space-y-3 @min-[960px]:contents">

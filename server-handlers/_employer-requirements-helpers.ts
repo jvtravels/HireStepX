@@ -281,9 +281,9 @@ export function candidateTraits(
   const nameParts = realName.toLowerCase().split(/[^\p{L}\p{M}\p{N}]+/u).filter((p) => p.length > 1);
   const out: string[] = [];
   const seniority = keepTrait(detail.seniorityLevel, nameParts, 24);
-  if (seniority) out.push(seniority);
+  if (seniority) out.push(/level|intern|fresher/i.test(seniority) ? seniority : `${seniority} level`);
   const industry = keepTrait(detail.industries[0], nameParts, 28);
-  if (industry) out.push(industry);
+  if (industry) out.push(/industry/i.test(industry) ? industry : `${industry} industry`);
   const notice = detail.noticePeriod?.trim() ?? "";
   if (NOTICE_RE.test(notice)) {
     out.push(/^immediate/i.test(notice) ? "Can join immediately" : `${notice.replace(/\s+notice$/i, "")} notice`);

@@ -546,14 +546,18 @@ describe("STAGE_TRANSITIONS / canManuallyTransitionStage", () => {
 describe("candidateTraits", () => {
   const base = { seniorityLevel: "Senior", industries: ["Fintech", "SaaS"], noticePeriod: "30 days" };
   it("returns seniority, top industry and a notice period", () => {
-    expect(candidateTraits(base, "Priya Sharma")).toEqual(["Senior", "Fintech", "30 days notice"]);
+    expect(candidateTraits(base, "Priya Sharma")).toEqual(["Senior level", "Fintech industry", "30 days notice"]);
   });
   it("words immediate availability plainly", () => {
     expect(candidateTraits({ ...base, noticePeriod: "Immediate" }, "A B")[2]).toBe("Can join immediately");
     expect(candidateTraits({ ...base, noticePeriod: "2 months notice" }, "A B")[2]).toBe("2 months notice");
   });
   it("drops free-text notice that is not a plain duration", () => {
-    expect(candidateTraits({ ...base, noticePeriod: "Serving notice at Acme, 30 days" }, "A B")).toEqual(["Senior", "Fintech"]);
+    expect(candidateTraits({ ...base, noticePeriod: "Serving notice at Acme, 30 days" }, "A B")).toEqual(["Senior level", "Fintech industry"]);
+  });
+  it("labels seniority and industry so the card reads in plain words", () => {
+    expect(candidateTraits({ seniorityLevel: "Mid", industries: ["AI"], noticePeriod: null }, "A B")).toEqual(["Mid level", "AI industry"]);
+    expect(candidateTraits({ seniorityLevel: "Entry level", industries: ["Education industry"], noticePeriod: null }, "A B")).toEqual(["Entry level", "Education industry"]);
   });
   it("drops any trait that contains part of the candidate's name", () => {
     expect(candidateTraits({ ...base, seniorityLevel: "Sharma Lead", industries: ["Priya Labs"] }, "Priya Sharma")).toEqual(["30 days notice"]);
