@@ -22,6 +22,7 @@ export function SortableHead<C extends string>({
   defaultDirection = "desc",
   after,
   inset = 20,
+  fit = false,
   children,
 }: {
   column: C;
@@ -38,6 +39,8 @@ export function SortableHead<C extends string>({
   after?: React.ReactNode;
   /* Left padding of the label, so a table whose cells use less than the default 20px can line the header up with them. */
   inset?: number;
+  /* Never truncate the label: the column grows to fit it (needs an auto-layout table). */
+  fit?: boolean;
   children: React.ReactNode;
 }) {
   const active = sort.column === column;
@@ -53,7 +56,7 @@ export function SortableHead<C extends string>({
           onMouseEnter={(e) => { e.currentTarget.style.background = T.rowTint; }}
           onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
         >
-          <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{children}</span>
+          <span style={fit ? { flexShrink: 0, whiteSpace: "nowrap" } : { minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{children}</span>
           {active ? (
             sort.direction === "asc" ? (
               <ChevronUpIcon size={14} style={{ flexShrink: 0 }} aria-hidden="true" />
