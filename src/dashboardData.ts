@@ -1507,20 +1507,15 @@ export async function fetchRecentSessionScores(
 export async function fetchSkillProgressTrends(
   opts: {
     sessionType?: string;
+    focus?: string;
     limit?: number;
-    /* The session currently being viewed, with its AUTHORITATIVE (superset:
-     * kernel-persisted OR transcript-recovered) candidate ask from the report
-     * adapter. When candidateAsk is null the kernel says no counter was named,
-     * so this row's persisted anchor/counter/specificity skill_scores are
-     * grounded into the weak band BEFORE the trend is computed — otherwise a
-     * row saved before the write-seam fix renders "Anchoring 70" on the Skill
-     * Progress panel while the same report's Skills Breakdown reads 35. Only
-     * this one row is grounded (we have its authoritative ask); prior rows keep
-     * their persisted values and self-heal forward via the write seam. */
+    /* Viewed session plus its authoritative candidate ask. A null ask grounds
+     * this row's anchor/counter/specificity scores into the weak band so the
+     * panel matches the report's Skills Breakdown; prior rows keep their values. */
     currentSession?: { id: string; candidateAsk: number | null };
   } = {},
 ): Promise<SkillTrend[]> {
-  const { sessionType, limit = 30, currentSession } = opts;
+  const { sessionType, focus, limit = 30, currentSession } = opts;
   try {
     const { getSupabase } = await import("./supabase");
     const {
@@ -1536,9 +1531,10 @@ export async function fetchSkillProgressTrends(
     if (!userId) return [];
     let q = client
       .from("sessions")
-      .select("id, created_at, skill_scores, target_company, type, focus")
+      .select("id, created_at, skill_scores, target_company, type, focus, score, duration")
       .eq("user_id", userId);
     if (sessionType) q = q.eq("type", sessionType);
+    if (focus) q = q.eq("focus", focus);
     const { data, error } = await q
       .order("created_at", { ascending: false })
       .limit(limit);
@@ -1551,9 +1547,16 @@ export async function fetchSkillProgressTrends(
       created_at: string;
       skill_scores: Record<string, number | { score: number }> | null;
       target_company: string | null;
+      score: number | null; duration: number | null;
     }>;
+    /* Same exclusions as fetchRecentSessionScores so rows and hero share a baseline. */
+    const countable = rows.filter(
+      (r) =>
+        r.id === currentSession?.id ||
+        ((r.score ?? 0) > 0 && (r.duration ?? 0) >= 60),
+    );
     const points = sessionRowsToProgressPoints(
-      rows.map((r) => ({
+      countable.map((r) => ({
         sessionId: r.id,
         completedAt: new Date(r.created_at).getTime(),
         skillScores:
@@ -1564,10 +1567,7 @@ export async function fetchSkillProgressTrends(
       })),
       humanizeSkillKey,
     );
-    /* Scope the trend to END at the viewed session so an older report shows
-     * its own skills vs its predecessors — not the globally-latest session's
-     * numbers (which made 8/10 skills render identically across reports while
-     * only the per-session-grounded anchor axis varied). */
+    /* End the trend at the viewed session so an older report shows its own numbers. */
     const scoped = currentSession
       ? capHistoryToSession(points, currentSession.id)
       : points;

@@ -1211,13 +1211,14 @@ function buildMetrics(report: SessionReport): DeliveryMetric[] {
       targetLabel: "Target 140–180",
       band: bandForPace(coreMetrics.paceWpm),
     }] : []),
-    {
+    // A pegged 0 or 100 is a saturated heuristic, not a measurement, so hide it.
+    ...(coreMetrics.energy > 0 && coreMetrics.energy < 100 ? [{
       label: "Energy",
       value: Math.round(coreMetrics.energy),
       unit: "/100",
       targetLabel: "Target 60–100",
       band: bandForEnergy(coreMetrics.energy),
-    },
+    }] : []),
     ...(advancedDelivery.medianLatencyMs > 0 ? [{
       label: "Median latency",
       value: round1(advancedDelivery.medianLatencyMs / 1000),
@@ -1225,13 +1226,14 @@ function buildMetrics(report: SessionReport): DeliveryMetric[] {
       targetLabel: "Target <2.0s",
       band: bandForLatency(advancedDelivery.medianLatencyMs),
     }] : []),
-    {
+    // Zero is unmeasured here (same as latency and silence), so omit it.
+    ...(advancedDelivery.selfCorrectionRate > 0 ? [{
       label: "Self-correction rate",
       value: round1(advancedDelivery.selfCorrectionRate),
       unit: "/min",
       targetLabel: "Target <1.0",
       band: bandForSelfCorrection(advancedDelivery.selfCorrectionRate),
-    },
+    }] : []),
   ];
 }
 

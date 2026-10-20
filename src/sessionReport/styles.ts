@@ -403,10 +403,10 @@ export const SESSION_REPORT_STYLES = `
 
   /* ─── Sparkline ─── */
   .ir-spark { vertical-align: middle; }
-  .ir-spark-line { stroke: #312E81; stroke-width: 1.5; fill: none; }
-  .ir-spark-area { fill: rgba(49, 46, 129, 0.10); }
-  .ir-spark-dot { fill: #312E81; }
-  .ir-spark-dot-current { fill: #312E81; r: 2.5; }
+  .ir-spark-line { stroke: var(--foreground); stroke-opacity: 0.55; stroke-width: 1.75; fill: none; stroke-linejoin: round; stroke-linecap: round; }
+  .ir-spark-area { fill: var(--foreground); fill-opacity: 0.06; }
+  .ir-spark-dot { fill: var(--foreground); fill-opacity: 0.4; }
+  .ir-spark-dot-current { fill: var(--foreground); r: 3.5; }
 
   /* ─── Feedback survey expansion ─── */
   .ir-feedback-row { display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap; }

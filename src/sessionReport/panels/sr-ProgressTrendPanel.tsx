@@ -71,7 +71,7 @@ export function ProgressTrendPanel({ trends }: { trends: SkillTrend[] }) {
       headingId="ir-progress-trend-heading"
       label="Skill progress"
       title="Progress over time"
-      subtitle="Score out of 100 for each skill, and the change since your last session."
+      subtitle="Each skill out of 100, and how it changed since your previous session of this type."
     >
       {hasAnyHistory && trends.length > 0 ? (
         <ul className="ir-trend-grid m-0 list-none p-0">

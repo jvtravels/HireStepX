@@ -39,8 +39,8 @@ export function ScoreGauge({ score, color }: { score: number; color: string }) {
 
 export function Sparkline({ points }: { points: number[] }) {
   if (!points || points.length < 2) return null;
-  const w = 96;
-  const h = 28;
+  const w = 144;
+  const h = 40;
   const pad = 3;
   const innerW = w - pad * 2;
   const innerH = h - pad * 2;
@@ -80,7 +80,7 @@ export function Sparkline({ points }: { points: number[] }) {
           className={i === points.length - 1 ? "ir-spark-dot-current" : "ir-spark-dot"}
           cx={xs[i]}
           cy={ys[i]}
-          r={i === points.length - 1 ? 2.5 : 1.6}
+          r={i === points.length - 1 ? 3.5 : 2}
         />
       ))}
     </svg>

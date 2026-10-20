@@ -811,8 +811,12 @@ export const SessionReport = memo(function SessionReport({
 
   /* ── Recent-scores series for the sparkline ── */
   const recentScores = useMemo(
-    () => (trend.length >= 2 ? trend.slice(-6).map((p) => p.score) : undefined),
-    [trend]
+    () => {
+      const viewedIdx = trend.findIndex((p) => p.id === session.id);
+      const upToViewed = viewedIdx >= 0 ? trend.slice(0, viewedIdx + 1) : trend;
+      return upToViewed.length >= 2 ? upToViewed.slice(-6).map((p) => p.score) : undefined;
+    },
+    [trend, session.id]
   );
 
   /* ── Action handlers ── */
@@ -883,6 +887,7 @@ export const SessionReport = memo(function SessionReport({
     let cancelled = false;
     fetchSkillProgressTrends({
       sessionType: session.type,
+      focus: session.focus || undefined,
       /* Ground THIS session's own point to its authoritative counter truth so
          the Skill Progress panel can't show "Anchoring 70" beside the same
          report's grounded Skills Breakdown "Anchor strength 35" (rows saved
@@ -901,7 +906,7 @@ export const SessionReport = memo(function SessionReport({
     return () => {
       cancelled = true;
     };
-  }, [viewData, session.id, session.type]);
+  }, [viewData, session.id, session.type, session.focus]);
 
   /* ── Report-derivation canary (telemetry) ──
      Fires once per rendered negotiation report with which path produced the

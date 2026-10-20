@@ -11,13 +11,13 @@ import { Card, CardContent } from "@/components/ui/card";
 type NoteKind = "strength" | "gap" | "regression" | "improvement" | "persistent" | "story-reuse" | "blind-spot";
 
 const NOTE_META: Record<NoteKind, { eyebrow: string; dot: string }> = {
-  strength:     { eyebrow: "What went well",  dot: t.success },
-  gap:          { eyebrow: "For next time",   dot: t.warning },
+  strength:     { eyebrow: "What went well",  dot: t.inkFaint },
+  gap:          { eyebrow: "For next time",   dot: t.inkFaint },
   regression:   { eyebrow: "Regression",      dot: t.error },
-  improvement:  { eyebrow: "Improvement",     dot: t.success },
-  persistent:   { eyebrow: "Persistent gap",    dot: t.warning },
-  "story-reuse": { eyebrow: "Story reuse",    dot: t.indigo },
-  "blind-spot": { eyebrow: "Blind spot",      dot: t.inkSoft },
+  improvement:  { eyebrow: "Improvement",     dot: t.inkFaint },
+  persistent:   { eyebrow: "Persistent gap",  dot: t.inkFaint },
+  "story-reuse": { eyebrow: "Story reuse",    dot: t.inkFaint },
+  "blind-spot": { eyebrow: "Blind spot",      dot: t.inkFaint },
 };
 
 function NoteCard({ kind, title, body, extra }: { kind: NoteKind; title: string; body: string; extra?: ReactNode }) {
