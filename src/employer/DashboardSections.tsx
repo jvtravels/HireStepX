@@ -304,7 +304,7 @@ export function ActiveJobsCard({
       <CardHeader
         id="active-jobs-heading"
         title="Active jobs"
-        description={sort ? `Sorted by ${SORT_LABEL[sort.key]}, ${sort.dir === "asc" ? "lowest" : "highest"} first.` : "Jobs needing attention first."}
+        description={`${jobs.length > JOBS_SHOWN ? `Showing ${JOBS_SHOWN} of ${jobs.length} jobs` : `${jobs.length} ${jobs.length === 1 ? "job" : "jobs"}`}, ${sort ? `sorted by ${SORT_LABEL[sort.key]}, ${sort.dir === "asc" ? "lowest" : "highest"} first` : "those needing attention first"}.`}
         action={
           <TextLink href="/employer/jobs">View all jobs</TextLink>
         }
@@ -389,9 +389,6 @@ export function ActiveJobsCard({
               );
             })}
           </ul>
-          {jobs.length > JOBS_SHOWN && (
-            <p className="m-0 mt-4 text-[13px] text-hx-ink-soft">Showing {JOBS_SHOWN} of {jobs.length} jobs.</p>
-          )}
         </>
       )}
     </section>
