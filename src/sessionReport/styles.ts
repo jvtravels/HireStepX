@@ -827,4 +827,9 @@ export const SESSION_REPORT_STYLES = `
   .ir-more-detail { display: none; }
   .ir-more-detail.is-open { display: flex; }
   .ir-more-detail-toggle:hover { background: rgba(49,46,129,0.05); }
+  .ir-tab-panel > .ir-flat-section:first-child { border-top: 0; padding-top: 4px; }
+  .ir-frame-body > .ir-flat-section:first-child { border-top: 0; }
+  .ir-tab-panel { display: flex; flex-direction: column; outline: none; }
+  .ir-tab-bar { scrollbar-width: none; }
+  .ir-tab-bar::-webkit-scrollbar { display: none; }
 `;

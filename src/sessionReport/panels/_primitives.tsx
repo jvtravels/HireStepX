@@ -38,6 +38,38 @@ export function toneToColor(tone: Tone): string {
   }
 }
 
+const PILL_TONE: Record<Tone, { bg: string; color: string }> = {
+  good: { bg: t.successTint, color: t.success },
+  warn: { bg: t.warningTint, color: t.warning },
+  bad: { bg: t.errorTint, color: t.error },
+  neutral: { bg: t.creamSoft, color: t.inkSoft },
+};
+
+/* The one status pill for the report: verdicts, bands, severities. */
+export function StatusPill({ tone, children, title }: { tone: Tone; children: React.ReactNode; title?: string }) {
+  const meta = PILL_TONE[tone];
+  return (
+    <span
+      title={title}
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 4,
+        padding: "2px 10px",
+        borderRadius: radius.pill,
+        background: meta.bg,
+        color: meta.color,
+        fontFamily: f.sans,
+        fontSize: size.sm,
+        fontWeight: 600,
+        whiteSpace: "nowrap",
+      }}
+    >
+      {children}
+    </span>
+  );
+}
+
 export function FreshnessChip({ source, n, asOf, methodologyUrl }: {
   source: string; n?: number; asOf?: string; methodologyUrl?: string;
 }) {
@@ -117,7 +149,7 @@ export function ToneCard({
   return (
     <div className={`nfr-tone-card nfr-tone-card-${tone}`}>
       <span className={`nfr-tone-dot nfr-tone-dot-${tone}`} aria-hidden />
-      <div style={{ minWidth: 0 }}>{children}</div>
+      <div className="min-w-0">{children}</div>
       {pill ?? <span aria-hidden />}
     </div>
   );
@@ -316,7 +348,7 @@ export function SectionHeader({ index, title, subtitle, accent = t.indigo, aside
       }}
     >
       {headBlock}
-      <div style={{ flexShrink: 0 }}>{aside}</div>
+      <div className="shrink-0">{aside}</div>
     </div>
   );
 }
@@ -369,7 +401,7 @@ export function SectionBand({
 export function ReportCardShell({
   id,
   ariaLabelledBy,
-  padding = "28px clamp(16px, 4vw, 32px)",
+  padding = "28px 0",
   scrollMarginTop = 72,
   children,
   style,
@@ -384,11 +416,10 @@ export function ReportCardShell({
   return (
     <section
       id={id}
+      className="ir-flat-section"
       aria-labelledby={ariaLabelledBy}
       style={{
-        background: t.white,
-        border: `1px solid ${t.line}`,
-        borderRadius: radius.shell,
+        borderTop: `1px solid ${t.line}`,
         padding,
         scrollMarginTop,
         ...style,
@@ -555,13 +586,8 @@ export function StatTile(props: StatTileProps) {
  * `import { SectionEyebrow } from "./sr-JumpNav"` call sites. */
 /* `num` is accepted but not rendered: sections are conditional, so fixed
  * numbers left visible gaps (e.g. 07 → 09) in most reports. */
-export function SectionEyebrow({ label }: { num?: string; label: string }) {
-  return (
-    <div className="ir-section-eyebrow">
-      <span className="ir-section-num">{label.toUpperCase()}</span>
-      <span className="ir-section-rule" aria-hidden="true" />
-    </div>
-  );
+export function SectionEyebrow(_props: { num?: string; label: string }) {
+  return null;
 }
 
 /* SrSectionShell — the section-card chrome shared by every sr-*Section
@@ -612,18 +638,18 @@ export function SrSectionShell({
       <h2
         id={headingId}
         style={{
-          fontFamily: f.serif,
-          fontSize: "clamp(18px, 4.5vw, 22px)",
-          fontWeight: 400,
+          fontFamily: f.sans,
+          fontSize: size.xl,
+          fontWeight: 600,
           color: t.coal,
-          margin: subtitle ? "0 0 6px" : 0,
+          margin: subtitle ? "0 0 4px" : "0 0 16px",
           letterSpacing: "-0.01em",
         }}
       >
         {title}
       </h2>
       {subtitle && (
-        <p style={{ fontFamily: f.sans, fontSize: size.base, color: t.inkSoft, margin: "0 0 18px", lineHeight: 1.5 }}>
+        <p style={{ fontFamily: f.sans, fontSize: size.base, color: t.inkSoft, margin: "0 0 16px", lineHeight: 1.5 }}>
           {subtitle}
         </p>
       )}
@@ -635,7 +661,7 @@ export function SrSectionShell({
       {aside ? (
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 16, flexWrap: "wrap" }}>
           <div style={{ minWidth: 0 }}>{titleBlock}</div>
-          <div style={{ flexShrink: 0 }}>{aside}</div>
+          <div className="shrink-0">{aside}</div>
         </div>
       ) : titleBlock}
       {children}
@@ -663,15 +689,15 @@ export function CalloutCard({
   return (
     <div
       style={{
-        background: t.copperSoft,
-        border: `1px solid ${t.copper100}`,
+        background: t.creamSoft,
+        border: `1px solid ${t.line}`,
         borderRadius: radius.bar,
-        padding: "18px 20px",
+        padding: "16px 18px",
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
         {icon}
-        <span style={{ fontFamily: f.mono, fontSize: size.xs, color: t.copper, letterSpacing: "0.10em", textTransform: "uppercase", fontWeight: 600 }}>
+        <span style={{ fontFamily: f.sans, fontSize: size.sm, color: t.coal, fontWeight: 600 }}>
           {eyebrow}
         </span>
       </div>

@@ -15,11 +15,9 @@
 
 "use client";
 
-import { useState, type ReactNode } from "react";
-import { captureClientEvent } from "../posthogClient";
+import { useState } from "react";
 
 import { t, f } from "./tokens";
-import { Button } from "@/components/ui/button";
 import { SESSION_REPORT_STYLES } from "./styles";
 import { NegotiationFullReport } from "./NegotiationFullReport";
 import { upgradeNudgeCopy } from "./upgradeNudgeCopy";
@@ -45,6 +43,9 @@ import type {
   Verdict,
 } from "./types";
 
+import StatusTabs from "../components/StatusTabs";
+import { Button } from "@/components/ui/button";
+import { ReportFrame, ReportBody } from "./panels/sr-ReportFrame";
 import { HeroSection } from "./panels/sr-HeroSection";
 import { TrendStrip } from "./panels/sr-TrendStrip";
 import { TopScoreDriversSection } from "./panels/sr-TopScoreDriversSection";
@@ -95,44 +96,23 @@ export type {
 
 function UpgradeNudgeStrip({ score, priorSessionCount, onUpgrade }: { score: number; priorSessionCount?: number; onUpgrade?: () => void }) {
   const copy = upgradeNudgeCopy(score, priorSessionCount);
-  const ctaStyle: React.CSSProperties = {
-    flexShrink: 0,
-    fontFamily: f.sans,
-    fontSize: 13,
-    fontWeight: 600,
-    padding: "9px 20px",
-    borderRadius: 8,
-    background: t.indigo ?? "#4f46e5",
-    color: "#fff",
-    border: 0,
-    cursor: "pointer",
-    whiteSpace: "nowrap",
-    textDecoration: "none",
-    display: "inline-block",
-  };
   return (
     <div
       role="complementary"
       aria-label="Continue practising"
-      className="hsx-upgrade-strip"
       style={{
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
         gap: 16,
         flexWrap: "wrap",
-        background: t.indigoTint,
-        border: `1px solid ${t.indigoRing}`,
+        background: t.creamSoft,
+        border: `1px solid ${t.line}`,
         borderRadius: 12,
-        padding: "14px 20px",
+        padding: "14px 18px",
+        marginTop: 28,
       }}
     >
-      <style>{`
-        @media (max-width: 480px) {
-          .hsx-upgrade-strip { flex-direction: column !important; align-items: flex-start !important; gap: 12px !important; }
-          .hsx-upgrade-strip a, .hsx-upgrade-strip button { width: 100% !important; text-align: center !important; }
-        }
-      `}</style>
       <div style={{ minWidth: 0 }}>
         <p style={{ margin: 0, fontFamily: f.sans, fontSize: 14, fontWeight: 600, color: t.coal }}>
           {copy.headline}
@@ -142,9 +122,9 @@ function UpgradeNudgeStrip({ score, priorSessionCount, onUpgrade }: { score: num
         </p>
       </div>
       {copy.ctaHref ? (
-        <a href={copy.ctaHref} style={ctaStyle}>{copy.ctaLabel}</a>
+        <Button asChild size="sm"><a href={copy.ctaHref}>{copy.ctaLabel}</a></Button>
       ) : (
-        <Button type="button" size="lg" className="px-5 shrink-0" onClick={onUpgrade}>{copy.ctaLabel}</Button>
+        <Button type="button" size="sm" onClick={onUpgrade}>{copy.ctaLabel}</Button>
       )}
     </div>
   );
@@ -154,21 +134,22 @@ function UpgradeNudgeStrip({ score, priorSessionCount, onUpgrade }: { score: num
 
 const TONE_VALUE_COLOR: Record<FocusBannerData["headlineMetric"]["tone"], string> = {
   good: t.success,
-  watch: t.copper,
+  watch: t.warning,
   miss: t.error,
-  neutral: t.neutralInk,
+  neutral: t.coal,
 };
 
 function FocusBannerStrip({ banner, daysUntilInterview }: { banner: FocusBannerData; daysUntilInterview?: number }) {
-  const valueColor = TONE_VALUE_COLOR[banner.headlineMetric.tone] ?? banner.accent;
+  const valueColor = TONE_VALUE_COLOR[banner.headlineMetric.tone] ?? t.coal;
   return (
     <div
       aria-label={`${banner.label} focus`}
       style={{
-        background: banner.accentSoft,
-        borderTop: `3px solid ${banner.accent}`,
+        background: t.creamSoft,
+        border: `1px solid ${t.line}`,
         borderRadius: 12,
-        padding: "16px 24px",
+        padding: "14px 18px",
+        marginBottom: 20,
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
@@ -176,202 +157,37 @@ function FocusBannerStrip({ banner, daysUntilInterview }: { banner: FocusBannerD
         flexWrap: "wrap",
       }}
     >
-      <div style={{ display: "flex", alignItems: "center", gap: 14, flex: 1, minWidth: 0 }}>
-        <div
-          aria-hidden="true"
-          style={{
-            width: 40,
-            height: 40,
-            borderRadius: 10,
-            background: banner.accent,
-            color: t.white,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontSize: 20,
-            flexShrink: 0,
-          }}
-        >
-          {banner.icon}
-        </div>
-        <div style={{ minWidth: 0 }}>
-          <div
-            style={{
-              fontSize: 11,
-              fontWeight: 700,
-              letterSpacing: 0.8,
-              textTransform: "uppercase",
-              color: banner.accent,
-              marginBottom: 3,
-            }}
-          >
-            {banner.label}
-          </div>
-          <div style={{ fontSize: 13, color: t.coal, fontWeight: 500, lineHeight: 1.4 }}>
-            {banner.tagline}
-          </div>
-        </div>
+      <div style={{ minWidth: 0, flex: 1 }}>
+        <div style={{ fontSize: 14, fontWeight: 600, color: t.coal }}>{banner.label}</div>
+        <div style={{ fontSize: 13, color: t.inkSoft, lineHeight: 1.4, marginTop: 2 }}>{banner.tagline}</div>
       </div>
-
-      {/* Right cluster: headline metric + optional days-to-interview countdown */}
-      <div style={{ display: "flex", alignItems: "center", gap: 24, flexShrink: 0 }}>
-        {/* Headline metric — the single most important number for this focus */}
+      <div style={{ display: "flex", alignItems: "center", gap: 20, flexShrink: 0 }}>
         <div style={{ textAlign: "right" }}>
-          <div
-            style={{
-              fontSize: 11,
-              fontWeight: 700,
-              letterSpacing: 0.8,
-              textTransform: "uppercase",
-              color: t.inkSoft,
-              marginBottom: 2,
-            }}
-          >
-            {banner.headlineMetric.label}
-          </div>
-          <div
-            style={{
-              fontSize: 20,
-              fontWeight: 700,
-              color: valueColor,
-              fontFamily: "'Geist Mono', 'Fira Code', monospace",
-            }}
-          >
+          <div style={{ fontSize: 12, color: t.inkSoft }}>{banner.headlineMetric.label}</div>
+          <div style={{ fontSize: 20, fontWeight: 700, color: valueColor, letterSpacing: "-0.01em" }}>
             {banner.headlineMetric.value}
           </div>
           {banner.headlineMetric.caption && (
-            <div style={{ fontSize: 11, color: t.inkSoft, marginTop: 3, maxWidth: 240 }}>
+            <div style={{ fontSize: 12, color: t.inkSoft, marginTop: 2, maxWidth: 240 }}>
               {banner.headlineMetric.caption}
             </div>
           )}
         </div>
-        {/* Countdown — only when the user has set an interview date */}
         {typeof daysUntilInterview === "number" && daysUntilInterview > 0 && (
-          <div
-            style={{
-              borderLeft: `1px solid ${t.lineStrong}`,
-              paddingLeft: 24,
-              textAlign: "right",
-            }}
-          >
-            <div
-              style={{
-                fontSize: 11,
-                fontWeight: 700,
-                letterSpacing: 0.8,
-                textTransform: "uppercase",
-                color: t.inkSoft,
-                marginBottom: 2,
-              }}
-            >
-              Real round in
-            </div>
-            <div
-              style={{
-                fontSize: 20,
-                fontWeight: 700,
-                color: t.copper,
-                fontFamily: "'Geist Mono', 'Fira Code', monospace",
-              }}
-            >
-              {daysUntilInterview}d
-            </div>
-            <div style={{ fontSize: 11, color: t.inkSoft, marginTop: 3 }}>
-              Practice before then
+          <div style={{ borderLeft: `1px solid ${t.line}`, paddingLeft: 20, textAlign: "right" }}>
+            <div style={{ fontSize: 12, color: t.inkSoft }}>Interview in</div>
+            <div style={{ fontSize: 20, fontWeight: 700, color: t.coal }}>
+              {daysUntilInterview} {daysUntilInterview === 1 ? "day" : "days"}
             </div>
           </div>
         )}
       </div>
-
-      {/* Secondary metrics — if the evaluator produced more than the headline */}
-      {banner.allMetrics.length > 1 && (
-        <div
-          style={{
-            display: "flex",
-            gap: 12,
-            flexWrap: "wrap",
-            width: "100%",
-            paddingTop: 10,
-            borderTop: `1px solid ${banner.accent}22`,
-          }}
-        >
-          {banner.allMetrics.slice(1).map((m) => {
-            const mColor = TONE_VALUE_COLOR[m.tone] ?? t.neutralInk;
-            return (
-              <div
-                key={m.label}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 6,
-                  fontSize: 12,
-                  color: t.neutralInk,
-                }}
-              >
-                <span style={{ fontWeight: 700, color: t.inkSoft, textTransform: "uppercase", fontSize: 11, letterSpacing: 0.5 }}>
-                  {m.label}
-                </span>
-                <span style={{ fontWeight: 700, color: mColor, fontFamily: "monospace" }}>
-                  {m.value}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      )}
     </div>
   );
 }
 
 /* ─── Main component ──────────────────────────────────────────────── */
 
-const DETAIL_PREF_KEY = "hsx_report_full_analysis";
-
-/* Secondary sections stay mounted while collapsed (display:none) so
-   analytics and anchors keep working. */
-function MoreDetail({ children }: { children: ReactNode }) {
-  const [open, setOpen] = useState(() => {
-    try { return localStorage.getItem(DETAIL_PREF_KEY) === "1"; } catch { return false; }
-  });
-  const toggle = () => {
-    const next = !open;
-    setOpen(next);
-    try { localStorage.setItem(DETAIL_PREF_KEY, next ? "1" : "0"); } catch { /* storage unavailable */ }
-    captureClientEvent("report_full_analysis_toggled", { open: next });
-  };
-  return (
-    <>
-      <button
-        type="button"
-        className="ir-more-detail-toggle"
-        aria-expanded={open}
-        aria-controls="ir-more-detail"
-        onClick={toggle}
-        style={{
-          alignSelf: "stretch",
-          padding: "14px 16px",
-          borderRadius: 12,
-          border: `1px solid ${t.indigoRing}`,
-          background: t.white,
-          color: t.indigoDeep,
-          fontFamily: f.sans,
-          fontSize: 14,
-          fontWeight: 600,
-          cursor: "pointer",
-        }}
-      >
-        {open ? "Hide full analysis ▴" : "Show full analysis — trends, metrics, coach notes ▾"}
-      </button>
-      <div
-        id="ir-more-detail"
-        className={open ? "ir-more-detail is-open" : "ir-more-detail"}
-        style={{ flexDirection: "column", gap: 16 }}
-      >
-        {children}
-      </div>
-    </>
-  );
-}
 
 export interface SessionReportViewProps {
   data: InterviewResultData;
@@ -485,179 +301,184 @@ export interface SessionReportViewProps {
   onUpgrade?: () => void;
 }
 
-export default function SessionReportView({
-  data,
-  sessionId,
-  onBack,
-  backLabel,
-  onShare,
-  shareUrl,
-  onTryQuestionAgain,
-  onDrillSkill,
-  onTrustAnswer,
-  onUsefulAnswer,
-  credibility,
-  onDisputeCredibility,
-  campusPlacementMeta,
-  salaryNegotiationMeta,
-  offerNetValue,
-  progressTrends,
-  behavioralFullReportData,
-  hrReportData,
-  isFreeUser,
-  onUpgrade,
-}: SessionReportViewProps) {
-  // Behavioral v2 dispatch — env-gated, opt-in. Renders the new
-  // diagnostic-first report and skips the existing panel stack.
-  // Default (env unset) falls through unchanged.
+type ReportTab = "overview" | "negotiation" | "answers" | "skills" | "coach";
+
+function ShareButton({ onShare }: { onShare?: () => void }) {
+  if (!onShare) return null;
+  return (
+    <Button type="button" variant="outline" size="sm" onClick={onShare}>
+      Share report
+    </Button>
+  );
+}
+
+function reportSubtitle(data: InterviewResultData): string {
+  const parts = [data.role, data.company, data.level].map((p) => (p ?? "").trim()).filter(Boolean);
+  return parts.join(" · ");
+}
+
+export default function SessionReportView(props: SessionReportViewProps) {
+  const { data, sessionId, onShare, shareUrl, onTrustAnswer, onUsefulAnswer, onDrillSkill, behavioralFullReportData, hrReportData } = props;
+  // Behavioral v2 dispatch: env-gated, opt-in. Default (env unset) falls through unchanged.
   const behavioralV2Enabled =
     typeof process !== "undefined" &&
     process.env.NEXT_PUBLIC_BEHAVIORAL_REPORT_V2 === "true";
   if (behavioralV2Enabled && behavioralFullReportData) {
     return <BehavioralFullReport data={behavioralFullReportData} />;
   }
-  // HR-round dispatch — when `hrReportData` is present (adapter detected
-  // hr-round focus), render the dedicated HrFullReport and skip the
-  // generic panel stack. The FocusBannerStrip is embedded inside
-  // HrFullReport's ReconcileStrip so we don't render it twice.
+  // HR-round dispatch: the FocusBannerStrip is embedded inside HrFullReport's
+  // ReconcileStrip so it is not rendered twice.
   if (hrReportData || data.hrReport) {
     const hr = hrReportData ?? data.hrReport;
     return (
       <>
         <style>{SESSION_REPORT_STYLES}</style>
-        <div style={{ display: "flex", flexDirection: "column", width: "100%", fontFamily: f.sans, color: t.coal, paddingBottom: 48 }}>
-          <section
-            id="ir-main"
-            aria-label="HR Round report"
-            className="ir-main-container"
-            style={{ width: "100%", display: "flex", flexDirection: "column", gap: 16 }}
-          >
-            <HrFullReport
-              overallScore={data.overallScore}
-              skills={data.skills}
-              wins={data.strengths}
-              questions={data.questions}
-              hrReport={hr}
-              daysUntilInterview={data.daysUntilInterview}
-              role={data.role}
-              company={data.company}
-              onDrillSkill={onDrillSkill}
-            />
-            <ReferralInviteSection score={data.overallScore} shareUrl={shareUrl} />
-            <ProductRating sessionId={sessionId ?? ""} />
-            <TestimonialNudge score={data.overallScore} priorSessionCount={data.priorSessionCount} role={data.role} />
-            <FooterSection onTrustAnswer={onTrustAnswer} onUsefulAnswer={onUsefulAnswer} />
-          </section>
-        </div>
+        <ReportFrame subtitle={reportSubtitle(data)} actions={<ShareButton onShare={onShare} />}>
+          <ReportBody>
+            <section
+              id="ir-main"
+              aria-label="HR Round report"
+              className="ir-main-container"
+              style={{ width: "100%", display: "flex", flexDirection: "column", gap: 16 }}
+            >
+              <HrFullReport
+                overallScore={data.overallScore}
+                skills={data.skills}
+                wins={data.strengths}
+                questions={data.questions}
+                hrReport={hr}
+                daysUntilInterview={data.daysUntilInterview}
+                role={data.role}
+                company={data.company}
+                onDrillSkill={onDrillSkill}
+              />
+              <ReferralInviteSection score={data.overallScore} shareUrl={shareUrl} />
+              <ProductRating sessionId={sessionId ?? ""} />
+              <TestimonialNudge score={data.overallScore} priorSessionCount={data.priorSessionCount} role={data.role} />
+              <FooterSection onTrustAnswer={onTrustAnswer} onUsefulAnswer={onUsefulAnswer} />
+            </section>
+          </ReportBody>
+        </ReportFrame>
       </>
     );
   }
-  /* L-2 (2026-07-10, live staging — negotiation report cc0a7469): the generic
-   * behavioural cross-session insights ("You were told to quantify results two
-   * sessions ago, still missing in 4/5 answers") are generated by the
-   * behavioural evaluate-session prompt and are meaningless on a salary
-   * negotiation report — a negotiation has no "answers to quantify results in".
-   * They were leaking onto BOTH the cross-session TrendStrip AND the Coach's
-   * Notes "PERSISTENT GAP" card, side-by-side with the dedicated negotiation
-   * surfaces. `data.negotiationOutcome` is the definitive "this is a negotiation
-   * report" signal and the view is the single point where both panels are
-   * chosen — suppress the behavioural insight stream here so neither surface
-   * can render it. (blindSpots stay — the adapter already filters those to
-   * negotiation competencies per R-8.) */
+  return <GenericReport {...props} />;
+}
+
+function GenericReport({
+  data,
+  onShare,
+  onTryQuestionAgain,
+  onDrillSkill,
+  credibility,
+  onDisputeCredibility,
+  campusPlacementMeta,
+  salaryNegotiationMeta,
+  offerNetValue,
+  progressTrends,
+  isFreeUser,
+  onUpgrade,
+}: SessionReportViewProps) {
+  const [tab, setTab] = useState<ReportTab>("overview");
+  /* L-2 (2026-07-10, live staging, negotiation report cc0a7469): the behavioural
+   * cross-session insights ("quantify results ... still missing in 4/5 answers")
+   * are meaningless on a salary negotiation report. `data.negotiationOutcome` is
+   * the definitive signal, and this is the single point where the panels are
+   * chosen, so suppress the stream here. (blindSpots stay: the adapter already
+   * filters those to negotiation competencies per R-8.) */
   const behaviouralCrossSessionInsights = data.negotiationOutcome
     ? undefined
     : data.crossSessionInsights;
   const weakestQuestion = data.questions.length > 0
     ? data.questions.reduce((min, q) => (q.score < min.score ? q : min), data.questions[0])
     : undefined;
+  const onDrillWeakest =
+    onDrillSkill && data.weakestSkill ? () => onDrillSkill(data.weakestSkill.name) : undefined;
+
+  const tabs: { key: ReportTab; label: string; count?: number }[] = [
+    { key: "overview", label: "Overview" },
+    ...(data.negotiationOutcome ? [{ key: "negotiation" as const, label: "Negotiation" }] : []),
+    { key: "answers", label: "Answers", count: data.questions.length || undefined },
+    { key: "skills", label: "Skills" },
+    { key: "coach", label: "Coach" },
+  ];
+
   return (
     <>
       <style>{SESSION_REPORT_STYLES}</style>
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          width: "100%",
-          fontFamily: f.sans,
-          color: t.coal,
-          paddingBottom: 48,
-        }}
-      >
-        {/* Skip link — keyboard users tabbing into the page can jump
-            directly past the header + jump-nav to the report content.
-            Visually hidden until focused; standard a11y pattern. */}
-        <a href="#ir-section-hero" className="ir-skip-link">
+      <ReportFrame subtitle={reportSubtitle(data)} actions={<ShareButton onShare={onShare} />}>
+        <a href="#ir-main" className="ir-skip-link">
           Skip to report
         </a>
-        {/* section, not main: the app shell's SidebarInset already provides the page's one main landmark. */}
-        <section
-          id="ir-main"
-          aria-label="Interview report"
-          className="ir-main-container"
-          style={{
-            width: "100%",
-            display: "flex",
-            flexDirection: "column",
-            gap: 16,
-          }}
-        >
-          {data.focusBanner && <FocusBannerStrip banner={data.focusBanner} daysUntilInterview={data.daysUntilInterview} />}
-          <HeroSection data={data} />
-          {isFreeUser && (
-            <UpgradeNudgeStrip score={data.overallScore} priorSessionCount={data.priorSessionCount} onUpgrade={onUpgrade} />
-          )}
-          {credibility && credibility.hasIssues && (
-            <CredibilitySection summary={credibility} onDispute={onDisputeCredibility} />
-          )}
-          {campusPlacementMeta && (
-            <CampusCgpaCalibrationNote meta={campusPlacementMeta} />
-          )}
-          {data.negotiationOutcome && (
-            <NegotiationFullReport
-              outcome={data.negotiationOutcome}
-              role={data.role}
-              company={data.company}
-              questions={data.questions}
-              daysUntilInterview={data.daysUntilInterview}
-              priorSessionCount={data.priorSessionCount}
-              guardrailFlagSummary={data.kernelMetrics?.guardrailFlagSummary}
-              salaryMeta={salaryNegotiationMeta}
-            />
-          )}
-          {offerNetValue && <OfferEconomicsPanel offer={offerNetValue} />}
-          {data.kernelMetrics && (
-            <KernelNegotiationQualitySection m={data.kernelMetrics} />
-          )}
-          <TopScoreDriversSection questions={data.questions} />
-          <SkillsSection
-            skills={data.skills}
-            weakest={data.weakestSkill}
-            onDrillSkill={
-              onDrillSkill && data.weakestSkill
-                ? () => onDrillSkill(data.weakestSkill.name)
-                : undefined
-            }
-          />
-          <PerQuestionSection questions={data.questions} onTryQuestionAgain={onTryQuestionAgain} />
-          <NextStepsSection
-            daysUntilInterview={data.daysUntilInterview}
-            readinessSentence={data.readinessSentence}
-            weakestSkill={data.weakestSkill?.name}
-            resumeImprovements={data.resumeImprovements}
-            weakestQuestionIndex={weakestQuestion?.index}
-            onTryWeakestQuestion={
-              onTryQuestionAgain && weakestQuestion
-                ? () => onTryQuestionAgain(weakestQuestion.index)
-                : undefined
-            }
-            onDrillSkill={
-              onDrillSkill && data.weakestSkill
-                ? () => onDrillSkill(data.weakestSkill.name)
-                : undefined
-            }
-          />
-          {(() => {
-            const secondary = (
+        <div className="ir-tab-bar" style={{ padding: "0 clamp(16px, 3vw, 28px)", borderBottom: `1px solid ${t.line}`, overflowX: "auto" }}>
+          <StatusTabs tabs={tabs} value={tab} onChange={setTab} label="Report sections" idPrefix="ir" panelId="ir-tabpanel" />
+        </div>
+        <ReportBody id="ir-tabpanel" labelledBy={`ir-tab-${tab}`}>
+          {/* section, not main: the app shell's SidebarInset already provides the page's one main landmark. */}
+          <section id="ir-main" aria-label="Interview report" className="ir-main-container ir-tab-panel" style={{ width: "100%" }}>
+            {tab === "overview" && (
+              <>
+                {data.focusBanner && <FocusBannerStrip banner={data.focusBanner} daysUntilInterview={data.daysUntilInterview} />}
+                <HeroSection data={data} />
+                {credibility && credibility.hasIssues && (
+                  <CredibilitySection summary={credibility} onDispute={onDisputeCredibility} />
+                )}
+                {campusPlacementMeta && <CampusCgpaCalibrationNote meta={campusPlacementMeta} />}
+                <TopScoreDriversSection questions={data.questions} />
+                <NextStepsSection
+                  daysUntilInterview={data.daysUntilInterview}
+                  readinessSentence={data.readinessSentence}
+                  weakestSkill={data.weakestSkill?.name}
+                  resumeImprovements={data.resumeImprovements}
+                  weakestQuestionIndex={weakestQuestion?.index}
+                  onTryWeakestQuestion={
+                    onTryQuestionAgain && weakestQuestion
+                      ? () => onTryQuestionAgain(weakestQuestion.index)
+                      : undefined
+                  }
+                  onDrillSkill={onDrillWeakest}
+                />
+                {isFreeUser && (
+                  <UpgradeNudgeStrip score={data.overallScore} priorSessionCount={data.priorSessionCount} onUpgrade={onUpgrade} />
+                )}
+              </>
+            )}
+            {tab === "negotiation" && data.negotiationOutcome && (
+              <>
+                <NegotiationFullReport
+                  outcome={data.negotiationOutcome}
+                  role={data.role}
+                  company={data.company}
+                  questions={data.questions}
+                  daysUntilInterview={data.daysUntilInterview}
+                  priorSessionCount={data.priorSessionCount}
+                  guardrailFlagSummary={data.kernelMetrics?.guardrailFlagSummary}
+                  salaryMeta={salaryNegotiationMeta}
+                />
+                {offerNetValue && <OfferEconomicsPanel offer={offerNetValue} />}
+                {data.kernelMetrics && <KernelNegotiationQualitySection m={data.kernelMetrics} />}
+              </>
+            )}
+            {tab === "answers" && (
+              <>
+                <PerQuestionSection questions={data.questions} onTryQuestionAgain={onTryQuestionAgain} />
+                {data.thoughtBubble && data.thoughtBubble.length > 0 && (
+                  <ThoughtBubbleSection segments={data.thoughtBubble} />
+                )}
+              </>
+            )}
+            {tab === "skills" && (
+              <>
+                <SkillsSection skills={data.skills} weakest={data.weakestSkill} onDrillSkill={onDrillWeakest} />
+                <CoreMetricsSection metrics={data.metrics} />
+                {progressTrends && <ProgressTrendPanel trends={progressTrends} />}
+                {!data.negotiationOutcome && offerNetValue && <OfferEconomicsPanel offer={offerNetValue} />}
+                {!data.negotiationOutcome && data.kernelMetrics && (
+                  <KernelNegotiationQualitySection m={data.kernelMetrics} />
+                )}
+              </>
+            )}
+            {tab === "coach" && (
               <>
                 {data.priorSessionCount !== undefined && data.priorSessionCount >= 3 && behaviouralCrossSessionInsights && (
                   <TrendStrip
@@ -665,31 +486,21 @@ export default function SessionReportView({
                     insights={behaviouralCrossSessionInsights}
                   />
                 )}
-                <CoreMetricsSection metrics={data.metrics} />
-                {progressTrends && <ProgressTrendPanel trends={progressTrends} />}
-                {data.thoughtBubble && data.thoughtBubble.length > 0 && (
-                  <ThoughtBubbleSection segments={data.thoughtBubble} />
-                )}
                 <CoachNotesSection
                   insights={behaviouralCrossSessionInsights}
                   storyReuse={data.negotiationOutcome ? undefined : data.storyReuseFindings}
                   blindSpots={data.blindSpots}
                   coaching={data.coaching}
                 />
-                {data.biasFindings && data.biasFindings.length > 0 && (
-                  <BiasSection findings={data.biasFindings} />
-                )}
-                {data.reverseInterview && (
-                  <ReverseInterviewSection reverse={data.reverseInterview} />
-                )}
+                {data.biasFindings && data.biasFindings.length > 0 && <BiasSection findings={data.biasFindings} />}
+                {data.reverseInterview && <ReverseInterviewSection reverse={data.reverseInterview} />}
                 <ScheduleNextSection todayIso={new Date().toISOString()} />
+                <TestimonialNudge score={data.overallScore} priorSessionCount={data.priorSessionCount} role={data.role} />
               </>
-            );
-            return data.negotiationOutcome ? secondary : <MoreDetail>{secondary}</MoreDetail>;
-          })()}
-          <TestimonialNudge score={data.overallScore} priorSessionCount={data.priorSessionCount} role={data.role} />
-        </section>
-      </div>
+            )}
+          </section>
+        </ReportBody>
+      </ReportFrame>
     </>
   );
 }

@@ -6,58 +6,36 @@ import { t, f, radius, size } from "../tokens";
 import type { DeliveryMetric } from "../types";
 import { SrSectionShell } from "./_primitives";
 import { MetricBand } from "./sr-HeroSection";
-import { Button } from "@/components/ui/button";
 
 export function CoreMetricsSection({ metrics }: { metrics: DeliveryMetric[] }) {
-  const howButton = (
-    <Button
-      type="button"
-      variant="link"
-      size="sm"
-      style={{ fontFamily: f.sans, color: t.indigo, height: "auto", padding: 0 }}
-    >
-      How are these calculated?
-    </Button>
-  );
   return (
     <SrSectionShell
       anchorId="ir-section-metrics"
       headingId="ir-metrics-heading"
-      num="02"
-      label="How you delivered"
-      title="Core Delivery Metrics"
-      aside={howButton}
+      label="Delivery"
+      title="Delivery"
+      subtitle="How you spoke, measured against a target for your role."
     >
       <div className="ir-tile-grid">
         {metrics.map((m) => (
           <div
             key={m.label}
             style={{
-              background: t.creamSoft,
               border: `1px solid ${t.line}`,
               borderRadius: radius.bar,
-              padding: "16px 18px",
+              padding: "14px 16px",
               display: "flex",
               flexDirection: "column",
-              gap: 8,
+              gap: 6,
             }}
           >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontFamily: f.sans, fontSize: size.base, color: t.inkSoft }}>{m.label}</span>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={t.inkFaint} strokeWidth="2" aria-hidden="true">
-                <circle cx="12" cy="12" r="10" />
-                <line x1="12" y1="16" x2="12" y2="12" />
-                <line x1="12" y1="8" x2="12.01" y2="8" />
-              </svg>
-            </div>
-            <div style={{ fontFamily: f.serif, fontSize: 36, color: t.coal, lineHeight: 1, letterSpacing: "-0.02em" }}>
+            <span style={{ fontFamily: f.sans, fontSize: size.base, color: t.inkSoft }}>{m.label}</span>
+            <div style={{ fontFamily: f.sans, fontSize: size["3xl"], fontWeight: 700, color: t.coal, lineHeight: 1.1, letterSpacing: "-0.02em" }}>
               {m.value}
-              {m.unit && <span style={{ fontSize: size.xl, color: t.inkSoft, marginLeft: 2, fontFamily: f.mono }}>{m.unit}</span>}
+              {m.unit && <span style={{ fontSize: size.md, fontWeight: 500, color: t.inkSoft, marginLeft: 3 }}>{m.unit}</span>}
             </div>
-            <div style={{ fontFamily: f.mono, fontSize: size.xs, color: t.inkSoft, letterSpacing: "0.04em" }}>
-              {m.targetLabel}
-            </div>
-            <div>
+            <div style={{ fontFamily: f.sans, fontSize: size.sm, color: t.inkSoft }}>{m.targetLabel}</div>
+            <div style={{ marginTop: 2 }}>
               <MetricBand band={m.band} />
             </div>
           </div>

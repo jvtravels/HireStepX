@@ -10,63 +10,28 @@ import { formatRoleWithLevel } from "../roleLabel";
 import type { Calibration } from "../types";
 
 export function ScoreGauge({ score, color }: { score: number; color: string }) {
-  /* Half-doughnut with the score number rendered INSIDE the SVG so
-     positioning is bulletproof across viewport widths. The previous
-     version positioned the score with absolute CSS over the SVG
-     parent — scaling and overflow caused the number to drift above
-     the arc on narrow screens (user-reported #7). Now everything is
-     in the same SVG coordinate system. */
-  const r = 110;
-  const cx = 140;
-  const cy = 140;
-  const len = Math.PI * r;
+  const r = 52;
+  const c = 2 * Math.PI * r;
   const pct = Math.max(0, Math.min(100, score)) / 100;
-  const filled = len * pct;
   return (
-    <svg
-      width="280"
-      height="170"
-      viewBox="0 0 280 170"
-      role="img"
-      aria-label={`Score ${score} out of 100`}
-    >
-      <path
-        d={`M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${cx + r} ${cy}`}
-        stroke={t.line}
-        strokeWidth="14"
-        strokeLinecap="round"
-        fill="none"
-      />
-      <path
-        d={`M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${cx + r} ${cy}`}
+    <svg width="132" height="132" viewBox="0 0 132 132" role="img" aria-label={`Score ${score} out of 100`}>
+      <circle cx="66" cy="66" r={r} stroke={t.line} strokeWidth="10" fill="none" />
+      <circle
+        cx="66"
+        cy="66"
+        r={r}
         stroke={color}
-        strokeWidth="14"
+        strokeWidth="10"
         strokeLinecap="round"
-        strokeDasharray={`${filled} ${len}`}
+        strokeDasharray={`${c * pct} ${c}`}
+        transform="rotate(-90 66 66)"
         fill="none"
       />
-      {/* Score number — anchored in SVG coords so it can never
-          drift outside the arc regardless of CSS scaling. */}
-      <text
-        x={cx}
-        y={cy - 14}
-        textAnchor="middle"
-        fontFamily={f.serif}
-        fontSize="60"
-        fill={t.coal}
-        style={{ letterSpacing: "-0.02em" }}
-      >
+      <text x="66" y="68" textAnchor="middle" fontFamily={f.sans} fontSize="38" fontWeight="700" fill={t.coal} style={{ letterSpacing: "-0.02em" }}>
         {score}
       </text>
-      <text
-        x={cx}
-        y={cy + 14}
-        textAnchor="middle"
-        fontFamily={f.mono}
-        fontSize="14"
-        fill={t.inkFaint}
-      >
-        / 100
+      <text x="66" y="88" textAnchor="middle" fontFamily={f.sans} fontSize="12" fill={t.inkFaint}>
+        out of 100
       </text>
     </svg>
   );
@@ -136,26 +101,26 @@ export function ReadinessHeadline({
   company: string;
 }) {
   const color =
-    readiness.pct >= 80 ? t.success : readiness.pct >= 60 ? t.copper : t.error;
+    readiness.pct >= 80 ? t.success : readiness.pct >= 60 ? t.warning : t.error;
   return (
     <div
       style={{
         display: "flex",
         alignItems: "center",
         gap: 14,
-        padding: "12px 18px",
+        padding: "12px 16px",
         borderRadius: radius.bar,
-        background: `linear-gradient(135deg, ${t.leanHireWash}, ${t.indigoWash})`,
+        background: t.creamSoft,
         border: `1px solid ${t.line}`,
-        marginBottom: 18,
+        marginBottom: 20,
         flexWrap: "wrap",
       }}
     >
       <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-        <span style={{ fontFamily: f.mono, fontSize: size.xs, color: t.inkSoft, letterSpacing: "0.10em", textTransform: "uppercase", fontWeight: 600 }}>
+        <span style={{ fontFamily: f.sans, fontSize: size.sm, color: t.inkSoft, fontWeight: 500 }}>
           Readiness
         </span>
-        <span style={{ fontFamily: f.serif, fontSize: size["3xl"], color, lineHeight: 1, letterSpacing: "-0.01em" }}>
+        <span style={{ fontFamily: f.sans, fontSize: size["2xl"], fontWeight: 700, color, lineHeight: 1, letterSpacing: "-0.01em" }}>
           {readiness.pct}%
         </span>
       </div>
@@ -163,34 +128,24 @@ export function ReadinessHeadline({
       <p style={{ fontFamily: f.sans, fontSize: size.base, color: t.coal, margin: 0, flex: 1, minWidth: 240, lineHeight: 1.45 }}>
         For <strong style={{ color: t.coal, fontWeight: 600 }}>{formatRoleWithLevel(level, role)}</strong>{company ? <> at <strong>{company}</strong></> : null}.
         {readiness.pct >= 80 ? (
-          <> You&apos;re interview-ready — focus on consistency.</>
+          <> You&apos;re interview-ready. Focus on consistency.</>
         ) : (
-          <> ~{readiness.etaWeeks} {readiness.etaWeeks === 1 ? "week" : "weeks"} of focused prep to close the gap.</>
+          <> About {readiness.etaWeeks} {readiness.etaWeeks === 1 ? "week" : "weeks"} of focused prep to close the gap.</>
         )}
       </p>
       {typeof daysUntil === "number" && daysUntil > 0 && (
         <span
           style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 6,
-            padding: "4px 12px",
+            padding: "3px 10px",
             borderRadius: radius.pill,
-            background: t.copperSoft,
-            color: t.copper,
-            fontFamily: f.mono,
-            fontSize: size.xs,
+            background: t.indigoWash,
+            color: t.indigo,
+            fontFamily: f.sans,
+            fontSize: size.sm,
             fontWeight: 600,
-            letterSpacing: "0.06em",
           }}
         >
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
-            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-            <line x1="16" y1="2" x2="16" y2="6" />
-            <line x1="8" y1="2" x2="8" y2="6" />
-            <line x1="3" y1="10" x2="21" y2="10" />
-          </svg>
-          INTERVIEW IN {daysUntil}D
+          Interview in {daysUntil} {daysUntil === 1 ? "day" : "days"}
         </span>
       )}
     </div>

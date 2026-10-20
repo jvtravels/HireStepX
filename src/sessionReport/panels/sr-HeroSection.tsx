@@ -5,11 +5,11 @@
  * MetricBand (still consumed by sr-CoreMetricsSection).
  * Pure presentation. */
 
+import type * as React from "react";
 import { t, f, radius, size } from "../tokens";
 import type { DeliveryMetric, InterviewResultData, Verdict } from "../types";
-import { ReportCardShell } from "./_primitives";
+import { ReportCardShell, StatusPill, type Tone } from "./_primitives";
 import { atCompany } from "../roleLabel";
-import { Badge } from "@/components/ui/badge";
 import {
   CalibrationBanner,
   ReadinessHeadline,
@@ -18,40 +18,29 @@ import {
   Sparkline,
 } from "./sr-HeroMetrics";
 
-export const VERDICT_META: Record<Verdict, { label: string; bg: string; color: string }> = {
-  strongHire:   { label: "Strong Hire",     bg: t.successTint,     color: t.success },
-  hire:         { label: "Hire",            bg: t.successWash,     color: t.success },
-  leanHire:     { label: "Lean Hire",       bg: t.copperWashLean,  color: t.copper },
-  noHire:       { label: "No Hire",         bg: t.errorTint,       color: t.error },
-  strongNoHire: { label: "Strong No Hire",  bg: t.errorMid,        color: t.error },
+export const VERDICT_META: Record<Verdict, { label: string; tone: Tone; color: string }> = {
+  strongHire:   { label: "Strong hire",     tone: "good", color: t.success },
+  hire:         { label: "Hire",            tone: "good", color: t.success },
+  leanHire:     { label: "Lean hire",       tone: "warn", color: t.warning },
+  noHire:       { label: "No hire",         tone: "bad",  color: t.error },
+  strongNoHire: { label: "Strong no hire",  tone: "bad",  color: t.error },
 };
 
 /* MetricBand stays exported — sr-CoreMetricsSection consumes it to
  * label each delivery tile. */
 export function MetricBand({ band }: { band: DeliveryMetric["band"] }) {
-  const meta =
-    band === "good"
-      ? { label: "Good", color: t.success, bg: t.successTint }
-      : band === "ok"
-        ? { label: "On Target", color: t.copper, bg: t.copperAccent }
-        : { label: "Needs Work", color: t.error, bg: t.errorTint };
-  return (
-    <Badge
-      className="h-auto border-0"
-      style={{
-        padding: "3px 10px",
-        borderRadius: radius.pill,
-        background: meta.bg,
-        color: meta.color,
-        fontFamily: f.sans,
-        fontSize: size.xs,
-        fontWeight: 600,
-      }}
-    >
-      {meta.label}
-    </Badge>
+  return band === "good" ? (
+    <StatusPill tone="good">Good</StatusPill>
+  ) : band === "ok" ? (
+    <StatusPill tone="warn">On target</StatusPill>
+  ) : (
+    <StatusPill tone="bad">Needs work</StatusPill>
   );
 }
+
+const LIST_LABEL: React.CSSProperties = { fontFamily: f.sans, fontSize: size.sm, fontWeight: 600, color: t.inkSoft, margin: "0 0 10px" };
+const LIST: React.CSSProperties = { listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 8 };
+const LI: React.CSSProperties = { display: "flex", gap: 8, fontFamily: f.sans, fontSize: size.md, color: t.coal, lineHeight: 1.45 };
 
 export function HeroSection({ data }: { data: InterviewResultData }) {
   const verdict = VERDICT_META[data.verdict];
@@ -59,10 +48,10 @@ export function HeroSection({ data }: { data: InterviewResultData }) {
     <ReportCardShell
       id="ir-section-hero"
       ariaLabelledBy="ir-hero-heading"
-      padding={28}
+      padding="4px 0 28px"
     >
       <h1 id="ir-hero-heading" style={{ position: "absolute", width: 1, height: 1, padding: 0, margin: -1, overflow: "hidden", clip: "rect(0,0,0,0)", whiteSpace: "nowrap", border: 0 }}>
-        Interview Report — {data.role}{atCompany(data.company)}, scored {data.overallScore} out of 100
+        Interview Report: {data.role}{atCompany(data.company)}, scored {data.overallScore} out of 100
       </h1>
       {data.readiness && (
         <ReadinessHeadline
@@ -74,68 +63,11 @@ export function HeroSection({ data }: { data: InterviewResultData }) {
         />
       )}
 
-      {/* Top row: company / role / level / difficulty pills */}
-      <div className="ir-pill-bar" style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 20 }}>
-        {data.company && (
-          <span className="ir-pill">
-            <span style={{ fontSize: size.base }}>🟢</span>
-            {data.company}
-            <span style={{ color: t.inkSoft, fontSize: size.xs, marginLeft: 4 }}>Company</span>
-          </span>
-        )}
-        <span className="ir-pill">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={t.indigo} strokeWidth="2" aria-hidden="true">
-            <polyline points="16 18 22 12 16 6" />
-            <polyline points="8 6 2 12 8 18" />
-          </svg>
-          {data.role}
-          <span style={{ color: t.inkSoft, fontSize: size.xs, marginLeft: 4 }}>Role</span>
-        </span>
-        {data.level && (
-          <span className="ir-pill">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={t.copper} strokeWidth="2" aria-hidden="true">
-              <line x1="12" y1="20" x2="12" y2="10" />
-              <line x1="18" y1="20" x2="18" y2="4" />
-              <line x1="6" y1="20" x2="6" y2="16" />
-            </svg>
-            {data.level}
-            <span style={{ color: t.inkSoft, fontSize: size.xs, marginLeft: 4 }}>Level</span>
-          </span>
-        )}
-        <span className="ir-pill">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={t.error} strokeWidth="2" aria-hidden="true">
-            <line x1="12" y1="20" x2="12" y2="4" />
-            <line x1="18" y1="20" x2="18" y2="10" />
-            <line x1="6" y1="20" x2="6" y2="14" />
-          </svg>
-          {data.difficulty}
-          <span style={{ color: t.inkSoft, fontSize: size.xs, marginLeft: 4 }}>Difficulty</span>
-        </span>
-      </div>
-
-      <div className="ir-hero-grid" style={{ display: "grid", gridTemplateColumns: "minmax(260px, 1fr) 2fr", gap: 32, alignItems: "center" }}>
-        <div>
-          <div style={{ fontFamily: f.mono, fontSize: size.xs, color: t.inkSoft, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 8 }}>
-            Overall Score
-          </div>
-          <div style={{ display: "inline-block" }}>
-            <ScoreGauge score={data.overallScore} color={verdict.color} />
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 8, flexWrap: "wrap" }}>
-            <Badge
-              className="h-auto border-0"
-              style={{
-                padding: "6px 14px",
-                borderRadius: radius.pill,
-                background: verdict.bg,
-                color: verdict.color,
-                fontFamily: f.sans,
-                fontSize: size.base,
-                fontWeight: 600,
-              }}
-            >
-              {verdict.label}
-            </Badge>
+      <div className="ir-hero-grid" style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: 28, alignItems: "center" }}>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
+          <ScoreGauge score={data.overallScore} color={verdict.color} />
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", justifyContent: "center" }}>
+            <StatusPill tone={verdict.tone}>{verdict.label}</StatusPill>
             {data.scoreConfidence && data.scoreConfidence !== "high" && (
               <ScoreConfidenceChip level={data.scoreConfidence} note={data.scoreConfidenceNote} />
             )}
@@ -157,103 +89,75 @@ export function HeroSection({ data }: { data: InterviewResultData }) {
           </div>
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-          <div
-            style={{
-              background: t.creamSoft,
-              border: `1px solid ${t.line}`,
-              borderRadius: radius.bar,
-              padding: "18px 22px",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={t.copper} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-              </svg>
-              <span style={{ fontFamily: f.mono, fontSize: size.xs, color: t.copper, letterSpacing: "0.12em", textTransform: "uppercase", fontWeight: 600 }}>
-                AI Interview Verdict
-              </span>
+        <div style={{ minWidth: 0 }}>
+          <p style={LIST_LABEL}>Summary</p>
+          <p style={{ fontFamily: f.sans, fontSize: size.lg, color: t.coal, lineHeight: 1.5, margin: 0 }}>
+            {data.aiVerdict}
+          </p>
+          {data.calibration && (
+            <div style={{ marginTop: 12 }}>
+              <CalibrationBanner calibration={data.calibration} />
+              {data.calibration.note && (
+                <p style={{ fontFamily: f.sans, fontSize: size.sm, color: t.inkSoft, lineHeight: 1.45, margin: "6px 0 0" }}>
+                  {/* Notes may or may not already end in a period; collapse
+                      any trailing period/space to exactly one so we never
+                      render "scoring..". */}
+                  {data.calibration.note.replace(/[.\s]+$/, "")}.
+                </p>
+              )}
             </div>
-            <p style={{ fontFamily: f.serif, fontSize: size.xl, color: t.coal, lineHeight: 1.45, margin: 0 }}>
-              {data.aiVerdict}
-            </p>
-            {data.calibration && (
-              <div style={{ marginTop: 12 }}>
-                <CalibrationBanner calibration={data.calibration} />
-                {data.calibration.note && (
-                  <p style={{ fontFamily: f.sans, fontSize: size.sm, color: t.inkSoft, lineHeight: 1.45, margin: "6px 0 0" }}>
-                    {/* Notes may or may not already end in a period (the
-                        "Generic calibration … scoring." default does). Collapse
-                        any trailing period/space to exactly one so we never
-                        render "scoring..". */}
-                    {data.calibration.note.replace(/[.\s]+$/, "")}.
-                  </p>
-                )}
-              </div>
-            )}
-            {data.fairnessSignals && data.fairnessSignals.notes.length > 0 && (
-              <div
-                style={{ marginTop: 12, padding: "10px 12px", borderRadius: 8, background: t.successWash, border: `1px solid ${t.successAccent}` }}
-                role="region"
-                aria-label="India-context fairness applied during scoring"
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: f.mono, fontSize: size.xs, color: t.success, letterSpacing: "0.10em", textTransform: "uppercase", fontWeight: 600, marginBottom: 6 }}>
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={t.success} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <path d="M9 12l2 2 4-4" />
-                    <circle cx="12" cy="12" r="9" />
-                  </svg>
-                  India-context fairness applied
-                </div>
-                <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 5 }}>
-                  {data.fairnessSignals.notes.map((n) => (
-                    <li key={n} style={{ display: "flex", gap: 8, fontFamily: f.sans, fontSize: size.sm, color: t.coal, lineHeight: 1.4 }}>
-                      <span aria-hidden="true" style={{ color: t.success, flexShrink: 0 }}>✓</span>
-                      {n}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-
-          <div className="ir-strengths-improvements" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
-            <div>
-              <div style={{ fontFamily: f.mono, fontSize: size.xs, color: t.success, letterSpacing: "0.10em", textTransform: "uppercase", marginBottom: 10, fontWeight: 600 }}>
-                Top Strengths
-              </div>
-              <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 8 }}>
-                {data.strengths.length > 0 ? data.strengths.map((s) => (
-                  <li key={s} style={{ display: "flex", gap: 8, fontFamily: f.sans, fontSize: size.md, color: t.coal, lineHeight: 1.4 }}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={t.success} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0, marginTop: 3 }}>
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                    {s}
-                  </li>
-                )) : (
-                  <li style={{ fontFamily: f.sans, fontSize: size.base, color: t.inkSoft, fontStyle: "italic" }}>
-                    Not enough signal to surface strengths — try a longer session.
-                  </li>
-                )}
-              </ul>
-            </div>
-            <div>
-              <div style={{ fontFamily: f.mono, fontSize: size.xs, color: t.copper, letterSpacing: "0.10em", textTransform: "uppercase", marginBottom: 10, fontWeight: 600 }}>
-                Top Improvements
-              </div>
-              <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 8 }}>
-                {data.improvements.map((s) => (
-                  <li key={s} style={{ display: "flex", gap: 8, fontFamily: f.sans, fontSize: size.md, color: t.coal, lineHeight: 1.4 }}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={t.copper} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0, marginTop: 3 }}>
-                      <line x1="12" y1="8" x2="12" y2="13" />
-                      <line x1="12" y1="16" x2="12" y2="16.01" />
-                      <circle cx="12" cy="12" r="9" />
-                    </svg>
-                    {s}
+          )}
+          {data.fairnessSignals && data.fairnessSignals.notes.length > 0 && (
+            <div
+              style={{ marginTop: 12, padding: "10px 12px", borderRadius: radius.lg, background: t.creamSoft, border: `1px solid ${t.line}` }}
+              role="region"
+              aria-label="India-context fairness applied during scoring"
+            >
+              <p style={{ ...LIST_LABEL, margin: "0 0 6px" }}>India-context fairness applied</p>
+              <ul style={{ ...LIST, gap: 5 }}>
+                {data.fairnessSignals.notes.map((n) => (
+                  <li key={n} style={{ ...LI, fontSize: size.sm }}>
+                    <span aria-hidden="true" style={{ color: t.success, flexShrink: 0 }}>✓</span>
+                    {n}
                   </li>
                 ))}
               </ul>
             </div>
-          </div>
+          )}
+        </div>
+      </div>
+
+      <div className="ir-strengths-improvements" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32, marginTop: 28 }}>
+        <div>
+          <p style={LIST_LABEL}>Top strengths</p>
+          <ul style={LIST}>
+            {data.strengths.length > 0 ? data.strengths.map((s) => (
+              <li key={s} style={LI}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={t.success} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0, marginTop: 3 }}>
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                {s}
+              </li>
+            )) : (
+              <li style={{ fontFamily: f.sans, fontSize: size.base, color: t.inkSoft }}>
+                Not enough signal to surface strengths. Try a longer session.
+              </li>
+            )}
+          </ul>
+        </div>
+        <div>
+          <p style={LIST_LABEL}>Top improvements</p>
+          <ul style={LIST}>
+            {data.improvements.map((s) => (
+              <li key={s} style={LI}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={t.warning} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0, marginTop: 3 }}>
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                  <polyline points="12 5 19 12 12 19" />
+                </svg>
+                {s}
+              </li>
+            ))}
+          </ul>
         </div>
       </div>
     </ReportCardShell>

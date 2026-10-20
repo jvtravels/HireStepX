@@ -5,8 +5,7 @@
 
 import { t, f, radius, size } from "../tokens";
 import type { Question } from "../types";
-import { SrSectionShell } from "./_primitives";
-import { Badge } from "@/components/ui/badge";
+import { SrSectionShell, StatusPill } from "./_primitives";
 
 export function TopScoreDriversSection({ questions }: { questions: Question[] }) {
   const severityWeight = (s: "high" | "medium" | "low"): number =>
@@ -24,88 +23,44 @@ export function TopScoreDriversSection({ questions }: { questions: Question[] })
     .sort((a, b) => severityWeight(b.row.severity) - severityWeight(a.row.severity) || a.idx - b.idx)
     .map((x) => x.row);
   const top = ranked.slice(0, 3);
-  const totalImpact = top.reduce((sum, r) => sum + severityWeight(r.severity), 0);
   const topN = top.length;
-
-  const impactChip = (
-    <span style={{ fontFamily: f.mono, fontSize: size.xs, color: t.inkSoft, letterSpacing: "0.06em", textTransform: "uppercase" }}>
-      weighted impact · {totalImpact} pts
-    </span>
-  );
   return (
     <SrSectionShell
       anchorId="ir-section-score-drivers"
       headingId="ir-score-drivers-heading"
-      num="01b"
-      label="Score drivers — what hit hardest"
-      title={topN < 3 ? `Top ${topN === 1 ? "" : topN + " "}score driver${topN === 1 ? "" : "s"}` : "Top 3 score drivers"}
-      subtitle={`Each flag is weighted by severity (high = 3, medium = 2, low = 1). ${topN === 1 ? "This accounts for most of the score gap." : `These ${topN === 2 ? "two" : "three"} account for most of the score gap.`}`}
-      aside={impactChip}
+      label="Score drivers"
+      title={topN === 1 ? "Biggest issue" : `Biggest ${topN} issues`}
+      subtitle="The most serious problems across your answers, worst first."
     >
       <ol style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 10 }}>
-        {top.map((r, i) => {
-          const impact = severityWeight(r.severity);
-          const tone = r.severity === "high" ? t.error : r.severity === "medium" ? t.copper : t.inkSoft;
-          return (
-            <li
-              key={`${r.qIdx}-${i}-${r.title}`}
-              style={{
-                display: "grid",
-                gridTemplateColumns: "auto 1fr auto",
-                gap: 12,
-                alignItems: "start",
-                padding: "12px 14px",
-                background: t.copperSoft,
-                border: `1px solid ${t.copper100}`,
-                borderLeft: `3px solid ${tone}`,
-                borderRadius: radius.xl,
-              }}
-            >
-              <span
-                aria-hidden
-                style={{
-                  fontFamily: f.mono,
-                  fontSize: size.sm,
-                  fontWeight: 700,
-                  color: tone,
-                  minWidth: 18,
-                  textAlign: "center",
-                }}
-              >
-                {i + 1}
-              </span>
-              <div style={{ minWidth: 0 }}>
-                <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
-                  <span style={{ fontFamily: f.sans, fontSize: size.md, fontWeight: 600, color: t.coal }}>{r.title}</span>
-                  <span style={{ fontFamily: f.mono, fontSize: size.xs, color: t.inkSoft }}>Q{r.qIdx}</span>
-                </div>
-                <p style={{ margin: "4px 0 0", fontFamily: f.sans, fontSize: size.base, color: t.coal, lineHeight: 1.45, overflowWrap: "anywhere" }}>
-                  {r.explanation}
-                </p>
+        {top.map((r, i) => (
+          <li
+            key={`${r.qIdx}-${i}-${r.title}`}
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr auto",
+              gap: 12,
+              alignItems: "start",
+              padding: "12px 14px",
+              background: t.creamSoft,
+              border: `1px solid ${t.line}`,
+              borderRadius: radius.xl,
+            }}
+          >
+            <div style={{ minWidth: 0 }}>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
+                <span style={{ fontFamily: f.sans, fontSize: size.md, fontWeight: 600, color: t.coal }}>{r.title}</span>
+                <span style={{ fontFamily: f.sans, fontSize: size.sm, color: t.inkSoft }}>Question {r.qIdx}</span>
               </div>
-              <Badge
-                variant="outline"
-                className="h-auto"
-                title={`${r.severity} severity — counts as ${impact} pt${impact === 1 ? "" : "s"}`}
-                style={{
-                  fontFamily: f.mono,
-                  fontSize: size.xs,
-                  fontWeight: 600,
-                  color: tone,
-                  background: t.white,
-                  borderColor: tone,
-                  borderRadius: radius.pill,
-                  padding: "3px 9px",
-                  whiteSpace: "nowrap",
-                  letterSpacing: "0.04em",
-                  textTransform: "uppercase",
-                }}
-              >
-                −{impact}
-              </Badge>
-            </li>
-          );
-        })}
+              <p style={{ margin: "4px 0 0", fontFamily: f.sans, fontSize: size.base, color: t.inkSoft, lineHeight: 1.5, overflowWrap: "anywhere" }}>
+                {r.explanation}
+              </p>
+            </div>
+            <StatusPill tone={r.severity === "high" ? "bad" : r.severity === "medium" ? "warn" : "neutral"}>
+              {r.severity === "high" ? "High" : r.severity === "medium" ? "Medium" : "Low"}
+            </StatusPill>
+          </li>
+        ))}
       </ol>
     </SrSectionShell>
   );

@@ -9,7 +9,8 @@ import { Button } from "@/components/ui/button";
 
 export function SkillsSection({ skills, weakest, onDrillSkill }: { skills: Skill[]; weakest: { name: string; tip: string }; onDrillSkill?: (skillName: string) => void }) {
   const max = 100;
-  const legend = (
+  const hasAvg = skills.some((s) => s.roleAvg);
+  const legend = hasAvg ? (
     <div style={{ display: "flex", alignItems: "center", gap: 16, fontFamily: f.sans, fontSize: size.sm, color: t.inkSoft }}>
       <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
         <span style={{ width: 16, height: 4, background: t.indigo, borderRadius: radius.micro }} />
@@ -17,17 +18,16 @@ export function SkillsSection({ skills, weakest, onDrillSkill }: { skills: Skill
       </span>
       <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
         <span style={{ width: 2, height: 12, background: t.inkSoft, borderRadius: radius.hairline }} />
-        Role Average
+        Role average
       </span>
     </div>
-  );
+  ) : undefined;
   return (
     <SrSectionShell
       anchorId="ir-section-skills"
       headingId="ir-skills-heading"
-      num="04"
-      label="Where you stand vs role bar"
-      title="Skills Breakdown"
+      label="Skills"
+      title="Skills"
       aside={legend}
     >
       <div className="ir-skills-grid" style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) 280px", gap: 28, alignItems: "start" }}>
@@ -37,7 +37,7 @@ export function SkillsSection({ skills, weakest, onDrillSkill }: { skills: Skill
             const avgPct = s.roleAvg ? (s.roleAvg / max) * 100 : null;
             const delta = s.roleAvg ? s.score - s.roleAvg : null;
             return (
-              <div key={s.name} className="ir-skill-row" style={{ display: "grid", gridTemplateColumns: "180px 1fr 60px 50px", gap: 14, alignItems: "center" }}>
+              <div key={s.name} className="ir-skill-row" style={{ display: "grid", gridTemplateColumns: hasAvg ? "180px 1fr 44px 50px" : "180px 1fr 44px", gap: 14, alignItems: "center" }}>
                 <span className="ir-skill-name" style={{ fontFamily: f.sans, fontSize: size.base, color: t.coal }}>{s.name}</span>
                 <div
                   className="ir-skill-bar-wrap"
@@ -54,52 +54,37 @@ export function SkillsSection({ skills, weakest, onDrillSkill }: { skills: Skill
                   }
                 >
                   <div className="ir-skill-bar-bg" style={{ background: t.line }} />
-                  <div
-                    className="ir-skill-bar-fg"
-                    style={{
-                      width: `${pct}%`,
-                      background: `linear-gradient(90deg, ${t.indigoDeep} 0%, ${t.indigo} 100%)`,
-                    }}
-                  />
+                  <div className="ir-skill-bar-fg" style={{ width: `${pct}%`, background: t.indigo }} />
                   {avgPct !== null && (
                     <div className="ir-skill-bar-marker" style={{ left: `calc(${avgPct}% - 1px)` }} aria-hidden="true" />
                   )}
                 </div>
-                <span className="ir-skill-score" style={{ fontFamily: f.mono, fontSize: size.md, color: t.coal, textAlign: "right", fontWeight: 600 }}>
+                <span className="ir-skill-score" style={{ fontFamily: f.sans, fontSize: size.md, color: t.coal, textAlign: "right", fontWeight: 600 }}>
                   {s.score}
                 </span>
-                <span
-                  className="ir-skill-delta"
-                  style={{
-                    fontFamily: f.mono,
-                    fontSize: size.sm,
-                    color: delta === null ? t.inkFaint : delta >= 0 ? t.success : t.error,
-                    fontWeight: 600,
-                    textAlign: "right",
-                  }}
-                >
-                  {delta === null ? "—" : delta >= 0 ? `+${delta}` : delta}
-                </span>
+                {hasAvg && (
+                  <span
+                    className="ir-skill-delta"
+                    style={{
+                      fontFamily: f.sans,
+                      fontSize: size.sm,
+                      color: delta === null ? t.inkFaint : delta >= 0 ? t.success : t.error,
+                      fontWeight: 600,
+                      textAlign: "right",
+                    }}
+                  >
+                    {delta === null ? "" : delta >= 0 ? `+${delta}` : delta}
+                  </span>
+                )}
               </div>
             );
           })}
         </div>
         <CalloutCard
           eyebrow={`Focus on ${weakest.name}`}
-          icon={
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={t.copper} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <circle cx="12" cy="12" r="10" />
-              <circle cx="12" cy="12" r="6" />
-              <circle cx="12" cy="12" r="2" />
-            </svg>
-          }
           footer={
-            <Button type="button" style={{ width: "100%", justifyContent: "center", marginTop: 14 }} onClick={() => onDrillSkill?.(weakest.name)}>
+            <Button type="button" size="sm" style={{ width: "100%", justifyContent: "center", marginTop: 14 }} onClick={() => onDrillSkill?.(weakest.name)}>
               Drill this skill
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <line x1="5" y1="12" x2="19" y2="12" />
-                <polyline points="12 5 19 12 12 19" />
-              </svg>
             </Button>
           }
         >
