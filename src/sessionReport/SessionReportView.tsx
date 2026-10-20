@@ -118,7 +118,7 @@ function FocusBannerStrip({ banner, daysUntilInterview }: { banner: FocusBannerD
       <div style={{ display: "flex", alignItems: "center", gap: 20, flexShrink: 0 }}>
         <div style={{ textAlign: "right" }}>
           <div style={{ fontSize: 12, color: t.inkSoft }}>{banner.headlineMetric.label}</div>
-          <div style={{ fontSize: 20, fontWeight: 700, color: valueColor, letterSpacing: "-0.01em" }}>
+          <div style={{ fontSize: 22, fontWeight: 700, color: valueColor, letterSpacing: "-0.01em" }}>
             {banner.headlineMetric.value}
           </div>
           {banner.headlineMetric.caption && (
@@ -130,7 +130,7 @@ function FocusBannerStrip({ banner, daysUntilInterview }: { banner: FocusBannerD
         {typeof daysUntilInterview === "number" && daysUntilInterview > 0 && (
           <div style={{ borderLeft: `1px solid ${t.line}`, paddingLeft: 20, textAlign: "right" }}>
             <div style={{ fontSize: 12, color: t.inkSoft }}>Interview in</div>
-            <div style={{ fontSize: 20, fontWeight: 700, color: t.coal }}>
+            <div style={{ fontSize: 22, fontWeight: 700, color: t.coal }}>
               {daysUntilInterview} {daysUntilInterview === 1 ? "day" : "days"}
             </div>
           </div>

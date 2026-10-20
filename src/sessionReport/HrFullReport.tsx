@@ -20,6 +20,7 @@
 
 import type { HrReportData, Question, Skill } from "./types";
 import { t, f } from "./tokens";
+import { tokens as base } from "../auth/_tokens";
 import { ReportCardShell, SectionBand } from "./panels/_primitives";
 import { atCompany } from "./roleLabel";
 import { Empty, EmptyDescription } from "@/components/ui/empty";
@@ -37,7 +38,7 @@ const ERROR_SOFT = t.error100;
 const SUCCESS = t.success;
 const SUCCESS_SOFT = t.success100;
 const COPPER = t.copper;
-const COPPER_SOFT = "#FED7AA";
+const COPPER_SOFT = t.copper100;
 const INDIGO = t.indigo;
 const INDIGO_SOFT = t.indigo100;
 const MONO = f.mono;
@@ -197,8 +198,8 @@ function DimensionGate({ skills }: { skills: Skill[] }) {
                     width: `${pct}%`,
                     borderRadius: 999,
                     background: passing
-                      ? `linear-gradient(90deg, ${INDIGO}, #4F46E5)`
-                      : `linear-gradient(90deg, ${ERROR}, #EF4444)`,
+                      ? `linear-gradient(90deg, ${INDIGO}, ${INDIGO})`
+                      : `linear-gradient(90deg, ${ERROR}, ${ERROR})`,
                   }}
                 />
                 {/* 60/100 floor marker */}
@@ -348,7 +349,7 @@ function ProbeReviewPanel({ questions }: { questions: Question[] }) {
                 <ProbeRow
                   kicker="Next probe likely"
                   body={
-                    <span style={{ fontFamily: SERIF, fontSize: 15, color: COAL, lineHeight: 1.45 }}>
+                    <span style={{ fontFamily: SERIF, fontSize: 16, color: COAL, lineHeight: 1.45 }}>
                       "{q.likelyFollowUp}"
                     </span>
                   }
@@ -442,7 +443,7 @@ function SectorNormStrip({
       </div>
       <div style={{ display: "grid", gap: 8 }}>
         {visible.map((l, i) => (
-          <div key={i} style={{ fontFamily: SANS, fontSize: 12.5, color: INK_SOFT, lineHeight: 1.5 }}>
+          <div key={i} style={{ fontFamily: SANS, fontSize: 12, color: INK_SOFT, lineHeight: 1.5 }}>
             <span style={{ fontWeight: 600, color: COAL }}>{l.label}: </span>
             {l.value}
           </div>
@@ -539,7 +540,7 @@ function NoticePanel({ hrReport }: { hrReport: HrReportData }) {
             >
               Comp expectation
             </div>
-            <div style={{ fontFamily: MONO, fontSize: 24, color: COAL, fontWeight: 700, marginBottom: 8 }}>
+            <div style={{ fontFamily: MONO, fontSize: 22, color: COAL, fontWeight: 700, marginBottom: 8 }}>
               {compExpected}
             </div>
             <div style={{ fontFamily: SANS, fontSize: 12, color: INK_SOFT, lineHeight: 1.5 }}>
@@ -875,27 +876,27 @@ export default function HrFullReport({
         }}
       >
         <div>
-          <div style={{ fontFamily: MONO, fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", color: "#B8B5D4", marginBottom: 4 }}>
+          <div style={{ fontFamily: MONO, fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", color: base.creamMuted, marginBottom: 4 }}>
             Overall
           </div>
           <div style={{ fontFamily: MONO, fontSize: 28, fontWeight: 700 }}>
             {overallScore}
-            <span style={{ fontSize: 14, color: "#B8B5D4", marginLeft: 2 }}>/100</span>
+            <span style={{ fontSize: 14, color: base.creamMuted, marginLeft: 2 }}>/100</span>
           </div>
         </div>
         <div className="hrfr-bridge-sep" style={{ width: 1, height: 36, background: "rgba(255,255,255,0.18)" }} />
         {totalDims > 0 && (
           <>
             <div>
-              <div style={{ fontFamily: MONO, fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", color: "#B8B5D4", marginBottom: 4 }}>
+              <div style={{ fontFamily: MONO, fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", color: base.creamMuted, marginBottom: 4 }}>
                 Failing dims
               </div>
-              <div style={{ fontFamily: MONO, fontSize: 28, fontWeight: 700, color: failingDims > 0 ? "#FCA5A5" : "#BBF7D0" }}>
+              <div style={{ fontFamily: MONO, fontSize: 28, fontWeight: 700, color: failingDims > 0 ? t.error100 : t.success100 }}>
                 {failingDims}
-                <span style={{ fontSize: 14, color: "#B8B5D4", marginLeft: 2 }}>/{totalDims}</span>
+                <span style={{ fontSize: 14, color: base.creamMuted, marginLeft: 2 }}>/{totalDims}</span>
               </div>
             </div>
-            <div className="hrfr-bridge-msg" style={{ fontFamily: SANS, fontSize: 13, lineHeight: 1.5, color: "#E5E2F2" }}>
+            <div className="hrfr-bridge-msg" style={{ fontFamily: SANS, fontSize: 13, lineHeight: 1.5, color: base.creamMuted }}>
               {failingDims === 0
                 ? "All dimensions cleared — strong HR signal across the board."
                 : `${failingDims} dimension${failingDims > 1 ? "s" : ""} below the 60/100 floor. Fix any one of them and you cross the line.`}
@@ -903,7 +904,7 @@ export default function HrFullReport({
           </>
         )}
         {totalDims === 0 && (
-          <div className="hrfr-bridge-msg" style={{ fontFamily: SANS, fontSize: 13, lineHeight: 1.5, color: "#E5E2F2", gridColumn: "3 / -1" }}>
+          <div className="hrfr-bridge-msg" style={{ fontFamily: SANS, fontSize: 13, lineHeight: 1.5, color: base.creamMuted, gridColumn: "3 / -1" }}>
             HR Round for {role}{atCompany(company)}
           </div>
         )}

@@ -58,7 +58,7 @@ export function DrillVerdictCard({
       >
         <span>
           Score:{" "}
-          <strong style={{ color: t.coal, fontSize: 15 }}>{summary.scorePct}/100</strong>
+          <strong style={{ color: t.coal, fontSize: 16 }}>{summary.scorePct}/100</strong>
         </span>
         <span>
           Strongest answer: <strong style={{ color: t.coal }}>Q{summary.strongestAnswerIdx + 1}</strong>

@@ -62,12 +62,12 @@ function StickyHeader({ d, range, onRange, showControls }: { d: Fixture; range: 
         <div style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 0 }}>
           <span style={{ display: "inline-flex", alignItems: "baseline", gap: 7 }}>
             <span style={{ fontFamily: f.sans, fontSize: 30, fontWeight: 700, lineHeight: 1, color: t.coal }}>{d.ri}</span>
-            <span style={{ fontFamily: f.mono, fontSize: 10, color: t.inkSoft }}>RI</span>
+            <span style={{ fontFamily: f.mono, fontSize: 11, color: t.inkSoft }}>RI</span>
           </span>
           <span style={{ display: "inline-flex", alignItems: "center", gap: 7, padding: "4px 11px", borderRadius: 999, background: band.bg, color: band.fg, fontFamily: f.sans, fontSize: 12, fontWeight: 600 }}>
             <span aria-hidden="true" style={{ width: 7, height: 7, borderRadius: 999, background: band.fg }} />{band.label}
           </span>
-          <span style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft }}>
+          <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft }}>
             {d.target.role}{d.target.hasCompany ? ` · ${d.target.company}` : ""} · bar <strong style={{ color: t.coal }}>{d.threshold}</strong>
             {d.ri < d.threshold && <> · <span style={{ color: t.copper, fontWeight: 600 }}>need {d.threshold - d.ri} more</span></>}
           </span>
@@ -101,7 +101,7 @@ function SparseNote({ sessions }: { sessions: number }) {
   return (
     <div style={{ display: "flex", gap: 10, alignItems: "flex-start", padding: "11px 15px", background: t.warning100, border: `1px solid ${t.line}`, borderRadius: 12, fontFamily: f.sans }}>
       <span aria-hidden="true" style={{ color: t.warning, fontWeight: 700 }}>!</span>
-      <span style={{ fontSize: 12.5, color: t.coal, lineHeight: 1.5 }}>
+      <span style={{ fontSize: 12, color: t.coal, lineHeight: 1.5 }}>
         Early read. With {sessions} {sessions === 1 ? "session" : "sessions"} logged, some figures (percentiles, consistency) are modelled estimates. They sharpen as you complete more sessions.
       </span>
     </div>
@@ -215,7 +215,7 @@ function EmptyAnalytics() {
   return (
     <CenterPane>
       <h2 style={{ fontFamily: f.sans, fontSize: 28, fontWeight: 700, color: t.coal, margin: 0 }}>Your Readiness Index is waiting</h2>
-      <p style={{ fontFamily: f.sans, fontSize: 14.5, color: t.inkSoft, lineHeight: 1.6, margin: "12px 0 22px" }}>
+      <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft, lineHeight: 1.6, margin: "12px 0 22px" }}>
         Complete your first evaluated mock interview and this page fills with your target-specific readiness score, five pillars, blind spots, and a refresh queue.
       </p>
       <Button type="button" variant="default" size="lg" onClick={() => router.push("/session/new")} className="rix-btn rix-focus rix-tap gap-2 px-5 h-11">
@@ -228,7 +228,7 @@ function EmptyAnalytics() {
 function ErrorState({ onRetry }: { onRetry: () => void }) {
   return (
     <CenterPane>
-      <h2 style={{ fontFamily: f.sans, fontSize: 24, fontWeight: 700, color: t.coal, margin: 0 }}>Could not load your analytics</h2>
+      <h2 style={{ fontFamily: f.sans, fontSize: 22, fontWeight: 700, color: t.coal, margin: 0 }}>Could not load your analytics</h2>
       <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft, lineHeight: 1.6, margin: "12px 0 22px" }}>
         Something went wrong fetching your Readiness Index. This is usually transient. Try again in a moment.
       </p>

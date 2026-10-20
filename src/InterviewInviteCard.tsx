@@ -9,7 +9,7 @@ import { inviteEvent, invitePracticeHref, stashInviteJd } from "./interviewInvit
 import { formatInterviewWhen, isDateOnlyInstant, isInterviewPast } from "./interviewWhen";
 
 const CARD_STYLE = { background: t.white, border: `1px solid ${t.line}`, borderRadius: 16, padding: 24, minWidth: 0 } as const;
-const HEADING_STYLE = { fontFamily: f.sans, fontSize: 15, fontWeight: 600, color: t.coal, margin: 0 } as const;
+const HEADING_STYLE = { fontFamily: f.sans, fontSize: 16, fontWeight: 600, color: t.coal, margin: 0 } as const;
 const BODY_STYLE = { fontFamily: f.sans, fontSize: 14, color: t.coal, margin: "10px 0 0", lineHeight: 1.6 } as const;
 const ACTIONS_STYLE = { display: "flex", flexDirection: "column", gap: 8, marginTop: 12 } as const;
 

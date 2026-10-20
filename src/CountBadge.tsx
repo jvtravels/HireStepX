@@ -86,7 +86,7 @@ export default function CountBadge({ count }: { count: number }) {
           display: "flex", alignItems: "center", justifyContent: "center",
           minWidth: 16, height: 16, padding: "0 4px", boxSizing: "border-box",
           borderRadius: 999, background: T.error, color: T.white,
-          fontFamily: F.sans, fontSize: 10, fontWeight: 700,
+          fontFamily: F.sans, fontSize: 11, fontWeight: 700,
           border: `2px solid ${T.white}`,
         }}
       >

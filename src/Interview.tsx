@@ -885,7 +885,7 @@ function InterviewInner() {
             </svg>
           </span>
           <span style={{
-            fontFamily: ef.sans, fontSize: 24, fontWeight: 500,
+            fontFamily: ef.sans, fontSize: 22, fontWeight: 500,
             letterSpacing: -0.2, color: e.cream,
           }}>
             Tap to enable voice

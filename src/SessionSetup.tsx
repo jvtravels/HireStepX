@@ -451,7 +451,7 @@ function PermissionCard({
         display: "flex",
         alignItems: "center",
         gap: 12,
-        transition: "all 220ms cubic-bezier(.2,.7,.2,1)",
+        transition: "background-color 220ms cubic-bezier(.2,.7,.2,1), border-color 220ms cubic-bezier(.2,.7,.2,1), color 220ms cubic-bezier(.2,.7,.2,1), box-shadow 220ms cubic-bezier(.2,.7,.2,1), opacity 220ms cubic-bezier(.2,.7,.2,1), transform 220ms cubic-bezier(.2,.7,.2,1)",
         opacity: isSkipped ? 0.7 : 1,
       }}
     >
@@ -610,7 +610,7 @@ function PermissionCard({
             variant="default"
             size="sm"
             onClick={onRequest}
-            style={{ background: T.indigo, color: T.cream, border: "1px solid transparent", cursor: "pointer", transition: "all 160ms ease" }}
+            style={{ background: T.indigo, color: T.cream, border: "1px solid transparent", cursor: "pointer", transition: "background-color 160ms ease, border-color 160ms ease, color 160ms ease, box-shadow 160ms ease, opacity 160ms ease, transform 160ms ease" }}
           >
             Allow
           </Button>
@@ -641,7 +641,7 @@ function PermissionCard({
             variant="outline"
             size="sm"
             onClick={onRequest}
-            style={{ background: T.white, color: T.coal, border: `1px solid ${T.lineStrong}`, cursor: "pointer", transition: "all 160ms ease" }}
+            style={{ background: T.white, color: T.coal, border: `1px solid ${T.lineStrong}`, cursor: "pointer", transition: "background-color 160ms ease, border-color 160ms ease, color 160ms ease, box-shadow 160ms ease, opacity 160ms ease, transform 160ms ease" }}
           >
             Retry
           </Button>
@@ -1679,7 +1679,7 @@ export default function SessionSetup() {
              1px hairline + extra padding so it reads as the commit zone.
              min-height 48 ensures Apple HIG touch target floor. */
           .hsx-setup-cta { width: 100% !important; min-height: 44px !important; }
-          .hsx-setup-cta-zone { border-top: 1px solid #EBE5D2; padding-top: 28px !important; margin-top: 32px !important; }
+          .hsx-setup-cta-zone { border-top: 1px solid ${T.line}; padding-top: 28px !important; margin-top: 32px !important; }
           /* Time pill bumps to 13/regular for legibility on phones. */
           .hsx-setup-time-pill { font-size: 13px !important; padding: 6px 14px !important; }
         }
@@ -1954,7 +1954,7 @@ export default function SessionSetup() {
                             tabIndex={comingSoon ? -1 : sel ? 0 : -1}
                             title={comingSoon ? "Coming soon — not available yet" : undefined}
                             style={{
-                              padding: 14, borderRadius: 12, cursor: comingSoon ? "not-allowed" : "pointer", transition: "all 0.22s cubic-bezier(.2,.7,.2,1)", textAlign: "left",
+                              padding: 14, borderRadius: 12, cursor: comingSoon ? "not-allowed" : "pointer", transition: "background-color 0.22s cubic-bezier(.2,.7,.2,1), border-color 0.22s cubic-bezier(.2,.7,.2,1), color 0.22s cubic-bezier(.2,.7,.2,1), box-shadow 0.22s cubic-bezier(.2,.7,.2,1), opacity 0.22s cubic-bezier(.2,.7,.2,1), transform 0.22s cubic-bezier(.2,.7,.2,1)", textAlign: "left",
                               background: comingSoon ? T.cream : sel ? `linear-gradient(180deg, ${T.indigo100}, ${T.white})` : T.white,
                               border: `1px ${comingSoon ? "dashed" : "solid"} ${sel ? T.indigo : T.line}`,
                               boxShadow: sel ? `inset 0 0 0 1px ${T.indigo}` : "none",
@@ -2237,7 +2237,7 @@ export default function SessionSetup() {
                   {countdown}
                 </span>
               </div>
-              <p style={{ fontFamily: F.sans, fontSize: 15, color: T.inkFaint, letterSpacing: "0.02em" }}>
+              <p style={{ fontFamily: F.sans, fontSize: 16, color: T.inkFaint, letterSpacing: "0.02em" }}>
                 Get ready...
               </p>
             </>

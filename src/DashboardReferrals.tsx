@@ -50,7 +50,7 @@ interface ReferralInvite {
   createdAt: string;
 }
 
-const SECTION_HEADING_STYLE = { fontFamily: f.sans, fontSize: 15, fontWeight: 600, color: t.coal, margin: 0 } as const;
+const SECTION_HEADING_STYLE = { fontFamily: f.sans, fontSize: 16, fontWeight: 600, color: t.coal, margin: 0 } as const;
 
 function IconTile({ children, tone = "neutral" }: { children: ReactNode; tone?: "neutral" | "brand" }) {
   return (
@@ -64,7 +64,7 @@ function StatRow({ icon, label, value }: { icon: ReactNode; label: string; value
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
       <IconTile>{icon}</IconTile>
-      <span style={{ flex: 1, fontFamily: f.sans, fontSize: 13.5, color: t.inkSoft }}>{label}</span>
+      <span style={{ flex: 1, fontFamily: f.sans, fontSize: 14, color: t.inkSoft }}>{label}</span>
       <span style={{ fontFamily: f.sans, fontSize: textSize.xl, fontWeight: 700, color: t.coal, fontVariantNumeric: "tabular-nums" }}>{value}</span>
     </div>
   );
@@ -176,7 +176,7 @@ export default function DashboardReferrals() {
                 <h2 id="referral-link-heading" style={SECTION_HEADING_STYLE}>Your referral link</h2>
               </div>
               {failed && !code ? (
-                <div role="alert" style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", color: t.inkSoft, fontSize: 13.5 }}>
+                <div role="alert" style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", color: t.inkSoft, fontSize: 14 }}>
                   <AlertCircleIcon size={16} color={t.error} aria-hidden="true" />
                   <span>We couldn&apos;t load your referral link. This is usually temporary.</span>
                   <Button variant="outline" size="sm" onClick={() => { setLoaded(false); setFailed(false); load({ cancelled: false }); }}>Try again</Button>
@@ -220,7 +220,7 @@ export default function DashboardReferrals() {
             <section aria-labelledby="referral-invites-heading" style={divided}>
               <h2 id="referral-invites-heading" style={SECTION_HEADING_STYLE}>Your invites</h2>
               {invites.length === 0 ? (
-                <p style={{ fontFamily: f.sans, fontSize: 13.5, color: t.inkSoft, margin: "8px 0 0", lineHeight: 1.55 }}>
+                <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft, margin: "8px 0 0", lineHeight: 1.55 }}>
                   No one has joined with your link yet. Share it above and they will show up here. Your free session unlocks after their first practice session with at least 3 answers.
                 </p>
               ) : (
@@ -232,7 +232,7 @@ export default function DashboardReferrals() {
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontFamily: f.sans, fontSize: 14, fontWeight: 600, color: t.coal, overflowWrap: "anywhere" }}>{inv.name}</div>
-                        <div style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkFaint, overflowWrap: "anywhere" }}>
+                        <div style={{ fontFamily: f.sans, fontSize: 12, color: t.inkFaint, overflowWrap: "anywhere" }}>
                           {inv.email ? `${inv.email} · ` : ""}{daysAgo(inv.createdAt)}
                         </div>
                       </div>
@@ -259,8 +259,8 @@ export default function DashboardReferrals() {
                   <li key={s.title} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
                     <IconTile tone="brand"><span style={{ fontFamily: f.sans, fontSize: 12, fontWeight: 700 }}>{i + 1}</span></IconTile>
                     <div style={{ minWidth: 0 }}>
-                      <div style={{ fontFamily: f.sans, fontSize: 13.5, fontWeight: 600, color: t.coal }}>{s.title}</div>
-                      <div style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft, marginTop: 2, lineHeight: 1.5 }}>{s.body}</div>
+                      <div style={{ fontFamily: f.sans, fontSize: 14, fontWeight: 600, color: t.coal }}>{s.title}</div>
+                      <div style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, marginTop: 2, lineHeight: 1.5 }}>{s.body}</div>
                     </div>
                   </li>
                 ))}

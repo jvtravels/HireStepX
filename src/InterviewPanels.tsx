@@ -1357,7 +1357,7 @@ export const TranscriptPanel = memo(function TranscriptPanel({ transcript, inter
                   </div>
                   <p style={{
                     fontFamily: ef.sans,
-                    fontSize: 13.5, color: e.coal, lineHeight: 1.55,
+                    fontSize: 14, color: e.coal, lineHeight: 1.55,
                     margin: 0, wordBreak: "break-word", overflowWrap: "break-word",
                   }}>
                     {displayText}

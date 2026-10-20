@@ -127,7 +127,7 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
   // Intentionally shadows the dark `c`/`font` imports for the entire UpgradeModal scope.
   const c = {
     obsidian: T.cream, graphite: T.creamRaised, carbon: T.creamSoft,
-    ivory: T.coal, chalk: "#3F3A33", stone: "#6B655C",
+    ivory: T.coal, chalk: T.neutralInk, stone: T.inkSoft,
     sage: T.success, ember: T.error,
     slate: T.indigo,
     border: T.line, borderHover: T.lineStrong,
@@ -537,7 +537,7 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
                 color: T.indigo, margin: 0, lineHeight: 1.3 }}>
                 You&apos;ve used all sessions in your Sprint Pack
               </p>
-              <p style={{ fontFamily: font.ui, fontSize: 11, color: "#6B655C",
+              <p style={{ fontFamily: font.ui, fontSize: 11, color: T.inkSoft,
                 margin: "2px 0 0", lineHeight: 1.4 }}>
                 Get another Sprint Pack (₹39 · 5 sessions) or buy individual sessions below.
               </p>
@@ -623,7 +623,7 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
         )}
         {promoError && <p style={{ fontFamily: font.ui, fontSize: 11, color: c.ember, marginBottom: 12, marginTop: -4 }}>{promoError}</p>}
         {promoResult?.valid && (
-          <div style={{ background: "#E8F2EA", border: `1px solid #BFD9C3`, borderRadius: 8, padding: "8px 14px", marginBottom: 12, marginTop: -4, display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{ background: T.success100, border: `1px solid ${T.successLine}`, borderRadius: 8, padding: "8px 14px", marginBottom: 12, marginTop: -4, display: "flex", alignItems: "center", gap: 8 }}>
             <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c.sage} strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
             <span style={{ fontFamily: font.ui, fontSize: 12, color: c.sage, fontWeight: 500 }}>
               {promoResult.discount_percent ? `${promoResult.discount_percent}% off` : `₹${Math.round((promoResult.discount_amount || 0) / 100)} off`} applied!
@@ -775,7 +775,7 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
                     className="w-full"
                     style={{ marginTop: "auto",
                       background: featured ? c.obsidian : c.slate,
-                      color: featured ? c.ivory : "#FFFFFF",
+                      color: featured ? c.ivory : T.white,
                       opacity: loading && loading !== plan.id ? 0.5 : 1,
                       boxShadow: featured ? "0 1px 0 rgba(244,229,216,.08), 0 8px 24px rgba(244,229,216,0.18)" : "0 1px 2px rgba(20,17,10,.12), 0 4px 12px -4px rgba(20,17,10,.20)",
                     }}
@@ -958,8 +958,8 @@ export const EmptyState = memo(function EmptyState({ onStartWarmup, onStartCusto
 
       <div style={{ background: `linear-gradient(135deg, oklch(0.359 0.135 278.697 / 0.12) 0%, ${c.graphite} 100%)`, borderRadius: 16, border: `1px solid oklch(0.359 0.135 278.697 / 0.15)`, padding: isMobile ? "32px 24px" : "48px 40px", textAlign: "center", marginBottom: 28 }}>
         <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "6px 16px", borderRadius: 20, background: "oklch(0.359 0.135 278.697 / 0.08)", border: "1px solid oklch(0.359 0.135 278.697 / 0.15)", marginBottom: 24 }}>
-          <span style={{ fontFamily: font.mono, fontSize: 10, fontWeight: 600, color: T.indigo, letterSpacing: "0.08em" }}>SESSION 1 OF 3</span>
-          <span style={{ fontFamily: font.ui, fontSize: 10, color: c.stone }}>Guided Warmup</span>
+          <span style={{ fontFamily: font.mono, fontSize: 11, fontWeight: 600, color: T.indigo, letterSpacing: "0.08em" }}>SESSION 1 OF 3</span>
+          <span style={{ fontFamily: font.ui, fontSize: 11, color: c.stone }}>Guided Warmup</span>
         </div>
         <h2 style={{ fontFamily: font.ui, fontSize: isMobile ? 22 : 28, fontWeight: 400, color: c.ivory, marginBottom: 10, letterSpacing: "-0.02em" }}>
           {targetRole ? `Your ${targetRole} warmup is ready` : "Your warmup session is ready"}
@@ -991,7 +991,7 @@ export const EmptyState = memo(function EmptyState({ onStartWarmup, onStartCusto
           <div key={item.step} style={{ background: c.graphite, borderRadius: 12, border: `1px solid ${item.active ? "oklch(0.359 0.135 278.697 / 0.3)" : c.border}`, padding: "24px 20px", opacity: item.active ? 1 : 0.5 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
               {item.icon}
-              <span style={{ fontFamily: font.mono, fontSize: 10, fontWeight: 600, color: item.active ? T.indigo : c.stone, letterSpacing: "0.08em" }}>SESSION {item.step}</span>
+              <span style={{ fontFamily: font.mono, fontSize: 11, fontWeight: 600, color: item.active ? T.indigo : c.stone, letterSpacing: "0.08em" }}>SESSION {item.step}</span>
             </div>
             <h3 style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: c.ivory, marginBottom: 6 }}>{item.title}</h3>
             <p style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, lineHeight: 1.5 }}>{item.desc}</p>
@@ -1008,7 +1008,7 @@ export const EmptyState = memo(function EmptyState({ onStartWarmup, onStartCusto
         ].map((item) => (
           <div key={item.label} style={{ textAlign: "center" }}>
             <span style={{ fontFamily: font.mono, fontSize: 16, fontWeight: 600, color: T.indigo, display: "block", marginBottom: 2 }}>{item.value}</span>
-            <span style={{ fontFamily: font.ui, fontSize: 10, color: c.stone }}>{item.label}</span>
+            <span style={{ fontFamily: font.ui, fontSize: 11, color: c.stone }}>{item.label}</span>
           </div>
         ))}
       </div>
@@ -1044,7 +1044,7 @@ export const SessionDetailView = memo(function SessionDetailView({ session, onBa
         <div className="session-detail-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20, flexWrap: "wrap", gap: 16 }}>
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
-              <span style={{ fontFamily: font.ui, fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: T.indigo, background: "oklch(0.359 0.135 278.697 / 0.08)", padding: "4px 10px", borderRadius: 4 }}>{session.type}</span>
+              <span style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: T.indigo, background: "oklch(0.359 0.135 278.697 / 0.08)", padding: "4px 10px", borderRadius: 4 }}>{session.type}</span>
               <span style={{ fontFamily: font.ui, fontSize: 13, color: c.stone }}>{session.dateLabel} · {session.duration}</span>
             </div>
             <h2 style={{ fontFamily: font.ui, fontSize: 22, fontWeight: 600, color: c.ivory, marginBottom: 4 }}>{session.role}</h2>
@@ -1059,7 +1059,7 @@ export const SessionDetailView = memo(function SessionDetailView({ session, onBa
               </svg>
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
                 <span style={{ fontFamily: font.mono, fontSize: 28, fontWeight: 700, color: c.ivory, lineHeight: 1 }}>{session.score}</span>
-                <span style={{ fontFamily: font.ui, fontSize: 10, fontWeight: 600, color: scoreLabelColor(session.score), marginTop: 2 }}>{scoreLabel(session.score)}</span>
+                <span style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 600, color: scoreLabelColor(session.score), marginTop: 2 }}>{scoreLabel(session.score)}</span>
               </div>
             </div>
             <span style={{ fontFamily: font.mono, fontSize: 12, fontWeight: 600, color: session.change > 0 ? c.sage : c.ember, display: "block", marginTop: 4 }}>
@@ -1070,18 +1070,18 @@ export const SessionDetailView = memo(function SessionDetailView({ session, onBa
 
         <div className="session-detail-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
           <div style={{ padding: "14px 16px", borderRadius: 10, background: T.success100, border: `1px solid ${T.successLine}` }}>
-            <span style={{ fontFamily: font.ui, fontSize: 10, fontWeight: 600, color: c.sage, letterSpacing: "0.06em", textTransform: "uppercase", display: "block", marginBottom: 6 }}>Top Strength</span>
+            <span style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 600, color: c.sage, letterSpacing: "0.06em", textTransform: "uppercase", display: "block", marginBottom: 6 }}>Top Strength</span>
             <span style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 500, color: c.ivory }}>{session.topStrength}</span>
           </div>
           <div style={{ padding: "14px 16px", borderRadius: 10, background: T.error100, border: `1px solid ${T.errorLine}` }}>
-            <span style={{ fontFamily: font.ui, fontSize: 10, fontWeight: 600, color: c.ember, letterSpacing: "0.06em", textTransform: "uppercase", display: "block", marginBottom: 6 }}>To Improve</span>
+            <span style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 600, color: c.ember, letterSpacing: "0.06em", textTransform: "uppercase", display: "block", marginBottom: 6 }}>To Improve</span>
             <span style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 500, color: c.ivory }}>{session.topWeakness}</span>
           </div>
         </div>
       </div>
 
       <div style={{ background: c.graphite, borderRadius: 14, border: `1px solid ${c.border}`, padding: "28px 32px", marginBottom: 20 }}>
-        <h3 style={{ fontFamily: font.ui, fontSize: 15, fontWeight: 600, color: c.ivory, marginBottom: 20 }}>Question Scores</h3>
+        <h3 style={{ fontFamily: font.ui, fontSize: 16, fontWeight: 600, color: c.ivory, marginBottom: 20 }}>Question Scores</h3>
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           {session.questionScores.map((q, i) => (
             <div key={i} style={{ display: "flex", alignItems: "center", gap: 16, padding: "12px 16px", borderRadius: 10, background: c.obsidian, border: `1px solid ${c.border}` }}>
@@ -1104,7 +1104,7 @@ export const SessionDetailView = memo(function SessionDetailView({ session, onBa
       </div>
 
       <div style={{ background: c.graphite, borderRadius: 14, border: `1px solid ${c.border}`, padding: "28px 32px", marginBottom: 20 }}>
-        <h3 style={{ fontFamily: font.ui, fontSize: 15, fontWeight: 600, color: c.ivory, marginBottom: 20 }}>Full Transcript</h3>
+        <h3 style={{ fontFamily: font.ui, fontSize: 16, fontWeight: 600, color: c.ivory, marginBottom: 20 }}>Full Transcript</h3>
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           {session.transcript.map((msg, i) => (
             <div key={i} style={{ display: "flex", gap: 12, flexDirection: msg.speaker === "user" ? "row-reverse" : "row" }}>
@@ -1120,7 +1120,7 @@ export const SessionDetailView = memo(function SessionDetailView({ session, onBa
                   {msg.text}
                 </div>
                 {msg.scoreNote && (
-                  <span style={{ fontFamily: font.mono, fontSize: 10, color: c.stone, display: "block", marginTop: 4, textAlign: msg.speaker === "ai" ? "left" : "right", paddingLeft: msg.speaker === "ai" ? 16 : 0, paddingRight: msg.speaker === "user" ? 16 : 0 }}>
+                  <span style={{ fontFamily: font.mono, fontSize: 11, color: c.stone, display: "block", marginTop: 4, textAlign: msg.speaker === "ai" ? "left" : "right", paddingLeft: msg.speaker === "ai" ? 16 : 0, paddingRight: msg.speaker === "user" ? 16 : 0 }}>
                     {msg.scoreNote}
                   </span>
                 )}
@@ -1131,7 +1131,7 @@ export const SessionDetailView = memo(function SessionDetailView({ session, onBa
       </div>
 
       <div style={{ background: c.graphite, borderRadius: 14, border: `1px solid ${c.border}`, padding: "28px 32px" }}>
-        <h3 style={{ fontFamily: font.ui, fontSize: 15, fontWeight: 600, color: c.ivory, marginBottom: 12 }}>AI Coach Summary</h3>
+        <h3 style={{ fontFamily: font.ui, fontSize: 16, fontWeight: 600, color: c.ivory, marginBottom: 12 }}>AI Coach Summary</h3>
         <p style={{ fontFamily: font.ui, fontSize: 14, color: c.chalk, lineHeight: 1.7, margin: 0 }}>{session.feedback}</p>
       </div>
     </div>

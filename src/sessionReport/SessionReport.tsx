@@ -1053,7 +1053,7 @@ export const SessionReport = memo(function SessionReport({
           </Button>
           <div style={{ maxWidth: 480, margin: "80px auto 0", textAlign: "center" }}>
             <div style={{ fontSize: 40, marginBottom: 16 }}>🎙️</div>
-            <h1 style={{ fontFamily: f.serif, fontSize: 26, color: t.coal, margin: "0 0 12px", fontWeight: 400 }}>No answers were recorded</h1>
+            <h1 style={{ fontFamily: f.serif, fontSize: 28, color: t.coal, margin: "0 0 12px", fontWeight: 400 }}>No answers were recorded</h1>
             <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft, margin: "0 0 24px", lineHeight: 1.6 }}>
               It looks like your microphone wasn&apos;t captured during this session — the interview ran but no candidate audio reached our system.
               Check that your browser has mic permission, or use <strong>Text mode</strong> to type your answers instead.

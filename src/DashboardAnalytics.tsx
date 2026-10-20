@@ -294,7 +294,7 @@ export default function AnalyticsPage() {
               <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={T.copper} strokeWidth="1.5" strokeLinecap="round"><path d="M12 2c1 6-4 6-4 12a6 6 0 0012 0c0-6-5-6-4-12"/><path d="M12 22a3 3 0 01-3-3c0-3 3-3 3-6"/></svg>
             </div>
             <div>
-              <span style={{ fontFamily: font.mono, fontSize: 24, fontWeight: 700, color: currentStreak > 0 ? T.copper : c.stone, display: "block", lineHeight: 1 }}>{currentStreak}</span>
+              <span style={{ fontFamily: font.mono, fontSize: 22, fontWeight: 700, color: currentStreak > 0 ? T.copper : c.stone, display: "block", lineHeight: 1 }}>{currentStreak}</span>
               <span style={{ fontFamily: font.ui, fontSize: 12, color: c.stone }}>day streak</span>
             </div>
           </div>
@@ -304,7 +304,7 @@ export default function AnalyticsPage() {
               <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c.sage} strokeWidth="1.5" strokeLinecap="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
             </div>
             <div>
-              <span style={{ fontFamily: font.mono, fontSize: 24, fontWeight: 700, color: c.sage, display: "block", lineHeight: 1 }}>{bestSession?.score || "—"}</span>
+              <span style={{ fontFamily: font.mono, fontSize: 22, fontWeight: 700, color: c.sage, display: "block", lineHeight: 1 }}>{bestSession?.score || "—"}</span>
               <span style={{ fontFamily: font.ui, fontSize: 12, color: c.stone }}>best score{bestSession ? ` · ${bestSession.type}` : ""}</span>
             </div>
           </div>
@@ -579,7 +579,7 @@ export default function AnalyticsPage() {
                 background: w.sessions > 0 ? w.sessions >= 3 ? c.sage : w.sessions >= 2 ? T.indigo : "oklch(0.359 0.135 278.697 / 0.3)" : c.border,
                 transition: "height 0.3s ease",
               }} />
-              <span style={{ fontFamily: font.mono, fontSize: 8, color: c.stone, whiteSpace: "nowrap" }}>{w.week}</span>
+              <span style={{ fontFamily: font.mono, fontSize: 11, color: c.stone, whiteSpace: "nowrap" }}>{w.week}</span>
             </div>
           ))}
         </div>

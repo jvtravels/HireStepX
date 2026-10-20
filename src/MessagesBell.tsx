@@ -101,7 +101,7 @@ export default function MessagesBell({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" style={{ width: "min(340px, calc(100vw - 24px))", padding: 0 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 12px" }}>
-          <DropdownMenuLabel className="p-0 font-normal" style={{ fontFamily: F.sans, fontSize: 13.5, fontWeight: 600, color: T.coal }}>
+          <DropdownMenuLabel className="p-0 font-normal" style={{ fontFamily: F.sans, fontSize: 14, fontWeight: 600, color: T.coal }}>
             Messages
           </DropdownMenuLabel>
           <button
@@ -143,7 +143,7 @@ export default function MessagesBell({
                           padding: "8px 12px 8px 20px",
                         }}
                       >
-                        <p style={{ margin: 0, fontFamily: F.sans, fontSize: 12.5, fontWeight: 600, color: T.coal, lineHeight: 1.4, display: "flex", alignItems: "center", gap: 6 }}>
+                        <p style={{ margin: 0, fontFamily: F.sans, fontSize: 12, fontWeight: 600, color: T.coal, lineHeight: 1.4, display: "flex", alignItems: "center", gap: 6 }}>
                           {c.unread && (
                             <span aria-hidden="true" style={{ width: 6, height: 6, borderRadius: "50%", background: T.indigo, flexShrink: 0 }} />
                           )}

@@ -65,7 +65,7 @@ const RESEND_BUTTON_BASE_STYLE: React.CSSProperties = {
   borderRadius: 8,
   padding: "12px 20px",
   fontFamily: f.sans,
-  fontSize: 15,
+  fontSize: 16,
   gap: 10,
 };
 const RESEND_BUTTON_SECONDARY_STYLE: React.CSSProperties = { ...RESEND_BUTTON_BASE_STYLE, fontWeight: 500, boxShadow: shadows.card };
@@ -705,7 +705,7 @@ export default function Signup() {
                     width: "100%",
                     height: "auto",
                     fontFamily: f.sans,
-                    fontSize: 15,
+                    fontSize: 16,
                     fontWeight: 500,
                     gap: 12,
                     padding: "16px 18px",
@@ -1025,7 +1025,7 @@ export default function Signup() {
                       width: "100%",
                       height: "auto",
                       fontFamily: f.sans,
-                      fontSize: 15,
+                      fontSize: 16,
                       fontWeight: 600,
                       borderRadius: 8,
                       padding: "16px 18px",

@@ -22,7 +22,7 @@ export function DrillPlanPanel({ outcome, onLaunchDrill }: { outcome: Negotiatio
                 {d.effort}
               </div>
             </div>
-            <div style={{ fontSize: 15, fontWeight: 700, color: t.coal, lineHeight: 1.3, fontFamily: f.serif }}>
+            <div style={{ fontSize: 16, fontWeight: 700, color: t.coal, lineHeight: 1.3, fontFamily: f.serif }}>
               {d.title}
             </div>
             <div style={{ fontSize: 12, color: t.inkSoft, lineHeight: 1.5, flex: 1 }}>{d.goal}</div>

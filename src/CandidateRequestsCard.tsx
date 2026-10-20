@@ -74,7 +74,7 @@ function ContactForm({ values, errors, onChange, inputs, includesEmail }: {
         const id = `contact-${field}`;
         return (
           <div key={field}>
-            <label htmlFor={id} className="mb-1 block text-[12.5px] font-medium text-hx-coal">{meta.label}</label>
+            <label htmlFor={id} className="mb-1 block text-[12px] font-medium text-hx-coal">{meta.label}</label>
             <Input
               id={id}
               type={meta.type}
@@ -157,7 +157,7 @@ function RequestRow({ matchId, request, unlocked, onResolved, onError }: {
       <div className="text-[14px] font-semibold text-hx-coal [overflow-wrap:anywhere]">{request.headline}</div>
       <div className="mt-0.5 text-[12px] text-hx-ink-soft">Asked {daysAgo(request.createdAt)}</div>
       {request.note && (
-        <p className="m-0 mt-2 text-[13.5px] leading-normal whitespace-pre-line text-hx-coal [overflow-wrap:anywhere]">{request.note}</p>
+        <p className="m-0 mt-2 text-[14px] leading-normal whitespace-pre-line text-hx-coal [overflow-wrap:anywhere]">{request.note}</p>
       )}
       {isContact ? (
         <ContactForm
@@ -207,7 +207,7 @@ export default function CandidateRequestsCard({ matchId, requests, unlocked, onR
   if (requests.length === 0) return null;
   return (
     <section aria-labelledby="job-requests-heading" style={style}>
-      <h2 id="job-requests-heading" className="m-0 text-[15px] font-semibold text-hx-coal">
+      <h2 id="job-requests-heading" className="m-0 text-[16px] font-semibold text-hx-coal">
         Requests from this employer
       </h2>
       <p className="mt-1 mb-1.5 text-[13px] leading-normal text-hx-ink-soft">

@@ -340,7 +340,7 @@ function MiniMonth({ events, focusedId, onDateClick }: { events: InterviewEvent[
   return (
     <div>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: sp.md }}>
-        <h2 style={{ fontFamily: font.ui, fontSize: 15, fontWeight: 400, color: c.ivory, margin: 0 }}>{monthLabel}</h2>
+        <h2 style={{ fontFamily: font.ui, fontSize: 16, fontWeight: 400, color: c.ivory, margin: 0 }}>{monthLabel}</h2>
         <div style={{ display: "flex", gap: 2 }}>
           {[
             { label: "Previous month", d: "M15 6l-6 6 6 6", go: () => setViewDate(new Date(year, month - 1, 1)) },
@@ -388,7 +388,7 @@ function MiniMonth({ events, focusedId, onDateClick }: { events: InterviewEvent[
 function ReminderRow({ label, on }: { label: string; on: boolean }) {
   return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "7px 0" }}>
-      <span style={{ fontSize: 12.5, color: c.ivory, fontFamily: font.ui }}>{label}</span>
+      <span style={{ fontSize: 12, color: c.ivory, fontFamily: font.ui }}>{label}</span>
       <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
         <Icon size={14} stroke={c.stone}>{I.mail}</Icon>
         {on ? <Pill bg={c.sageLight} fg={c.sage}>Set</Pill> : <Pill bg={c.graphite} fg={c.stone} bd={c.border}>Off</Pill>}
@@ -821,7 +821,7 @@ export default function CalendarPage() {
           <div>
             <Eyebrow>Interview Readiness</Eyebrow>
             <h1 style={{ fontFamily: font.ui, fontSize: 28, fontWeight: 400, color: c.ivory, margin: "4px 0 6px" }}>Calendar</h1>
-            <p style={{ fontSize: 13.5, color: c.chalk, margin: 0, maxWidth: 460, lineHeight: 1.5 }}>
+            <p style={{ fontSize: 14, color: c.chalk, margin: 0, maxWidth: 460, lineHeight: 1.5 }}>
               Every interview you log becomes a prep plan, not just a date.
             </p>
           </div>
@@ -868,7 +868,7 @@ export default function CalendarPage() {
             <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, padding: "24px 28px 18px", borderBottom: `1px solid ${c.borderSubtle}` }}>
               <div>
                 <Eyebrow>{editingId ? "Edit" : "New"}</Eyebrow>
-                <h3 id="cal-modal-title" style={{ fontFamily: font.ui, fontSize: 23, fontWeight: 400, color: c.ivory, margin: "5px 0 0" }}>{editingId ? "Edit interview" : "Add an interview"}</h3>
+                <h3 id="cal-modal-title" style={{ fontFamily: font.ui, fontSize: 22, fontWeight: 400, color: c.ivory, margin: "5px 0 0" }}>{editingId ? "Edit interview" : "Add an interview"}</h3>
               </div>
               <button className="cpr-tap" onClick={() => { setShowForm(false); resetForm(); }} aria-label="Close" style={{ background: "none", border: "none", color: c.stone, cursor: "pointer", padding: 6, marginTop: 2, display: "flex", borderRadius: radius.sm }}>
                 <Icon size={20}>{I.x}</Icon>
@@ -888,7 +888,7 @@ export default function CalendarPage() {
                       onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); applyQuickAdd(); } }}
                       placeholder="Amazon SDE phone screen tuesday 3pm" style={inputStyle} onFocus={fieldFocus} onBlur={fieldBlur} />
                     <button className="cpr-tap" onClick={applyQuickAdd} disabled={!formQuickAdd.trim()}
-                      style={{ flexShrink: 0, display: "inline-flex", alignItems: "center", gap: 6, background: formQuickAdd.trim() ? c.graphite : "transparent", color: formQuickAdd.trim() ? c.ivory : c.stone, border: `1px solid ${c.border}`, borderRadius: 8, padding: "0 16px", fontFamily: font.ui, fontSize: 12.5, fontWeight: 600, cursor: formQuickAdd.trim() ? "pointer" : "not-allowed", whiteSpace: "nowrap" }}>
+                      style={{ flexShrink: 0, display: "inline-flex", alignItems: "center", gap: 6, background: formQuickAdd.trim() ? c.graphite : "transparent", color: formQuickAdd.trim() ? c.ivory : c.stone, border: `1px solid ${c.border}`, borderRadius: 8, padding: "0 16px", fontFamily: font.ui, fontSize: 12, fontWeight: 600, cursor: formQuickAdd.trim() ? "pointer" : "not-allowed", whiteSpace: "nowrap" }}>
                       Fill
                     </button>
                   </div>
@@ -1036,7 +1036,7 @@ export default function CalendarPage() {
               <Card pad={24} style={{ borderColor: T.indigoRing }}>
                 <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: sp.lg, flexWrap: "wrap" }}>
                   <div style={{ display: "flex", gap: sp.md }}>
-                    <div style={{ width: 52, height: 52, borderRadius: radius.md, background: c.graphite, border: `1px solid ${c.border}`, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: font.ui, fontSize: 24, color: T.indigo, flexShrink: 0 }}>
+                    <div style={{ width: 52, height: 52, borderRadius: radius.md, background: c.graphite, border: `1px solid ${c.border}`, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: font.ui, fontSize: 22, color: T.indigo, flexShrink: 0 }}>
                       {(focused.company || focused.title || "?").charAt(0).toUpperCase()}
                     </div>
                     <div>
@@ -1056,7 +1056,7 @@ export default function CalendarPage() {
                 <div style={{ marginTop: sp.lg, display: "flex", alignItems: "center", gap: sp.lg, padding: "14px 16px", background: c.graphite, borderRadius: radius.md, border: `1px solid ${c.borderSubtle}` }}>
                   <Icon size={18} stroke={T.indigo}>{I.globe}</Icon>
                   <div>
-                    <div style={{ fontFamily: font.ui, fontSize: 15, fontWeight: 600, color: c.ivory }}>
+                    <div style={{ fontFamily: font.ui, fontSize: 16, fontWeight: 600, color: c.ivory }}>
                       {formatEventDate(focused.date)} · {formatEventTime(focused.time)}
                       {heroLocalLabel && <span style={{ color: T.indigo, fontWeight: 500 }}> ({heroLocalLabel} your time)</span>}
                     </div>
@@ -1118,11 +1118,11 @@ export default function CalendarPage() {
             <Card pad={20}>
               {past.length > 0 && (
                 <>
-                  <h3 style={{ fontFamily: font.ui, fontSize: 15, fontWeight: 400, color: c.ivory, margin: "0 0 12px" }}>Past ({past.length})</h3>
+                  <h3 style={{ fontFamily: font.ui, fontSize: 16, fontWeight: 400, color: c.ivory, margin: "0 0 12px" }}>Past ({past.length})</h3>
                   <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: cancelled.length > 0 ? 20 : 0 }}>
                     {past.map((ev) => (
                       <div key={ev.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: `1px solid ${c.borderSubtle}` }}>
-                        <span style={{ fontSize: 12.5, color: c.chalk, fontFamily: font.ui }}>
+                        <span style={{ fontSize: 12, color: c.chalk, fontFamily: font.ui }}>
                           <strong style={{ color: c.ivory, fontWeight: 600 }}>{ev.title}</strong> · {ev.company} · {formatEventDate(ev.date)}
                         </span>
                         <button className="cpr-tap" onClick={() => handleDelete(ev.id)} aria-label="Remove" style={{ display: "flex", color: c.stone, background: "none", border: "none", cursor: "pointer", padding: 4 }}>
@@ -1135,11 +1135,11 @@ export default function CalendarPage() {
               )}
               {cancelled.length > 0 && (
                 <>
-                  <h3 style={{ fontFamily: font.ui, fontSize: 15, fontWeight: 400, color: c.stone, margin: "0 0 12px" }}>Cancelled ({cancelled.length})</h3>
+                  <h3 style={{ fontFamily: font.ui, fontSize: 16, fontWeight: 400, color: c.stone, margin: "0 0 12px" }}>Cancelled ({cancelled.length})</h3>
                   <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                     {cancelled.map((ev) => (
                       <div key={ev.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: `1px solid ${c.borderSubtle}`, opacity: 0.6 }}>
-                        <span style={{ fontSize: 12.5, color: c.chalk, fontFamily: font.ui, textDecoration: "line-through" }}>
+                        <span style={{ fontSize: 12, color: c.chalk, fontFamily: font.ui, textDecoration: "line-through" }}>
                           {ev.title} · {ev.company} · {formatEventDate(ev.date)}
                         </span>
                         <button className="cpr-tap" onClick={() => handleDelete(ev.id)} aria-label="Remove" style={{ display: "flex", color: c.stone, background: "none", border: "none", cursor: "pointer", padding: 4 }}>
@@ -1166,7 +1166,7 @@ export default function CalendarPage() {
           <Card pad={20}>
             <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: sp.sm }}>
               <Icon size={15} stroke={T.indigo}>{I.bell}</Icon>
-              <h2 style={{ fontFamily: font.ui, fontSize: 15, fontWeight: 400, color: c.ivory, margin: 0 }}>Reminders</h2>
+              <h2 style={{ fontFamily: font.ui, fontSize: 16, fontWeight: 400, color: c.ivory, margin: 0 }}>Reminders</h2>
             </div>
             {focused ? (
               <>
@@ -1199,7 +1199,7 @@ export default function CalendarPage() {
                 : "Connect to sync your interviews both ways with Google Calendar."}
             </p>
             {!googleConnected && !googleUnavailable && (
-              <button className="cpr-tap" onClick={handleConnectGoogle} disabled={googleBusy} style={{ marginTop: sp.md, display: "inline-flex", alignItems: "center", gap: 7, background: "transparent", color: c.ivory, border: `1px solid ${c.border}`, borderRadius: 8, padding: "9px 14px", fontFamily: font.ui, fontSize: 12.5, fontWeight: 600, cursor: googleBusy ? "default" : "pointer" }}>
+              <button className="cpr-tap" onClick={handleConnectGoogle} disabled={googleBusy} style={{ marginTop: sp.md, display: "inline-flex", alignItems: "center", gap: 7, background: "transparent", color: c.ivory, border: `1px solid ${c.border}`, borderRadius: 8, padding: "9px 14px", fontFamily: font.ui, fontSize: 12, fontWeight: 600, cursor: googleBusy ? "default" : "pointer" }}>
                 <Icon size={14} stroke={c.slate}>{I.google}</Icon> {googleBusy ? "Connecting…" : "Connect"}
               </button>
             )}

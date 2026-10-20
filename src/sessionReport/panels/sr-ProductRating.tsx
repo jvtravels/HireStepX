@@ -12,7 +12,7 @@ import { captureClientEvent } from "../../posthogClient";
 import { Button } from "@/components/ui/button";
 
 const starButtonStyle: CSSProperties = {
-  fontSize: 26,
+  fontSize: 28,
   lineHeight: 1,
   color: t.line,
 };

@@ -340,7 +340,7 @@ export function Checkbox({ checked, onChange, label, description }: CheckboxProp
           display: "inline-flex",
           alignItems: "center",
           justifyContent: "center",
-          transition: "all 0.12s ease",
+          transition: "background-color 0.12s ease, border-color 0.12s ease, color 0.12s ease, box-shadow 0.12s ease, opacity 0.12s ease, transform 0.12s ease",
           flexShrink: 0,
           boxShadow: focused ? `0 0 0 3px ${t.indigoRing}` : "none",
         }}

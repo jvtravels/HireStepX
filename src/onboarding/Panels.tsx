@@ -876,7 +876,7 @@ export function ProfileReadyState({
             )}
 
             {aiProfile.summary && (
-              <p style={{ fontFamily: f.sans, fontSize: 14.5, lineHeight: 1.6, color: t.inkSoft, margin: 0, marginBottom: 16, flex: 1, whiteSpace: "pre-wrap" }}>
+              <p style={{ fontFamily: f.sans, fontSize: 14, lineHeight: 1.6, color: t.inkSoft, margin: 0, marginBottom: 16, flex: 1, whiteSpace: "pre-wrap" }}>
                 {aiProfile.summary}
               </p>
             )}
@@ -949,7 +949,7 @@ export function ProfileReadyState({
           {aiProfile.careerTrajectory && (
             <div className="hsx-onb-cell" style={{ gridColumn: "span 7" }}>
               <SectionCard label="Career trajectory">
-                <p style={{ fontFamily: f.sans, fontSize: 13.5, lineHeight: 1.6, color: t.coal, margin: 0 }}>
+                <p style={{ fontFamily: f.sans, fontSize: 14, lineHeight: 1.6, color: t.coal, margin: 0 }}>
                   {aiProfile.careerTrajectory}
                 </p>
               </SectionCard>
@@ -988,7 +988,7 @@ export function ProfileReadyState({
               <SectionCard label="Key achievements">
                 <ul style={{ margin: 0, paddingLeft: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 10 }}>
                   {aiProfile.keyAchievements.map((line, i) => (
-                    <li key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10, fontFamily: f.sans, fontSize: 13.5, lineHeight: 1.55, color: t.coal }}>
+                    <li key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10, fontFamily: f.sans, fontSize: 14, lineHeight: 1.55, color: t.coal }}>
                       <span style={{ flexShrink: 0, marginTop: 6, width: 4, height: 4, borderRadius: 999, background: t.indigo }} aria-hidden="true" />
                       {line}
                     </li>
@@ -1018,7 +1018,7 @@ export function ProfileReadyState({
               <SectionCard label="Improve your resume">
                 <ul style={{ margin: 0, paddingLeft: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 10 }}>
                   {aiProfile.improvements.map((line, i) => (
-                    <li key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10, fontFamily: f.sans, fontSize: 13.5, lineHeight: 1.55, color: t.coal }}>
+                    <li key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10, fontFamily: f.sans, fontSize: 14, lineHeight: 1.55, color: t.coal }}>
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={t.indigo} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0, marginTop: 4 }}>
                         <line x1="12" y1="20" x2="12" y2="10" />
                         <polyline points="7 14 12 9 17 14" />
@@ -1050,7 +1050,7 @@ export function ProfileReadyState({
                     items.push("Personalised question mix based on your profile");
                   }
                   return items.slice(0, 3).map((line, i) => (
-                    <li key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10, fontFamily: f.sans, fontSize: 13.5, lineHeight: 1.55, color: t.coal }}>
+                    <li key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10, fontFamily: f.sans, fontSize: 14, lineHeight: 1.55, color: t.coal }}>
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={t.indigo} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0, marginTop: 4 }}>
                         <polyline points="20 6 9 17 4 12" />
                       </svg>
@@ -1079,7 +1079,7 @@ export function ProfileReadyState({
                   "Quantified achievements",
                   "Industry & role benchmarking",
                 ].map((line) => (
-                  <li key={line} style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: f.sans, fontSize: 13.5, lineHeight: 1.5, color: t.coal }}>
+                  <li key={line} style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: f.sans, fontSize: 14, lineHeight: 1.5, color: t.coal }}>
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={t.success} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0 }}>
                       <polyline points="20 6 9 17 4 12" />
                     </svg>
@@ -1341,7 +1341,7 @@ function StrengthGapCard({ label, tone, items }: { label: string; tone: "success
       </div>
       <ul style={{ margin: 0, paddingLeft: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 8 }}>
         {items.map((line, i) => (
-          <li key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8, fontFamily: f.sans, fontSize: 13.5, lineHeight: 1.55, color: t.coal }}>
+          <li key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8, fontFamily: f.sans, fontSize: 14, lineHeight: 1.55, color: t.coal }}>
             <span aria-hidden="true" style={{ flexShrink: 0, marginTop: 7, width: 4, height: 4, borderRadius: 999, background: accent }} />
             {line}
           </li>
@@ -1384,7 +1384,7 @@ export function NavigationFooter({
     const isGhost = primaryDisabled;
     const primaryStyle: React.CSSProperties = {
       fontFamily: f.sans,
-      fontSize: 15,
+      fontSize: 16,
       fontWeight: 600,
       color: isGhost ? t.inkFaint : t.cream,
       background: isGhost ? t.creamSoft : t.indigo,

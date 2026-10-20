@@ -247,7 +247,7 @@ export default function AppShellFrame({
                     </AvatarFallback>
                   </Avatar>
                   <span className="group-data-[collapsible=icon]:hidden" style={{ minWidth: 0 }}>
-                    <p style={{ margin: 0, fontFamily: F.sans, fontSize: 13.5, fontWeight: 600, color: c.ink, lineHeight: 1.35, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{account.name}</p>
+                    <p style={{ margin: 0, fontFamily: F.sans, fontSize: 14, fontWeight: 600, color: c.ink, lineHeight: 1.35, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{account.name}</p>
                     <p style={{ margin: 0, fontFamily: F.sans, fontSize: 12, color: c.inkSoft, lineHeight: 1.35, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" }}>{account.subtitle}</p>
                   </span>
                 </span>

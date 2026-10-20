@@ -291,7 +291,7 @@ export const NetworkIndicator = React.memo(function NetworkIndicator() {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 5, padding: "3px 10px", borderRadius: 100, background: "rgba(20,17,10,0.10)", border: `1px solid ${colors[quality]}30` }}>
       <div style={{ width: 6, height: 6, borderRadius: "50%", background: colors[quality], boxShadow: `0 0 6px ${colors[quality]}60` }} />
-      <span style={{ fontFamily: ef.sans, fontSize: 10, fontWeight: 500, color: colors[quality] }}>{labels[quality]}</span>
+      <span style={{ fontFamily: ef.sans, fontSize: 11, fontWeight: 500, color: colors[quality] }}>{labels[quality]}</span>
     </div>
   );
 });
@@ -366,7 +366,7 @@ export const QuestionProgressBar = React.memo(function QuestionProgressBar({ cur
           <div key={i} style={{
             flex: 1, borderRadius: 2, height: 4,
             background: i < current ? e.indigo : i === current ? "oklch(0.359 0.135 278.697 / 0.40)" : "rgba(20,17,10,0.13)",
-            transition: "all 0.4s ease",
+            transition: "background-color 0.4s ease, border-color 0.4s ease, color 0.4s ease, box-shadow 0.4s ease, opacity 0.4s ease, transform 0.4s ease",
           }} />
         ))}
       </div>

@@ -161,7 +161,7 @@ export function DailyChallengeBanner({ challenge, onNavigate }: { challenge: Dai
   return (
     <div role="button" tabIndex={0} aria-label={`Daily Challenge: ${challenge.label}`}
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onNavigate(path); } }}
-      style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 20px", borderRadius: radius.md, background: `oklch(from ${T.indigo} l c h / 0.03)`, border: `1px solid oklch(from ${T.indigo} l c h / 0.08)`, marginBottom: sp.xl, cursor: "pointer", transition: "all 0.2s ease" }}
+      style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 20px", borderRadius: radius.md, background: `oklch(from ${T.indigo} l c h / 0.03)`, border: `1px solid oklch(from ${T.indigo} l c h / 0.08)`, marginBottom: sp.xl, cursor: "pointer", transition: "background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease, transform 0.2s ease" }}
       onClick={() => onNavigate(path)}
       onMouseEnter={(e) => { e.currentTarget.style.background = `oklch(from ${T.indigo} l c h / 0.06)`; e.currentTarget.style.borderColor = `oklch(from ${T.indigo} l c h / 0.15)`; }}
       onMouseLeave={(e) => { e.currentTarget.style.background = `oklch(from ${T.indigo} l c h / 0.03)`; e.currentTarget.style.borderColor = `oklch(from ${T.indigo} l c h / 0.08)`; }}>
@@ -275,7 +275,7 @@ export function AchievementsSection({ badges, isMobile }: { badges: Badge[]; isM
         {sectionTitle("Achievements")}
         <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : `repeat(${Math.min(badges.length, 4)}, 1fr)`, gap: 12, marginTop: 16 }}>
           {badges.map((badge) => (
-            <div key={badge.id} className={badge.earned ? "badge-earned" : ""} style={{ padding: "16px", borderRadius: radius.md, background: badge.earned ? `oklch(from ${T.copper} l c h / 0.03)` : c.obsidian, textAlign: "center", opacity: badge.earned ? 1 : 0.45, transition: "all 0.3s ease", position: "relative", overflow: "hidden" }}
+            <div key={badge.id} className={badge.earned ? "badge-earned" : ""} style={{ padding: "16px", borderRadius: radius.md, background: badge.earned ? `oklch(from ${T.copper} l c h / 0.03)` : c.obsidian, textAlign: "center", opacity: badge.earned ? 1 : 0.45, transition: "background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease, transform 0.3s ease", position: "relative", overflow: "hidden" }}
               onMouseEnter={(e) => { if (!badge.earned) e.currentTarget.style.opacity = "0.7"; if (badge.earned) e.currentTarget.style.boxShadow = `0 0 20px oklch(from ${T.copper} l c h / 0.12)`; }}
               onMouseLeave={(e) => { if (!badge.earned) e.currentTarget.style.opacity = "0.45"; e.currentTarget.style.boxShadow = "none"; }}>
               {badge.earned && <div style={{ position: "absolute", inset: 0, background: `radial-gradient(circle at 50% 30%, oklch(from ${T.copper} l c h / 0.08) 0%, transparent 60%)`, pointerEvents: "none" }} />}

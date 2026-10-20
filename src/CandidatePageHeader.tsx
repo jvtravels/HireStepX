@@ -17,7 +17,7 @@ const TITLE_BLOCK: CSSProperties = { minWidth: 0 };
 const TITLE_BLOCK_FIXED: CSSProperties = { minWidth: 0, flexShrink: 0 };
 const TITLE: CSSProperties = {
   fontFamily: f.sans,
-  fontSize: 26,
+  fontSize: 28,
   lineHeight: "32px",
   fontWeight: 700,
   color: t.coal,

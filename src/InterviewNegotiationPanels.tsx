@@ -1,5 +1,6 @@
 import React, { memo, useState } from "react";
 import { e, ef } from "./interviewTokens";
+import { tokens as t } from "./auth/_tokens";
 import { computeCtcBreakdown, liquidityFactorFromBuybackNote } from "./_ctc-breakdown";
 import { resolveCandidateAskLpa } from "./negotiationDealSummary";
 import { Button } from "@/components/ui/button";
@@ -87,7 +88,7 @@ export const NegotiationCoachingCard = memo(function NegotiationCoachingCard({ o
         <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={e.indigo} strokeWidth="2" strokeLinecap="round">
           <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
         </svg>
-        <span style={{ fontFamily: ef.sans, fontSize: 15, fontWeight: 600, color: e.coal }}>Negotiation Playbook</span>
+        <span style={{ fontFamily: ef.sans, fontSize: 16, fontWeight: 600, color: e.coal }}>Negotiation Playbook</span>
         {negotiationStyle && (
           <span style={{ fontFamily: ef.sans, fontSize: 11, color: e.indigo, padding: "2px 8px", borderRadius: 6, background: "oklch(0.359 0.135 278.697 / 0.16)", marginLeft: "auto" }}>
             {styleLabel} Manager
@@ -413,7 +414,7 @@ export const DealSummaryCard = memo(function DealSummaryCard({ transcript, negot
         ].map(item => (
           <div key={item.label} style={{ flex: 1, minWidth: 80, padding: "10px 12px", borderRadius: 10, background: "rgba(20,17,10,0.07)", border: "1px solid rgba(20,17,10,0.04)" }}>
             <p style={{ fontFamily: ef.sans, fontSize: 11, color: e.inkSoft, margin: 0, textTransform: "uppercase", letterSpacing: "0.05em" }}>{item.label}</p>
-            <p style={{ fontFamily: ef.sans, fontSize: 15, fontWeight: 600, color: item.color, margin: "4px 0 0" }}>{item.value}</p>
+            <p style={{ fontFamily: ef.sans, fontSize: 16, fontWeight: 600, color: item.color, margin: "4px 0 0" }}>{item.value}</p>
           </div>
         ))}
       </div>
@@ -714,7 +715,7 @@ export const NegotiationLiveDashboard = memo(function NegotiationLiveDashboard({
                     data-testid="zopa-highest-offer"
                     style={{
                       position: "absolute", left: `${pct(highestOffer)}%`, top: 0, bottom: 0,
-                      width: 3, background: "#7e22ce", borderRadius: 2, zIndex: 3,
+                      width: 3, background: t.violet, borderRadius: 2, zIndex: 3,
                       transform: "translateX(-50%)",
                     }}
                   />
@@ -733,7 +734,7 @@ export const NegotiationLiveDashboard = memo(function NegotiationLiveDashboard({
                     data-testid="zopa-candidate-target"
                     style={{
                       position: "absolute", left: `${pct(targetForMarker)}%`, top: "50%",
-                      width: 10, height: 10, background: "#2563eb",
+                      width: 10, height: 10, background: t.info,
                       transform: "translate(-50%, -50%) rotate(45deg)", zIndex: 4,
                       borderRadius: 1,
                     }}

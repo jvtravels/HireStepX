@@ -33,8 +33,8 @@ import { isInterviewInvite } from "./interviewInvite";
 /* Same surface as the employer console's <Card> (white, 1px line, 16px
    radius, 24px padding, flat) so the two detail screens read as one product. */
 const PANEL_STYLE = { background: t.white, border: `1px solid ${t.line}`, borderRadius: 16, padding: 24, minWidth: 0 } as const;
-const SECTION_HEADING_STYLE = { fontFamily: f.sans, fontSize: 15, fontWeight: 600, color: t.coal, margin: "0 0 8px" } as const;
-const HEADING_FLUSH_STYLE = { fontFamily: f.sans, fontSize: 15, fontWeight: 600, color: t.coal, margin: 0 } as const;
+const SECTION_HEADING_STYLE = { fontFamily: f.sans, fontSize: 16, fontWeight: 600, color: t.coal, margin: "0 0 8px" } as const;
+const HEADING_FLUSH_STYLE = { fontFamily: f.sans, fontSize: 16, fontWeight: 600, color: t.coal, margin: 0 } as const;
 const ACTION_STACK_STYLE = { display: "flex", flexDirection: "column", gap: 8, marginTop: 12 } as const;
 const ACTION_TOP_STYLE = { marginTop: 12 } as const;
 const BODY_TEXT_STYLE = { fontFamily: f.sans, fontSize: 14, color: t.coal, margin: 0, lineHeight: 1.6, whiteSpace: "pre-line", overflowWrap: "anywhere" } as const;
@@ -87,7 +87,7 @@ function Detail({ icon, label, value, muted }: { icon: React.ReactNode; label: s
       <IconTile>{icon}</IconTile>
       <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
         <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkFaint }}>{label}</span>
-        <span style={{ fontFamily: f.sans, fontSize: 13.5, fontWeight: 500, color: muted ? t.inkFaint : t.coal, fontStyle: muted ? "italic" : "normal", overflowWrap: "anywhere" }}>{value}</span>
+        <span style={{ fontFamily: f.sans, fontSize: 14, fontWeight: 500, color: muted ? t.inkFaint : t.coal, fontStyle: muted ? "italic" : "normal", overflowWrap: "anywhere" }}>{value}</span>
       </div>
     </div>
   );
@@ -121,9 +121,9 @@ function CompanyCard({ job, onMessage, actions, response }: {
       <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
         <CompanyAvatar job={job} size={48} />
         <div style={{ minWidth: 0 }}>
-          <div style={{ fontFamily: f.sans, fontSize: 15, fontWeight: 700, color: t.coal, wordBreak: "break-word" }}>{job.companyName}</div>
+          <div style={{ fontFamily: f.sans, fontSize: 16, fontWeight: 700, color: t.coal, wordBreak: "break-word" }}>{job.companyName}</div>
           {job.preferredIndustry && (
-            <div style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkFaint, marginTop: 2 }}>{job.preferredIndustry}</div>
+            <div style={{ fontFamily: f.sans, fontSize: 12, color: t.inkFaint, marginTop: 2 }}>{job.preferredIndustry}</div>
           )}
         </div>
         <div style={{ marginLeft: "auto", flexShrink: 0 }}>{actions}</div>
@@ -143,7 +143,7 @@ function CompanyCard({ job, onMessage, actions, response }: {
               {websiteHost}
             </a>
           )}
-          <p style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft, margin: 0, lineHeight: 1.5 }}>
+          <p style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, margin: 0, lineHeight: 1.5 }}>
             This employer has viewed your profile and can reach you directly.
           </p>
           <Button variant="outline" size="sm" onClick={onMessage} style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -153,7 +153,7 @@ function CompanyCard({ job, onMessage, actions, response }: {
       ) : (
         <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
           <LockIcon size={14} color={t.inkFaint} aria-hidden="true" style={{ marginTop: 2, flexShrink: 0 }} />
-          <p style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft, margin: 0, lineHeight: 1.5 }}>
+          <p style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, margin: 0, lineHeight: 1.5 }}>
             Company details are shared once this employer shows interest. You can't apply to this role; they'll reach out if you're a fit.
           </p>
         </div>
@@ -300,7 +300,7 @@ export default function JobDetailPage() {
           </div>
 
           {!job.unlocked && job.matchReason && (
-            <p style={{ fontFamily: f.sans, fontSize: 13.5, color: t.inkSoft, margin: "16px 0 0", lineHeight: 1.5 }}>{job.matchReason}</p>
+            <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft, margin: "16px 0 0", lineHeight: 1.5 }}>{job.matchReason}</p>
           )}
 
           <div style={{ marginTop: 20, paddingTop: 20, borderTop: `1px solid ${t.line}`, display: "flex", flexDirection: "column", gap: 20 }}>
@@ -311,7 +311,7 @@ export default function JobDetailPage() {
               {job.skills.length > 0 ? (
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                   {job.skills.map((s, i) => (
-                    <span key={i} style={{ fontFamily: f.sans, fontSize: 12.5, color: t.coal, background: t.cream, border: `1px solid ${t.line}`, padding: "4px 10px", borderRadius: 999 }}>
+                    <span key={i} style={{ fontFamily: f.sans, fontSize: 12, color: t.coal, background: t.cream, border: `1px solid ${t.line}`, padding: "4px 10px", borderRadius: 999 }}>
                       {s}
                     </span>
                   ))}
@@ -346,7 +346,7 @@ export default function JobDetailPage() {
               {job.perksAndBenefits.length > 0 ? (
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                   {job.perksAndBenefits.map((p, i) => (
-                    <span key={i} style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft, border: `1px solid ${t.line}`, padding: "4px 10px", borderRadius: 999 }}>
+                    <span key={i} style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, border: `1px solid ${t.line}`, padding: "4px 10px", borderRadius: 999 }}>
                       {p}
                     </span>
                   ))}

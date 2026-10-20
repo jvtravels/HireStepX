@@ -1479,7 +1479,7 @@ input[type="range"]::-moz-range-thumb {
   .iv-reconnecting > div { padding: 24px 20px 20px !important; }
   /* ContextChip — tighten on phone so the 3-segment chip stays one
      visual unit and doesn't push other topbar items off-screen. */
-  .iv-canvas-contextchip { font-size: 9.5px !important; gap: 6px !important; padding: 4px 8px !important; max-width: 60vw !important; letter-spacing: 1.2px !important; }
+  .iv-canvas-contextchip { font-size: 11px !important; gap: 6px !important; padding: 4px 8px !important; max-width: 60vw !important; letter-spacing: 1.2px !important; }
   /* Self-view tile becomes smaller card with a softer position */
   .iv-canvas-selfview { width: 110px !important; height: 72px !important; right: 12px !important; bottom: 92px !important; }
 }

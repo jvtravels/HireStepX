@@ -154,7 +154,7 @@ export default function OnboardingComplete() {
               fontFamily: font.ui, fontSize: 12, fontWeight: 500, color: c.stone,
               background: c.graphite, border: `1px solid ${c.border}`, borderRadius: 8,
               padding: "8px 16px", gap: 6,
-              transition: "all 0.2s",
+              transition: "background-color 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s, opacity 0.2s, transform 0.2s",
             }}
               onMouseEnter={(e) => { e.currentTarget.style.borderColor = "rgba(49,46,129,0.3)"; e.currentTarget.style.color = c.ivory; }}
               onMouseLeave={(e) => { e.currentTarget.style.borderColor = c.border; e.currentTarget.style.color = c.stone; }}
@@ -174,7 +174,7 @@ export default function OnboardingComplete() {
               fontFamily: font.ui, fontSize: 12, fontWeight: 500, color: c.stone,
               background: c.graphite, border: `1px solid ${c.border}`, borderRadius: 8,
               padding: "8px 16px", gap: 6,
-              transition: "all 0.2s",
+              transition: "background-color 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s, opacity 0.2s, transform 0.2s",
             }}
               onMouseEnter={(e) => { e.currentTarget.style.borderColor = "rgba(49,46,129,0.3)"; e.currentTarget.style.color = c.ivory; }}
               onMouseLeave={(e) => { e.currentTarget.style.borderColor = c.border; e.currentTarget.style.color = c.stone; }}
@@ -194,7 +194,7 @@ export default function OnboardingComplete() {
               fontFamily: font.ui, fontSize: 12, fontWeight: 500, color: c.stone,
               background: c.graphite, border: `1px solid ${c.border}`, borderRadius: 8,
               padding: "8px 16px", gap: 6,
-              transition: "all 0.2s",
+              transition: "background-color 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s, opacity 0.2s, transform 0.2s",
             }}
               onMouseEnter={(e) => { e.currentTarget.style.borderColor = "rgba(49,46,129,0.3)"; e.currentTarget.style.color = c.ivory; }}
               onMouseLeave={(e) => { e.currentTarget.style.borderColor = c.border; e.currentTarget.style.color = c.stone; }}
@@ -232,7 +232,7 @@ export default function OnboardingComplete() {
                 style={{
                   fontFamily: font.ui, fontSize: 12, fontWeight: 600, padding: "8px 20px", borderRadius: 8,
                   background: "rgba(49,46,129,0.15)", color: T.indigo,
-                  transition: "all 0.2s",
+                  transition: "background-color 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s, opacity 0.2s, transform 0.2s",
                 }}
                 onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(49,46,129,0.25)"; }}
                 onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(49,46,129,0.15)"; }}
@@ -283,7 +283,7 @@ export default function OnboardingComplete() {
                 style={{
                   fontFamily: font.ui, fontSize: 14, fontWeight: 600, padding: "12px 32px", borderRadius: 8,
                   background: `linear-gradient(135deg, ${T.indigo}, ${T.indigoDeep})`, color: c.obsidian,
-                  boxShadow: "0 8px 32px rgba(49,46,129,0.25)", transition: "all 0.2s",
+                  boxShadow: "0 8px 32px rgba(49,46,129,0.25)", transition: "background-color 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s, opacity 0.2s, transform 0.2s",
                 }}
                 onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 12px 40px rgba(49,46,129,0.35)"; }}
                 onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 8px 32px rgba(49,46,129,0.25)"; }}

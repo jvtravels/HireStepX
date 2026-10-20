@@ -174,7 +174,7 @@ export function EditorialCard({ children, density = "default" }: { children: Rea
 export function PageHeader({ title, desc }: { title: string; desc: string }) {
   return (
     <div style={{ padding: "20px 28px", borderBottom: `1px solid ${c.border}` }}>
-      <h1 style={{ fontFamily: font.ui, fontSize: 20, fontWeight: 600, color: c.ink, margin: 0, letterSpacing: "-0.01em" }}>{title}</h1>
+      <h1 style={{ fontFamily: font.ui, fontSize: 22, fontWeight: 600, color: c.ink, margin: 0, letterSpacing: "-0.01em" }}>{title}</h1>
       <p style={{ fontFamily: font.ui, fontSize: 14, color: c.inkSoft, margin: "4px 0 0" }}>{desc}</p>
     </div>
   );
@@ -476,7 +476,7 @@ export const PortfolioLinksSection = memo(function PortfolioLinksSection(props: 
                 <PortfolioLinkIcon url={link.url} size={16} />
               </span>
               <a href={link.url} target="_blank" rel="noopener noreferrer" style={{ minWidth: 0, flex: 1, textDecoration: "none" }}>
-                <div style={{ fontFamily: font.ui, fontSize: 13.5, fontWeight: 600, color: c.ink, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                <div style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: c.ink, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                   {link.title}
                 </div>
                 <div style={{ fontFamily: font.ui, fontSize: 12, color: c.inkSoft, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
@@ -513,7 +513,7 @@ export const PortfolioLinksSection = memo(function PortfolioLinksSection(props: 
           {links.length === 0 ? (
             <button type="button" style={{
               display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-              fontFamily: font.ui, fontSize: 13.5, fontWeight: 600, color: c.inkSoft,
+              fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: c.inkSoft,
               background: "transparent", border: `1.5px dashed ${c.borderStrong}`, borderRadius: 8,
               padding: "18px 14px", cursor: "pointer", width: "100%",
             }}>
@@ -537,7 +537,7 @@ export const PortfolioLinksSection = memo(function PortfolioLinksSection(props: 
           <DialogTitle style={{ fontFamily: font.ui, fontSize: 16, fontWeight: 700, color: c.ink, margin: "0 0 4px" }}>
             Add a portfolio link
           </DialogTitle>
-          <DialogDescription style={{ fontFamily: font.ui, fontSize: 12.5, color: c.inkSoft, margin: "0 0 18px" }}>
+          <DialogDescription style={{ fontFamily: font.ui, fontSize: 12, color: c.inkSoft, margin: "0 0 18px" }}>
             GitHub, Dribbble, LinkedIn, Behance, Notion, or any URL.
           </DialogDescription>
 
@@ -898,7 +898,7 @@ export const PlanUsageSection = memo(function PlanUsageSection(props: PlanUsageS
           flex: "0 1 300px", minWidth: 240, background: c.creamSoft, borderLeft: `1px solid ${c.border}`, borderTop: `1px solid ${c.border}`,
           padding: "24px 28px", display: "flex", flexDirection: "column", justifyContent: "center", gap: 10,
         }}>
-          <div style={{ fontFamily: font.ui, fontSize: 17, fontWeight: 700, color: c.ink }}>{creditBalance} Extra Session{creditBalance === 1 ? "" : "s"}</div>
+          <div style={{ fontFamily: font.ui, fontSize: 16, fontWeight: 700, color: c.ink }}>{creditBalance} Extra Session{creditBalance === 1 ? "" : "s"}</div>
           <div style={{ fontFamily: font.ui, fontSize: 12, color: c.inkSoft }}>Available anytime · Never expire</div>
           <div style={{ marginTop: 8 }}>
             {!isPaid ? (
@@ -952,7 +952,10 @@ export const PlanUsageSection = memo(function PlanUsageSection(props: PlanUsageS
             ))}
           </div>
         ) : payments.length === 0 ? (
-          <div style={{ fontFamily: font.ui, fontSize: 13, color: c.inkSoft, padding: "16px 0" }}>No payments yet.</div>
+          <div className="flex flex-col items-center gap-1 rounded-xl border border-dashed border-hx-line px-5 py-8 text-center">
+            <p className="m-0 text-sm font-semibold text-hx-coal">No payments yet</p>
+            <p className="m-0 text-xs text-hx-ink-soft">Receipts for plan upgrades and session top-ups will appear here.</p>
+          </div>
         ) : (
           <div style={{ border: `1px solid ${c.border}`, borderRadius: 12, overflow: "hidden" }}>
             <Table>

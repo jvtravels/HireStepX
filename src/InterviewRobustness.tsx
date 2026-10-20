@@ -43,7 +43,7 @@ export const PaceMeter = memo(function PaceMeter({ seconds, ideal = { min: 60, m
         <span aria-hidden style={{ position: "absolute", left: `${idealStartPct}%`, width: `${idealEndPct - idealStartPct}%`, top: 0, bottom: 0, background: e.success100 }} />
         <span aria-hidden style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${pct}%`, background: tint, opacity: 0.9, transition: "width 240ms ease, background 240ms ease" }} />
       </div>
-      <div style={{ display: "flex", justifyContent: "space-between", fontFamily: ef.mono, fontSize: 9, textTransform: "uppercase", letterSpacing: 1.2, color: e.inkSoft }}>
+      <div style={{ display: "flex", justifyContent: "space-between", fontFamily: ef.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1.2, color: e.inkSoft }}>
         <span>{Math.floor(seconds)}s spoken</span>
         <span style={{ color: tint }}>{labelMap[zone]}</span>
       </div>
@@ -251,7 +251,7 @@ export const ReconnectingOverlay = memo(function ReconnectingOverlay({ attempt =
         <div style={{
           marginTop: 18, display: "inline-flex", alignItems: "center", gap: 8,
           padding: "5px 12px", background: e.creamSoft, border: `1px solid ${e.line}`,
-          borderRadius: 999, fontFamily: ef.mono, fontSize: 10,
+          borderRadius: 999, fontFamily: ef.mono, fontSize: 11,
           textTransform: "uppercase", letterSpacing: 1.2, color: e.inkSoft,
         }}>
           <span style={{ width: 5, height: 5, borderRadius: 999, background: e.indigo }} />

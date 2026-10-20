@@ -20,17 +20,17 @@ const LEVEL_STYLE: Record<MatchFactorLevel, { label: string; color: string; back
   gap: { label: "Gap", color: t.inkSoft, background: t.creamSoft },
 };
 
-const HEADING = { fontFamily: f.sans, fontSize: 15, fontWeight: 600, color: t.coal, margin: "0 0 8px" } as const;
+const HEADING = { fontFamily: f.sans, fontSize: 16, fontWeight: 600, color: t.coal, margin: "0 0 8px" } as const;
 const LIST = { listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 8 } as const;
-const ROW = { display: "flex", alignItems: "center", gap: 10, fontFamily: f.sans, fontSize: 13.5, color: t.inkSoft, lineHeight: 1.4 } as const;
-const CHIP_BASE = { fontFamily: f.sans, fontSize: 11.5, fontWeight: 600, padding: "2px 8px", borderRadius: 999, flexShrink: 0, minWidth: 54, textAlign: "center" } as const;
+const ROW = { display: "flex", alignItems: "center", gap: 10, fontFamily: f.sans, fontSize: 14, color: t.inkSoft, lineHeight: 1.4 } as const;
+const CHIP_BASE = { fontFamily: f.sans, fontSize: 12, fontWeight: 600, padding: "2px 8px", borderRadius: 999, flexShrink: 0, minWidth: 54, textAlign: "center" } as const;
 const chip = (color: string, background: string) => ({ ...CHIP_BASE, color, background });
 const FACTOR_LABEL = { fontWeight: 600, color: t.coal } as const;
 const SKILLS = { display: "flex", flexWrap: "wrap", gap: 6, marginTop: 12 } as const;
-const SKILL_BASE = { fontFamily: f.sans, fontSize: 12.5, padding: "4px 10px", borderRadius: 999 } as const;
+const SKILL_BASE = { fontFamily: f.sans, fontSize: 12, padding: "4px 10px", borderRadius: 999 } as const;
 const SKILL_YES = { ...SKILL_BASE, color: t.successInk, background: t.success100 } as const;
 const SKILL_NO = { ...SKILL_BASE, color: t.inkSoft, background: t.cream, border: `1px dashed ${t.line}` } as const;
-const HINT = { fontFamily: f.sans, fontSize: 12.5, color: t.inkFaint, margin: "8px 0 0", lineHeight: 1.5 } as const;
+const HINT = { fontFamily: f.sans, fontSize: 12, color: t.inkFaint, margin: "8px 0 0", lineHeight: 1.5 } as const;
 
 export function MatchFactorsCard({ data }: { data: MatchFactors }) {
   if (data.factors.length === 0) return null;

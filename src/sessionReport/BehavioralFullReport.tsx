@@ -296,7 +296,7 @@ function StarMatrix({ rows }: { rows: BehavioralStarRow[] }) {
                 </div>
               );
             })}
-            <div style={{ fontSize: 12.5, color: t.inkSoft, lineHeight: 1.45 }}>
+            <div style={{ fontSize: 12, color: t.inkSoft, lineHeight: 1.45 }}>
               {rowCoach[k]}
             </div>
           </React.Fragment>
@@ -526,7 +526,7 @@ function TranscriptRow({ row }: { row: BehavioralTranscriptRow }) {
       >
         {row.questionId}
       </span>
-      <span style={{ flex: 1, fontSize: 13.5, color: t.coal }}>{row.topic}</span>
+      <span style={{ flex: 1, fontSize: 14, color: t.coal }}>{row.topic}</span>
       <span style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
         {row.pills.map((pill) => (
           <StatusPill key={pill.label} label={pill.label} tone={pill.tone} />
@@ -697,10 +697,10 @@ export default function BehavioralFullReport({
             >
               ONE HABIT TO FIX
             </span>
-            <div style={{ fontSize: 15, fontWeight: 600, color: t.coal, lineHeight: 1.4 }}>
+            <div style={{ fontSize: 16, fontWeight: 600, color: t.coal, lineHeight: 1.4 }}>
               {data.oneHabit.headline}
             </div>
-            <div style={{ fontSize: 12.5, color: t.inkSoft, lineHeight: 1.5 }}>
+            <div style={{ fontSize: 12, color: t.inkSoft, lineHeight: 1.5 }}>
               {data.oneHabit.rationale}
             </div>
           </div>
@@ -765,7 +765,7 @@ export default function BehavioralFullReport({
                   background: t.creamSoft,
                   borderRadius: 8,
                   padding: 12,
-                  fontSize: 12.5,
+                  fontSize: 12,
                   color: t.inkSoft,
                   lineHeight: 1.5,
                   fontStyle: "italic",
@@ -905,7 +905,7 @@ export default function BehavioralFullReport({
                       borderLeft: `3px solid ${t.copper}`,
                       background: t.copper100,
                       fontStyle: "italic",
-                      fontSize: 13.5,
+                      fontSize: 14,
                       color: t.coal,
                       lineHeight: 1.5,
                     }}
@@ -939,7 +939,7 @@ export default function BehavioralFullReport({
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            fontSize: 12.5,
+            fontSize: 12,
             color: t.inkSoft,
             flexWrap: "wrap",
             gap: 8,

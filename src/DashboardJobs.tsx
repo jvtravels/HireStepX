@@ -225,7 +225,7 @@ function JobCard({ r, onOpen, opening }: { r: JobMatch; onOpen: () => void; open
         <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
           <CompanyAvatar job={r} size={36} />
           <div style={{ minWidth: 0, flex: 1 }}>
-            <div style={{ fontFamily: f.sans, fontSize: 15, fontWeight: 600, color: t.coal, wordBreak: "break-word" }}>{r.roleTitle}</div>
+            <div style={{ fontFamily: f.sans, fontSize: 16, fontWeight: 600, color: t.coal, wordBreak: "break-word" }}>{r.roleTitle}</div>
             <div style={{ fontFamily: f.sans, fontSize: 13, color: t.inkFaint, wordBreak: "break-word" }}>
               {r.companyName}{r.preferredIndustry ? ` · ${r.preferredIndustry}` : ""}
             </div>
@@ -458,7 +458,7 @@ export default function DashboardJobs() {
     shortlisted === 0 ? (
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10, padding: "56px 24px", flex: 1, textAlign: "center" }}>
         <BriefcaseIcon size={26} color={t.inkFaint} aria-hidden="true" />
-        <p style={{ fontFamily: f.sans, fontSize: 14.5, fontWeight: 600, color: t.coal, margin: 0 }}>No matches yet</p>
+        <p style={{ fontFamily: f.sans, fontSize: 14, fontWeight: 600, color: t.coal, margin: 0 }}>No matches yet</p>
         <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkFaint, margin: 0, lineHeight: 1.5, maxWidth: 380 }}>
           Jobs show up here when your profile matches an open role, or when an employer shows interest in you. You can't apply; employers come to you.
           Complete your resume, keep practising, and stay visible to employers to be matched sooner.
@@ -521,8 +521,8 @@ export default function DashboardJobs() {
                   <TableCell colSpan={8} style={{ padding: "40px 14px" }}>
                     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
                       <SearchXIcon size={22} color={t.inkFaint} aria-hidden="true" />
-                      <p style={{ fontFamily: f.sans, fontSize: 13.5, fontWeight: 600, color: t.coal, margin: 0 }}>No opportunities match these filters</p>
-                      <p style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkFaint, margin: 0 }}>Try adjusting or clearing your filters.</p>
+                      <p style={{ fontFamily: f.sans, fontSize: 14, fontWeight: 600, color: t.coal, margin: 0 }}>No opportunities match these filters</p>
+                      <p style={{ fontFamily: f.sans, fontSize: 12, color: t.inkFaint, margin: 0 }}>Try adjusting or clearing your filters.</p>
                       <Button
                         variant="outline"
                         onClick={clearAllFilters}

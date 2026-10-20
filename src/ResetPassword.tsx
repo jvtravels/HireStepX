@@ -623,7 +623,7 @@ export default function ResetPassword() {
                 style={{
                   width: "100%",
                   fontFamily: ft.sans,
-                  fontSize: 15,
+                  fontSize: 16,
                   fontWeight: 600,
                   color: t.cream,
                   background: t.indigo,
@@ -1088,7 +1088,7 @@ export default function ResetPassword() {
                         style={{
                           width: "100%",
                           fontFamily: ft.sans,
-                          fontSize: 15,
+                          fontSize: 16,
                           fontWeight: 600,
                           color: isGhost ? t.inkFaint : t.cream,
                           background: isGhost ? t.creamSoft : t.indigo,

@@ -44,7 +44,7 @@ function ratingBadge(rating: string | undefined): { label: string; color: string
   switch (rating) {
     case "strong": return { label: "Strong", color: c.sage, bg: "rgba(21,128,61,0.1)" };
     case "good": return { label: "Good", color: T.copper, bg: "rgba(180,83,9,0.1)" };
-    case "partial": return { label: "Partial", color: "#E89B5A", bg: "rgba(232,155,90,0.1)" };
+    case "partial": return { label: "Partial", color: T.warning, bg: T.warning100 };
     case "weak": return { label: "Weak", color: c.ember, bg: "rgba(185,28,28,0.1)" };
     default: return { label: "Reviewed", color: c.stone, bg: "rgba(142,137,131,0.1)" };
   }
@@ -172,15 +172,15 @@ export const SessionHeader = memo(function SessionHeader({ type, dateLabel, scor
         </div>
       </div>
       <div style={{ textAlign: "center", flexShrink: 0 }}>
-        <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: c.stone, display: "block", marginBottom: 8 }}>Overall Score</span>
+        <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: c.stone, display: "block", marginBottom: 8 }}>Overall Score</span>
         <div role="img" aria-label={`Score ${score} out of 100 — ${scoreLabel(score)}`} style={{
           width: 72, height: 72, borderRadius: "50%",
           border: `3px solid ${scoreLabelColor(score)}`,
           display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
           boxShadow: `0 0 24px ${scoreLabelColor(score)}20`,
         }}>
-          <span aria-hidden="true" style={{ fontFamily: font.mono, fontSize: 24, fontWeight: 700, color: c.ivory, lineHeight: 1 }}>{score}</span>
-          <span aria-hidden="true" style={{ fontSize: 10, color: scoreLabelColor(score), fontWeight: 600 }}>/100</span>
+          <span aria-hidden="true" style={{ fontFamily: font.mono, fontSize: 22, fontWeight: 700, color: c.ivory, lineHeight: 1 }}>{score}</span>
+          <span aria-hidden="true" style={{ fontSize: 11, color: scoreLabelColor(score), fontWeight: 600 }}>/100</span>
         </div>
         <span title={scoreTip(score)} style={{ fontSize: 11, fontWeight: 600, color: scoreLabelColor(score), marginTop: 6, display: "block", cursor: "help" }}>
           {scoreLabel(score)}
@@ -244,15 +244,15 @@ export const SpeechMetricsSection = memo(function SpeechMetricsSection({ metrics
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
             <div>
               <span style={{ fontSize: 11, fontWeight: 600, color: c.chalk, display: "block" }}>Filler Words</span>
-              <span style={{ fontSize: 10, color: c.stone }}>Per Minute</span>
+              <span style={{ fontSize: 11, color: c.stone }}>Per Minute</span>
             </div>
-            <span style={{ fontFamily: font.mono, fontSize: 24, fontWeight: 700, color: metrics.fillerPerMin <= 3 ? c.sage : metrics.fillerPerMin <= 6 ? T.copper : c.ember }}>
+            <span style={{ fontFamily: font.mono, fontSize: 22, fontWeight: 700, color: metrics.fillerPerMin <= 3 ? c.sage : metrics.fillerPerMin <= 6 ? T.copper : c.ember }}>
               {metrics.fillerPerMin}
             </span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
-            <span style={{ fontSize: 10, color: c.stone }}>Total detected:</span>
-            <span style={{ fontSize: 10, fontWeight: 600, color: metrics.fillerCount > 0 ? c.ember : c.sage, background: metrics.fillerCount > 0 ? "rgba(185,28,28,0.1)" : "rgba(21,128,61,0.1)", padding: "1px 6px", borderRadius: 4 }}>{metrics.fillerCount}</span>
+            <span style={{ fontSize: 11, color: c.stone }}>Total detected:</span>
+            <span style={{ fontSize: 11, fontWeight: 600, color: metrics.fillerCount > 0 ? c.ember : c.sage, background: metrics.fillerCount > 0 ? "rgba(185,28,28,0.1)" : "rgba(21,128,61,0.1)", padding: "1px 6px", borderRadius: 4 }}>{metrics.fillerCount}</span>
           </div>
           {metrics.fillerBreakdown.length > 0 && (
             <div>
@@ -262,7 +262,7 @@ export const SpeechMetricsSection = memo(function SpeechMetricsSection({ metrics
                 onClick={onToggleFillerBreakdown}
                 aria-expanded={showFillerBreakdown}
                 style={{
-                  fontSize: 10, color: c.stone, background: "rgba(255,255,255,0.03)", borderColor: c.border,
+                  fontSize: 11, color: c.stone, background: "rgba(255,255,255,0.03)", borderColor: c.border,
                   width: "100%", justifyContent: "space-between",
                 }}
               >
@@ -275,7 +275,7 @@ export const SpeechMetricsSection = memo(function SpeechMetricsSection({ metrics
               {showFillerBreakdown && (
                 <div style={{ marginTop: 6, display: "flex", flexDirection: "column", gap: 3 }}>
                   {metrics.fillerBreakdown.map(({ word, count }) => (
-                    <div key={word} style={{ display: "flex", justifyContent: "space-between", fontSize: 10 }}>
+                    <div key={word} style={{ display: "flex", justifyContent: "space-between", fontSize: 11 }}>
                       <span style={{ color: c.stone, fontWeight: 600 }}>"{word}"</span>
                       <span style={{ fontFamily: font.mono, color: c.chalk, fontWeight: 600 }}>{count}x</span>
                     </div>
@@ -284,7 +284,7 @@ export const SpeechMetricsSection = memo(function SpeechMetricsSection({ metrics
               )}
             </div>
           )}
-          <div style={{ marginTop: 6, fontSize: 10, color: c.stone }}>Target: 0-3/min</div>
+          <div style={{ marginTop: 6, fontSize: 11, color: c.stone }}>Target: 0-3/min</div>
         </div>
 
         {/* Silence Ratio */}
@@ -292,17 +292,17 @@ export const SpeechMetricsSection = memo(function SpeechMetricsSection({ metrics
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
             <div>
               <span style={{ fontSize: 11, fontWeight: 600, color: c.chalk, display: "block" }}>Silence Ratio</span>
-              <span style={{ fontSize: 10, color: c.stone }}>Speaking Continuity</span>
+              <span style={{ fontSize: 11, color: c.stone }}>Speaking Continuity</span>
             </div>
-            <span style={{ fontFamily: font.mono, fontSize: 24, fontWeight: 700, color: metrics.silenceRatio <= 30 ? c.sage : metrics.silenceRatio <= 50 ? T.copper : c.ember }}>
+            <span style={{ fontFamily: font.mono, fontSize: 22, fontWeight: 700, color: metrics.silenceRatio <= 30 ? c.sage : metrics.silenceRatio <= 50 ? T.copper : c.ember }}>
               {metrics.silenceRatio}<span style={{ fontSize: 14 }}>%</span>
             </span>
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-            <div><span style={{ fontSize: 10, color: c.stone, display: "block" }}>Lowest</span><span style={{ fontFamily: font.mono, fontSize: 11, color: c.chalk }}>{Math.max(0, metrics.silenceRatio - 12)}</span></div>
-            <div style={{ textAlign: "right" }}><span style={{ fontSize: 10, color: c.stone, display: "block" }}>Highest</span><span style={{ fontFamily: font.mono, fontSize: 11, color: c.chalk }}>{Math.min(100, metrics.silenceRatio + 18)}</span></div>
+            <div><span style={{ fontSize: 11, color: c.stone, display: "block" }}>Lowest</span><span style={{ fontFamily: font.mono, fontSize: 11, color: c.chalk }}>{Math.max(0, metrics.silenceRatio - 12)}</span></div>
+            <div style={{ textAlign: "right" }}><span style={{ fontSize: 11, color: c.stone, display: "block" }}>Highest</span><span style={{ fontFamily: font.mono, fontSize: 11, color: c.chalk }}>{Math.min(100, metrics.silenceRatio + 18)}</span></div>
           </div>
-          <div style={{ fontSize: 10, color: c.stone }}>Target: 0-20%</div>
+          <div style={{ fontSize: 11, color: c.stone }}>Target: 0-20%</div>
         </div>
 
         {/* Energy */}
@@ -310,17 +310,17 @@ export const SpeechMetricsSection = memo(function SpeechMetricsSection({ metrics
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
             <div>
               <span style={{ fontSize: 11, fontWeight: 600, color: c.chalk, display: "block" }}>Energy</span>
-              <span style={{ fontSize: 10, color: c.stone }}>Voice Dynamics</span>
+              <span style={{ fontSize: 11, color: c.stone }}>Voice Dynamics</span>
             </div>
-            <span style={{ fontFamily: font.mono, fontSize: 24, fontWeight: 700, color: metrics.energy >= 70 ? c.sage : metrics.energy >= 50 ? T.copper : c.ember }}>
+            <span style={{ fontFamily: font.mono, fontSize: 22, fontWeight: 700, color: metrics.energy >= 70 ? c.sage : metrics.energy >= 50 ? T.copper : c.ember }}>
               {metrics.energy}<span style={{ fontSize: 14, color: c.stone }}>/100</span>
             </span>
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-            <div><span style={{ fontSize: 10, color: c.stone, display: "block" }}>Lowest</span><span style={{ fontFamily: font.mono, fontSize: 11, color: c.chalk }}>{Math.max(0, metrics.energy - 20)}</span></div>
-            <div style={{ textAlign: "right" }}><span style={{ fontSize: 10, color: c.stone, display: "block" }}>Highest</span><span style={{ fontFamily: font.mono, fontSize: 11, color: c.chalk }}>{Math.min(100, metrics.energy + 10)}</span></div>
+            <div><span style={{ fontSize: 11, color: c.stone, display: "block" }}>Lowest</span><span style={{ fontFamily: font.mono, fontSize: 11, color: c.chalk }}>{Math.max(0, metrics.energy - 20)}</span></div>
+            <div style={{ textAlign: "right" }}><span style={{ fontSize: 11, color: c.stone, display: "block" }}>Highest</span><span style={{ fontFamily: font.mono, fontSize: 11, color: c.chalk }}>{Math.min(100, metrics.energy + 10)}</span></div>
           </div>
-          <div style={{ fontSize: 10, color: c.stone }}>Target: 60-100</div>
+          <div style={{ fontSize: 11, color: c.stone }}>Target: 60-100</div>
         </div>
 
         {/* Pace */}
@@ -328,18 +328,18 @@ export const SpeechMetricsSection = memo(function SpeechMetricsSection({ metrics
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
             <div>
               <span style={{ fontSize: 11, fontWeight: 600, color: c.chalk, display: "block" }}>Pace</span>
-              <span style={{ fontSize: 10, color: c.stone }}>Speaking Speed</span>
+              <span style={{ fontSize: 11, color: c.stone }}>Speaking Speed</span>
             </div>
-            <span style={{ fontFamily: font.mono, fontSize: 24, fontWeight: 700, color: metrics.pace >= 130 && metrics.pace <= 180 ? c.sage : T.copper }}>
+            <span style={{ fontFamily: font.mono, fontSize: 22, fontWeight: 700, color: metrics.pace >= 130 && metrics.pace <= 180 ? c.sage : T.copper }}>
               {metrics.pace}<span style={{ fontSize: 12, color: c.stone }}> wpm</span>
             </span>
           </div>
           <div style={{ padding: "6px 10px", borderRadius: 6, background: "rgba(255,255,255,0.02)", border: `1px solid ${c.border}`, marginBottom: 6 }}>
-            <span style={{ fontSize: 10, color: c.chalk }}>
+            <span style={{ fontSize: 11, color: c.chalk }}>
               {metrics.pace < 130 ? "Slightly slow. Try to speak faster." : metrics.pace > 180 ? "Fast. Try to slow down." : "Good pace. Natural and clear."}
             </span>
           </div>
-          <div style={{ fontSize: 10, color: c.stone }}>Target: 130-180 wpm</div>
+          <div style={{ fontSize: 11, color: c.stone }}>Target: 130-180 wpm</div>
         </div>
       </div>
     </Section>
@@ -373,15 +373,15 @@ export const ResponseAnalysis = memo(function ResponseAnalysis({ items }: { item
                   <span style={{ fontSize: 11, fontWeight: 700, color: c.slate }}>Q{i + 1}</span>
                 </div>
                 <div style={{ flex: 1 }}>
-                  <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: c.slate, display: "block", marginBottom: 4 }}>Interview Question</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: c.slate, display: "block", marginBottom: 4 }}>Interview Question</span>
                   <p style={{ fontSize: 14, fontWeight: 500, color: c.ivory, lineHeight: 1.5, margin: 0 }}>{item.question}</p>
                 </div>
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", minHeight: 0 }}>
                 <div style={{ padding: "16px 20px", borderRight: `1px solid ${c.border}` }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                    <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: c.ember }}>Your Answer</span>
-                    <span style={{ fontSize: 10, fontWeight: 600, color: badge.color, background: badge.bg, padding: "2px 8px", borderRadius: 4 }}>{badge.label}</span>
+                    <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: c.ember }}>Your Answer</span>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: badge.color, background: badge.bg, padding: "2px 8px", borderRadius: 4 }}>{badge.label}</span>
                   </div>
                   <div style={{ borderLeft: `2px solid ${c.ember}40`, paddingLeft: 14 }}>
                     <p style={{ fontSize: 13, color: c.chalk, lineHeight: 1.7, margin: 0 }}>{item.candidateSummary}</p>
@@ -395,8 +395,8 @@ export const ResponseAnalysis = memo(function ResponseAnalysis({ items }: { item
                 </div>
                 <div style={{ padding: "16px 20px", background: "rgba(21,128,61,0.02)" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                    <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: c.sage }}>Restructured Answer</span>
-                    <span style={{ fontSize: 10, fontWeight: 600, color: c.sage, background: "rgba(21,128,61,0.1)", padding: "2px 8px", borderRadius: 4 }}>STAR Format</span>
+                    <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: c.sage }}>Restructured Answer</span>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: c.sage, background: "rgba(21,128,61,0.1)", padding: "2px 8px", borderRadius: 4 }}>STAR Format</span>
                   </div>
                   <div style={{ borderLeft: `2px solid ${c.sage}40`, paddingLeft: 14 }}>
                     <p style={{ fontSize: 13, color: c.chalk, lineHeight: 1.7, margin: 0 }}>{item.ideal}</p>
@@ -450,7 +450,7 @@ export const AICoachSummary = memo(function AICoachSummary({ feedback, strengths
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           {strengths.length > 0 && (
             <div style={{ padding: "16px 18px", borderRadius: 12, background: "rgba(21,128,61,0.04)", border: `1px solid rgba(21,128,61,0.1)`, borderLeft: `3px solid ${c.sage}` }}>
-              <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: c.sage, display: "block", marginBottom: 8 }}>Strengths</span>
+              <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: c.sage, display: "block", marginBottom: 8 }}>Strengths</span>
               {strengths.map((s, i) => (
                 <div key={i} style={{ display: "flex", gap: 8, marginTop: i > 0 ? 6 : 0 }}>
                   <span style={{ color: c.sage, fontSize: 12, marginTop: 1 }}>{"✓"}</span>
@@ -461,7 +461,7 @@ export const AICoachSummary = memo(function AICoachSummary({ feedback, strengths
           )}
           {improvements.length > 0 && (
             <div style={{ padding: "16px 18px", borderRadius: 12, background: "rgba(185,28,28,0.04)", border: `1px solid rgba(185,28,28,0.1)`, borderLeft: `3px solid ${c.ember}` }}>
-              <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: c.ember, display: "block", marginBottom: 8 }}>Areas to Improve</span>
+              <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: c.ember, display: "block", marginBottom: 8 }}>Areas to Improve</span>
               {improvements.map((s, i) => (
                 <div key={i} style={{ display: "flex", gap: 8, marginTop: i > 0 ? 6 : 0 }}>
                   <span style={{ color: c.ember, fontSize: 12, marginTop: 1 }}>{"→"}</span>
@@ -472,7 +472,7 @@ export const AICoachSummary = memo(function AICoachSummary({ feedback, strengths
           )}
           {nextSteps && nextSteps.length > 0 && (
             <div style={{ padding: "16px 18px", borderRadius: 12, background: "oklch(0.359 0.135 278.697 / 0.04)", border: `1px solid oklch(0.359 0.135 278.697 / 0.1)`, borderLeft: `3px solid ${c.slate}` }}>
-              <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: c.slate, display: "block", marginBottom: 8 }}>Next Steps</span>
+              <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: c.slate, display: "block", marginBottom: 8 }}>Next Steps</span>
               {nextSteps.map((s, i) => (
                 <div key={i} style={{ display: "flex", gap: 8, marginTop: i > 0 ? 6 : 0 }}>
                   <span style={{ fontFamily: font.mono, color: c.slate, fontSize: 11, marginTop: 1 }}>{i + 1}.</span>
@@ -483,7 +483,7 @@ export const AICoachSummary = memo(function AICoachSummary({ feedback, strengths
           )}
           {tips.length > 0 && (
             <div style={{ padding: "16px 18px", borderRadius: 12, background: "oklch(0.359 0.135 278.697 / 0.04)", border: `1px solid oklch(0.359 0.135 278.697 / 0.1)`, borderLeft: `3px solid ${c.slate}` }}>
-              <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: c.slate, display: "block", marginBottom: 8 }}>Tips</span>
+              <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: c.slate, display: "block", marginBottom: 8 }}>Tips</span>
               {tips.map((s, i) => <p key={i} style={{ fontSize: 13, color: c.chalk, lineHeight: 1.6, margin: i > 0 ? "4px 0 0" : 0 }}>{s}</p>)}
             </div>
           )}
@@ -698,7 +698,7 @@ export const JDCoverageSection = memo(function JDCoverageSection({
           </div>
         </div>
         <div>
-          <div style={{ fontFamily: font.ui, fontSize: 15, fontWeight: 600, color: c.ivory }}>{jdAnalysis.matchLabel}</div>
+          <div style={{ fontFamily: font.ui, fontSize: 16, fontWeight: 600, color: c.ivory }}>{jdAnalysis.matchLabel}</div>
           <div style={{ fontFamily: font.ui, fontSize: 12, color: c.stone }}>Resume vs Job Description alignment</div>
         </div>
       </div>

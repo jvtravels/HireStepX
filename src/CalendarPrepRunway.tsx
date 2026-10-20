@@ -548,7 +548,7 @@ function MiniMonth() {
   return (
     <div>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: sp.md }}>
-        <h2 style={{ fontFamily: font.ui, fontSize: 15, fontWeight: 600, color: c.ivory, margin: 0 }}>June 2026</h2>
+        <h2 style={{ fontFamily: font.ui, fontSize: 16, fontWeight: 600, color: c.ivory, margin: 0 }}>June 2026</h2>
         <div style={{ display: "flex", gap: 2, color: c.stone }}>
           {[
             { label: "Previous month", d: "M15 6l-6 6 6 6" },
@@ -628,7 +628,7 @@ function MiniMonth() {
 function ReminderRow({ label, on }: { label: string; on?: boolean }) {
   return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "7px 0" }}>
-      <span style={{ fontSize: 12.5, color: c.ivory, fontFamily: font.ui }}>{label}</span>
+      <span style={{ fontSize: 12, color: c.ivory, fontFamily: font.ui }}>{label}</span>
       <span style={{ display: "flex", alignItems: "center", gap: 8, color: on ? c.sage : c.stone }}>
         <Icon size={14} stroke={c.stone}>{I.mail}</Icon>
         <Icon size={14} stroke={c.stone}>{I.push}</Icon>
@@ -667,7 +667,7 @@ export default function CalendarPrepRunway() {
           <h1 style={{ fontFamily: font.ui, fontSize: 30, fontWeight: 600, color: c.ivory, margin: "4px 0 6px" }}>
             Calendar
           </h1>
-          <p style={{ fontSize: 13.5, color: c.chalk, margin: 0, maxWidth: 460, lineHeight: 1.5 }}>
+          <p style={{ fontSize: 14, color: c.chalk, margin: 0, maxWidth: 460, lineHeight: 1.5 }}>
             Every interview you log becomes a prep plan, not just a date.
           </p>
         </div>
@@ -710,7 +710,7 @@ export default function CalendarPrepRunway() {
             <span style={{ color: T.indigo, display: "flex" }}>
               <Icon size={14}>{I.sparkle}</Icon>
             </span>
-            <span style={{ fontSize: 12.5, color: c.stone, fontFamily: font.ui }}>
+            <span style={{ fontSize: 12, color: c.stone, fontFamily: font.ui }}>
               “Amazon SDE phone screen Tuesday 3pm”
             </span>
           </div>
@@ -762,7 +762,7 @@ export default function CalendarPrepRunway() {
           <Card pad={20}>
             <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: sp.sm }}>
               <Icon size={15} stroke={T.indigo}>{I.bell}</Icon>
-              <h2 style={{ fontFamily: font.ui, fontSize: 15, fontWeight: 600, color: c.ivory, margin: 0 }}>Reminders</h2>
+              <h2 style={{ fontFamily: font.ui, fontSize: 16, fontWeight: 600, color: c.ivory, margin: 0 }}>Reminders</h2>
             </div>
             <ReminderRow label="72 hours before" on />
             <ReminderRow label="24 hours before" on />
@@ -805,7 +805,7 @@ export default function CalendarPrepRunway() {
                     alignItems: "center",
                     justifyContent: "center",
                     fontFamily: font.ui,
-                    fontSize: 24,
+                    fontSize: 22,
                     fontWeight: 600,
                     color: T.indigo,
                     flexShrink: 0,
@@ -843,7 +843,7 @@ export default function CalendarPrepRunway() {
             >
               <Icon size={18} stroke={T.indigo}>{I.globe}</Icon>
               <div>
-                <div style={{ fontFamily: font.ui, fontSize: 15, fontWeight: 600, color: c.ivory }}>{s.whenPrimary}</div>
+                <div style={{ fontFamily: font.ui, fontSize: 16, fontWeight: 600, color: c.ivory }}>{s.whenPrimary}</div>
                 <div style={{ fontSize: 12, color: c.stone, fontFamily: font.ui, marginTop: 2 }}>{s.whenSecondary}</div>
               </div>
             </div>

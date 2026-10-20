@@ -118,6 +118,8 @@ export interface SessionsContextValue {
    * does not blank the streak/sessions cards.
    */
   sessionsLoading: boolean;
+  /** Initial/refetch failed with no cached list to fall back on. Lets the Sessions page show a retry state instead of a misleading "No sessions yet". */
+  sessionsLoadFailed: boolean;
   eventsLoading: boolean;
   /**
    * Gap-flag codes from the user's most-recently analyzed session
@@ -315,6 +317,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
      still in flight, preserving the old gate semantics for consumers
      that need a both-loaded view (Resume, Settings, Analytics). */
   const [sessionsLoading, setSessionsLoading] = useState(true);
+  const [sessionsLoadFailed, setSessionsLoadFailed] = useState(false);
   const [eventsLoading, setEventsLoading] = useState(true);
   const dataLoading = sessionsLoading || eventsLoading;
   // Keep the server render and the browser's first render identical. The
@@ -563,6 +566,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
         if (cancelled) return;
         sessionsFetchedAtRef.current = Date.now();
         const mapped = sessions.map(mapSessionRecord);
+        setSessionsLoadFailed(false);
         setSupabaseSessions(mapped);
         try { localStorage.setItem(sessionsCacheKey, JSON.stringify(mapped)); } catch { /* expected: localStorage may be unavailable */ }
       }).catch(() => {
@@ -573,8 +577,9 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
             setSyncError("Offline — showing cached data.");
           } else {
             setSyncError("Could not load session data.");
+            setSessionsLoadFailed(true);
           }
-        } catch { setSyncError("Could not load session data."); }
+        } catch { setSyncError("Could not load session data."); setSessionsLoadFailed(true); }
       }).finally(() => { if (!cancelled) setSessionsLoading(false); }),
       // Best-effort fetch of latest analyzed-session flags for the
       // gap-aware "Your next move" CTA. Failure → empty topGaps →
@@ -953,8 +958,8 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     recentSessions, scoreTrend, skills, skillVelocity, overallStats, hasData,
     weekActivity, currentStreak, readinessScore, readinessDelta, practiceCoverage, evidenceCapabilities,
     calendarEvents, topGaps, refreshSessions, invalidateSessions, sessionVersion,
-    sessionsLoading, eventsLoading,
-  }), [recentSessions, scoreTrend, skills, skillVelocity, overallStats, hasData, weekActivity, currentStreak, readinessScore, readinessDelta, practiceCoverage, evidenceCapabilities, calendarEvents, topGaps, refreshSessions, invalidateSessions, sessionVersion, sessionsLoading, eventsLoading]);
+    sessionsLoading, sessionsLoadFailed, eventsLoading,
+  }), [recentSessions, scoreTrend, skills, skillVelocity, overallStats, hasData, weekActivity, currentStreak, readinessScore, readinessDelta, practiceCoverage, evidenceCapabilities, calendarEvents, topGaps, refreshSessions, invalidateSessions, sessionVersion, sessionsLoading, sessionsLoadFailed, eventsLoading]);
 
   const subscriptionValue: SubscriptionContextValue = useMemo(() => ({
     isFree, isStarter, atSessionLimit,

@@ -24,6 +24,7 @@ import {
   PlusIcon,
   SearchXIcon,
   MicIcon,
+  CloudOffIcon,
 } from "lucide-react";
 import {
   Table,
@@ -284,7 +285,7 @@ function ProgressCell({ progress }: { progress: number }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
       <span style={{ fontFamily: font.mono, fontSize: 13, fontWeight: 500, color: text, display: "inline-flex", alignItems: "center", gap: 4, fontVariantNumeric: "tabular-nums" }}>
-        {glyph && <span aria-hidden="true" style={{ fontSize: 9 }}>{glyph}</span>}
+        {glyph && <span aria-hidden="true" style={{ fontSize: 11 }}>{glyph}</span>}
         {sign}{progress}
       </span>
       <span style={{ fontFamily: font.ui, fontSize: 13, color: T.inkFaint }}>vs last session</span>
@@ -390,7 +391,7 @@ export function SessionsTable({
                   >
                     <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
                       <div style={{ minWidth: 0 }}>
-                        <p style={{ fontFamily: font.ui, fontSize: 15, fontWeight: 600, color: T.coal, margin: 0, wordBreak: "break-word" }}>
+                        <p style={{ fontFamily: font.ui, fontSize: 16, fontWeight: 600, color: T.coal, margin: 0, wordBreak: "break-word" }}>
                           {row.title}{row.company ? ` · ${row.company}` : ""}
                         </p>
                         <p style={{ fontFamily: font.ui, fontSize: 13, color: T.inkFaint, margin: "2px 0 0" }}>
@@ -532,7 +533,7 @@ function SessionsEmptyState({ onStartSession }: { onStartSession: () => void }) 
         <div style={{ width: 56, height: 56, borderRadius: 12, background: T.indigo100, display: "flex", alignItems: "center", justifyContent: "center" }}>
           <MicIcon size={24} color={T.indigo} aria-hidden="true" />
         </div>
-        <h2 style={{ fontFamily: font.ui, fontSize: 20, fontWeight: 700, color: T.coal, margin: 0 }}>No sessions yet</h2>
+        <h2 style={{ fontFamily: font.ui, fontSize: 22, fontWeight: 700, color: T.coal, margin: 0 }}>No sessions yet</h2>
         <p style={{ fontFamily: font.ui, fontSize: 14, lineHeight: "22px", color: T.inkFaint, margin: 0 }}>
           Start your first mock interview to see your score, progress, and coaching notes here.
         </p>
@@ -540,6 +541,23 @@ function SessionsEmptyState({ onStartSession }: { onStartSession: () => void }) 
           <PlusIcon size={16} aria-hidden="true" />
           Start session
         </Button>
+      </div>
+    </div>
+  );
+}
+
+function SessionsErrorState({ onRetry }: { onRetry: () => void }) {
+  return (
+    <div role="alert" className="flex min-h-0 flex-1 items-center justify-center p-10">
+      <div className="flex max-w-[420px] flex-col items-center gap-4 text-center">
+        <div className="flex size-14 items-center justify-center rounded-xl bg-hx-row">
+          <CloudOffIcon size={24} color={T.inkSoft} aria-hidden="true" />
+        </div>
+        <h2 className="m-0 text-[22px] font-bold text-hx-coal">Couldn't load your sessions</h2>
+        <p className="m-0 text-sm leading-[22px] text-muted-foreground">
+          Your past sessions are safe. Check your connection and try again.
+        </p>
+        <Button size="lg" variant="outline" onClick={onRetry}>Try again</Button>
       </div>
     </div>
   );
@@ -664,7 +682,7 @@ function SessionsWorkspace({
 
 export default function SessionsV2Screen() {
   const router = useRouter();
-  const { recentSessions, sessionsLoading } = useDashboardSessions();
+  const { recentSessions, sessionsLoading, sessionsLoadFailed, invalidateSessions } = useDashboardSessions();
 
   const rows = useMemo(() => {
     const now = Date.now();
@@ -694,7 +712,10 @@ export default function SessionsV2Screen() {
   // SkeletonReveal below, which hides it until sessionsLoading clears.
   let body: React.ReactNode;
   let showPageHeader = true;
-  if (rows.length === 0) {
+  if (rows.length === 0 && sessionsLoadFailed) {
+    showPageHeader = false;
+    body = <SessionsErrorState onRetry={invalidateSessions} />;
+  } else if (rows.length === 0) {
     body = <SessionsEmptyState onStartSession={onStartSession} />;
   } else {
     // WorkspaceHeader already embeds the title + CTA into its own row —
