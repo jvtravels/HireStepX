@@ -127,7 +127,7 @@ export function ScheduleNextSection({
       headingId="ir-schedule-heading"
       num="10"
       label="Plan ahead"
-      title="When Is Your Next Session?"
+      title="When is your next session?"
     >
       {scheduled ? (
         /* ── Confirmation state ── */

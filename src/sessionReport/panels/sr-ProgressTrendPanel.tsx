@@ -200,7 +200,7 @@ export function ProgressTrendPanel({ trends }: { trends: SkillTrend[] }) {
       headingId="ir-progress-trend-heading"
       num="03"
       label="Across sessions"
-      title="Skill Progress"
+      title="Skill progress"
       subtitle="How your skills are trending vs. prior sessions."
     >
       {hasAnyHistory && trends.length > 0 ? (
