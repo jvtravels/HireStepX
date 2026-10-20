@@ -54,10 +54,13 @@ function PersonAvatar({ name, initials }: { name: string; initials: string }) {
   );
 }
 
-function CardHeader({ id, title, action }: { id: string; title: string; action?: ReactNode }) {
+function CardHeader({ id, title, description, action }: { id: string; title: string; description?: ReactNode; action?: ReactNode }) {
   return (
-    <div className="mb-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-      <h2 id={id} className={H2}>{title}</h2>
+    <div className="mb-4 flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
+      <div className="min-w-0">
+        <h2 id={id} className={H2}>{title}</h2>
+        {description && <p className="m-0 mt-0.5 text-[13px] text-hx-ink-soft">{description}</p>}
+      </div>
       {action}
     </div>
   );
@@ -448,13 +451,9 @@ export function RecommendedCandidatesCard({ cards, total }: { cards: Recommended
       <CardHeader
         id="recommended-heading"
         title="Candidates to review"
+        description={cards.length > 0 ? `${total > cards.length ? `Top ${cards.length} of ${total}` : `${total} ${total === 1 ? "candidate" : "candidates"}`} waiting for your review, best match first.` : undefined}
         action={<TextLink href="/employer/jobs">View all</TextLink>}
       />
-      {cards.length > 0 && (
-        <p className="m-0 text-[13px] text-hx-ink-soft">
-          {total > cards.length ? `Top ${cards.length} of ${total}` : `${total} ${total === 1 ? "candidate" : "candidates"}`} waiting for your review, best match first.
-        </p>
-      )}
       {cards.length === 0 ? (
         <EmptyState className={EMPTY} title="No candidates to review" description="Strong matches appear here as soon as a job finishes screening." />
       ) : (
