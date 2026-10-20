@@ -1639,16 +1639,16 @@ export default function SessionSetup() {
         }
         .ob-focus-card:focus-visible, .hsx-setup-cta:focus-visible, .hsx-permission-actions button:focus-visible { outline: 2px solid ${T.indigo}; outline-offset: 2px; }
         @media (max-width: 1024px), (pointer: coarse) { .hsx-permission-actions button { min-height: 44px; min-width: 44px; } }
-        @media (max-width: 1100px) { .ob-permissions-grid { grid-template-columns: 1fr !important; } }
+        @media (max-width: 860px) { .ob-permissions-grid { grid-template-columns: 1fr !important; } }
         .ob-s2-role-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
         .ob-s2-focus-grid { display: grid; grid-template-columns: repeat(var(--focus-cols, 3), 1fr); gap: 10px; }
-        .ob-permissions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .ob-permissions-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
         .ob-s2-session-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
 
         /* ─── Responsive layout ─────────────────────────────────────────
            Three breakpoints: tablet (≤1024), small (≤600), tiny (≤500). */
         .hsx-setup-topbar { padding: 32px 48px; }
-        .hsx-setup-card { padding: clamp(24px, 4vh, 48px) 48px 64px; }
+        .hsx-setup-content { padding: clamp(24px, 4vh, 64px) 32px 80px; }
         .hsx-setup-hero-h1 { white-space: nowrap; }
         .hsx-setup-identity-name { display: inline; }
 
@@ -1656,7 +1656,7 @@ export default function SessionSetup() {
            the hero + spacing aggressively so the form + CTA fit without scroll. */
         @media (max-width: 1280px) {
           .hsx-setup-topbar { padding: 12px 32px !important; }
-          .hsx-setup-card { padding: 20px 32px 40px !important; }
+          .hsx-setup-content { padding: 12px 32px 32px !important; }
           .hsx-setup-hero-h1 { font-size: clamp(1.5rem, 3vw, 2rem) !important; line-height: 1.1 !important; }
           .hsx-setup-hero { margin-bottom: 14px !important; }
           .hsx-setup-form-sections { gap: 16px !important; }
@@ -1673,6 +1673,7 @@ export default function SessionSetup() {
         }
         @media (max-width: 600px) {
           .hsx-setup-topbar { padding: 16px 20px !important; }
+          .hsx-setup-content { padding: 20px 20px 64px !important; }
           .ob-s2-role-grid { grid-template-columns: 1fr !important; gap: 16px !important; }
           .ob-s2-focus-grid { grid-template-columns: repeat(var(--focus-cols-sm, 2), 1fr) !important; }
           .ob-s2-session-grid { grid-template-columns: 1fr !important; }
@@ -1698,11 +1699,12 @@ export default function SessionSetup() {
           .hsx-setup-cta { width: 100% !important; min-height: 44px !important; }
           .hsx-setup-cta-group { flex-direction: column !important; align-items: stretch !important; gap: 10px !important; }
           .hsx-setup-cta-group > div { text-align: center !important; flex: none !important; }
+          .hsx-setup-card { border-radius: 12px !important; }
           /* Sticky Start bar: the zone dissolves so the CTA group can stick to
              the viewport bottom (sticky is bounded by its parent). The scroll
              wrapper must not clip it with overflow. */
           .hsx-setup-content { overflow: visible !important; }
-          .hsx-setup-card { padding: 20px 20px 48px !important; }
+          .hsx-setup-card { padding: 20px !important; }
           .hsx-setup-cta-zone { display: contents !important; }
           .hsx-setup-cta-group {
             position: sticky; bottom: 0; z-index: 5; background: ${T.white};
@@ -1723,6 +1725,7 @@ export default function SessionSetup() {
           /* Tiny-phone refinements (≤iPhone SE-class viewports) — squeeze
              padding + grids further so cards don't overflow. */
           .hsx-setup-topbar { padding: 12px 14px !important; gap: 8px !important; }
+          .hsx-setup-content { padding: 16px 14px 56px !important; }
           .ob-s2-focus-grid { grid-template-columns: 1fr !important; }
           .hsx-permission-card { padding: 10px !important; gap: 8px !important; }
         }
@@ -1771,8 +1774,8 @@ export default function SessionSetup() {
       </div>
 
       {/* ─── Content ─── */}
-      <div className="hsx-setup-content" style={{ flex: 1, display: "flex", alignItems: "flex-start", justifyContent: "center", overflow: "auto", background: T.white }}>
-        <main id="hsx-setup-form" tabIndex={-1} className="hsx-setup-card" style={{ width: "100%", boxSizing: "border-box", background: T.white, animation: "fadeUp 0.3s ease", outline: "none" }}>
+      <div className="hsx-setup-content" style={{ flex: 1, display: "flex", alignItems: "flex-start", justifyContent: "center", overflow: "auto", background: T.creamSoft }}>
+        <main id="hsx-setup-form" tabIndex={-1} className="hsx-setup-card" style={{ width: "100%", maxWidth: 820, boxSizing: "border-box", padding: "clamp(20px, 4vw, 40px)", background: T.white, border: `1px solid ${T.line}`, borderRadius: 16, boxShadow: "0 1px 2px oklch(0.2 0 0 / 0.04), 0 8px 24px oklch(0.2 0 0 / 0.04)", animation: "fadeUp 0.3s ease", outline: "none" }}>
 
           <div>
               {/* Drill mode banner — shown when the user arrived from a
