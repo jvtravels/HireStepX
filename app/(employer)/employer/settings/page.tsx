@@ -123,7 +123,7 @@ export default function EmployerSettingsPage() {
         <PageHeader title="Settings" desc="Update your company profile, manage your account security, review your purchases and set notification sounds." />
 
         <FlatSection title="Company profile">
-          <div style={{ maxWidth: 480 }}>
+          <div className="max-w-[640px]">
             {formLocked && (
               <p role="status" style={{ fontFamily: f.sans, fontSize: 13, color: t.errorInk, margin: "0 0 16px", lineHeight: 1.5 }}>
                 {deletionPending
@@ -148,7 +148,7 @@ export default function EmployerSettingsPage() {
         </FlatSection>
 
         <FlatSection title="Verification and limits">
-          <div className="flex max-w-[480px] flex-col gap-2 text-[13px] leading-relaxed text-foreground">
+          <div className="flex max-w-[640px] flex-col gap-2 text-[13px] leading-relaxed text-foreground">
             <p className="m-0 flex flex-wrap items-center gap-2">
               <span className="font-semibold">Current tier</span>
               {tierInfo.verifiedBadge ? <Badge tone="success">Verified</Badge> : <Badge tone="neutral">{tierInfo.label}</Badge>}
