@@ -19,7 +19,7 @@ export function ThoughtBubbleSection({ segments }: { segments: ThoughtBubbleSegm
       headingId="ir-thought-bubble-heading"
       num="05"
       label="How engaged did they stay"
-      title="Interviewer Attention Timeline"
+      title="Interviewer attention"
     >
       <Button
         type="button"

@@ -12,7 +12,7 @@ export const SESSION_REPORT_STYLES = `
   .ir-row { display: flex; gap: 16px; flex-wrap: wrap; }
   .ir-tile-grid {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(var(--ir-cols, 4), minmax(0, 1fr));
     gap: 14px;
   }
   @media (max-width: 880px) {
@@ -631,10 +631,10 @@ export const SESSION_REPORT_STYLES = `
   .ir-redflag-list { list-style: none; padding: 0; margin: 0 0 8px; display: flex; flex-direction: column; gap: 6px; }
   .ir-redflag-item {
     display: flex; gap: 8px; align-items: flex-start;
-    padding: 8px 10px;
-    background: rgba(196,112,90,0.05);
-    border-left: 2px solid #B91C1C;
-    border-radius: 4px;
+    padding: 10px 12px;
+    background: #fff;
+    border: 1px solid rgba(185,28,28,0.25);
+    border-radius: 8px;
     font-family: 'Geist Sans', sans-serif;
     font-size: 12px;
     line-height: 1.45;
@@ -647,23 +647,21 @@ export const SESSION_REPORT_STYLES = `
   .ir-likely-followup {
     margin-top: 8px;
     padding: 10px 12px;
-    background: rgba(49,46,129,0.05);
-    border: 1px solid rgba(49,46,129,0.15);
+    background: #fff;
+    border: 1px solid rgba(0,0,0,0.08);
     border-radius: 8px;
     font-family: 'Geist Sans', sans-serif;
-    font-size: 12px;
-    color: #312E81;
+    font-size: 13px;
+    color: #2A241B;
     line-height: 1.5;
   }
   .ir-likely-followup-eyebrow {
     display: block;
     font-family: 'Geist Sans', sans-serif;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+    font-size: 12px;
+    font-weight: 600;
     margin-bottom: 4px;
-    color: #312E81;
+    color: #52525B;
   }
 
   /* What-makes-it-strong list (under exemplar tab) */

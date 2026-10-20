@@ -11,13 +11,13 @@ import { Card, CardContent } from "@/components/ui/card";
 type NoteKind = "strength" | "gap" | "regression" | "improvement" | "persistent" | "story-reuse" | "blind-spot";
 
 const NOTE_META: Record<NoteKind, { eyebrow: string; dot: string }> = {
-  strength:     { eyebrow: "✓ What went well",  dot: t.success },
-  gap:          { eyebrow: "→ For next time",   dot: t.copper },
-  regression:   { eyebrow: "↓ Regression",      dot: t.error },
-  improvement:  { eyebrow: "↑ Improvement",     dot: t.success },
-  persistent:   { eyebrow: "Persistent gap",    dot: t.copper },
-  "story-reuse": { eyebrow: "↻ Story reuse",    dot: t.indigo },
-  "blind-spot": { eyebrow: "◌ Blind spot",      dot: t.inkSoft },
+  strength:     { eyebrow: "What went well",  dot: t.success },
+  gap:          { eyebrow: "For next time",   dot: t.warning },
+  regression:   { eyebrow: "Regression",      dot: t.error },
+  improvement:  { eyebrow: "Improvement",     dot: t.success },
+  persistent:   { eyebrow: "Persistent gap",    dot: t.warning },
+  "story-reuse": { eyebrow: "Story reuse",    dot: t.indigo },
+  "blind-spot": { eyebrow: "Blind spot",      dot: t.inkSoft },
 };
 
 function NoteCard({ kind, title, body, extra }: { kind: NoteKind; title: string; body: string; extra?: ReactNode }) {
@@ -27,11 +27,11 @@ function NoteCard({ kind, title, body, extra }: { kind: NoteKind; title: string;
       <CardContent className="px-4 py-3.5">
         <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
           <span aria-hidden style={{ width: 6, height: 6, borderRadius: "50%", background: meta.dot, flexShrink: 0 }} />
-          <span style={{ fontFamily: f.mono, fontSize: size.xs, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", color: meta.dot }}>
+          <span style={{ fontFamily: f.sans, fontSize: size.sm, fontWeight: 600, color: t.inkSoft }}>
             {meta.eyebrow}
           </span>
         </div>
-        <h3 style={{ fontFamily: f.serif, fontSize: size.lg, color: t.coal, lineHeight: 1.3, margin: "0 0 6px" }}>{title}</h3>
+        <h3 style={{ fontFamily: f.sans, fontSize: size.md, fontWeight: 600, color: t.coal, lineHeight: 1.35, margin: "0 0 6px" }}>{title}</h3>
         <p style={{ fontFamily: f.sans, fontSize: size.base, color: t.inkSoft, lineHeight: 1.55, margin: 0 }}>{body}</p>
         {extra}
       </CardContent>

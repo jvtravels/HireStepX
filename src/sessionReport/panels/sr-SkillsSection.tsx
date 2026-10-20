@@ -54,7 +54,7 @@ export function SkillsSection({ skills, weakest, onDrillSkill }: { skills: Skill
                   }
                 >
                   <div className="ir-skill-bar-bg" style={{ background: t.line }} />
-                  <div className="ir-skill-bar-fg" style={{ width: `${pct}%`, background: t.indigo }} />
+                  <div className="ir-skill-bar-fg" style={{ width: `${pct}%`, background: s.name === weakest.name ? t.warning : t.indigo }} />
                   {avgPct !== null && (
                     <div className="ir-skill-bar-marker" style={{ left: `calc(${avgPct}% - 1px)` }} aria-hidden="true" />
                   )}

@@ -2,6 +2,7 @@
  * Six-tile delivery metrics row. MetricBand pill comes from sr-HeroSection.
  * Pure presentation. */
 
+import type * as React from "react";
 import { t, f, radius, size } from "../tokens";
 import type { DeliveryMetric } from "../types";
 import { SrSectionShell } from "./_primitives";
@@ -16,7 +17,10 @@ export function CoreMetricsSection({ metrics }: { metrics: DeliveryMetric[] }) {
       title="Delivery"
       subtitle="How you spoke, measured against a target for your role."
     >
-      <div className="ir-tile-grid">
+      <div
+        className="ir-tile-grid"
+        style={{ "--ir-cols": metrics.length === 6 ? 3 : Math.min(metrics.length, 4) } as React.CSSProperties}
+      >
         {metrics.map((m) => (
           <div
             key={m.label}

@@ -102,6 +102,7 @@ export function ReadinessHeadline({
 }) {
   const color =
     readiness.pct >= 80 ? t.success : readiness.pct >= 60 ? t.warning : t.error;
+  const status = readiness.pct >= 80 ? "Interview-ready" : readiness.pct >= 60 ? "Getting close" : "Needs prep";
   return (
     <div
       style={{
@@ -116,14 +117,9 @@ export function ReadinessHeadline({
         flexWrap: "wrap",
       }}
     >
-      <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-        <span style={{ fontFamily: f.sans, fontSize: size.sm, color: t.inkSoft, fontWeight: 500 }}>
-          Readiness
-        </span>
-        <span style={{ fontFamily: f.sans, fontSize: size["2xl"], fontWeight: 700, color, lineHeight: 1, letterSpacing: "-0.01em" }}>
-          {readiness.pct}%
-        </span>
-      </div>
+      <span style={{ fontFamily: f.sans, fontSize: size.sm, fontWeight: 600, color, padding: "3px 10px", borderRadius: radius.pill, border: `1px solid ${t.line}`, background: t.white }}>
+        {status}
+      </span>
       <span style={{ height: 22, width: 1, background: t.line }} aria-hidden="true" />
       <p style={{ fontFamily: f.sans, fontSize: size.base, color: t.coal, margin: 0, flex: 1, minWidth: 240, lineHeight: 1.45 }}>
         For <strong style={{ color: t.coal, fontWeight: 600 }}>{formatRoleWithLevel(level, role)}</strong>{company ? <> at <strong>{company}</strong></> : null}.

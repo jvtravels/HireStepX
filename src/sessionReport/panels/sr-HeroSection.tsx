@@ -30,11 +30,11 @@ export const VERDICT_META: Record<Verdict, { label: string; tone: Tone; color: s
  * label each delivery tile. */
 export function MetricBand({ band }: { band: DeliveryMetric["band"] }) {
   return band === "good" ? (
-    <StatusPill tone="good">Good</StatusPill>
+    <StatusPill tone="good">On target</StatusPill>
   ) : band === "ok" ? (
-    <StatusPill tone="warn">On target</StatusPill>
+    <StatusPill tone="neutral">Close</StatusPill>
   ) : (
-    <StatusPill tone="bad">Needs work</StatusPill>
+    <StatusPill tone="warn">Needs work</StatusPill>
   );
 }
 
@@ -74,9 +74,10 @@ export function HeroSection({ data }: { data: InterviewResultData }) {
             {data.recentScores && data.recentScores.length >= 2 ? (
               <span style={{ display: "inline-flex", alignItems: "center", gap: 8, fontFamily: f.sans, fontSize: size.base, color: t.inkSoft }}>
                 <Sparkline points={data.recentScores} />
+                <span>Last {data.recentScores.length} sessions</span>
                 {data.scoreDelta !== 0 && (
                   <span style={{ color: data.scoreDelta > 0 ? t.success : t.error, fontWeight: 600 }}>
-                    {data.scoreDelta > 0 ? "↑" : "↓"} {Math.abs(data.scoreDelta)}
+                    {data.scoreDelta > 0 ? "↑" : "↓"} {Math.abs(data.scoreDelta)} pts
                   </span>
                 )}
               </span>

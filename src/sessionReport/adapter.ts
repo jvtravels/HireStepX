@@ -1178,10 +1178,8 @@ function pickWeakestSkill(
  *  per pixel of report real estate. */
 function buildMetrics(report: SessionReport): DeliveryMetric[] {
   const { coreMetrics, advancedDelivery } = report;
-  // Text-only sessions have no voice signal — every metric would be 0, which
-  // renders as a wall of "Good" tiles that are actually absent data. Return []
-  // so the CoreMetricsSection is hidden rather than misleading. Matches the
-  // same guard in readinessIndex/sections.tsx DeliveryPanel.
+  // No voice signal => every metric is 0 (absent data, not "Good"): return []
+  // to hide the section. Zero silence/latency are likewise unmeasured, so omitted.
   const hasVoiceData =
     coreMetrics.fillerPerMin > 0 ||
     coreMetrics.silenceRatio > 0 ||
@@ -1197,13 +1195,13 @@ function buildMetrics(report: SessionReport): DeliveryMetric[] {
       targetLabel: "Target 0–3",
       band: bandForFiller(coreMetrics.fillerPerMin),
     },
-    {
+    ...(coreMetrics.silenceRatio > 0 ? [{
       label: "Silence ratio",
       value: Math.round(coreMetrics.silenceRatio * 100),
       unit: "%",
       targetLabel: "Target 0–20%",
       band: bandForSilence(coreMetrics.silenceRatio),
-    },
+    }] : []),
     // Suppress pace when the LLM reports an implausibly low value (< 20 wpm) —
     // this happens on mini/brief sessions where the LLM divides word count by
     // total session clock time (including AI turns) rather than user speaking time.
@@ -1220,13 +1218,13 @@ function buildMetrics(report: SessionReport): DeliveryMetric[] {
       targetLabel: "Target 60–100",
       band: bandForEnergy(coreMetrics.energy),
     },
-    {
+    ...(advancedDelivery.medianLatencyMs > 0 ? [{
       label: "Median latency",
       value: round1(advancedDelivery.medianLatencyMs / 1000),
       unit: "s",
       targetLabel: "Target <2.0s",
       band: bandForLatency(advancedDelivery.medianLatencyMs),
-    },
+    }] : []),
     {
       label: "Self-correction rate",
       value: round1(advancedDelivery.selfCorrectionRate),
@@ -1497,7 +1495,7 @@ function adaptQuestion(
     idealAnswerSnippet: q.topPerformerAnswer
       ? {
           text: stripProsodyMarkup(q.topPerformerAnswer.text),
-          whyBetter: q.topPerformerAnswer.whatMakesItStrong.join(" "),
+          whyBetter: q.topPerformerAnswer.whatMakesItStrong.map((b) => b.trim().replace(/[.\s]+$/, "")).filter(Boolean).join(". ") + ".",
         }
       : pickIdealAnswerSnippet(
           stripProsodyMarkup(q.question),
