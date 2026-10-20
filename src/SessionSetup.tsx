@@ -1695,6 +1695,9 @@ export default function SessionSetup() {
              1px hairline + extra padding so it reads as the commit zone.
              min-height 48 ensures Apple HIG touch target floor. */
           .hsx-setup-cta { width: 100% !important; min-height: 44px !important; }
+          .hsx-setup-cta-group { order: -1; width: 100%; align-items: stretch !important; }
+          .hsx-setup-cta-group > div { text-align: center !important; }
+          .hsx-setup-card { border-radius: 12px !important; }
           .hsx-setup-cta-zone { border-top: 1px solid ${T.line}; padding-top: 28px !important; margin-top: 32px !important; }
         }
         @media (max-width: 500px) {
@@ -1756,8 +1759,8 @@ export default function SessionSetup() {
       </div>
 
       {/* ─── Content ─── */}
-      <div className="hsx-setup-content" style={{ flex: 1, display: "flex", alignItems: "flex-start", justifyContent: "center", overflow: "auto" }}>
-        <main id="hsx-setup-form" tabIndex={-1} style={{ width: "100%", maxWidth: "min(1080px, calc(100vw - 32px))", animation: "fadeUp 0.3s ease", outline: "none" }}>
+      <div className="hsx-setup-content" style={{ flex: 1, display: "flex", alignItems: "flex-start", justifyContent: "center", overflow: "auto", background: T.creamSoft }}>
+        <main id="hsx-setup-form" tabIndex={-1} className="hsx-setup-card" style={{ width: "100%", maxWidth: 760, boxSizing: "border-box", padding: "clamp(20px, 4vw, 40px)", background: T.white, border: `1px solid ${T.line}`, borderRadius: 16, boxShadow: "0 1px 2px oklch(0.2 0 0 / 0.04), 0 8px 24px oklch(0.2 0 0 / 0.04)", animation: "fadeUp 0.3s ease", outline: "none" }}>
 
           <div>
               {/* Drill mode banner — shown when the user arrived from a
@@ -1857,7 +1860,7 @@ export default function SessionSetup() {
                   <div style={{ marginBottom: 14 }}>
                     <h2 style={{ display: "flex", alignItems: "center", gap: 6, margin: 0, fontFamily: F.sans, fontSize: 13, fontWeight: 500, color: T.coal }}>
                       <span>Interview focus</span>
-                      <span style={{ color: T.indigo, fontSize: 12 }}>*</span>
+                      <span style={{ color: T.error, fontSize: 12 }}>*</span>
                     </h2>
                     <div style={{ fontFamily: F.sans, fontSize: 12, color: T.inkSoft, marginTop: 4 }}>
                       {relevantFocusSet && targetRole.trim()
@@ -2077,7 +2080,25 @@ export default function SessionSetup() {
               </div>
             );
           })()}
-          <div className="hsx-setup-cta-zone" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, marginTop: 40, paddingTop: 24 }}>
+          <div className="hsx-setup-cta-zone" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "16px 24px", marginTop: 32, paddingTop: 24, borderTop: `1px solid ${T.line}` }}>
+            <div className="hsx-setup-notes" style={{ display: "flex", flexDirection: "column", gap: 8, flex: "1 1 260px", minWidth: 0 }}>
+            {usingCredit && (
+              <div style={{ display: "flex", alignItems: "flex-start", gap: 8, fontFamily: F.sans, fontSize: 13, color: T.inkSoft, lineHeight: 1.4 }}>
+                <svg width="14" height="14" style={{ flexShrink: 0, marginTop: 2 }} viewBox="0 0 24 24" fill="none" stroke={T.inkSoft} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+                </svg>
+                1 session credit will be used · {creditBalance} remaining
+              </div>
+            )}
+
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 8, fontFamily: F.sans, fontSize: 13, color: T.inkSoft, lineHeight: 1.4 }}>
+              <svg aria-hidden width="14" height="14" style={{ flexShrink: 0, marginTop: 2 }} viewBox="0 0 24 24" fill="none" stroke={T.success} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              </svg>
+              Your name and contact stay hidden from employers. Manage this in Settings.
+            </div>
+            </div>
+            <div className="hsx-setup-cta-group" style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8, flex: "0 1 auto" }}>
             {(() => {
               const needsMic = micRequired && formComplete && micStatus !== "granted" && micStatus !== "requesting";
               const isHardDisabled = !formComplete || starting || !isOnline || micStatus === "requesting";
@@ -2115,27 +2136,12 @@ export default function SessionSetup() {
                       <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
                     )}
                   </Button>
-                  <div id="hsx-cta-reason" aria-live="polite" style={{ fontFamily: F.sans, fontSize: 13, color: micStatus === "denied" && needsMic ? T.error : T.inkSoft, textAlign: "center", margin: ctaReason ? "-4px 0 0" : "-12px 0 0", height: ctaReason ? undefined : 0, overflow: "hidden" }}>
+                  <div id="hsx-cta-reason" aria-live="polite" style={{ fontFamily: F.sans, fontSize: 13, color: micStatus === "denied" && needsMic ? T.error : T.inkSoft, textAlign: "right", margin: ctaReason ? "-4px 0 0" : "-12px 0 0", height: ctaReason ? undefined : 0, overflow: "hidden" }}>
                     {ctaReason}
                   </div>
                 </>
               );
             })()}
-
-            {usingCredit && (
-              <div style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: F.sans, fontSize: 13, color: T.inkSoft }}>
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={T.inkSoft} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                  <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
-                </svg>
-                1 session credit will be used · {creditBalance} remaining
-              </div>
-            )}
-
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: F.sans, fontSize: 13, color: T.inkSoft }}>
-              <svg aria-hidden width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={T.success} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-              </svg>
-              Your name and contact stay hidden from employers. Manage this in Settings.
             </div>
             <span className="sr-only" aria-live="polite">{micStatus === "granted" && (cameraStatus === "granted" ? "Mic and camera ready." : "Mic ready. Camera is optional.")}</span>
           </div>
