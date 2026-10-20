@@ -50,9 +50,9 @@ export function HeroSection({ data }: { data: InterviewResultData }) {
       ariaLabelledBy="ir-hero-heading"
       padding="4px 0 28px"
     >
-      <h1 id="ir-hero-heading" style={{ position: "absolute", width: 1, height: 1, padding: 0, margin: -1, overflow: "hidden", clip: "rect(0,0,0,0)", whiteSpace: "nowrap", border: 0 }}>
+      <h2 id="ir-hero-heading" style={{ position: "absolute", width: 1, height: 1, padding: 0, margin: -1, overflow: "hidden", clip: "rect(0,0,0,0)", whiteSpace: "nowrap", border: 0 }}>
         Interview Report: {data.role}{atCompany(data.company)}, scored {data.overallScore} out of 100
-      </h1>
+      </h2>
       {data.readiness && (
         <ReadinessHeadline
           readiness={data.readiness}
