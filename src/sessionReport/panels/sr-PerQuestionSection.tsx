@@ -25,21 +25,6 @@ const BAND_META: Record<Question["band"], { label: string; tone: Tone }> = {
 
 export function PerQuestionSection({ questions }: { questions: Question[] }) {
   const [openIdx, setOpenIdx] = useState<number | null>(0);
-  const PRIMARY_COUNT = 3;
-  /* R-7 (2026-07-10, live staging — Senior Product Designer @ Lollypop Design
-   * Studio): a negotiation runs as a handful of turns, and every turn is
-   * load-bearing (anchor, counter, close) — collapsing to the first 3 hid the
-   * close and read as "the report is truncating my negotiation". Short sessions
-   * (≤ AUTO_EXPAND_MAX turns) open fully; only long Q&A interviews keep the
-   * top-3 progressive disclosure. */
-  const AUTO_EXPAND_MAX = 6;
-  const [showAll, setShowAll] = useState<boolean>(questions.length <= AUTO_EXPAND_MAX);
-  const visible = showAll ? questions : questions.slice(0, PRIMARY_COUNT);
-  const hiddenCount = questions.length - visible.length;
-  const handleExpandAll = () => {
-    setShowAll(true);
-    setOpenIdx(null);
-  };
   return (
     <section
       id="ir-section-questions"
@@ -62,7 +47,7 @@ export function PerQuestionSection({ questions }: { questions: Question[] }) {
         <h2 id="ir-questions-heading" style={{ fontFamily: f.sans, fontSize: size.xl, fontWeight: 600, color: t.coal, margin: 0, letterSpacing: "-0.01em" }}>
           Your answers <span style={{ color: t.inkSoft, fontSize: size.base, fontWeight: 400, marginLeft: 6 }}>{questions.length} {questions.length === 1 ? "question" : "questions"}</span>
         </h2>
-        {showAll ? (
+        {openIdx !== null ? (
           <Button
             type="button"
             variant="link"
@@ -75,7 +60,7 @@ export function PerQuestionSection({ questions }: { questions: Question[] }) {
         ) : null}
       </header>
       <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-        {visible.map((q, idx) => {
+        {questions.map((q, idx) => {
           const open = openIdx === idx;
           const band = BAND_META[q.band];
           const panelId = `ir-q-panel-${q.index}`;
@@ -178,33 +163,6 @@ export function PerQuestionSection({ questions }: { questions: Question[] }) {
           );
         })}
       </ul>
-      {hiddenCount > 0 && (
-        <div
-          style={{
-            borderTop: `1px solid ${t.line}`,
-            padding: "14px 18px",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            gap: 6,
-          }}
-        >
-          <p style={{ margin: 0, fontSize: size.sm, color: t.inkFaint }}>
-            Showing {visible.length} of {questions.length} questions
-          </p>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleExpandAll}
-            aria-label={`Show all ${questions.length} questions (${hiddenCount} more)`}
-          >
-            Show {hiddenCount} more question{hiddenCount === 1 ? "" : "s"}
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <polyline points="6 9 12 15 18 9" />
-            </svg>
-          </Button>
-        </div>
-      )}
     </section>
   );
 }
