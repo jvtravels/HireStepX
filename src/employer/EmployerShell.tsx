@@ -20,7 +20,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { LayoutDashboardIcon, BriefcaseIcon, MessageSquareIcon, SettingsIcon, ChevronDownIcon, LogOutIcon } from "lucide-react";
+import { LayoutDashboardIcon, BriefcaseIcon, SettingsIcon, ChevronDownIcon, LogOutIcon } from "lucide-react";
 import AppShellFrame, { type ShellNavItem } from "../AppShellFrame";
 
 export type BreadcrumbCrumb = { label: string; path?: string };
@@ -60,8 +60,14 @@ export function EmployerHeaderAction({ children }: { children: React.ReactNode }
 const navItems: ShellNavItem[] = [
   { id: "dashboard", label: "Dashboard", path: "/employer", icon: <LayoutDashboardIcon size={18} aria-hidden="true" /> },
   { id: "jobs", label: "Jobs", path: "/employer/jobs", icon: <BriefcaseIcon size={18} aria-hidden="true" /> },
-  { id: "messages", label: "Messages", path: "/employer/messages", icon: <MessageSquareIcon size={18} aria-hidden="true" /> },
-  { id: "settings", label: "Settings", path: "/employer/settings", icon: <SettingsIcon size={18} aria-hidden="true" /> },
+];
+
+/* Messages and Settings are deliberately not in the sidebar (messages is the
+   header icon, settings is in the account menu), same as the candidate side.
+   Kept so the breadcrumb label resolves and no sidebar item is highlighted. */
+const offNavRoutes = [
+  { id: "messages", label: "Messages", path: "/employer/messages" },
+  { id: "settings", label: "Settings", path: "/employer/settings" },
 ];
 
 const rupees = new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 });
@@ -291,13 +297,15 @@ export default function EmployerShell({ children }: { children: React.ReactNode 
     );
   }
 
+  const offNav = offNavRoutes.find((item) => pathname === item.path || pathname?.startsWith(`${item.path}/`));
   const activeItem =
+    offNav ??
     navItems.find((item) =>
       item.path === "/employer" ? pathname === item.path : pathname === item.path || pathname?.startsWith(`${item.path}/`)
     ) ??
     (pathname?.startsWith("/employer/requirements/") ? navItems.find((item) => item.id === "jobs") : undefined) ??
     navItems[0];
-  const isMessagesRoute = activeItem.id === "messages";
+  const sidebarActiveId = offNav ? "" : activeItem.id;
 
   const pageBody = companyStatusLoading ? <PageSkeleton label="Loading your workspace" /> : children;
 
@@ -308,7 +316,7 @@ export default function EmployerShell({ children }: { children: React.ReactNode 
         homeHref="/employer"
         navAriaLabel="Employer navigation"
         navItems={navItems}
-        activeId={activeItem.id}
+        activeId={sidebarActiveId}
         onNavigate={(path) => router.push(path)}
         messaging={{ fetchConversations: listConversations, basePath: "/employer/messages" }}
         audience="employer"
@@ -318,6 +326,12 @@ export default function EmployerShell({ children }: { children: React.ReactNode 
           email: user?.email,
         }}
         sidebarFooterExtra={<CreditChip balancePaise={creditPaise} />}
+        accountMenuItems={
+          <DropdownMenuItem onClick={() => router.push("/employer/settings")}>
+            <SettingsIcon size={14} aria-hidden="true" />
+            Settings
+          </DropdownMenuItem>
+        }
         onLogout={handleLogout}
         breadcrumbRoot={{ label: displayName || "HireStepX", path: "/employer" }}
         pageLabel={activeItem.label}
@@ -329,7 +343,7 @@ export default function EmployerShell({ children }: { children: React.ReactNode 
         headerActionsRef={setHeaderSlot}
         banners={<VerificationBanner />}
       >
-        <div className={isMessagesRoute ? "flex min-h-0 w-full min-w-0 flex-1 flex-col" : "mx-auto flex min-h-0 w-full max-w-[1360px] min-w-0 flex-1 flex-col"}>
+        <div className={"flex min-h-0 w-full min-w-0 flex-1 flex-col"}>
           {isSelfCardedRoute(pathname ?? "") ? pageBody : isBareRoute(pathname ?? "") ? (
             <div className="mb-16 flex min-h-full w-full min-w-0 flex-none flex-col">{pageBody}</div>
           ) : DETAIL_ROUTE.test(pathname ?? "") ? (
