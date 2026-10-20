@@ -22,7 +22,6 @@ import type { MatchFactors } from "./MatchFactorsCard";
 import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
-  PlusIcon,
   SearchXIcon,
   AlertCircleIcon,
   BriefcaseIcon,
@@ -256,7 +255,7 @@ function JobCard({ r, onOpen, opening }: { r: JobMatch; onOpen: () => void; open
 export default function DashboardJobs() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const isNarrow = useMaxWidth(1520);
+  const isNarrow = useMaxWidth(1280);
   const { user: authUser } = useAuth();
   // Cache-first like DashboardContext's sessions/events: a tab switch back
   // into Jobs shows the last-known list instantly instead of a spinner,
@@ -414,10 +413,6 @@ export default function DashboardJobs() {
               <FiltersPanel sections={filterSections} value={filters} onApply={setFilters} />
             </>
           )}
-          <Button className={isNarrow ? "w-full" : undefined} onClick={() => router.push("/session/new")}>
-            <PlusIcon size={16} strokeWidth={2.5} aria-hidden="true" />
-            Start session
-          </Button>
         </>
       }
     />
