@@ -34,6 +34,8 @@ const RANGE_OPTIONS: readonly DashboardRange[] = [7, 30, 90];
 /* Sections sit in the page's container; the parent draws the hairlines between them. */
 const CARD = "min-w-0 px-7 py-6";
 const H2 = "m-0 text-[15px] font-semibold text-hx-coal";
+/* Sections that end in a full-bleed table or list sit flush on the divider below them. */
+const LAST_ROWS = "pb-0";
 const LIST = "m-0 list-none p-0";
 const EMPTY = "py-6";
 /* Tables bleed to the container edge so rows read as lines, not a box in a box. */
@@ -300,7 +302,7 @@ export function ActiveJobsCard({
     );
   };
   return (
-    <section aria-labelledby="active-jobs-heading" className={`${CARD} @container`}>
+    <section aria-labelledby="active-jobs-heading" className={`${CARD} @container ${LAST_ROWS}`}>
       <CardHeader
         id="active-jobs-heading"
         title="Active jobs"
@@ -313,7 +315,7 @@ export function ActiveJobsCard({
         <EmptyState className={EMPTY} title="No active jobs" description="Post a job and matched candidates will show up here." />
       ) : (
         <>
-          <div className={`hidden border-y border-hx-line @min-[700px]:block ${BLEED}`}>
+          <div className={`hidden border-t border-hx-line @min-[700px]:block ${BLEED}`}>
             <Table className="text-[13px]">
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
@@ -354,7 +356,7 @@ export function ActiveJobsCard({
               </TableBody>
             </Table>
           </div>
-          <ul className={`${LIST} -mx-7 border-y border-hx-line @min-[700px]:hidden`}>
+          <ul className={`${LIST} -mx-7 border-t border-hx-line @min-[700px]:hidden`}>
             {shown.map((j, i) => {
               const p = byId.get(j.id);
               const health = jobHealth(j, p, now);
@@ -464,7 +466,7 @@ function ExperienceCell({ c }: { c: RecommendedCard }) {
 
 export function RecommendedCandidatesCard({ cards, total }: { cards: RecommendedCard[]; total: number }) {
   return (
-    <section aria-labelledby="recommended-heading" className={`${CARD} @container`}>
+    <section aria-labelledby="recommended-heading" className={`${CARD} @container ${LAST_ROWS}`}>
       <CardHeader
         id="recommended-heading"
         title="Candidates to review"
