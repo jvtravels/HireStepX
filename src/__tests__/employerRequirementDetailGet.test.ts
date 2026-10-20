@@ -48,6 +48,8 @@ interface Sim {
   noResume?: string[];
   withFile?: string[];
   filesFail?: boolean;
+  /** Overrides on the requirement row. */
+  reqRow?: Partial<typeof REQ_ROW>;
 }
 
 const NAME = "Priya Sharma";
@@ -66,7 +68,7 @@ function install(sim: Sim) {
   const json = (body: unknown, ok = true) => ({ ok, status: ok ? 200 : 500, json: async () => body, text: async () => "" });
   global.fetch = vi.fn(async (input: string) => {
     const url = String(input);
-    if (url.includes("/rest/v1/employer_requirements?")) return json([REQ_ROW]);
+    if (url.includes("/rest/v1/employer_requirements?")) return json([{ ...REQ_ROW, ...(sim.reqRow ?? {}) }]);
     if (url.includes("/rest/v1/requirement_matches?")) {
       if (url.includes("id=gt.")) return json([]);
       return json(sim.matches.map((m) => ({
@@ -157,6 +159,29 @@ describe("GET employer-requirement-detail — masking", () => {
     expect(Object.values(since)).toContain("2026-09-02T00:00:00Z");
     expect(Object.values(since)).toContain("2026-09-10T00:00:00Z");
     expect(Object.values(since)).toContain("2026-09-01T00:00:00Z");
+  });
+});
+
+describe("GET employer-requirement-detail — required skills met", () => {
+  it("reports how many of the job's listed skills the candidate covers", async () => {
+    install({ matches: [m(1)], reqRow: { skills: ["React", "TypeScript"] } });
+    const c = (await get()).body.candidates[0];
+    expect(c.requiredSkillsMet).toBe(2);
+    expect(c.requiredSkillsTotal).toBe(2);
+  });
+
+  it("flags a reviewable candidate who meets none of them with requiredSkillsMet 0", async () => {
+    install({ matches: [m(1)], reqRow: { skills: ["Kubernetes", "Terraform"] } });
+    const c = (await get()).body.candidates[0];
+    expect(c.requiredSkillsMet).toBe(0);
+    expect(c.requiredSkillsTotal).toBe(2);
+  });
+
+  it("says nothing (null) when the job lists no skills, so no label is shown", async () => {
+    install({ matches: [m(1)], reqRow: { skills: [] } });
+    const c = (await get()).body.candidates[0];
+    expect(c.requiredSkillsMet).toBeNull();
+    expect(c.requiredSkillsTotal).toBeNull();
   });
 });
 

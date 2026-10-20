@@ -359,6 +359,20 @@ export function countRequiredSkillsCovered(
   return unitsCovered(have, requiredSkills.map((s) => tokenize(s)).filter((t) => t.length > 0));
 }
 
+/** Employer-facing read-out of how many listed skills a candidate covers, so a
+    reviewable match that meets none of them can be labelled instead of looking
+    like any other mid-score row. `total` is 0 when the job lists no usable
+    skills (nothing to meet, so no label). Such a candidate is already kept out
+    of the Strong tier and out of strong alerts by skillsSupportStrong +
+    capUnsupportedStrong; this only makes the gap visible. */
+export function requiredSkillsCoverage(
+  candidate: Pick<CandidatePoolRow, "target_role" | "resume_data">,
+  requiredSkills: string[] | undefined,
+): { met: number; total: number } {
+  const units = (requiredSkills || []).map((s) => tokenize(s)).filter((t) => t.length > 0);
+  return { met: unitsCovered(candidateSkillTokens(candidate), units), total: units.length };
+}
+
 /** The skill gate for a "strong" match. It applies whatever the skill count:
     2+ listed skills need 2 covered (or half the list); 1 listed skill must be
     covered; with none listed the title's content words stand in for the

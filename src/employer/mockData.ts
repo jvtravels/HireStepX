@@ -68,6 +68,11 @@ export interface Candidate {
   city: string;
   matchScore: number; // fit against THIS requirement only
   matchBreakdown?: MatchBreakdown; // why matchScore is what it is
+  /** How many of the job's listed skills the candidate covers. 0 means a reviewable
+      match that meets none of them (never Strong, never alerted); null when the job
+      lists no skills or the server did not say. */
+  requiredSkillsMet?: number | null;
+  requiredSkillsTotal?: number | null;
   rosterScore: number; // lifetime performance across all practice sessions
   sessionsCompleted: number;
   lastActiveDaysAgo: number;

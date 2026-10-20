@@ -255,6 +255,14 @@ export default function CandidateRow({
             <div className="mt-1.5 flex flex-wrap items-center gap-1">
               {response === "interested" && <span className="rounded-full bg-hx-success-100 px-2 py-0.5 text-[11px] font-semibold text-hx-success-ink">Interested</span>}
               {response === "declined" && <span className="rounded-full bg-hx-soft px-2 py-0.5 text-[11px] font-semibold text-hx-neutral-ink">Declined</span>}
+              {candidate.requiredSkillsMet === 0 && (
+                <span
+                  className="rounded-full bg-hx-soft px-2 py-0.5 text-[11px] font-semibold text-hx-neutral-ink"
+                  title="This candidate fits the job on role and location but meets none of its required skills, so it is not ranked as a strong match."
+                >
+                  No required skills met
+                </span>
+              )}
             </div>
           </div>
         </div>
