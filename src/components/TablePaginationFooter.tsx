@@ -64,7 +64,7 @@ export function TablePaginationFooter({
             <SelectTrigger
               size="sm"
               aria-label="Rows per page"
-              style={{ borderRadius: 6, fontFamily: F.sans, fontSize: 13, fontWeight: 500, color: T.inkFaint }}
+              style={{ borderRadius: 6, fontFamily: F.sans, fontSize: 14, fontWeight: 500, color: T.inkFaint }}
             >
               <SelectValue />
             </SelectTrigger>

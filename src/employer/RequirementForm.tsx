@@ -50,7 +50,7 @@ import { ROLE_SUGGESTIONS } from "@/onboardingData";
 import { COMPANY_SUGGESTIONS } from "../../data/company-suggestions";
 import { COLLEGE_SUGGESTIONS, DOMAIN_SUGGESTIONS, INDUSTRY_SUGGESTIONS, SKILL_SUGGESTIONS } from "../../data/requirement-suggestions";
 
-const SELECT_FIELD = "h-11 w-full rounded-[10px] border-hx-line bg-white px-3.5 text-[15px] text-hx-coal max-md:text-[16px]";
+const SELECT_FIELD = "h-11 w-full rounded-[10px] border-hx-line bg-white px-3.5 text-sm text-hx-coal";
 
 const baseInputStyle: CSSProperties = {
   width: "100%",
