@@ -123,9 +123,8 @@ describe("HrFullReport", () => {
     expect(screen.getByText("What you said")).toBeInTheDocument();
     expect(screen.getByText("What HR wants to hear")).toBeInTheDocument();
 
-    // Section 04 — Drill CTA.
-    expect(screen.getByText(/Re-drill the/)).toBeInTheDocument();
-    expect(screen.getByText("Start drill plan →")).toBeInTheDocument();
+    // The drill-plan section was removed (no per-dimension drill backend).
+    expect(screen.queryByText("Start drill plan →")).not.toBeInTheDocument();
   });
 
   it("edge: no hrReport → logistics section shows an honest empty state, no crash", () => {
@@ -136,13 +135,11 @@ describe("HrFullReport", () => {
     expect(screen.queryByText("Your 'why this company' — rewritten")).not.toBeInTheDocument();
   });
 
-  it("edge: empty skills → dimension gate + drill CTA suppressed, hero shows role/company", () => {
+  it("edge: empty skills → dimension gate shown, hero shows role/company", () => {
     renderReport({ skills: [] });
     expect(screen.getByText(/Dimension scores not available/)).toBeInTheDocument();
     // With no dims, the hero falls back to the role/company line.
     expect(screen.getByText(/HR Round for Senior Product Designer at Infosys/)).toBeInTheDocument();
-    // Section 04 drill plan is gated on skills.length > 0.
-    expect(screen.queryByText("Start drill plan →")).not.toBeInTheDocument();
   });
 
   it("edge: motivationAfter only → single full-width card, no 'what you said' column", () => {

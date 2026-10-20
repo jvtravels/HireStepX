@@ -206,9 +206,6 @@ export interface SessionReportViewProps {
    *  card. Production routes to /session/new with the weakest question
    *  pre-loaded. */
   onTryQuestionAgain?: (questionIdx: number) => void;
-  /** "Drill weakest skill" — invoked from the Next-Steps third card.
-   *  Production routes to a focused 5-question drill. */
-  onDrillSkill?: (skillName: string) => void;
   /** Trust + usefulness 2-question polls. Both fire to analytics. */
   onTrustAnswer?: (value: "yes" | "no") => void;
   onUsefulAnswer?: (value: "yes" | "no") => void;
@@ -303,7 +300,7 @@ function reportSubtitle(data: InterviewResultData): string {
 }
 
 export default function SessionReportView(props: SessionReportViewProps) {
-  const { data, sessionId, onTrustAnswer, onUsefulAnswer, onDrillSkill, behavioralFullReportData, hrReportData } = props;
+  const { data, sessionId, onTrustAnswer, onUsefulAnswer, behavioralFullReportData, hrReportData } = props;
   // Behavioral v2 dispatch: env-gated, opt-in. Default (env unset) falls through unchanged.
   const behavioralV2Enabled =
     typeof process !== "undefined" &&
@@ -335,7 +332,6 @@ export default function SessionReportView(props: SessionReportViewProps) {
                 daysUntilInterview={data.daysUntilInterview}
                 role={data.role}
                 company={data.company}
-                onDrillSkill={onDrillSkill}
               />
               <ReferralInviteSection score={data.overallScore} />
               <ProductRating sessionId={sessionId ?? ""} />
@@ -353,7 +349,6 @@ export default function SessionReportView(props: SessionReportViewProps) {
 function GenericReport({
   data,
   onTryQuestionAgain,
-  onDrillSkill,
   credibility,
   onDisputeCredibility,
   campusPlacementMeta,
@@ -376,8 +371,6 @@ function GenericReport({
   const weakestQuestion = data.questions.length > 0
     ? data.questions.reduce((min, q) => (q.score < min.score ? q : min), data.questions[0])
     : undefined;
-  const onDrillWeakest =
-    onDrillSkill && data.weakestSkill ? () => onDrillSkill(data.weakestSkill.name) : undefined;
 
   const tabs: { key: ReportTab; label: string; count?: number }[] = [
     { key: "overview", label: "Overview" },
@@ -412,7 +405,6 @@ function GenericReport({
                 <NextStepsSection
                   daysUntilInterview={data.daysUntilInterview}
                   readinessSentence={data.readinessSentence}
-                  weakestSkill={data.weakestSkill?.name}
                   resumeImprovements={data.resumeImprovements}
                   weakestQuestionIndex={weakestQuestion?.index}
                   weakestQuestionScore={weakestQuestion?.score}
@@ -421,7 +413,6 @@ function GenericReport({
                       ? () => onTryQuestionAgain(weakestQuestion.index)
                       : undefined
                   }
-                  onDrillSkill={onDrillWeakest}
                 />
                 {isFreeUser && (
                   <UpgradeNudgeStrip score={data.overallScore} priorSessionCount={data.priorSessionCount} onUpgrade={onUpgrade} />
@@ -454,7 +445,7 @@ function GenericReport({
             )}
             {tab === "skills" && (
               <>
-                <SkillsSection skills={data.skills} weakest={data.weakestSkill} onDrillSkill={onDrillWeakest} />
+                <SkillsSection skills={data.skills} weakest={data.weakestSkill} />
                 <CoreMetricsSection metrics={data.metrics} />
                 {progressTrends && <ProgressTrendPanel trends={progressTrends} />}
                 {!data.negotiationOutcome && offerNetValue && <OfferEconomicsPanel offer={offerNetValue} />}

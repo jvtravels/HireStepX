@@ -1,5 +1,5 @@
 /* Extracted from SessionReportView.tsx 2026-05-29 split.
- * Three action cards: retry weakest / save story / drill weakest skill.
+ * Action cards: retry weakest question (date-aware prep plan when an interview is scheduled).
  * First card is date-aware (scheduled interview → prep plan).
  * Pure presentation.
  *
@@ -17,35 +17,23 @@ import { Button } from "@/components/ui/button";
 export function NextStepsSection({
   daysUntilInterview,
   readinessSentence,
-  weakestSkill,
   weakestQuestionIndex,
   weakestQuestionScore,
   onTryWeakestQuestion,
-  onDrillSkill,
   resumeImprovements,
 }: {
   daysUntilInterview?: number;
   readinessSentence?: string;
-  weakestSkill?: string;
   /** The label index (as shown in the Per-Question section) of the
    *  lowest-scored question — used in the CTA copy so it matches
    *  what the user sees in the report (e.g. "Q5", not "Q1"). */
   weakestQuestionIndex?: number;
   weakestQuestionScore?: number;
   onTryWeakestQuestion?: () => void;
-  onDrillSkill?: () => void;
   /** Resume polish bullets from the AI analysis — shown when present
    *  to connect interview coaching with resume quality. Max 3. */
   resumeImprovements?: string[];
 }) {
-  /* Drill weakest skill — bridges to drill mode. If the parent didn't
-   * provide a handler we fall back to a no-op so the CTA is never a
-   * dead button. Matches the no-op-default pattern used elsewhere in the
-   * report (e.g. onTryWeakestQuestion is left undefined and disabled;
-   * the drill CTA is the entry point for a new flow so we keep it live
-   * by default). */
-  const handleDrillSkill = onDrillSkill ?? (() => {});
-
   const hasScheduledInterview = typeof daysUntilInterview === "number" && daysUntilInterview > 0;
   const sessionsToFit = hasScheduledInterview
     ? Math.min(6, Math.max(2, Math.floor((daysUntilInterview as number) * 0.6)))
@@ -66,14 +54,6 @@ export function NextStepsSection({
   const firstCardWithHandler = { ...firstCard, onClick: onTryWeakestQuestion };
   const cards = [
     firstCardWithHandler,
-    {
-      title: "Drill your weakest skill",
-      desc: weakestSkill
-        ? `Focus on ${weakestSkill} with a 5-question drill.`
-        : "Run a focused drill on your lowest skill.",
-      cta: "Start 5-question drill",
-      onClick: handleDrillSkill,
-    },
   ];
   return (
     <ReportCardShell id="ir-section-next" ariaLabelledBy="ir-next-heading">

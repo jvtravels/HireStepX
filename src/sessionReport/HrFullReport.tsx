@@ -6,7 +6,6 @@
  *   01 Diagnose   — dimension gate + wins + probe review
  *   02 Act        — notice logistics + comp anchor + BGV gaps + counter-offer
  *   03 Practice   — motivation rewrite
- *   04 Next step  — drill CTA
  *
  * Data sources:
  *   • `skills`       — 8 HR rubric dimensions scored by the evaluator
@@ -24,7 +23,6 @@ import { t, f } from "./tokens";
 import { ReportCardShell, SectionBand } from "./panels/_primitives";
 import { atCompany } from "./roleLabel";
 import { Empty, EmptyDescription } from "@/components/ui/empty";
-import { Button } from "@/components/ui/button";
 
 /* ─── Design tokens ─────────────────────────────────────────────────── */
 
@@ -816,111 +814,6 @@ function MotivationRewritePanel({ hrReport }: { hrReport: HrReportData }) {
   );
 }
 
-/* ─── Drill CTA ─────────────────────────────────────────────────────── */
-
-function DrillCtaPanel({
-  skills,
-  daysUntilInterview,
-  onDrillSkill,
-}: {
-  skills: Skill[];
-  daysUntilInterview?: number;
-  onDrillSkill?: (name: string) => void;
-}) {
-  const weakest = [...skills].sort((a, b) => a.score - b.score).slice(0, 3);
-  return (
-    <Panel style={{ background: `linear-gradient(135deg, #0E0C08 0%, ${INDIGO} 100%)` }}>
-      <div
-        className="hrfr-cta"
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr auto",
-          gap: 24,
-          alignItems: "center",
-          marginBottom: 20,
-        }}
-      >
-        <div>
-          <div
-            style={{
-              fontFamily: MONO,
-              fontSize: 11,
-              letterSpacing: "0.10em",
-              textTransform: "uppercase",
-              color: "#B8B5D4",
-              marginBottom: 6,
-            }}
-          >
-            DRILL PLAN{daysUntilInterview ? ` · ${daysUntilInterview} DAYS LEFT` : ""}
-          </div>
-          <div style={{ fontFamily: SERIF, fontSize: 22, color: t.white, lineHeight: 1.2, marginBottom: 6 }}>
-            Re-drill the {weakest.length > 0 ? weakest.length : "weakest"} dimensions before your real round
-          </div>
-          <div style={{ fontFamily: SANS, fontSize: 13, color: "#B8B5D4" }}>
-            One 12-minute focused session per dimension — scored on the same rubric so you can see the delta.
-          </div>
-        </div>
-        <Button
-          type="button"
-          size="lg"
-          onClick={() => onDrillSkill && weakest[0] && onDrillSkill(weakest[0].name)}
-          disabled={!onDrillSkill}
-          style={{
-            background: t.white,
-            color: INDIGO,
-            fontFamily: SANS,
-            fontSize: 14,
-            fontWeight: 700,
-            whiteSpace: "nowrap",
-          }}
-        >
-          Start drill plan →
-        </Button>
-      </div>
-      {weakest.length > 0 && (
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: `repeat(auto-fit, minmax(min(100%, 200px), 1fr))`,
-            gap: 10,
-          }}
-        >
-          {weakest.map((s, i) => (
-            <div
-              key={s.name}
-              style={{
-                background: "rgba(255,255,255,0.08)",
-                border: "1px solid rgba(255,255,255,0.15)",
-                borderRadius: 10,
-                padding: 14,
-              }}
-            >
-              <div
-                style={{
-                  fontFamily: MONO,
-                  fontSize: 11,
-                  letterSpacing: "0.10em",
-                  textTransform: "uppercase",
-                  color: "#FCA5A5",
-                  marginBottom: 6,
-                }}
-              >
-                Drill {i + 1}
-              </div>
-              <div style={{ fontFamily: SANS, fontSize: 13, color: t.white, lineHeight: 1.4 }}>
-                {s.name}
-              </div>
-              <div style={{ fontFamily: MONO, fontSize: 11, color: "#C7CAD6", marginTop: 4 }}>
-                {s.score}/100
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </Panel>
-  );
-}
-
 /* ─── Composed export ────────────────────────────────────────────────── */
 
 interface HrFullReportProps {
@@ -933,7 +826,6 @@ interface HrFullReportProps {
   daysUntilInterview?: number;
   role: string;
   company: string;
-  onDrillSkill?: (name: string) => void;
 }
 
 const HR_RESPONSIVE_CSS = `
@@ -944,7 +836,6 @@ const HR_RESPONSIVE_CSS = `
     .hrfr-dim { grid-template-columns: 1fr auto auto !important; row-gap: 6px !important; column-gap: 10px !important; }
     .hrfr-dim > :first-child { grid-column: 1 / -1; }
     .hrfr-probe { grid-template-columns: 1fr !important; gap: 4px !important; }
-    .hrfr-cta { grid-template-columns: 1fr !important; gap: 16px !important; }
     .hrfr-bridge { grid-template-columns: 1fr 1fr !important; padding: 18px 16px !important; gap: 14px !important; }
     .hrfr-bridge-sep { display: none !important; }
     .hrfr-bridge-msg { grid-column: 1 / -1 !important; }
@@ -961,7 +852,6 @@ export default function HrFullReport({
   daysUntilInterview,
   role,
   company,
-  onDrillSkill,
 }: HrFullReportProps) {
   const failingDims = skills.filter((s) => s.score < 60).length;
   const totalDims = skills.length;
@@ -1078,24 +968,6 @@ export default function HrFullReport({
             bg={INDIGO_SOFT}
           />
           <MotivationRewritePanel hrReport={hrReport} />
-        </>
-      )}
-
-      {/* SECTION 04 — NEXT STEP */}
-      {skills.length > 0 && (
-        <>
-          <SectionBand
-            label="04 · Next step"
-            title="Where the drill plan takes you"
-            subtitle="One focused 12-minute session per weakest dimension."
-            accent={SUCCESS}
-            bg={SUCCESS_SOFT}
-          />
-          <DrillCtaPanel
-            skills={skills}
-            daysUntilInterview={daysUntilInterview}
-            onDrillSkill={onDrillSkill}
-          />
         </>
       )}
     </ReportCardShell>

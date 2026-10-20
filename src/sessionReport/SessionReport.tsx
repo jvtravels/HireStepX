@@ -1027,34 +1027,6 @@ export const SessionReport = memo(function SessionReport({
     [router, session.id, session.type, session.focus, session.role, session.company, report]
   );
 
-  const onDrillSkill = useCallback(
-    (skillName: string) => {
-      track("report_action_clicked", {
-        action: "drill_skill",
-        sessionId: session.id,
-        skill: skillName,
-        view: "main",
-      });
-      const params = new URLSearchParams();
-      const isCampus = session.focus === "campus-placement";
-      // Campus placement: skill slugs like "problem-framing" aren't valid
-      // campus drill targets — route back to the campus-placement focus
-      // so the user gets a relevant practice session.
-      if (isCampus) {
-        params.set("type", "behavioral");
-        params.set("focus", "campus-placement");
-      } else {
-        const slug = skillName.toLowerCase().replace(/\s+/g, "-");
-        params.set("type", "behavioral");
-        params.set("focus", slug);
-      }
-      if (session.role) params.set("role", session.role);
-      if (session.company) params.set("company", session.company);
-      router.push(`/session/new?${params.toString()}`);
-    },
-    [router, session.id, session.focus, session.role, session.company]
-  );
-
   const onTrustAnswer = useCallback(
     (value: "yes" | "no") => {
       track("report_trust_poll_submitted", {
@@ -1165,7 +1137,6 @@ export const SessionReport = memo(function SessionReport({
       onBack={onBack}
       backLabel={backLabel}
       onTryQuestionAgain={onTryQuestionAgain}
-      onDrillSkill={onDrillSkill}
       onTrustAnswer={onTrustAnswer}
       onUsefulAnswer={onUsefulAnswer}
       credibility={credibility}

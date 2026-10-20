@@ -5,9 +5,8 @@
 import { t, f, radius, size } from "../tokens";
 import type { Skill } from "../types";
 import { SrSectionShell, CalloutCard } from "./_primitives";
-import { Button } from "@/components/ui/button";
 
-export function SkillsSection({ skills, weakest, onDrillSkill }: { skills: Skill[]; weakest: { name: string; tip: string }; onDrillSkill?: (skillName: string) => void }) {
+export function SkillsSection({ skills, weakest }: { skills: Skill[]; weakest: { name: string; tip: string } }) {
   const max = 100;
   const hasAvg = skills.some((s) => s.roleAvg);
   const legend = hasAvg ? (
@@ -83,11 +82,6 @@ export function SkillsSection({ skills, weakest, onDrillSkill }: { skills: Skill
         </div>
         <CalloutCard
           eyebrow={`Focus on ${weakest.name}`}
-          footer={
-            <Button type="button" size="sm" style={{ width: "100%", justifyContent: "center", marginTop: 14 }} onClick={() => onDrillSkill?.(weakest.name)}>
-              Drill this skill
-            </Button>
-          }
         >
           {weakest.tip}
         </CalloutCard>
