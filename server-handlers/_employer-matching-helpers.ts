@@ -422,21 +422,33 @@ export async function loadOptedOutCandidateIds(
   return off;
 }
 
-/** Of `ids`, who is already hired against a DIFFERENT requirement. Scoped to
- *  the post-prefilter candidates so the read stays small (uses the
- *  requirement_matches(candidate_user_id, candidate_status) index). */
+/** How long a "hired" outcome on one job keeps a candidate out of other
+ *  employers' fresh match lists. Conservative on purpose: long enough to cover a
+ *  notice period and joining date, short enough that someone hired a year ago
+ *  (and possibly looking again) is not hidden for good. */
+export const HIRED_ELSEWHERE_WINDOW_DAYS = 90;
+
+/** Of `ids`, who was marked hired against a DIFFERENT requirement within
+ *  HIRED_ELSEWHERE_WINDOW_DAYS. Only the candidate ids come back: which employer
+ *  or job hired them is never read into the result. Scoped to the
+ *  post-prefilter candidates so the read stays small (uses the
+ *  requirement_matches(candidate_user_id, candidate_status) index). A row with
+ *  no status timestamp (written before the column existed) still counts. */
 export async function loadHiredElsewhere(
   supabaseUrl: string,
   headers: Headers,
   requirementId: string,
   ids: string[],
   fetchImpl: FetchImpl = fetch,
+  nowMs: number = Date.now(),
 ): Promise<Set<string>> {
   const out = new Set<string>();
+  const cutoff = encodeURIComponent(new Date(nowMs - HIRED_ELSEWHERE_WINDOW_DAYS * 86_400_000).toISOString());
   for (const batch of chunk(ids, MAX_IN_BATCH)) {
     try {
       const res = await fetchImpl(
         `${supabaseUrl}/rest/v1/requirement_matches?candidate_status=eq.hired&requirement_id=neq.${encodeURIComponent(requirementId)}` +
+          `&or=(candidate_status_updated_at.gte.${cutoff},candidate_status_updated_at.is.null)` +
           `&candidate_user_id=in.(${inList(batch)})&select=candidate_user_id&limit=1000`,
         { headers },
       );
@@ -448,6 +460,21 @@ export async function loadHiredElsewhere(
     }
   }
   return out;
+}
+
+/** Untouched rows whose candidate was hired elsewhere are dropped from this
+ *  requirement's list; touched rows (the employer already acted) always stay. */
+export function planHiredElsewhereRemovals(
+  untouched: ExistingMatchRow[],
+  hiredIds: Set<string>,
+): { removeIds: string[]; untouched: ExistingMatchRow[] } {
+  const removeIds: string[] = [];
+  const keep: ExistingMatchRow[] = [];
+  for (const m of untouched) {
+    if (!m.unlocked && hiredIds.has(m.candidate_user_id)) removeIds.push(m.id);
+    else keep.push(m);
+  }
+  return { removeIds, untouched: keep };
 }
 
 /** Pages fetched per candidate batch before we stop: 50 candidates x 5 pages

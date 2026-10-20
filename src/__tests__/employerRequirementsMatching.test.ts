@@ -54,6 +54,8 @@ interface Sim {
   currentStatus?: string;
   /** Another overlapping pass already claimed every strong-match announcement. */
   claimLost?: boolean;
+  /** Candidates marked hired on a different requirement. */
+  hired?: string[];
 }
 
 /* Strong matches need the candidate to cover the requirement's listed skills. */
@@ -66,7 +68,7 @@ function dev(id: string, name = `Dev ${id}`, extra: Partial<SimProfile> = {}): S
 }
 
 function makeSim(sim: Sim) {
-  const calls = { upserts: [] as Array<Array<{ candidate_user_id: string }>>, deletes: [] as string[], patches: [] as Array<{ url: string; body: Record<string, unknown> }> };
+  const calls = { upserts: [] as Array<Array<{ candidate_user_id: string }>>, deletes: [] as string[], hiredReads: [] as string[], patches: [] as Array<{ url: string; body: Record<string, unknown> }> };
   const json = (body: unknown, ok = true) => ({ ok, status: ok ? 200 : 500, json: async () => body, text: async () => "" });
   const claimedIds = new Set<string>();
   const fetchMock = vi.fn(async (input: string, init?: RequestInit) => {
@@ -84,7 +86,11 @@ function makeSim(sim: Sim) {
         return json(won.map((id) => ({ candidate_user_id: id })));
       }
       if (method === "PATCH") return json([]);
-      if (url.includes("candidate_status=eq.hired")) return json([]);
+      if (url.includes("candidate_status=eq.hired")) {
+        calls.hiredReads.push(url);
+        const asked = decodeURIComponent(url.match(/candidate_user_id=in\.\(([^)]*)\)/)?.[1] || "").split(",");
+        return json((sim.hired ?? []).filter((id) => asked.includes(id)).map((id) => ({ candidate_user_id: id })));
+      }
       return url.includes("id=gt.") ? json([]) : json(sim.matches ?? []);
     }
     if (url.includes("/rest/v1/profiles?")) {
@@ -274,6 +280,58 @@ describe("runMatching — re-match cleanup", () => {
     await runMatching(REQ_ID, REQ, OWNER);
 
     expect(deletedIds(calls)).not.toContain("m-stale");
+  });
+});
+
+describe("runMatching — candidates hired on another job", () => {
+  it("drops untouched rows for a candidate hired elsewhere and stops surfacing them, keeping touched and unlocked rows", async () => {
+    const { calls } = makeSim({
+      profiles: [dev("hired-new", "H", SKILLED), dev("hired-open", "H2", SKILLED), dev("hired-int", "H3", SKILLED), dev("hired-paid", "H4", SKILLED), dev("free", "F", SKILLED)],
+      sessions: ["hired-new", "hired-open", "hired-int", "hired-paid", "free"].map((i) => graded(i, 90)),
+      hired: ["hired-new", "hired-open", "hired-int", "hired-paid"],
+      matches: [
+        { id: "m-open", candidate_user_id: "hired-open", match_score: 70, unlocked: false },
+        { id: "m-int", candidate_user_id: "hired-int", match_score: 70, unlocked: false, candidate_status: "interviewing" },
+        { id: "m-paid", candidate_user_id: "hired-paid", match_score: 70, unlocked: true },
+      ],
+    });
+
+    await runMatching(REQ_ID, REQ, OWNER);
+
+    expect(deletedIds(calls)).toContain("m-open");
+    expect(deletedIds(calls)).not.toContain("m-int");
+    expect(deletedIds(calls)).not.toContain("m-paid");
+    const hiredDelete = decodeURIComponent(calls.deletes.find((u) => u.includes("m-open")) || "");
+    expect(hiredDelete).toContain("unlocked=eq.false");
+    expect(hiredDelete).toContain("candidate_status_note=is.null");
+    // a hired candidate is not offered as a new match either
+    expect(upsertedIds(calls)).toEqual(["free"]);
+  });
+
+  it("only counts a hire inside the bounded window, and reads it for rows already on the list too", async () => {
+    const { calls } = makeSim({
+      profiles: [dev("free", "F", SKILLED), chef("old-row")],
+      sessions: [graded("free", 90)],
+      matches: [{ id: "m-old", candidate_user_id: "old-row", match_score: 70, unlocked: false }],
+    });
+    await runMatching(REQ_ID, REQ, OWNER);
+    const url = decodeURIComponent(calls.hiredReads[0]);
+    expect(url).toContain("candidate_status_updated_at.gte.");
+    expect(url).toContain("candidate_status_updated_at.is.null");
+    expect(url).toContain("old-row");
+  });
+});
+
+describe("runMatching — candidates who meet none of the listed skills", () => {
+  it("is never scored Strong and never triggers a strong alert", async () => {
+    const { calls } = makeSim({
+      profiles: [dev("noskills", "N", { resume_data: { skills: ["Photoshop", "Illustration"] } })],
+      sessions: [graded("noskills", 95)],
+    });
+    await runMatching(REQ_ID, REQ, OWNER);
+    const row = (calls.upserts.flat() as Array<{ candidate_user_id: string; match_score: number }>).find((r) => r.candidate_user_id === "noskills");
+    if (row) expect(row.match_score).toBeLessThan(40);
+    expect(notify.mock.calls.some((c) => (c[0] as { type: string }).type === "strong_match_found")).toBe(false);
   });
 });
 

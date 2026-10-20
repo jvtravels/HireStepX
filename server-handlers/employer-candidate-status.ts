@@ -37,6 +37,7 @@ import {
   type RequirementMatchRow,
 } from "./_employer-candidate-status-helpers";
 import { notify } from "./_notify";
+import { untouchedMatchFilter } from "./_employer-matching-helpers";
 import { findOrCreateConversationId, postSystemMessage } from "./_messages-helpers";
 import { emailShell, title as emailTitle, para, b, button, escapeHtml } from "./_email-theme";
 import { loadEmployerMatchAccess, loadAuthIdentity, DENIED_STATUS } from "./_entitlements";
@@ -318,6 +319,19 @@ export default async function handler(req: Request): Promise<Response> {
         note: candidateMessage,
       }),
     }).catch((err) => slog.warn("employer-candidate-status: event insert failed", { error: (err as Error).message }));
+
+    // A hired candidate is off the market for other employers' jobs. The next
+    // rematch would hide them anyway (HIRED_ELSEWHERE_WINDOW_DAYS); this drops
+    // the stale rows now instead of waiting for that pass. Unlocked and
+    // employer-actioned rows on other jobs are left alone, and the employer
+    // gets nothing back that says who hired the candidate.
+    if (candidateStatus === "hired") {
+      await fetch(
+        `${SUPABASE_URL}/rest/v1/requirement_matches?candidate_user_id=eq.${encodeURIComponent(matchRows[0].candidate_user_id)}` +
+          `&requirement_id=neq.${encodeURIComponent(requirementId)}&unlocked=eq.false${untouchedMatchFilter()}`,
+        { method: "DELETE", headers: { ...serviceHeaders(), Prefer: "return=minimal" } },
+      ).catch((err) => slog.warn("employer-candidate-status: hired cleanup failed", { error: (err as Error).message }));
+    }
 
     const notifText = STATUS_NOTIFICATION_TEXT[candidateStatus];
     if (notifText) {

@@ -59,6 +59,8 @@ interface Sim {
   /** Row for the status / last_matched_at read a failed pass settles on. */
   settle?: { status: string; last_matched_at: string | null };
   backlog?: unknown[];
+  /** Candidates marked hired on a different requirement. */
+  hired?: string[];
 }
 
 function makeSim(sim: Sim) {
@@ -83,7 +85,10 @@ function makeSim(sim: Sim) {
         return json([]);
       }
       if (method === "DELETE") return json([]);
-      if (url.includes("candidate_status=eq.hired")) return json([]);
+      if (url.includes("candidate_status=eq.hired")) {
+        const asked = decodeURIComponent(url.match(/candidate_user_id=in\.\(([^)]*)\)/)?.[1] || "").split(",");
+        return json((sim.hired ?? []).filter((id) => asked.includes(id)).map((id) => ({ candidate_user_id: id })));
+      }
       if (sim.llmColumnsMissing && url.includes("llm_score")) return json({}, false, 400);
       if (url.includes("id=gt.")) return json([]);
       if (url.includes("select=match_score")) return json((sim.matches ?? []).map((m) => ({ match_score: m.match_score, candidate_status: m.candidate_status ?? null, candidate_response: m.candidate_response ?? null })));
@@ -363,6 +368,50 @@ describe("single-candidate resume rematch", () => {
       : base(u, i))) as unknown as typeof fetch;
     await rematchOpenRequirementsForNewResume("a");
     expect(calls.singleUpserts).toEqual([]);
+  });
+
+  const deletes = (calls: ReturnType<typeof makeSim>) => calls.urls.filter((u) => u.startsWith("DELETE ")).map((u) => decodeURIComponent(u));
+
+  it("drops an untouched locked row for a job the candidate no longer fits, never an unlocked or actioned one", async () => {
+    const calls = makeSim({ profiles: [{ id: "a", name: "A", target_role: "Chef" }], backlog: [backlogRow] });
+    await rematchOpenRequirementsForNewResume("a");
+    const del = deletes(calls);
+    expect(del).toHaveLength(1);
+    expect(del[0]).toContain("candidate_user_id=eq.a");
+    expect(del[0]).toContain(`requirement_id=in.(${REQ_ID})`);
+    expect(del[0]).toContain("unlocked=eq.false");
+    expect(del[0]).toContain("candidate_status_note=is.null");
+    expect(del[0]).toContain("interview_scheduled_at=is.null");
+    expect(del[0]).toContain("candidate_status.eq.shortlisted");
+    expect(calls.singleUpserts).toEqual([]);
+  });
+
+  it("drops the untouched row and writes nothing when the candidate was hired on another job", async () => {
+    const calls = makeSim({
+      profiles: [dev("a")], backlog: [backlogRow], hired: ["a"],
+      matches: [{ id: "m1", candidate_user_id: "a", match_score: 70, unlocked: false }],
+    });
+    await rematchOpenRequirementsForNewResume("a");
+    expect(calls.singleUpserts).toEqual([]);
+    expect(deletes(calls).some((u) => u.includes("candidate_user_id=eq.a") && u.includes("unlocked=eq.false"))).toBe(true);
+    expect(notify).not.toHaveBeenCalled();
+  });
+
+  it("removes the untouched row when the new profile falls below the floor, and leaves a paid one alone", async () => {
+    const weak = { id: "a", name: "A", target_role: "Backend Developer", resume_data: { skills: ["React"] } };
+    const calls = makeSim({
+      profiles: [weak], backlog: [backlogRow],
+      matches: [{ id: "m1", candidate_user_id: "a", match_score: 70, unlocked: false }],
+    });
+    await rematchOpenRequirementsForNewResume("a");
+    expect(deletes(calls).some((u) => u.includes("id=in.(m1)") && u.includes("unlocked=eq.false") && u.includes("candidate_status_note=is.null"))).toBe(true);
+
+    const paid = makeSim({
+      profiles: [weak], backlog: [backlogRow],
+      matches: [{ id: "m2", candidate_user_id: "a", match_score: 70, unlocked: true }],
+    });
+    await rematchOpenRequirementsForNewResume("a");
+    expect(deletes(paid)).toEqual([]);
   });
 
   it("does not run for an opted-out candidate", async () => {

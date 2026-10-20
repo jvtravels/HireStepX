@@ -134,6 +134,47 @@ describe("employer-candidate-status same-state repeats", () => {
   });
 });
 
+describe("employer-candidate-status hired cleanup", () => {
+  const cleanup = (f: ReturnType<typeof installFetch>) =>
+    f.mock.calls
+      .filter(([u, init]) => String(u).includes("/rest/v1/requirement_matches") && (init as RequestInit | undefined)?.method === "DELETE")
+      .map(([u]) => decodeURIComponent(String(u)));
+
+  it("drops the candidate's other untouched locked rows when they are marked hired", async () => {
+    const f = installFetch({ unlocked: true, from: "interviewing" });
+    const res = await patch({ candidateStatus: "hired" });
+    expect(res.status).toBe(200);
+    const del = cleanup(f);
+    expect(del).toHaveLength(1);
+    expect(del[0]).toContain(`candidate_user_id=eq.${CAND}`);
+    expect(del[0]).toContain("requirement_id=neq.r1");
+    expect(del[0]).toContain("unlocked=eq.false");
+    expect(del[0]).toContain("candidate_status_note=is.null");
+    expect(del[0]).toContain("candidate_status.eq.shortlisted");
+  });
+
+  it("does nothing extra for any other status, or when the status did not change", async () => {
+    const other = installFetch({ unlocked: true, from: "shortlisted" });
+    await patch({ candidateStatus: "rejected" });
+    expect(cleanup(other)).toHaveLength(0);
+
+    const same = installFetch({ unlocked: true, from: "hired" });
+    await patch({ candidateStatus: "hired", note: "start date confirmed" });
+    expect(cleanup(same)).toHaveLength(0);
+  });
+
+  it("still succeeds when the cleanup request fails", async () => {
+    installFetch({ unlocked: true, from: "interviewing" });
+    const base = global.fetch;
+    global.fetch = vi.fn(async (u: string, init?: RequestInit) => {
+      if (init?.method === "DELETE") throw new Error("network");
+      return (base as unknown as typeof fetch)(u, init);
+    }) as unknown as typeof fetch;
+    const res = await patch({ candidateStatus: "hired" });
+    expect(res.status).toBe(200);
+  });
+});
+
 describe("employer-candidate-status rate limit", () => {
   it("allows 60 changes a minute so a 20-candidate bulk move can be undone", async () => {
     installFetch({ unlocked: true });

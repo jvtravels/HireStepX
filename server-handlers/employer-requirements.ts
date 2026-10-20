@@ -59,6 +59,7 @@ import {
   loadEvidenceFlags,
   planExistingMatches,
   planStaleRemovals,
+  planHiredElsewhereRemovals,
   isEligiblePoolProfile,
   isRelevantProfile,
   computeTrustedSessionStats,
@@ -795,6 +796,19 @@ async function deleteLockedMatches(ids: string[], requirementId: string, opts: {
   return ok;
 }
 
+/** Removes one candidate's untouched, locked rows on the given requirements. The
+ *  single-candidate path has no row ids to hand (it never reads the full list), so
+ *  it deletes by candidate and re-asserts "untouched" in the DELETE itself. */
+async function deleteUntouchedLockedFor(candidateId: string, requirementIds: string[]): Promise<void> {
+  for (const batch of chunk(requirementIds, 100)) {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/requirement_matches?candidate_user_id=eq.${encodeURIComponent(candidateId)}&requirement_id=in.(${inList(batch)})&unlocked=eq.false${untouchedMatchFilter()}`,
+      { method: "DELETE", headers: serviceHeaders() },
+    ).catch(() => null);
+    if (!res || !res.ok) slog.error("requirement_matches candidate cleanup failed", { code: "requirement_matches_cleanup_failed" });
+  }
+}
+
 /** Thrown by the inner pass once runMatching has timed out or failed, so no
  *  further write happens on behalf of a run the caller already gave up on. */
 function stopIfAborted(signal: AbortSignal): void {
@@ -879,9 +893,17 @@ async function runMatchingInner(requirementId: string, req: RequirementInput, ow
   // removes stale rows (see planStaleRemovals).
   const scanComplete = !scan.truncated;
 
-  // "Hired elsewhere" only matters for candidates who'd otherwise surface.
-  const hiredElsewhereIds = await loadHiredElsewhere(SUPABASE_URL, headers, requirementId, relevant.map((p) => p.id));
+  // "Hired elsewhere" only matters for candidates who'd otherwise surface, plus
+  // the untouched locked rows already on this list: someone hired since the last
+  // pass must leave it now, not after three missed passes. Touched rows stay.
+  const hiredElsewhereIds = await loadHiredElsewhere(SUPABASE_URL, headers, requirementId, [...new Set([...relevant.map((p) => p.id), ...plan.untouched.map((m) => m.candidate_user_id)])]);
   const pool = relevant.filter((p) => !hiredElsewhereIds.has(p.id));
+  const hiredPlan = planHiredElsewhereRemovals(plan.untouched, hiredElsewhereIds);
+  if (hiredPlan.removeIds.length > 0) {
+    stopIfAborted(signal);
+    await deleteLockedMatches(hiredPlan.removeIds, requirementId, { untouchedOnly: true });
+  }
+  const untouchedRows = hiredPlan.untouched;
 
   const needsReports = !!(req.minReadinessBand || req.minStarCompleteness);
   const sessionRows = pool.length > 0 ? await loadGradedSessions(SUPABASE_URL, headers, pool.map((p) => p.id), needsReports) : [];
@@ -987,7 +1009,7 @@ async function runMatchingInner(requirementId: string, req: RequirementInput, ow
   // Stale cleanup runs AFTER the upsert, so a failure mid-pass leaves the old
   // shortlist in place instead of an empty one. Locked rows only.
   const rankedIds = new Set(ranked.map((m) => m.candidateId));
-  const { removeIds: staleIds, missIds } = planStaleRemovals(plan.untouched, rankedIds, scanComplete);
+  const { removeIds: staleIds, missIds } = planStaleRemovals(untouchedRows, rankedIds, scanComplete);
   stopIfAborted(signal);
   if (missIds.length > 0) await recordMissedPasses(requirementId, missIds);
   if (staleIds.length > 0) {
@@ -996,7 +1018,7 @@ async function runMatchingInner(requirementId: string, req: RequirementInput, ow
   }
   const removedStale = new Set(staleIds);
   // Untouched rows a partial scan couldn't re-evaluate stay on the list.
-  const retained = plan.untouched.filter((m) => !rankedIds.has(m.candidate_user_id) && !removedStale.has(m.id));
+  const retained = untouchedRows.filter((m) => !rankedIds.has(m.candidate_user_id) && !removedStale.has(m.id));
 
   // "New strong match" ping: strong NOW, not strong on the previous pass.
   // One notification + one email per run, never per candidate; capped; counts
@@ -1173,9 +1195,13 @@ async function rematchSingleCandidate(candidateId: string): Promise<void> {
   if (!backlogRes) return;
   const rows = ((await backlogRes.json().catch(() => [])) as Array<OpenRequirementForRematch & { employers?: { suspended_at?: string | null } | null }>)
     .filter((r) => !isSuspended(r.employers) && r.employer_id !== candidateId);
-  const candidates = pickRequirementsToRematch(rows, rows.length)
-    .filter((r) => isRelevantProfile(profile, requirementInputFromRow(r)))
-    .slice(0, MAX_INCREMENTAL_CANDIDATE_REQUIREMENTS);
+  const open = pickRequirementsToRematch(rows, rows.length);
+  const relevantOpen = open.filter((r) => isRelevantProfile(profile, requirementInputFromRow(r)));
+  // An edit that took this candidate out of a posting's relevance leaves their old
+  // locked row behind; the full pass would only drop it after three misses.
+  const irrelevantIds = open.filter((r) => !relevantOpen.includes(r)).map((r) => r.id);
+  if (irrelevantIds.length > 0) await deleteUntouchedLockedFor(candidateId, irrelevantIds);
+  const candidates = relevantOpen.slice(0, MAX_INCREMENTAL_CANDIDATE_REQUIREMENTS);
   if (candidates.length === 0) return;
 
   const needsReports = candidates.some((r) => !!(r.min_readiness_band || r.min_star_completeness));
@@ -1204,7 +1230,10 @@ async function rematchCandidateForRequirement(
   const headers = serviceHeaders();
   const req = requirementInputFromRow(r);
   const hired = await loadHiredElsewhere(SUPABASE_URL, headers, r.id, [profile.id]);
-  if (hired.has(profile.id)) return;
+  if (hired.has(profile.id)) {
+    await deleteUntouchedLockedFor(profile.id, [r.id]);
+    return;
+  }
 
   const stats = computeTrustedSessionStats(keepSessionsForRole(sessionRows, req.title));
   const row = buildCandidatePoolRow(profile, stats, Date.now());
@@ -1246,7 +1275,11 @@ async function rematchCandidateForRequirement(
   ).get(profile.id);
   const match = ranked[0];
   const score = capUnsupportedStrong(blendScore(match.matchScore, llm?.score), match.skillsSupportStrong);
-  if (score < MIN_MATCH_SCORE_FLOOR) return;
+  if (score < MIN_MATCH_SCORE_FLOOR) {
+    // Below the floor after blending: same fate as failing relevance above.
+    if (existing && !existing.unlocked) await deleteLockedMatches([existing.id], r.id, { untouchedOnly: true });
+    return;
+  }
 
   if (await criteriaChangedSince(r.id, req)) return;
   const upsertRes = await fetch(`${SUPABASE_URL}/rest/v1/requirement_matches?on_conflict=requirement_id,candidate_user_id`, {
