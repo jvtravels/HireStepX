@@ -186,7 +186,7 @@ export function Card({
   "aria-labelledby"?: string;
 }) {
   return (
-    <section className={className} aria-label={ariaLabel} aria-labelledby={ariaLabelledBy} style={{ background, border, borderRadius: radius, padding: pad, boxShadow: shadows.card, ...style }}>
+    <section className={className} aria-label={ariaLabel} aria-labelledby={ariaLabelledBy} style={{ background, border, borderRadius: radius, padding: pad, ...style }}>
       {children}
     </section>
   );
