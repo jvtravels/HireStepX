@@ -7,6 +7,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { Badge, type BadgeTone } from "@/employer/_atoms";
 import { tokens as t, fonts as f, textSize } from "@/auth/_tokens";
 import { daysUntil } from "./jobsHelpers";
+import { InfoTip } from "@/employer/_panelParts";
 import StrongMatchCell from "./StrongMatchCell";
 
 /* Info "i" next to a column header. The visible target is small to keep the
@@ -95,22 +96,24 @@ export function MatchesCell({ r }: { r: RequirementSummary }) {
   if (s.evaluated === 0) return <span style={mutedText}>None yet</span>;
   const total = Math.max(s.totalMatched, s.evaluated);
   const capped = total > s.evaluated;
-  const range = s.scoreLow == null || s.scoreHigh == null ? "" : s.scoreLow === s.scoreHigh ? `All scored ${s.scoreLow}%` : `Scores ${s.scoreLow} to ${s.scoreHigh}%`;
-  const detail = [capped ? `Top ${s.evaluated} scored` : "", range].filter(Boolean).join(" · ");
+  const range = s.scoreLow == null || s.scoreHigh == null ? "" : s.scoreLow === s.scoreHigh ? `All scored ${s.scoreLow}%.` : `Scores range from ${s.scoreLow}% to ${s.scoreHigh}%.`;
+  const notes = [
+    capped ? `Showing the ${s.evaluated} best-scoring of ${total} matched candidates.` : "",
+    range,
+    s.topMatches > 0 ? "Strong matches are the highest scorers, shown with their average score." : "No strong match yet. Strong matches score 40% or higher.",
+  ].filter(Boolean);
   return (
     <div className="flex flex-col items-start gap-1">
-      <div className="text-[14px] font-medium text-hx-coal">
+      <div className="flex items-center gap-0.5 text-[14px] font-medium text-hx-coal">
         {total} {total === 1 ? "candidate" : "candidates"} matched
+        <InfoTip label="About these matches">{notes.join(" ")}</InfoTip>
       </div>
-      {s.topMatches > 0 ? (
+      {s.topMatches > 0 && (
         <div className="flex flex-wrap items-center gap-2">
           <Badge tone="brand">{s.topMatches} strong</Badge>
           {s.strongAvgScore != null && <span style={mutedText}>{s.strongAvgScore}% avg</span>}
         </div>
-      ) : (
-        <span style={mutedText}>None strong yet</span>
       )}
-      {detail && <div style={mutedText}>{detail}</div>}
       {s.strongMatches.length > 0 && (
         <div className="pt-1">
           <StrongMatchCell aiScreening={s} />

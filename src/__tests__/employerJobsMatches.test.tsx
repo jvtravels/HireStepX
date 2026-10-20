@@ -2,12 +2,15 @@
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
 import type { RequirementSummary } from "../employer/mockData";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { MatchesCell, DueCell } from "../../app/(employer)/employer/jobs/_components/JobCells";
 import { compareRows } from "../../app/(employer)/employer/jobs/_components/jobsHelpers";
 
 const base = { evaluated: 0, totalMatched: 0, scoreLow: null, scoreHigh: null, topMatches: 0, strongAvgScore: null, strongMatchInitials: [], strongMatchExtra: 0, strongMatches: [] };
 const job = (over: Partial<RequirementSummary["aiScreening"]> = {}, status = "active"): RequirementSummary =>
   ({ id: "j", title: "Engineer", status, createdAt: "2026-01-01", aiScreening: { ...base, ...over } }) as unknown as RequirementSummary;
+
+const renderCell = (ui: React.ReactElement) => render(<TooltipProvider>{ui}</TooltipProvider>);
 
 describe("MatchesCell", () => {
   it("says None yet before anything is evaluated, never a dash", () => {
@@ -20,31 +23,33 @@ describe("MatchesCell", () => {
     expect(screen.getByText("Finding candidates")).toBeTruthy();
   });
 
-  it("leads with the total matched, then the strong count and the score range", () => {
-    render(<MatchesCell r={job({ evaluated: 12, totalMatched: 12, scoreLow: 48, scoreHigh: 91, topMatches: 3, strongAvgScore: 82 })} />);
+  it("leads with the total matched, then the strong count, with the score range kept in the info tip", () => {
+    renderCell(<MatchesCell r={job({ evaluated: 12, totalMatched: 12, scoreLow: 48, scoreHigh: 91, topMatches: 3, strongAvgScore: 82 })} />);
     expect(screen.getByText("12 candidates matched")).toBeTruthy();
     expect(screen.getByText("3 strong")).toBeTruthy();
     expect(screen.getByText("82% avg")).toBeTruthy();
-    expect(screen.getByText("Scores 48 to 91%")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "About these matches" })).toBeTruthy();
+    expect(screen.queryByText("Scores 48 to 91%")).toBeNull();
   });
 
   it("uses the capped-pool wording", () => {
-    render(<MatchesCell r={job({ evaluated: 20, totalMatched: 35, topMatches: 1 })} />);
+    renderCell(<MatchesCell r={job({ evaluated: 20, totalMatched: 35, topMatches: 1 })} />);
     expect(screen.getByText("35 candidates matched")).toBeTruthy();
     expect(screen.getByText("1 strong")).toBeTruthy();
-    expect(screen.getByText("Top 20 scored")).toBeTruthy();
+    expect(screen.queryByText("Top 20 scored")).toBeNull();
   });
 
-  it("does not print a range when every candidate scored the same", () => {
-    render(<MatchesCell r={job({ evaluated: 3, totalMatched: 3, scoreLow: 25, scoreHigh: 25 })} />);
+  it("keeps the score spread out of the cell body", () => {
+    renderCell(<MatchesCell r={job({ evaluated: 3, totalMatched: 3, scoreLow: 25, scoreHigh: 25 })} />);
     expect(screen.getByText("3 candidates matched")).toBeTruthy();
-    expect(screen.getByText("All scored 25%")).toBeTruthy();
+    expect(screen.queryByText("All scored 25%")).toBeNull();
   });
 
-  it("says so when nothing qualifies as a strong match", () => {
-    render(<MatchesCell r={job({ evaluated: 4, totalMatched: 4 })} />);
+  it("leaves out the strong line when nothing qualifies, and explains it in the tip", () => {
+    renderCell(<MatchesCell r={job({ evaluated: 4, totalMatched: 4 })} />);
     expect(screen.getByText("4 candidates matched")).toBeTruthy();
-    expect(screen.getByText("None strong yet")).toBeTruthy();
+    expect(screen.queryByText("None strong yet")).toBeNull();
+    expect(screen.queryByText(/strong$/)).toBeNull();
   });
 });
 
