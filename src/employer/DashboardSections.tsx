@@ -198,13 +198,14 @@ function FunnelStepItem({ step, range, last }: { step: FunnelStep; range: Dashbo
     : step.added <= 0 ? `None new in last ${range} days`
     : step.key === "recommended" ? `${step.added} new ${step.added === 1 ? "match" : "matches"} in last ${range} days`
     : `+${step.added} in last ${range} days`;
+  const short = step.added === null ? null : step.added <= 0 ? "None new" : `+${step.added} new`;
   return (
-    <li className={`flex min-w-0 flex-col gap-1 px-7 py-5 ${last ? "" : "border-b border-hx-line min-[640px]:border-b-0 min-[640px]:border-r"}`}>
+    <li className={`flex min-w-0 flex-col gap-1 px-4 py-4 min-[640px]:px-7 min-[640px]:py-5 ${last ? "" : "border-r border-hx-line"}`}>
       <p className="sr-only">{step.value} {step.label}{added ? `, ${added}` : ""}</p>
       <div aria-hidden="true" className="text-[13px] text-hx-ink-soft">{step.label}</div>
       <div aria-hidden="true" className="text-[28px] font-semibold leading-[1.15] tabular-nums text-hx-coal"><AnimatedNumber value={step.value} /></div>
       <div aria-hidden="true" className="min-h-4 text-[12px] text-hx-ink-soft">
-        {added && <span className={step.added ? "font-medium text-hx-success-ink" : ""}>{added}</span>}
+        {added && <span className={step.added ? "font-medium text-hx-success-ink" : ""}><span className="min-[640px]:hidden">{short}</span><span className="hidden min-[640px]:inline">{added}</span></span>}
       </div>
     </li>
   );
@@ -214,7 +215,7 @@ export function DashboardFunnel({ data, recommendedTotal, range, busy = false }:
   const steps = buildFunnel(data, recommendedTotal);
   return (
     <section aria-label="Hiring funnel" aria-busy={busy} className="mx-busy min-w-0 border-b border-hx-line">
-      <ol className={`${LIST} grid grid-cols-1 min-[640px]:grid-cols-3`}>
+      <ol className={`${LIST} grid grid-cols-3`}>
         {steps.map((step, i) => <FunnelStepItem key={step.key} step={step} range={range} last={i === steps.length - 1} />)}
       </ol>
     </section>
