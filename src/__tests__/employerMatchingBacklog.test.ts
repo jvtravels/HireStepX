@@ -10,7 +10,7 @@ import {
   fetchLatestMatchingInputChange,
   isRematchDue,
 } from "../../server-handlers/_incremental-rematch-helpers";
-import { requiredSkillsCoverage } from "../../server-handlers/_requirement-match-helpers";
+import { requiredSkillsCoverage, requiredSkillsMatched } from "../../server-handlers/_requirement-match-helpers";
 
 const NOW = Date.parse("2026-10-20T00:00:00Z");
 const iso = (ms: number) => new Date(ms).toISOString();
@@ -131,5 +131,22 @@ describe("requiredSkillsCoverage", () => {
     expect(requiredSkillsCoverage(cand(["React"]), [])).toEqual({ met: 0, total: 0 });
     expect(requiredSkillsCoverage(cand(["React"]), undefined)).toEqual({ met: 0, total: 0 });
     expect(requiredSkillsCoverage(cand(["React"]), ["  "])).toEqual({ met: 0, total: 0 });
+  });
+});
+
+describe("requiredSkillsMatched", () => {
+  const cand = (skills: string[], target_role = "Frontend Developer") => ({ target_role, resume_data: { skills } as unknown });
+
+  it("names exactly the skills requiredSkillsCoverage counts", () => {
+    const required = ["React", "TypeScript", "Kubernetes"];
+    const c = cand(["React", "typescript"]);
+    expect(requiredSkillsMatched(c, required)).toEqual(["React", "TypeScript"]);
+    expect(requiredSkillsMatched(c, required).length).toBe(requiredSkillsCoverage(c, required).met);
+  });
+
+  it("counts a family member for a generic required skill and returns nothing for no skills", () => {
+    expect(requiredSkillsMatched(cand(["PostgreSQL"]), ["SQL"])).toEqual(["SQL"]);
+    expect(requiredSkillsMatched(cand(["React"]), undefined)).toEqual([]);
+    expect(requiredSkillsMatched(cand(["React"]), ["  "])).toEqual([]);
   });
 });

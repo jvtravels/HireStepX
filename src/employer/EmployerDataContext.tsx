@@ -326,6 +326,8 @@ const SHORTLIST_PAGE_LIMIT = 100;
 /** Upper bound on candidates loaded into one job page; beyond it the page says "showing N of M". */
 export const MAX_SHORTLIST_CANDIDATES = 500;
 const RETRY_DELAYS_MS = [300, 900];
+/** A stalled connection otherwise sits on skeletons for the browser's own ~45s timeout; cutting it sooner lets the retry (which usually lands) run. */
+const GET_ATTEMPT_TIMEOUT_MS = 10_000;
 const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 /** Server failures and dead networks are worth a ticket; 4xx and 429 are answers. */
@@ -342,9 +344,11 @@ function reportFetchFailure(url: string, status: number | null) {
 export async function getWithRetry(url: string): Promise<{ ok: boolean; status: number; data: unknown } | null> {
   for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
     const last = attempt === RETRY_DELAYS_MS.length;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), GET_ATTEMPT_TIMEOUT_MS);
     try {
       const headers = await authHeaders();
-      const res = await fetch(url, { headers });
+      const res = await fetch(url, { headers, signal: controller.signal });
       const data: unknown = await res.json().catch(() => null);
       if (res.status < 500 || last) {
         if (res.status >= 500) reportFetchFailure(url, res.status);
@@ -355,6 +359,8 @@ export async function getWithRetry(url: string): Promise<{ ok: boolean; status: 
         reportFetchFailure(url, null);
         return null;
       }
+    } finally {
+      clearTimeout(timer);
     }
     await wait(RETRY_DELAYS_MS[attempt]);
   }

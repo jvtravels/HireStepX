@@ -32,6 +32,13 @@ export function HeadInfo({ label, children }: { label: string; children: React.R
   );
 }
 
+const DUE_FORMAT = new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
+
+export function formatDueDate(dueDate: string): string {
+  const d = new Date(`${dueDate}T00:00:00Z`);
+  return Number.isNaN(d.getTime()) ? dueDate : DUE_FORMAT.format(d);
+}
+
 export function DueCell({ dueDate }: { dueDate: string | null }) {
   if (!dueDate) {
     return (
@@ -43,7 +50,7 @@ export function DueCell({ dueDate }: { dueDate: string | null }) {
   const label = left < 0 ? `${Math.abs(left)}d overdue` : left === 0 ? "Due today" : `${left}d left`;
   return (
     <div>
-      <div style={{ fontFamily: f.sans, fontSize: textSize.md, fontWeight: 500, color: t.coal }}>{dueDate}</div>
+      <div style={{ fontFamily: f.sans, fontSize: textSize.md, fontWeight: 500, color: t.coal }}>{formatDueDate(dueDate)}</div>
       <div style={{ marginTop: 4, width: "fit-content" }}>
         <Badge tone={tone}>{label}</Badge>
       </div>
@@ -85,8 +92,8 @@ export function MatchesCell({ r }: { r: RequirementSummary }) {
     );
   }
   if (s.evaluated === 0) return <span style={mutedText}>None yet</span>;
-  const evaluatedLine = s.totalMatched > s.evaluated ? `Top ${s.evaluated} of ${s.totalMatched} matched` : `${s.evaluated} evaluated`;
-  const range = s.scoreLow != null && s.scoreHigh != null ? `, scores ${s.scoreLow} to ${s.scoreHigh}%` : "";
+  const evaluatedLine = s.totalMatched > s.evaluated ? `Showing top ${s.evaluated} of ${s.totalMatched} matched` : `${s.evaluated} evaluated`;
+  const range = s.scoreLow == null || s.scoreHigh == null ? "" : s.scoreLow === s.scoreHigh ? `, all ${s.scoreLow}%` : `, scores ${s.scoreLow} to ${s.scoreHigh}%`;
   return (
     <div className="flex flex-col items-start gap-1">
       {s.topMatches > 0 ? (

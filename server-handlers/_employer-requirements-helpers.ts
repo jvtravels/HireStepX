@@ -253,6 +253,9 @@ export interface StrongMatchCandidate {
   initials: string;
   yearsExperience: number | null;
   skills: string[];
+  /** The job's listed skills this candidate covers, decided server-side with
+   *  the same rule as the detail page's count. */
+  requiredSkillsMatched?: string[];
   /** Non-identifying descriptors (seniority, industry, notice) that let an
    *  employer tell masked candidates apart. Same fields the detail page shows
    *  before unlock. */

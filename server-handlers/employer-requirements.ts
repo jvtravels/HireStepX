@@ -27,6 +27,7 @@ import {
   MIN_MATCH_SCORE_FLOOR,
   capUnsupportedStrong,
   extractSkills,
+  requiredSkillsMatched,
   requirementCriteriaFingerprint,
   MATCH_SHORTLIST_CAP,
   LLM_RERANK_WINDOW,
@@ -299,11 +300,11 @@ async function handleGet(userId: string, headers: Record<string, string>): Promi
 
         const matchStats = computeMatchStats(matchRows, STRONG_MATCH_THRESHOLD, hasEvidenceById);
         const topCandidateIds = Array.from(new Set(Array.from(matchStats.values()).flatMap((s) => s.topCandidateIds)));
-        const profileById = new Map<string, { name: string; resume_data: unknown }>();
+        const profileById = new Map<string, { name: string; target_role: string | null; resume_data: unknown }>();
         for (const batch of chunk(topCandidateIds, 100)) {
-          const profilesRes = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=in.(${inList(batch)})&select=id,name,resume_data`, { headers: serviceHeaders() });
+          const profilesRes = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=in.(${inList(batch)})&select=id,name,target_role,resume_data`, { headers: serviceHeaders() });
           if (!profilesRes.ok) continue;
-          const profileRows = (await profilesRes.json().catch(() => [])) as Array<{ id: string; name: string; resume_data: unknown }>;
+          const profileRows = (await profilesRes.json().catch(() => [])) as Array<{ id: string; name: string; target_role: string | null; resume_data: unknown }>;
           for (const row of profileRows) profileById.set(row.id, row);
         }
         const detailsById = new Map<string, { name: string; yearsExperience: number | null; skills: string[]; traits: string[] }>(
@@ -314,6 +315,17 @@ async function handleGet(userId: string, headers: Record<string, string>): Promi
           }),
         );
         aiScreeningByRequirement = buildAiScreeningByRequirement(matchStats, detailsById);
+
+        // The dashboard and job table read these names instead of re-deriving
+        // coverage in the browser, so they agree with the detail page's count.
+        const skillsByRequirement = new Map(rows.map((r) => [r.id, r.skills ?? []]));
+        for (const [requirementId, summary] of aiScreeningByRequirement) {
+          const required = skillsByRequirement.get(requirementId) ?? [];
+          for (const c of summary.strongMatches) {
+            const profile = profileById.get(c.id);
+            if (profile) c.requiredSkillsMatched = requiredSkillsMatched({ target_role: profile.target_role, resume_data: profile.resume_data }, required);
+          }
+        }
 
         // Identity must not leave the server for a match the employer hasn't
         // unlocked: swap real names/initials on the strong-match chips for

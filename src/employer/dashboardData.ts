@@ -221,7 +221,8 @@ export function buildRecommendedCards(
 
   return ordered.slice(0, limit).map(({ id, createdAt, score }) => {
     const { job, c } = detail.get(id)!;
-    const matched = matchRequiredSkills(job.skills, c.skills);
+    const found = new Set([...(c.requiredSkillsMatched ?? []), ...matchRequiredSkills(job.skills, c.skills)]);
+    const matched = job.skills.filter((s) => found.has(s));
     const matchedSet = new Set(matched);
     return {
       matchId: id,

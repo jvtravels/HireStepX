@@ -157,6 +157,12 @@ describe("buildRecommendedCards", () => {
     expect(cards[0].waitingDays).toBe(5);
     expect(cards[1].waitingDays).toBe(0);
   });
+  it("takes the server's matched skills so the card agrees with the job table", () => {
+    const j = job("r1", {}, [{ ...cand("aaaaaa", ["css"]), requiredSkillsMatched: ["React", "SQL"] }]);
+    const [c] = buildRecommendedCards([j], null, NOW);
+    expect(c.matchedSkills).toEqual(["React", "SQL"]);
+    expect(c.missingSkills).toEqual(["Node"]);
+  });
   it("reports experience against the job's range", () => {
     const [c] = buildRecommendedCards(jobs, refs, NOW);
     expect(c.yearsExperience).toBe(3);

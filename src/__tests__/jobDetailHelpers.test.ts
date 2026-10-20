@@ -14,6 +14,7 @@ import {
   pipelineRows,
   scoreTone,
   skillFit,
+  candidateSkillFit,
   skillKey,
   skillTiers,
   tabCounts,
@@ -41,6 +42,17 @@ describe("skillTiers", () => {
 describe("skillFit", () => {
   it("splits required skills into matched and gaps case-insensitively", () => {
     expect(skillFit(["react", "Node"], ["React", "Go", "node"])).toEqual({ matched: ["React", "node"], gaps: ["Go"] });
+  });
+});
+
+describe("candidateSkillFit", () => {
+  it("trusts the server's matched list when the redacted client copy has no skills", () => {
+    const locked = cand(60, "shortlisted", { requiredSkillsMatched: ["React", "SQL"] });
+    expect(candidateSkillFit(locked, ["React", "Node", "SQL"])).toEqual({ matched: ["React", "SQL"], gaps: ["Node"] });
+  });
+  it("falls back to the client's own match when the server sent no list", () => {
+    const own = cand(60, "shortlisted", { skills: ["React"] });
+    expect(candidateSkillFit(own, ["React", "Node"])).toEqual({ matched: ["React"], gaps: ["Node"] });
   });
 });
 

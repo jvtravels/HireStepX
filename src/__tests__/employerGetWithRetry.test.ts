@@ -52,4 +52,15 @@ describe("getWithRetry", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(reportHandledError).not.toHaveBeenCalled();
   });
+
+  it("aborts a stalled request after 10s and retries instead of waiting on the browser", async () => {
+    const stalled = (_url: string, init?: RequestInit) =>
+      new Promise<Response>((_, reject) => init?.signal?.addEventListener("abort", () => reject(new DOMException("aborted", "AbortError"))));
+    const fetchMock = vi.fn().mockImplementationOnce(stalled).mockResolvedValueOnce(respond(200));
+    vi.stubGlobal("fetch", fetchMock);
+    const pending = getWithRetry("/api/employer-dashboard?range=30");
+    await vi.advanceTimersByTimeAsync(11_000);
+    expect((await pending)?.ok).toBe(true);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
 });

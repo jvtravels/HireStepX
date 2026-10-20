@@ -116,7 +116,16 @@ export function skillFit(candidateSkills: string[], required: string[], corpus =
 
 /** skillFit over everything we hold for one candidate. */
 export function candidateSkillFit(candidate: Candidate, required: string[]): { matched: string[]; gaps: string[] } {
-  return skillFit(candidateSkillNames(candidate), required, resumeCorpus(candidate));
+  const own = skillFit(candidateSkillNames(candidate), required, resumeCorpus(candidate));
+  const server = candidate.requiredSkillsMatched;
+  if (!server) return own;
+  /* The server sees the full resume, which a locked candidate's redacted copy
+     here does not, so its list is the floor; our own matches can only add. */
+  const serverKeys = new Set(server.map(key));
+  const matched: string[] = [];
+  const gaps: string[] = [];
+  for (const skill of dedupe(required)) (serverKeys.has(key(skill)) || own.matched.includes(skill) ? matched : gaps).push(skill);
+  return { matched, gaps };
 }
 
 export type AvailabilityTone = "good" | "soon" | "unknown";

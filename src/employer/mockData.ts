@@ -73,6 +73,8 @@ export interface Candidate {
       lists no skills or the server did not say. */
   requiredSkillsMet?: number | null;
   requiredSkillsTotal?: number | null;
+  /** Which listed skills are covered; null when the profile could not be read. */
+  requiredSkillsMatched?: string[] | null;
   rosterScore: number; // lifetime performance across all practice sessions
   sessionsCompleted: number;
   lastActiveDaysAgo: number;
@@ -119,6 +121,8 @@ export interface StrongMatchCandidate {
   initials: string;
   yearsExperience: number | null;
   skills: string[];
+  /** Server's own list of the job's skills this candidate covers. */
+  requiredSkillsMatched?: string[];
   traits?: string[];
 }
 

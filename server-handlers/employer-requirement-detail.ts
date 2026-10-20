@@ -37,7 +37,7 @@
 export const config = { runtime: "edge" };
 
 import { withAuthAndRateLimit, corsHeaders, withRequestId, slog } from "./_shared";
-import { extractResumeLocation, explainMatch, extractSkills, requiredSkillsCoverage, type RequirementInput } from "./_requirement-match-helpers";
+import { extractResumeLocation, explainMatch, extractSkills, requiredSkillsCoverage, requiredSkillsMatched, type RequirementInput } from "./_requirement-match-helpers";
 import { extractResumeDetail, redactResumeDetailForLock, coarsenLockedCity } from "./_resume-detail-helpers";
 import { later } from "./_employer-dashboard-helpers";
 import { runMatching, logRequirementActivity } from "./employer-requirements";
@@ -368,6 +368,7 @@ export default async function handler(req: Request): Promise<Response> {
         // a real answer: the candidate is reviewable but covers none of them.
         requiredSkillsMet: skillCoverage.total > 0 ? skillCoverage.met : null,
         requiredSkillsTotal: skillCoverage.total > 0 ? skillCoverage.total : null,
+        requiredSkillsMatched: profile ? requiredSkillsMatched({ target_role: profile.target_role, resume_data: profile.resume_data }, requirement.skills ?? []) : null,
         sessionsCompleted: sessionCounts.get(m.candidate_user_id) || 0,
         lastActiveDaysAgo,
         skills: extractSkills(profile?.resume_data).slice(0, 8),

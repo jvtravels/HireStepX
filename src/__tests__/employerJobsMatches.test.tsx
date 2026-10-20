@@ -30,7 +30,12 @@ describe("MatchesCell", () => {
   it("uses the singular and the capped-pool wording", () => {
     render(<MatchesCell r={job({ evaluated: 20, totalMatched: 35, topMatches: 1 })} />);
     expect(screen.getByText("1 strong match")).toBeTruthy();
-    expect(screen.getByText("Top 20 of 35 matched")).toBeTruthy();
+    expect(screen.getByText("Showing top 20 of 35 matched")).toBeTruthy();
+  });
+
+  it("does not print a range when every candidate scored the same", () => {
+    render(<MatchesCell r={job({ evaluated: 3, totalMatched: 3, scoreLow: 25, scoreHigh: 25 })} />);
+    expect(screen.getByText("3 evaluated, all 25%")).toBeTruthy();
   });
 
   it("says so when nothing qualifies as a strong match", () => {
@@ -43,6 +48,14 @@ describe("DueCell", () => {
   it("shows Not set instead of an em dash", () => {
     const { container } = render(<DueCell dueDate={null} />);
     expect(container.textContent).toBe("Not set");
+  });
+});
+
+describe("DueCell date", () => {
+  it("shows a readable date, not the raw ISO string", () => {
+    const { container } = render(<DueCell dueDate="2026-11-01" />);
+    expect(container.textContent).toContain("1 Nov 2026");
+    expect(container.textContent).not.toContain("2026-11-01");
   });
 });
 

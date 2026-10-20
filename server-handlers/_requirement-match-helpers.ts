@@ -373,6 +373,20 @@ export function requiredSkillsCoverage(
   return { met: unitsCovered(candidateSkillTokens(candidate), units), total: units.length };
 }
 
+/** Which of the employer's listed skills the candidate covers, using the same
+    token rule as requiredSkillsCoverage, so a count and the names beside it can
+    never disagree. */
+export function requiredSkillsMatched(
+  candidate: Pick<CandidatePoolRow, "target_role" | "resume_data">,
+  requiredSkills: string[] | undefined,
+): string[] {
+  const have = candidateSkillTokens(candidate);
+  return (requiredSkills || []).filter((s) => {
+    const tokens = tokenize(s);
+    return tokens.length > 0 && unitsCovered(have, [tokens]) === 1;
+  });
+}
+
 /** The skill gate for a "strong" match. It applies whatever the skill count:
     2+ listed skills need 2 covered (or half the list); 1 listed skill must be
     covered; with none listed the title's content words stand in for the
