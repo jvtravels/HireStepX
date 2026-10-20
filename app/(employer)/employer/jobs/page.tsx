@@ -14,7 +14,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { PlusIcon, BriefcaseIcon, AlertTriangleIcon } from "lucide-react";
+import { BriefcaseIcon, AlertTriangleIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SearchWithSuggestions } from "@/components/SearchWithSuggestions";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -24,7 +24,7 @@ import { useToast } from "@/Toast";
 import { useEmployerData } from "@/employer/EmployerDataContext";
 import type { RequirementStage } from "@/employer/mockData";
 import { STAGE_LABEL, STAGE_OPTIONS } from "@/employer/_atoms";
-import { PageSkeleton, ErrorPanel, PrimaryLink } from "@/employer/_consoleParts";
+import { PageSkeleton, ErrorPanel, PostJobLink } from "@/employer/_consoleParts";
 import { tokens as t, fonts as f, textSize } from "@/auth/_tokens";
 import { EMPLOYMENT_TYPE_LABEL } from "@/hiringMatchFormat";
 import {
@@ -161,7 +161,6 @@ export default function EmployerJobsPage() {
     if (!ok) toast("Couldn't update the stage. Please try again.", "error");
   };
 
-  const postIcon = <PlusIcon size={16} strokeWidth={2.5} aria-hidden="true" />;
 
   const shell = (body: React.ReactNode, filters?: React.ReactNode) => (
     <div style={{ background: t.white, display: "flex", flexDirection: "column", flex: 1, minHeight: 0, borderRadius: 16, border: `1px solid ${t.line}`, overflow: "hidden" }}>
@@ -184,7 +183,7 @@ export default function EmployerJobsPage() {
           {filters}
           {!suspended && (
             <div className="max-sm:w-full max-sm:[&>a]:w-full">
-              <PrimaryLink href="/employer/requirements/new" icon={postIcon}>Post a job</PrimaryLink>
+              <PostJobLink />
             </div>
           )}
         </div>
@@ -229,7 +228,7 @@ export default function EmployerJobsPage() {
             Post your first job and we&apos;ll score candidates who are actively practising on HireStepX against it, usually in under a minute.
           </p>
         </div>
-        {!suspended && <PrimaryLink href="/employer/requirements/new" icon={postIcon}>Create your first listing</PrimaryLink>}
+        {!suspended && <PostJobLink>Create your first listing</PostJobLink>}
       </div>,
     );
   }

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PlusIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
@@ -17,6 +18,18 @@ export function PrimaryLink({ href, children, icon, full = false, onClick }: { h
       <Link href={href} onClick={onClick}>
         {children}
         {icon}
+      </Link>
+    </Button>
+  );
+}
+
+/** The one "Post a job" button for every employer surface, so it never differs between pages. */
+export function PostJobLink({ children = "Post a job", full = false }: { children?: React.ReactNode; full?: boolean }) {
+  return (
+    <Button asChild variant="default" size="lg" className={cn("h-9 gap-2 px-4.5 pointer-coarse:h-11", full && "w-full")}>
+      <Link href="/employer/requirements/new">
+        <PlusIcon size={16} strokeWidth={2.5} aria-hidden="true" />
+        {children}
       </Link>
     </Button>
   );

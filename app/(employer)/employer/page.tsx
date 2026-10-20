@@ -1,9 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { PlusIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EmployerHeaderAction } from "@/employer/EmployerShell";
 import { useEmployerData } from "@/employer/EmployerDataContext";
@@ -13,7 +11,7 @@ import { tierLadder } from "@/employer/_accountHelpers";
 import { PAY_AS_YOU_GO_SENTENCE, CREDIT_BACK_SENTENCE, unlockFeeSentence } from "@/employer/_employerOffer";
 import { tokens as t, fonts as f } from "@/auth/_tokens";
 import { Card as AtomCard, Eyebrow, EmployerIcon } from "@/employer/_atoms";
-import { PrimaryLink, ErrorPanel, InlineAlert } from "@/employer/_consoleParts";
+import { PrimaryLink, PostJobLink, ErrorPanel, InlineAlert } from "@/employer/_consoleParts";
 import CompanyProfileForm from "@/employer/CompanyProfileForm";
 import {
   DashboardHeader, DashboardFunnel, ActiveJobsCard, RecommendedCandidatesCard,
@@ -289,12 +287,7 @@ function EmployerDashboard() {
     <div style={{ minWidth: 0 }}>
       {canCreate && statsReady && (
         <EmployerHeaderAction>
-          <Button asChild size="sm" className="h-9 gap-1.5">
-            <Link href="/employer/requirements/new" aria-label="Post a job">
-              <PlusIcon size={14} aria-hidden="true" />
-              <span className="max-sm:hidden">Post a job</span>
-            </Link>
-          </Button>
+          <PostJobLink />
         </EmployerHeaderAction>
       )}
       <div className="mx-stagger overflow-hidden rounded-2xl border border-hx-line bg-white">

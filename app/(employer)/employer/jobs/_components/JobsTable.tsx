@@ -2,14 +2,14 @@
 
 import Link from "next/link";
 import { motion, useReducedMotion } from "motion/react";
-import { PlusIcon, SearchXIcon, InfoIcon } from "lucide-react";
+import { SearchXIcon, InfoIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { SortableHead, type Sort } from "@/components/SortableHead";
 import type { RequirementSummary, RequirementStage } from "@/employer/mockData";
 import { Badge, StageCell } from "@/employer/_atoms";
-import { PrimaryLink } from "@/employer/_consoleParts";
+import { PostJobLink } from "@/employer/_consoleParts";
 import { tokens as t, fonts as f, textSize } from "@/auth/_tokens";
 import { WORK_MODE_LABEL, EMPLOYMENT_TYPE_LABEL } from "@/hiringMatchFormat";
 import { COLUMN_LABEL, budgetLabel, experienceLabel, locationText, type SortColumn } from "./jobsHelpers";
@@ -136,7 +136,7 @@ export default function JobsTable({
                       <Button variant="outline" onClick={onClear} style={{ borderRadius: 8, height: 40, fontFamily: f.sans, fontSize: textSize.sm, fontWeight: 500 }}>
                         {onlySearchActive ? "Clear search" : "Clear filters"}
                       </Button>
-                      {!readOnly && <PrimaryLink href="/employer/requirements/new" icon={<PlusIcon size={14} strokeWidth={2.5} aria-hidden="true" />}>Create</PrimaryLink>}
+                      {!readOnly && <PostJobLink>Create a job</PostJobLink>}
                     </div>
                   </div>
                 </TableCell>
