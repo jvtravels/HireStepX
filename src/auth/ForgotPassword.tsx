@@ -208,10 +208,10 @@ export default function ForgotPassword() {
                 <h1
                   id="forgot-heading"
                   style={{
-                    fontFamily: f.serif,
-                    fontSize: "clamp(2.5rem, 6vw, 4.5rem)",
+                    fontFamily: f.sans,
+                    fontSize: "clamp(1.75rem, 4.4vw, 2.5rem)",
                     lineHeight: 1.05,
-                    fontWeight: 400,
+                    fontWeight: 600,
                     letterSpacing: "-0.02em",
                     whiteSpace: "nowrap",
                     margin: 0,
@@ -219,15 +219,7 @@ export default function ForgotPassword() {
                   }}
                 >
                   Check your{" "}
-                  <em
-                    style={{
-                      fontStyle: "italic",
-                      fontWeight: 400,
-                      color: t.copper,
-                    }}
-                  >
-                    inbox
-                  </em>
+                  inbox
                 </h1>
                 <p
                   className="hsx-login-subtitle"
@@ -422,10 +414,10 @@ export default function ForgotPassword() {
                 <h1
                   id="forgot-heading"
                   style={{
-                    fontFamily: f.serif,
-                    fontSize: "clamp(2.5rem, 6vw, 4.5rem)",
+                    fontFamily: f.sans,
+                    fontSize: "clamp(1.75rem, 4.4vw, 2.5rem)",
                     lineHeight: 1.05,
-                    fontWeight: 400,
+                    fontWeight: 600,
                     letterSpacing: "-0.02em",
                     whiteSpace: "nowrap",
                     margin: 0,
@@ -433,15 +425,7 @@ export default function ForgotPassword() {
                   }}
                 >
                   Reset your{" "}
-                  <em
-                    style={{
-                      fontStyle: "italic",
-                      fontWeight: 400,
-                      color: t.copper,
-                    }}
-                  >
-                    password
-                  </em>
+                  password
                 </h1>
                 <p
                   className="hsx-login-subtitle"

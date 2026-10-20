@@ -17,9 +17,9 @@ import { LockIcon } from "lucide-react";
 // Cycles through 4 existing status tokens so every badge is sourced from
 // the design system rather than a one-off hex literal.
 const BADGE_COLORS = [
-  { bg: t.info100, fg: t.info },
+  { bg: t.indigo100, fg: t.indigoDeep },
   { bg: t.success100, fg: t.success },
-  { bg: t.violet100, fg: t.violet },
+  { bg: t.copper100, fg: t.copperDark },
   { bg: t.error100, fg: t.error },
 ];
 

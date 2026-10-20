@@ -263,7 +263,7 @@ export function evidenceLinks(c: Pick<Candidate, "portfolioLinks">): { github: s
 
 /* ── Job status + summaries ── */
 
-export type JobStatusTone = "success" | "info" | "neutral" | "warning" | "error";
+export type JobStatusTone = "success" | "brand" | "neutral" | "warning" | "error";
 
 export function jobStatusPill(status: Requirement["status"]): { label: string; tone: JobStatusTone } {
   switch (status) {
@@ -271,7 +271,7 @@ export function jobStatusPill(status: Requirement["status"]): { label: string; t
     case "partial":
       return { label: "Active", tone: "success" };
     case "generating":
-      return { label: "Matching", tone: "info" };
+      return { label: "Matching", tone: "brand" };
     case "closed":
       return { label: "Closed", tone: "neutral" };
     case "zero":

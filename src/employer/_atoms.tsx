@@ -81,7 +81,7 @@ export function Eyebrow({ children, tone = "ink" }: { children: React.ReactNode;
   );
 }
 
-type PillTone = "indigo" | "copper" | "success" | "neutral" | "warning" | "error" | "violet";
+type PillTone = "indigo" | "copper" | "success" | "neutral" | "warning" | "error";
 
 /* fg values are the *Ink shades (AA ≥4.5:1 on their tint) — the base status
    hues (t.success / t.warning / t.copper / t.inkSoft) measure 3.5–4.3:1 on
@@ -93,7 +93,6 @@ const pillPalette: Record<PillTone, { bg: string; fg: string }> = {
   warning: { bg: t.warning100, fg: t.warningInk },
   error: { bg: t.error100, fg: t.errorInk },
   neutral: { bg: t.creamSoft, fg: t.neutralInk },
-  violet: { bg: t.violet100, fg: t.violet },
 };
 
 export function Pill({ children, tone = "neutral", filled = false }: { children: React.ReactNode; tone?: PillTone; filled?: boolean }) {
@@ -351,7 +350,7 @@ export const CANDIDATE_STATUS_LABEL: Record<CandidateStatus, string> = {
 
 const CANDIDATE_STATUS_TONE: Record<CandidateStatus, PillTone> = {
   shortlisted: "indigo",
-  interview_invited: "violet",
+  interview_invited: "copper",
   interviewing: "copper",
   hired: "success",
   rejected: "error",
@@ -374,12 +373,12 @@ export function StageDot({ tone, label }: { tone: PillTone; label: string }) {
   );
 }
 
-export type BadgeTone = "neutral" | "success" | "brand" | "info" | "warning" | "error";
+export type BadgeTone = "neutral" | "success" | "brand" | "copper" | "warning" | "error";
 const BADGE_TONE: Record<BadgeTone, { color: string; background: string }> = {
   neutral: { color: t.neutralInk, background: t.creamSoft },
   success: { color: t.successInk, background: t.success100 },
   brand: { color: t.indigoDeep, background: t.indigo100 },
-  info: { color: t.info, background: t.info100 },
+  copper: { color: t.copperDark, background: t.copper100 },
   warning: { color: t.warningInk, background: t.warning100 },
   error: { color: t.errorInk, background: t.error100 },
 };
@@ -410,8 +409,8 @@ export const STAGE_LABEL: Record<RequirementStage, string> = {
 
 export const STAGE_TONE: Record<RequirementStage, BadgeTone> = {
   ai_matching: "neutral",
-  ready_for_review: "info",
-  interviewing: "brand",
+  ready_for_review: "brand",
+  interviewing: "copper",
   hired: "success",
 };
 

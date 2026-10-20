@@ -113,12 +113,11 @@ export function MetaLine({ parts, className }: { parts: MetaPart[]; className?: 
   );
 }
 
-export type ChipTone = "danger" | "primary" | "info" | "neutral";
+export type ChipTone = "danger" | "primary" | "neutral";
 
 const CHIP_TONE: Record<ChipTone, string> = {
   danger: "bg-hx-error-100 text-hx-error-ink",
   primary: "bg-hx-indigo-100 text-hx-indigo",
-  info: "bg-hx-info-100 text-hx-info",
   neutral: "bg-hx-soft text-hx-neutral-ink",
 };
 

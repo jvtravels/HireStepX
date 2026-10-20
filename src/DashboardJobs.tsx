@@ -172,12 +172,11 @@ function experienceBucket(m: JobMatch): string | null {
 const EMPTY_BTN_STYLE = { borderRadius: 8, height: 36, fontFamily: f.sans, fontSize: 13, fontWeight: 500 } as const;
 const EMPTY_ACTIONS_STYLE = { display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center", marginTop: 4 } as const;
 
-type BadgeTone = "neutral" | "success" | "brand" | "info";
+type BadgeTone = "neutral" | "success" | "brand";
 const BADGE_TONE: Record<BadgeTone, { color: string; background: string }> = {
   neutral: { color: t.inkSoft, background: t.creamSoft },
   success: { color: t.successInk, background: t.success100 },
   brand: { color: t.indigoDeep, background: t.indigo100 },
-  info: { color: t.info, background: t.info100 },
 };
 
 function Badge({ tone, title, children }: { tone: BadgeTone; title?: string; children: React.ReactNode }) {
@@ -237,7 +236,7 @@ function JobCard({ r, onOpen, opening }: { r: JobMatch; onOpen: () => void; open
           {closed
             ? <Badge tone="neutral" title="This role is no longer accepting candidates">Role closed</Badge>
             : r.unlocked ? <Badge tone="brand" title="This employer unlocked your profile and can reach out directly">Employer interested</Badge> : <Badge tone="success" title="Your profile matched this role's requirements">Matched</Badge>}
-          {isNew && <Badge tone="info">New</Badge>}
+          {isNew && <Badge tone="brand">New</Badge>}
           {jobType && <Badge tone="neutral">{jobType}</Badge>}
         </div>
         {r.skills.length > 0 && (
@@ -616,7 +615,7 @@ export default function DashboardJobs() {
                       {daysAgo(r.matchedAt)}
                       {isNew && (
                         <div style={{ marginTop: 4, width: "fit-content" }}>
-                          <Badge tone="info">New</Badge>
+                          <Badge tone="brand">New</Badge>
                         </div>
                       )}
                     </TableCell>

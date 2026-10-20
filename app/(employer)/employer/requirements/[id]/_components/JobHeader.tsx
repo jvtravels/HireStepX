@@ -19,7 +19,7 @@ const DESCRIPTION_PREVIEW = 420;
 
 const STATUS_TONE: Record<JobStatusTone, string> = {
   success: "bg-hx-success-100 text-hx-success-ink",
-  info: "bg-hx-info-100 text-hx-info",
+  brand: "bg-hx-indigo-100 text-hx-indigo",
   neutral: "bg-hx-soft text-hx-neutral-ink",
   warning: "bg-hx-warning-100 text-hx-warning-ink",
   error: "bg-hx-error-100 text-hx-error-ink",

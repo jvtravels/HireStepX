@@ -77,7 +77,7 @@ export default function SettingsPage() {
         <CandidatePageHeader title="Settings" subtitle="Manage your subscription, payments, privacy, and account security." padding="20px 28px" />
         <div style={{ flex: 1, minHeight: 0, overflowY: "auto" }}>
 
-        <FlatSection title="Plan & Usage">
+        <FlatSection split title="Plan & Usage">
           <PlanUsageSection
             authUser={authUser} tierLabel={tierLabel}
             confirmCancel={confirmCancel} setConfirmCancel={setConfirmCancel}
@@ -90,7 +90,7 @@ export default function SettingsPage() {
           />
         </FlatSection>
 
-        <FlatSection title="Account">
+        <FlatSection split title="Account">
           <AccountSection
             resetLoading={resetLoading} resetSent={resetSent}
             handlePasswordReset={handlePasswordReset}
@@ -98,19 +98,19 @@ export default function SettingsPage() {
           />
         </FlatSection>
 
-        <FlatSection title="Employer visibility">
+        <FlatSection split title="Employer visibility">
           <EmployerVisibilityCard showToast={showToast} />
         </FlatSection>
 
-        <FlatSection title="Email preferences">
+        <FlatSection split title="Email preferences">
           <EmailPreferencesSection audience="candidate" />
         </FlatSection>
 
-        <FlatSection title="Sounds">
+        <FlatSection split title="Sounds">
           <SoundsSection />
         </FlatSection>
 
-        <FlatSection title="Danger Zone" last>
+        <FlatSection split title="Danger Zone" last>
           <DangerZoneSection
             authUser={authUser}
             confirmDelete={confirmDelete} setConfirmDelete={setConfirmDelete}

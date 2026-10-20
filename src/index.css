@@ -64,8 +64,8 @@
   --card-foreground: oklch(0.148 0.004 228.8);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.148 0.004 228.8);
-  --primary: oklch(0.53 0.163 48.998);
-  --primary-foreground: oklch(0.987 0.022 95.277);
+  --primary: oklch(0.359 0.135 278.697);
+  --primary-foreground: oklch(1 0 0);
   --secondary: oklch(0.967 0.001 286.375);
   --secondary-foreground: oklch(0.21 0.006 285.885);
   --muted: oklch(0.963 0.002 197.1);
@@ -77,12 +77,9 @@
   --input: oklch(0.925 0.005 214.3);
   --ring: oklch(0.723 0.014 214.4);
 
-  /* Button-only brand colors. --primary/--destructive above are shared by the
-     whole shadcn primitive set (checkbox, radio, calendar, ...) and stay
-     copper/red for those. Buttons use these instead so the actionable brand
-     color is indigo (see src/auth/_tokens.ts T.indigo) rather than the
-     editorial copper reserved for score/streak/achievement visuals. Values
-     mirror T.indigo/T.indigoDeep/T.error/T.errorInk exactly. */
+  /* --primary is indigo, the actionable brand colour (see src/auth/_tokens.ts
+     T.indigo); copper is reserved for score/streak/achievement visuals. The
+     --btn-* values below mirror T.indigo/T.indigoDeep/T.error/T.errorInk. */
   --btn-primary: oklch(0.359 0.135 278.697);
   --btn-primary-hover: oklch(0.257 0.086 281.288);
   --btn-primary-foreground: oklch(1 0 0);
@@ -96,8 +93,8 @@
   --radius: 0.625rem;
   --sidebar: oklch(0.9851 0 89.9);
   --sidebar-foreground: oklch(0.148 0.004 228.8);
-  --sidebar-primary: oklch(0.666 0.179 58.318);
-  --sidebar-primary-foreground: oklch(0.987 0.022 95.277);
+  --sidebar-primary: oklch(0.359 0.135 278.697);
+  --sidebar-primary-foreground: oklch(1 0 0);
   --sidebar-accent: oklch(0.963 0.002 197.1);
   --sidebar-accent-foreground: oklch(0.218 0.008 223.9);
   --sidebar-border: oklch(0.925 0.005 214.3);
@@ -1554,10 +1551,9 @@ input[type="range"]::-moz-range-thumb {
   --color-hx-success-100: oklch(0.962 0.043 156.743);
   --color-hx-success-ink: oklch(0.448 0.108 151.328);
   --color-hx-error-ink: oklch(0.405 0.152 27.518);
-  --color-hx-violet: oklch(0.491 0.241 292.581);
-  --color-hx-violet-100: oklch(0.943 0.028 294.588);
-  --color-hx-info: oklch(0.478 0.147 240.79);
-  --color-hx-info-100: oklch(0.967 0.017 236.6);
+  --color-hx-copper: oklch(0.53 0.163 48.998);
+  --color-hx-copper-dark: oklch(0.468 0.146 48.998);
+  --color-hx-copper-100: oklch(0.94 0.03 58.318);
   --color-hx-warning: oklch(0.53 0.121 66.442);
   --color-hx-warning-100: oklch(0.962 0.058 95.617);
   --color-hx-warning-ink: oklch(0.457 0.100 66.296);

@@ -709,13 +709,13 @@ export const NegotiationLiveDashboard = memo(function NegotiationLiveDashboard({
                     transform: "translateX(-50%)",
                   }}
                 />
-                {/* highestOfferMade (purple) — only when > initialOffer */}
+                {/* highestOfferMade (copper) — only when > initialOffer */}
                 {highestOffer > negotiationBand.initialOffer && (
                   <div
                     data-testid="zopa-highest-offer"
                     style={{
                       position: "absolute", left: `${pct(highestOffer)}%`, top: 0, bottom: 0,
-                      width: 3, background: t.violet, borderRadius: 2, zIndex: 3,
+                      width: 3, background: t.copper, borderRadius: 2, zIndex: 3,
                       transform: "translateX(-50%)",
                     }}
                   />
@@ -728,13 +728,13 @@ export const NegotiationLiveDashboard = memo(function NegotiationLiveDashboard({
                     width: 3, background: e.success, borderRadius: 2, zIndex: 2,
                   }}
                 />
-                {/* candidateTarget (blue diamond) — only when disclosed */}
+                {/* candidateTarget (indigo diamond) — only when disclosed */}
                 {targetForMarker != null && (
                   <div
                     data-testid="zopa-candidate-target"
                     style={{
                       position: "absolute", left: `${pct(targetForMarker)}%`, top: "50%",
-                      width: 10, height: 10, background: t.info,
+                      width: 10, height: 10, background: t.indigo,
                       transform: "translate(-50%, -50%) rotate(45deg)", zIndex: 4,
                       borderRadius: 1,
                     }}

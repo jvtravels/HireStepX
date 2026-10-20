@@ -24,7 +24,7 @@ export interface InboxItem {
   statusTone: StatusTone;
 }
 
-export type StatusTone = "neutral" | "indigo" | "violet" | "copper" | "success" | "error";
+export type StatusTone = "neutral" | "indigo" | "copper" | "success" | "error";
 
 export type ThreadRow =
   | { kind: "day"; key: string; label: string }
@@ -177,7 +177,7 @@ export function useFavorites(role: ViewerRole) {
 export function statusTone(status: string): StatusTone {
   switch (status) {
     case "shortlisted": return "indigo";
-    case "interview_invited": return "violet";
+    case "interview_invited": return "copper";
     case "interviewing": return "copper";
     case "hired": return "success";
     case "rejected": return "error";

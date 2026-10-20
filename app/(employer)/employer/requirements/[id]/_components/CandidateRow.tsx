@@ -40,8 +40,8 @@ const MotionRow = motion.create(TableRow);
 
 const STAGE_TONE: Record<CandidateStatus, string> = {
   shortlisted: "bg-hx-indigo-100 text-hx-indigo",
-  interview_invited: "bg-hx-violet-100 text-hx-violet",
-  interviewing: "bg-hx-warning-100 text-hx-warning-ink",
+  interview_invited: "bg-hx-copper-100 text-hx-copper-dark",
+  interviewing: "bg-hx-copper-100 text-hx-copper-dark",
   hired: "bg-hx-success-100 text-hx-success-ink",
   rejected: "bg-hx-error-100 text-hx-error-ink",
   not_a_fit: "bg-hx-soft text-hx-neutral-ink",
@@ -233,7 +233,7 @@ export default function CandidateRow({
   };
 
   return (
-    <MotionRow ref={rowRef} exit={reduceMotion ? undefined : { opacity: 0, transition: { duration: 0.16, ease: [0.25, 1, 0.5, 1] } }} role="row" onClick={openProfile} data-selected={selected} data-active={active} className="cand-tr rq-row h-[76px] cursor-pointer border-b border-hx-line">
+    <MotionRow ref={rowRef} layout={reduceMotion ? false : "position"} transition={{ layout: { duration: 0.22, ease: [0.25, 1, 0.5, 1] } }} exit={reduceMotion ? undefined : { opacity: 0, transition: { duration: 0.16, ease: [0.25, 1, 0.5, 1] } }} role="row" onClick={openProfile} data-selected={selected} data-active={active} className="cand-tr rq-row h-[76px] cursor-pointer border-b border-hx-line">
       <TableCell role="cell" className="cand-td cand-td-name max-w-[240px] px-3 py-3 align-middle">
         <div className="flex min-w-0 items-center gap-3">
           <Checkbox

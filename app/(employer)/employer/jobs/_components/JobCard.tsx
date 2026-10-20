@@ -50,7 +50,7 @@ export default function JobCard({ r, readOnly, onStage, actions }: { r: Requirem
         </div>
         <div style={{ minWidth: 0 }}>
           <div style={label}>Experience</div>
-          {exp ? <Badge tone="info">{exp}</Badge> : <span style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.inkSoft }}>Any</span>}
+          {exp ? <Badge tone="neutral">{exp}</Badge> : <span style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.inkSoft }}>Any</span>}
         </div>
         <div style={{ minWidth: 0 }}>
           <div style={label}>Location</div>

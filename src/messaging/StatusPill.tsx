@@ -3,9 +3,8 @@ import type { StatusTone } from "./helpers";
 
 const TONE: Record<StatusTone, string> = {
   neutral: "bg-muted text-muted-foreground",
-  indigo: "bg-primary/10 text-primary",
-  violet: "bg-violet-100 text-violet-700 dark:bg-violet-500/20 dark:text-violet-300",
-  copper: "bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300",
+  indigo: "bg-hx-indigo-100 text-hx-indigo",
+  copper: "bg-hx-copper-100 text-hx-copper-dark",
   success: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300",
   error: "bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300",
 };

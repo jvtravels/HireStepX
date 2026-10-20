@@ -569,10 +569,10 @@ export default function ResetPassword() {
             >
               <h1
                 style={{
-                  fontFamily: ft.serif,
-                  fontSize: "clamp(2.5rem, 6vw, 4.5rem)",
+                  fontFamily: ft.sans,
+                  fontSize: "clamp(1.75rem, 4.4vw, 2.5rem)",
                   lineHeight: 1.05,
-                  fontWeight: 400,
+                  fontWeight: 600,
                   letterSpacing: "-0.02em",
                   whiteSpace: "nowrap",
                   margin: 0,
@@ -580,15 +580,7 @@ export default function ResetPassword() {
                 }}
               >
                 Password{" "}
-                <em
-                  style={{
-                    fontStyle: "italic",
-                    fontWeight: 400,
-                    color: t.copper,
-                  }}
-                >
-                  updated
-                </em>
+                updated
               </h1>
               <p
                 role="status"
@@ -800,10 +792,10 @@ export default function ResetPassword() {
             <h1
               id="reset-heading"
               style={{
-                fontFamily: ft.serif,
-                fontSize: "clamp(2.5rem, 6vw, 4.5rem)",
+                fontFamily: ft.sans,
+                fontSize: "clamp(1.75rem, 4.4vw, 2.5rem)",
                 lineHeight: 1.05,
-                fontWeight: 400,
+                fontWeight: 600,
                 letterSpacing: "-0.02em",
                 whiteSpace: "nowrap",
                 margin: 0,
@@ -811,15 +803,7 @@ export default function ResetPassword() {
               }}
             >
               Set a new{" "}
-              <em
-                style={{
-                  fontStyle: "italic",
-                  fontWeight: 400,
-                  color: t.copper,
-                }}
-              >
-                password
-              </em>
+              password
             </h1>
             <p
               className="hsx-login-subtitle"

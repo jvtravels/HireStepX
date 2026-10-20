@@ -417,18 +417,16 @@ export default function Signup() {
             <div style={{ maxWidth: 480 }}>
               <h1
                 style={{
-                  fontFamily: f.serif,
-                  fontSize: "clamp(2rem, 4.4vw, 3.5rem)",
-                  fontWeight: 400,
+                  fontFamily: f.sans,
+                  fontSize: "clamp(1.75rem, 4.4vw, 2.5rem)",
+                  fontWeight: 600,
                   letterSpacing: "-0.02em",
                   margin: 0,
                   color: t.coal,
                 }}
               >
                 Check your{" "}
-                <em style={{ fontStyle: "italic", color: t.copper }}>
-                  email
-                </em>
+                email
                 .
               </h1>
               <p
@@ -629,10 +627,10 @@ export default function Signup() {
             <h1
               id="signup-heading"
               style={{
-                fontFamily: f.serif,
-                fontSize: "clamp(2.5rem, 6vw, 4.5rem)",
+                fontFamily: f.sans,
+                fontSize: "clamp(1.75rem, 4.4vw, 2.5rem)",
                 lineHeight: 1.05,
-                fontWeight: 400,
+                fontWeight: 600,
                 letterSpacing: "-0.02em",
                 whiteSpace: "nowrap",
                 margin: 0,
@@ -642,29 +640,13 @@ export default function Signup() {
               {isEmployerFlow ? (
                 <>
                   Hire on{" "}
-                  <em
-                    style={{
-                      fontStyle: "italic",
-                      fontWeight: 400,
-                      color: t.copper,
-                    }}
-                  >
-                    proof
-                  </em>
+                  proof
                   , not promises.
                 </>
               ) : (
                 <>
                   Practise like the{" "}
-                  <em
-                    style={{
-                      fontStyle: "italic",
-                      fontWeight: 400,
-                      color: t.copper,
-                    }}
-                  >
-                    real thing
-                  </em>
+                  real thing
                   .
                 </>
               )}

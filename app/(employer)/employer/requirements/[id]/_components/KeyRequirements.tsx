@@ -35,7 +35,7 @@ export default function KeyRequirements({ requirement }: { requirement: Requirem
   const tiers = [
     mustHave.length > 0 && <Tier key="must" title="Must have" icon={<CircleAlertIcon size={12} />} tone="danger" skills={mustHave} iconClass="bg-hx-error-100 text-hx-error-ink" />,
     other.length > 0 && <Tier key="oth" title="Important" icon={<StarIcon size={12} />} tone="primary" skills={other} iconClass="bg-hx-indigo-100 text-hx-indigo" />,
-    niceToHave.length > 0 && <Tier key="nice" title="Nice to have" icon={<SparklesIcon size={12} />} tone="info" skills={niceToHave} iconClass="bg-hx-info-100 text-hx-info" />,
+    niceToHave.length > 0 && <Tier key="nice" title="Nice to have" icon={<SparklesIcon size={12} />} tone="neutral" skills={niceToHave} iconClass="bg-hx-soft text-hx-neutral-ink" />,
   ].filter(Boolean);
   if (tiers.length === 0) return null;
   return (

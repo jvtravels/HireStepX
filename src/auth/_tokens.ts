@@ -55,8 +55,7 @@ export const tokens = {
   // indigo doubles as a categorical chart-series color in
   // dashboardComponents.tsx's results charts, and as a neutral
   // "upcoming/soon" status tint in DashboardHomePanels.tsx's calendar
-  // strip, alongside violet/info for other status hues — both are
-  // deliberate, not drift.)
+  // strip — both are deliberate, not drift.)
   // L 0.555 -> 0.53: 12px copper text on copper100 chips was 4.21:1; now 4.68.
   copper: "oklch(0.53 0.163 48.998)",
   // Copper for text/eyebrows on coal/indigo-dark surfaces (copper on coal is
@@ -99,16 +98,9 @@ export const tokens = {
   warningInk: "oklch(0.457 0.100 66.296)",
   warningLine: "oklch(0.457 0.100 66.296 / 0.20)",
 
-  // Fourth stage/status hue (interviewing-stage pipelines, "in progress"
-  // states distinct from indigo/copper/success/warning/error). Mirrors the
-  // existing status-color pattern: base + light tint for pill/dot fills.
-  violet: "oklch(0.491 0.241 292.581)",
-  violet100: "oklch(0.943 0.028 294.588)",
-
-  // Fifth stage hue — Figma's "Developing" score-band badge (info/blue),
-  // distinct from success/warning/error/violet.
-  info: "oklch(0.478 0.147 240.79)",
-  info100: "oklch(0.967 0.017 236.6)",
+  // Accent palette is indigo + copper only. The former violet and info-blue
+  // stage hues were removed; success/warning/error stay as functional status
+  // colours, never as decorative accents.
 
   // Neutral badge — zero-delta / no-change states, distinct from ink.
   neutralInk: "oklch(0.373 0.017 261.4)",

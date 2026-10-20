@@ -429,10 +429,10 @@ export default function Login() {
             <h1
               id="login-heading"
               style={{
-                fontFamily: f.serif,
-                fontSize: "clamp(2.5rem, 6vw, 4.5rem)",
+                fontFamily: f.sans,
+                fontSize: "clamp(1.75rem, 4.4vw, 2.5rem)",
                 lineHeight: 1.05,
-                fontWeight: 400,
+                fontWeight: 600,
                 letterSpacing: "-0.02em",
                 whiteSpace: "nowrap",
                 margin: 0,
@@ -442,29 +442,13 @@ export default function Login() {
               {isEmployerFlow ? (
                 <>
                   Hire{" "}
-                  <em
-                    style={{
-                      fontStyle: "italic",
-                      fontWeight: 400,
-                      color: t.copper,
-                    }}
-                  >
-                    faster
-                  </em>{" "}
+                  faster{" "}
                   with proof
                 </>
               ) : (
                 <>
                   Clarity{" "}
-                  <em
-                    style={{
-                      fontStyle: "italic",
-                      fontWeight: 400,
-                      color: t.copper,
-                    }}
-                  >
-                    wins
-                  </em>{" "}
+                  wins{" "}
                   interviews
                 </>
               )}

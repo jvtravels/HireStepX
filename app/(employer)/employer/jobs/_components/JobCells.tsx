@@ -91,7 +91,7 @@ export function MatchesCell({ r }: { r: RequirementSummary }) {
     <div className="flex flex-col items-start gap-1">
       {s.topMatches > 0 ? (
         <div className="flex flex-wrap items-center gap-2">
-          <Badge tone="info">{s.topMatches} strong {s.topMatches === 1 ? "match" : "matches"}</Badge>
+          <Badge tone="brand">{s.topMatches} strong {s.topMatches === 1 ? "match" : "matches"}</Badge>
           {s.strongAvgScore != null && <span style={mutedText}>{s.strongAvgScore}% avg</span>}
         </div>
       ) : (

@@ -21,7 +21,7 @@ export type NoticeTone = "error" | "warning" | "info" | "success";
 const NOTICE_PALETTE: Record<NoticeTone, { bg: string; fg: string; line: string }> = {
   error: { bg: t.error100, fg: t.errorInk, line: t.errorLine },
   warning: { bg: t.warning100, fg: t.warningInk, line: t.warningLine },
-  info: { bg: t.info100, fg: t.info, line: t.line },
+  info: { bg: t.indigo100, fg: t.indigoDeep, line: t.line },
   success: { bg: t.success100, fg: t.successInk, line: t.successLine },
 };
 
