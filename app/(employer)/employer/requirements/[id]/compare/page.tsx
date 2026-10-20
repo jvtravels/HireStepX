@@ -11,7 +11,8 @@ import type { Candidate } from "@/employer/mockData";
 import { tokens as t, fonts as f, textSize } from "@/auth/_tokens";
 import { CandidateStatusChip, ScoreChip, SkillTag } from "@/employer/_atoms";
 import { InsightList, InsightRow } from "@/employer/_panelParts";
-import { EmptyNote, ErrorRetry, LinkCta, PageSkeleton } from "@/employer/_requirementAtoms";
+import { EmptyNote, ErrorRetry, LinkCta } from "@/employer/_requirementAtoms";
+import { PageSkeleton } from "@/employer/_consoleParts";
 import { candidateSkillFit, interviewScore, scoreTone } from "@/employer/_jobDetailHelpers";
 import { candidateDisplayName } from "../_components/requirementFormat";
 import { MIN_COMPARE, parseCompareIds } from "../_components/shortlistSelection";
@@ -206,7 +207,7 @@ export default function ComparePage() {
   const wantedIds = parseCompareIds(searchParams);
   const chosen = wantedIds.flatMap((id) => requirement?.candidates.find((c) => c.id === id) ?? []);
 
-  if (loading) return <PageSkeleton label="Loading candidates to compare" />;
+  if (loading) return <PageSkeleton label="Loading candidates to compare" padded />;
 
   if (!requirement) {
     return (

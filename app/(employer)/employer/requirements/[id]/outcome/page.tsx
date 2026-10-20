@@ -23,7 +23,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { PrimaryCta, CANDIDATE_STATUS_LABEL } from "@/employer/_atoms";
-import { EmptyNote, ErrorRetry, InlineNotice, LinkCta, PageSkeleton, SuspendedBanner } from "@/employer/_requirementAtoms";
+import { EmptyNote, ErrorRetry, InlineNotice, LinkCta, SuspendedBanner } from "@/employer/_requirementAtoms";
+import { PageSkeleton } from "@/employer/_consoleParts";
 import { failureMessage, setCandidateStatus } from "@/employer/_requirementCalls";
 import { useEmployerAccess } from "@/employer/_useEmployerAccess";
 import { nextCandidateStatuses } from "../../../../../../server-handlers/_employer-candidate-status-helpers";
@@ -123,7 +124,7 @@ export default function OutcomeFeedbackPage() {
     </Link>
   );
 
-  if (loading) return <PageSkeleton label="Loading candidate" />;
+  if (loading) return <PageSkeleton label="Loading candidate" padded />;
 
   if (!requirement) {
     return (

@@ -3,7 +3,7 @@
 /* Shared building blocks for the employer requirement surfaces (detail,
    compare, outcome, edit, new). Kept separate from _atoms.tsx so the
    requirement pages can share trust/state primitives —
-   inline notices, suspended banner, skeletons, retry panel — without growing
+   inline notices, suspended banner, retry panel — without growing
    the general atom file. */
 
 import type { ReactNode } from "react";
@@ -11,8 +11,7 @@ import Link from "next/link";
 import { AlertTriangleIcon, CheckCircle2Icon, InfoIcon, ShieldAlertIcon, RefreshCwIcon } from "lucide-react";
 import { tokens as t, fonts as f, textSize } from "@/auth/_tokens";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Card, OutlineCta } from "@/employer/_atoms";
+import { OutlineCta } from "@/employer/_atoms";
 import { StatePanel } from "@/employer/StatePanel";
 
 /* ── Inline notices ── */
@@ -99,85 +98,6 @@ export function SuspendedBanner() {
 }
 
 /* ── Loading / error / empty ── */
-
-/** Stands in for Card when the page already sits inside the shell's white container. */
-/** Page-level loading placeholder. The visually hidden label gives screen
-    readers something to announce; the skeleton blocks are decorative.
-    `job` mirrors the job detail page: header, tab row, toolbar, candidate rows. */
-export function PageSkeleton({ label, variant = "default", flat = false }: { label: string; variant?: "default" | "job"; flat?: boolean }) {
-  if (variant === "job") {
-    return (
-      <div role="status" aria-busy="true" className="flex min-w-0 flex-col gap-5 px-7 py-6">
-        <span className="sr-only">{label}</span>
-        <div aria-hidden="true" className="grid min-w-0 gap-5 min-[1440px]:grid-cols-[minmax(0,1fr)_320px]">
-          <div className="flex flex-col gap-3">
-            <Skeleton className="h-4 w-24" />
-            <Skeleton className="h-8 w-[min(420px,80%)]" />
-            <div className="flex flex-wrap gap-2">
-              <Skeleton className="h-6 w-28 rounded-full" />
-              <Skeleton className="h-6 w-24 rounded-full" />
-              <Skeleton className="h-6 w-32 rounded-full" />
-            </div>
-          </div>
-          <Skeleton className="hidden h-28 w-full rounded-xl min-[1440px]:block" />
-        </div>
-        <div aria-hidden="true" className="flex flex-col gap-4">
-          <div className="flex flex-wrap items-center gap-3">
-            <Skeleton className="h-9 w-72 max-w-full rounded-lg" />
-            <Skeleton className="h-9 w-56 max-w-full rounded-lg" />
-          </div>
-          {[0, 1, 2, 3, 4].map((i) => (
-            <div key={i} className="flex items-center gap-4 border-t border-hx-line pt-4">
-              <Skeleton className="size-4 shrink-0" />
-              <Skeleton className="size-9 shrink-0 rounded-full" />
-              <div className="flex min-w-0 flex-1 flex-col gap-2">
-                <Skeleton className="h-4 w-2/5" />
-                <Skeleton className="h-3 w-3/5" />
-              </div>
-              <Skeleton className="h-8 w-28 max-sm:hidden" />
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-  if (flat) {
-    return (
-      <div role="status" aria-busy="true" className="grid gap-6 px-7 py-6">
-        <span className="sr-only">{label}</span>
-        <div aria-hidden="true" className="grid gap-3">
-          <Skeleton className="h-7 w-[45%]" />
-          <Skeleton className="h-4 w-[70%]" />
-          <Skeleton className="h-4 w-[55%]" />
-        </div>
-        <div aria-hidden="true" className="grid gap-3">
-          {[0, 1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-11 w-full" />
-          ))}
-        </div>
-      </div>
-    );
-  }
-  return (
-    <div role="status" aria-busy="true" style={{ display: "grid", gap: 16 }}>
-      <span className="sr-only">{label}</span>
-      <Card>
-        <div aria-hidden="true" style={{ display: "grid", gap: 12 }}>
-          <Skeleton style={{ height: 28, width: "45%" }} />
-          <Skeleton style={{ height: 16, width: "70%" }} />
-          <Skeleton style={{ height: 16, width: "55%" }} />
-        </div>
-      </Card>
-      <Card pad={16}>
-        <div aria-hidden="true" style={{ display: "grid", gap: 12 }}>
-          {[0, 1, 2, 3].map((i) => (
-            <Skeleton key={i} style={{ height: 44, width: "100%" }} />
-          ))}
-        </div>
-      </Card>
-    </div>
-  );
-}
 
 /** Failure panel with a retry action — used where a section's data could not
     be loaded and the user should be able to try again without a full reload. */

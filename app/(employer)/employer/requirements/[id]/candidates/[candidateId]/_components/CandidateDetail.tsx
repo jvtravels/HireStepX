@@ -8,7 +8,8 @@ import { useEmployerBreadcrumb } from "@/employer/EmployerShell";
 import { useToast } from "@/Toast";
 import { markProfileOpened } from "@/employer/onboardingSteps";
 import { useEmployerAccess } from "@/employer/_useEmployerAccess";
-import { ErrorRetry, EmptyNote, LinkCta, PageSkeleton, SuspendedBanner } from "@/employer/_requirementAtoms";
+import { ErrorRetry, EmptyNote, LinkCta, SuspendedBanner } from "@/employer/_requirementAtoms";
+import { PageSkeleton } from "@/employer/_consoleParts";
 import UnlockDialog from "../../../_components/UnlockDialog";
 import { CandidateDialogsHost } from "./CandidateDialogsHost";
 import { CandidateHeader } from "./CandidateHeader";
@@ -97,7 +98,7 @@ export default function CandidateDetail({ requirementId, matchId }: { requiremen
 
   const back = <LinkCta href={shortlistHref} variant="outline">Back to shortlist</LinkCta>;
 
-  if (d.loading) return <PageSkeleton label="Loading candidate…" flat />;
+  if (d.loading) return <PageSkeleton label="Loading candidate…" padded />;
 
   if (d.loadFailed || !requirement) {
     return (

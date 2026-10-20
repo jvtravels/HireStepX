@@ -7,7 +7,8 @@ import { useEmployerBreadcrumb } from "@/employer/EmployerShell";
 import { useEmployerData, Requirement } from "@/employer/EmployerDataContext";
 import { RequirementForm, RequirementFormValues } from "@/employer/RequirementForm";
 import { tokens as t, fonts as f, textSize } from "@/auth/_tokens";
-import { ErrorRetry, PageSkeleton, SuspendedBanner } from "@/employer/_requirementAtoms";
+import { ErrorRetry, SuspendedBanner } from "@/employer/_requirementAtoms";
+import { PageSkeleton } from "@/employer/_consoleParts";
 import { useEmployerAccess } from "@/employer/_useEmployerAccess";
 
 const SUSPENDED_SUBMIT_ERROR = "Your employer account is suspended, so jobs can't be edited. Contact support@hirestepx.com.";
@@ -53,7 +54,7 @@ export default function EditRequirementPage() {
     return true;
   };
 
-  if (loading) return <PageSkeleton label="Loading job" />;
+  if (loading) return <PageSkeleton label="Loading job" padded />;
 
   if (!requirement) {
     return (

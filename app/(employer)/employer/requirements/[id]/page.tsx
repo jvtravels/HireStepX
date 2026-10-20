@@ -12,7 +12,8 @@ import { TAB_LABEL, jobInsights, tabCounts, visibleTabs, type CandidateTab } fro
 import StatusTabs from "@/components/StatusTabs";
 import InterviewInviteDialog, { statusErrorCopy, type InviteResult, type InviteValues } from "@/employer/InterviewInviteDialog";
 import { useToast } from "@/Toast";
-import { EmptyNote, ErrorRetry, InlineNotice, PageSkeleton, SuspendedBanner } from "@/employer/_requirementAtoms";
+import { EmptyNote, ErrorRetry, InlineNotice, SuspendedBanner } from "@/employer/_requirementAtoms";
+import { PageSkeleton } from "@/employer/_consoleParts";
 import type { UnlockedCandidate } from "@/employer/_requirementCalls";
 import { useEmployerAccess } from "@/employer/_useEmployerAccess";
 import type { Candidate, CandidateStatus } from "@/employer/mockData";
@@ -368,7 +369,7 @@ export default function RequirementDetailPage() {
     setInsightId(null);
   };
 
-  if (loading && !requirement) return <PageSkeleton label="Loading job" variant="job" flat />;
+  if (loading && !requirement) return <PageSkeleton label="Loading job" variant="job" padded />;
 
   if (!requirement) {
     return (

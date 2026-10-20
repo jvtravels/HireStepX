@@ -49,20 +49,24 @@ export function OutlineLink({ href, children, full = false, small = false, onCli
   );
 }
 
-/** Announced loading placeholder. `label` is what a screen reader hears.
- *  `list` mirrors a toolbar plus table rows (jobs list); the default mirrors a
- *  page heading with two content blocks. */
-export function PageSkeleton({ label = "Loading", variant = "page" }: { label?: string; variant?: "page" | "list" }) {
+const SKELETON_ROWS = [0, 1, 2, 3, 4, 5];
+
+/** The one loading placeholder for every employer page. `label` is what a screen reader hears.
+ *  `page` is a heading with two content blocks, `list` a toolbar plus table rows (jobs list),
+ *  `job` a header, toolbar and candidate rows (job detail). `padded` is for pages that render
+ *  inside the white container without their own gutter. */
+export function PageSkeleton({ label = "Loading", variant = "page", padded = false }: { label?: string; variant?: "page" | "list" | "job"; padded?: boolean }) {
+  const announced = label.endsWith("…") ? label : `${label}…`;
   return (
-    <div role="status" aria-live="polite" aria-busy="true" className="flex w-full flex-col gap-4">
-      <span className="sr-only">{label}…</span>
+    <div role="status" aria-live="polite" aria-busy="true" className={cn("flex w-full min-w-0 flex-col gap-4", padded && "px-7 py-6")}>
+      <span className="sr-only">{announced}</span>
       {variant === "list" ? (
         <div aria-hidden="true" className="flex flex-col gap-3">
           <div className="flex gap-3">
             <Skeleton className="h-9 w-64 max-w-full rounded-lg" />
             <Skeleton className="h-9 w-24 rounded-lg" />
           </div>
-          {[0, 1, 2, 3, 4, 5].map((i) => (
+          {SKELETON_ROWS.map((i) => (
             <div key={i} className="flex items-center gap-4 border-t border-hx-line pt-3">
               <div className="flex min-w-0 flex-[2] flex-col gap-2">
                 <Skeleton className="h-4 w-3/5" />
@@ -75,6 +79,38 @@ export function PageSkeleton({ label = "Loading", variant = "page" }: { label?: 
             </div>
           ))}
         </div>
+      ) : variant === "job" ? (
+        <>
+          <div aria-hidden="true" className="grid min-w-0 gap-5 min-[1440px]:grid-cols-[minmax(0,1fr)_320px]">
+            <div className="flex flex-col gap-3">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-8 w-[min(420px,80%)]" />
+              <div className="flex flex-wrap gap-2">
+                <Skeleton className="h-6 w-28 rounded-full" />
+                <Skeleton className="h-6 w-24 rounded-full" />
+                <Skeleton className="h-6 w-32 rounded-full" />
+              </div>
+            </div>
+            <Skeleton className="hidden h-28 w-full rounded-xl min-[1440px]:block" />
+          </div>
+          <div aria-hidden="true" className="flex flex-col gap-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <Skeleton className="h-9 w-72 max-w-full rounded-lg" />
+              <Skeleton className="h-9 w-56 max-w-full rounded-lg" />
+            </div>
+            {SKELETON_ROWS.slice(0, 5).map((i) => (
+              <div key={i} className="flex items-center gap-4 border-t border-hx-line pt-4">
+                <Skeleton className="size-4 shrink-0" />
+                <Skeleton className="size-9 shrink-0 rounded-full" />
+                <div className="flex min-w-0 flex-1 flex-col gap-2">
+                  <Skeleton className="h-4 w-2/5" />
+                  <Skeleton className="h-3 w-3/5" />
+                </div>
+                <Skeleton className="h-8 w-28 max-sm:hidden" />
+              </div>
+            ))}
+          </div>
+        </>
       ) : (
         <>
           <Skeleton className="h-10 w-[min(420px,70%)] rounded-lg" />
