@@ -58,7 +58,6 @@ import { CoachNotesSection } from "./panels/sr-CoachNotesSection";
 import { BiasSection } from "./panels/sr-BiasSection";
 import { ReverseInterviewSection } from "./panels/sr-ReverseInterviewSection";
 import { NextStepsSection } from "./panels/sr-NextStepsSection";
-import { ScheduleNextSection } from "./panels/sr-ScheduleNextSection";
 import { FooterSection } from "./panels/sr-FooterSection";
 import { ReferralInviteSection } from "./panels/sr-ReferralInviteSection";
 import { TestimonialNudge } from "./panels/sr-TestimonialNudge";
@@ -480,7 +479,6 @@ function GenericReport({
                 />
                 {data.biasFindings && data.biasFindings.length > 0 && <BiasSection findings={data.biasFindings} />}
                 {data.reverseInterview && <ReverseInterviewSection reverse={data.reverseInterview} />}
-                <ScheduleNextSection todayIso={new Date().toISOString()} />
                 <TestimonialNudge score={data.overallScore} priorSessionCount={data.priorSessionCount} role={data.role} />
               </>
             )}

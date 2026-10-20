@@ -16,7 +16,6 @@ const MUST_NOT_SUPPRESS_OUTLINE = [
   "src/AdminDashboard.tsx",
   "src/AdminUnlockPanel.tsx",
   "src/SessionDetailPanels.tsx",
-  "src/sessionReport/panels/sr-ScheduleNextSection.tsx",
   "src/components/interview/Composer.tsx",
   "src/onboarding/Panels.tsx",
   "app/admin-login/page.tsx",
