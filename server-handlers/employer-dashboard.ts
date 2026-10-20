@@ -67,8 +67,8 @@ export default async function handler(req: Request): Promise<Response> {
 
   try {
     const [requirements, events, activity] = await Promise.all([
-      readRows<{ id: string; title: string; created_at: string }>(
-        `${SUPABASE_URL}/rest/v1/employer_requirements?employer_id=eq.${employer}&select=id,title,created_at&order=created_at.desc&limit=500`,
+      readRows<{ id: string; title: string; created_at: string; status: string | null }>(
+        `${SUPABASE_URL}/rest/v1/employer_requirements?employer_id=eq.${employer}&select=id,title,created_at,status&order=created_at.desc&limit=500`,
       ),
       readRows<StatusEventRow>(
         `${SUPABASE_URL}/rest/v1/match_status_events?employer_id=eq.${employer}&created_at=gte.${encodeURIComponent(since)}&select=match_id,requirement_id,to_status,actor,note,created_at&order=created_at.desc&limit=2000`,
@@ -97,7 +97,11 @@ export default async function handler(req: Request): Promise<Response> {
 
     const eventTimes = (statuses: string[]) => events.filter((e) => statuses.includes(e.to_status)).map((e) => e.created_at);
     const upcoming = selectUpcomingInterviews(matches, titleByRequirement, now, Number.MAX_SAFE_INTEGER);
-    const strongRefs = selectRecentRecommended(matches, STRONG_MATCH_THRESHOLD, 500);
+    // A closed job can no longer hire, so its shortlist is not "waiting for your decision".
+    const openIds = new Set(requirements.filter((r) => r.status !== "closed").map((r) => r.id));
+    const openMatches = matches.filter((m) => openIds.has(m.requirement_id));
+    const strongRefs = selectRecentRecommended(openMatches, STRONG_MATCH_THRESHOLD, 500);
+    const oldest = strongRefs.reduce<(typeof strongRefs)[number] | null>((a, r) => (!a || Date.parse(r.createdAt) < Date.parse(a.createdAt) ? r : a), null);
 
     const body = {
       range,
@@ -106,10 +110,11 @@ export default async function handler(req: Request): Promise<Response> {
         interviewsScheduled: upcoming.length,
         hired: matches.filter((m) => m.candidate_status === "hired").length,
         awaitingReview: strongRefs.length,
+        longestWaiting: oldest ? { title: titleByRequirement.get(oldest.requirementId) ?? "", createdAt: oldest.createdAt } : null,
       },
       trends: {
         jobs: buildTrend(requirements.map((r) => r.created_at), now, range),
-        recommended: buildTrend(matches.filter((m) => m.match_score >= STRONG_MATCH_THRESHOLD && m.created_at).map((m) => m.created_at as string), now, range),
+        recommended: buildTrend(openMatches.filter((m) => m.match_score >= STRONG_MATCH_THRESHOLD && m.created_at).map((m) => m.created_at as string), now, range),
         interviews: buildTrend(eventTimes(["interview_invited", "interviewing"]), now, range),
         hired: buildTrend(eventTimes(["hired"]), now, range),
       },

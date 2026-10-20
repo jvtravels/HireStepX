@@ -47,7 +47,7 @@ export interface DashboardActivityItem {
 export interface EmployerDashboardData {
   range: DashboardRange;
   jobs: DashboardJobPipeline[];
-  totals: { interviewsScheduled: number; hired: number; awaitingReview: number };
+  totals: { interviewsScheduled: number; hired: number; awaitingReview: number; longestWaiting?: { title: string; createdAt: string } | null };
   trends: { jobs: DashboardTrend; recommended: DashboardTrend; interviews: DashboardTrend; hired: DashboardTrend };
   upcomingInterviews: DashboardUpcomingInterview[];
   recommended: DashboardRecommendedRef[];
@@ -262,6 +262,15 @@ export function interviewSlot(iso: string): { day: string; month: string; time: 
   return { day, month: month ?? "", time: slotTime.format(d).toUpperCase() };
 }
 
+/** A real figure for the banner: how long the oldest unreviewed candidate has been waiting. */
+function waitingFact(longest: { title: string; createdAt: string } | null | undefined, now: number): string {
+  const created = longest ? Date.parse(longest.createdAt) : NaN;
+  if (!longest || Number.isNaN(created)) return "Review them from the top of your shortlist.";
+  const days = Math.max(0, Math.floor((now - created) / 86_400_000));
+  const when = days === 0 ? "since today" : days === 1 ? "1 day" : `${days} days`;
+  return `Longest waiting: ${when}${longest.title ? ` (${longest.title})` : ""}.`;
+}
+
 export interface NextAction {
   title: string;
   body: string;
@@ -281,6 +290,7 @@ export function buildNextAction(
   now: number,
   canCreate: boolean,
   topCandidate?: { requirementId: string; matchId: string } | null,
+  longestWaiting?: { title: string; createdAt: string } | null,
 ): NextAction | null {
   const soon = upcoming.find((i) => Date.parse(i.scheduledAt) - now <= SOON_MS);
   if (soon) {
@@ -295,7 +305,7 @@ export function buildNextAction(
   if (awaitingReview > 0) {
     return {
       title: `${awaitingReview} ${awaitingReview === 1 ? "candidate is" : "candidates are"} waiting for your decision`,
-      body: "Recommended candidates move faster when you respond within a couple of days.",
+      body: waitingFact(longestWaiting, now),
       cta: topCandidate ? "Review top candidate" : "Review candidates",
       href: topCandidate ? `/employer/requirements/${topCandidate.requirementId}/candidates/${topCandidate.matchId}` : "/employer/jobs",
     };

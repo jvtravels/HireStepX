@@ -24,7 +24,7 @@ const req = (qs = "") => new Request(`https://x.test/api/employer-dashboard${qs}
 // mock below rejects any select that strays from this list (supabase-schema.sql
 // declares columns, e.g. profile_viewed_at, that production does not have).
 const PROD_COLUMNS: Record<string, string[]> = {
-  employer_requirements: ["id", "title", "created_at", "employer_id"],
+  employer_requirements: ["id", "title", "created_at", "employer_id", "status"],
   match_status_events: ["match_id", "requirement_id", "employer_id", "to_status", "actor", "note", "created_at"],
   employer_requirement_activity: ["requirement_id", "employer_id", "created_at"],
   requirement_matches: [
@@ -79,12 +79,31 @@ describe("employer-dashboard handler", () => {
     expect(res.status).toBe(200);
     expect(body.range).toBe(30);
     expect(body.jobs).toEqual([{ requirementId: "r1", interviewing: 1, hired: 1, lastUpdatedAt: expect.any(String) }]);
-    expect(body.totals).toEqual({ interviewsScheduled: 1, hired: 1, awaitingReview: 1 });
+    expect(body.totals).toEqual({ interviewsScheduled: 1, hired: 1, awaitingReview: 1, longestWaiting: { title: "Backend Engineer", createdAt: expect.any(String) } });
     expect(body.trends.interviews.current).toBe(1);
     expect(body.trends.jobs.current).toBe(1);
     expect(body.upcomingInterviews[0]).toMatchObject({ matchId: "m1aaaaaa", candidateName: "Candidate #m1aaaa", roleTitle: "Backend Engineer" });
     expect(body.recommended.map((r: { matchId: string }) => r.matchId)).toEqual(["m2bbbbbb"]);
     expect(body.activity[0].text).toBe("You moved Candidate #m1aaaa to Interviewing");
+  });
+
+  it("leaves closed jobs out of the waiting-for-decision count and names the longest wait", async () => {
+    mockTables({
+      employer_requirements: [
+        { id: "r1", title: "Backend Engineer", created_at: iso(-30), status: "ready" },
+        { id: "r2", title: "Old Closed Role", created_at: iso(-60), status: "closed" },
+      ],
+      match_status_events: [],
+      employer_requirement_activity: [],
+      requirement_matches: [
+        { id: "m1aaaaaa", requirement_id: "r1", candidate_status: "shortlisted", interview_scheduled_at: null, candidate_status_updated_at: null, created_at: iso(-4), unlocked: false, unlocked_candidate_name: null, match_score: 75 },
+        { id: "m2bbbbbb", requirement_id: "r2", candidate_status: "shortlisted", interview_scheduled_at: null, candidate_status_updated_at: null, created_at: iso(-40), unlocked: false, unlocked_candidate_name: null, match_score: 90 },
+      ],
+    });
+    const body = await (await handler(req("?range=30"))).json();
+    expect(body.totals.awaitingReview).toBe(1);
+    expect(body.recommended.map((r: { matchId: string }) => r.matchId)).toEqual(["m1aaaaaa"]);
+    expect(body.totals.longestWaiting.title).toBe("Backend Engineer");
   });
 
   it("works for an employer with no jobs, and falls back to a 30-day range", async () => {

@@ -251,3 +251,17 @@ describe("buildRecommendedCards skill matching", () => {
     expect(card.missingSkills).toEqual(["Go"]);
   });
 });
+
+describe("buildNextAction waiting fact", () => {
+  const strong = [{ id: "a1", name: "A", initials: "A", yearsExperience: 3, skills: [] }];
+  const longest = (days: number) => ({ title: "Software Engineer", createdAt: new Date(NOW - days * DAY - 3_600_000).toISOString() });
+  it("states the longest wait with the job title instead of a promise", () => {
+    const a = buildNextAction([job("1", {}, strong)], [], 2, NOW, true, null, longest(3));
+    expect(a?.body).toBe("Longest waiting: 3 days (Software Engineer).");
+  });
+  it("handles same-day and one-day waits and a missing fact", () => {
+    expect(buildNextAction([job("1", {}, strong)], [], 1, NOW, true, null, { title: "QA", createdAt: new Date(NOW - 3_600_000).toISOString() })?.body).toBe("Longest waiting: since today (QA).");
+    expect(buildNextAction([job("1", {}, strong)], [], 1, NOW, true, null, longest(1))?.body).toContain("1 day");
+    expect(buildNextAction([job("1", {}, strong)], [], 1, NOW, true)?.body).not.toContain("move faster");
+  });
+});

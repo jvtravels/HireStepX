@@ -242,7 +242,7 @@ function EmployerDashboard() {
   const canCreate = !suspended && !atJobLimit;
   const refreshing = dashboardState === "loading" && dashboard !== null;
   const nextAction = useMemo(
-    () => (dashboard ? buildNextAction(openRequirements, dashboard.upcomingInterviews, dashboard.totals.awaitingReview, now, canCreate, recommendedCards[0] ?? null) : null),
+    () => (dashboard ? buildNextAction(openRequirements, dashboard.upcomingInterviews, dashboard.totals.awaitingReview, now, canCreate, recommendedCards[0] ?? null, dashboard.totals.longestWaiting ?? null) : null),
     [openRequirements, dashboard, now, canCreate, recommendedCards],
   );
 

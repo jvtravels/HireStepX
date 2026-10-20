@@ -3,7 +3,8 @@
 import { useState, useEffect, useCallback, type ReactNode } from "react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
-import { ArrowLeftIcon } from "lucide-react";
+import { ArrowLeftIcon, CheckIcon } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useEmployerBreadcrumb } from "@/employer/EmployerShell";
 import { useEmployerData, type Requirement } from "@/employer/EmployerDataContext";
 import type { Candidate } from "@/employer/mockData";
@@ -13,6 +14,7 @@ import { EmptyNote, ErrorRetry, LinkCta, PageSkeleton } from "@/employer/_requir
 import { candidateSkillFit, interviewScore, scoreTone } from "@/employer/_jobDetailHelpers";
 import { candidateDisplayName } from "../_components/requirementFormat";
 import { MIN_COMPARE, parseCompareIds } from "../_components/shortlistSelection";
+import { metricLeaders, sameAcross, summarizeComparison, type CompareMetric } from "../_components/compareInsights";
 import { displaySkillName } from "../candidates/[candidateId]/_components/helpers";
 
 const COMPARE_CSS = `
@@ -62,11 +64,16 @@ function NameCell({ candidate, requirementId }: { candidate: Candidate; requirem
 interface CompareRow {
   label: string;
   render: (c: Candidate, requiredSkills: string[]) => ReactNode;
+  /** Set when the row has a numeric measure where one candidate can clearly lead. */
+  metric?: CompareMetric;
+  /** What "the same" means for this row, so the differences-only view can hide it. */
+  same: (c: Candidate, requiredSkills: string[]) => string;
 }
 
 const ROWS: CompareRow[] = [
   {
     label: "Target role",
+    same: (c) => `${c.targetRole}|${c.city}`,
     render: (c) => (
       <span style={cellText}>
         {[c.targetRole, c.city].filter((v) => v && v !== "Not specified").join(" · ") || <span style={{ color: t.inkFaint }}>Not specified</span>}
@@ -75,6 +82,8 @@ const ROWS: CompareRow[] = [
   },
   {
     label: "Match score",
+    metric: "match",
+    same: (c) => String(Math.round(c.matchScore)),
     render: (c) => (
       <>
         <ScoreChip score={c.matchScore} />
@@ -88,6 +97,8 @@ const ROWS: CompareRow[] = [
   },
   {
     label: "Required skills",
+    metric: "skills",
+    same: (c, required) => candidateSkillFit(c, required).matched.slice().sort().join(","),
     render: (c, required) => {
       const { matched, gaps } = candidateSkillFit(c, required);
       return (
@@ -103,6 +114,8 @@ const ROWS: CompareRow[] = [
   {
     // The same figure and rule as the shortlist's evidence column: a never-practised candidate has no score, not a default 50.
     label: "Interview score",
+    metric: "interview",
+    same: (c) => String(interviewScore(c)),
     render: (c) => {
       const score = interviewScore(c);
       if (score == null) return <span style={faintText}>No graded interviews</span>;
@@ -115,6 +128,8 @@ const ROWS: CompareRow[] = [
   },
   {
     label: "Practice sessions",
+    metric: "sessions",
+    same: (c) => String(c.sessionsCompleted),
     render: (c) => (
       <>
         <span style={cellText}>
@@ -126,6 +141,7 @@ const ROWS: CompareRow[] = [
   },
   {
     label: "Pipeline status",
+    same: (c) => String(c.candidateStatus ?? ""),
     render: (c) => (
       <>
         {c.candidateStatus ? <CandidateStatusChip status={c.candidateStatus} /> : <span style={{ ...cellText, color: t.inkFaint }}>Not set</span>}
@@ -138,6 +154,7 @@ const ROWS: CompareRow[] = [
   },
   {
     label: "Skills",
+    same: (c) => c.skills.slice().sort().join(","),
     render: (c) =>
       c.skills.length ? (
         <ul style={{ display: "flex", gap: 6, flexWrap: "wrap", listStyle: "none", margin: 0, padding: 0 }}>
@@ -159,6 +176,7 @@ export default function ComparePage() {
   const { fetchRequirementDetail } = useEmployerData();
   const [requirement, setRequirement] = useState<Requirement | null>(null);
   const [loading, setLoading] = useState(true);
+  const [diffOnly, setDiffOnly] = useState(false);
 
   const load = useCallback(() => {
     let active = true;
@@ -208,6 +226,13 @@ export default function ComparePage() {
   const names = chosen.map(candidateDisplayName);
   const namesLabel = names.length === 2 ? `${names[0]} and ${names[1]}` : `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
 
+  const summary = summarizeComparison(chosen, requirement.skills);
+  const leaders = new Map<CompareMetric, Set<string>>(
+    (["match", "skills", "interview", "sessions"] as CompareMetric[]).map((m) => [m, metricLeaders(chosen, requirement.skills, m)]),
+  );
+  const rows = ROWS.filter((row) => row.label !== "Required skills" || requirement.skills.length > 0);
+  const visibleRows = diffOnly ? rows.filter((row) => !sameAcross(chosen, (c) => row.same(c, requirement.skills))) : rows;
+
   return (
     <div style={{ minWidth: 0 }}>
       <style>{COMPARE_CSS}</style>
@@ -223,6 +248,37 @@ export default function ComparePage() {
               : "Side by side on match, interview evidence and pipeline status."}
           </p>
         </header>
+        <div className="flex flex-col gap-4 border-b border-hx-line px-7 py-5 max-sm:px-4">
+          <div>
+            <h2 className="m-0 text-[15px] font-semibold text-hx-coal">How they differ</h2>
+            {summary.differences.length > 0 ? (
+              <ul className="m-0 mt-2 flex list-none flex-col gap-1.5 p-0 text-[14px] text-hx-coal">
+                {summary.differences.map((line) => (
+                  <li key={line}>{line}</li>
+                ))}
+              </ul>
+            ) : (
+              <p className="m-0 mt-2 text-[14px] text-hx-ink-soft">These candidates are close on every measure we compare. Use the interview to separate them.</p>
+            )}
+          </div>
+          {summary.questions.length > 0 && (
+            <div>
+              <h2 className="m-0 text-[15px] font-semibold text-hx-coal">Worth asking in the interview</h2>
+              <ul className="m-0 mt-2 flex list-none flex-col gap-1.5 p-0 text-[14px] text-hx-coal">
+                {summary.questions.map((q) => (
+                  <li key={q}>{q}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          <p className="m-0 text-[13px] text-hx-ink-soft">
+            Worked out from the figures below. HireStepX shows where candidates differ and does not pick a hire for you. Interview scores reflect practice, not job performance.
+          </p>
+          <label htmlFor="cmp-diff-only" className="flex min-h-11 w-fit cursor-pointer items-center gap-2.5 text-[14px] font-semibold text-hx-coal">
+            <Checkbox id="cmp-diff-only" checked={diffOnly} onCheckedChange={(v) => setDiffOnly(v === true)} className="shrink-0" />
+            Show differences only
+          </label>
+        </div>
         {/* Keyboard users can only scroll an overflow region they can focus. */}
         {/* eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex */}
         <div className="overflow-x-auto focus-visible:outline-2 focus-visible:-outline-offset-2" tabIndex={0} role="region" aria-label="Comparison table. Scroll sideways to see every candidate.">
@@ -238,18 +294,28 @@ export default function ComparePage() {
                 {chosen.map((c) => (
                   <th key={c.id} scope="col">
                     <NameCell candidate={c} requirementId={requirement.id} />
+                    {(summary.leads.get(c.id) ?? 0) > 0 && (
+                      <div className="mt-1 text-[13px] font-normal text-hx-ink-soft">Highest on {summary.leads.get(c.id)} of 4 measures</div>
+                    )}
                   </th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {ROWS.filter((row) => row.label !== "Required skills" || requirement.skills.length > 0).map((row) => (
+              {visibleRows.map((row) => (
                 <tr key={row.label}>
                   <th scope="row" style={{ fontFamily: f.sans, fontSize: textSize.base }}>
                     {row.label}
                   </th>
                   {chosen.map((c) => (
-                    <td key={c.id}>{row.render(c, requirement.skills)}</td>
+                    <td key={c.id}>
+                      {row.render(c, requirement.skills)}
+                      {row.metric && leaders.get(row.metric)?.has(c.id) && (
+                        <div className="mt-1 inline-flex items-center gap-1 text-[13px] font-semibold text-hx-indigo">
+                          <CheckIcon size={13} aria-hidden="true" /> Highest
+                        </div>
+                      )}
+                    </td>
                   ))}
                 </tr>
               ))}
