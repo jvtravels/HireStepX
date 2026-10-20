@@ -26,7 +26,7 @@ function plainFor(skill: string) {
   return SKILL_PLAIN[skill] ?? SKILL_PLAIN[skill.replace(/-/g, " ")];
 }
 
-function band(score: number): { label: string; weak: boolean } {
+export function band(score: number): { label: string; weak: boolean } {
   if (score >= 75) return { label: "Strong", weak: false };
   if (score >= 55) return { label: "Okay", weak: false };
   return { label: "Needs work", weak: true };
@@ -100,9 +100,9 @@ export function ProgressTrendPanel({ trends }: { trends: SkillTrend[] }) {
     <SrSectionShell
       anchorId="ir-section-progress-trend"
       headingId="ir-progress-trend-heading"
-      label="Core skills"
-      title="Core skills over time"
-      subtitle="Ten things interviewers quietly judge. Each is scored out of 100. The line shows your last few sessions, and the change is versus your previous session."
+      label="Interview skills"
+      title="Interview skills over time"
+      subtitle="The same ten skills are scored in every interview, whatever the role, so you can see them move. The line shows your last few sessions, and the change is versus your previous one."
     >
       {hasAnyHistory && trends.length > 0 ? (
         <>

@@ -37,7 +37,23 @@ export const SESSION_REPORT_STYLES = `
     position: absolute; left: 0; top: 0; bottom: 0;
     border-radius: 99px;
     transition: width 600ms cubic-bezier(0.16, 1, 0.3, 1);
+    transform-origin: left center;
+    animation: ir-bar-grow 700ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
+  @keyframes ir-bar-grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+  @keyframes ir-panel-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  .ir-panel-in { animation: ir-panel-in 240ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+  .ir-more { border-top: 1px solid oklch(0.92 0.004 265); padding-top: 10px; }
+  .ir-more > summary {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; cursor: pointer; list-style: none;
+    font-size: 13px; color: oklch(0.55 0.02 213.5); border-radius: 6px;
+  }
+  .ir-more > summary::-webkit-details-marker { display: none; }
+  .ir-more > summary:focus-visible { outline: 2px solid #312E81; outline-offset: 2px; }
+  .ir-more-title { font-weight: 600; color: var(--foreground); }
+  .ir-more-chev { margin-left: auto; transition: transform 200ms ease; }
+  .ir-more[open] .ir-more-chev { transform: rotate(180deg); }
+  .ir-more-body { display: flex; flex-direction: column; gap: 12px; padding-top: 12px; }
   .ir-skill-bar-marker {
     position: absolute; top: -3px; height: 14px; width: 2px;
     background: rgba(110, 103, 89, 0.45); border-radius: 1px;
@@ -474,6 +490,9 @@ export const SESSION_REPORT_STYLES = `
       transition: none !important;
     }
     .ir-cta-primary:hover { transform: none !important; }
+    .ir-skill-bar-fg,
+    .ir-panel-in,
+    .ir-more-chev { animation: none !important; }
   }
 
   /* ─── Section navigation ───

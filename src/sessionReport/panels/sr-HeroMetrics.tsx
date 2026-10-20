@@ -8,11 +8,13 @@
 import { t, f, radius, size } from "../tokens";
 import { formatRoleWithLevel } from "../roleLabel";
 import type { Calibration } from "../types";
+import { useCountUp } from "../useCountUp";
 
 export function ScoreGauge({ score, color }: { score: number; color: string }) {
   const r = 52;
   const c = 2 * Math.PI * r;
-  const pct = Math.max(0, Math.min(100, score)) / 100;
+  const shown = useCountUp(Math.max(0, Math.min(100, score)));
+  const pct = shown / 100;
   return (
     <svg width="132" height="132" viewBox="0 0 132 132" role="img" aria-label={`Score ${score} out of 100`}>
       <circle cx="66" cy="66" r={r} stroke={t.line} strokeWidth="10" fill="none" />
@@ -28,7 +30,7 @@ export function ScoreGauge({ score, color }: { score: number; color: string }) {
         fill="none"
       />
       <text x="66" y="68" textAnchor="middle" fontFamily={f.sans} fontSize="38" fontWeight="700" fill={t.coal} style={{ letterSpacing: "-0.02em" }}>
-        {score}
+        {Math.round(shown)}
       </text>
       <text x="66" y="88" textAnchor="middle" fontFamily={f.sans} fontSize="12" fill={t.inkFaint}>
         out of 100

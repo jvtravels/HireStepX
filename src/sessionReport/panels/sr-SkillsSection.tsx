@@ -5,6 +5,7 @@
 import { t, f, radius, size } from "../tokens";
 import type { Skill } from "../types";
 import { SrSectionShell, CalloutCard } from "./_primitives";
+import { band } from "./sr-ProgressTrendPanel";
 
 export function SkillsSection({ skills, weakest }: { skills: Skill[]; weakest: { name: string; tip: string } }) {
   const max = 100;
@@ -26,8 +27,8 @@ export function SkillsSection({ skills, weakest }: { skills: Skill[]; weakest: {
       anchorId="ir-section-skills"
       headingId="ir-skills-heading"
       label="This session"
-      title="Skills for this role"
-      subtitle="Scored out of 100 for this session. Your lowest skill is highlighted."
+      title="Role skills"
+      subtitle="What this role is judged on, scored out of 100 for this session only. Your lowest is highlighted."
       aside={legend}
     >
       <div className="ir-skills-grid" style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) 280px", gap: 28, alignItems: "start" }}>
@@ -37,7 +38,7 @@ export function SkillsSection({ skills, weakest }: { skills: Skill[]; weakest: {
             const avgPct = s.roleAvg ? (s.roleAvg / max) * 100 : null;
             const delta = s.roleAvg ? s.score - s.roleAvg : null;
             return (
-              <div key={s.name} className="ir-skill-row" style={{ display: "grid", gridTemplateColumns: hasAvg ? "180px 1fr 44px 50px" : "180px 1fr 44px", gap: 14, alignItems: "center" }}>
+              <div key={s.name} className="ir-skill-row" style={{ display: "grid", gridTemplateColumns: hasAvg ? "180px 1fr 72px 50px" : "180px 1fr 72px", gap: 14, alignItems: "center" }}>
                 <span className="ir-skill-name" style={{ fontFamily: f.sans, fontSize: size.base, color: t.coal }}>{s.name}</span>
                 <div
                   className="ir-skill-bar-wrap"
@@ -59,8 +60,9 @@ export function SkillsSection({ skills, weakest }: { skills: Skill[]; weakest: {
                     <div className="ir-skill-bar-marker" style={{ left: `calc(${avgPct}% - 1px)` }} aria-hidden="true" />
                   )}
                 </div>
-                <span className="ir-skill-score" style={{ fontFamily: f.sans, fontSize: size.md, color: t.coal, textAlign: "right", fontWeight: 600 }}>
+                <span className="ir-skill-score" style={{ fontFamily: f.sans, fontSize: size.md, color: t.coal, textAlign: "right", fontWeight: 600, display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
                   {s.score}
+                  <span className="ir-trend-band" style={{ color: band(s.score).weak ? t.warning : t.inkSoft }}>{band(s.score).label}</span>
                 </span>
                 {hasAvg && (
                   <span

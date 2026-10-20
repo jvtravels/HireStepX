@@ -84,6 +84,7 @@ const LABEL: React.CSSProperties = { fontFamily: f.sans, fontSize: size.sm, font
 export function QuestionDetail({ q }: { q: Question }) {
   const [tab, setTab] = useState<"answer" | "restructured" | "exemplar">("answer");
   const isStrong = q.band === "strong" || q.band === "complete";
+  const starCount = Object.values(q.star).filter(Boolean).length;
   const coachHeading = isStrong ? "Why it landed" : "Why it scored low";
   const metricTiles = q.focusMetrics
     ? q.focusMetrics.map((m) => ({
@@ -98,7 +99,7 @@ export function QuestionDetail({ q }: { q: Question }) {
         { label: "Quantified", value: `${q.metrics.quantificationCount}`, tone: q.metrics.quantificationCount === 0 ? t.warning : t.coal },
       ];
   return (
-    <div style={{ padding: "0 18px 18px" }}>
+    <div className="ir-panel-in" style={{ padding: "0 18px 18px" }}>
       <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
         <TabsList variant="line" aria-label={`Question ${q.index} answer views`} className="mb-4">
           <TabsTrigger value="answer">Your answer</TabsTrigger>
@@ -144,24 +145,36 @@ export function QuestionDetail({ q }: { q: Question }) {
               )}
             </div>
 
-            <div className="ir-pq-metrics-strip" style={{ display: "flex", flexDirection: "column", gap: 12, borderTop: `1px solid ${t.line}`, paddingTop: 12 }}>
-              <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 6 }}>
-                <span style={{ ...LABEL, marginRight: 4 }}>STAR structure</span>
-                <StarChip active={q.star.situation} label="Situation" />
-                <StarChip active={q.star.task} label="Task" />
-                <StarChip active={q.star.action} label="Action" />
-                <StarChip active={q.star.result} label="Result" />
-                <StarChip active={q.star.learning} label="Learning" />
-              </div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 28px" }}>
-                {metricTiles.map((m) => (
-                  <div key={m.label} style={{ display: "flex", flexDirection: "column", minWidth: 64 }}>
-                    <span style={{ ...LABEL, fontWeight: 500 }}>{m.label}</span>
-                    <span style={{ fontFamily: f.sans, fontSize: size.lg, fontWeight: 600, color: m.tone, marginTop: 1 }}>{m.value}</span>
-                  </div>
+            <details className="ir-more ir-pq-metrics-strip">
+              <summary>
+                <span className="ir-more-title">Answer details</span>
+                <span>{starCount} of 5 STAR parts</span>
+                {metricTiles.slice(0, 2).map((m) => (
+                  <span key={m.label}>{m.value} {m.label.toLowerCase()}</span>
                 ))}
+                <svg className="ir-more-chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </summary>
+              <div className="ir-more-body">
+                <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 6 }}>
+                  <span style={{ ...LABEL, marginRight: 4 }}>STAR structure</span>
+                  <StarChip active={q.star.situation} label="Situation" />
+                  <StarChip active={q.star.task} label="Task" />
+                  <StarChip active={q.star.action} label="Action" />
+                  <StarChip active={q.star.result} label="Result" />
+                  <StarChip active={q.star.learning} label="Learning" />
+                </div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 28px" }}>
+                  {metricTiles.map((m) => (
+                    <div key={m.label} style={{ display: "flex", flexDirection: "column", minWidth: 64 }}>
+                      <span style={{ ...LABEL, fontWeight: 500 }}>{m.label}</span>
+                      <span style={{ fontFamily: f.sans, fontSize: size.lg, fontWeight: 600, color: m.tone, marginTop: 1 }}>{m.value}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
+            </details>
           </div>
 
           <div

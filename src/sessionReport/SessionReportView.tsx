@@ -17,10 +17,9 @@
 
 import { useState } from "react";
 
-import { t, f } from "./tokens";
+import { t } from "./tokens";
 import { SESSION_REPORT_STYLES } from "./styles";
 import { NegotiationFullReport } from "./NegotiationFullReport";
-import { upgradeNudgeCopy } from "./upgradeNudgeCopy";
 import BehavioralFullReport from "./BehavioralFullReport";
 import HrFullReport from "./HrFullReport";
 import type { BehavioralFullReportData } from "./types";
@@ -44,7 +43,6 @@ import type {
 } from "./types";
 
 import StatusTabs from "../components/StatusTabs";
-import { Button } from "@/components/ui/button";
 import { ReportFrame, ReportBody } from "./panels/sr-ReportFrame";
 import { HeroSection } from "./panels/sr-HeroSection";
 import { TrendStrip } from "./panels/sr-TrendStrip";
@@ -85,47 +83,6 @@ export type {
   ThoughtBubbleSegment,
   Verdict,
 };
-
-/* ─── Free-user upgrade nudge ──────────────────────────────────────── */
-/* Shown after the hero score on the report page — the highest-attention,
-   highest-curiosity moment in the product. Better here than at the
-   session-limit gate when the user is already frustrated and blocked. */
-
-function UpgradeNudgeStrip({ score, priorSessionCount, onUpgrade }: { score: number; priorSessionCount?: number; onUpgrade?: () => void }) {
-  const copy = upgradeNudgeCopy(score, priorSessionCount);
-  return (
-    <div
-      role="complementary"
-      aria-label="Continue practising"
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: 16,
-        flexWrap: "wrap",
-        background: t.creamSoft,
-        border: `1px solid ${t.line}`,
-        borderRadius: 12,
-        padding: "14px 18px",
-        marginTop: 28,
-      }}
-    >
-      <div style={{ minWidth: 0 }}>
-        <p style={{ margin: 0, fontFamily: f.sans, fontSize: 14, fontWeight: 600, color: t.coal }}>
-          {copy.headline}
-        </p>
-        <p style={{ margin: "3px 0 0", fontFamily: f.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.45 }}>
-          {copy.subcopy}
-        </p>
-      </div>
-      {copy.ctaHref ? (
-        <Button asChild size="sm"><a href={copy.ctaHref}>{copy.ctaLabel}</a></Button>
-      ) : (
-        <Button type="button" size="sm" onClick={onUpgrade}>{copy.ctaLabel}</Button>
-      )}
-    </div>
-  );
-}
 
 /* ─── Focus banner ─────────────────────────────────────────────────── */
 
@@ -274,13 +231,6 @@ export interface SessionReportViewProps {
    *  + drill CTA) instead of the generic panel stack. Populated by the
    *  adapter for sessions where focus is "hr-round". */
   hrReportData?: HrReportData;
-  /** When true, shows a post-session upgrade nudge after the hero score.
-   *  The moment the score lands is the highest-attention, highest-curiosity
-   *  point in the product — better to pitch here than at the session-limit
-   *  gate when the user is already frustrated. */
-  isFreeUser?: boolean;
-  /** Called when the user clicks the upgrade CTA on the post-session nudge. */
-  onUpgrade?: () => void;
 }
 
 type ReportTab = "overview" | "negotiation" | "answers" | "skills" | "coach";
@@ -348,8 +298,6 @@ function GenericReport({
   salaryNegotiationMeta,
   offerNetValue,
   progressTrends,
-  isFreeUser,
-  onUpgrade,
 }: SessionReportViewProps) {
   const [tab, setTab] = useState<ReportTab>("overview");
   /* L-2 (2026-07-10, live staging, negotiation report cc0a7469): the behavioural
@@ -382,7 +330,7 @@ function GenericReport({
         </a>
         <ReportBody id="ir-tabpanel" labelledBy={`ir-tab-${tab}`}>
           {/* section, not main: the app shell's SidebarInset already provides the page's one main landmark. */}
-          <section id="ir-main" aria-label="Interview report" className="ir-main-container ir-tab-panel" style={{ width: "100%" }}>
+          <section key={tab} id="ir-main" aria-label="Interview report" className="ir-main-container ir-tab-panel ir-panel-in" style={{ width: "100%" }}>
             {tab === "overview" && (
               <>
                 {data.focusBanner && <FocusBannerStrip banner={data.focusBanner} daysUntilInterview={data.daysUntilInterview} />}
@@ -395,9 +343,6 @@ function GenericReport({
                   readinessSentence={data.readinessSentence}
                   resumeImprovements={data.resumeImprovements}
                 />
-                {isFreeUser && (
-                  <UpgradeNudgeStrip score={data.overallScore} priorSessionCount={data.priorSessionCount} onUpgrade={onUpgrade} />
-                )}
               </>
             )}
             {tab === "negotiation" && data.negotiationOutcome && (
@@ -422,8 +367,8 @@ function GenericReport({
             {tab === "skills" && (
               <>
                 <SkillsSection skills={data.skills} weakest={data.weakestSkill} />
-                <CoreMetricsSection metrics={data.metrics} />
                 {progressTrends && <ProgressTrendPanel trends={progressTrends} />}
+                <CoreMetricsSection metrics={data.metrics} />
                 {!data.negotiationOutcome && offerNetValue && <OfferEconomicsPanel offer={offerNetValue} />}
                 {!data.negotiationOutcome && data.kernelMetrics && (
                   <KernelNegotiationQualitySection m={data.kernelMetrics} />
