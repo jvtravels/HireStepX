@@ -5,6 +5,7 @@ import { LoaderCircleIcon, ClipboardListIcon, MessageSquareIcon, CheckCircle2Ico
 import { Button } from "@/components/ui/button";
 import { Badge as UiBadge } from "@/components/ui/badge";
 import { Checkbox as UiCheckbox } from "@/components/ui/checkbox";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import AnimatedNumber from "../AnimatedNumber";
 import { cn } from "@/lib/utils";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -934,34 +935,24 @@ export function SegmentedControl<T extends string>({
   ariaLabel?: string;
 }) {
   return (
-    <div role="group" aria-label={ariaLabel} style={{ display: "inline-flex", flexWrap: "wrap", padding: 3, borderRadius: 11, background: t.creamSoft, gap: 2 }}>
-      {options.map((opt) => {
-        const selected = opt.value === value;
-        return (
-          <button
-            key={opt.value}
-            type="button"
-            onClick={() => onChange(opt.value)}
-            aria-pressed={selected}
-            className="pointer-coarse:min-h-11"
-            style={{
-              padding: "8px 16px",
-              minHeight: "max(36px, var(--coarse-min, 0px))",
-              borderRadius: 8,
-              border: selected ? `1px solid ${t.line}` : "1px solid transparent",
-              background: selected ? t.white : "transparent",
-              color: selected ? t.indigoDeep : t.neutralInk,
-              fontFamily: f.sans,
-              fontSize: 13,
-              fontWeight: 600,
-              cursor: "pointer",
-            }}
-          >
-            {opt.label}
-          </button>
-        );
-      })}
-    </div>
+    <ToggleGroup
+      type="single"
+      value={value}
+      onValueChange={(next) => next && onChange(next as T)}
+      aria-label={ariaLabel}
+      spacing={0.5}
+      className="flex-wrap rounded-[11px] bg-hx-soft p-[3px]"
+    >
+      {options.map((opt) => (
+        <ToggleGroupItem
+          key={opt.value}
+          value={opt.value}
+          className="h-auto min-h-9 rounded-lg border border-transparent px-4 py-2 text-[13px] font-semibold text-hx-neutral-ink hover:bg-transparent hover:text-hx-neutral-ink data-[state=on]:border-hx-line data-[state=on]:bg-white data-[state=on]:text-hx-indigo-deep pointer-coarse:min-h-11"
+        >
+          {opt.label}
+        </ToggleGroupItem>
+      ))}
+    </ToggleGroup>
   );
 }
 

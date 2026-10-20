@@ -108,8 +108,8 @@ describe("edit form shows every stored value", () => {
     await submitEdit();
     expect(label(/job title/i)).toHaveValue("Backend Engineer");
     expect(label(/department/i)).toHaveValue("Engineering");
-    expect(screen.getByRole("button", { name: "Contract" })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByRole("button", { name: "Hybrid" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("radio", { name: "Contract" })).toHaveAttribute("aria-checked", "true");
+    expect(screen.getByRole("radio", { name: "Hybrid" })).toHaveAttribute("aria-checked", "true");
     expect(screen.getByText("Pune")).toBeInTheDocument();
     expect(label(/open positions/i)).toHaveValue("2");
     expect(label(/application deadline/i)).toHaveValue("2099-12-31");
@@ -145,8 +145,8 @@ describe("edit form → PATCH handler → stored columns", () => {
 
     change(/job title/i, "Staff Backend Engineer");
     change(/department/i, "Platform");
-    fireEvent.click(screen.getByRole("button", { name: "Part-time" }));
-    fireEvent.click(screen.getByRole("button", { name: "Onsite" }));
+    fireEvent.click(screen.getByRole("radio", { name: "Part-time" }));
+    fireEvent.click(screen.getByRole("radio", { name: "Onsite" }));
     addTag(/^location/i, "Mumbai");
     change(/open positions/i, "4");
     change(/application deadline/i, "2099-06-30");

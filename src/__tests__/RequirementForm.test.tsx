@@ -74,7 +74,7 @@ describe("RequirementForm (create)", () => {
   it("only shows duration and hours for non full-time roles", () => {
     setup();
     expect(screen.queryByLabelText(/duration \(weeks\)/i)).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "Contract" }));
+    fireEvent.click(screen.getByRole("radio", { name: "Contract" }));
     expect(screen.getByLabelText(/duration \(weeks\)/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/hours per week/i)).toBeInTheDocument();
   });
@@ -103,7 +103,7 @@ describe("RequirementForm (create)", () => {
     await fillStepOne();
     type(/^minimum/i, "12");
     expect(screen.getByText(/₹12,00,000 a year|From ₹12,00,000 a year/)).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Per month" }));
+    fireEvent.click(screen.getByRole("radio", { name: "Per month" }));
     expect(screen.getByLabelText(/^minimum/i)).toHaveValue("100000");
   });
 

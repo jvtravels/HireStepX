@@ -17,6 +17,15 @@ if (typeof window !== "undefined" && typeof window.matchMedia !== "function") {
     }) as MediaQueryList;
 }
 
+// jsdom has no ResizeObserver; Radix primitives (Checkbox, Switch) measure with it on mount.
+if (typeof globalThis.ResizeObserver === "undefined") {
+  globalThis.ResizeObserver = class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  };
+}
+
 // Node's experimental localStorage can be active without a backing file (see the
 // "--localstorage-file" warning), leaving getItem/setItem undefined. Components
 // that touch localStorage during render (interview draft restore) then throw and
