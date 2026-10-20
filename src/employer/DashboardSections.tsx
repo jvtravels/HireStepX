@@ -19,14 +19,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { EmptyState } from "@/components/EmptyState";
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { InfoTip } from "./_panelParts";
+import { InfoTip, InsightList, InsightRow } from "./_panelParts";
 import { Badge, Pill, ScoreChip, STAGE_LABEL, STAGE_TONE, STRONG_MATCH_THRESHOLD } from "./_atoms";
 import { PrimaryLink, OutlineLink } from "./_consoleParts";
 import type { RequirementSummary } from "./mockData";
 import {
   RANGE_LABEL, buildFunnel, interviewSlot, jobHealth, pipelineStage, sortJobs, jobsNeedingAttentionFirst,
   type DashboardRange, type DashboardJobPipeline, type FunnelStep, type JobSortKey, type SortDir, type DashboardUpcomingInterview,
-  type DashboardActivityItem, type DashboardInsight, type InsightTone, type RecommendedCard, type EmployerDashboardData, type NextAction,
+  type DashboardActivityItem, type DashboardInsight, type RecommendedCard, type EmployerDashboardData, type NextAction,
 } from "./dashboardData";
 
 const RANGE_OPTIONS: readonly DashboardRange[] = [7, 30, 90];
@@ -565,13 +565,6 @@ export function UpcomingInterviewsCard({ items }: { items: DashboardUpcomingInte
   );
 }
 
-const INSIGHT_TILE: Record<InsightTone, string> = {
-  positive: "bg-hx-success-100 text-hx-success-ink",
-  action: "bg-hx-indigo-100 text-hx-indigo",
-  attention: "bg-hx-warning-100 text-hx-warning-ink",
-  neutral: "bg-hx-soft text-hx-ink-soft",
-};
-
 const INSIGHT_ICON: Record<string, ReactNode> = {
   "best-pipeline": <TrendingUpIcon size={16} />,
   "no-strong": <SearchXIcon size={16} />,
@@ -585,25 +578,20 @@ export function KeyInsightsCard({ insights }: { insights: DashboardInsight[] }) 
       {insights.length === 0 ? (
         <EmptyState className={EMPTY} title="No insights yet" description="Insights appear once your jobs have screened candidates." />
       ) : (
-        <ul className={`${LIST} divide-y divide-hx-line`}>
+        <InsightList>
           {insights.map((i) => (
-            <li key={i.id}>
-              <Link href={i.href} className="group flex items-start gap-3.5 rounded-md py-4 no-underline first:pt-2 last:pb-1">
-                <span aria-hidden="true" className={`mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg ${INSIGHT_TILE[i.tone]}`}>
-                  {INSIGHT_ICON[i.id] ?? <LightbulbIcon size={16} />}
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block text-[14px] font-semibold leading-5 text-hx-coal">{i.title}</span>
-                  <span className="mt-1 block text-[13px] leading-[1.55] text-hx-ink-soft">{i.body}</span>
-                  <span className="mt-2 inline-flex items-center gap-1 text-[13px] font-semibold text-hx-indigo group-hover:underline">
-                    {i.cta}
-                    <ArrowRightIcon size={14} aria-hidden="true" className="transition-transform duration-200 ease-out group-hover:translate-x-0.5" />
-                  </span>
-                </span>
-              </Link>
-            </li>
+            <InsightRow
+              key={i.id}
+              tone={i.tone}
+              icon={INSIGHT_ICON[i.id] ?? <LightbulbIcon size={16} />}
+              title={i.title}
+              body={i.body}
+              href={i.href}
+              cta={i.cta}
+              className="first:pt-2 last:pb-1"
+            />
           ))}
-        </ul>
+        </InsightList>
       )}
     </section>
   );

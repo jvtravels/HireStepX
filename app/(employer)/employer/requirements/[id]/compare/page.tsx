@@ -3,19 +3,27 @@
 import { useState, useEffect, useCallback, type ReactNode } from "react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
-import { ArrowLeftIcon, CheckIcon } from "lucide-react";
+import { ArrowLeftIcon, CheckIcon, MessageCircleQuestionIcon, ScaleIcon, SearchXIcon, TrendingUpIcon, UserXIcon } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useEmployerBreadcrumb } from "@/employer/EmployerShell";
 import { useEmployerData, type Requirement } from "@/employer/EmployerDataContext";
 import type { Candidate } from "@/employer/mockData";
 import { tokens as t, fonts as f, textSize } from "@/auth/_tokens";
 import { CandidateStatusChip, ScoreChip, SkillTag } from "@/employer/_atoms";
+import { InsightList, InsightRow } from "@/employer/_panelParts";
 import { EmptyNote, ErrorRetry, LinkCta, PageSkeleton } from "@/employer/_requirementAtoms";
 import { candidateSkillFit, interviewScore, scoreTone } from "@/employer/_jobDetailHelpers";
 import { candidateDisplayName } from "../_components/requirementFormat";
 import { MIN_COMPARE, parseCompareIds } from "../_components/shortlistSelection";
 import { metricLeaders, sameAcross, summarizeComparison, type CompareMetric } from "../_components/compareInsights";
 import { displaySkillName } from "../candidates/[candidateId]/_components/helpers";
+
+const DIFFERENCE_ICON: Record<string, ReactNode> = {
+  lead: <TrendingUpIcon size={16} />,
+  no: <UserXIcon size={16} />,
+  shared: <SearchXIcon size={16} />,
+  split: <ScaleIcon size={16} />,
+};
 
 const COMPARE_CSS = `
 .cmp-back:focus-visible { outline: 2px solid ${t.indigo}; outline-offset: 2px; border-radius: 4px; }
@@ -252,11 +260,11 @@ export default function ComparePage() {
           <div>
             <h2 className="m-0 text-[15px] font-semibold text-hx-coal">How they differ</h2>
             {summary.differences.length > 0 ? (
-              <ul className="m-0 mt-2 flex list-none flex-col gap-1.5 p-0 text-[14px] text-hx-coal">
-                {summary.differences.map((line) => (
-                  <li key={line}>{line}</li>
+              <InsightList className="mt-3">
+                {summary.differences.map((n) => (
+                  <InsightRow key={n.id} tone={n.tone} icon={DIFFERENCE_ICON[n.id.split("-")[0]] ?? <ScaleIcon size={16} />} title={n.title} body={n.body} />
                 ))}
-              </ul>
+              </InsightList>
             ) : (
               <p className="m-0 mt-2 text-[14px] text-hx-ink-soft">These candidates are close on every measure we compare. Use the interview to separate them.</p>
             )}
@@ -264,11 +272,11 @@ export default function ComparePage() {
           {summary.questions.length > 0 && (
             <div>
               <h2 className="m-0 text-[15px] font-semibold text-hx-coal">Worth asking in the interview</h2>
-              <ul className="m-0 mt-2 flex list-none flex-col gap-1.5 p-0 text-[14px] text-hx-coal">
-                {summary.questions.map((q) => (
-                  <li key={q}>{q}</li>
+              <InsightList className="mt-3">
+                {summary.questions.map((n) => (
+                  <InsightRow key={n.id} tone={n.tone} icon={<MessageCircleQuestionIcon size={16} />} title={n.title} body={n.body} />
                 ))}
-              </ul>
+              </InsightList>
             </div>
           )}
           <p className="m-0 text-[13px] text-hx-ink-soft">

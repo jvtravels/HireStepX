@@ -28,16 +28,17 @@ describe("summarizeComparison", () => {
   const b = cand("b", { matchScore: 49, sessionsCompleted: 4, rosterScore: 63 });
   it("describes the split without naming a winner", () => {
     const s = summarizeComparison([a, b], REQ);
-    expect(s.differences.join(" ")).toContain("They split");
-    expect(s.differences.join(" ")).toContain("Neither lists TypeScript");
+    const text = s.differences.map((d) => `${d.title} ${d.body}`).join(" ");
+    expect(text).toContain("They split");
+    expect(text).toContain("Neither lists TypeScript");
     expect(s.leads.get("a")).toBe(1);
     expect(s.leads.get("b")).toBe(2);
-    expect(s.differences.join(" ")).not.toMatch(/best|winner|hire (him|her|them)/i);
+    expect(text).not.toMatch(/best|winner|hire (him|her|them)/i);
   });
   it("suggests questions for missing skills and weak interview scores, capped at three", () => {
     const s = summarizeComparison([a, b, cand("c", { rosterScore: 20, sessionsCompleted: 2 })], REQ);
     expect(s.questions.length).toBeLessThanOrEqual(3);
-    expect(s.questions[0]).toContain("TypeScript");
+    expect(s.questions[0].title).toContain("TypeScript");
   });
   it("says so when candidates are close", () => {
     expect(summarizeComparison([cand("a"), cand("b")], []).differences).toEqual([]);

@@ -7,7 +7,7 @@
 
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { InfoIcon, type LucideIcon } from "lucide-react";
+import { ArrowRightIcon, InfoIcon, type LucideIcon } from "lucide-react";
 import { cn } from "cn";
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -193,5 +193,67 @@ export function InfoTip({ label, children }: { label: string; children: ReactNod
         {children}
       </TooltipContent>
     </Tooltip>
+  );
+}
+
+/* ─── Insight rows ─── */
+
+export type InsightRowTone = "positive" | "action" | "attention" | "neutral";
+
+const INSIGHT_TILE: Record<InsightRowTone, string> = {
+  positive: "bg-hx-success-100 text-hx-success-ink",
+  action: "bg-hx-indigo-100 text-hx-indigo",
+  attention: "bg-hx-warning-100 text-hx-warning-ink",
+  neutral: "bg-hx-soft text-hx-ink-soft",
+};
+
+export function InsightList({ children, className }: { children: ReactNode; className?: string }) {
+  return <ul className={cn("m-0 list-none divide-y divide-hx-line p-0", className)}>{children}</ul>;
+}
+
+/** A toned icon tile, a title, a sentence of detail and, when `href` and `cta` are given, a link. The whole row is the link. */
+export function InsightRow({
+  tone,
+  icon,
+  title,
+  body,
+  href,
+  cta,
+  className,
+}: {
+  tone: InsightRowTone;
+  icon: ReactNode;
+  title: string;
+  body: string;
+  href?: string;
+  cta?: string;
+  className?: string;
+}) {
+  const content = (
+    <>
+      <span aria-hidden="true" className={cn("mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg", INSIGHT_TILE[tone])}>
+        {icon}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-[14px] font-semibold leading-5 text-hx-coal">{title}</span>
+        <span className="mt-1 block text-[13px] leading-[1.55] text-hx-ink-soft [overflow-wrap:anywhere]">{body}</span>
+        {href && cta && (
+          <span className="mt-2 inline-flex items-center gap-1 text-[13px] font-semibold text-hx-indigo group-hover:underline">
+            {cta}
+            <ArrowRightIcon size={14} aria-hidden="true" className="transition-transform duration-200 ease-out group-hover:translate-x-0.5 motion-reduce:transition-none" />
+          </span>
+        )}
+      </span>
+    </>
+  );
+  const row = cn("flex items-start gap-3.5 py-4 first:pt-0 last:pb-0", className);
+  return (
+    <li>
+      {href ? (
+        <Link href={href} className={cn("group rounded-md no-underline", row)}>{content}</Link>
+      ) : (
+        <div className={row}>{content}</div>
+      )}
+    </li>
   );
 }

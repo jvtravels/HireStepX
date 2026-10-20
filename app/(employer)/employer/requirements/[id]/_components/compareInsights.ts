@@ -46,9 +46,16 @@ export function metricLeaders(candidates: Candidate[], required: string[], metri
   return new Set([sorted[0].id]);
 }
 
+export interface CompareNote {
+  id: string;
+  tone: "positive" | "action" | "attention" | "neutral";
+  title: string;
+  body: string;
+}
+
 export interface CompareSummary {
-  differences: string[];
-  questions: string[];
+  differences: CompareNote[];
+  questions: CompareNote[];
   /** How many of the four measures each candidate clearly leads on. */
   leads: Map<string, number>;
 }
@@ -58,7 +65,7 @@ const unit = (m: CompareMetric, v: number, f: Facts): string => (m === "intervie
 export function summarizeComparison(candidates: Candidate[], required: string[]): CompareSummary {
   const facts = candidates.map((c) => factsOf(c, required));
   const byId = new Map(facts.map((f) => [f.id, f]));
-  const differences: string[] = [];
+  const differences: CompareNote[] = [];
   const leads = new Map(facts.map((f) => [f.id, 0]));
   const leaderOf = new Map<CompareMetric, string>();
 
@@ -70,31 +77,36 @@ export function summarizeComparison(candidates: Candidate[], required: string[])
     const top = byId.get(id)!;
     const others = facts.filter((f) => f.id !== id && value(f, m) !== null);
     const rest = others.map((f) => unit(m, value(f, m) as number, f)).join(" and ");
-    differences.push(`${top.name} leads on ${LABEL[m]}: ${unit(m, value(top, m) as number, top)} against ${rest}.`);
+    differences.push({ id: `lead-${m}`, tone: "positive", title: `${top.name} leads on ${LABEL[m]}`, body: `${unit(m, value(top, m) as number, top)} against ${rest}.` });
   });
 
   const noInterview = facts.filter((f) => f.interview === null);
   if (noInterview.length > 0 && noInterview.length < facts.length) {
-    differences.push(`${joinNames(noInterview.map((f) => f.name))} ${noInterview.length === 1 ? "has" : "have"} no graded interviews yet, so there is no interview evidence to compare.`);
+    differences.push({
+      id: "no-interview",
+      tone: "attention",
+      title: "No graded interviews yet",
+      body: `${joinNames(noInterview.map((f) => f.name))} ${noInterview.length === 1 ? "has" : "have"} none, so there is no interview evidence to compare.`,
+    });
   }
 
   const sharedGaps = required.length > 0 ? facts.map((f) => f.gaps).reduce((a, b) => a.filter((g) => b.includes(g))) : [];
   if (sharedGaps.length > 0) {
-    differences.push(`${facts.length === 2 ? "Neither" : "None"} lists ${joinNames(sharedGaps)}, which this job requires.`);
+    differences.push({ id: "shared-gaps", tone: "attention", title: `${facts.length === 2 ? "Neither" : "None"} lists ${joinNames(sharedGaps)}`, body: "This job requires it, so confirm it in the interview." });
   }
 
   const matchLead = leaderOf.get("match");
   const interviewLead = leaderOf.get("interview");
   if (matchLead && interviewLead && matchLead !== interviewLead) {
-    differences.push("They split: one fits the job better on paper, the other has stronger interview evidence. Neither leads on every measure.");
+    differences.push({ id: "split", tone: "neutral", title: "They split", body: "One fits the job better on paper, the other has stronger interview evidence. Neither leads on every measure." });
   }
 
-  const questions: string[] = [];
+  const questions: CompareNote[] = [];
   for (const f of facts) {
-    if (f.gaps.length > 0 && questions.length < 3) questions.push(`Ask ${f.name} about ${joinNames(f.gaps.slice(0, 3))}, which they do not list.`);
+    if (f.gaps.length > 0 && questions.length < 3) questions.push({ id: `gap-${f.id}`, tone: "action", title: `Ask ${f.name} about ${joinNames(f.gaps.slice(0, 3))}`, body: "They do not list it, and this job requires it." });
   }
   for (const f of facts) {
-    if (f.interview !== null && f.interview < 50 && questions.length < 3) questions.push(`Ask ${f.name} to walk through a recent project; their practice interviews average ${f.interview}/100.`);
+    if (f.interview !== null && f.interview < 50 && questions.length < 3) questions.push({ id: `project-${f.id}`, tone: "action", title: `Ask ${f.name} to walk through a recent project`, body: `Their practice interviews average ${f.interview}/100.` });
   }
 
   return { differences, questions, leads };
