@@ -85,7 +85,7 @@ const dueText = (r: Requirement) => {
 };
 
 /** The right-hand column of the job screen: posting facts and the posting's
-    talent preferences as two small cards. Every row is drawn from fields the
+    candidate preferences as two small cards. Every row is drawn from fields the
     API returns; empty ones are skipped. */
 export default function JobSideRail({
   requirement,
@@ -134,7 +134,7 @@ export default function JobSideRail({
 
       <Panel
         id="preferences-heading"
-        title="Talent preferences"
+        title="Candidate preferences"
         action={canEdit ? <PanelLink href={`/employer/requirements/${r.id}/edit`}>Edit</PanelLink> : undefined}
       >
         <KeyValueList>

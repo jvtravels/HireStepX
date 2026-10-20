@@ -45,12 +45,12 @@ describe("RequirementForm (create)", () => {
 
   it("starts on step 1 and marks it as the current step", () => {
     setup();
-    expect(screen.getByRole("heading", { level: 2, name: "Role and requirements" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { level: 2, name: "Role basics" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 2, name: "Job and requirements" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 2, name: "Job basics" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { level: 2, name: "Requirements and pay" })).toBeInTheDocument();
     expect(screen.getByText("Step 1 of 2")).toBeInTheDocument();
     const current = screen.getByRole("navigation", { name: /form progress/i }).querySelector('[aria-current="step"]');
-    expect(current).toHaveTextContent("Role and requirements");
+    expect(current).toHaveTextContent("Job and requirements");
   });
 
   it("does not advance with missing required fields, lists them, and focuses the first", () => {
@@ -145,7 +145,7 @@ describe("RequirementForm (edit)", () => {
   it("shows all three sections on one page with Save changes", () => {
     setup({ mode: "edit" });
     expect(screen.getByRole("button", { name: "Save changes" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Role basics" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Job basics" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Requirements and pay" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Candidate targeting" })).toBeInTheDocument();
   });

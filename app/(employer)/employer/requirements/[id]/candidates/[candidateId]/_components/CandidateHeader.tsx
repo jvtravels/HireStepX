@@ -24,7 +24,7 @@ function MatchSignal({ score, fit }: { score: number; fit: FitSummary }) {
         <span className="tabular-nums text-hx-ink-soft">{score}</span>
       </DotLabel>
       <InfoTip label="How the match score works">
-        The score blends role match, required skills, practice results and recent activity. A strong score with unmet criteria reads "Promising" until you check the gaps under Fit for this role.
+        The score blends job match, required skills, practice results and recent activity. A strong score with unmet criteria reads "Promising" until you check the gaps under Fit for this job.
       </InfoTip>
     </span>
   );

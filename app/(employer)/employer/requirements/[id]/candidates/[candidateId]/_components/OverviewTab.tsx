@@ -68,7 +68,7 @@ function MatchPanel({ candidate, requirement, matched, unmatched, evidence, requ
     analysisClear && "No concerns flagged on the resume.",
   ].filter(Boolean).join(" ");
   return (
-    <Panel id="match-heading" title="Fit for this role" icon={<TargetIcon size={15} />} action={<Badge tone={SIGNAL_TONE[signal.key]}>{signal.label}</Badge>}>
+    <Panel id="match-heading" title="Fit for this job" icon={<TargetIcon size={15} />} action={<Badge tone={SIGNAL_TONE[signal.key]}>{signal.label}</Badge>}>
       <div className="grid gap-5">
         <div className="@container">
           <div className="grid gap-5 @xl:grid-cols-[auto_minmax(0,1fr)] @xl:items-center @xl:gap-10">

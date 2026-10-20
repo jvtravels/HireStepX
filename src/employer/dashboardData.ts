@@ -136,7 +136,7 @@ export function buildInsights(
     out.push({
       id: "no-strong",
       tone: "attention",
-      title: "Roles with no strong match",
+      title: "Jobs with no strong match",
       body: `${noMatches[0].title}${noMatches.length > 1 ? ` and ${noMatches.length - 1} more have` : " has"} no strong matches. Try broadening skills or location.`,
       cta: "Edit job",
       href: `/employer/requirements/${noMatches[0].id}/edit`,

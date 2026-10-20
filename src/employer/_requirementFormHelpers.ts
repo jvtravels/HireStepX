@@ -21,7 +21,7 @@ export const SALARY_LIMITS: Record<SalaryType, number> = {
 export type FormStep = 1 | 2;
 
 export const STEP_LABELS: Record<FormStep, string> = {
-  1: "Role and requirements",
+  1: "Job and requirements",
   2: "Candidate targeting",
 };
 

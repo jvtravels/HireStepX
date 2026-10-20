@@ -89,7 +89,7 @@ const EMPLOYMENT_TYPES: { value: EmploymentType; label: string }[] = [
 export type { RequirementFormValues } from "./mockData";
 
 /* Shared by the "post a new job" and "edit a job" pages.
-   Create walks a 3-step wizard (Role basics, Requirements and pay, Candidate
+   Create walks a 3-step wizard (Job basics, Requirements and pay, Candidate
    targeting); edit renders the same three sections on one flat page with a
    top Cancel / Save changes bar. Validation is inline and on demand: nothing
    is disabled, a failed Continue/Save explains what is wrong and moves focus
@@ -589,7 +589,7 @@ export function RequirementForm({
           <div style={bodyPadding}>
             {requiredNote}
             <ErrorSummary errors={attempted ? errors : {}} scope="all" onJump={focusField} />
-            {section("Role basics", roleBasics)}
+            {section("Job basics", roleBasics)}
             {section("Requirements and pay", requirementsAndPay)}
             {section(STEP_LABELS[2], targeting)}
             {submitErrorEl}
@@ -639,7 +639,7 @@ export function RequirementForm({
           {step === 1 ? (
             <div style={stackedSections}>
               {isCreate && <JdAutofill draft={draft} applyPatch={applyImport} importedRef={importedRef} />}
-              {section("Role basics", roleBasics)}
+              {section("Job basics", roleBasics)}
               {section("Requirements and pay", requirementsAndPay)}
             </div>
           ) : (
