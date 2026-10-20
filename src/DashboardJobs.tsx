@@ -577,11 +577,6 @@ export default function DashboardJobs() {
                     </TableCell>
                     <TableCell style={{ padding: "12px 20px", maxWidth: 260, verticalAlign: "top", whiteSpace: "normal" }}>
                       <div style={{ fontSize: textSize.md, fontWeight: 500, color: t.coal }}>{r.roleTitle}</div>
-                      {r.description && (
-                        <div style={{ fontSize: textSize.sm, color: t.inkFaint, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>
-                          {r.description}
-                        </div>
-                      )}
                       {r.skills.length > 0 && (
                         <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 6 }}>
                           {r.skills.slice(0, 3).map((s, si) => (

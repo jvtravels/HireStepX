@@ -78,8 +78,7 @@ describe("DashboardJobs", () => {
     expect(within(table).getByText("Full-time")).toBeInTheDocument();
     expect(within(table).getByText("Employer interested")).toBeInTheDocument();
     expect(within(table).queryByText(/Your practice history in backend roles/)).not.toBeInTheDocument();
-    // The Figma table shows a short description snippet under the job title.
-    expect(within(table).getByText("We're growing the payments platform team.")).toBeInTheDocument();
+    expect(within(table).queryByText("We're growing the payments platform team.")).not.toBeInTheDocument();
 
     // Filter dropdowns are populated from the real fetched match data.
     expect(screen.getByRole("button", { name: "Filters" })).toBeInTheDocument();
