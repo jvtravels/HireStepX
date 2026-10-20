@@ -97,7 +97,7 @@ export function DashboardHeader({
       <div className="flex w-full flex-wrap items-center gap-2.5 min-[900px]:w-auto min-[900px]:flex-nowrap">
         <DashboardSearch jobs={jobs} candidates={recommended} />
         <Select value={String(range)} onValueChange={(v) => onRangeChange(Number(v) as DashboardRange)}>
-          <SelectTrigger aria-label="Date range" className="h-9 shrink-0 border-hx-line bg-white text-[13px] text-hx-coal"><SelectValue /></SelectTrigger>
+          <SelectTrigger aria-label="Date range" className="h-9 shrink-0 border-hx-line bg-white text-sm text-hx-coal"><SelectValue /></SelectTrigger>
           <SelectContent align="end">
             {RANGE_OPTIONS.map((r) => <SelectItem key={r} value={String(r)}>{RANGE_LABEL[r]}</SelectItem>)}
           </SelectContent>
