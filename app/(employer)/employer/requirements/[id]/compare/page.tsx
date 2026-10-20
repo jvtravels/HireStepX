@@ -8,7 +8,7 @@ import { useEmployerBreadcrumb } from "@/employer/EmployerShell";
 import { useEmployerData, type Requirement } from "@/employer/EmployerDataContext";
 import type { Candidate } from "@/employer/mockData";
 import { tokens as t, fonts as f, textSize } from "@/auth/_tokens";
-import { Card, CandidateStatusChip, Eyebrow, ScoreChip, SkillTag } from "@/employer/_atoms";
+import { CandidateStatusChip, ScoreChip, SkillTag } from "@/employer/_atoms";
 import { EmptyNote, ErrorRetry, LinkCta, PageSkeleton } from "@/employer/_requirementAtoms";
 import { interviewScore, scoreTone } from "@/employer/_jobDetailHelpers";
 import { candidateDisplayName } from "../_components/requirementFormat";
@@ -21,12 +21,12 @@ const COMPARE_CSS = `
 .cmp-name-link { color: inherit; text-decoration: none; }
 .cmp-name-link:hover { text-decoration: underline; }
 .cmp-name-link:focus-visible { outline: 2px solid ${t.indigo}; outline-offset: 2px; border-radius: 4px; }
-.cmp-table th, .cmp-table td { padding: 12px; text-align: left; vertical-align: top; border-bottom: 1px solid ${t.line}; overflow-wrap: anywhere; }
+.cmp-table th, .cmp-table td { padding: 14px 28px; text-align: left; vertical-align: top; border-bottom: 1px solid ${t.line}; overflow-wrap: anywhere; }
 .cmp-table tbody tr:last-child th, .cmp-table tbody tr:last-child td { border-bottom: 0; }
 .cmp-table thead th { background: ${t.rowTint}; }
 .cmp-table tbody th { width: 28%; font-weight: 600; color: ${t.inkSoft}; }
 @media (max-width: 480px) {
-  .cmp-table th, .cmp-table td { padding: 10px 8px; }
+  .cmp-table th, .cmp-table td { padding: 10px 12px; }
   .cmp-table tbody th { width: 30%; }
   .cmp-table[data-cols="2"] { min-width: 0; }
 }
@@ -197,51 +197,52 @@ export default function ComparePage() {
   return (
     <div style={{ minWidth: 0 }}>
       <style>{COMPARE_CSS}</style>
-      <BackLink requirementId={requirement.id} />
-      <div style={{ marginTop: 8 }}>
-        <Eyebrow tone="indigo">Comparing candidates</Eyebrow>
-      </div>
-      <h1 style={{ fontFamily: f.sans, fontSize: "clamp(22px, 6vw, 26px)", color: t.coal, margin: "6px 0 16px", overflowWrap: "anywhere" }}>{requirement.title}</h1>
-      {chosen.some((c) => !c.unlocked) && (
-        <p style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.inkFaint, margin: "0 0 16px", maxWidth: 640 }}>
-          Names and contact details of locked candidates stay hidden until you unlock them from the shortlist.
-        </p>
-      )}
-      <Card pad={0} aria-label={`Comparison of ${namesLabel}`} style={{ overflow: "hidden", boxShadow: "none" }}>
+      <section aria-label={`Comparison of ${namesLabel}`} style={{ background: t.white, border: `1px solid ${t.line}`, borderRadius: 16, overflow: "hidden" }}>
+        <header style={{ padding: "20px 28px", borderBottom: `1px solid ${t.line}` }}>
+          <BackLink requirementId={requirement.id} />
+          <h1 style={{ fontFamily: f.sans, fontSize: 20, fontWeight: 600, color: t.coal, margin: "10px 0 0", overflowWrap: "anywhere" }}>
+            Comparing candidates for {requirement.title}
+          </h1>
+          <p style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.inkSoft, margin: "4px 0 0", maxWidth: 640 }}>
+            {chosen.some((c) => !c.unlocked)
+              ? "Names and contact details of locked candidates stay hidden until you unlock them from the shortlist."
+              : "Side by side on match, interview evidence and pipeline status."}
+          </p>
+        </header>
         {/* Keyboard users can only scroll an overflow region they can focus. */}
         {/* eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex */}
         <div className="overflow-x-auto focus-visible:outline-2 focus-visible:-outline-offset-2" tabIndex={0} role="region" aria-label="Comparison table. Scroll sideways to see every candidate.">
-        <table className="cmp-table" data-cols={chosen.length}>
-          <caption className="sr-only">
-            Side-by-side comparison of {namesLabel} for {requirement.title}
-          </caption>
-          <thead>
-            <tr>
-              <td style={{ background: t.rowTint }}>
-                <span className="sr-only">Attribute</span>
-              </td>
-              {chosen.map((c) => (
-                <th key={c.id} scope="col">
-                  <NameCell candidate={c} requirementId={requirement.id} />
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {ROWS.map((row) => (
-              <tr key={row.label}>
-                <th scope="row" style={{ fontFamily: f.sans, fontSize: textSize.base }}>
-                  {row.label}
-                </th>
+          <table className="cmp-table" data-cols={chosen.length}>
+            <caption className="sr-only">
+              Side-by-side comparison of {namesLabel} for {requirement.title}
+            </caption>
+            <thead>
+              <tr>
+                <td style={{ background: t.rowTint }}>
+                  <span className="sr-only">Attribute</span>
+                </td>
                 {chosen.map((c) => (
-                  <td key={c.id}>{row.render(c)}</td>
+                  <th key={c.id} scope="col">
+                    <NameCell candidate={c} requirementId={requirement.id} />
+                  </th>
                 ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {ROWS.map((row) => (
+                <tr key={row.label}>
+                  <th scope="row" style={{ fontFamily: f.sans, fontSize: textSize.base }}>
+                    {row.label}
+                  </th>
+                  {chosen.map((c) => (
+                    <td key={c.id}>{row.render(c)}</td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
-      </Card>
+      </section>
     </div>
   );
 }
