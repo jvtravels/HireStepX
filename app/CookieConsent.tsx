@@ -34,6 +34,7 @@ export default function CookieConsent() {
   const [advertising, setAdvertising] = useState(false);
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
+  const bannerRef = useRef<HTMLDivElement>(null);
   const openerRef = useRef<HTMLElement | null>(null);
   const uid = useId();
   const titleId = `${uid}-title`;
@@ -71,6 +72,20 @@ export default function CookieConsent() {
     if (visible && (reopened || expanded)) titleRef.current?.focus();
   }, [visible, reopened, expanded]);
 
+  // The banner is fixed to the bottom edge, so on a short screen it sat on top of the page's own
+  // buttons (the login button on first visit). Reserve its height as body padding so the page can
+  // scroll clear of it.
+  useEffect(() => {
+    const el = bannerRef.current;
+    if (!visible || !el) return;
+    const root = document.documentElement;
+    const sync = () => root.style.setProperty("--hsx-cookie-h", `${Math.ceil(el.getBoundingClientRect().height) + 16}px`);
+    sync();
+    const ro = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(sync);
+    ro?.observe(el);
+    return () => { ro?.disconnect(); root.style.removeProperty("--hsx-cookie-h"); };
+  }, [visible, expanded]);
+
   const dismiss = () => {
     setVisible(false);
     setExpanded(false);
@@ -103,6 +118,7 @@ export default function CookieConsent() {
 
   return (
     <div
+      ref={bannerRef}
       role="dialog"
       aria-labelledby={titleId}
       aria-describedby={descId}

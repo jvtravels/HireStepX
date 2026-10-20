@@ -41,6 +41,7 @@ import ShortcutsDialog from "./_components/ShortcutsDialog";
 import ViewMenu from "./_components/ViewMenu";
 import { useStageActions } from "./_components/useStageActions";
 import { useShortlistShortcuts } from "./_components/useShortlistShortcuts";
+import { useShortcutsEnabled } from "@/employer/keyboardShortcutsPref";
 import { useShortlistSelection } from "./_components/useShortlistSelection";
 import BulkRejectDialog from "./_components/BulkRejectDialog";
 import { MAX_SELECTION, compareHref, planBulkMove, type BulkTarget } from "./_components/shortlistSelection";
@@ -339,9 +340,10 @@ export default function RequirementDetailPage() {
   const listVisible = requirement?.status === "ready" || requirement?.status === "partial" || requirement?.status === "closed";
   const showShortcuts = useCallback(() => setShortcutsOpen(true), []);
   const undoLast = useCallback(() => void triggerToastAction(), [triggerToastAction]);
+  const shortcutsOn = useShortcutsEnabled();
   useShortlistShortcuts(
     { onNext: sel.next, onPrev: sel.prev, onToggleSelect: sel.toggleActive, onOpen: sel.openActive, onHelp: showShortcuts, onEscape: sel.clear, onUndo: undoLast },
-    listVisible,
+    listVisible && shortcutsOn,
   );
 
   /* An insight spans every stage, so a tab that hides its candidates would show an empty table. */

@@ -2,6 +2,8 @@
 
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Kbd } from "@/components/ui/kbd";
+import { Switch } from "@/components/ui/switch";
+import { setShortcutsEnabled, useShortcutsEnabled } from "@/employer/keyboardShortcutsPref";
 
 export const SHORTLIST_SHORTCUTS: ReadonlyArray<{ keys: string; does: string }> = [
   { keys: "j", does: "Next candidate" },
@@ -14,6 +16,7 @@ export const SHORTLIST_SHORTCUTS: ReadonlyArray<{ keys: string; does: string }> 
 ];
 
 export default function ShortcutsDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+  const enabled = useShortcutsEnabled();
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
@@ -29,6 +32,10 @@ export default function ShortcutsDialog({ open, onOpenChange }: { open: boolean;
             </div>
           ))}
         </dl>
+        <label className="flex items-center justify-between gap-4 border-t border-hx-line pt-4 text-[14px] text-hx-coal">
+          Use keyboard shortcuts
+          <Switch checked={enabled} onCheckedChange={setShortcutsEnabled} aria-label="Use keyboard shortcuts" />
+        </label>
       </DialogContent>
     </Dialog>
   );

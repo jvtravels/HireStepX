@@ -13,6 +13,9 @@ import BillingHistorySection from "@/employer/BillingHistorySection";
 import CompanyProfileForm from "@/employer/CompanyProfileForm";
 import NotificationPreferences from "@/notifications/NotificationPreferences";
 import { Badge, OutlineCta } from "@/employer/_atoms";
+import { KeyboardIcon } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { setShortcutsEnabled, useShortcutsEnabled } from "@/employer/keyboardShortcutsPref";
 import {
   describeLimits, exportBody, exportFilename, exportIsIncomplete, openJobCount, tierPresentation,
 } from "@/employer/_accountHelpers";
@@ -41,6 +44,7 @@ export default function EmployerSettingsPage() {
   const [creditPaise, setCreditPaise] = useState<number | null>(null);
   const [exporting, setExporting] = useState(false);
   const [exportNote, setExportNote] = useState("");
+  const shortcutsOn = useShortcutsEnabled();
 
   // Warn before a refresh/close throws away unsaved company details.
   useEffect(() => {
@@ -168,6 +172,16 @@ export default function EmployerSettingsPage() {
 
         <FlatSection title="Sounds">
           <SoundsSection />
+        </FlatSection>
+
+        <FlatSection title="Keyboard shortcuts">
+          <ActionRow
+            last
+            icon={<KeyboardIcon size={18} aria-hidden="true" />}
+            title="Use keyboard shortcuts"
+            desc="Move through candidates with j and k, select with x, and undo a stage change with z. Press ? on a job to see them all."
+            action={<Switch checked={shortcutsOn} onCheckedChange={setShortcutsEnabled} aria-label="Use keyboard shortcuts" />}
+          />
         </FlatSection>
 
         <FlatSection title="Account">

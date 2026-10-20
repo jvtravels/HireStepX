@@ -1746,10 +1746,10 @@ a[href]:not([data-slot]):not([data-sidebar]):not([role]):not([data-no-underline]
   color: var(--foreground);
   border: 1px solid var(--border);
   border-radius: calc(var(--radius) * 1.4);
-  box-shadow: 0 12px 40px oklch(0.148 0.004 228.8 / 0.14), 0 2px 8px oklch(0.148 0.004 228.8 / 0.06);
   font-family: var(--font-ui);
   animation: hsx-cookie-in 0.22s ease-out;
 }
+body { padding-bottom: var(--hsx-cookie-h, 0px); }
 @keyframes hsx-cookie-in {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: none; }

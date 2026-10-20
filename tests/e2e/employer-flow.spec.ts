@@ -199,4 +199,32 @@ test.describe("Employer console — mocked network", () => {
     await expect(dialog.getByRole("heading", { name: /^Unlock this candidate for ₹\d+\?$/ })).toBeVisible();
     await expect(dialog).toContainText(/₹\d+ per candidate\./);
   });
+  test("changing a stage can be undone with the z shortcut, and the shortcuts toggle turns it off", async ({ page }) => {
+    await installEmployerMocks(page);
+    const unlocked: Candidate = { ...LOCKED_CANDIDATE, name: "Priya Sharma", unlocked: true, candidateStatus: "shortlisted" };
+    const patches: string[] = [];
+    await page.route(/\/api\/employer-dashboard/, (route) => json(route, DASHBOARD));
+    await page.route(/\/api\/employer-requirement-detail/, (route) => json(route, { ...REQUIREMENT_DETAIL, candidates: [unlocked] }));
+    await page.route(/\/api\/employer-candidate-status/, (route) => {
+      const body = route.request().postDataJSON() as { candidateStatus: string };
+      patches.push(body.candidateStatus);
+      return json(route, { id: MATCH_ID, candidateStatus: body.candidateStatus });
+    });
+
+    await page.goto(`/employer/requirements/${REQ_ID}`);
+    await page.getByRole("button", { name: /^Stage for Priya Sharma: To review/ }).click({ timeout: 45_000 });
+    await page.getByRole("menuitem", { name: "Reject" }).click();
+    await page.getByRole("alertdialog").getByRole("button", { name: "Confirm" }).click();
+    await expect.poll(() => patches).toEqual(["rejected"]);
+
+    await page.keyboard.press("z");
+    await expect.poll(() => patches).toEqual(["rejected", "shortlisted"]);
+
+    await page.goto("/employer/settings");
+    await page.getByRole("switch", { name: "Use keyboard shortcuts" }).click({ timeout: 15_000 });
+    await page.goto(`/employer/requirements/${REQ_ID}`);
+    await expect(page.getByRole("button", { name: /^Stage for Priya Sharma/ })).toBeVisible({ timeout: 15_000 });
+    await page.keyboard.press("?");
+    await expect(page.getByRole("heading", { name: "Keyboard shortcuts" })).toHaveCount(0);
+  });
 });

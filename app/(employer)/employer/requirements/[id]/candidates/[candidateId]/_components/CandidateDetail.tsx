@@ -16,6 +16,7 @@ import { buildCandidateSummary, buildEvidenceSummary, buildRoleFit, dedupeQuesti
 import { CandidateNav } from "./CandidateNav";
 import { PrimaryCandidateAction } from "./PrimaryCandidateAction";
 import { useCandidateShortcuts } from "./useCandidateShortcuts";
+import { useShortcutsEnabled } from "@/employer/keyboardShortcutsPref";
 import { ActionNoticeAlert } from "./Notices";
 import { OverviewTab } from "./OverviewTab";
 import { PracticeTab } from "./PracticeTab";
@@ -84,7 +85,8 @@ export default function CandidateDetail({ requirementId, matchId }: { requiremen
   const goPrev = useCallback(() => { if (shortlist?.prev) router.push(hrefFor(shortlist.prev)); }, [shortlist, hrefFor, router]);
   const goTab = useCallback((i: number) => selectTab(TAB_ORDER[i]), [selectTab]);
   const undoLast = useCallback(() => void triggerToastAction(), [triggerToastAction]);
-  useCandidateShortcuts({ onNext: goNext, onPrev: goPrev, onTab: goTab, onUndo: undoLast }, ready && !dialog && !unlockOpen);
+  const shortcutsOn = useShortcutsEnabled();
+  useCandidateShortcuts({ onNext: goNext, onPrev: goPrev, onTab: goTab, onUndo: undoLast }, ready && !dialog && !unlockOpen && shortcutsOn);
   const condensed = useScrolledPast(headerRef, ready);
 
   useEmployerBreadcrumb(

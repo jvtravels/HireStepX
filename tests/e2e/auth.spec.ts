@@ -184,3 +184,18 @@ test.describe("Auth — Authenticated Flow", () => {
     }
   });
 });
+
+test.describe("cookie banner on a short screen", () => {
+  test.use({ viewport: { width: 360, height: 520 } });
+
+  test("the login button stays reachable above the first-visit banner", async ({ page }) => {
+    await page.goto("/login");
+    await expect(page.getByRole("dialog", { name: /Cookies on HireStepX/ })).toBeVisible({ timeout: 15_000 });
+    const submit = page.locator("button.hsx-login-cta");
+    await submit.scrollIntoViewIfNeeded();
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    const button = await submit.boundingBox();
+    const banner = await page.getByRole("dialog", { name: /Cookies on HireStepX/ }).boundingBox();
+    expect(button && banner && button.y + button.height <= banner.y).toBe(true);
+  });
+});
