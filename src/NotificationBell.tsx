@@ -75,7 +75,19 @@ export default function NotificationBell({
                   size="icon-sm"
                   variant="ghost"
                   className="ml-auto"
+                  aria-label="Mark all read"
+                  title="Mark all read"
+                  disabled={feed.unreadCount === 0}
+                  onClick={feed.markAllRead}
+                >
+                  <CheckCheckIcon aria-hidden="true" />
+                </Button>
+                <Button
+                  type="button"
+                  size="icon-sm"
+                  variant="ghost"
                   aria-label="Notification preferences"
+                  title="Notification preferences"
                   onClick={() => setView("settings")}
                 >
                   <SettingsIcon aria-hidden="true" />
@@ -83,11 +95,6 @@ export default function NotificationBell({
               </>
             )}
           </div>
-          {view !== "settings" && (
-            <Button type="button" size="sm" variant="ghost" className="self-start" disabled={feed.unreadCount === 0} onClick={feed.markAllRead}>
-              <CheckCheckIcon aria-hidden="true" /> Mark all read
-            </Button>
-          )}
         </SheetHeader>
         <div className="min-h-0 flex-1 overflow-y-auto">
           {view === "settings" ? (
