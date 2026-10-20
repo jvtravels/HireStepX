@@ -131,6 +131,12 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 [role="menuitemradio"]:focus-visible {
   outline: none;
 }
+/* Shared Select trigger: Radix hands focus back to it after a pick, which
+   shows the keyboard ring on mouse use. A darker border marks focus instead. */
+[data-slot="select-trigger"]:focus-visible {
+  outline: none;
+  border-color: oklch(0.359 0.135 278.697);
+}
 /* Chip / tag fields: the wrapper is the visible "input", so it carries the
    single focus ring, drawn over its own 1px border. The inner input's ring is
    suppressed so a nested box never appears inside the field. */
