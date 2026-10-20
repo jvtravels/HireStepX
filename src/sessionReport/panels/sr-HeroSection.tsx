@@ -10,6 +10,7 @@ import { t, f, radius, size } from "../tokens";
 import type { DeliveryMetric, InterviewResultData, Verdict } from "../types";
 import { ReportCardShell, StatusPill, type Tone } from "./_primitives";
 import { atCompany } from "../roleLabel";
+import type { SkillTrend } from "../progressTracking";
 import {
   CalibrationBanner,
   ReadinessHeadline,
@@ -42,8 +43,15 @@ const LIST_LABEL: React.CSSProperties = { fontFamily: f.sans, fontSize: size.sm,
 const LIST: React.CSSProperties = { listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 8 };
 const LI: React.CSSProperties = { display: "flex", gap: 8, fontFamily: f.sans, fontSize: size.md, color: t.coal, lineHeight: 1.45 };
 
-export function HeroSection({ data }: { data: InterviewResultData }) {
+function biggestMover(trends: SkillTrend[] | undefined, direction: 1 | -1): SkillTrend | undefined {
+  if (!trends) return undefined;
+  const best = [...trends].sort((a, b) => direction * (b.deltaVsLast - a.deltaVsLast))[0];
+  return best && direction * best.deltaVsLast >= 5 ? best : undefined;
+}
+
+export function HeroSection({ data, progressTrends }: { data: InterviewResultData; progressTrends?: SkillTrend[] }) {
   const verdict = VERDICT_META[data.verdict];
+  const mover = data.scoreDelta !== 0 ? biggestMover(progressTrends, data.scoreDelta > 0 ? 1 : -1) : undefined;
   return (
     <ReportCardShell
       id="ir-section-hero"
@@ -88,6 +96,11 @@ export function HeroSection({ data }: { data: InterviewResultData }) {
               </span>
             ) : null}
           </div>
+          {mover && (
+            <p style={{ fontFamily: f.sans, fontSize: size.sm, color: t.inkSoft, margin: 0, textAlign: "center" }}>
+              Biggest move: {mover.skill} {mover.deltaVsLast > 0 ? "up" : "down"} {Math.abs(mover.deltaVsLast)}
+            </p>
+          )}
         </div>
 
         <div style={{ minWidth: 0 }}>

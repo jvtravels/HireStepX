@@ -337,7 +337,7 @@ function GenericReport({
             {tab === "overview" && (
               <>
                 {data.focusBanner && <FocusBannerStrip banner={data.focusBanner} daysUntilInterview={data.daysUntilInterview} />}
-                <HeroSection data={data} />
+                <HeroSection data={data} progressTrends={progressTrends} />
                 {credibility && credibility.hasIssues && (
                   <CredibilitySection summary={credibility} onDispute={onDisputeCredibility} />
                 )}

@@ -481,7 +481,7 @@ export function sessionReportToInterviewResult(
       name: weakestSkill?.name || "—",
       tip:
         weakestSkill
-          ? `Focus your next session on ${weakestSkill.name.toLowerCase()}. It's your lowest signal at ${weakestSkill.score}/100.`
+          ? `Focus your next session on ${weakestSkill.name.toLowerCase()}. It's your lowest role skill at ${weakestSkill.score}/100.`
           : "Keep practising consistently.",
     },
     questions: (() => {
