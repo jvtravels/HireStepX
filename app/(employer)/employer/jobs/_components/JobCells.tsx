@@ -77,10 +77,9 @@ export function FilterChip({ label, onRemove }: { label: string; onRemove: () =>
 
 const mutedText: React.CSSProperties = { fontFamily: f.sans, fontSize: textSize.base, color: t.inkSoft };
 
-/* One cell for everything the AI found for a job: strong matches first (that
-   is what an employer acts on), then how many candidates were evaluated, then
-   who the strong matches are. Replaces three separate columns that repeated
-   the same numbers. */
+/* One cell for everything the AI found for a job: the total matched first (the
+   number an employer asks about), then how many of those are strong, then the
+   score spread and who the strong matches are. */
 export function MatchesCell({ r }: { r: RequirementSummary }) {
   const s = r.aiScreening;
   if (r.status === "generating") {
@@ -92,19 +91,24 @@ export function MatchesCell({ r }: { r: RequirementSummary }) {
     );
   }
   if (s.evaluated === 0) return <span style={mutedText}>None yet</span>;
-  const evaluatedLine = s.totalMatched > s.evaluated ? `Showing top ${s.evaluated} of ${s.totalMatched} matched` : `${s.evaluated} evaluated`;
-  const range = s.scoreLow == null || s.scoreHigh == null ? "" : s.scoreLow === s.scoreHigh ? `, all ${s.scoreLow}%` : `, scores ${s.scoreLow} to ${s.scoreHigh}%`;
+  const total = Math.max(s.totalMatched, s.evaluated);
+  const capped = total > s.evaluated;
+  const range = s.scoreLow == null || s.scoreHigh == null ? "" : s.scoreLow === s.scoreHigh ? `All scored ${s.scoreLow}%` : `Scores ${s.scoreLow} to ${s.scoreHigh}%`;
+  const detail = [capped ? `Top ${s.evaluated} scored` : "", range].filter(Boolean).join(" · ");
   return (
     <div className="flex flex-col items-start gap-1">
+      <div className="text-[14px] font-medium text-hx-coal">
+        {total} {total === 1 ? "candidate" : "candidates"} matched
+      </div>
       {s.topMatches > 0 ? (
         <div className="flex flex-wrap items-center gap-2">
-          <Badge tone="brand">{s.topMatches} strong {s.topMatches === 1 ? "match" : "matches"}</Badge>
+          <Badge tone="brand">{s.topMatches} strong</Badge>
           {s.strongAvgScore != null && <span style={mutedText}>{s.strongAvgScore}% avg</span>}
         </div>
       ) : (
-        <span style={mutedText}>No strong matches yet</span>
+        <span style={mutedText}>None strong yet</span>
       )}
-      <div style={mutedText}>{evaluatedLine}{range}</div>
+      {detail && <div style={mutedText}>{detail}</div>}
       {s.strongMatches.length > 0 && (
         <div className="pt-1">
           <StrongMatchCell aiScreening={s} />

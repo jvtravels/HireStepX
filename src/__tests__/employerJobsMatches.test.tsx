@@ -20,27 +20,31 @@ describe("MatchesCell", () => {
     expect(screen.getByText("Finding candidates")).toBeTruthy();
   });
 
-  it("leads with strong matches and folds the evaluated count and score range into one cell", () => {
+  it("leads with the total matched, then the strong count and the score range", () => {
     render(<MatchesCell r={job({ evaluated: 12, totalMatched: 12, scoreLow: 48, scoreHigh: 91, topMatches: 3, strongAvgScore: 82 })} />);
-    expect(screen.getByText("3 strong matches")).toBeTruthy();
+    expect(screen.getByText("12 candidates matched")).toBeTruthy();
+    expect(screen.getByText("3 strong")).toBeTruthy();
     expect(screen.getByText("82% avg")).toBeTruthy();
-    expect(screen.getByText("12 evaluated, scores 48 to 91%")).toBeTruthy();
+    expect(screen.getByText("Scores 48 to 91%")).toBeTruthy();
   });
 
-  it("uses the singular and the capped-pool wording", () => {
+  it("uses the capped-pool wording", () => {
     render(<MatchesCell r={job({ evaluated: 20, totalMatched: 35, topMatches: 1 })} />);
-    expect(screen.getByText("1 strong match")).toBeTruthy();
-    expect(screen.getByText("Showing top 20 of 35 matched")).toBeTruthy();
+    expect(screen.getByText("35 candidates matched")).toBeTruthy();
+    expect(screen.getByText("1 strong")).toBeTruthy();
+    expect(screen.getByText("Top 20 scored")).toBeTruthy();
   });
 
   it("does not print a range when every candidate scored the same", () => {
     render(<MatchesCell r={job({ evaluated: 3, totalMatched: 3, scoreLow: 25, scoreHigh: 25 })} />);
-    expect(screen.getByText("3 evaluated, all 25%")).toBeTruthy();
+    expect(screen.getByText("3 candidates matched")).toBeTruthy();
+    expect(screen.getByText("All scored 25%")).toBeTruthy();
   });
 
   it("says so when nothing qualifies as a strong match", () => {
     render(<MatchesCell r={job({ evaluated: 4, totalMatched: 4 })} />);
-    expect(screen.getByText("No strong matches yet")).toBeTruthy();
+    expect(screen.getByText("4 candidates matched")).toBeTruthy();
+    expect(screen.getByText("None strong yet")).toBeTruthy();
   });
 });
 

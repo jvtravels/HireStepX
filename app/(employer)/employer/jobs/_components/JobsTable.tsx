@@ -108,7 +108,7 @@ export default function JobsTable({
                 width={240}
                 sort={sort}
                 onSortChange={setSort}
-                after={<HeadInfo label="About matches">Strong matches are the highest-scoring candidates for this job, with their average score. Evaluated is how many candidates the AI has scored in total.</HeadInfo>}
+                after={<HeadInfo label="About matches">Matched is every candidate the AI found for this job. Strong are the highest-scoring of them, shown with their average score.</HeadInfo>}
               >
                 Matches
               </SortableHead>
