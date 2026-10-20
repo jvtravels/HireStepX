@@ -5,6 +5,7 @@ import type { Candidate, CandidateStatus } from "../employer/mockData";
 import type { EmployerApiResult } from "../employer/EmployerDataContext";
 import SelectionBar from "../../app/(employer)/employer/requirements/[id]/_components/SelectionBar";
 import { useStageActions } from "../../app/(employer)/employer/requirements/[id]/_components/useStageActions";
+import { useCandidateShortcuts } from "../../app/(employer)/employer/requirements/[id]/candidates/[candidateId]/_components/useCandidateShortcuts";
 import { rowAnnouncement, useShortlistShortcuts } from "../../app/(employer)/employer/requirements/[id]/_components/useShortlistShortcuts";
 import { ToastProvider, useToast } from "../Toast";
 
@@ -225,5 +226,27 @@ describe("Toast action", () => {
     fireEvent.click(screen.getByText("go"));
     fireEvent.click(screen.getByRole("button", { name: "Undo" }));
     expect(onUndo).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("useCandidateShortcuts", () => {
+  const handlers = () => ({ onNext: vi.fn(), onPrev: vi.fn(), onTab: vi.fn(), onUndo: vi.fn() });
+
+  it("maps j k z and 1 to 3, and ignores a held z", () => {
+    const h = handlers();
+    renderHook(() => useCandidateShortcuts(h, true));
+    for (const key of ["j", "k", "z", "2"]) fireEvent.keyDown(window, { key });
+    fireEvent.keyDown(window, { key: "z", repeat: true });
+    expect(h.onNext).toHaveBeenCalledTimes(1);
+    expect(h.onPrev).toHaveBeenCalledTimes(1);
+    expect(h.onUndo).toHaveBeenCalledTimes(1);
+    expect(h.onTab).toHaveBeenCalledWith(1);
+  });
+
+  it("leaves Cmd+Z alone so the browser undo still works", () => {
+    const h = handlers();
+    renderHook(() => useCandidateShortcuts(h, true));
+    fireEvent.keyDown(window, { key: "z", metaKey: true });
+    expect(h.onUndo).not.toHaveBeenCalled();
   });
 });

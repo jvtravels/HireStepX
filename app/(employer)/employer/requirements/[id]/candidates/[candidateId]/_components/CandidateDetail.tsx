@@ -47,7 +47,7 @@ export default function CandidateDetail({ requirementId, matchId }: { requiremen
   const { suspended } = useEmployerData();
   const d = useCandidateDetail(requirementId, matchId);
   const router = useRouter();
-  const { toast } = useToast();
+  const { toast, triggerToastAction } = useToast();
   const headerRef = useRef<HTMLDivElement | null>(null);
   const [tab, setTab] = useState<CandidateTabKey>("overview");
   const [dialog, setDialog] = useState<"invite" | "reject" | null>(null);
@@ -83,7 +83,8 @@ export default function CandidateDetail({ requirementId, matchId }: { requiremen
   const goNext = useCallback(() => { if (shortlist?.next) router.push(hrefFor(shortlist.next)); }, [shortlist, hrefFor, router]);
   const goPrev = useCallback(() => { if (shortlist?.prev) router.push(hrefFor(shortlist.prev)); }, [shortlist, hrefFor, router]);
   const goTab = useCallback((i: number) => selectTab(TAB_ORDER[i]), [selectTab]);
-  useCandidateShortcuts({ onNext: goNext, onPrev: goPrev, onTab: goTab }, ready && !dialog && !unlockOpen);
+  const undoLast = useCallback(() => void triggerToastAction(), [triggerToastAction]);
+  useCandidateShortcuts({ onNext: goNext, onPrev: goPrev, onTab: goTab, onUndo: undoLast }, ready && !dialog && !unlockOpen);
   const condensed = useScrolledPast(headerRef, ready);
 
   useEmployerBreadcrumb(
