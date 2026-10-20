@@ -49,6 +49,17 @@ describe("sortJobs", () => {
   it("sorts titles case-insensitively", () => {
     expect(sortJobs(jobs, pipe, "title", "asc").map((j) => j.id)).toEqual(["b", "a", "c"]);
   });
+  it("sorts by evaluated count and by pipeline stage", () => {
+    const sized = [job("x", { aiScreening: { ...jobs[0].aiScreening, evaluated: 5 } }), job("y", { aiScreening: { ...jobs[0].aiScreening, evaluated: 40 } })];
+    expect(sortJobs(sized, [], "evaluated", "desc").map((j) => j.id)).toEqual(["y", "x"]);
+    const stages: DashboardJobPipeline[] = [
+      { requirementId: "a", interviewing: 0, hired: 1, lastUpdatedAt: null },
+      { requirementId: "b", interviewing: 2, hired: 0, lastUpdatedAt: null },
+    ];
+    const staged = jobs.map((j) => ({ ...j, stage: "ready_for_review" as const }));
+    expect(sortJobs(staged, stages, "status", "desc").map((j) => j.id)).toEqual(["a", "b", "c"]);
+    expect(sortJobs(staged, stages, "status", "asc").map((j) => j.id)).toEqual(["c", "b", "a"]);
+  });
   it("sorts by recommended, interviewing and hired, treating missing pipeline as zero", () => {
     expect(sortJobs(jobs, pipe, "recommended", "desc").map((j) => j.id)).toEqual(["c", "a", "b"]);
     expect(sortJobs(jobs, pipe, "interviewing", "desc").map((j) => j.id)).toEqual(["a", "b", "c"]);

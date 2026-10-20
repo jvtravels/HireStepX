@@ -344,7 +344,9 @@ export function buildFunnel(data: EmployerDashboardData | null, recommendedTotal
   }));
 }
 
-export type JobSortKey = "title" | "recommended" | "interviewing" | "hired";
+export type JobSortKey = "title" | "status" | "evaluated" | "recommended" | "interviewing" | "hired";
+
+const STAGE_ORDER: Record<RequirementStage, number> = { ai_matching: 0, ready_for_review: 1, interviewing: 2, hired: 3 };
 export type SortDir = "asc" | "desc";
 
 /** Default order for a capped list: jobs with strong matches first (most first),
@@ -368,6 +370,8 @@ export function sortJobs(
   const value = (j: RequirementSummary): number | string => {
     switch (key) {
       case "title": return j.title.toLowerCase();
+      case "status": return STAGE_ORDER[pipelineStage(j, byId.get(j.id))];
+      case "evaluated": return j.aiScreening.evaluated;
       case "recommended": return j.aiScreening.topMatches;
       case "interviewing": return byId.get(j.id)?.interviewing ?? 0;
       case "hired": return byId.get(j.id)?.hired ?? 0;

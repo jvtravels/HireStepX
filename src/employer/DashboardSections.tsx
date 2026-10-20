@@ -246,15 +246,16 @@ export function DashboardFunnel({ data, openJobs, recommendedTotal, range, busy 
 
 /* ─── Active jobs ─── */
 
-function JobMeta({ job }: { job: RequirementSummary }) {
+function JobMeta({ job, health }: { job: RequirementSummary; health?: { tone: "warning" | "error"; label: string } | null }) {
   const where = job.workMode ? job.workMode[0].toUpperCase() + job.workMode.slice(1) : job.location;
   const type = job.employmentType ? job.employmentType.replace("-", " ").replace(/^./, (c) => c.toUpperCase()) : "";
   const parts = [where, type ].filter(Boolean);
   return (
     <div className="mt-0.5 flex flex-wrap gap-x-1.5 text-[12px] text-hx-ink-soft">
       {parts.map((part, i) => (
-        <span key={part} className="whitespace-nowrap">{part}{i < parts.length - 1 && <span aria-hidden="true"> ·</span>}</span>
+        <span key={part} className="whitespace-nowrap">{part}{(i < parts.length - 1 || health) && <span aria-hidden="true"> ·</span>}</span>
       ))}
+      {health && <span className={`font-medium ${health.tone === "error" ? "text-hx-error-ink" : "text-hx-warning-ink"}`}>{health.label}</span>}
     </div>
   );
 }
@@ -282,6 +283,7 @@ export function ActiveJobsCard({
   const ordered = sort ? sortJobs(jobs, pipeline, sort.key, sort.dir) : jobsNeedingAttentionFirst(jobs);
   const shown = ordered.slice(0, JOBS_SHOWN);
   const toggleSort = (key: JobSortKey) => setSort((cur) => (cur?.key === key ? { key, dir: cur.dir === "desc" ? "asc" : "desc" } : { key, dir: key === "title" ? "asc" : "desc" }));
+  const SORT_LABEL: Record<JobSortKey, string> = { title: "job title", status: "status", evaluated: "evaluated", recommended: "strong matches", interviewing: "interviewing", hired: "hired" };
   const sortHead = (key: JobSortKey, label: string, center: boolean, hint?: string) => {
     const active = sort?.key === key;
     const Icon = !active ? ChevronsUpDownIcon : sort.dir === "asc" ? ArrowUpIcon : ArrowDownIcon;
@@ -302,6 +304,7 @@ export function ActiveJobsCard({
       <CardHeader
         id="active-jobs-heading"
         title="Active jobs"
+        description={sort ? `Sorted by ${SORT_LABEL[sort.key]}, ${sort.dir === "asc" ? "lowest" : "highest"} first.` : "Jobs needing attention first."}
         action={
           <TextLink href="/employer/jobs">View all jobs</TextLink>
         }
@@ -315,8 +318,8 @@ export function ActiveJobsCard({
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
                   {sortHead("title", "Job title", false)}
-                  <TableHead className={TH}>Status</TableHead>
-                  <TableHead className={`${TH} text-center`}>Evaluated</TableHead>
+                  {sortHead("status", "Status", false)}
+                  {sortHead("evaluated", "Evaluated", true)}
                   {sortHead("recommended", "Strong matches", true, `A strong match scores ${STRONG_MATCH_THRESHOLD}% or higher against this job. When a job shows 0, the candidates evaluated so far scored lower.`)}
                   {sortHead("interviewing", "Interviewing", true)}
                   {sortHead("hired", "Hired", true)}
@@ -335,8 +338,7 @@ export function ActiveJobsCard({
                     >
                       <TableCell className={`${TD} whitespace-normal`}>
                         <Link href={`/employer/requirements/${j.id}`} className="inline-block py-0.5 font-semibold text-hx-coal no-underline hover:underline">{j.title}</Link>
-                        <JobMeta job={j} />
-                        {health && <div className="mt-1.5"><Pill tone={health.tone}>{health.label}</Pill></div>}
+                        <JobMeta job={j} health={health} />
                       </TableCell>
                       <TableCell className={TD}>
                         <JobStatusBadge job={j} pipeline={p} />
@@ -388,7 +390,7 @@ export function ActiveJobsCard({
             })}
           </ul>
           {jobs.length > JOBS_SHOWN && (
-            <p className="m-0 mt-4 text-[13px] text-hx-ink-soft">Showing {JOBS_SHOWN} of {jobs.length} jobs{sort ? "." : ", those needing attention first."}</p>
+            <p className="m-0 mt-4 text-[13px] text-hx-ink-soft">Showing {JOBS_SHOWN} of {jobs.length} jobs.</p>
           )}
         </>
       )}
