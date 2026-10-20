@@ -2,22 +2,28 @@
  * panel + header (same as Jobs / Sessions / Settings), then the body. */
 
 import type { ReactNode } from "react";
-import CandidatePageHeader, { CandidatePagePanel } from "../../CandidatePageHeader";
+import { CandidatePagePanel } from "../../CandidatePageHeader";
 
 export function ReportFrame({
   title = "Session report",
   subtitle,
-  actions,
+  tabs,
   children,
 }: {
   title?: string;
   subtitle?: string;
-  actions?: ReactNode;
+  tabs?: ReactNode;
   children: ReactNode;
 }) {
   return (
     <CandidatePagePanel>
-      <CandidatePageHeader title={title} subtitle={subtitle} actions={actions} padding="20px 28px" />
+      <header className="flex flex-wrap items-center justify-between gap-x-6 border-b border-border px-4 min-[900px]:px-7">
+        <div className="flex min-w-0 items-baseline gap-3 py-3.5">
+          <h1 className="m-0 shrink-0 text-lg font-semibold leading-6 tracking-tight text-foreground">{title}</h1>
+          {subtitle && <p className="m-0 truncate text-sm text-muted-foreground">{subtitle}</p>}
+        </div>
+        {tabs && <div className="ir-tab-bar -mx-1 max-w-full min-w-0 overflow-x-auto">{tabs}</div>}
+      </header>
       {children}
     </CandidatePagePanel>
   );

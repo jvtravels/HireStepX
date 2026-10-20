@@ -388,13 +388,13 @@ function GenericReport({
   return (
     <>
       <style>{SESSION_REPORT_STYLES}</style>
-      <ReportFrame subtitle={reportSubtitle(data)}>
+      <ReportFrame
+        subtitle={reportSubtitle(data)}
+        tabs={<StatusTabs tabs={tabs} value={tab} onChange={setTab} label="Report sections" idPrefix="ir" panelId="ir-tabpanel" listClassName="group-data-horizontal/tabs:h-12" />}
+      >
         <a href="#ir-main" className="ir-skip-link">
           Skip to report
         </a>
-        <div className="ir-tab-bar" style={{ padding: "0 clamp(16px, 3vw, 28px)", borderBottom: `1px solid ${t.line}`, overflowX: "auto" }}>
-          <StatusTabs tabs={tabs} value={tab} onChange={setTab} label="Report sections" idPrefix="ir" panelId="ir-tabpanel" />
-        </div>
         <ReportBody id="ir-tabpanel" labelledBy={`ir-tab-${tab}`}>
           {/* section, not main: the app shell's SidebarInset already provides the page's one main landmark. */}
           <section id="ir-main" aria-label="Interview report" className="ir-main-container ir-tab-panel" style={{ width: "100%" }}>

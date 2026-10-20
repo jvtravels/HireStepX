@@ -24,6 +24,7 @@ export default function StatusTabs<K extends string>({
   idPrefix,
   panelId,
   className,
+  listClassName,
 }: {
   tabs: ReadonlyArray<StatusTabItem<K>>;
   value: K;
@@ -32,6 +33,7 @@ export default function StatusTabs<K extends string>({
   idPrefix: string;
   panelId?: string;
   className?: string;
+  listClassName?: string;
 }) {
   const listRef = useRef<HTMLDivElement | null>(null);
   const [moreRight, setMoreRight] = useState(false);
@@ -54,7 +56,7 @@ export default function StatusTabs<K extends string>({
         variant="line"
         aria-label={label}
         onScroll={measure}
-        className={cn("w-auto border-b-0", moreRight && "[mask-image:linear-gradient(to_right,black_calc(100%-32px),transparent)]")}
+        className={cn("w-auto border-b-0", listClassName, moreRight && "[mask-image:linear-gradient(to_right,black_calc(100%-32px),transparent)]")}
       >
         {tabs.map((tab) => {
           const active = tab.key === value;
