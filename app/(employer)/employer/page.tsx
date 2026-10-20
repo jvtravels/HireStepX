@@ -312,7 +312,7 @@ function EmployerDashboard() {
             )}
             {showSetupReminder && <OnboardingChecklist steps={onboardingSteps} onDismiss={hideChecklist} />}
             {nextAction && <NextActionCard action={nextAction} />}
-            <DashboardFunnel data={dashboard} recommendedTotal={recommendedTotal} range={range} busy={refreshing} />
+            <DashboardFunnel data={dashboard} openJobs={openRequirements} recommendedTotal={recommendedTotal} range={range} busy={refreshing} />
             <div aria-busy={refreshing} className="mx-busy grid grid-cols-1 min-[1100px]:grid-cols-[minmax(0,1fr)_minmax(300px,380px)]">
               <div className="min-w-0 divide-y divide-hx-line min-[1100px]:border-r min-[1100px]:border-hx-line">
                 <ActiveJobsCard jobs={openRequirements} pipeline={dashboard?.jobs ?? null} now={now} rowActions={rowActions} />

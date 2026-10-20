@@ -197,14 +197,16 @@ export function NextActionCard({ action }: { action: NextAction }) {
 
 /* ─── Hiring funnel ─── */
 
-function FunnelStepItem({ step, range, last }: { step: FunnelStep; range: DashboardRange; last: boolean }) {
+const FUNNEL_CELL = "flex min-w-0 flex-col border-hx-line gap-1 px-4 py-4 min-[640px]:px-7 min-[640px]:py-5";
+
+function FunnelStepItem({ step, range, border }: { step: FunnelStep; range: DashboardRange; border: string }) {
   const added = step.added === null ? null
     : step.added <= 0 ? null
     : step.key === "recommended" ? `${step.added} new ${step.added === 1 ? "match" : "matches"} in last ${range} days`
     : `+${step.added} in last ${range} days`;
   const short = step.added === null || step.added <= 0 ? null : `+${step.added} new`;
   return (
-    <li className={`flex min-w-0 flex-col gap-1 px-4 py-4 min-[640px]:px-7 min-[640px]:py-5 ${last ? "" : "border-r border-hx-line"}`}>
+    <li className={`${FUNNEL_CELL} ${border}`}>
       <p className="sr-only">{step.value} {step.label}{added ? `, ${added}` : ""}</p>
       <div aria-hidden="true" className="text-[13px] text-hx-ink-soft">{step.label}</div>
       <div aria-hidden="true" className="text-[28px] font-semibold leading-[1.15] tabular-nums text-hx-coal"><AnimatedNumber value={step.value} /></div>
@@ -215,12 +217,28 @@ function FunnelStepItem({ step, range, last }: { step: FunnelStep; range: Dashbo
   );
 }
 
-export function DashboardFunnel({ data, recommendedTotal, range, busy = false }: { data: EmployerDashboardData | null; recommendedTotal: number; range: DashboardRange; busy?: boolean }) {
+function OpenJobsItem({ jobs, border }: { jobs: RequirementSummary[]; border: string }) {
+  const withMatches = jobs.filter((j) => j.aiScreening.topMatches > 0).length;
+  const detail = jobs.length > 0 && withMatches > 0 ? `${withMatches} with strong ${withMatches === 1 ? "match" : "matches"}` : null;
+  return (
+    <li className={`${FUNNEL_CELL} ${border}`}>
+      <p className="sr-only">{jobs.length} open {jobs.length === 1 ? "job" : "jobs"}{detail ? `, ${detail}` : ""}</p>
+      <div aria-hidden="true" className="text-[13px] text-hx-ink-soft">Open jobs</div>
+      <div aria-hidden="true" className="text-[28px] font-semibold leading-[1.15] tabular-nums text-hx-coal"><AnimatedNumber value={jobs.length} /></div>
+      <div aria-hidden="true" className="min-h-4 text-[12px] text-hx-ink-soft">{detail}</div>
+    </li>
+  );
+}
+
+export function DashboardFunnel({ data, openJobs, recommendedTotal, range, busy = false }: { data: EmployerDashboardData | null; openJobs: RequirementSummary[]; recommendedTotal: number; range: DashboardRange; busy?: boolean }) {
   const steps = buildFunnel(data, recommendedTotal);
+  /* Two columns below 640px (a 2x2 grid), four in one row above it. */
+  const borders = ["border-r border-b min-[640px]:border-b-0", "border-b min-[640px]:border-r min-[640px]:border-b-0", "border-r", ""];
   return (
     <section aria-label="Hiring funnel" aria-busy={busy} className="mx-busy min-w-0 border-b border-hx-line">
-      <ol className={`${LIST} grid grid-cols-3`}>
-        {steps.map((step, i) => <FunnelStepItem key={step.key} step={step} range={range} last={i === steps.length - 1} />)}
+      <ol className={`${LIST} grid grid-cols-2 min-[640px]:grid-cols-4`}>
+        <OpenJobsItem jobs={openJobs} border={borders[0]} />
+        {steps.map((step, i) => <FunnelStepItem key={step.key} step={step} range={range} border={borders[i + 1]} />)}
       </ol>
     </section>
   );
