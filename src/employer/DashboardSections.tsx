@@ -56,7 +56,7 @@ function PersonAvatar({ name, initials }: { name: string; initials: string }) {
 
 function CardHeader({ id, title, description, action }: { id: string; title: string; description?: ReactNode; action?: ReactNode }) {
   return (
-    <div className="mb-4 flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
+    <div className={`mb-4 flex flex-wrap justify-between gap-x-3 gap-y-1 ${description ? "items-start" : "items-center"}`}>
       <div className="min-w-0">
         <h2 id={id} className={H2}>{title}</h2>
         {description && <p className="m-0 mt-0.5 text-[13px] text-hx-ink-soft">{description}</p>}
@@ -269,11 +269,13 @@ export function ActiveJobsCard({
     const Icon = !active ? ChevronsUpDownIcon : sort.dir === "asc" ? ArrowUpIcon : ArrowDownIcon;
     return (
       <TableHead className={`${TH} ${center ? "text-center" : ""}`} aria-sort={active ? (sort.dir === "asc" ? "ascending" : "descending") : "none"}>
-        <button type="button" onClick={() => toggleSort(key)} className={`inline-flex items-center gap-1 rounded font-semibold hover:text-hx-coal ${active ? "text-hx-coal" : ""}`}>
-          {label}
-          <Icon size={12} aria-hidden="true" className={active ? "" : "opacity-50"} />
-        </button>
-        {hint && <InfoTip label={`About ${label}`}>{hint}</InfoTip>}
+        <div className={`flex items-center gap-1 ${center ? "justify-center" : ""}`}>
+          <button type="button" onClick={() => toggleSort(key)} className={`inline-flex items-center gap-1 rounded font-semibold hover:text-hx-coal ${active ? "text-hx-coal" : ""}`}>
+            {label}
+            <Icon size={12} aria-hidden="true" className={active ? "" : "opacity-50"} />
+          </button>
+          {hint && <InfoTip label={`About ${label}`}>{hint}</InfoTip>}
+        </div>
       </TableHead>
     );
   };
@@ -368,9 +370,7 @@ export function ActiveJobsCard({
             })}
           </ul>
           {jobs.length > JOBS_SHOWN && (
-            <p className="m-0 mt-3 text-[12px] text-hx-ink-soft">
-              Showing {JOBS_SHOWN} of {jobs.length} jobs. <TextLink href="/employer/jobs">View all jobs</TextLink>
-            </p>
+            <p className="m-0 mt-4 text-[13px] text-hx-ink-soft">Showing {JOBS_SHOWN} of {jobs.length} jobs{sort ? "." : ", those needing attention first."}</p>
           )}
         </>
       )}
