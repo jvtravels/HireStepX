@@ -13,12 +13,13 @@ export const t = {
   /* Surface */
   cream: T.cream,
   white: T.white,
-  creamSoft: T.creamSoft,
+  /* Report-local: lighter than the app-wide creamSoft so grey surfaces stay quiet. */
+  creamSoft: "oklch(0.985 0.001 286)",
 
   /* Ink */
   coal: T.coal,
   indigoGray: T.indigoGray,
-  inkSoft: T.inkSoft,
+  inkSoft: "oklch(0.55 0.02 213.5)",
   inkFaint: T.inkFaint,
 
   /* Brand — interactive */
@@ -136,7 +137,7 @@ export const t = {
      That drift was the single biggest reason the report read as a
      separate "editorial" system instead of matching Resume's cool-neutral
      card borders, which consume T.line/T.lineStrong directly. */
-  line: T.line,
+  line: "oklch(0.955 0.004 265)",
   lineStrong: T.lineStrong,
 } as const;
 

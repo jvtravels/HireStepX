@@ -21,6 +21,16 @@ export const SESSION_REPORT_STYLES = `
   @media (max-width: 480px) {
     .ir-tile-grid { grid-template-columns: 1fr; gap: 10px; }
   }
+  .ir-metric-tile { display: flex; flex-direction: column; gap: 8px; padding: 14px 16px; border: 1px solid oklch(0.955 0.004 265); border-radius: 12px; }
+  .ir-metric-label { font-size: 14px; color: oklch(0.55 0.02 213.5); }
+  .ir-metric-value { font-size: 28px; font-weight: 700; line-height: 1.1; letter-spacing: -0.02em; color: var(--foreground); }
+  .ir-metric-unit { font-size: 16px; font-weight: 500; color: oklch(0.55 0.02 213.5); margin-left: 3px; }
+  .ir-metric-target { font-size: 12px; color: oklch(0.55 0.02 213.5); }
+  .ir-metric-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  .ir-metric-hint { font-size: 12px; color: var(--foreground); }
+  .ir-meter { position: relative; height: 8px; margin: 4px 0; border-radius: 99px; background: oklch(0.955 0.004 265); }
+  .ir-meter-zone { position: absolute; top: 0; bottom: 0; border-radius: 99px; background: rgba(21,128,61,0.18); }
+  .ir-meter-dot { position: absolute; top: -3px; width: 14px; height: 14px; box-sizing: border-box; border-radius: 50%; background: var(--foreground); border: 2px solid oklch(1 0 0); }
   .ir-skill-bar-wrap { position: relative; height: 8px; border-radius: 99px; overflow: visible; }
   .ir-skill-bar-bg { position: absolute; inset: 0; border-radius: 99px; }
   .ir-skill-bar-fg {
@@ -50,7 +60,7 @@ export const SESSION_REPORT_STYLES = `
   }
   .ir-cta-primary:hover { background: #1E1B4B; transform: translateY(-1px); }
   .ir-cta-ghost {
-    background: transparent; color: #312E81; border: 1px solid #E4E4E7;
+    background: transparent; color: #312E81; border: 1px solid #ECECEF;
     padding: 10px 18px; border-radius: 10px; font-weight: 500; font-size: 13px;
     cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
     transition: border-color 160ms ease, background 160ms ease;
@@ -59,20 +69,20 @@ export const SESSION_REPORT_STYLES = `
   .ir-pill {
     display: inline-flex; align-items: center; gap: 6px;
     padding: 6px 12px; border-radius: 999px;
-    background: #FFFFFF; border: 1px solid #E4E4E7;
+    background: #FFFFFF; border: 1px solid #ECECEF;
     font-size: 12px; font-weight: 500;
   }
   .ir-tab-btn {
     background: transparent; border: none; cursor: pointer;
     padding: 8px 0; margin-right: 18px;
-    font-family: inherit; font-size: 13px; font-weight: 500; color: #52525B;
+    font-family: inherit; font-size: 13px; font-weight: 500; color: #63636B;
     border-bottom: 2px solid transparent;
     transition: color 160ms, border-color 160ms;
   }
   .ir-tab-btn[aria-selected="true"] { color: #312E81; border-bottom-color: #312E81; }
   .ir-thumb-btn {
-    background: transparent; border: 1px solid #E4E4E7; border-radius: 8px;
-    padding: 6px 10px; cursor: pointer; color: #52525B;
+    background: transparent; border: 1px solid #ECECEF; border-radius: 8px;
+    padding: 6px 10px; cursor: pointer; color: #63636B;
     transition: border-color 160ms, color 160ms, background 160ms;
   }
   .ir-thumb-btn:hover { border-color: #312E81; color: #312E81; }
@@ -86,7 +96,7 @@ export const SESSION_REPORT_STYLES = `
   .nfr-section-band {
     display: flex; align-items: center; gap: 16px;
     padding: 18px 24px; border-radius: 12px;
-    margin: 24px 0 18px; border: 1px solid #E4E4E7;
+    margin: 24px 0 18px; border: 1px solid #ECECEF;
   }
   .nfr-grid-2up {
     display: grid; grid-template-columns: 1fr 1fr; gap: 18px;
@@ -95,7 +105,7 @@ export const SESSION_REPORT_STYLES = `
     display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px;
   }
   .nfr-panel {
-    background: #FFFFFF; border: 1px solid #E4E4E7;
+    background: #FFFFFF; border: 1px solid #ECECEF;
     border-radius: 14px; padding: 22px;
     box-shadow: 0 1px 0 rgba(20,17,10,.03), 0 1px 2px rgba(20,17,10,.04);
   }
@@ -113,7 +123,7 @@ export const SESSION_REPORT_STYLES = `
   .nfr-tldr {
     margin-bottom: 28px;
     border-top: 1px solid #B45309;
-    border-bottom: 1px solid #E4E4E7;
+    border-bottom: 1px solid #ECECEF;
     padding: 22px 0 26px;
   }
   .nfr-tldr-eyebrow {
@@ -137,10 +147,10 @@ export const SESSION_REPORT_STYLES = `
     display: grid; grid-template-columns: minmax(140px, 1fr) auto;
     align-items: baseline; gap: 14px;
     padding: 12px 0;
-    border-top: 1px solid #E4E4E7;
+    border-top: 1px solid #ECECEF;
   }
   .nfr-tldr-evidence-label {
-    font-size: 12px; color: #52525B; line-height: 1.4;
+    font-size: 12px; color: #63636B; line-height: 1.4;
   }
   .nfr-tldr-evidence-value {
     font-family: 'Geist Sans', sans-serif;
@@ -149,7 +159,7 @@ export const SESSION_REPORT_STYLES = `
   }
   .nfr-tldr-evidence-hint {
     grid-column: 1 / -1;
-    font-size: 11px; color: #71717A; line-height: 1.4;
+    font-size: 11px; color: #7C7C85; line-height: 1.4;
     margin-top: 2px;
   }
   .nfr-tldr-tone-good    { color: #15803D; }
@@ -187,10 +197,10 @@ export const SESSION_REPORT_STYLES = `
   .nfr-table th {
     padding: 11px 14px; font-size: 11px; font-weight: 700;
     letter-spacing: 0.8px; text-transform: uppercase;
-    color: #52525B; text-align: left; background: #F4F4F5;
+    color: #63636B; text-align: left; background: #FAFAFA;
   }
   .nfr-table td { padding: 11px 14px; font-size: 13px; color: #0E0C08; }
-  .nfr-table tr { border-top: 1px solid #E4E4E7; }
+  .nfr-table tr { border-top: 1px solid #ECECEF; }
   .nfr-table tr:first-child { border-top: none; }
   .nfr-mono { font-family: 'Geist Sans', sans-serif; }
   .nfr-pill {
@@ -201,7 +211,7 @@ export const SESSION_REPORT_STYLES = `
   .nfr-pill-good { background: #DCFCE7; color: #15803D; }
   .nfr-pill-bad  { background: #FEE2E2; color: #B91C1C; }
   .nfr-pill-warn { background: rgba(180,83,9,0.12); color: #B45309; }
-  .nfr-pill-neutral { background: #F4F4F5; color: #0E0C08; }
+  .nfr-pill-neutral { background: #FAFAFA; color: #0E0C08; }
 
   /* ─── Shared NFR primitives (2026-05-26 audit) ───
      Three shapes carry most repeated chrome across the 15 panels:
@@ -214,11 +224,11 @@ export const SESSION_REPORT_STYLES = `
      tone-tinted backgrounds + a leading dot for tone cards. */
   .nfr-info-tile {
     padding: 14px 16px;
-    background: #F4F4F5;
-    border: 1px solid #E4E4E7;
+    background: #FAFAFA;
+    border: 1px solid #ECECEF;
     border-radius: 10px;
     font-size: 13px;
-    color: #52525B;
+    color: #63636B;
     line-height: 1.55;
   }
   .nfr-info-tile-compact { padding: 10px 14px; font-size: 12px; }
@@ -247,12 +257,12 @@ export const SESSION_REPORT_STYLES = `
     font-size: 11px; font-weight: 700; letter-spacing: 0.8px;
     text-transform: uppercase;
     font-family: 'Geist Sans', sans-serif;
-    color: #52525B;
+    color: #63636B;
   }
   .nfr-quote {
     padding: 12px 14px;
-    background: #F4F4F5;
-    border: 1px solid #E4E4E7;
+    background: #FAFAFA;
+    border: 1px solid #ECECEF;
     border-radius: 10px;
     font-size: 13px;
     color: #0E0C08;
@@ -275,7 +285,7 @@ export const SESSION_REPORT_STYLES = `
      prior implementation hand-rolled the cream wash + bold label +
      larger mono value inline. */
   .nfr-table-total td {
-    background: #F4F4F5;
+    background: #FAFAFA;
     font-weight: 700;
     color: #0E0C08;
   }
@@ -385,8 +395,8 @@ export const SESSION_REPORT_STYLES = `
   /* ─── Feedback survey expansion ─── */
   .ir-feedback-row { display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap; }
   .ir-feedback-tag {
-    background: transparent; border: 1px solid #E4E4E7; border-radius: 999px;
-    padding: 5px 12px; cursor: pointer; color: #52525B;
+    background: transparent; border: 1px solid #ECECEF; border-radius: 999px;
+    padding: 5px 12px; cursor: pointer; color: #63636B;
     font-family: inherit; font-size: 12px; font-weight: 500;
     transition: all 160ms ease;
   }
@@ -457,7 +467,7 @@ export const SESSION_REPORT_STYLES = `
     top: 0;
     z-index: 10;
     background: #FFFFFF;
-    border: 1px solid #E4E4E7;
+    border: 1px solid #ECECEF;
     border-radius: 12px;
     padding: 6px;
     margin: 0 0 16px;
@@ -478,7 +488,7 @@ export const SESSION_REPORT_STYLES = `
     font-family: inherit;
     font-size: 12px;
     font-weight: 500;
-    color: #52525B;
+    color: #63636B;
     text-decoration: none;
     white-space: nowrap;
     transition: color 160ms, background 160ms;
@@ -487,7 +497,7 @@ export const SESSION_REPORT_STYLES = `
   .ir-jump-link-num {
     font-family: 'Geist Sans', sans-serif;
     font-size: 11px;
-    color: #71717A;
+    color: #7C7C85;
     font-weight: 700;
     letter-spacing: 0.06em;
   }
@@ -512,7 +522,7 @@ export const SESSION_REPORT_STYLES = `
   .ir-section-rule {
     flex: 1;
     height: 1px;
-    background: #E4E4E7;
+    background: #ECECEF;
   }
 
   /* ─── Calibration banner ───
@@ -533,7 +543,7 @@ export const SESSION_REPORT_STYLES = `
     line-height: 1.4;
   }
   .ir-calibration-bands {
-    color: #52525B;
+    color: #63636B;
     font-family: 'Geist Sans', sans-serif;
     font-size: 11px;
   }
@@ -568,7 +578,7 @@ export const SESSION_REPORT_STYLES = `
     gap: 20px;
     padding: 14px 22px;
     background: linear-gradient(90deg, rgba(49,46,129,0.04), rgba(212,179,127,0.04));
-    border: 1px solid #E4E4E7;
+    border: 1px solid #ECECEF;
     border-radius: 12px;
     flex-wrap: wrap;
   }
@@ -588,10 +598,10 @@ export const SESSION_REPORT_STYLES = `
     font-size: 13px;
     color: #2A241B;
   }
-  .ir-trend-item-label { color: #52525B; font-size: 12px; }
+  .ir-trend-item-label { color: #63636B; font-size: 12px; }
   .ir-trend-delta-up   { color: #15803D; font-weight: 600; font-family: 'Geist Sans', sans-serif; font-size: 12px; }
   .ir-trend-delta-down { color: #B91C1C; font-weight: 600; font-family: 'Geist Sans', sans-serif; font-size: 12px; }
-  .ir-trend-delta-flat { color: #71717A; font-weight: 600; font-family: 'Geist Sans', sans-serif; font-size: 12px; }
+  .ir-trend-delta-flat { color: #7C7C85; font-weight: 600; font-family: 'Geist Sans', sans-serif; font-size: 12px; }
 
   /* ─── Per-Q inline pills (frequency + length verdict) ─── */
   .ir-q-meta-pill {
@@ -604,8 +614,8 @@ export const SESSION_REPORT_STYLES = `
     font-weight: 600;
     letter-spacing: 0.04em;
     background: #FFFFFF;
-    border: 1px solid #E4E4E7;
-    color: #52525B;
+    border: 1px solid #ECECEF;
+    color: #63636B;
   }
   .ir-q-meta-pill.too-short  { color: #B91C1C; border-color: rgba(196,112,90,0.30); background: rgba(196,112,90,0.06); }
   .ir-q-meta-pill.too-long   { color: #B45309; border-color: rgba(180,83,9,0.30);  background: rgba(180,83,9,0.06); }
@@ -641,7 +651,7 @@ export const SESSION_REPORT_STYLES = `
     color: #2A241B;
   }
   .ir-redflag-item-title { color: #B91C1C; font-weight: 600; }
-  .ir-redflag-item-quote { color: #52525B; font-style: italic; display: block; margin-top: 2px; }
+  .ir-redflag-item-quote { color: #63636B; font-style: italic; display: block; margin-top: 2px; }
 
   /* Likely follow-up callout (coach column, weak/partial only) */
   .ir-likely-followup {
@@ -661,7 +671,7 @@ export const SESSION_REPORT_STYLES = `
     font-size: 12px;
     font-weight: 600;
     margin-bottom: 4px;
-    color: #52525B;
+    color: #63636B;
   }
 
   /* What-makes-it-strong list (under exemplar tab) */
@@ -689,7 +699,7 @@ export const SESSION_REPORT_STYLES = `
   }
   .ir-coach-note-card {
     background: #FAFAFA;
-    border: 1px solid #E4E4E7;
+    border: 1px solid #ECECEF;
     border-left: 3px solid #B45309;
     border-radius: 10px;
     padding: 14px 16px;
@@ -714,7 +724,7 @@ export const SESSION_REPORT_STYLES = `
   .ir-coach-note-body {
     font-family: 'Geist Sans', sans-serif;
     font-size: 13px;
-    color: #52525B;
+    color: #63636B;
     line-height: 1.55;
     margin: 0;
   }
@@ -723,8 +733,8 @@ export const SESSION_REPORT_STYLES = `
   .ir-coach-note-card.persistent { border-left-color: #B45309; }
   .ir-coach-note-card.story-reuse { border-left-color: #312E81; }
   .ir-coach-note-card.story-reuse .ir-coach-note-eyebrow { color: #312E81; }
-  .ir-coach-note-card.blind-spot { border-left-color: #71717A; }
-  .ir-coach-note-card.blind-spot .ir-coach-note-eyebrow { color: #52525B; }
+  .ir-coach-note-card.blind-spot { border-left-color: #7C7C85; }
+  .ir-coach-note-card.blind-spot .ir-coach-note-eyebrow { color: #63636B; }
 
   /* ─── Thought-bubble timeline (collapsed by default) ─── */
   .ir-thought-toggle {
@@ -737,7 +747,7 @@ export const SESSION_REPORT_STYLES = `
     padding: 8px 14px;
     font-family: 'Geist Sans', sans-serif;
     font-size: 12px;
-    color: #52525B;
+    color: #63636B;
     cursor: pointer;
     transition: border-color 160ms, color 160ms;
   }
@@ -747,7 +757,7 @@ export const SESSION_REPORT_STYLES = `
     height: 28px;
     border-radius: 6px;
     overflow: hidden;
-    border: 1px solid #E4E4E7;
+    border: 1px solid #ECECEF;
     margin-top: 12px;
   }
   .ir-thought-seg-engaged   { background: rgba(21,128,61,0.40); }
@@ -758,7 +768,7 @@ export const SESSION_REPORT_STYLES = `
     margin-top: 10px;
     font-family: 'Geist Sans', sans-serif;
     font-size: 11px;
-    color: #52525B;
+    color: #63636B;
   }
   .ir-thought-legend-swatch {
     display: inline-block;
@@ -796,7 +806,7 @@ export const SESSION_REPORT_STYLES = `
   .ir-bias-example {
     display: block;
     font-family: 'Geist Sans', system-ui, sans-serif;
-    font-size: 11px; color: #52525B; font-style: italic;
+    font-size: 11px; color: #63636B; font-style: italic;
     margin: 4px 0 6px;
   }
   .ir-bias-tip {
@@ -808,15 +818,15 @@ export const SESSION_REPORT_STYLES = `
   .ir-poll-row {
     display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
     font-family: 'Geist Sans', system-ui, sans-serif;
-    font-size: 12px; color: #52525B;
+    font-size: 12px; color: #63636B;
   }
   .ir-poll-yes, .ir-poll-no {
     background: transparent;
-    border: 1px solid #E4E4E7;
+    border: 1px solid #ECECEF;
     border-radius: 999px;
     padding: 4px 12px;
     cursor: pointer;
-    font-family: inherit; font-size: 12px; color: #52525B;
+    font-family: inherit; font-size: 12px; color: #63636B;
     transition: all 160ms;
   }
   .ir-poll-yes:hover, .ir-poll-no:hover { border-color: #312E81; color: #312E81; }

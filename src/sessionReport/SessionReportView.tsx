@@ -203,14 +203,6 @@ export interface SessionReportViewProps {
    *  Header — overridden to "Back to Sessions" when the user arrived
    *  from /sessions so the affordance matches where they came from. */
   backLabel?: string;
-  /** Share-link handler — POSTs to /api/share-report and copies the
-   *  resulting URL to clipboard. */
-  onShare?: () => void;
-  /** Public share URL for the report — when provided, used by the LinkedIn
-   *  share button and passed to ReferralInviteSection so both surface the
-   *  same URL. Populated by SessionReport.tsx after /api/share-report
-   *  resolves; undefined until the user hits "Share Report". */
-  shareUrl?: string;
   /** "Try this question again" — invoked from the Next-Steps first
    *  card. Production routes to /session/new with the weakest question
    *  pre-loaded. */
@@ -303,22 +295,13 @@ export interface SessionReportViewProps {
 
 type ReportTab = "overview" | "negotiation" | "answers" | "skills" | "coach";
 
-function ShareButton({ onShare }: { onShare?: () => void }) {
-  if (!onShare) return null;
-  return (
-    <Button type="button" variant="outline" size="sm" onClick={onShare}>
-      Share report
-    </Button>
-  );
-}
-
 function reportSubtitle(data: InterviewResultData): string {
   const parts = [data.role, data.company, data.level].map((p) => (p ?? "").trim()).filter(Boolean);
   return parts.join(" · ");
 }
 
 export default function SessionReportView(props: SessionReportViewProps) {
-  const { data, sessionId, onShare, shareUrl, onTrustAnswer, onUsefulAnswer, onDrillSkill, behavioralFullReportData, hrReportData } = props;
+  const { data, sessionId, onTrustAnswer, onUsefulAnswer, onDrillSkill, behavioralFullReportData, hrReportData } = props;
   // Behavioral v2 dispatch: env-gated, opt-in. Default (env unset) falls through unchanged.
   const behavioralV2Enabled =
     typeof process !== "undefined" &&
@@ -333,7 +316,7 @@ export default function SessionReportView(props: SessionReportViewProps) {
     return (
       <>
         <style>{SESSION_REPORT_STYLES}</style>
-        <ReportFrame subtitle={reportSubtitle(data)} actions={<ShareButton onShare={onShare} />}>
+        <ReportFrame subtitle={reportSubtitle(data)}>
           <ReportBody>
             <section
               id="ir-main"
@@ -352,7 +335,7 @@ export default function SessionReportView(props: SessionReportViewProps) {
                 company={data.company}
                 onDrillSkill={onDrillSkill}
               />
-              <ReferralInviteSection score={data.overallScore} shareUrl={shareUrl} />
+              <ReferralInviteSection score={data.overallScore} />
               <ProductRating sessionId={sessionId ?? ""} />
               <TestimonialNudge score={data.overallScore} priorSessionCount={data.priorSessionCount} role={data.role} />
               <FooterSection onTrustAnswer={onTrustAnswer} onUsefulAnswer={onUsefulAnswer} />
@@ -367,7 +350,6 @@ export default function SessionReportView(props: SessionReportViewProps) {
 
 function GenericReport({
   data,
-  onShare,
   onTryQuestionAgain,
   onDrillSkill,
   credibility,
@@ -406,7 +388,7 @@ function GenericReport({
   return (
     <>
       <style>{SESSION_REPORT_STYLES}</style>
-      <ReportFrame subtitle={reportSubtitle(data)} actions={<ShareButton onShare={onShare} />}>
+      <ReportFrame subtitle={reportSubtitle(data)}>
         <a href="#ir-main" className="ir-skip-link">
           Skip to report
         </a>

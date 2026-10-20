@@ -15,7 +15,6 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState, type CSSProper
 import { useRouter } from "next/navigation";
 import { track } from "@vercel/analytics";
 import { captureClientEvent } from "../posthogClient";
-import { useToast } from "../Toast";
 import {
   evaluateSessionWithAI,
   EvaluateSessionError,
@@ -318,7 +317,6 @@ export const SessionReport = memo(function SessionReport({
 }) {
   const router = useRouter();
   const { user } = useAuth();
-  const { toast } = useToast();
   const isFreeUser = (user?.subscriptionTier ?? "free") === "free";
   /* Upgrade CTA on the report page navigates back to dashboard and opens
      the upgrade modal. The ?upgrade=1 param is picked up by DashboardLayout
@@ -332,11 +330,6 @@ export const SessionReport = memo(function SessionReport({
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");
   const [reloadTick, setReloadTick] = useState(0);
-  /* Public share URL — set when the user clicks "Share Report" and the
-     API returns a URL. Passed to SessionReportView so the LinkedIn share
-     button and ReferralInviteSection can surface the report link rather
-     than just the referral signup URL. */
-  const [shareUrl, setShareUrl] = useState<string | undefined>(undefined);
   const [trend, setTrend] = useState<SessionTrendPoint[]>([]);
   /* Cross-session skill-progress trends for the Skill Progress panel.
      Derived from the skill_scores already on the user's session rows
@@ -830,49 +823,6 @@ export const SessionReport = memo(function SessionReport({
     setReloadTick((tk) => tk + 1);
   }, [session.id]);
 
-  const onShare = useCallback(async () => {
-    track("report_action_clicked", {
-      action: "share",
-      sessionId: session.id,
-      view: "main",
-    });
-    try {
-      const { apiFetch } = await import("../apiClient");
-      const res = await apiFetch<{ url?: string; expiresAt?: string; error?: string }>(
-        "/api/share-report?action=create",
-        { sessionId: session.id, ttlDays: 14 }
-      );
-      if (!res.ok || !res.data?.url) {
-        const msg = res.error || res.data?.error || "Could not create share link";
-        toast(msg, "error");
-        return;
-      }
-      const url = res.data.url;
-      /* Persist the URL so SessionReportView can pass it to the LinkedIn
-         share button and ReferralInviteSection. This is set once and never
-         cleared — the URL is valid for 14 days, so keeping it in state
-         for the lifetime of this view is correct. */
-      setShareUrl(url);
-      const ttl = res.data.expiresAt
-        ? new Date(res.data.expiresAt).toLocaleDateString()
-        : "in 14 days";
-      try {
-        await navigator.clipboard.writeText(url);
-        toast(`Share link copied! Valid until ${ttl}.`, "success");
-      } catch {
-        // Clipboard denied — show the URL truncated so the user can copy manually
-        const truncated = url.length > 40 ? url.slice(0, 40) + "…" : url;
-        toast(`Link: ${truncated}`, "info");
-      }
-    } catch (err) {
-      console.error(
-        "[sessionReport] share failed:",
-        err instanceof Error ? err.message : err
-      );
-      toast("Could not create share link. Please try again.", "error");
-    }
-  }, [session.id]);
-
   /* ── Adapter: SessionReport → InterviewResultData ── */
   const viewData = useMemo(() => {
     if (!report) return null;
@@ -1209,8 +1159,6 @@ export const SessionReport = memo(function SessionReport({
       sessionId={session.id}
       onBack={onBack}
       backLabel={backLabel}
-      onShare={onShare}
-      shareUrl={shareUrl}
       onTryQuestionAgain={onTryQuestionAgain}
       onDrillSkill={onDrillSkill}
       onTrustAnswer={onTrustAnswer}

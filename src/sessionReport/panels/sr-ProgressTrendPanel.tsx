@@ -119,11 +119,12 @@ function TrendTile({ trend }: { trend: SkillTrend }) {
         ? "up"
         : "down";
   const color = trendColor(shown);
-  const deltaSign = trend.deltaVsLast > 0 ? "+" : "";
   const deltaText =
     trend.sparkline.length <= 1
-      ? "first session"
-      : `${deltaSign}${trend.deltaVsLast.toFixed(0)} pts vs last`;
+      ? "First session"
+      : shown === "flat"
+        ? "No change since last session"
+        : `${shown === "up" ? "Up" : "Down"} ${Math.abs(trend.deltaVsLast).toFixed(0)} since last session`;
   return (
     <div
       style={{
@@ -141,7 +142,7 @@ function TrendTile({ trend }: { trend: SkillTrend }) {
           fontFamily: f.sans,
           fontSize: size.sm,
           color: t.inkSoft,
-          letterSpacing: "0.02em",
+          fontWeight: 500,
         }}
       >
         {trend.skill}
@@ -149,8 +150,9 @@ function TrendTile({ trend }: { trend: SkillTrend }) {
       <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
         <span
           style={{
-            fontFamily: f.serif,
+            fontFamily: f.sans,
             fontSize: size["3xl"],
+            fontWeight: 700,
             color: t.coal,
             lineHeight: 1,
             letterSpacing: "-0.02em",
@@ -160,23 +162,22 @@ function TrendTile({ trend }: { trend: SkillTrend }) {
         </span>
         <span
           style={{
-            fontFamily: f.mono,
-            fontSize: size.xs,
+            fontFamily: f.sans,
+            fontSize: size.sm,
             color: t.inkSoft,
-            letterSpacing: "0.04em",
           }}
         >
-          / 100
+          out of 100
         </span>
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
         <ArrowGlyph trend={shown} />
         <span
           style={{
-            fontFamily: f.mono,
-            fontSize: size.xs,
+            fontFamily: f.sans,
+            fontSize: size.sm,
+            fontWeight: 500,
             color,
-            letterSpacing: "0.03em",
           }}
         >
           {deltaText}
@@ -198,10 +199,9 @@ export function ProgressTrendPanel({ trends }: { trends: SkillTrend[] }) {
     <SrSectionShell
       anchorId="ir-section-progress-trend"
       headingId="ir-progress-trend-heading"
-      num="03"
-      label="Across sessions"
+      label="Skill progress"
       title="Skill progress"
-      subtitle="How your skills are trending vs. prior sessions."
+      subtitle="Your score for each skill, and how it moved since your last session. The small line shows your recent sessions."
     >
       {hasAnyHistory && trends.length > 0 ? (
         <div

@@ -28,6 +28,7 @@ export function SkillsSection({ skills, weakest, onDrillSkill }: { skills: Skill
       headingId="ir-skills-heading"
       label="Skills"
       title="Skills"
+      subtitle="Each score is out of 100. Your lowest skill is highlighted in amber."
       aside={legend}
     >
       <div className="ir-skills-grid" style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) 280px", gap: 28, alignItems: "start" }}>
