@@ -16,10 +16,12 @@ import {
   XIcon,
   type LucideIcon,
 } from "lucide-react";
+import { motion, useReducedMotion } from "motion/react";
 import { cn } from "cn";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -33,6 +35,8 @@ import { nextCandidateStatuses } from "../../../../../../server-handlers/_employ
 import { formatPaise, singleUnlockPrice } from "../../../../../../server-handlers/_unlock-pricing";
 import { skillChipSlots } from "./candidateTableModel";
 import { candidateDisplayName, candidateResponseOf, candidateSubtitle, canInviteCandidate, canMessageCandidate, initials, interviewSubstep, practisedLabel } from "./requirementFormat";
+
+const MotionRow = motion.create(TableRow);
 
 const STAGE_TONE: Record<CandidateStatus, string> = {
   shortlisted: "bg-hx-indigo-100 text-hx-indigo",
@@ -216,6 +220,7 @@ export default function CandidateRow({
   const showMessageInMenu = canMessage && primary?.onSelect !== onMessage;
   const profileHref = `/employer/requirements/${requirementId}/candidates/${candidate.id}`;
   const router = useRouter();
+  const reduceMotion = useReducedMotion();
 
   // Menus render in portals but React still bubbles their clicks here, so only
   // act on clicks whose target is really inside the row and not a control.
@@ -228,7 +233,7 @@ export default function CandidateRow({
   };
 
   return (
-    <TableRow ref={rowRef} role="row" onClick={openProfile} data-selected={selected} data-active={active} className="cand-tr rq-row h-[76px] cursor-pointer border-b border-hx-line">
+    <MotionRow ref={rowRef} exit={reduceMotion ? undefined : { opacity: 0, transition: { duration: 0.16, ease: [0.25, 1, 0.5, 1] } }} role="row" onClick={openProfile} data-selected={selected} data-active={active} className="cand-tr rq-row h-[76px] cursor-pointer border-b border-hx-line">
       <TableCell role="cell" className="cand-td cand-td-name max-w-[240px] px-3 py-3 align-middle">
         <div className="flex min-w-0 items-center gap-3">
           <Checkbox
@@ -246,9 +251,31 @@ export default function CandidateRow({
             </AvatarFallback>
           </Avatar>
           <div className="min-w-0">
-            <Link href={profileHref} className="rq-link block truncate text-[14px] font-semibold text-hx-coal no-underline">
-              {name}
-            </Link>
+            <HoverCard openDelay={400} closeDelay={80}>
+              <HoverCardTrigger asChild>
+                <Link href={profileHref} className="rq-link block truncate text-[14px] font-semibold text-hx-coal no-underline">
+                  {name}
+                </Link>
+              </HoverCardTrigger>
+              <HoverCardContent side="bottom" align="start" className="w-72 p-3">
+                <div className="text-[13px] font-semibold text-hx-coal">{name}</div>
+                {subtitle && <div className="mt-0.5 text-[12px] text-hx-ink-soft">{subtitle}</div>}
+                <dl className="m-0 mt-2.5 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 text-[12px] tabular-nums">
+                  <dt className="text-hx-ink-soft">Match</dt>
+                  <dd className={cn("m-0 font-semibold", MATCH_TEXT[matchBand(Math.round(candidate.matchScore))])}>{Math.round(candidate.matchScore)}/100</dd>
+                  <dt className="text-hx-ink-soft">Skills</dt>
+                  <dd className="m-0 text-hx-coal">{matched.length} of {matched.length + gaps.length} required</dd>
+                  <dt className="text-hx-ink-soft">Interviews</dt>
+                  <dd className="m-0 text-hx-coal">
+                    {score != null ? `${score}/100 across ${evidence.interviews} ${evidence.interviews === 1 ? "interview" : "interviews"}` : "None yet"}
+                  </dd>
+                  <dt className="text-hx-ink-soft">Last active</dt>
+                  <dd className="m-0 text-hx-coal">{practised ? practised.replace(/^Practised /, "") : "Unknown"}</dd>
+                  <dt className="text-hx-ink-soft">Availability</dt>
+                  <dd className="m-0 text-hx-coal">{availability.label}</dd>
+                </dl>
+              </HoverCardContent>
+            </HoverCard>
             {subtitle && (
               <div className="mt-0.5 truncate text-[12.5px] text-hx-ink-soft" title={subtitle}>
                 {subtitle}
@@ -427,6 +454,6 @@ export default function CandidateRow({
           )}
         </div>
       </TableCell>
-    </TableRow>
+    </MotionRow>
   );
 }

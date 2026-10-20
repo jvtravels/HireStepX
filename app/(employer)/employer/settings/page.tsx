@@ -122,7 +122,7 @@ export default function EmployerSettingsPage() {
       <div style={{ background: t.white, border: `1px solid ${t.line}`, borderRadius: 16, overflow: "hidden" }}>
         <PageHeader title="Settings" desc="Update your company profile, manage your account security, review your purchases and set notification sounds." />
 
-        <FlatSection title="Company profile">
+        <FlatSection split title="Company profile">
           <div className="max-w-[640px]">
             {formLocked && (
               <p role="status" style={{ fontFamily: f.sans, fontSize: 13, color: t.errorInk, margin: "0 0 16px", lineHeight: 1.5 }}>
@@ -147,7 +147,7 @@ export default function EmployerSettingsPage() {
           </div>
         </FlatSection>
 
-        <FlatSection title="Verification and limits">
+        <FlatSection split title="Verification and limits">
           <div className="flex max-w-[640px] flex-col gap-2 text-[13px] leading-relaxed text-foreground">
             <p className="m-0 flex flex-wrap items-center gap-2">
               <span className="font-semibold">Current tier</span>
@@ -158,23 +158,23 @@ export default function EmployerSettingsPage() {
           </div>
         </FlatSection>
 
-        <FlatSection title="Email preferences">
+        <FlatSection split title="Email preferences">
           <EmailPreferencesSection audience="employer" />
         </FlatSection>
 
-        <FlatSection title="Notifications">
+        <FlatSection split title="Notifications">
           <NotificationPreferences audience="employer" />
         </FlatSection>
 
-        <FlatSection title="Billing history" id="billing">
+        <FlatSection split title="Billing history" id="billing">
           <BillingHistorySection />
         </FlatSection>
 
-        <FlatSection title="Sounds">
+        <FlatSection split title="Sounds">
           <SoundsSection />
         </FlatSection>
 
-        <FlatSection title="Keyboard shortcuts">
+        <FlatSection split title="Keyboard shortcuts">
           <ActionRow
             last
             icon={<KeyboardIcon size={18} aria-hidden="true" />}
@@ -184,7 +184,7 @@ export default function EmployerSettingsPage() {
           />
         </FlatSection>
 
-        <FlatSection title="Account">
+        <FlatSection split title="Account">
           <AccountSection
             resetLoading={resetLoading} resetSent={resetSent}
             handlePasswordReset={handlePasswordReset}
@@ -192,7 +192,7 @@ export default function EmployerSettingsPage() {
           />
         </FlatSection>
 
-        <FlatSection title="Your data">
+        <FlatSection split title="Your data">
           <ActionRow
             last
             icon={icons.download}
@@ -203,7 +203,7 @@ export default function EmployerSettingsPage() {
           {exportNote && <p role="status" className="m-0 mt-2 text-[13px] text-destructive">{exportNote}</p>}
         </FlatSection>
 
-        <FlatSection title="Danger zone" last>
+        <FlatSection split title="Danger zone" last>
           <DangerZoneSection
             authUser={user}
             confirmDelete={confirmDelete} setConfirmDelete={setConfirmDelete}

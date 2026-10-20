@@ -180,11 +180,11 @@ export function PageHeader({ title, desc }: { title: string; desc: string }) {
   );
 }
 
-export function FlatSection({ title, children, last, id }: { title: string; children: React.ReactNode; last?: boolean; id?: string }) {
+export function FlatSection({ title, children, last, id, split }: { title: string; children: React.ReactNode; last?: boolean; id?: string; split?: boolean }) {
   return (
-    <div id={id} style={{ scrollMarginTop: 16, padding: "24px 28px", borderBottom: last ? "none" : `1px solid ${c.border}` }}>
-      <h2 style={{ fontFamily: font.ui, fontSize: 16, fontWeight: 600, color: c.ink, margin: "0 0 18px" }}>{title}</h2>
-      {children}
+    <div id={id} className={split ? "lg:grid lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-x-10" : undefined} style={{ scrollMarginTop: 16, padding: "24px 28px", borderBottom: last ? "none" : `1px solid ${c.border}` }}>
+      <h2 className={split ? "mb-[18px] lg:mb-0" : undefined} style={{ fontFamily: font.ui, fontSize: 16, fontWeight: 600, color: c.ink, margin: split ? 0 : "0 0 18px" }}>{title}</h2>
+      <div className="min-w-0">{children}</div>
     </div>
   );
 }

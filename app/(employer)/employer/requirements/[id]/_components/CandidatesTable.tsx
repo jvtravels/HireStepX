@@ -9,6 +9,7 @@ import { InfoTip } from "@/employer/_panelParts";
 import { availabilityOf } from "@/employer/_jobDetailHelpers";
 import type { Candidate, CandidateStatus } from "@/employer/mockData";
 import { Checkbox } from "@/components/ui/checkbox";
+import { AnimatePresence } from "motion/react";
 import CandidateRow from "./CandidateRow";
 import { MAX_SELECTION } from "./shortlistSelection";
 import { CAND_TABLE_CSS } from "./candidateTableStyles";
@@ -203,6 +204,7 @@ export default function CandidatesTable({
               </TableRow>
             </TableHeader>
             <TableBody role="rowgroup" className="mx-stagger">
+              <AnimatePresence initial={false}>
               {rows.map((c) => (
                 <CandidateRow
                   key={c.id}
@@ -222,6 +224,7 @@ export default function CandidatesTable({
                   active={activeId === c.id}
                 />
               ))}
+              </AnimatePresence>
             </TableBody>
           </Table>
         </div>
