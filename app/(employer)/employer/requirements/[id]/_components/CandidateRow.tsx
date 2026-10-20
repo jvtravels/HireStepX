@@ -26,7 +26,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useToast } from "@/Toast";
-import { CANDIDATE_STATUS_LABEL, matchBand } from "@/employer/_atoms";
+import { BADGE_TONE_CLASS, CANDIDATE_STATUS_LABEL, CANDIDATE_STATUS_TONE, CandidateStatusChip, matchBand } from "@/employer/_atoms";
 import { useEmployerData } from "@/employer/EmployerDataContext";
 import { availabilityOf, evidenceLabels, evidenceLinks, evidenceSources, interviewScore, scoreTone, candidateSkillFit, type ScoreTone } from "@/employer/_jobDetailHelpers";
 import { DotLabel } from "@/employer/_panelParts";
@@ -37,16 +37,6 @@ import { skillChipSlots } from "./candidateTableModel";
 import { candidateDisplayName, candidateResponseOf, candidateSubtitle, canInviteCandidate, canMessageCandidate, initials, interviewSubstep, practisedLabel } from "./requirementFormat";
 
 const MotionRow = motion.create(TableRow);
-
-const STAGE_TONE: Record<CandidateStatus, string> = {
-  shortlisted: "bg-hx-indigo-100 text-hx-indigo",
-  interview_invited: "bg-hx-copper-100 text-hx-copper-dark",
-  interviewing: "bg-hx-copper-100 text-hx-copper-dark",
-  hired: "bg-hx-success-100 text-hx-success-ink",
-  rejected: "bg-hx-error-100 text-hx-error-ink",
-  not_a_fit: "bg-hx-soft text-hx-neutral-ink",
-  no_response: "bg-hx-soft text-hx-neutral-ink",
-};
 
 const SCORE_TEXT: Record<ScoreTone, string> = {
   success: "text-hx-success-ink",
@@ -130,14 +120,6 @@ const MOVE_COPY: Record<CandidateStatus, { label: string; icon: LucideIcon; clos
   not_a_fit: { label: "Not a fit", icon: XIcon, closes: true },
   no_response: { label: "No response", icon: XIcon, closes: true },
 };
-
-function StagePill({ status, className }: { status: CandidateStatus; className?: string }) {
-  return (
-    <span className={cn("inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[12px] font-semibold whitespace-nowrap", STAGE_TONE[status], className)}>
-      {CANDIDATE_STATUS_LABEL[status]}
-    </span>
-  );
-}
 
 export default function CandidateRow({
   candidate,
@@ -354,7 +336,7 @@ export default function CandidateRow({
                   aria-label={`Stage for ${name}: ${CANDIDATE_STATUS_LABEL[candidate.candidateStatus]}. Move to another stage`}
                   className={cn(
                     "inline-flex cursor-pointer items-center gap-1 rounded-full border-0 py-1 pr-2 pl-2.5 text-[12px] font-semibold whitespace-nowrap transition-[filter] duration-150 hover:brightness-95 focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none pointer-coarse:min-h-11",
-                    STAGE_TONE[candidate.candidateStatus],
+                    BADGE_TONE_CLASS[CANDIDATE_STATUS_TONE[candidate.candidateStatus]],
                   )}
                 >
                   {CANDIDATE_STATUS_LABEL[candidate.candidateStatus]}
@@ -391,7 +373,7 @@ export default function CandidateRow({
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <StagePill status={candidate.candidateStatus} />
+            <CandidateStatusChip status={candidate.candidateStatus} />
           )}
           {substep && <span className="text-[11.5px] text-hx-ink-soft">{substep}</span>}
         </div>

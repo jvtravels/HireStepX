@@ -4,7 +4,7 @@
    page.tsx). One white container (drawn by the page) holding hairline-separated
    sections, so nothing is a card inside a card; neutral pills, indigo reserved for
    actions. Built on the shared primitives (ui/table, ui/avatar, Select,
-   the command palette pieces, EmptyState, _atoms Badge/Pill/ScoreChip) rather than local
+   the command palette pieces, EmptyState, _atoms Badge/ScoreChip) rather than local
    copies. Everything is driven by props; data wiring stays in the page. */
 
 import Link from "next/link";
@@ -20,7 +20,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { EmptyState } from "@/components/EmptyState";
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { InfoTip, InsightList, InsightRow } from "./_panelParts";
-import { Badge, Pill, ScoreChip, STRONG_MATCH_THRESHOLD, StageCell } from "./_atoms";
+import { Badge, ScoreChip, STRONG_MATCH_THRESHOLD, StageCell } from "./_atoms";
 import { PrimaryLink, OutlineLink } from "./_consoleParts";
 import type { RequirementSummary } from "./mockData";
 import {
@@ -383,7 +383,7 @@ export function ActiveJobsCard({
                   </div>
                   <div className="mt-2 flex flex-wrap items-center gap-1.5">
                     <JobStatusBadge job={j} pipeline={p} />
-                    {health && <Pill tone={health.tone}>{health.label}</Pill>}
+                    {health && <Badge tone={health.tone}>{health.label}</Badge>}
                   </div>
                   <dl className="m-0 mt-3 flex flex-wrap justify-between gap-x-3 gap-y-2">
                     {stats.map(([label, value]) => (
@@ -440,8 +440,8 @@ function SkillsCell({ c }: { c: RecommendedCard }) {
       )}
       {shown.length > 0 && (
         <div className="mt-2 flex flex-wrap gap-1.5">
-          {shown.map((sk) => <Pill key={sk} tone="success">{sk}</Pill>)}
-          {more > 0 && <Pill tone="neutral">+{more}</Pill>}
+          {shown.map((sk) => <Badge key={sk} tone="success">{sk}</Badge>)}
+          {more > 0 && <Badge tone="neutral">+{more}</Badge>}
         </div>
       )}
       {missing.length > 0 && (
@@ -504,7 +504,7 @@ export function RecommendedCandidatesCard({ cards, total }: { cards: Recommended
                       )}
                       {waiting && (
                         <div className="mt-2">
-                          <Pill tone="warning">{waiting}</Pill>
+                          <Badge tone="warning">{waiting}</Badge>
                         </div>
                       )}
                     </div>

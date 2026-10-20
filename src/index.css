@@ -1557,6 +1557,7 @@ input[type="range"]::-moz-range-thumb {
   --color-hx-soft: oklch(0.967 0.001 286.375);
   --color-hx-indigo: oklch(0.359 0.135 278.697);
   --color-hx-indigo-100: oklch(0.920 0.022 294.573);
+  --color-hx-indigo-deep: oklch(0.257 0.086 281.288);
   --color-hx-success: oklch(0.527 0.137 150.069);
   --color-hx-success-100: oklch(0.962 0.043 156.743);
   --color-hx-success-ink: oklch(0.448 0.108 151.328);

@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { LoaderCircleIcon, ClipboardListIcon, MessageSquareIcon, CheckCircle2Icon, ChevronDownIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge as UiBadge } from "@/components/ui/badge";
 import AnimatedNumber from "../AnimatedNumber";
 import { cn } from "@/lib/utils";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -81,13 +82,13 @@ export function Eyebrow({ children, tone = "ink" }: { children: React.ReactNode;
   );
 }
 
-type PillTone = "indigo" | "copper" | "success" | "neutral" | "warning" | "error";
+export type BadgeTone = "neutral" | "success" | "brand" | "copper" | "warning" | "error";
 
 /* fg values are the *Ink shades (AA ≥4.5:1 on their tint) — the base status
    hues (t.success / t.warning / t.copper / t.inkSoft) measure 3.5–4.3:1 on
    these backgrounds, which failed WCAG 1.4.3 for 12px pill text. */
-const pillPalette: Record<PillTone, { bg: string; fg: string }> = {
-  indigo: { bg: t.indigo100, fg: t.indigoDeep },
+const pillPalette: Record<BadgeTone, { bg: string; fg: string }> = {
+  brand: { bg: t.indigo100, fg: t.indigoDeep },
   copper: { bg: t.copper100, fg: t.copperDark },
   success: { bg: t.success100, fg: t.successInk },
   warning: { bg: t.warning100, fg: t.warningInk },
@@ -95,29 +96,21 @@ const pillPalette: Record<PillTone, { bg: string; fg: string }> = {
   neutral: { bg: t.creamSoft, fg: t.neutralInk },
 };
 
-export function Pill({ children, tone = "neutral", filled = false }: { children: React.ReactNode; tone?: PillTone; filled?: boolean }) {
-  const p = pillPalette[tone];
+export const BADGE_TONE_CLASS: Record<BadgeTone, string> = {
+  neutral: "bg-hx-soft text-hx-neutral-ink",
+  success: "bg-hx-success-100 text-hx-success-ink",
+  brand: "bg-hx-indigo-100 text-hx-indigo-deep",
+  copper: "bg-hx-copper-100 text-hx-copper-dark",
+  warning: "bg-hx-warning-100 text-hx-warning-ink",
+  error: "bg-hx-error-100 text-hx-error-ink",
+};
+
+/** The one status/label chip for the employer console, built on the shared Badge. */
+export function Badge({ tone, className, children, ...rest }: { tone: BadgeTone } & Omit<React.ComponentProps<typeof UiBadge>, "variant">) {
   return (
-    <span
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 6,
-        padding: "4px 10px",
-        borderRadius: 999,
-        fontFamily: f.sans,
-        fontSize: 12,
-        fontWeight: 600,
-        letterSpacing: 0.2,
-        maxWidth: "100%",
-        minWidth: 0,
-        overflowWrap: "anywhere",
-        background: filled ? p.fg : p.bg,
-        color: filled ? t.white : p.fg,
-      }}
-    >
+    <UiBadge {...rest} className={cn("h-auto gap-1.5 px-2.5 py-1 text-xs font-semibold", BADGE_TONE_CLASS[tone] ?? BADGE_TONE_CLASS.neutral, className)}>
       {children}
-    </span>
+    </UiBadge>
   );
 }
 
@@ -135,7 +128,7 @@ export function matchBand(score: number): "strong" | "fair" | "low" {
 
 export function ScoreChip({ score, label = "Match score" }: { score: number; label?: string }) {
   const band = matchBand(score);
-  const tone: PillTone = band === "strong" ? "success" : band === "fair" ? "copper" : "neutral";
+  const tone: BadgeTone = band === "strong" ? "success" : band === "fair" ? "copper" : "neutral";
   return (
     <div
       role="img"
@@ -313,26 +306,6 @@ export function OutlineCta({
   );
 }
 
-export function SkillTag({ children }: { children: React.ReactNode }) {
-  return (
-    <span
-      style={{
-        display: "inline-flex",
-        padding: "4px 9px",
-        borderRadius: 8,
-        background: t.creamSoft,
-        border: `1px solid ${t.line}`,
-        fontFamily: f.sans,
-        fontSize: 12,
-        color: t.neutralInk,
-        fontWeight: 500,
-      }}
-    >
-      {children}
-    </span>
-  );
-}
-
 /** Label + tone for a candidate's per-requirement hiring-pipeline status —
  *  single source of truth so the candidate-detail page, the requirement
  *  table column, and any future surface never drift on wording or color.
@@ -348,8 +321,8 @@ export const CANDIDATE_STATUS_LABEL: Record<CandidateStatus, string> = {
   no_response: "No response",
 };
 
-const CANDIDATE_STATUS_TONE: Record<CandidateStatus, PillTone> = {
-  shortlisted: "indigo",
+export const CANDIDATE_STATUS_TONE: Record<CandidateStatus, BadgeTone> = {
+  shortlisted: "brand",
   interview_invited: "copper",
   interviewing: "copper",
   hired: "success",
@@ -359,35 +332,16 @@ const CANDIDATE_STATUS_TONE: Record<CandidateStatus, PillTone> = {
 };
 
 export function CandidateStatusChip({ status }: { status: CandidateStatus }) {
-  return <Pill tone={CANDIDATE_STATUS_TONE[status]}>{CANDIDATE_STATUS_LABEL[status]}</Pill>;
+  return <Badge tone={CANDIDATE_STATUS_TONE[status]}>{CANDIDATE_STATUS_LABEL[status]}</Badge>;
 }
 
 /** Colored dot + label — pipeline/stage indicator for opportunity and
  *  requirement tables (matching → review → interviewing → hired). */
-export function StageDot({ tone, label }: { tone: PillTone; label: string }) {
+export function StageDot({ tone, label }: { tone: BadgeTone; label: string }) {
   return (
     <span style={{ display: "inline-flex", alignItems: "center", gap: 8, fontFamily: f.sans, fontSize: 13.5, color: t.coal }}>
       <span aria-hidden="true" style={{ width: 8, height: 8, borderRadius: "50%", background: pillPalette[tone].fg, flexShrink: 0 }} />
       {label}
-    </span>
-  );
-}
-
-export type BadgeTone = "neutral" | "success" | "brand" | "copper" | "warning" | "error";
-const BADGE_TONE: Record<BadgeTone, { color: string; background: string }> = {
-  neutral: { color: t.neutralInk, background: t.creamSoft },
-  success: { color: t.successInk, background: t.success100 },
-  brand: { color: t.indigoDeep, background: t.indigo100 },
-  copper: { color: t.copperDark, background: t.copper100 },
-  warning: { color: t.warningInk, background: t.warning100 },
-  error: { color: t.errorInk, background: t.error100 },
-};
-
-export function Badge({ tone, children }: { tone: BadgeTone; children: React.ReactNode }) {
-  const { color, background } = BADGE_TONE[tone] ?? BADGE_TONE.neutral;
-  return (
-    <span style={{ fontFamily: f.sans, fontSize: textSize.sm, fontWeight: 600, color, background, padding: "3px 9px", borderRadius: 999, whiteSpace: "nowrap" }}>
-      {children}
     </span>
   );
 }
@@ -467,7 +421,7 @@ export function StageCell({
   // A posting whose matching found nobody can still carry a stale
   // ready_for_review stage; there is nothing to review, so say so.
   const idleMatching = !hasEvaluatedCandidates && !!matchedOnce && (stage === "ai_matching" || stage === "ready_for_review");
-  const { color, background } = BADGE_TONE[idleMatching ? "neutral" : STAGE_TONE[stage]];
+  const { fg: color, bg: background } = pillPalette[idleMatching ? "neutral" : STAGE_TONE[stage]];
   const StageIcon = STAGE_ICON[idleMatching ? "ai_matching" : stage];
   // The global CSS reduced-motion rule only reaches CSS animations; motion's
   // JS-driven springs/scales need the hook.

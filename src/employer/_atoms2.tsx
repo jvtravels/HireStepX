@@ -1,15 +1,15 @@
 import React from "react";
 import { tokens as t, fonts as f } from "../auth/_tokens";
-import { EmployerIcon, Pill } from "./_atoms";
+import { EmployerIcon, Badge } from "./_atoms";
 
 /* Additive employer atoms. Lives beside _atoms.tsx (which is near its size
    budget); import from here, not from _atoms. */
 
 export type VerificationTierValue = "basic" | "email_verified" | "verified";
 
-const TIER_COPY: Record<VerificationTierValue, { label: string; tone: "neutral" | "indigo" | "success"; hint: string }> = {
+const TIER_COPY: Record<VerificationTierValue, { label: string; tone: "neutral" | "brand" | "success"; hint: string }> = {
   basic: { label: "Basic", tone: "neutral", hint: "Company profile saved. Verify your email to raise your daily limits." },
-  email_verified: { label: "Email verified", tone: "indigo", hint: "Work email confirmed. Higher daily limits than Basic." },
+  email_verified: { label: "Email verified", tone: "brand", hint: "Work email confirmed. Higher daily limits than Basic." },
   verified: { label: "Verified employer", tone: "success", hint: "Email domain matches your company website, or checked by HireStepX. Highest limits." },
 };
 
@@ -20,13 +20,13 @@ export function VerificationBadge({ tier, showHint = false }: { tier: Verificati
   return (
     <span style={{ display: "inline-flex", flexDirection: "column", alignItems: "flex-start", gap: 4, maxWidth: "100%" }}>
       <span title={copy.hint}>
-        <Pill tone={copy.tone}>
+        <Badge tone={copy.tone}>
           {tier !== "basic" && <EmployerIcon.Check />}
           <span>
             <span className="sr-only">Verification level: </span>
             {copy.label}
           </span>
-        </Pill>
+        </Badge>
       </span>
       {showHint && <span style={{ fontFamily: f.sans, fontSize: 12, color: t.neutralInk }}>{copy.hint}</span>}
     </span>

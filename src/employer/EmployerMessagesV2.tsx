@@ -29,7 +29,7 @@ import { useEmployerData, type ConversationContext, type ConversationMessage, ty
 import { useToast } from "../Toast";
 import { REJECT_NOTIFY_NOTE } from "../../app/(employer)/employer/requirements/[id]/_components/requirementFormat";
 import { playUiSound } from "../uiSounds";
-import { OutlineCta, PrimaryCta, Pill, ScoreChip, CANDIDATE_STATUS_LABEL } from "./_atoms";
+import { OutlineCta, PrimaryCta, Badge, ScoreChip, CANDIDATE_STATUS_LABEL } from "./_atoms";
 import { ErrorPanel, PrimaryLink, StatePanel } from "./_consoleParts";
 import { MaskedIdentity, isMaskedName } from "./_atoms2";
 import InterviewInviteDialog, { canInviteToInterview, statusErrorCopy, type InviteResult, type InviteValues } from "./InterviewInviteDialog";
@@ -649,14 +649,14 @@ export default function EmployerMessagesV2() {
                     {(evidence.readiness || evidence.starCompleteness) && (
                       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                         {evidence.readiness && (
-                          <Pill tone={evidence.readiness.band === "strongHire" ? "success" : evidence.readiness.band === "hire" ? "indigo" : "neutral"}>
+                          <Badge tone={evidence.readiness.band === "strongHire" ? "success" : evidence.readiness.band === "hire" ? "brand" : "neutral"}>
                             {evidence.readiness.band === "strongHire" ? "Strong hire" : evidence.readiness.band === "hire" ? "Hire" : "Lean hire"} readiness · {evidence.readiness.confidence} confidence
-                          </Pill>
+                          </Badge>
                         )}
                         {evidence.starCompleteness && (
-                          <Pill tone={evidence.starCompleteness.pct >= 70 ? "success" : evidence.starCompleteness.pct >= 40 ? "neutral" : "indigo"}>
+                          <Badge tone={evidence.starCompleteness.pct >= 70 ? "success" : evidence.starCompleteness.pct >= 40 ? "neutral" : "brand"}>
                             STAR completeness: {evidence.starCompleteness.pct}%
-                          </Pill>
+                          </Badge>
                         )}
                       </div>
                     )}

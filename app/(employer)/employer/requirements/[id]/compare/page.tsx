@@ -9,8 +9,8 @@ import { useEmployerBreadcrumb } from "@/employer/EmployerShell";
 import { useEmployerData, type Requirement } from "@/employer/EmployerDataContext";
 import type { Candidate } from "@/employer/mockData";
 import { tokens as t, fonts as f, textSize } from "@/auth/_tokens";
-import { CandidateStatusChip, ScoreChip, SkillTag } from "@/employer/_atoms";
-import { InsightList, InsightRow } from "@/employer/_panelParts";
+import { CandidateStatusChip, ScoreChip } from "@/employer/_atoms";
+import { InsightList, InsightRow, SkillChip } from "@/employer/_panelParts";
 import { EmptyNote, ErrorRetry, LinkCta } from "@/employer/_requirementAtoms";
 import { PageSkeleton } from "@/employer/_consoleParts";
 import { candidateSkillFit, interviewScore, scoreTone } from "@/employer/_jobDetailHelpers";
@@ -169,7 +169,7 @@ const ROWS: CompareRow[] = [
         <ul style={{ display: "flex", gap: 6, flexWrap: "wrap", listStyle: "none", margin: 0, padding: 0 }}>
           {c.skills.map((s) => (
             <li key={s}>
-              <SkillTag>{displaySkillName(s)}</SkillTag>
+              <SkillChip>{displaySkillName(s)}</SkillChip>
             </li>
           ))}
         </ul>
