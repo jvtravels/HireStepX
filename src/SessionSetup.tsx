@@ -22,6 +22,8 @@ import { matchRoleKey } from "../data/salaries";
 import { sessionMinutesForFocus } from "../data/session-length";
 import { Button } from "@/components/ui/button";
 import SetupTopbarLeft from "./SetupTopbarLeft";
+import AudioDevicePicker from "./AudioDevicePicker";
+import { micConstraints } from "./audioDevices";
 import { getRecommendedFocus, resolveFocusDefaults } from "./setupFocus";
 import { AUTH_STYLES } from "./auth/_styles";
 
@@ -1098,7 +1100,7 @@ export default function SessionSetup() {
     setMicStatus("requesting");
     setMicDenyReason(null);
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: micConstraints() });
       micStreamRef.current = stream;
       setMicStatus("granted");
       startLevelMeter(stream);
@@ -1698,7 +1700,20 @@ export default function SessionSetup() {
           .hsx-setup-cta-group { flex-direction: column !important; align-items: stretch !important; gap: 10px !important; }
           .hsx-setup-cta-group > div { text-align: center !important; flex: none !important; }
           .hsx-setup-card { border-radius: 12px !important; }
-          .hsx-setup-cta-zone { border-top: 1px solid ${T.line}; padding-top: 28px !important; margin-top: 32px !important; }
+          /* Sticky Start bar: the zone dissolves so the CTA group can stick to
+             the viewport bottom (sticky is bounded by its parent). The scroll
+             wrapper must not clip it with overflow. */
+          .hsx-setup-content { overflow: visible !important; }
+          .hsx-setup-card { padding: 20px !important; }
+          .hsx-setup-cta-zone { display: contents !important; }
+          .hsx-setup-cta-group {
+            position: sticky; bottom: 0; z-index: 5; background: ${T.white};
+            margin: 24px -20px 0 !important;
+            padding: 12px 20px calc(12px + env(safe-area-inset-bottom, 0px));
+            border-top: 1px solid ${T.line};
+            box-shadow: 0 -6px 16px oklch(0.2 0 0 / 0.06);
+          }
+          .hsx-setup-notes { margin-top: 16px; }
         }
         @media (max-width: 500px) {
           /* Drop the name to keep the right cluster from overflowing —
@@ -2019,6 +2034,17 @@ export default function SessionSetup() {
                       cameraSignals={cameraSignals}
                     />
                   </div>
+                  {micStatus === "granted" && (
+                    <AudioDevicePicker
+                      onMicChange={() => {
+                        stopLevelMeter();
+                        micStreamRef.current?.getTracks().forEach((t) => t.stop());
+                        micStreamRef.current = null;
+                        setVoiceDetected(false);
+                        void requestMic();
+                      }}
+                    />
+                  )}
                 </div>
 
               </div>

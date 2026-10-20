@@ -4,6 +4,7 @@
    Extracted from useInterviewEngine. */
 
 import { useEffect, useRef } from "react";
+import { micConstraints } from "./audioDevices";
 import { createDeepgramSTT, type DeepgramSTTHandle } from "./deepgramSTT";
 import { createSpeechRecognition } from "./speechRecognition";
 import type { SpeechRecognitionInstance, SpeechRecognitionEvent } from "./speechRecognition";
@@ -340,7 +341,7 @@ export function useInterviewSTT(
     if (phase !== "listening" || isMuted) { refs.micStreamRef.current = null; return; }
     let cancelled = false;
     const timer = window.setTimeout(() => {
-      navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+      navigator.mediaDevices.getUserMedia({ audio: micConstraints() }).then(stream => {
         if (cancelled) { stream.getTracks().forEach(t => t.stop()); return; }
         refs.micStreamRef.current = stream;
       }).catch(() => {});

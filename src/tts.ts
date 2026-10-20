@@ -35,8 +35,8 @@ function syntheticReadDurationMs(text: string): number {
   return Math.max(1800, Math.round((words / 160) * 60_000));
 }
 
+import { applySpeaker, applySpeakerToContext } from "./audioDevices";
 import { safeUUID } from "./utils";
-
 /* Module-level Window augmentation — exposes the Cartesia AudioContext so
  * useMobileAudioResilience in Interview.tsx can resume it after iOS Safari
  * suspends the page. Was previously read/written via `as unknown as` casts;
@@ -448,7 +448,7 @@ async function _speakWithWebSocketInner(
       return speakWithProxy(text, voiceId, onEnd, onError, gender, onDurationKnown, onAudioStarted);
     }
 
-    audioCtx = new AudioContext({ sampleRate: WS_SAMPLE_RATE });
+    audioCtx = new AudioContext({ sampleRate: WS_SAMPLE_RATE }); applySpeakerToContext(audioCtx);
     nextStartTime = audioCtx.currentTime;
     // Expose on window so Interview.tsx's useMobileAudioResilience hook can
     // resume it after backgrounding / rotation on iOS Safari, which otherwise
@@ -695,7 +695,7 @@ async function speakWithProxy(
     }
 
     const url = URL.createObjectURL(blob);
-    audio = new Audio(url);
+    audio = new Audio(url); applySpeaker(audio);
 
     audio.onloadedmetadata = () => {
       if (audio && isFinite(audio.duration) && audio.duration > 0 && onDurationKnown) {
@@ -814,7 +814,7 @@ async function speakWithSarvam(
     }
 
     const url = URL.createObjectURL(blob);
-    audio = new Audio(url);
+    audio = new Audio(url); applySpeaker(audio);
     audio.onloadedmetadata = () => {
       if (audio && isFinite(audio.duration) && audio.duration > 0 && onDurationKnown) {
         onDurationKnown(audio.duration * 1000);
@@ -926,7 +926,7 @@ async function speakWithAzure(
     }
 
     const url = URL.createObjectURL(blob);
-    audio = new Audio(url);
+    audio = new Audio(url); applySpeaker(audio);
     audio.onloadedmetadata = () => {
       if (audio && isFinite(audio.duration) && audio.duration > 0 && onDurationKnown) {
         onDurationKnown(audio.duration * 1000);

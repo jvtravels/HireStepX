@@ -1,5 +1,7 @@
 /* Deepgram real-time STT via WebSocket — with Web Speech API fallback */
 
+import { micConstraints } from "./audioDevices";
+
 let _cachedApiKey: string | null = null;
 let _apiKeyExpiry = 0;
 const API_KEY_TTL = 5 * 60 * 1000; // 5 min
@@ -89,7 +91,7 @@ export async function createDeepgramSTT(
 
   let stream: MediaStream;
   try {
-    stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    stream = await navigator.mediaDevices.getUserMedia({ audio: micConstraints() });
   } catch (err) {
     console.warn("[Deepgram] getUserMedia failed:", err);
     callbacks.onError("not-allowed");
