@@ -169,7 +169,6 @@ export default function JobsTable({
                       >
                         {r.title}
                       </Link>
-                      {isClosed && <Badge tone="neutral">Closed</Badge>}
                     </div>
                     {(budget || jobType) && (
                       <div style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: f.sans, fontSize: textSize.base, color: t.inkSoft, marginTop: 2 }}>
