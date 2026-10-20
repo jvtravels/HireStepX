@@ -215,6 +215,9 @@ export const CTA_SIZE = {
   md: "h-11 px-5 text-sm",
 } as const;
 
+/** Look of every employer text field. Pass to the shared Input/Textarea; the invalid state comes from aria-invalid. */
+export const FIELD_CLASS = "h-auto rounded-[10px] border-hx-line bg-white px-3.5 py-3 text-hx-coal aria-invalid:border-hx-error aria-invalid:ring-0";
+
 export const CTA_INDIGO_CLASS = "border-hx-indigo bg-hx-indigo-100 text-hx-indigo-deep hover:bg-hx-indigo-100";
 
 export function PrimaryCta({

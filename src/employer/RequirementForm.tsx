@@ -1,7 +1,6 @@
 "use client";
 
 import { useUnsavedNavGuard } from "@/employer/useUnsavedNavGuard";
-import { useMaxWidth } from "../hooks/useMaxWidth";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -11,6 +10,9 @@ import { useRouter } from "next/navigation";
 import { WorkMode, EmploymentType, Requirement, RequirementFormValues } from "./mockData";
 import { buildRequirementPayload, type RequirementDraft } from "./_requirementPayload";
 import DateField from "./DateField";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 import JdAutofill from "./JdAutofill";
 import { outcomeCounts } from "./_jdAutofillHelpers";
 import { captureClientEvent } from "../posthogClient";
@@ -18,6 +20,7 @@ import { tokens as t, fonts as f, textSize } from "@/auth/_tokens";
 import {
   AutocompleteInput,
   Checkbox,
+  FIELD_CLASS,
   FieldLabel,
   FormSection,
   HelpText,
@@ -52,18 +55,10 @@ import { COLLEGE_SUGGESTIONS, DOMAIN_SUGGESTIONS, INDUSTRY_SUGGESTIONS, SKILL_SU
 
 const SELECT_FIELD = "h-11 w-full rounded-[10px] border-hx-line bg-white px-3.5 text-sm text-hx-coal";
 
-const baseInputStyle: CSSProperties = {
-  width: "100%",
-  padding: "12px 14px",
-  borderRadius: 10,
-  border: `1px solid ${t.line}`,
-  fontFamily: f.sans,
-  fontSize: textSize.md,
-  boxSizing: "border-box",
-};
-
 /* Collapses to one column on narrow viewports; two 1fr columns leave each
    input too narrow to type into comfortably on a phone. */
+const TEXTAREA_CLASS = cn(FIELD_CLASS, "field-sizing-fixed resize-y");
+
 const grid2: CSSProperties = {
   display: "grid",
   gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
@@ -105,7 +100,6 @@ export type { RequirementFormValues } from "./mockData";
 const LAST_STEP: FormStep = 2;
 const ADVANCED_ID = "advanced";
 
-const textareaStyle: CSSProperties = { resize: "vertical" };
 const advancedTitle: CSSProperties = { fontFamily: f.sans, fontSize: textSize.md, fontWeight: 600, color: t.coal };
 const advancedHint: CSSProperties = { fontFamily: f.sans, fontSize: textSize.base, fontWeight: 400, color: t.inkFaint };
 const advancedBody: CSSProperties = { display: "flex", flexDirection: "column", gap: 20, padding: "4px 0 16px" };
@@ -133,10 +127,6 @@ export function RequirementForm({
   setSubmitError: Dispatch<SetStateAction<string | null>>;
 }) {
   const router = useRouter();
-  const phone = useMaxWidth(768);
-  // iOS zooms any focused input under 16px.
-  const inputStyle: CSSProperties = phone ? { ...baseInputStyle, fontSize: 16 } : baseInputStyle;
-  const longTextStyle: CSSProperties = { ...inputStyle, ...textareaStyle };
   const isCreate = mode === "create";
 
   const [step, setStep] = useState<FormStep>(1);
@@ -175,7 +165,6 @@ export function RequirementForm({
   const errors = useMemo(() => validateDraft(draft, today, initial?.dueDate), [draft, today, initial?.dueDate]);
   const shown = (k: FieldKey): string | undefined => (attempted || touched.has(k) ? errors[k] : undefined);
   const errId = (k: FieldKey) => `${FIELD_FOCUS_ID[k]}-err`;
-  const descriptionStyle: CSSProperties = { ...longTextStyle, borderColor: shown("description") ? t.error : t.line };
   const describe = (k: FieldKey, extra?: string) => [shown(k) ? errId(k) : null, extra].filter(Boolean).join(" ") || undefined;
   const fieldError = (k: FieldKey) => {
     const msg = shown(k);
@@ -323,7 +312,7 @@ export function RequirementForm({
 
       <div style={cell(1, 280)}>
         <FieldLabel htmlFor="rf-department">Department</FieldLabel>
-        <input id="rf-department" value={draft.department} onChange={(e) => set("department", e.target.value)} placeholder="Engineering, Sales, Design…" autoComplete="off" style={inputStyle} />
+        <Input id="rf-department" value={draft.department} onChange={(e) => set("department", e.target.value)} placeholder="Engineering, Sales, Design…" autoComplete="off" className={FIELD_CLASS} />
       </div>
       </div>
 
@@ -350,12 +339,12 @@ export function RequirementForm({
 
         <div style={cell(1, 150)}>
           <FieldLabel htmlFor="rf-open">Open positions</FieldLabel>
-          <NumberField id="rf-open" value={draft.openPositions} onChange={(v) => set("openPositions", v)} onBlur={() => touch("openPositions")} maxDigits={3} placeholder="1" invalid={!!shown("openPositions")} describedBy={describe("openPositions")} style={inputStyle} />
+          <NumberField id="rf-open" value={draft.openPositions} onChange={(v) => set("openPositions", v)} onBlur={() => touch("openPositions")} maxDigits={3} placeholder="1" invalid={!!shown("openPositions")} describedBy={describe("openPositions")} />
           {fieldError("openPositions")}
         </div>
         <div style={cell(1, 190)}>
           <FieldLabel htmlFor="rf-due">Application deadline</FieldLabel>
-          <DateField id="rf-due" aria-describedby={describe("dueDate", "rf-due-help")} aria-invalid={!!shown("dueDate") || undefined} min={today} value={draft.dueDate} onChange={(e) => set("dueDate", e.target.value)} onBlur={() => touch("dueDate")} style={inputStyle} />
+          <DateField id="rf-due" aria-describedby={describe("dueDate", "rf-due-help")} aria-invalid={!!shown("dueDate") || undefined} min={today} value={draft.dueDate} onChange={(e) => set("dueDate", e.target.value)} onBlur={() => touch("dueDate")} className={FIELD_CLASS} />
           {shown("dueDate") ? fieldError("dueDate") : null}
           <HelpText id="rf-due-help" live={false}>
             {initial?.dueDate && initial.dueDate < today && draft.dueDate === initial.dueDate
@@ -369,13 +358,13 @@ export function RequirementForm({
         <div style={grid2}>
           <div>
             <FieldLabel htmlFor="rf-weeks">Duration (weeks)</FieldLabel>
-            <NumberField id="rf-weeks" value={draft.durationWeeks} onChange={(v) => set("durationWeeks", v)} onBlur={() => touch("durationWeeks")} maxDigits={3} placeholder="12" invalid={!!shown("durationWeeks")} describedBy={describe("durationWeeks", "rf-weeks-help")} style={inputStyle} />
+            <NumberField id="rf-weeks" value={draft.durationWeeks} onChange={(v) => set("durationWeeks", v)} onBlur={() => touch("durationWeeks")} maxDigits={3} placeholder="12" invalid={!!shown("durationWeeks")} describedBy={describe("durationWeeks", "rf-weeks-help")} />
             <HelpText id="rf-weeks-help" live={false}>Used to judge contract fit when ranking candidates. Not shown to candidates.</HelpText>
             {fieldError("durationWeeks")}
           </div>
           <div>
             <FieldLabel htmlFor="rf-hours">Hours per week</FieldLabel>
-            <NumberField id="rf-hours" value={draft.hoursPerWeek} onChange={(v) => set("hoursPerWeek", v)} onBlur={() => touch("hoursPerWeek")} maxDigits={2} placeholder="20" invalid={!!shown("hoursPerWeek")} describedBy={describe("hoursPerWeek")} style={inputStyle} />
+            <NumberField id="rf-hours" value={draft.hoursPerWeek} onChange={(v) => set("hoursPerWeek", v)} onBlur={() => touch("hoursPerWeek")} maxDigits={2} placeholder="20" invalid={!!shown("hoursPerWeek")} describedBy={describe("hoursPerWeek")} />
             {fieldError("hoursPerWeek")}
           </div>
         </div>
@@ -393,7 +382,6 @@ export function RequirementForm({
         onChange={(min, max) => { setDraft((d) => ({ ...d, experienceMin: min, experienceMax: max })); setDirty(true); }}
         onBlur={() => touch("experience")}
         error={shown("experience")}
-        inputStyle={inputStyle}
       />
       </div>
 
@@ -405,7 +393,6 @@ export function RequirementForm({
         onChange={(next) => { setDraft((d) => ({ ...d, salaryType: next.salaryType, budgetMin: next.min, budgetMax: next.max })); setDirty(true); }}
         onBlur={() => touch("budget")}
         error={shown("budget")}
-        inputStyle={inputStyle}
       />
       </div>
       </div>
@@ -418,7 +405,7 @@ export function RequirementForm({
 
       <div>
         <FieldLabel required htmlFor="rf-description">Description</FieldLabel>
-        <textarea
+        <Textarea
           id="rf-description"
           aria-required="true"
           aria-describedby={describe("description", "rf-description-help")}
@@ -429,7 +416,7 @@ export function RequirementForm({
           rows={6}
           maxLength={MAX_DESCRIPTION_LENGTH}
           placeholder="Paste the JD or write a few lines about what you're looking for…"
-          style={descriptionStyle}
+          className={TEXTAREA_CLASS}
         />
         <HelpText id="rf-description-help" live={false}>
           We compare this with each candidate's resume to build their match report. {descLen.toLocaleString("en-IN")} / {MAX_DESCRIPTION_LENGTH.toLocaleString("en-IN")}
@@ -440,13 +427,13 @@ export function RequirementForm({
       <div style={flexRow}>
       <div style={cell(1, 320)}>
         <FieldLabel htmlFor="rf-resp">Responsibilities</FieldLabel>
-        <textarea id="rf-resp" aria-describedby="rf-resp-count" value={draft.responsibilities} onChange={(e) => set("responsibilities", e.target.value)} rows={4} maxLength={MAX_LONG_TEXT_LENGTH} placeholder="What will this person own day to day?" style={longTextStyle} />
+        <Textarea id="rf-resp" aria-describedby="rf-resp-count" value={draft.responsibilities} onChange={(e) => set("responsibilities", e.target.value)} rows={4} maxLength={MAX_LONG_TEXT_LENGTH} placeholder="What will this person own day to day?" className={TEXTAREA_CLASS} />
         <HelpText id="rf-resp-count" live={false}>{draft.responsibilities.length.toLocaleString("en-IN")} / {MAX_LONG_TEXT_LENGTH.toLocaleString("en-IN")}. Shown to candidates, not used for matching.</HelpText>
       </div>
 
       <div style={cell(1, 320)}>
         <FieldLabel htmlFor="rf-nice">Nice to have</FieldLabel>
-        <textarea id="rf-nice" aria-describedby="rf-nice-count" value={draft.niceToHave} onChange={(e) => set("niceToHave", e.target.value)} rows={3} maxLength={MAX_LONG_TEXT_LENGTH} placeholder="Skills or experience that aren't required but would help" style={longTextStyle} />
+        <Textarea id="rf-nice" aria-describedby="rf-nice-count" value={draft.niceToHave} onChange={(e) => set("niceToHave", e.target.value)} rows={3} maxLength={MAX_LONG_TEXT_LENGTH} placeholder="Skills or experience that aren't required but would help" className={TEXTAREA_CLASS} />
         <HelpText id="rf-nice-count" live={false}>{draft.niceToHave.length.toLocaleString("en-IN")} / {MAX_LONG_TEXT_LENGTH.toLocaleString("en-IN")}. Shown to candidates, not used for matching.</HelpText>
       </div>
       </div>
@@ -520,12 +507,12 @@ export function RequirementForm({
           <div style={grid2}>
             <div>
               <FieldLabel htmlFor="rf-schedule">Work schedule</FieldLabel>
-              <input id="rf-schedule" value={draft.workSchedule} onChange={(e) => set("workSchedule", e.target.value)} placeholder="Mon–Fri, 9 AM–6 PM" autoComplete="off" style={inputStyle} />
+              <Input id="rf-schedule" value={draft.workSchedule} onChange={(e) => set("workSchedule", e.target.value)} placeholder="Mon–Fri, 9 AM–6 PM" autoComplete="off" className={FIELD_CLASS} />
               <HelpText id="rf-schedule-help" live={false}>Saved on this job for your reference. Not shown to candidates or used for matching.</HelpText>
             </div>
             <div>
               <FieldLabel htmlFor="rf-availability">Availability</FieldLabel>
-              <input id="rf-availability" value={draft.availability} onChange={(e) => set("availability", e.target.value)} placeholder="Immediate, 2 weeks…" autoComplete="off" style={inputStyle} />
+              <Input id="rf-availability" value={draft.availability} onChange={(e) => set("availability", e.target.value)} placeholder="Immediate, 2 weeks…" autoComplete="off" className={FIELD_CLASS} />
               <HelpText id="rf-availability-help" live={false}>Saved on this job for your reference. Not shown to candidates or used for matching.</HelpText>
             </div>
           </div>
@@ -533,7 +520,7 @@ export function RequirementForm({
           <div style={grid2}>
             <div>
               <FieldLabel htmlFor="rf-relevant">Relevant experience</FieldLabel>
-              <input id="rf-relevant" value={draft.relevantExperience} onChange={(e) => set("relevantExperience", e.target.value)} placeholder="3+ years in a similar role" autoComplete="off" style={inputStyle} />
+              <Input id="rf-relevant" value={draft.relevantExperience} onChange={(e) => set("relevantExperience", e.target.value)} placeholder="3+ years in a similar role" autoComplete="off" className={FIELD_CLASS} />
               <HelpText id="rf-relevant-help" live={false}>Saved on this job for your reference. Not shown to candidates or used for matching.</HelpText>
             </div>
             <div style={checkboxCell}>
@@ -557,7 +544,7 @@ export function RequirementForm({
             </div>
             <div>
               <FieldLabel htmlFor="rf-star">Minimum STAR completeness (%)</FieldLabel>
-              <NumberField id="rf-star" value={draft.minStarCompleteness} onChange={(v) => set("minStarCompleteness", v)} onBlur={() => touch("minStarCompleteness")} maxDigits={3} placeholder="60" invalid={!!shown("minStarCompleteness")} describedBy={describe("minStarCompleteness", "rf-star-help")} style={inputStyle} />
+              <NumberField id="rf-star" value={draft.minStarCompleteness} onChange={(v) => set("minStarCompleteness", v)} onBlur={() => touch("minStarCompleteness")} maxDigits={3} placeholder="60" invalid={!!shown("minStarCompleteness")} describedBy={describe("minStarCompleteness", "rf-star-help")} />
               <HelpText id="rf-star-help" live={false}>How much of the Situation, Task, Action, Result structure a candidate's answers must cover.</HelpText>
               {fieldError("minStarCompleteness")}
             </div>

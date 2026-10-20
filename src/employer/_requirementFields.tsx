@@ -2,7 +2,8 @@
 
 import { useState, type CSSProperties, type ReactNode } from "react";
 import { tokens as t, fonts as f, textSize } from "@/auth/_tokens";
-import { FieldLabel, HelpText, SegmentedControl } from "@/employer/_atoms";
+import { FieldLabel, FIELD_CLASS, HelpText, SegmentedControl } from "@/employer/_atoms";
+import { Input } from "@/components/ui/input";
 import type { SalaryType } from "./mockData";
 import {
   EXPERIENCE_PRESETS,
@@ -49,7 +50,6 @@ export function NumberField({
   placeholder,
   invalid,
   describedBy,
-  style,
   maxDigits,
 }: {
   id: string;
@@ -59,12 +59,10 @@ export function NumberField({
   placeholder?: string;
   invalid?: boolean;
   describedBy?: string;
-  style: CSSProperties;
   maxDigits?: number;
 }) {
-  const merged: CSSProperties = { ...style, borderColor: invalid ? t.error : style.borderColor };
   return (
-    <input
+    <Input
       id={id}
       type="text"
       inputMode="numeric"
@@ -76,7 +74,7 @@ export function NumberField({
       placeholder={placeholder}
       aria-invalid={invalid || undefined}
       aria-describedby={describedBy}
-      style={merged}
+      className={FIELD_CLASS}
     />
   );
 }
@@ -117,14 +115,12 @@ export function ExperienceField({
   max,
   onChange,
   error,
-  inputStyle,
   onBlur,
 }: {
   min: string;
   max: string;
   onChange: (min: string, max: string) => void;
   error?: string;
-  inputStyle: CSSProperties;
   onBlur?: () => void;
 }) {
   return (
@@ -143,11 +139,11 @@ export function ExperienceField({
       <div style={pairGrid}>
         <div>
           <FieldLabel htmlFor="rf-exp-min">From (years)</FieldLabel>
-          <NumberField id="rf-exp-min" value={min} onChange={(v) => onChange(v, max)} onBlur={onBlur} placeholder="2" maxDigits={2} invalid={!!error} describedBy="rf-exp-help" style={inputStyle} />
+          <NumberField id="rf-exp-min" value={min} onChange={(v) => onChange(v, max)} onBlur={onBlur} placeholder="2" maxDigits={2} invalid={!!error} describedBy="rf-exp-help" />
         </div>
         <div>
           <FieldLabel htmlFor="rf-exp-max">To (years)</FieldLabel>
-          <NumberField id="rf-exp-max" value={max} onChange={(v) => onChange(min, v)} onBlur={onBlur} placeholder="5" maxDigits={2} invalid={!!error} describedBy="rf-exp-help" style={inputStyle} />
+          <NumberField id="rf-exp-max" value={max} onChange={(v) => onChange(min, v)} onBlur={onBlur} placeholder="5" maxDigits={2} invalid={!!error} describedBy="rf-exp-help" />
         </div>
       </div>
       {error ? (
@@ -179,7 +175,6 @@ export function SalaryField({
   max,
   onChange,
   error,
-  inputStyle,
   onBlur,
 }: {
   salaryType: SalaryType;
@@ -187,7 +182,6 @@ export function SalaryField({
   max: string;
   onChange: (next: { salaryType: SalaryType; min: string; max: string }) => void;
   error?: string;
-  inputStyle: CSSProperties;
   onBlur?: () => void;
 }) {
   const [announce, setAnnounce] = useState("");
@@ -212,11 +206,11 @@ export function SalaryField({
       <div style={pairGrid}>
         <div>
           <FieldLabel htmlFor="rf-budget-min">Minimum ({unit.label})</FieldLabel>
-          <NumberField id="rf-budget-min" value={min} onChange={(v) => onChange({ salaryType, min: v, max })} onBlur={onBlur} placeholder={unit.min} maxDigits={9} invalid={!!error} describedBy="rf-budget-help" style={inputStyle} />
+          <NumberField id="rf-budget-min" value={min} onChange={(v) => onChange({ salaryType, min: v, max })} onBlur={onBlur} placeholder={unit.min} maxDigits={9} invalid={!!error} describedBy="rf-budget-help" />
         </div>
         <div>
           <FieldLabel htmlFor="rf-budget-max">Maximum ({unit.label})</FieldLabel>
-          <NumberField id="rf-budget-max" value={max} onChange={(v) => onChange({ salaryType, min, max: v })} onBlur={onBlur} placeholder={unit.max} maxDigits={9} invalid={!!error} describedBy="rf-budget-help" style={inputStyle} />
+          <NumberField id="rf-budget-max" value={max} onChange={(v) => onChange({ salaryType, min, max: v })} onBlur={onBlur} placeholder={unit.max} maxDigits={9} invalid={!!error} describedBy="rf-budget-help" />
         </div>
       </div>
       {error ? (

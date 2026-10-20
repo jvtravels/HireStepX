@@ -1,6 +1,8 @@
 "use client";
 
 import type { InputHTMLAttributes, MouseEvent } from "react";
+import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 
 /** Click handler that opens the native picker. Exported for design-system
     inputs (shadcn <Input type="date">) that can't be swapped for DateField. */
@@ -18,16 +20,16 @@ export function openDatePicker(e: MouseEvent<HTMLInputElement>): void {
    felt dead; showPicker() makes the entire field a target while keyboard entry
    into the day/month/year segments keeps working. */
 export default function DateField(props: Omit<InputHTMLAttributes<HTMLInputElement>, "type">) {
-  const { onClick, style, ...rest } = props;
+  const { onClick, className, ...rest } = props;
   return (
-    <input
+    <Input
       {...rest}
       type="date"
       onClick={(e) => {
         onClick?.(e);
         openDatePicker(e);
       }}
-      style={{ cursor: "pointer", ...style }}
+      className={cn("cursor-pointer", className)}
     />
   );
 }

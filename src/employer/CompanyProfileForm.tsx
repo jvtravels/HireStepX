@@ -4,7 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import { isValidGstin, normalizeGstin } from "../../server-handlers/_gstin";
 import { tokens as t, fonts as f } from "@/auth/_tokens";
 import { useEmployerData } from "@/employer/EmployerDataContext";
-import { EmployerIcon, FieldLabel, HelpText, OutlineCta, PrimaryCta } from "@/employer/_atoms";
+import { EmployerIcon, FIELD_CLASS, FieldLabel, HelpText, OutlineCta, PrimaryCta } from "@/employer/_atoms";
+import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 import {
   LOGO_ACCEPTED_TYPES,
   LOGO_CONTENT_TYPE_ALLOWLIST,
@@ -16,20 +18,7 @@ import {
 } from "@/employer/_companyProfileHelpers";
 
 const legendStyle: React.CSSProperties = { fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.coal, padding: 0, marginBottom: 12 };
-const inputStyle: React.CSSProperties = {
-  width: "100%",
-  padding: "12px 14px",
-  borderRadius: 10,
-  border: `1px solid ${t.line}`,
-  background: t.white,
-  fontFamily: f.sans,
-  // 16px stops iOS Safari zooming the page on focus.
-  fontSize: 16,
-  color: t.coal,
-  boxSizing: "border-box",
-};
-const gstinStyle: React.CSSProperties = { ...inputStyle, fontFamily: f.mono, letterSpacing: "0.04em" };
-const gstinErrorStyle: React.CSSProperties = { ...gstinStyle, borderColor: t.error };
+const GSTIN_CLASS = cn(FIELD_CLASS, "font-mono tracking-[0.04em]");
 
 /* The one company-profile form, used by first-run onboarding and by Settings.
    Both POST the same upsert, so they share validation, the logo picker and the
@@ -176,7 +165,7 @@ export default function CompanyProfileForm({
     <form onSubmit={handleSubmit} noValidate style={{ display: "flex", flexDirection: "column", gap: 18 }}>
       <div>
         <FieldLabel required htmlFor={nameId}>Company name</FieldLabel>
-        <input
+        <Input
           id={nameId}
           name="company-name"
           autoComplete="organization"
@@ -188,14 +177,14 @@ export default function CompanyProfileForm({
           aria-describedby={nameError ? `${nameId}-err` : undefined}
           placeholder="Acme Technologies Pvt Ltd"
           disabled={disabled}
-          style={{ ...inputStyle, borderColor: nameError ? t.error : t.line }}
+          className={FIELD_CLASS}
         />
         {nameError && <HelpText id={`${nameId}-err`} tone="error">{nameError}</HelpText>}
       </div>
 
       <div>
         <FieldLabel required htmlFor={websiteId}>Company website</FieldLabel>
-        <input
+        <Input
           id={websiteId}
           name="company-website"
           type="text"
@@ -211,7 +200,7 @@ export default function CompanyProfileForm({
           aria-describedby={`${websiteId}-${websiteError ? "err" : "help"}`}
           placeholder="acme.com"
           disabled={disabled}
-          style={{ ...inputStyle, borderColor: websiteError ? t.error : t.line }}
+          className={FIELD_CLASS}
         />
         {websiteError ? (
           <HelpText id={`${websiteId}-err`} tone="error">{websiteError}</HelpText>
@@ -243,7 +232,7 @@ export default function CompanyProfileForm({
               Remove logo
             </OutlineCta>
           )}
-          <input
+          <Input
             ref={fileRef}
             type="file"
             accept={LOGO_ACCEPTED_TYPES}
@@ -268,7 +257,7 @@ export default function CompanyProfileForm({
         </legend>
         <div>
           <FieldLabel htmlFor={gstinId}>GSTIN</FieldLabel>
-          <input
+          <Input
             id={gstinId}
             name="company-gstin"
             autoComplete="off"
@@ -282,7 +271,7 @@ export default function CompanyProfileForm({
             aria-describedby={`${gstinId}-${gstinError ? "err" : "help"}`}
             placeholder="27AAPFU0939F1ZV"
             disabled={disabled}
-            style={gstinError ? gstinErrorStyle : gstinStyle}
+            className={GSTIN_CLASS}
           />
           {gstinError ? (
             <HelpText id={`${gstinId}-err`} tone="error">{gstinError}</HelpText>
@@ -292,7 +281,7 @@ export default function CompanyProfileForm({
         </div>
         <div>
           <FieldLabel htmlFor={billingNameId}>Name on invoices</FieldLabel>
-          <input
+          <Input
             id={billingNameId}
             name="company-billing-name"
             autoComplete="organization"
@@ -301,7 +290,7 @@ export default function CompanyProfileForm({
             onChange={(e) => { setBillingName(e.target.value); setSaved(false); }}
             placeholder="Legal name as registered for GST"
             disabled={disabled}
-            style={inputStyle}
+            className={FIELD_CLASS}
           />
           <HelpText>Leave blank to use your company name.</HelpText>
         </div>
