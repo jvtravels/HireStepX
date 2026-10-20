@@ -52,11 +52,11 @@ export default function ViewMenu({
         <Button
           type="button"
           variant="outline"
-          aria-label={activeCount > 0 ? `View options, ${activeCount} filter${activeCount === 1 ? "" : "s"} active` : "View options"}
+          aria-label={activeCount > 0 ? `Filters, ${activeCount} active` : "Filters"}
           className="h-9 shrink-0 gap-2 rounded-lg bg-white px-3 text-[14px] font-medium text-hx-coal pointer-coarse:h-11"
         >
           <SlidersHorizontalIcon size={13} aria-hidden="true" />
-          View
+          Filters
           {activeCount > 0 && (
             <span aria-hidden="true" className="inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-hx-indigo px-1 text-[12px] font-semibold text-white">
               {activeCount}
