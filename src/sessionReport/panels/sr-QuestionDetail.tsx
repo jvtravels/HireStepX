@@ -20,13 +20,15 @@ function StarChip({ active, label }: { active: boolean; label: string }) {
   );
 }
 
-function HighlightLegend() {
-  const items: { cls: string; label: string }[] = [
-    { cls: "ir-highlight-filler", label: "Filler words" },
-    { cls: "ir-highlight-hedge", label: "Hedging" },
-    { cls: "ir-highlight-quant", label: "Numbers and impact" },
-    { cls: "ir-highlight-first", label: "\u201CI\u201D statements" },
+function HighlightLegend({ spans }: { spans: AnswerSpan[] }) {
+  const all: { kind: NonNullable<AnswerSpan["highlight"]>; cls: string; label: string }[] = [
+    { kind: "filler", cls: "ir-highlight-filler", label: "Filler words" },
+    { kind: "hedge", cls: "ir-highlight-hedge", label: "Hedging" },
+    { kind: "quantified", cls: "ir-highlight-quant", label: "Numbers and impact" },
+    { kind: "firstPerson", cls: "ir-highlight-first", label: "\u201CI\u201D statements" },
   ];
+  const items = all.filter((i) => spans.some((s) => s.highlight === i.kind));
+  if (items.length === 0) return null;
   return (
     <div className="ir-legend">
       {items.map((i) => (
@@ -112,7 +114,7 @@ export function QuestionDetail({ q }: { q: Question }) {
             <div>
               <TabsContent value="answer">
                 <AnswerBody spans={q.answer} />
-                <HighlightLegend />
+                <HighlightLegend spans={q.answer} />
               </TabsContent>
               {q.restructured && (
                 <TabsContent value="restructured">
@@ -148,7 +150,7 @@ export function QuestionDetail({ q }: { q: Question }) {
             <details className="ir-more ir-pq-metrics-strip">
               <summary>
                 <span className="ir-more-title">Answer details</span>
-                <span>{starCount} of 5 STAR parts</span>
+                {starCount > 0 && <span>{starCount} of 5 STAR parts</span>}
                 {metricTiles.slice(0, 2).map((m) => (
                   <span key={m.label}>{m.value} {m.label.toLowerCase()}</span>
                 ))}
@@ -157,14 +159,16 @@ export function QuestionDetail({ q }: { q: Question }) {
                 </svg>
               </summary>
               <div className="ir-more-body">
-                <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 6 }}>
-                  <span style={{ ...LABEL, marginRight: 4 }}>STAR structure</span>
-                  <StarChip active={q.star.situation} label="Situation" />
-                  <StarChip active={q.star.task} label="Task" />
-                  <StarChip active={q.star.action} label="Action" />
-                  <StarChip active={q.star.result} label="Result" />
-                  <StarChip active={q.star.learning} label="Learning" />
-                </div>
+                {starCount > 0 && (
+                  <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 6 }}>
+                    <span style={{ ...LABEL, marginRight: 4 }}>STAR structure</span>
+                    <StarChip active={q.star.situation} label="Situation" />
+                    <StarChip active={q.star.task} label="Task" />
+                    <StarChip active={q.star.action} label="Action" />
+                    <StarChip active={q.star.result} label="Result" />
+                    <StarChip active={q.star.learning} label="Learning" />
+                  </div>
+                )}
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 28px" }}>
                   {metricTiles.map((m) => (
                     <div key={m.label} style={{ display: "flex", flexDirection: "column", minWidth: 64 }}>
