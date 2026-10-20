@@ -7,6 +7,7 @@
    1500-LOC ESLint warning threshold) stays focused on data wiring and
    orchestration; these are presentational, driven entirely by props. */
 
+import { useEffect, useState } from "react";
 import { tokens as t, fonts as f, textSize } from "./auth/_tokens";
 import type { PracticeCoverage, EvidenceCapability } from "./dashboardData";
 import { hoursOrDaysAgo } from "./hiringMatchFormat";
@@ -57,6 +58,19 @@ function StatCard({ children }: { children: React.ReactNode }) {
 
 /* ─── Header ─── */
 
+/* Time-of-day greeting, resolved after mount so the server render and the
+   first client paint agree. */
+function useGreeting(hasData: boolean) {
+  const fallback = hasData ? "Welcome Back" : "Welcome";
+  const [greeting, setGreeting] = useState(fallback);
+  useEffect(() => {
+    if (!hasData) { setGreeting("Welcome"); return; }
+    const h = new Date().getHours();
+    setGreeting(h < 5 ? "Working late" : h < 12 ? "Good Morning" : h < 17 ? "Good Afternoon" : "Good Evening");
+  }, [hasData]);
+  return greeting;
+}
+
 export function DashboardHeader({
   displayName, hasData, targetRole, seniorityLevel, readinessGap,
 }: {
@@ -67,6 +81,7 @@ export function DashboardHeader({
   readinessGap: number;
 }) {
   const roleLabel = targetRole || "your target role";
+  const greeting = useGreeting(hasData);
   // Role titles often already carry the level ("Senior Product Designer") —
   // prefixing again rendered "Senior Senior Product Designer".
   const seniorityPrefix = seniorityLevel && !roleLabel.toLowerCase().startsWith(seniorityLevel.toLowerCase())
@@ -76,7 +91,7 @@ export function DashboardHeader({
       <div style={{ minWidth: 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 8 }}>
           <h1 style={{ fontFamily: f.sans, fontSize: textSize["3xl"], fontWeight: 700, color: t.coal, margin: 0, letterSpacing: "-0.01em" }}>
-            {hasData ? "Welcome Back" : "Welcome"}, {displayName}
+            {greeting}, {displayName}
           </h1>
           {targetRole && (
             <span style={{
@@ -458,9 +473,9 @@ export function NoSessionsEmptyState({ onStart }: { onStart: () => void }) {
           <rect x="3" y="4" width="18" height="18" rx="2" /><path d="M8 2v4M16 2v4M3 10h18" />
         </svg>
       </div>
-      <h3 style={{ fontFamily: f.sans, fontSize: textSize.lg, fontWeight: 700, color: t.coal, margin: 0 }}>No Sessions Yet</h3>
+      <h3 style={{ fontFamily: f.sans, fontSize: textSize.lg, fontWeight: 700, color: t.coal, margin: 0 }}>Your first session starts here</h3>
       <p style={{ fontFamily: f.sans, fontSize: textSize.sm, color: t.inkSoft, margin: 0, maxWidth: 360 }}>
-        Your completed practice sessions will appear here.
+        One short practice round gives you a score, a STAR breakdown and a coached answer. They all land here.
       </p>
       <Button
         type="button"

@@ -435,7 +435,7 @@ export default function EmployerMessagesV2() {
     return shell(
       <div className="flex flex-1 flex-col items-center justify-center gap-2.5 px-6 py-14 text-center">
         <MessagesSquareIcon aria-hidden="true" className="size-7 text-muted-foreground" />
-        <p className="m-0 font-[family-name:var(--font-display)] text-2xl font-normal text-foreground">No conversations yet</p>
+        <p className="m-0 text-sm font-semibold text-foreground">No conversations yet</p>
         <p className="m-0 max-w-sm text-[13px] leading-normal text-muted-foreground">
           Unlock a candidate from a shortlist, send a message, and the conversation shows up here with their answers alongside.
         </p>

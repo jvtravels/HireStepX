@@ -2,6 +2,7 @@
    Shared atoms for all auth screens (Login, Signup, ForgotPassword, etc).
    No business logic — pure presentation + local interaction state. */
 import React, { useState, useId, useEffect, useRef } from "react";
+import Image from "next/image";
 import { tokens as t, fonts as f } from "./_tokens";
 
 /* ─── Icons ─── */
@@ -565,17 +566,13 @@ export function PasswordChecklist({ checks }: PasswordChecklistProps) {
 
 export function Wordmark() {
   return (
-    <span
-      aria-label="HireStepX"
-      className="hsx-wordmark hsx-login-wordmark"
-      style={{
-        display: "inline-flex", alignItems: "baseline",
-        fontFamily: f.sans, fontSize: 22, fontWeight: 600,
-        color: t.coal, letterSpacing: -0.4, lineHeight: 1.2,
-      }}
-    >
-      <span aria-hidden>HireStep</span>
-      <span aria-hidden className="hsx-wordmark-x" style={{ fontWeight: 700, color: t.indigo }}>X</span>
-    </span>
+    <Image
+      src="/wordmark.png"
+      alt="HireStepX"
+      width={387}
+      height={108}
+      priority
+      className="hsx-wordmark h-7 w-auto"
+    />
   );
 }

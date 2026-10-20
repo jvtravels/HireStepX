@@ -18,28 +18,15 @@
      MetaRow            trustLine            EndButton
 */
 import React from "react";
+import Image from "next/image";
 import { ThinkingOrb, type OrbState } from "thinking-orbs";
 import { e, ef, resolveOrbColor } from "./interviewTokens";
 import { Button } from "@/components/ui/button";
 import { Toggle } from "@/components/ui/toggle";
 
-/* ─── Wordmark — split spans for the italic X, but exposes a single
-     "HireStepX" accessible name so screen readers don't say "Hire Step X"
-     and so tests can query it as one text node. */
+/* ─── Wordmark — the real logo asset, so the X is the brand copper everywhere. */
 export function CanvasWordmark({ size = 18 }: { size?: number }) {
-  return (
-    <span
-      aria-label="HireStepX"
-      style={{
-        display: "inline-flex", alignItems: "baseline", gap: 0,
-        fontFamily: ef.sans, fontSize: size, fontWeight: 600,
-        color: e.coal, letterSpacing: -0.4,
-      }}
-    >
-      <span aria-hidden>HireStep</span>
-      <span aria-hidden style={{ fontWeight: 700, color: e.indigo }}>X</span>
-    </span>
-  );
+  return <Image src="/wordmark.png" alt="HireStepX" width={387} height={108} style={{ height: Math.round(size * 1.1), width: "auto" }} />;
 }
 
 /* ─── StatusPill ─── */
