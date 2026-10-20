@@ -13,7 +13,7 @@ import { tokens as t, fonts as f, textSize } from "@/auth/_tokens";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, OutlineCta } from "@/employer/_atoms";
-import { StatePanel } from "@/employer/_consoleParts";
+import { StatePanel } from "@/employer/StatePanel";
 
 /* ── Inline notices ── */
 
