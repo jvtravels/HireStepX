@@ -2,14 +2,12 @@
 
 import Link from "next/link";
 import { motion, useReducedMotion } from "motion/react";
-import { SearchXIcon, InfoIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { InfoIcon } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { SortableHead, type Sort } from "@/components/SortableHead";
 import type { RequirementSummary, RequirementStage } from "@/employer/mockData";
 import { Badge, StageCell } from "@/employer/_atoms";
-import { PostJobLink } from "@/employer/_consoleParts";
 import { tokens as t, fonts as f, textSize } from "@/auth/_tokens";
 import { WORK_MODE_LABEL, EMPLOYMENT_TYPE_LABEL } from "@/hiringMatchFormat";
 import { COLUMN_LABEL, budgetLabel, experienceLabel, locationText, type SortColumn } from "./jobsHelpers";
@@ -47,7 +45,7 @@ function shouldIgnoreRowClick(e: React.MouseEvent<HTMLElement>): boolean {
 }
 
 export default function JobsTable({
-  rows, hasAnyDepartment, sort, onSortChange, readOnly, onStage, onOpen, rowActions, search, onlySearchActive, onClear,
+  rows, hasAnyDepartment, sort, onSortChange, readOnly, onStage, onOpen, rowActions,
 }: {
   rows: RequirementSummary[];
   hasAnyDepartment: boolean;
@@ -57,9 +55,6 @@ export default function JobsTable({
   onStage: (id: string, stage: RequirementStage) => void;
   onOpen: (href: string) => void;
   rowActions: (r: RequirementSummary) => React.ReactNode;
-  search: string;
-  onlySearchActive: boolean;
-  onClear: () => void;
 }) {
   const reduceMotion = useReducedMotion();
   const openRow = (e: React.MouseEvent<HTMLElement>, href: string) => {
@@ -121,27 +116,6 @@ export default function JobsTable({
             </TableRow>
           </TableHeader>
           <TableBody className="mx-stagger">
-            {pageRows.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={hasAnyDepartment ? 8 : 7} style={{ padding: "40px 14px" }}>
-                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
-                    <SearchXIcon size={22} color={t.inkSoft} aria-hidden="true" />
-                    <p style={{ fontFamily: f.sans, fontSize: textSize.base, fontWeight: 600, color: t.coal, margin: 0 }}>
-                      {search.trim() ? `No results for "${search.trim()}"` : "No jobs match these filters"}
-                    </p>
-                    <p style={{ fontFamily: f.sans, fontSize: textSize.sm, color: t.inkSoft, margin: 0 }}>
-                      {search.trim() ? "Try a different search term, or clear it to see all your jobs." : "Try adjusting or clearing your filters."}
-                    </p>
-                    <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
-                      <Button variant="outline" onClick={onClear} style={{ borderRadius: 8, height: 40, fontFamily: f.sans, fontSize: textSize.sm, fontWeight: 500 }}>
-                        {onlySearchActive ? "Clear search" : "Clear filters"}
-                      </Button>
-                      {!readOnly && <PostJobLink>Create a job</PostJobLink>}
-                    </div>
-                  </div>
-                </TableCell>
-              </TableRow>
-            )}
             {pageRows.map((r, rowIndex) => {
               const mode = r.workMode ? WORK_MODE_LABEL[r.workMode] || r.workMode : null;
               const jobType = r.employmentType ? EMPLOYMENT_TYPE_LABEL[r.employmentType] || r.employmentType : null;

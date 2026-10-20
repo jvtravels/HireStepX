@@ -35,7 +35,7 @@ export interface EmptyStateAction {
 export interface EmptyStateProps {
   icon?: ReactNode;
   title: string;
-  description?: string;
+  description?: ReactNode;
   action?: EmptyStateAction | ReactNode;
   className?: string;
   /** Optional style overrides for the outer card. */

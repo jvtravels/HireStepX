@@ -6,13 +6,14 @@
    inline notices, suspended banner, skeletons, retry panel — without growing
    the general atom file. */
 
-import type { CSSProperties, ReactNode } from "react";
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { AlertTriangleIcon, CheckCircle2Icon, InfoIcon, ShieldAlertIcon, RefreshCwIcon } from "lucide-react";
 import { tokens as t, fonts as f, textSize } from "@/auth/_tokens";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, OutlineCta } from "@/employer/_atoms";
+import { StatePanel } from "@/employer/_consoleParts";
 
 /* ── Inline notices ── */
 
@@ -100,10 +101,6 @@ export function SuspendedBanner() {
 /* ── Loading / error / empty ── */
 
 /** Stands in for Card when the page already sits inside the shell's white container. */
-function FlatBox({ style, children }: { style?: CSSProperties; children: ReactNode }) {
-  return <div style={style}>{children}</div>;
-}
-
 /** Page-level loading placeholder. The visually hidden label gives screen
     readers something to announce; the skeleton blocks are decorative.
     `job` mirrors the job detail page: header, tab row, toolbar, candidate rows. */
@@ -199,41 +196,31 @@ export function ErrorRetry({
   flat?: boolean;
   children?: ReactNode;
 }) {
-  const Shell = flat ? FlatBox : Card;
   return (
-    <Shell style={{ textAlign: "center", padding: 40, boxShadow: "none" }}>
-      <div
-        aria-hidden="true"
-        style={{ width: 40, height: 40, borderRadius: 10, background: t.error100, color: t.errorInk, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}
-      >
-        <AlertTriangleIcon size={18} />
-      </div>
-      <h2 role="alert" style={{ fontFamily: f.sans, fontSize: textSize["2xl"], fontWeight: 600, color: t.coal, margin: "0 0 8px" }}>
-        {title}
-      </h2>
-      <p style={{ fontFamily: f.sans, fontSize: textSize.md, color: t.inkFaint, margin: "0 auto 18px", maxWidth: 460 }}>{message}</p>
-      <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
-        {onRetry && (
-          <OutlineCta onClick={onRetry} loading={retrying} icon={<RefreshCwIcon size={14} aria-hidden="true" />}>
-            {retrying ? "Retrying…" : "Try again"}
-          </OutlineCta>
-        )}
-        {children}
-      </div>
-    </Shell>
+    <StatePanel
+      tone="error"
+      title={title}
+      message={message}
+      contained={flat ? false : undefined}
+      actions={
+        onRetry || children ? (
+          <>
+            {onRetry && (
+              <OutlineCta onClick={onRetry} loading={retrying} icon={<RefreshCwIcon size={14} aria-hidden="true" />}>
+                {retrying ? "Retrying…" : "Try again"}
+              </OutlineCta>
+            )}
+            {children}
+          </>
+        ) : undefined
+      }
+    />
   );
 }
 
 /** Empty-state panel: one heading, one sentence of why, optional next step. */
-export function EmptyNote({ title, children, action, flat = false }: { title: string; children: ReactNode; action?: ReactNode; flat?: boolean }) {
-  const Shell = flat ? FlatBox : Card;
-  return (
-    <Shell style={{ textAlign: "center", padding: 40 }}>
-      <h2 style={{ fontFamily: f.sans, fontSize: textSize["2xl"], fontWeight: 600, color: t.coal, margin: "0 0 8px" }}>{title}</h2>
-      <p style={{ fontFamily: f.sans, fontSize: textSize.md, color: t.inkFaint, margin: "0 auto", maxWidth: 520, lineHeight: 1.6 }}>{children}</p>
-      {action && <div style={{ marginTop: 18, display: "flex", justifyContent: "center" }}>{action}</div>}
-    </Shell>
-  );
+export function EmptyNote({ title, children, action, flat = false, icon }: { title: string; children: ReactNode; action?: ReactNode; flat?: boolean; icon?: ReactNode }) {
+  return <StatePanel title={title} message={children} actions={action} icon={icon} contained={flat ? false : undefined} />;
 }
 
 /** A real link that looks like PrimaryCta/OutlineCta. Atoms render <button>,

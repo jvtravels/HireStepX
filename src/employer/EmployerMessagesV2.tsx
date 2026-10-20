@@ -11,7 +11,7 @@ import { useCallback, useEffect, useRef, useState, type CSSProperties } from "re
 import Link from "next/link";
 import { useMaxWidth } from "../hooks/useMaxWidth";
 import { useRouter, useSearchParams } from "next/navigation";
-import { AlertCircleIcon, MessagesSquareIcon } from "lucide-react";
+import { MessagesSquareIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -30,6 +30,7 @@ import { useToast } from "../Toast";
 import { REJECT_NOTIFY_NOTE } from "../../app/(employer)/employer/requirements/[id]/_components/requirementFormat";
 import { playUiSound } from "../uiSounds";
 import { OutlineCta, PrimaryCta, Pill, ScoreChip, CANDIDATE_STATUS_LABEL } from "./_atoms";
+import { ErrorPanel, PrimaryLink, StatePanel } from "./_consoleParts";
 import { MaskedIdentity, isMaskedName } from "./_atoms2";
 import InterviewInviteDialog, { canInviteToInterview, statusErrorCopy, type InviteResult, type InviteValues } from "./InterviewInviteDialog";
 import type { CandidateStatus } from "./mockData";
@@ -422,27 +423,19 @@ export default function EmployerMessagesV2() {
 
   if (conversations === null) {
     return shell(
-      <div className="flex flex-1 flex-col items-center justify-center gap-3 px-5 py-16 text-center" role="alert">
-        <AlertCircleIcon aria-hidden="true" className="size-6 text-muted-foreground" />
-        <p className="m-0 text-sm font-semibold text-foreground">Couldn&apos;t load your messages</p>
-        <p className="m-0 text-[13px] text-muted-foreground">Check your connection and try again.</p>
-        <Button variant="outline" size="lg" className="pointer-coarse:h-11 px-4" onClick={loadConversations}>Retry</Button>
-      </div>,
+      <ErrorPanel contained={false} title="Couldn't load your messages" message="Check your connection and try again." onRetry={loadConversations} retryLabel="Retry" />,
     );
   }
 
   if (list.length === 0) {
     return shell(
-      <div className="flex flex-1 flex-col items-center justify-center gap-2.5 px-6 py-14 text-center">
-        <MessagesSquareIcon aria-hidden="true" className="size-7 text-muted-foreground" />
-        <p className="m-0 text-sm font-semibold text-foreground">No conversations yet</p>
-        <p className="m-0 max-w-sm text-[13px] leading-normal text-muted-foreground">
-          Unlock a candidate from a shortlist, send a message, and the conversation shows up here with their answers alongside.
-        </p>
-        <Button asChild size="lg" className="pointer-coarse:h-11 px-4">
-          <Link href="/employer/jobs">Review your shortlists</Link>
-        </Button>
-      </div>,
+      <StatePanel
+        contained={false}
+        icon={<MessagesSquareIcon aria-hidden="true" />}
+        title="No conversations yet"
+        message="Unlock a candidate from a shortlist, send a message, and the conversation shows up here with their answers alongside."
+        actions={<PrimaryLink href="/employer/jobs">Review your shortlists</PrimaryLink>}
+      />,
     );
   }
 

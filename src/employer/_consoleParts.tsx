@@ -1,10 +1,12 @@
+import { createContext, useContext } from "react";
 import Link from "next/link";
-import { PlusIcon } from "lucide-react";
+import { AlertTriangleIcon, InboxIcon, PlusIcon } from "lucide-react";
+import { EmptyState } from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { tokens as t, fonts as f } from "@/auth/_tokens";
-import { OutlineCta, PrimaryCta } from "@/employer/_atoms";
+import { fonts as f } from "@/auth/_tokens";
+import { OutlineCta } from "@/employer/_atoms";
 
 /* Shared console building blocks for the pages that own their own layout
    (dashboard, jobs, settings) and the route-level loading/error boundaries.
@@ -86,36 +88,80 @@ export function PageSkeleton({ label = "Loading", variant = "page" }: { label?: 
   );
 }
 
-/** Inline failure with a way out. `role="alert"` so it is announced when it
- *  replaces a loading state. */
+/** Set by the shell around pages it already wraps in the white main container, so a state panel
+ *  inside them centres in that container instead of drawing a second one. */
+const InWhiteCardContext = createContext(false);
+export const InWhiteCardProvider = InWhiteCardContext.Provider;
+
+/** The one page-level empty or error state. Fills the white main container and centres its
+ *  content both ways, so every employer page looks the same when there is nothing to show or
+ *  the data failed to load. Pass `contained={false}` when the caller already draws the card. */
+export function StatePanel({
+  tone = "empty",
+  icon,
+  title,
+  message,
+  actions,
+  contained,
+}: {
+  tone?: "empty" | "error";
+  icon?: React.ReactNode;
+  title: string;
+  message: React.ReactNode;
+  actions?: React.ReactNode;
+  contained?: boolean;
+}) {
+  const inCard = useContext(InWhiteCardContext);
+  const ownCard = contained ?? !inCard;
+  const glyph =
+    icon ?? (tone === "error" ? <AlertTriangleIcon aria-hidden="true" className="text-hx-error-ink" /> : <InboxIcon aria-hidden="true" />);
+  return (
+    <div
+      role={tone === "error" ? "alert" : undefined}
+      className={cn("flex w-full min-w-0 flex-1 flex-col", ownCard && "rounded-2xl border border-hx-line bg-white")}
+    >
+      <EmptyState
+        className="min-h-[360px] px-6 py-16"
+        icon={glyph}
+        title={title}
+        description={message}
+        action={actions ? <div className="flex flex-wrap items-center justify-center gap-3">{actions}</div> : undefined}
+      />
+    </div>
+  );
+}
+
+/** Page-level failure with a way out. */
 export function ErrorPanel({
   title = "Something went wrong",
   message,
   onRetry,
   retryLabel = "Try again",
   action,
+  contained,
 }: {
   title?: string;
   message: string;
   onRetry?: () => void;
   retryLabel?: string;
   action?: React.ReactNode;
+  contained?: boolean;
 }) {
   return (
-    <div
-      role="alert"
-      style={{
-        width: "100%", maxWidth: 560, margin: "0 auto", boxSizing: "border-box", padding: 24, textAlign: "center",
-        background: t.white, border: `1px solid ${t.line}`, borderRadius: 12,
-      }}
-    >
-      <h2 style={{ fontFamily: f.sans, fontSize: 18, fontWeight: 600, color: t.coal, margin: "0 0 6px" }}>{title}</h2>
-      <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft, lineHeight: 1.55, margin: "0 0 16px" }}>{message}</p>
-      <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
-        {onRetry && <PrimaryCta onClick={onRetry}>{retryLabel}</PrimaryCta>}
-        {action}
-      </div>
-    </div>
+    <StatePanel
+      tone="error"
+      title={title}
+      message={message}
+      contained={contained}
+      actions={
+        onRetry || action ? (
+          <>
+            {onRetry && <OutlineCta onClick={onRetry}>{retryLabel}</OutlineCta>}
+            {action}
+          </>
+        ) : undefined
+      }
+    />
   );
 }
 

@@ -9,7 +9,7 @@ import { tokens as t, fonts as f } from "../auth/_tokens";
 import { EmployerWordmark } from "./_atoms";
 import { useEmployerData } from "./EmployerDataContext";
 import VerificationBanner from "./VerificationBanner";
-import { ErrorPanel, PageSkeleton } from "./_consoleParts";
+import { ErrorPanel, InWhiteCardProvider, PageSkeleton } from "./_consoleParts";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -95,15 +95,10 @@ function CreditChip({ balancePaise }: { balancePaise: number }) {
    double-carded; the shell wraps everything else. */
 const SELF_CARDED_ROUTES = ["/employer", "/employer/jobs", "/employer/requirements/new", "/employer/settings", "/employer/messages"];
 
-/* Compare and outcome draw their own container. Job detail and candidate
+/* Compare, outcome and the not-found page draw their own container. Job detail and candidate
    detail are flat, hairline-separated sections that the shell wraps in the one
    white container (overflow-clip, not hidden, so their sticky bars still work). */
-const BARE_ROUTE = /^\/employer\/requirements\/[^/]+\/(compare|outcome)$/;
 const DETAIL_ROUTE = /^\/employer\/requirements\/[^/]+(\/candidates\/[^/]+)?$/;
-
-function isBareRoute(pathname: string): boolean {
-  return BARE_ROUTE.test(pathname);
-}
 
 function isSelfCardedRoute(pathname: string): boolean {
   return SELF_CARDED_ROUTES.includes(pathname) || /^\/employer\/requirements\/[^/]+\/edit$/.test(pathname);
@@ -344,16 +339,12 @@ export default function EmployerShell({ children }: { children: React.ReactNode 
         banners={<VerificationBanner />}
       >
         <div className={"flex min-h-0 w-full min-w-0 flex-1 flex-col"}>
-          {isSelfCardedRoute(pathname ?? "") ? pageBody : isBareRoute(pathname ?? "") ? (
-            <div className="mb-16 flex min-h-full w-full min-w-0 flex-none flex-col">{pageBody}</div>
-          ) : DETAIL_ROUTE.test(pathname ?? "") ? (
+          {isSelfCardedRoute(pathname ?? "") ? pageBody : DETAIL_ROUTE.test(pathname ?? "") ? (
             <div className="mb-16 box-border flex min-h-full w-full min-w-0 flex-none flex-col overflow-clip rounded-2xl border border-hx-line bg-white">
-              {pageBody}
+              <InWhiteCardProvider value>{pageBody}</InWhiteCardProvider>
             </div>
           ) : (
-            <div className="mb-16 box-border flex min-h-full w-full min-w-0 flex-none flex-col rounded-2xl border border-hx-line bg-white p-4">
-              {pageBody}
-            </div>
+            <div className="mb-16 flex min-h-full w-full min-w-0 flex-none flex-col">{pageBody}</div>
           )}
         </div>
       </AppShellFrame>

@@ -14,7 +14,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { BriefcaseIcon, AlertTriangleIcon } from "lucide-react";
+import { BriefcaseIcon, AlertTriangleIcon, SearchXIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SearchWithSuggestions } from "@/components/SearchWithSuggestions";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -24,7 +24,7 @@ import { useToast } from "@/Toast";
 import { useEmployerData } from "@/employer/EmployerDataContext";
 import type { RequirementStage } from "@/employer/mockData";
 import { STAGE_LABEL, STAGE_OPTIONS } from "@/employer/_atoms";
-import { PageSkeleton, ErrorPanel, PostJobLink } from "@/employer/_consoleParts";
+import { PageSkeleton, ErrorPanel, PostJobLink, StatePanel } from "@/employer/_consoleParts";
 import { tokens as t, fonts as f, textSize } from "@/auth/_tokens";
 import { EMPLOYMENT_TYPE_LABEL } from "@/hiringMatchFormat";
 import {
@@ -37,7 +37,6 @@ import JobsTable from "./_components/JobsTable";
 import JobCard from "./_components/JobCard";
 import { useJobRowActions } from "./_components/useJobRowActions";
 
-const emptyNote: React.CSSProperties = { fontFamily: f.sans, fontSize: textSize.base, color: t.inkSoft, margin: "6px 0 0", lineHeight: 1.5, maxWidth: 380 };
 
 export default function EmployerJobsPage() {
   const router = useRouter();
@@ -202,34 +201,24 @@ export default function EmployerJobsPage() {
 
   if (requirementsError && requirements.length === 0) {
     return shell(
-      <div style={{ padding: "48px 16px" }}>
-        <ErrorPanel
-          title="We couldn't load your jobs"
-          message="Your data is safe. Check your connection and try again."
-          onRetry={() => { void refreshRequirements(); }}
-          retryLabel="Retry"
-        />
-      </div>,
+      <ErrorPanel
+        contained={false}
+        title="We couldn't load your jobs"
+        message="Your data is safe. Check your connection and try again."
+        onRetry={() => { void refreshRequirements(); }}
+      />,
     );
   }
 
   if (requirements.length === 0) {
     return shell(
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, padding: "72px 24px", flex: 1, textAlign: "center" }}>
-        <div aria-hidden="true" style={{
-          width: 64, height: 64, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
-          border: `1.5px dashed ${t.line}`, background: t.creamSoft,
-        }}>
-          <BriefcaseIcon size={24} color={t.inkSoft} />
-        </div>
-        <div>
-          <h2 style={{ fontFamily: f.sans, fontSize: 18, fontWeight: 700, color: t.coal, margin: 0, letterSpacing: "-0.01em" }}>No job listings yet</h2>
-          <p style={{ ...emptyNote, margin: "6px auto 0" }}>
-            Post your first job and we&apos;ll score candidates who are actively practising on HireStepX against it, usually in under a minute.
-          </p>
-        </div>
-        {!suspended && <PostJobLink>Create your first listing</PostJobLink>}
-      </div>,
+      <StatePanel
+        contained={false}
+        icon={<BriefcaseIcon aria-hidden="true" />}
+        title="No job listings yet"
+        message="Post your first job and we'll score candidates who are actively practising on HireStepX against it, usually in under a minute."
+        actions={suspended ? undefined : <PostJobLink>Create your first listing</PostJobLink>}
+      />,
     );
   }
 
@@ -317,42 +306,41 @@ export default function EmployerJobsPage() {
         </div>
       )}
 
-      {/* Focusable so keyboard users can scroll the wide table (axe scrollable-region-focusable). */}
-      {/* eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex */}
-      <div role="region" aria-label="Jobs list" tabIndex={0} className="jobs-scroll" style={{ overflow: "auto", flex: 1, minHeight: 0 }}>
-        <TooltipProvider delayDuration={200}>
-          {/* Table on wide screens, cards on phones. Switched in CSS so the first
-              paint is right on any viewport (no JS media-query flash). */}
-          <ul aria-label="Posted jobs" className="mx-stagger m-0 hidden list-none p-0 max-sm:block">
-            {pageRows.length === 0 && (
-              <li style={{ padding: "32px 16px", textAlign: "center", fontFamily: f.sans, fontSize: textSize.base, color: t.inkSoft }}>
-                {search.trim() ? `No results for "${search.trim()}"` : "No jobs match these filters"}
-                <div style={{ marginTop: 12 }}>
-                  <Button variant="outline" className="pointer-coarse:h-11" onClick={clearFilters}>{onlySearchActive ? "Clear search" : "Clear filters"}</Button>
-                </div>
-              </li>
-            )}
-            {pageRows.map((r) => (
-              <JobCard key={r.id} r={r} readOnly={suspended} onStage={(stage) => changeStage(r.id, stage)} actions={rowActions(r)} />
-            ))}
-          </ul>
-          <div className="max-sm:hidden">
-            <JobsTable
-              rows={pageRows}
-              hasAnyDepartment={hasAnyDepartment}
-              sort={sort}
-              onSortChange={setSort}
-              readOnly={suspended}
-              onStage={changeStage}
-              onOpen={(href) => router.push(href)}
-              rowActions={rowActions}
-              search={search}
-              onlySearchActive={onlySearchActive}
-              onClear={clearFilters}
-            />
-          </div>
-        </TooltipProvider>
-      </div>
+      {pageRows.length === 0 ? (
+        <StatePanel
+          contained={false}
+          icon={<SearchXIcon aria-hidden="true" />}
+          title={search.trim() ? `No results for "${search.trim()}"` : "No jobs match these filters"}
+          message={search.trim() ? "Try a different search term, or clear it to see all your jobs." : "Try adjusting or clearing your filters."}
+          actions={<Button variant="outline" className="pointer-coarse:h-11" onClick={clearFilters}>{onlySearchActive ? "Clear search" : "Clear filters"}</Button>}
+        />
+      ) : (
+        /* Focusable so keyboard users can scroll the wide table (axe scrollable-region-focusable). */
+        // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
+        <div role="region" aria-label="Jobs list" tabIndex={0} className="jobs-scroll" style={{ overflow: "auto", flex: 1, minHeight: 0 }}>
+          <TooltipProvider delayDuration={200}>
+            {/* Table on wide screens, cards on phones. Switched in CSS so the first
+                paint is right on any viewport (no JS media-query flash). */}
+            <ul aria-label="Posted jobs" className="mx-stagger m-0 hidden list-none p-0 max-sm:block">
+              {pageRows.map((r) => (
+                <JobCard key={r.id} r={r} readOnly={suspended} onStage={(stage) => changeStage(r.id, stage)} actions={rowActions(r)} />
+              ))}
+            </ul>
+            <div className="max-sm:hidden">
+              <JobsTable
+                rows={pageRows}
+                hasAnyDepartment={hasAnyDepartment}
+                sort={sort}
+                onSortChange={setSort}
+                readOnly={suspended}
+                onStage={changeStage}
+                onOpen={(href) => router.push(href)}
+                rowActions={rowActions}
+              />
+            </div>
+          </TooltipProvider>
+        </div>
+      )}
 
       <TablePaginationFooter
         entityLabel="job"

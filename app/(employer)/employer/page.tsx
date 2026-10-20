@@ -302,7 +302,7 @@ function EmployerDashboard() {
         {requirementsLoading ? (
           <DashboardSkeleton inline />
         ) : requirementsError ? (
-          <div className="px-7 py-6"><InlineAlert message="We couldn't load your jobs just now." onRetry={() => { void refreshRequirements(); }} /></div>
+          <ErrorPanel contained={false} title="We couldn't load your jobs" message="Your data is safe. Check your connection and try again." onRetry={() => { void refreshRequirements(); }} />
         ) : showOnboardingChecklist ? (
           <OnboardingChecklist steps={onboardingSteps} />
         ) : (
