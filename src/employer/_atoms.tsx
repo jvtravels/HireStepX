@@ -156,36 +156,6 @@ export function ScoreChip({ score, label = "Match score" }: { score: number; lab
   );
 }
 
-export function Card({
-  children,
-  pad = 24,
-  radius = 16,
-  background = t.white,
-  border = `1px solid ${t.line}`,
-  className,
-  style,
-  "aria-label": ariaLabel,
-  "aria-labelledby": ariaLabelledBy,
-}: {
-  children: React.ReactNode;
-  pad?: number;
-  radius?: number;
-  background?: string;
-  border?: string;
-  className?: string;
-  style?: React.CSSProperties;
-  /** Naming a Card turns its <section> into a region landmark — only do so
-   *  for cards a screen-reader user would want to jump to. */
-  "aria-label"?: string;
-  "aria-labelledby"?: string;
-}) {
-  return (
-    <section className={className} aria-label={ariaLabel} aria-labelledby={ariaLabelledBy} style={{ background, border, borderRadius: radius, padding: pad, ...style }}>
-      {children}
-    </section>
-  );
-}
-
 /* PrimaryCta/OutlineCta wrap the shared shadcn Button — same component,
    sizing, and radius as the rest of the app (e.g. Jobs page's "Post a
    requirement" / outline filter buttons) so employer CTAs read as one

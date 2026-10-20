@@ -10,8 +10,10 @@ import { emailDomain, isFreeMailDomain } from "../../../server-handlers/_employe
 import { tierLadder } from "@/employer/_accountHelpers";
 import { PAY_AS_YOU_GO_SENTENCE, CREDIT_BACK_SENTENCE, unlockFeeSentence } from "@/employer/_employerOffer";
 import { tokens as t, fonts as f } from "@/auth/_tokens";
-import { Card as AtomCard, Eyebrow, EmployerIcon } from "@/employer/_atoms";
-import { PrimaryLink, PostJobLink, ErrorPanel, InlineAlert } from "@/employer/_consoleParts";
+import { Eyebrow, EmployerIcon } from "@/employer/_atoms";
+import { Card } from "@/components/ui/card";
+import { PrimaryLink, PostJobLink, ErrorPanel } from "@/employer/_consoleParts";
+import { InlineAlert } from "@/employer/_requirementAtoms";
 import CompanyProfileForm from "@/employer/CompanyProfileForm";
 import {
   DashboardHeader, DashboardFunnel, ActiveJobsCard, RecommendedCandidatesCard,
@@ -20,6 +22,9 @@ import {
 import { buildInsights, buildNextAction, buildRecommendedCards, type DashboardRange, type EmployerDashboardData } from "@/employer/dashboardData";
 import { deriveOnboardingSteps, hasOpenedProfile, hasProgressedCandidate, type ChecklistStep } from "@/employer/onboardingSteps";
 import { useJobRowActions } from "./jobs/_components/useJobRowActions";
+
+/* Flat white surface with a 1px line, the console's one card look. */
+const SURFACE = "gap-0 rounded-2xl border border-hx-line bg-white p-6 ring-0";
 
 const ONBOARDING_HIDDEN_KEY = "hirestepx-employer-onboarding-hidden";
 
@@ -31,7 +36,7 @@ function WorkEmailRequired({ email }: { email: string }) {
   const [busy, setBusy] = useState(false);
   return (
     <div className="mx-auto w-full max-w-[560px]">
-      <AtomCard>
+      <Card className={SURFACE}>
         <div role="alert" className="flex flex-col gap-3 text-foreground">
           <h1 className="m-0 text-2xl font-normal">Employer accounts need a work email</h1>
           <p className="m-0 text-[15px] leading-relaxed text-muted-foreground">
@@ -51,7 +56,7 @@ function WorkEmailRequired({ email }: { email: string }) {
             </Button>
           </div>
         </div>
-      </AtomCard>
+      </Card>
     </div>
   );
 }
@@ -96,7 +101,7 @@ function CompanyOnboarding() {
           Add your company name and website, then post a job. Your AI-matched shortlist is built once a job is posted.
         </p>
       </div>
-      <AtomCard>
+      <Card className={SURFACE}>
         <CompanyProfileForm
           idPrefix="onboarding"
           initialName={user?.pendingCompanyName ?? ""}
@@ -105,7 +110,7 @@ function CompanyOnboarding() {
           busyLabel="Setting up…"
           websiteHelp="Candidates see this on your jobs. Signing in with a work email on this domain raises your limits."
         />
-      </AtomCard>
+      </Card>
 
       <section aria-labelledby="onboarding-next" style={{ marginTop: 48 }}>
         <div id="onboarding-next" style={{ textAlign: "center", marginBottom: 20 }}>

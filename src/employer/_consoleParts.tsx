@@ -168,16 +168,5 @@ export function ErrorPanel({
   );
 }
 
-/** Compact in-page failure with a retry, for sections that fail while the rest
- *  of the page still works. Counterpart to the centred ErrorPanel. */
-export function InlineAlert({ message, onRetry }: { message: string; onRetry: () => void }) {
-  return (
-    <div role="alert" className="flex flex-wrap items-center gap-3 rounded-xl border border-hx-line bg-white px-4 py-3 text-[14px] text-hx-error-ink">
-      <span className="min-w-[200px] flex-1">{message}</span>
-      <OutlineCta size="sm" onClick={onRetry}>Retry</OutlineCta>
-    </div>
-  );
-}
-
 export { OutlineCta, StatePanel };
 export { InWhiteCardProvider } from "@/employer/StatePanel";

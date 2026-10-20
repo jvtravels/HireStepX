@@ -30,7 +30,7 @@ import { MatchFactorsCard, EmployerVisibilityCard } from "./MatchFactorsCard";
 import InterviewInviteCard from "./InterviewInviteCard";
 import { isInterviewInvite } from "./interviewInvite";
 
-/* Same surface as the employer console's <Card> (white, 1px line, 16px
+/* Same surface as the employer console's cards (white, 1px line, 16px
    radius, 24px padding, flat) so the two detail screens read as one product. */
 const PANEL_STYLE = { background: t.white, border: `1px solid ${t.line}`, borderRadius: 16, padding: 24, minWidth: 0 } as const;
 const SECTION_HEADING_STYLE = { fontFamily: f.sans, fontSize: 16, fontWeight: 600, color: t.coal, margin: "0 0 8px" } as const;

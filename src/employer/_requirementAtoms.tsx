@@ -8,7 +8,8 @@
 
 import type { ReactNode } from "react";
 import { AlertTriangleIcon, CheckCircle2Icon, InfoIcon, ShieldAlertIcon, RefreshCwIcon } from "lucide-react";
-import { tokens as t, fonts as f, textSize } from "@/auth/_tokens";
+import { Alert, AlertTitle } from "@/components/ui/alert";
+import { cn } from "@/lib/utils";
 import { OutlineCta } from "@/employer/_atoms";
 import { CtaLink } from "@/employer/_consoleParts";
 import { StatePanel } from "@/employer/StatePanel";
@@ -17,11 +18,11 @@ import { StatePanel } from "@/employer/StatePanel";
 
 export type NoticeTone = "error" | "warning" | "info" | "success";
 
-const NOTICE_PALETTE: Record<NoticeTone, { bg: string; fg: string; line: string }> = {
-  error: { bg: t.error100, fg: t.errorInk, line: t.errorLine },
-  warning: { bg: t.warning100, fg: t.warningInk, line: t.warningLine },
-  info: { bg: t.indigo100, fg: t.indigoDeep, line: t.line },
-  success: { bg: t.success100, fg: t.successInk, line: t.successLine },
+const NOTICE_CLASS: Record<NoticeTone, string> = {
+  error: "border-hx-error-ink/20 bg-hx-error-100 text-hx-error-ink",
+  warning: "border-hx-warning-ink/20 bg-hx-warning-100 text-hx-warning-ink",
+  info: "border-hx-line bg-hx-indigo-100 text-hx-indigo-deep",
+  success: "border-hx-success-ink/20 bg-hx-success-100 text-hx-success-ink",
 };
 
 const NOTICE_ICON: Record<NoticeTone, typeof InfoIcon> = {
@@ -49,35 +50,34 @@ export function InlineNotice({
   id?: string;
   live?: boolean;
 }) {
-  const p = NOTICE_PALETTE[tone];
   const Icon = NOTICE_ICON[tone];
   return (
-    <div
+    <Alert
       id={id}
       role={live ? (tone === "error" ? "alert" : "status") : undefined}
-      className={live ? (tone === "error" ? "mx-shake" : "mx-rise") : undefined}
-      style={{
-        display: "flex",
-        alignItems: "flex-start",
-        gap: 10,
-        flexWrap: "wrap",
-        padding: "10px 14px",
-        borderRadius: 12,
-        background: p.bg,
-        color: p.fg,
-        border: `1px solid ${p.line}`,
-        fontFamily: f.sans,
-        fontSize: textSize.base,
-        lineHeight: 1.5,
-      }}
+      className={cn(
+        "flex flex-wrap items-start gap-2.5 rounded-xl px-3.5 py-2.5 text-[13px] leading-normal",
+        NOTICE_CLASS[tone],
+        live && (tone === "error" ? "mx-shake" : "mx-rise"),
+      )}
     >
-      <Icon size={16} aria-hidden="true" style={{ flexShrink: 0, marginTop: 2 }} />
-      <div style={{ flex: "1 1 220px", minWidth: 0, overflowWrap: "anywhere" }}>
-        {title && <div style={{ fontWeight: 700, marginBottom: children ? 2 : 0 }}>{title}</div>}
+      <Icon size={16} aria-hidden="true" className="mt-0.5 shrink-0" />
+      <div className="min-w-0 flex-[1_1_220px] [overflow-wrap:anywhere]">
+        {title && <AlertTitle className={cn("font-bold", children ? "mb-0.5" : "")}>{title}</AlertTitle>}
         {children}
       </div>
       {action}
-    </div>
+    </Alert>
+  );
+}
+
+/** Compact in-page failure with a retry, for sections that fail while the rest
+    of the page still works. Counterpart to the centred ErrorRetry panel. */
+export function InlineAlert({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return (
+    <InlineNotice tone="error" action={<OutlineCta size="sm" onClick={onRetry}>Retry</OutlineCta>}>
+      {message}
+    </InlineNotice>
   );
 }
 
@@ -88,7 +88,7 @@ export function SuspendedBanner() {
     <InlineNotice tone="warning" title="Account suspended: read-only" live={false}>
       You can still review existing candidates, but unlocking, messaging, status changes and editing
       requirements are turned off. Contact{" "}
-      <a href="mailto:support@hirestepx.com" style={{ color: "inherit", fontWeight: 600, textDecoration: "underline" }}>
+      <a href="mailto:support@hirestepx.com" className="font-semibold text-inherit underline">
         support@hirestepx.com
       </a>{" "}
       to resolve this.
