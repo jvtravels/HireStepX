@@ -252,7 +252,7 @@ export default async function handler(req: Request): Promise<Response> {
     const candidateIds = pageMatches.map((m) => m.candidate_user_id);
 
     const profileById = new Map<string, { name: string; email: string; target_role: string; resume_data: unknown; practice_timestamps: string[]; portfolio_links: unknown }>();
-    for (const batch of chunk(candidateIds, 100)) {
+    const loadProfiles = () => Promise.all(chunk(candidateIds, 100).map(async (batch) => {
       const profilesRes = await fetch(
         `${SUPABASE_URL}/rest/v1/profiles?id=in.(${inList(batch)})&select=id,name,email,target_role,resume_data,practice_timestamps,portfolio_links`,
         { headers: serviceHeaders() },
@@ -263,7 +263,7 @@ export default async function handler(req: Request): Promise<Response> {
         }>;
         for (const r of rows) profileById.set(r.id, r);
       }
-    }
+    }));
 
     // Server-graded sessions only (report_generated_at set): a client-relayed
     // session row is not evidence an employer should see counted.
@@ -271,13 +271,14 @@ export default async function handler(req: Request): Promise<Response> {
     // The same role-matched, trusted stats scoring used, per candidate, so the
     // "why this score" breakdown is computed from identical inputs.
     const sessionRowsByUser = new Map<string, Awaited<ReturnType<typeof loadGradedSessions>>>();
-    if (candidateIds.length > 0) {
+    const loadSessions = async () => {
+      if (candidateIds.length === 0) return;
       const graded = await loadGradedSessions(SUPABASE_URL, serviceHeaders(), candidateIds, !!(requirement.min_readiness_band || requirement.min_star_completeness));
       for (const r of graded) {
         sessionCounts.set(r.user_id, (sessionCounts.get(r.user_id) || 0) + 1);
         sessionRowsByUser.set(r.user_id, [...(sessionRowsByUser.get(r.user_id) ?? []), r]);
       }
-    }
+    };
     const scoringInput: RequirementInput = {
       title: requirement.title, location: requirement.location, description: requirement.description || "",
       skills: requirement.skills ?? [], customSkills: requirement.custom_skill_sets ?? [], workMode: requirement.work_mode,
@@ -293,30 +294,35 @@ export default async function handler(req: Request): Promise<Response> {
        the flag stays false and the row links to the profile instead. */
     const withResumeFile = new Set<string>();
     const unlockedIds = pageMatches.filter((m) => m.unlocked).map((m) => m.candidate_user_id);
-    for (const batch of chunk(unlockedIds, 100)) {
+    const loadResumeFiles = () => Promise.all(chunk(unlockedIds, 100).map(async (batch) => {
       const filesRes = await fetch(
         `${SUPABASE_URL}/rest/v1/resume_versions?select=resumes!inner(user_id)&resumes.user_id=in.(${inList(batch)})&file_path=not.is.null&limit=1000`,
         { headers: serviceHeaders() },
       ).catch(() => null);
-      if (!filesRes || !filesRes.ok) continue;
+      if (!filesRes || !filesRes.ok) return;
       const fileRows = (await filesRes.json().catch(() => [])) as Array<{ resumes?: { user_id?: string } | null }>;
       for (const r of fileRows) if (r.resumes?.user_id) withResumeFile.add(r.resumes.user_id);
-    }
+    }));
 
     /* Matches whose paid unlock was already refunded as account credit: the
        employer got their money back, so the contact details stop being theirs
        to export. Best-effort — the ledger is an optional table. */
     const refundedMatchIds = new Set<string>();
+    const employerId = auth.userId;
     const unlockedMatchIds = pageMatches.filter((m) => m.unlocked).map((m) => m.id);
-    for (const batch of chunk(unlockedMatchIds, 100)) {
+    const loadRefunds = () => Promise.all(chunk(unlockedMatchIds, 100).map(async (batch) => {
       const ledgerRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/employer_credit_ledger?employer_id=eq.${encodeURIComponent(auth.userId)}&kind=eq.refund&match_id=in.(${inList(batch)})&select=match_id`,
+        `${SUPABASE_URL}/rest/v1/employer_credit_ledger?employer_id=eq.${encodeURIComponent(employerId)}&kind=eq.refund&match_id=in.(${inList(batch)})&select=match_id`,
         { headers: serviceHeaders() },
       ).catch(() => null);
-      if (!ledgerRes || !ledgerRes.ok) continue;
+      if (!ledgerRes || !ledgerRes.ok) return;
       const ledgerRows = (await ledgerRes.json().catch(() => [])) as Array<{ match_id: string | null }>;
       for (const r of ledgerRows) if (r.match_id) refundedMatchIds.add(r.match_id);
-    }
+    }));
+
+    // None of these reads depends on another, so they run together instead of
+    // adding their round trips up.
+    await Promise.all([loadProfiles(), loadSessions(), loadResumeFiles(), loadRefunds()]);
 
     const candidates = pageMatches.map((m) => {
       const profile = profileById.get(m.candidate_user_id);

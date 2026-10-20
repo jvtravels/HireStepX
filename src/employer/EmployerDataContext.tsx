@@ -267,8 +267,8 @@ interface EmployerDataContextValue {
   createUnlockOrderResult: (request: UnlockRequest) => Promise<EmployerApiResult<UnlockOrder>>;
   verifyUnlockPayment: (payload: VerifyPayload) => Promise<VerifyResult | null>;
   /** Loads the job with its whole shortlist (every page, capped at MAX_SHORTLIST_CANDIDATES);
-   *  pass `{ firstPageOnly: true }` when only job fields are needed. `total` is the true count. */
-  fetchRequirementDetail: (id: string, options?: { firstPageOnly?: boolean }) => Promise<Requirement | null>;
+   *  pass `{ firstPageOnly: true }` when only job fields are needed. `onFirstPage` receives the top 25 early so the screen can paint before the rest arrives. `total` is the true count. */
+  fetchRequirementDetail: (id: string, options?: { firstPageOnly?: boolean; onFirstPage?: (partial: Requirement) => void }) => Promise<Requirement | null>;
   archiveRequirement: (id: string, options?: { archiveReason?: string; archiveDisposition?: ArchiveDisposition }) => Promise<boolean>;
   /** Same as archiveRequirement but also returns the candidates "reject_remaining" changed, so the caller can offer Undo. */
   archiveRequirementResult: (id: string, options?: { archiveReason?: string; archiveDisposition?: ArchiveDisposition }) => Promise<{ ok: boolean; rejectedMatches: ArchivedMatchRecord[] }>;
@@ -323,6 +323,7 @@ export function useEmployerData() {
 /* ── Helpers ── */
 
 const SHORTLIST_PAGE_LIMIT = 100;
+const FIRST_PAINT_LIMIT = 25;
 /** Upper bound on candidates loaded into one job page; beyond it the page says "showing N of M". */
 export const MAX_SHORTLIST_CANDIDATES = 500;
 const RETRY_DELAYS_MS = [300, 900];
@@ -543,21 +544,34 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
     return null;
   }, []);
 
-  const fetchRequirementDetail = useCallback(async (id: string, options?: { firstPageOnly?: boolean }): Promise<Requirement | null> => {
+  const fetchRequirementDetail = useCallback(async (id: string, options?: { firstPageOnly?: boolean; onFirstPage?: (partial: Requirement) => void }): Promise<Requirement | null> => {
     const base = `/api/employer-requirement-detail?id=${encodeURIComponent(id)}`;
-    const first = await getWithRetry(options?.firstPageOnly ? base : `${base}&page=1&limit=${SHORTLIST_PAGE_LIMIT}`);
-    if (!first || !first.ok || !first.data) return null;
+    if (options?.firstPageOnly) {
+      const only = await getWithRetry(base);
+      return only && only.ok && only.data ? (only.data as Requirement) : null;
+    }
+    // A small first page lets the screen paint while the rest loads; every
+    // request repeats the server's ranking, so the remainder is fetched in
+    // parallel rather than one page after another.
+    const fullFirst = getWithRetry(`${base}&page=1&limit=${SHORTLIST_PAGE_LIMIT}`);
+    const quick = options?.onFirstPage ? await getWithRetry(`${base}&page=1&limit=${FIRST_PAINT_LIMIT}`) : null;
+    if (quick && quick.ok && quick.data) options?.onFirstPage?.(quick.data as Requirement);
+    const first = await fullFirst;
+    if (!first || !first.ok || !first.data) return quick && quick.ok ? (quick.data as Requirement) : null;
     const detail = first.data as Requirement;
-    if (options?.firstPageOnly) return detail;
-    // The server pages the shortlist (25 by default); follow nextPage so a job
-    // with more matches than one page shows all of them, up to a sane cap.
+    const total = Math.min(detail.total ?? detail.candidates.length, MAX_SHORTLIST_CANDIDATES);
+    const lastPage = Math.ceil(total / SHORTLIST_PAGE_LIMIT);
+    const rest = await Promise.all(
+      Array.from({ length: Math.max(0, lastPage - 1) }, (_, i) => getWithRetry(`${base}&page=${i + 2}&limit=${SHORTLIST_PAGE_LIMIT}`)),
+    );
+    const seen = new Set(detail.candidates.map((c) => c.id));
     let candidates = detail.candidates;
-    let next = detail.nextPage ?? null;
-    while (next && candidates.length < MAX_SHORTLIST_CANDIDATES) {
-      const more = await getWithRetry(`${base}&page=${next}&limit=${SHORTLIST_PAGE_LIMIT}`);
+    let next: number | null = detail.nextPage ?? null;
+    for (const more of rest) {
       if (!more || !more.ok || !isRecord(more.data) || !Array.isArray(more.data.candidates)) break;
-      const seen = new Set(candidates.map((c) => c.id));
-      candidates = candidates.concat((more.data.candidates as Candidate[]).filter((c) => !seen.has(c.id)));
+      const fresh = (more.data.candidates as Candidate[]).filter((c) => !seen.has(c.id));
+      for (const c of fresh) seen.add(c.id);
+      candidates = candidates.concat(fresh);
       next = typeof more.data.nextPage === "number" ? more.data.nextPage : null;
     }
     return { ...detail, candidates, nextPage: next };

@@ -98,6 +98,7 @@ export default function RequirementDetailPage() {
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [pendingBulk, setPendingBulk] = useState<BulkTarget | null>(null);
   const [bulkBusy, setBulkBusy] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [unlockTarget, setUnlockTarget] = useState<UnlockTarget | null>(null);
@@ -109,10 +110,18 @@ export default function RequirementDetailPage() {
   const load = useCallback(async () => {
     setLoading(true);
     setLoadFailed(false);
-    const r = await fetchRequirementDetail(params.id);
+    setLoadingMore(false);
+    const r = await fetchRequirementDetail(params.id, {
+      onFirstPage: (partial) => {
+        setRequirement(partial);
+        setLoading(false);
+        setLoadingMore(true);
+      },
+    });
     setRequirement(r);
     setLoadFailed(r == null);
     setLoading(false);
+    setLoadingMore(false);
   }, [fetchRequirementDetail, params.id]);
 
   // Background revalidation keeps the rendered list when a refetch fails, so a
@@ -586,7 +595,7 @@ export default function RequirementDetailPage() {
                   )
                 ) : (
                   <>
-                  {(requirement.total ?? candidates.length) > candidates.length && (
+                  {!loadingMore && (requirement.total ?? candidates.length) > candidates.length && (
                     <div className="mx-7 mb-3">
                       <InlineNotice tone="info" live={false}>
                         Showing {candidates.length} of {requirement.total} candidates. Narrow the shortlist with search and filters, or close out candidates you have already decided on.
