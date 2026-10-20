@@ -199,7 +199,7 @@ export function ActionRow({ icon, tone, title, desc, action, last }: {
       display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap",
       padding: "16px 0", borderBottom: last ? "none" : `1px solid ${c.border}`,
     }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 0, flex: 1 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 0, flex: "1 1 240px" }}>
         <span aria-hidden="true" style={{
           width: 40, height: 40, borderRadius: 10, flexShrink: 0,
           display: "flex", alignItems: "center", justifyContent: "center",

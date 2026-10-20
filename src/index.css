@@ -353,6 +353,8 @@ body {
   :root { --coarse-min: 44px; }
   input, select, textarea { min-height: 44px; }
   button { min-height: 44px; }
+  /* Switches/checkboxes/radios are buttons too; their hit area is already extended with ::after, so the blanket 44px would stretch them into tall pills. */
+  button[role="switch"], button[role="checkbox"], button[role="radio"] { min-height: 0; min-width: 0; }
 }
 
 /* ─── Keyframe Animations ─── */
@@ -885,6 +887,7 @@ input[type="range"]::-moz-range-thumb {
   .session-setup-grid { grid-template-columns: 1fr !important; }
 
   button, a { min-height: 44px; }
+  button[role="switch"], button[role="checkbox"], button[role="radio"] { min-height: 0; }
 
   .session-detail-grid { grid-template-columns: 1fr !important; }
   .session-detail-header { flex-direction: column !important; gap: 16px !important; }
