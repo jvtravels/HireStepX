@@ -4,7 +4,9 @@ import { useState, useEffect, useCallback, type ReactNode } from "react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { ArrowLeftIcon, CheckIcon, MessageCircleQuestionIcon, ScaleIcon, SearchXIcon, TrendingUpIcon, UserXIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useEmployerBreadcrumb } from "@/employer/EmployerShell";
 import { useEmployerData, type Requirement } from "@/employer/EmployerDataContext";
 import type { Candidate } from "@/employer/mockData";
@@ -28,20 +30,13 @@ const DIFFERENCE_ICON: Record<string, ReactNode> = {
 
 const COMPARE_CSS = `
 .cmp-back:focus-visible { outline: 2px solid ${t.indigo}; outline-offset: 2px; border-radius: 4px; }
-.cmp-table { width: 100%; min-width: 560px; border-collapse: collapse; table-layout: fixed; }
 .cmp-name-link { color: inherit; text-decoration: none; }
 .cmp-name-link:hover { text-decoration: underline; }
 .cmp-name-link:focus-visible { outline: 2px solid ${t.indigo}; outline-offset: 2px; border-radius: 4px; }
-.cmp-table th, .cmp-table td { padding: 14px 28px; text-align: left; vertical-align: top; border-bottom: 1px solid ${t.line}; overflow-wrap: anywhere; }
-.cmp-table tbody tr:last-child th, .cmp-table tbody tr:last-child td { border-bottom: 0; }
-.cmp-table thead th { background: ${t.rowTint}; }
-.cmp-table tbody th { width: 28%; font-weight: 600; color: ${t.inkSoft}; }
-@media (max-width: 480px) {
-  .cmp-table th, .cmp-table td { padding: 10px 12px; }
-  .cmp-table tbody th { width: 30%; }
-  .cmp-table[data-cols="2"] { min-width: 0; }
-}
 `;
+
+const CMP_CELL = "whitespace-normal break-words px-3 py-2.5 align-top [overflow-wrap:anywhere] min-[481px]:px-7 min-[481px]:py-3.5";
+const CMP_ROW = "border-hx-line hover:bg-transparent";
 
 const cellText = { fontFamily: f.sans, fontSize: textSize.base, color: t.coal } as const;
 const faintText = { ...cellText, color: t.inkFaint } as const;
@@ -291,45 +286,49 @@ export default function ComparePage() {
         {/* Keyboard users can only scroll an overflow region they can focus. */}
         {/* eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex */}
         <div className="overflow-x-auto focus-visible:outline-2 focus-visible:-outline-offset-2" tabIndex={0} role="region" aria-label="Comparison table. Scroll sideways to see every candidate.">
-          <table className="cmp-table" data-cols={chosen.length}>
-            <caption className="sr-only">
+          <Table
+            data-cols={chosen.length}
+            containerClassName="overflow-visible"
+            className="min-w-[560px] table-fixed border-collapse text-base data-[cols=2]:max-[480px]:min-w-0"
+          >
+            <TableCaption className="sr-only">
               Side-by-side comparison of {namesLabel} for {requirement.title}
-            </caption>
-            <thead>
-              <tr>
-                <td style={{ background: t.rowTint }}>
+            </TableCaption>
+            <TableHeader>
+              <TableRow className={CMP_ROW}>
+                <TableCell className={cn(CMP_CELL, "bg-hx-row")}>
                   <span className="sr-only">Attribute</span>
-                </td>
+                </TableCell>
                 {chosen.map((c) => (
-                  <th key={c.id} scope="col">
+                  <TableHead key={c.id} scope="col" className={cn(CMP_CELL, "h-auto bg-hx-row font-bold")}>
                     <NameCell candidate={c} requirementId={requirement.id} />
                     {(summary.leads.get(c.id) ?? 0) > 0 && (
                       <div className="mt-1 text-[13px] font-normal text-hx-ink-soft">Highest on {summary.leads.get(c.id)} of 4 measures</div>
                     )}
-                  </th>
+                  </TableHead>
                 ))}
-              </tr>
-            </thead>
-            <tbody>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {visibleRows.map((row) => (
-                <tr key={row.label}>
-                  <th scope="row" style={{ fontFamily: f.sans, fontSize: textSize.base }}>
+                <TableRow key={row.label} className={CMP_ROW}>
+                  <TableHead scope="row" className={cn(CMP_CELL, "h-auto w-[30%] font-semibold text-hx-ink-soft min-[481px]:w-[28%]")}>
                     {row.label}
-                  </th>
+                  </TableHead>
                   {chosen.map((c) => (
-                    <td key={c.id}>
+                    <TableCell key={c.id} className={CMP_CELL}>
                       {row.render(c, requirement.skills)}
                       {row.metric && leaders.get(row.metric)?.has(c.id) && (
                         <div className="mt-1 inline-flex items-center gap-1 text-[13px] font-semibold text-hx-indigo">
                           <CheckIcon size={13} aria-hidden="true" /> Highest
                         </div>
                       )}
-                    </td>
+                    </TableCell>
                   ))}
-                </tr>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       </section>
     </div>
