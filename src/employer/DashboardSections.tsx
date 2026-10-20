@@ -138,7 +138,7 @@ function DashboardSearch({ jobs, candidates }: { jobs: RequirementSummary[]; can
         shouldFilter={false}
         label="Search jobs and candidates"
         onKeyDown={(e) => { if (e.key === "Escape") setQ(""); }}
-        className="h-auto overflow-visible bg-transparent p-0"
+        className="h-auto overflow-visible bg-transparent p-0 [&_[data-slot=input-group]]:border-hx-line [&_[data-slot=input-group]]:bg-white"
       >
         <CommandInput value={q} onValueChange={setQ} placeholder="Search jobs and candidates" />
         <div hidden={!term} className="mx-swap absolute inset-x-0 top-11 z-20 min-w-0 rounded-xl border border-hx-line bg-white">
