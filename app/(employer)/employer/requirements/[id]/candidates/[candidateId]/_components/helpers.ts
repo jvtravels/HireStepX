@@ -298,7 +298,9 @@ export function candidateSignal(score: number, fit: FitSummary): { key: Candidat
       ? { key: "strong", label: "Strong match", tone: "good" }
       : { key: "promising", label: "Promising match", tone: "soon" };
   }
-  return band === "fair" ? { key: "fair", label: "Fair match", tone: "soon" } : { key: "low", label: "Low match", tone: "unknown" };
+  const meetsNothing = fit.total > 0 && fit.meets === 0 && fit.close.length === 0;
+  if (band === "fair" && !meetsNothing) return { key: "fair", label: "Fair match", tone: "soon" };
+  return { key: "low", label: "Low match", tone: "unknown" };
 }
 
 /** "1 yr 4 mo", "7 mo"; used for per-role tenure. */

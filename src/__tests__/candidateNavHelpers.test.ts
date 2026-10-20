@@ -79,6 +79,11 @@ describe("candidateSignal", () => {
     expect(candidateSignal(19, fit(2, 2)).label).toBe("Low match");
   });
 
+  it("reads Low when a fair score meets no criterion at all", () => {
+    expect(candidateSignal(25, fit(0, 2, ["Required skills", "Experience"])).label).toBe("Low match");
+    expect(candidateSignal(25, fit(0, 2, ["Experience"], ["Required skills"])).label).toBe("Fair match");
+  });
+
   it("treats a candidate with no comparable criteria like the score alone", () => {
     expect(candidateSignal(44, fit(0, 0)).label).toBe("Strong match");
   });

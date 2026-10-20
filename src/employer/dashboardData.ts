@@ -125,7 +125,7 @@ export function buildInsights(
       id: "best-pipeline",
       tone: "positive",
       title: "Strongest pipeline",
-      body: `${best.title} has ${best.aiScreening.topMatches} strong ${best.aiScreening.topMatches === 1 ? "match" : "matches"}${avg !== null ? `, averaging ${Math.round(avg)}% fit` : ""}.`,
+      body: `${best.title} has ${best.aiScreening.topMatches} strong ${best.aiScreening.topMatches === 1 ? "match" : "matches"}${avg !== null ? `, average match score ${Math.round(avg)} out of 100` : ""}.`,
       cta: "View job",
       href: `/employer/requirements/${best.id}`,
     });

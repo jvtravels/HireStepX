@@ -219,7 +219,7 @@ describe("buildInsights", () => {
   it("emits only observations that are true", () => {
     const out = buildInsights([job("r1", {}, [cand("aaaaaa", [])]), job("r2")], pipeline, NOW);
     expect(out.map((i) => i.id)).toEqual(["best-pipeline", "no-strong", "stale"]);
-    expect(out[0].body).toContain("averaging 71% fit");
+    expect(out[0].body).toContain("average match score 71 out of 100");
     expect(out.map((i) => i.tone)).toEqual(["positive", "attention", "neutral"]);
     expect(out.every((i) => i.cta.length > 0)).toBe(true);
   });
