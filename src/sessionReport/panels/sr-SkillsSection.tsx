@@ -13,7 +13,7 @@ export function SkillsSection({ skills, weakest, onDrillSkill }: { skills: Skill
   const legend = hasAvg ? (
     <div style={{ display: "flex", alignItems: "center", gap: 16, fontFamily: f.sans, fontSize: size.sm, color: t.inkSoft }}>
       <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-        <span style={{ width: 16, height: 4, background: t.coal, borderRadius: radius.micro }} />
+        <span style={{ width: 16, height: 4, background: t.inkSoft, borderRadius: radius.micro }} />
         You
       </span>
       <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
@@ -55,7 +55,7 @@ export function SkillsSection({ skills, weakest, onDrillSkill }: { skills: Skill
                   }
                 >
                   <div className="ir-skill-bar-bg" style={{ background: t.line }} />
-                  <div className="ir-skill-bar-fg" style={{ width: `${pct}%`, background: s.name === weakest.name ? t.warning : t.coal }} />
+                  <div className="ir-skill-bar-fg" style={{ width: `${pct}%`, background: s.name === weakest.name ? t.warning : t.inkSoft }} />
                   {avgPct !== null && (
                     <div className="ir-skill-bar-marker" style={{ left: `calc(${avgPct}% - 1px)` }} aria-hidden="true" />
                   )}
