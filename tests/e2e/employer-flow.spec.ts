@@ -199,6 +199,32 @@ test.describe("Employer console — mocked network", () => {
     await expect(dialog.getByRole("heading", { name: /^Unlock this candidate for ₹\d+\?$/ })).toBeVisible();
     await expect(dialog).toContainText(/₹\d+ per candidate\./);
   });
+  test("outcome page: title sits inside the main container beside a candidate summary, and saving confirms", async ({ page }, testInfo) => {
+    await installEmployerMocks(page);
+    const saved: string[] = [];
+    await page.route(/\/api\/employer-dashboard/, (route) => json(route, DASHBOARD));
+    await page.route(/\/api\/employer-requirement-detail/, (route) => json(route, REQUIREMENT_DETAIL));
+    await page.route(/\/api\/employer-candidate-status/, (route) => {
+      const body = route.request().postDataJSON() as { candidateStatus: string };
+      saved.push(body.candidateStatus);
+      return json(route, { id: MATCH_ID, candidateStatus: body.candidateStatus });
+    });
+
+    await page.goto(`/employer/requirements/${REQ_ID}/outcome?candidate=${MATCH_ID}`);
+
+    const container = page.getByRole("region", { name: "Record an outcome" });
+    await expect(container.getByRole("heading", { level: 1 })).toContainText("How did it go with");
+    const summary = container.getByRole("complementary", { name: "Candidate summary" });
+    await expect(summary).toContainText("Match score");
+    await expect(summary).toContainText("87 / 100");
+    await page.screenshot({ path: testInfo.outputPath("outcome-form.png"), fullPage: true });
+
+    await container.getByRole("radio", { name: /Rejected/ }).click();
+    await container.getByRole("button", { name: "Save outcome" }).click();
+    await expect.poll(() => saved).toEqual(["rejected"]);
+    await expect(page.getByRole("heading", { name: "Outcome saved" })).toBeVisible();
+    await page.screenshot({ path: testInfo.outputPath("outcome-saved.png"), fullPage: true });
+  });
   test("changing a stage can be undone with the z shortcut, and the shortcuts toggle turns it off", async ({ page }) => {
     await installEmployerMocks(page);
     const unlocked: Candidate = { ...LOCKED_CANDIDATE, name: "Priya Sharma", unlocked: true, candidateStatus: "shortlisted" };

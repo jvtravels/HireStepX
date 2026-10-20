@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { CheckIcon } from "lucide-react";
 import { useParams, useSearchParams } from "next/navigation";
 import { useEmployerBreadcrumb } from "@/employer/EmployerShell";
 import { useEmployerData, type Requirement } from "@/employer/EmployerDataContext";
@@ -21,7 +22,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, Eyebrow, PrimaryCta, CANDIDATE_STATUS_LABEL } from "@/employer/_atoms";
+import { PrimaryCta, CANDIDATE_STATUS_LABEL } from "@/employer/_atoms";
 import { EmptyNote, ErrorRetry, InlineNotice, LinkCta, PageSkeleton, SuspendedBanner } from "@/employer/_requirementAtoms";
 import { failureMessage, setCandidateStatus } from "@/employer/_requirementCalls";
 import { useEmployerAccess } from "@/employer/_useEmployerAccess";
@@ -53,8 +54,28 @@ const OUTCOME_CSS = `
 .out-opt[data-checked="true"] { border-color: ${t.indigo}; background: ${t.indigo100}; }
 .out-opt[data-disabled="true"] { cursor: not-allowed; opacity: 0.75; }
 .out-opt:focus-within { outline: 2px solid ${t.indigo}; outline-offset: 2px; }
+.out-grid { display: grid; grid-template-columns: minmax(0, 1fr) 320px; }
+.out-main { padding: 24px 28px; display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+.out-aside { padding: 24px 28px; border-left: 1px solid ${t.line}; background: ${t.pageBg}; display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+.out-foot { grid-column: 1 / -1; display: flex; justify-content: flex-end; align-items: center; gap: 12px; padding: 16px 28px; border-top: 1px solid ${t.line}; }
+@media (max-width: 900px) {
+  .out-grid { grid-template-columns: minmax(0, 1fr); }
+  .out-aside { border-left: 0; border-top: 1px solid ${t.line}; }
+  .out-foot { flex-direction: column-reverse; align-items: stretch; }
+}
 .out-link:focus-visible { outline: 2px solid ${t.indigo}; outline-offset: 2px; border-radius: 4px; }
 `;
+
+const SUMMARY_LABEL = { fontFamily: f.sans, fontSize: 12, fontWeight: 600, letterSpacing: 0.4, textTransform: "uppercase", color: t.inkSoft, margin: 0 } as const;
+
+function SummaryRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div style={{ display: "grid", gap: 2 }}>
+      <dt style={SUMMARY_LABEL}>{label}</dt>
+      <dd style={{ fontFamily: f.sans, fontSize: textSize.md, fontWeight: 500, color: t.coal, margin: 0, overflowWrap: "anywhere" }}>{value}</dd>
+    </div>
+  );
+}
 
 export default function OutcomeFeedbackPage() {
   const params = useParams<{ id: string }>();
@@ -158,15 +179,20 @@ export default function OutcomeFeedbackPage() {
 
   if (savedStatus) {
     return (
-      <div style={{ maxWidth: 480, margin: "48px auto", textAlign: "center", padding: "0 16px" }}>
-        <div role="status" aria-live="polite">
-          <h1 style={{ fontFamily: f.sans, fontSize: textSize["2xl"], color: t.coal, margin: "0 0 8px" }}>Outcome saved</h1>
-          <p style={{ fontFamily: f.sans, fontSize: textSize.md, color: t.inkSoft, margin: "0 0 20px", overflowWrap: "anywhere" }}>
-            {name} is now marked as {CANDIDATE_STATUS_LABEL[savedStatus].toLowerCase()} for {requirement.title}. {isFinalStatus(savedStatus) ? "" : reversibilityNote(savedStatus)}
-          </p>
-        </div>
+      <div style={{ width: "100%", minWidth: 0 }}>
         <style>{OUTCOME_CSS}</style>
-        <LinkCta variant="outline" href={backHref}>Back to shortlist</LinkCta>
+        <section aria-label="Outcome saved" style={{ background: t.white, border: `1px solid ${t.line}`, borderRadius: 16, overflow: "hidden" }}>
+          <div role="status" aria-live="polite" style={{ maxWidth: 520, margin: "0 auto", padding: "64px 28px", textAlign: "center" }}>
+            <span aria-hidden="true" style={{ width: 48, height: 48, borderRadius: 999, background: t.indigo100, color: t.indigo, display: "inline-flex", alignItems: "center", justifyContent: "center", marginBottom: 16 }}>
+              <CheckIcon size={24} />
+            </span>
+            <h1 style={{ fontFamily: f.sans, fontSize: 20, fontWeight: 600, color: t.coal, margin: "0 0 8px", letterSpacing: "-0.01em" }}>Outcome saved</h1>
+            <p style={{ fontFamily: f.sans, fontSize: textSize.md, color: t.inkSoft, margin: "0 0 24px", overflowWrap: "anywhere", lineHeight: 1.5 }}>
+              {name} is now marked as {CANDIDATE_STATUS_LABEL[savedStatus].toLowerCase()} for {requirement.title}. {isFinalStatus(savedStatus) ? "" : reversibilityNote(savedStatus)}
+            </p>
+            <LinkCta variant="outline" href={backHref}>Back to shortlist</LinkCta>
+          </div>
+        </section>
       </div>
     );
   }
@@ -179,34 +205,31 @@ export default function OutcomeFeedbackPage() {
           <SuspendedBanner />
         </div>
       )}
-      <Eyebrow tone="indigo">Outcome feedback</Eyebrow>
-      <h1 style={{ fontFamily: f.sans, fontSize: "clamp(22px, 6vw, 26px)", color: t.coal, margin: "8px 0 4px", overflowWrap: "anywhere" }}>How did it go with {name}?</h1>
-      <p style={{ fontFamily: f.sans, fontSize: textSize.md, color: t.inkSoft, margin: "0 0 20px", overflowWrap: "anywhere" }}>{requirement.title}</p>
-
-      <Card aria-label="Record an outcome">
-        {(declined || withdrew) && (
-          <div style={{ marginBottom: 16 }}>
-            <InlineNotice tone="warning" title={withdrew ? "This candidate withdrew" : "This candidate declined"}>
-              {withdrew ? "They withdrew from employer contact" : "They chose not to be contacted for this job"}, so you can&apos;t invite them. You can still close them out.
+      <section aria-label="Record an outcome" style={{ background: t.white, border: `1px solid ${t.line}`, borderRadius: 16, overflow: "hidden" }}>
+        <header style={{ padding: "20px 28px", borderBottom: `1px solid ${t.line}` }}>
+          <h1 style={{ fontFamily: f.sans, fontSize: 20, fontWeight: 600, color: t.coal, margin: 0, letterSpacing: "-0.01em", overflowWrap: "anywhere" }}>How did it go with {name}?</h1>
+          <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft, margin: "4px 0 0", overflowWrap: "anywhere" }}>{requirement.title}</p>
+        </header>
+        {available.length === 0 ? (
+          <div style={{ padding: "24px 28px" }}>
+            <InlineNotice tone="info" title={`Already ${CANDIDATE_STATUS_LABEL[current].toLowerCase()}`}>
+              {name} is in a final status, so there is no further outcome to record.
             </InlineNotice>
           </div>
-        )}
-        {available.length === 0 ? (
-          <InlineNotice tone="info" title={`Already ${CANDIDATE_STATUS_LABEL[current].toLowerCase()}`}>
-            {name} is in a final status, so there is no further outcome to record.
-          </InlineNotice>
         ) : (
-          (
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                onSubmit();
-              }}
-              style={{ display: "flex", flexDirection: "column", gap: 18, maxWidth: 560 }}
-            >
-              <p style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.inkSoft, margin: 0 }}>
-                Current status: <strong style={{ color: t.coal }}>{CANDIDATE_STATUS_LABEL[current]}</strong>
-              </p>
+          <form
+            className="out-grid"
+            onSubmit={(e) => {
+              e.preventDefault();
+              onSubmit();
+            }}
+          >
+            <div className="out-main">
+              {(declined || withdrew) && (
+                <InlineNotice tone="warning" title={withdrew ? "This candidate withdrew" : "This candidate declined"}>
+                  {withdrew ? "They withdrew from employer contact" : "They chose not to be contacted for this job"}, so you can&apos;t invite them. You can still close them out.
+                </InlineNotice>
+              )}
               <fieldset style={{ border: 0, margin: 0, padding: 0, minWidth: 0 }}>
                 <legend style={{ fontFamily: f.sans, fontSize: textSize.base, fontWeight: 600, color: t.coal, marginBottom: 8, padding: 0 }}>
                   Outcome <span aria-hidden="true">*</span>
@@ -282,13 +305,40 @@ export default function OutcomeFeedbackPage() {
                   </InlineNotice>
                 )}
               </div>
-              <PrimaryCta full disabled={!selected || submitting || blocked} loading={submitting} onClick={onSubmit}>
+            </div>
+            <aside className="out-aside" aria-label="Candidate summary">
+              <dl style={{ margin: 0, display: "grid", gap: 16 }}>
+                <SummaryRow label="Current status" value={CANDIDATE_STATUS_LABEL[current]} />
+                {candidate.targetRole && <SummaryRow label="Target role" value={candidate.targetRole} />}
+                {candidate.city && <SummaryRow label="Location" value={candidate.city} />}
+                <SummaryRow label="Match score" value={`${candidate.matchScore} / 100`} />
+                {candidate.skills.length > 0 && (
+                  <div style={{ display: "grid", gap: 6 }}>
+                    <dt style={SUMMARY_LABEL}>Skills</dt>
+                    <dd style={{ margin: 0, display: "flex", flexWrap: "wrap", gap: 6 }}>
+                      {candidate.skills.slice(0, 6).map((skill) => (
+                        <span key={skill} style={{ fontFamily: f.sans, fontSize: 12, color: t.coal, background: t.white, border: `1px solid ${t.line}`, borderRadius: 6, padding: "2px 8px" }}>{skill}</span>
+                      ))}
+                    </dd>
+                  </div>
+                )}
+              </dl>
+              <div style={{ borderTop: `1px solid ${t.line}`, paddingTop: 16, display: "grid", gap: 4 }}>
+                <span style={SUMMARY_LABEL}>What happens next</span>
+                <p style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.inkSoft, margin: 0, lineHeight: 1.5 }}>
+                  {selected ? reversibilityNote(selected.status) : "Pick an outcome to see what changes for you and the candidate."}
+                </p>
+              </div>
+            </aside>
+            <div className="out-foot">
+              <LinkCta variant="outline" href={backHref}>Cancel</LinkCta>
+              <PrimaryCta disabled={!selected || submitting || blocked} loading={submitting} onClick={onSubmit}>
                 {submitting ? "Saving…" : "Save outcome"}
               </PrimaryCta>
-            </form>
-          )
+            </div>
+          </form>
         )}
-      </Card>
+      </section>
 
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>
