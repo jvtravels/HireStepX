@@ -79,8 +79,8 @@ export function CoreMetricsSection({ metrics }: { metrics: DeliveryMetric[] }) {
               <div className="ir-metric-target">{m.targetLabel}</div>
               <div className="ir-metric-foot">
                 <MetricBand band={m.band} />
-                {scale && <span className="ir-metric-hint">{scale.hint[m.band]}</span>}
               </div>
+              {scale && <div className="ir-metric-hint">{scale.hint[m.band]}</div>}
             </div>
           );
         })}

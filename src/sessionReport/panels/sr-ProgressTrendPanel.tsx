@@ -1,198 +1,68 @@
-/* Session Report — cross-session skill progress trend panel.
- *
- * Renders a grid of small "trend tiles", one per negotiation skill,
- * showing latest score, delta-arrow vs. prior-session baseline, and a
- * tiny inline SVG sparkline of the score sequence over recent sessions.
- *
- * Purpose: every report today is standalone. This panel is the seam
- * for "am I improving on ESOPs / Anchoring / etc.?" — the first thing
- * users ask once they've taken more than one session.
- *
- * Pure presentation. Takes precomputed `trends` and renders. The trend
- * math itself lives in `../progressTracking/index.ts` so it's easy to
- * unit-test in isolation. Visual language mirrors the other sr-* panels
- * (SrSectionShell wrapper, token-only colors, no chart libraries). */
+/* Session Report: cross-session skill progress. One compact row per skill
+ * with score, a small neutral sparkline and a plain-language change chip.
+ * Trend math lives in `../progressTracking/index.ts`. */
 
 "use client";
 
-import { t, f, radius, size } from "../tokens";
 import { SrSectionShell } from "./_primitives";
 import type { SkillTrend } from "../progressTracking";
 
-/* ─── Sparkline ─────────────────────────────────────────────────────
- * Tiny inline SVG polyline. No library. Domain locked to [0,100] so
- * tiles for skills with high vs. low scores read on the same vertical
- * axis — comparing slopes across the grid is the whole point.
- *
- * Single point renders a centred dot (a polyline needs ≥2 points).
- * Empty sparkline renders nothing (caller handles empty state). */
-function Sparkline({
-  values,
-  color,
-  width = 72,
-  height = 22,
-}: {
-  values: number[];
-  color: string;
-  width?: number;
-  height?: number;
-}) {
+type Shown = "up" | "down" | "flat" | "new";
+
+function Sparkline({ values, dotClass, width = 64, height = 22 }: { values: number[]; dotClass: string; width?: number; height?: number }) {
   if (values.length === 0) return null;
-  const pad = 2;
+  const pad = 3;
   const innerW = width - pad * 2;
   const innerH = height - pad * 2;
-  const yFor = (v: number) =>
-    pad + innerH - (Math.max(0, Math.min(100, v)) / 100) * innerH;
-
-  if (values.length === 1) {
-    return (
-      <svg width={width} height={height} aria-hidden="true">
-        <circle cx={width / 2} cy={yFor(values[0])} r={2.5} fill={color} />
-      </svg>
-    );
-  }
-
-  const step = innerW / (values.length - 1);
-  const points = values
-    .map((v, i) => `${pad + i * step},${yFor(v)}`)
-    .join(" ");
-
+  const yFor = (v: number) => pad + innerH - (Math.max(0, Math.min(100, v)) / 100) * innerH;
+  const step = values.length > 1 ? innerW / (values.length - 1) : 0;
+  const xs = values.map((_, i) => (values.length > 1 ? pad + i * step : width / 2));
+  const last = values.length - 1;
   return (
-    <svg width={width} height={height} aria-hidden="true">
-      <polyline
-        points={points}
-        fill="none"
-        stroke={color}
-        strokeWidth={1.5}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
+    <svg className="ir-trend-spark" width={width} height={height} aria-hidden="true">
+      {values.length > 1 && (
+        <polyline
+          points={values.map((v, i) => `${xs[i]},${yFor(v)}`).join(" ")}
+          fill="none"
+          stroke="currentColor"
+          strokeOpacity={0.35}
+          strokeWidth={1.5}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      )}
+      <circle className={dotClass} cx={xs[last]} cy={yFor(values[last])} r={2.5} fill="currentColor" />
     </svg>
   );
 }
 
-/* ─── Arrow glyph + color ───────────────────────────────────────────
- * Maps trend → token color so a palette shift touches one file.
- * Up = success (green), down = error (red), flat = inkSoft (warm gray). */
-function trendColor(trend: SkillTrend["trend"]): string {
-  switch (trend) {
-    case "up": return t.success;
-    case "down": return t.error;
-    case "flat": return t.inkSoft;
-  }
+function rowState(trend: SkillTrend): { shown: Shown; label: string } {
+  if (trend.sparkline.length <= 1) return { shown: "new", label: "New" };
+  const d = Math.round(trend.deltaVsLast);
+  if (Math.abs(trend.deltaVsLast) < 3) return { shown: "flat", label: "No change" };
+  return d > 0 ? { shown: "up", label: `+${d}` } : { shown: "down", label: `−${Math.abs(d)}` };
 }
 
-function ArrowGlyph({ trend }: { trend: SkillTrend["trend"] }) {
-  const color = trendColor(trend);
-  if (trend === "up") {
-    return (
-      <svg width={12} height={12} viewBox="0 0 12 12" aria-hidden="true">
-        <polyline points="2,8 6,3 10,8" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    );
-  }
-  if (trend === "down") {
-    return (
-      <svg width={12} height={12} viewBox="0 0 12 12" aria-hidden="true">
-        <polyline points="2,4 6,9 10,4" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    );
-  }
+function TrendRow({ trend }: { trend: SkillTrend }) {
+  const { shown, label } = rowState(trend);
+  const cls = shown === "up" ? "ir-trend-delta-up" : shown === "down" ? "ir-trend-delta-down" : "ir-trend-delta-flat";
   return (
-    <svg width={12} height={12} viewBox="0 0 12 12" aria-hidden="true">
-      <line x1={2} y1={6} x2={10} y2={6} stroke={color} strokeWidth={2} strokeLinecap="round" />
-    </svg>
-  );
-}
-
-/* ─── Trend tile ────────────────────────────────────────────────────
- * Skill name + latest score, delta-arrow row, sparkline. Matches the
- * creamSoft/line/radius.bar tile vocabulary used by sr-CoreMetricsSection
- * so the two sections sit visually adjacent without jarring. */
-function TrendTile({ trend }: { trend: SkillTrend }) {
-  // Arrow and text must agree: the stored `trend` compares against the
-  // 3-session average, but the label shows the delta vs the last session.
-  const shown: SkillTrend["trend"] =
-    trend.sparkline.length <= 1 || Math.abs(trend.deltaVsLast) < 3
-      ? "flat"
-      : trend.deltaVsLast > 0
-        ? "up"
-        : "down";
-  const color = trendColor(shown);
-  const deltaText =
-    trend.sparkline.length <= 1
-      ? "First session"
-      : shown === "flat"
-        ? "No change since last session"
-        : `${shown === "up" ? "Up" : "Down"} ${Math.abs(trend.deltaVsLast).toFixed(0)} since last session`;
-  return (
-    <div
-      style={{
-        background: t.creamSoft,
-        border: `1px solid ${t.line}`,
-        borderRadius: radius.bar,
-        padding: "14px 16px",
-        display: "flex",
-        flexDirection: "column",
-        gap: 8,
-      }}
-    >
-      <div
-        style={{
-          fontFamily: f.sans,
-          fontSize: size.sm,
-          color: t.inkSoft,
-          fontWeight: 500,
-        }}
+    <li className="ir-trend-row">
+      <span className="ir-trend-name">{trend.skill}</span>
+      <span className="text-muted-foreground inline-flex">
+        <Sparkline values={trend.sparkline} dotClass={cls} />
+      </span>
+      <span className="ir-trend-score">{trend.latestScore.toFixed(0)}</span>
+      <span
+        className={`ir-trend-delta ${cls}`}
+        title={shown === "new" ? "First session for this skill" : `Change since your last session: ${label}`}
       >
-        {trend.skill}
-      </div>
-      <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-        <span
-          style={{
-            fontFamily: f.sans,
-            fontSize: size["3xl"],
-            fontWeight: 700,
-            color: t.coal,
-            lineHeight: 1,
-            letterSpacing: "-0.02em",
-          }}
-        >
-          {trend.latestScore.toFixed(0)}
-        </span>
-        <span
-          style={{
-            fontFamily: f.sans,
-            fontSize: size.sm,
-            color: t.inkSoft,
-          }}
-        >
-          out of 100
-        </span>
-      </div>
-      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-        <ArrowGlyph trend={shown} />
-        <span
-          style={{
-            fontFamily: f.sans,
-            fontSize: size.sm,
-            fontWeight: 500,
-            color,
-          }}
-        >
-          {deltaText}
-        </span>
-      </div>
-      <Sparkline values={trend.sparkline} color={color} />
-    </div>
+        {label}
+      </span>
+    </li>
   );
 }
 
-/* ─── Panel ─────────────────────────────────────────────────────────
- * Empty state when no history yet — the user hasn't completed a second
- * session, so there's nothing to trend on. Friendly copy not a hidden
- * panel: showing the empty state teaches that the feature exists and
- * sets the expectation for session #2. */
 export function ProgressTrendPanel({ trends }: { trends: SkillTrend[] }) {
   const hasAnyHistory = trends.some((tr) => tr.sparkline.length > 0);
   return (
@@ -200,37 +70,19 @@ export function ProgressTrendPanel({ trends }: { trends: SkillTrend[] }) {
       anchorId="ir-section-progress-trend"
       headingId="ir-progress-trend-heading"
       label="Skill progress"
-      title="Skill progress"
-      subtitle="Your score for each skill, and how it moved since your last session. The small line shows your recent sessions."
+      title="Progress over time"
+      subtitle="Score out of 100 for each skill, and the change since your last session."
     >
       {hasAnyHistory && trends.length > 0 ? (
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
-            gap: 12,
-            marginTop: 16,
-          }}
-        >
+        <ul className="ir-trend-grid m-0 list-none p-0">
           {trends.map((tr) => (
-            <TrendTile key={tr.skill} trend={tr} />
+            <TrendRow key={tr.skill} trend={tr} />
           ))}
-        </div>
+        </ul>
       ) : (
-        <div
-          style={{
-            marginTop: 16,
-            padding: "18px 20px",
-            background: t.creamSoft,
-            border: `1px dashed ${t.lineStrong}`,
-            borderRadius: radius.bar,
-            fontFamily: f.sans,
-            fontSize: size.base,
-            color: t.inkSoft,
-          }}
-        >
-          Your first session — track progress from session 2 onward.
-        </div>
+        <p className="mt-4 rounded-xl border border-dashed border-border px-5 py-4 text-sm text-muted-foreground">
+          This is your first session. Progress shows up from session 2.
+        </p>
       )}
     </SrSectionShell>
   );

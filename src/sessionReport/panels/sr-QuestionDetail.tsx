@@ -6,59 +6,33 @@
 
 import { useState } from "react";
 import { t, f, radius, space, size } from "../tokens";
-import type { AnswerSpan, HighlightKind, Question } from "../types";
+import type { AnswerSpan, Question } from "../types";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 
 function StarChip({ active, label }: { active: boolean; label: string }) {
   return (
     <span
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 4,
-        padding: "2px 9px",
-        borderRadius: radius.pill,
-        border: `1px solid ${active ? "transparent" : t.line}`,
-        background: active ? t.successTint : t.white,
-        color: active ? t.success : t.inkFaint,
-        fontFamily: f.sans,
-        fontSize: size.sm,
-        fontWeight: 500,
-      }}
+      className={active ? "ir-star-chip ir-star-chip-on" : "ir-star-chip"}
+      title={active ? `${label} found in your answer` : `${label} not found in your answer`}
     >
-      {active ? "\u2713" : "\u2013"} {label}
+      {active ? "\u2713 " : ""}{label}
     </span>
   );
 }
 
 function HighlightLegend() {
-  const items: { kind: HighlightKind; label: string }[] = [
-    { kind: "filler", label: "Filler / Hesitation" },
-    { kind: "hedge", label: "Hedging" },
-    { kind: "quantified", label: "Impact / Quantified" },
-    { kind: "firstPerson", label: "First Person" },
+  const items: { cls: string; label: string }[] = [
+    { cls: "ir-highlight-filler", label: "Filler words" },
+    { cls: "ir-highlight-hedge", label: "Hedging" },
+    { cls: "ir-highlight-quant", label: "Numbers and impact" },
+    { cls: "ir-highlight-first", label: "\u201CI\u201D statements" },
   ];
-  const colorFor = (k: HighlightKind) =>
-    k === "filler" ? t.leanHireRing
-    : k === "hedge" ? t.hedgeTint
-    : k === "quantified" ? t.successAccent
-    : t.indigoTint;
   return (
-    <div style={{ display: "flex", flexWrap: "wrap", gap: 14, marginTop: 12 }}>
+    <div className="ir-legend">
       {items.map((i) => (
-        <span
-          key={i.kind}
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 6,
-            fontFamily: f.sans,
-            fontSize: size.xs,
-            color: t.inkSoft,
-          }}
-        >
-          <span style={{ width: 10, height: 10, borderRadius: radius.micro, background: colorFor(i.kind) }} />
+        <span key={i.label} className="ir-legend-item">
+          <span className={`${i.cls} ir-legend-swatch`} aria-hidden="true" />
           {i.label}
         </span>
       ))}
@@ -173,7 +147,7 @@ export function QuestionDetail({ q, onTryQuestionAgain }: { q: Question; onTryQu
 
             <div className="ir-pq-metrics-strip" style={{ display: "flex", flexDirection: "column", gap: 12, borderTop: `1px solid ${t.line}`, paddingTop: 12 }}>
               <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 6 }}>
-                <span style={{ ...LABEL, marginRight: 4 }}>Structure</span>
+                <span style={{ ...LABEL, marginRight: 4 }}>STAR structure</span>
                 <StarChip active={q.star.situation} label="Situation" />
                 <StarChip active={q.star.task} label="Task" />
                 <StarChip active={q.star.action} label="Action" />

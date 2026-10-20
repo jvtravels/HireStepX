@@ -14,8 +14,8 @@
 "use client";
 
 import { useState } from "react";
-import { t, f, radius, size } from "../tokens";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { SrSectionShell } from "./_primitives";
 
 /* ── Date helpers ──────────────────────────────────────────────────────── */
@@ -101,218 +101,54 @@ export function ScheduleNextSection({
     onSchedule?.(isoDate);
   }
 
-  /* Calendar icon — matches the one in NextStepsSection */
-  const CalIcon = (
-    <svg
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-      <line x1="16" y1="2" x2="16" y2="6" />
-      <line x1="8" y1="2" x2="8" y2="6" />
-      <line x1="3" y1="10" x2="21" y2="10" />
-    </svg>
-  );
-
   return (
     <SrSectionShell
       anchorId="ir-section-schedule"
       headingId="ir-schedule-heading"
       num="10"
       label="Plan ahead"
-      title="When is your next session?"
+      title="Plan your next session"
+      subtitle="Pick a time and we will keep it on your calendar."
     >
       {scheduled ? (
-        /* ── Confirmation state ── */
-        <div
-          role="status"
-          aria-live="polite"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 12,
-            background: t.successWash,
-            border: `1px solid ${t.successAccent}`,
-            borderLeft: `3px solid ${t.success}`,
-            borderRadius: radius.bar,
-            padding: "14px 18px",
-          }}
-        >
-          <span
-            style={{
-              width: 32,
-              height: 32,
-              borderRadius: radius.xl,
-              background: t.success100,
-              color: t.success,
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              flexShrink: 0,
-            }}
-          >
-            {CalIcon}
-          </span>
-          <div>
-            <p
-              style={{
-                fontFamily: f.sans,
-                fontSize: size.base,
-                fontWeight: 600,
-                color: t.success,
-                margin: "0 0 2px",
-                textTransform: "uppercase",
-                letterSpacing: "0.05em",
-              }}
-            >
-              Scheduled!
-            </p>
-            <p
-              style={{
-                fontFamily: f.sans,
-                fontSize: size.md,
-                color: t.coal,
-                margin: 0,
-                lineHeight: 1.5,
-              }}
-            >
-              See you {formatConfirmation(scheduled)}.
-            </p>
+        <div role="status" aria-live="polite" className="flex items-center gap-3 rounded-xl border border-border bg-muted/40 px-4 py-3">
+          <div className="min-w-0 flex-1">
+            <p className="m-0 text-sm font-semibold text-foreground">Scheduled</p>
+            <p className="m-0 text-sm text-muted-foreground">See you {formatConfirmation(scheduled)}.</p>
           </div>
-          {/* Allow re-scheduling */}
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => setScheduled(null)}
-            style={{
-              marginLeft: "auto",
-              fontFamily: f.sans,
-              color: t.inkSoft,
-              flexShrink: 0,
-            }}
-          >
+          <Button type="button" variant="ghost" size="sm" onClick={() => setScheduled(null)}>
             Change
           </Button>
         </div>
       ) : (
-        /* ── Picker state ── */
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          {/* Quick-pick row */}
-          <div
-            style={{ display: "flex", gap: 10, flexWrap: "wrap" }}
-            role="group"
-            aria-label="Quick date options"
-          >
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap gap-2" role="group" aria-label="Quick date options">
             {quickPicks.map(({ label, date }) => (
-              <Button
-                key={label}
-                type="button"
-                variant="secondary"
-                onClick={() => commit(date.toISOString())}
-                style={{
-                  fontFamily: f.sans,
-                  color: t.indigo,
-                  background: t.indigoTint,
-                  border: `1px solid ${t.indigoRing}`,
-                  transition: "background 0.15s",
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLButtonElement).style.background =
-                    t.indigo100;
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLButtonElement).style.background =
-                    t.indigoTint;
-                }}
-              >
+              <Button key={label} type="button" variant="outline" size="sm" onClick={() => commit(date.toISOString())}>
                 {label}
               </Button>
             ))}
           </div>
-
-          {/* Divider */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
+          <span className="px-1 text-sm text-muted-foreground" aria-hidden="true">or</span>
+          <Input
+            type="datetime-local"
+            value={customValue}
+            min={toDatetimeLocal(addDays(base, 0))}
+            onChange={(e) => setCustomValue(e.target.value)}
+            aria-label="Choose a custom date and time"
+            className="w-auto min-w-[200px] flex-1 sm:max-w-[260px]"
+          />
+          <Button
+            type="button"
+            size="sm"
+            disabled={!customValue}
+            onClick={() => {
+              if (!customValue) return;
+              commit(new Date(customValue).toISOString());
             }}
           >
-            <div
-              style={{ flex: 1, height: 1, background: t.line }}
-              aria-hidden="true"
-            />
-            <span
-              style={{
-                fontFamily: f.sans,
-                fontSize: size.xs,
-                color: t.inkFaint,
-                textTransform: "uppercase",
-                letterSpacing: "0.06em",
-                whiteSpace: "nowrap",
-              }}
-            >
-              or pick a date
-            </span>
-            <div
-              style={{ flex: 1, height: 1, background: t.line }}
-              aria-hidden="true"
-            />
-          </div>
-
-          {/* Custom datetime-local input + Schedule button */}
-          <div
-            style={{
-              display: "flex",
-              gap: 10,
-              alignItems: "center",
-              flexWrap: "wrap",
-            }}
-          >
-            <input
-              type="datetime-local"
-              value={customValue}
-              min={toDatetimeLocal(addDays(base, 0))}
-              onChange={(e) => setCustomValue(e.target.value)}
-              aria-label="Choose a custom date and time"
-              style={{
-                fontFamily: f.sans,
-                fontSize: size.base,
-                color: t.coal,
-                background: t.creamSoft,
-                border: `1px solid ${t.lineStrong}`,
-                borderRadius: radius.lg,
-                padding: "8px 12px",
-                flex: "1 1 200px",
-                minWidth: 0,
-              }}
-            />
-            <Button
-              type="button"
-              disabled={!customValue}
-              onClick={() => {
-                if (!customValue) return;
-                commit(new Date(customValue).toISOString());
-              }}
-              style={{
-                fontFamily: f.sans,
-                fontWeight: 700,
-                color: t.white,
-                background: customValue ? t.indigo : t.inkFaint,
-                flexShrink: 0,
-              }}
-            >
-              Schedule
-            </Button>
-          </div>
+            Schedule
+          </Button>
         </div>
       )}
     </SrSectionShell>

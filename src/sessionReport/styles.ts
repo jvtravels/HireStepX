@@ -52,6 +52,21 @@ export const SESSION_REPORT_STYLES = `
   .ir-highlight-hedge  { background: rgba(110, 103, 89, 0.18); padding: 1px 3px; border-radius: 3px; }
   .ir-highlight-quant  { background: rgba(21, 128, 61, 0.18); padding: 1px 3px; border-radius: 3px; color: #15803D; font-weight: 600; }
   .ir-highlight-first  { background: rgba(49, 46, 129, 0.10); padding: 1px 3px; border-radius: 3px; color: #312E81; }
+  .ir-legend { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-top: 12px; }
+  .ir-legend-item { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: oklch(0.55 0.02 213.5); }
+  .ir-legend-swatch { display: inline-block; width: 12px; height: 12px; padding: 0; border-radius: 4px; border: 1px solid oklch(0 0 0 / 0.08); }
+  .ir-star-chip { display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 99px; border: 1px dashed oklch(0.9 0.004 265); font-size: 13px; font-weight: 500; color: oklch(0.65 0.015 213.5); }
+  .ir-star-chip-on { border: 1px solid transparent; background: rgba(21,128,61,0.10); color: #15803D; }
+  .ir-trend-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 48px; margin-top: 8px; }
+  .ir-trend-row { display: flex; align-items: center; gap: 14px; padding: 12px 0; border-bottom: 1px solid oklch(0.955 0.004 265); }
+  .ir-trend-name { flex: 1; min-width: 0; font-size: 14px; color: var(--foreground); }
+  .ir-trend-spark { flex-shrink: 0; }
+  .ir-trend-score { width: 28px; text-align: right; font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--foreground); }
+  .ir-trend-delta { min-width: 64px; text-align: right; font-size: 13px; font-weight: 500; font-variant-numeric: tabular-nums; }
+  .ir-trend-delta-up { color: #15803D; }
+  .ir-trend-delta-down { color: #B91C1C; }
+  .ir-trend-delta-flat { color: oklch(0.55 0.02 213.5); }
+  @media (max-width: 760px) { .ir-trend-grid { grid-template-columns: minmax(0, 1fr); } }
   .ir-cta-primary {
     background: #312E81; color: #FAFAFA; border: 1px solid transparent;
     padding: 10px 18px; border-radius: 10px; font-weight: 600; font-size: 13px;
@@ -694,7 +709,7 @@ export const SESSION_REPORT_STYLES = `
   /* ─── Coach's Notes section (cross-session aggregator) ─── */
   .ir-coach-notes-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: 14px;
   }
   .ir-coach-note-card {

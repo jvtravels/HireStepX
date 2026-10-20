@@ -64,8 +64,8 @@ export function CoachNotesSection({
       headingId="ir-coach-notes-heading"
       num="07"
       label="What your coach would say"
-      title={<>Coach&apos;s Notes</>}
-      subtitle={<>Patterns we&apos;ve noticed across your last few sessions — the perspective a human coach would bring.</>}
+      title={<>Coach&apos;s notes</>}
+      subtitle={<>Patterns we noticed across your recent sessions, the way a human coach would put them.</>}
     >
       <div className="ir-coach-notes-grid">
         {hasCoaching && (
