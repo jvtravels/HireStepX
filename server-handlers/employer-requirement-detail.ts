@@ -42,6 +42,7 @@ import { extractResumeDetail, redactResumeDetailForLock, coarsenLockedCity } fro
 import { later } from "./_employer-dashboard-helpers";
 import { runMatching, logRequirementActivity } from "./employer-requirements";
 import {
+  loadBlockedCandidateIds,
   fetchKeyset,
   loadGradedSessions,
   keepSessionsForRole,
@@ -174,6 +175,41 @@ export default async function handler(req: Request): Promise<Response> {
   }
 
   try {
+    type MatchRow = {
+      id: string; candidate_user_id: string; match_score: number; roster_score: number; unlocked: boolean; unlocked_at: string | null;
+      candidate_status: string; candidate_status_note: string | null; interview_scheduled_at: string | null;
+      candidate_status_updated_at: string | null; created_at: string | null;
+      candidate_response?: string | null;
+      llm_score?: number | null;
+    };
+    // Light columns only, keyset-paginated: the heavy profile/session reads
+    // below run for the requested page, not the whole shortlist.
+    const MATCH_COLUMNS = "id,candidate_user_id,match_score,roster_score,unlocked,unlocked_at,candidate_status,candidate_status_note,interview_scheduled_at,candidate_status_updated_at,created_at";
+    const readMatches = (columns: string) => fetchKeyset<MatchRow & Record<string, unknown>>({
+      baseUrl: `${SUPABASE_URL}/rest/v1/requirement_matches?requirement_id=eq.${encodeURIComponent(requirementId)}&select=${columns}`,
+      headers: serviceHeaders(), keyField: "id", pageSize: 1000, maxRows: 5000,
+    });
+    // candidate_response ships in its own migration: if it is not applied yet
+    // the read fails, so retry without it and report the response as unknown
+    // (null) rather than failing the whole page.
+    // llm_score (migration 0048) is the model's opinion behind the stored
+    // score, needed for the breakdown to reproduce it; it degrades the same way.
+    let responseKnown = true;
+    const loadAllMatches = async (): Promise<MatchRow[] | null> => {
+      let read = await readMatches(`${MATCH_COLUMNS},candidate_response,llm_score`);
+      if (read.failed) read = await readMatches(`${MATCH_COLUMNS},candidate_response`);
+      if (read.failed) {
+        responseKnown = false;
+        read = await readMatches(MATCH_COLUMNS);
+      }
+      return read.failed ? null : read.rows;
+    };
+    // The matches and the block list don't depend on the requirement read, so
+    // all three go out together. A requirement this employer doesn't own 404s
+    // below and the other two results are never used.
+    const matchesRead = loadAllMatches();
+    const blockedRead = loadBlockedCandidateIds(SUPABASE_URL, serviceHeaders(), auth.userId);
+
     const reqRes = await fetch(
       `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&employer_id=eq.${encodeURIComponent(auth.userId)}&select=id,title,location,notice_period_pref,description,status,stage,department,archive_reason,archive_disposition,experience_min,experience_max,due_date,budget_min,budget_max,locations,open_positions,work_mode,skills,responsibilities,nice_to_have,preferred_industry,preferred_colleges,target_companies,perks_and_benefits,employment_type,salary_type,duration_weeks,hours_per_week,preferred_domain,work_schedule,availability,relevant_experience,portfolio_required,custom_skill_sets,min_readiness_band,min_star_completeness,matched_pool_size,created_at,last_matched_at`,
       { headers: serviceHeaders() },
@@ -202,36 +238,8 @@ export default async function handler(req: Request): Promise<Response> {
       return new Response(JSON.stringify({ error: "Requirement not found" }), { status: 404, headers });
     }
 
-    type MatchRow = {
-      id: string; candidate_user_id: string; match_score: number; roster_score: number; unlocked: boolean; unlocked_at: string | null;
-      candidate_status: string; candidate_status_note: string | null; interview_scheduled_at: string | null;
-      candidate_status_updated_at: string | null; created_at: string | null;
-      candidate_response?: string | null;
-      llm_score?: number | null;
-    };
-    // Light columns only, keyset-paginated: the heavy profile/session reads
-    // below run for the requested page, not the whole shortlist.
-    const MATCH_COLUMNS = "id,candidate_user_id,match_score,roster_score,unlocked,unlocked_at,candidate_status,candidate_status_note,interview_scheduled_at,candidate_status_updated_at,created_at";
-    const readMatches = (columns: string) => fetchKeyset<MatchRow & Record<string, unknown>>({
-      baseUrl: `${SUPABASE_URL}/rest/v1/requirement_matches?requirement_id=eq.${encodeURIComponent(requirementId)}&select=${columns}`,
-      headers: serviceHeaders(), keyField: "id", pageSize: 1000, maxRows: 5000,
-    });
-    // candidate_response ships in its own migration: if it is not applied yet
-    // the read fails, so retry without it and report the response as unknown
-    // (null) rather than failing the whole page.
-    // llm_score (migration 0048) is the model's opinion behind the stored
-    // score, needed for the breakdown to reproduce it; it degrades the same way.
-    let matchesRead = await readMatches(`${MATCH_COLUMNS},candidate_response,llm_score`);
-    let responseKnown = true;
-    if (matchesRead.failed) {
-      matchesRead = await readMatches(`${MATCH_COLUMNS},candidate_response`);
-    }
-    if (matchesRead.failed) {
-      responseKnown = false;
-      matchesRead = await readMatches(MATCH_COLUMNS);
-    }
-    if (matchesRead.failed) throw new Error("matches read failed");
-    const allMatches: MatchRow[] = matchesRead.rows;
+    const allMatches = await matchesRead;
+    if (!allMatches) throw new Error("matches read failed");
 
     /* Consent: a candidate who blocked this employer is gone entirely; one who
        switched employer visibility off disappears while locked, but an
@@ -241,7 +249,7 @@ export default async function handler(req: Request): Promise<Response> {
        linger, so it is re-applied at read time. The unlock order uses the
        same ranked list (loadRankedVisibleMatches) so rank positions and the
        batch price shown here are exactly what gets charged. Fail closed. */
-    const gated = await loadRankedVisibleMatches(SUPABASE_URL, serviceHeaders(), auth.userId, allMatches);
+    const gated = await loadRankedVisibleMatches(SUPABASE_URL, serviceHeaders(), auth.userId, allMatches, blockedRead);
     if (!gated) throw new Error("candidate consent read failed");
     const { ranked: visibleMatches, optedOut } = gated;
     const nextUnlockBatch = nextUnlockBatchQuote(visibleMatches);

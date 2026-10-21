@@ -74,6 +74,24 @@ export function chunk<T>(items: T[], size: number): T[][] {
   return out;
 }
 
+/** Most database reads one request keeps in flight at once. */
+export const READ_CONCURRENCY = 6;
+
+/** Maps `items` through `fn` with at most `limit` in flight; results keep the
+ *  input order, so callers merge batches exactly as a sequential loop would. */
+export async function mapConcurrent<T, R>(items: T[], fn: (item: T, index: number) => Promise<R>, limit = READ_CONCURRENCY): Promise<R[]> {
+  const results = new Array<R>(items.length);
+  let next = 0;
+  const worker = async () => {
+    while (next < items.length) {
+      const i = next++;
+      results[i] = await fn(items[i], i);
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
+  return results;
+}
+
 export function inList(ids: string[]): string {
   return ids.map((id) => encodeURIComponent(id)).join(",");
 }
@@ -407,10 +425,13 @@ export async function loadOptedOutCandidateIds(
 ): Promise<Set<string> | null> {
   const present = new Set<string>();
   const off = new Set<string>();
-  for (const batch of chunk(ids, MAX_IN_BATCH)) {
+  const pages = await mapConcurrent(chunk(ids, MAX_IN_BATCH), async (batch) => {
     const res = await fetchImpl(`${supabaseUrl}/rest/v1/profiles?id=in.(${inList(batch)})&select=id,employer_visibility,deleted_at`, { headers });
     if (!res.ok) return null;
-    const rows = (await res.json().catch(() => [])) as Array<{ id: string; employer_visibility?: string | null; deleted_at?: string | null }>;
+    return (await res.json().catch(() => [])) as Array<{ id: string; employer_visibility?: string | null; deleted_at?: string | null }>;
+  });
+  for (const rows of pages) {
+    if (rows === null) return null;
     for (const r of rows) {
       present.add(r.id);
       // A soft-deleted account is in its grace window and must read as gone,
@@ -511,22 +532,22 @@ export async function loadGradedSessions(
   fetchImpl: FetchImpl = fetch,
 ): Promise<GradedSessionRow[]> {
   const select = `user_id,score,created_at,type,target_role,report_generated_at${withReports ? ",report_json" : ""}`;
-  const out: GradedSessionRow[] = [];
   let skippedCandidates = 0;
-  for (const batch of chunk(ids, SESSION_BATCH)) {
-    let failed = false;
+  const perBatch = await mapConcurrent(chunk(ids, SESSION_BATCH), async (batch) => {
+    const rowsOut: GradedSessionRow[] = [];
     for (let page = 0; page < SESSION_MAX_PAGES; page++) {
       const rows = await fetchSessionPage(
         `${supabaseUrl}/rest/v1/sessions?user_id=in.(${inList(batch)})&report_generated_at=not.is.null` +
           `&select=${select}&order=created_at.desc,id.desc&limit=${SESSION_PAGE_LIMIT}&offset=${page * SESSION_PAGE_LIMIT}`,
         headers, fetchImpl,
       );
-      if (rows === null) { failed = true; break; }
-      out.push(...rows);
+      if (rows === null) { skippedCandidates += batch.length; break; }
+      rowsOut.push(...rows);
       if (rows.length < SESSION_PAGE_LIMIT) break;
     }
-    if (failed) skippedCandidates += batch.length;
-  }
+    return rowsOut;
+  });
+  const out = perBatch.flat();
   if (skippedCandidates > 0) {
     slog.warn("loadGradedSessions: session batches failed, candidates scored without session evidence", { skippedCandidates, requested: ids.length });
   }
@@ -543,10 +564,13 @@ export async function loadEvidenceFlags(
   fetchImpl: FetchImpl = fetch,
 ): Promise<Map<string, boolean> | null> {
   const flags = new Map<string, boolean>(ids.map((id) => [id, false]));
-  for (const batch of chunk(ids, MAX_IN_BATCH)) {
+  const pages = await mapConcurrent(chunk(ids, MAX_IN_BATCH), async (batch) => {
     const res = await fetchImpl(`${supabaseUrl}/rest/v1/profiles?id=in.(${inList(batch)})&resume_data=not.is.null&select=id`, { headers });
     if (!res.ok) return null;
-    const rows = (await res.json().catch(() => [])) as Array<{ id: string }>;
+    return (await res.json().catch(() => [])) as Array<{ id: string }>;
+  });
+  for (const rows of pages) {
+    if (rows === null) return null;
     for (const r of rows) flags.set(r.id, true);
   }
   const withoutResume = ids.filter((id) => !flags.get(id));
@@ -1109,11 +1133,15 @@ export async function loadRankedVisibleMatches<T extends RankableMatch>(
   headers: Headers,
   employerId: string,
   matches: T[],
+  /** The block list, when the caller already started reading it. */
+  blockedRead?: Promise<Set<string> | null>,
 ): Promise<{ ranked: T[]; optedOut: Set<string> } | null> {
   const ids = Array.from(new Set(matches.map((m) => m.candidate_user_id)));
-  const blocked = await loadBlockedCandidateIds(supabaseUrl, headers, employerId);
-  const optedOut = ids.length > 0 ? await loadOptedOutCandidateIds(supabaseUrl, headers, ids) : new Set<string>();
-  const evidence = ids.length > 0 ? await loadEvidenceFlags(supabaseUrl, headers, ids) : new Map<string, boolean>();
+  const [blocked, optedOut, evidence] = await Promise.all([
+    blockedRead ?? loadBlockedCandidateIds(supabaseUrl, headers, employerId),
+    ids.length > 0 ? loadOptedOutCandidateIds(supabaseUrl, headers, ids) : new Set<string>(),
+    ids.length > 0 ? loadEvidenceFlags(supabaseUrl, headers, ids) : new Map<string, boolean>(),
+  ]);
   if (!blocked || !optedOut || !evidence) return null;
   return { ranked: rankVisibleMatches(matches, { blocked, optedOut, evidence }), optedOut };
 }

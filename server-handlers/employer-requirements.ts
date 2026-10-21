@@ -49,6 +49,7 @@ import {
   POOL_PAGE_SIZE,
   SCAN_RESERVE_MS,
   chunk,
+  mapConcurrent,
   inList,
   fetchKeyset,
   fetchKeysetRotated,
@@ -261,52 +262,50 @@ async function handleGet(userId: string, headers: Record<string, string>): Promi
       // Bounded reads: requirement ids go in small batches and each batch is
       // keyset-paged, so no single request leans on a limit Supabase would
       // silently cap at its max-rows setting.
-      const allMatches: Array<{ id: string; requirement_id: string; candidate_user_id: string; match_score: number; unlocked: boolean }> = [];
-      let matchesOk = true;
-      for (const batch of chunk(ids, 20)) {
-        const r = await fetchKeyset<{ id: string; requirement_id: string; candidate_user_id: string; match_score: number; unlocked: boolean }>({
-          baseUrl: `${SUPABASE_URL}/rest/v1/requirement_matches?requirement_id=in.(${inList(batch)})&select=id,requirement_id,candidate_user_id,match_score,unlocked`,
-          headers: serviceHeaders(), keyField: "id", pageSize: 1000, maxRows: 5000,
-        });
-        if (r.failed) { matchesOk = false; break; }
-        allMatches.push(...r.rows);
-      }
+      type ListMatch = { id: string; requirement_id: string; candidate_user_id: string; match_score: number; unlocked: boolean };
+      // The block list doesn't depend on the matches, so it loads alongside them.
+      const blockedRead = loadBlockedCandidateIds(SUPABASE_URL, serviceHeaders(), userId);
+      const matchBatches = await mapConcurrent(chunk(ids, 20), (batch) => fetchKeyset<ListMatch>({
+        baseUrl: `${SUPABASE_URL}/rest/v1/requirement_matches?requirement_id=in.(${inList(batch)})&select=id,requirement_id,candidate_user_id,match_score,unlocked`,
+        headers: serviceHeaders(), keyField: "id", pageSize: 1000, maxRows: 5000,
+      }));
+      const matchesOk = matchBatches.every((r) => !r.failed);
+      const allMatches: ListMatch[] = matchBatches.flatMap((r) => r.rows);
 
       const candidateIds = Array.from(new Set(allMatches.map((m) => m.candidate_user_id)));
       // Consent: a locked match for a candidate who opted out of employer
       // visibility or blocked this employer must not show, even before the
       // next re-match deletes the row. An unreadable consent check hides
       // everything rather than risk showing someone who said no.
-      const [blocked, optedOut] = matchesOk && candidateIds.length > 0
+      // The evidence flags only need the candidate ids, so they load with the
+      // consent reads; the unconsented ones are filtered out below.
+      const [blocked, optedOut, allEvidence] = matchesOk && candidateIds.length > 0
         ? await Promise.all([
-            loadBlockedCandidateIds(SUPABASE_URL, serviceHeaders(), userId),
+            blockedRead,
             loadOptedOutCandidateIds(SUPABASE_URL, serviceHeaders(), candidateIds),
+            loadEvidenceFlags(SUPABASE_URL, serviceHeaders(), candidateIds),
           ])
-        : [new Set<string>(), new Set<string>()];
+        : [await blockedRead.then(() => new Set<string>()), new Set<string>(), new Map<string, boolean>()];
       if (matchesOk && blocked && optedOut) {
         const matchRows = allMatches.filter((m) =>
           m.unlocked ? !blocked.has(m.candidate_user_id) : !blocked.has(m.candidate_user_id) && !optedOut.has(m.candidate_user_id),
         );
-        const visibleCandidateIds = Array.from(new Set(matchRows.map((m) => m.candidate_user_id)));
-
         // Re-applies the same no-evidence rule the detail GET applies at read
         // time, with "evidence" meaning a parsed resume or a SERVER-GRADED
         // session, so this list's stats never disagree with the detail page.
-        const hasEvidenceById = (visibleCandidateIds.length > 0
-          ? await loadEvidenceFlags(SUPABASE_URL, serviceHeaders(), visibleCandidateIds)
-          : new Map<string, boolean>()) ?? new Map<string, boolean>();
+        const hasEvidenceById = allEvidence ?? new Map<string, boolean>();
 
         countsByRequirement = countMatchesByRequirement(matchRows.filter((m) => hasEvidenceById.get(m.candidate_user_id) === true));
 
         const matchStats = computeMatchStats(matchRows, STRONG_MATCH_THRESHOLD, hasEvidenceById);
         const topCandidateIds = Array.from(new Set(Array.from(matchStats.values()).flatMap((s) => s.topCandidateIds)));
         const profileById = new Map<string, { name: string; target_role: string | null; resume_data: unknown }>();
-        for (const batch of chunk(topCandidateIds, 100)) {
+        const profileBatches = await mapConcurrent(chunk(topCandidateIds, 100), async (batch) => {
           const profilesRes = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=in.(${inList(batch)})&select=id,name,target_role,resume_data`, { headers: serviceHeaders() });
-          if (!profilesRes.ok) continue;
-          const profileRows = (await profilesRes.json().catch(() => [])) as Array<{ id: string; name: string; target_role: string | null; resume_data: unknown }>;
-          for (const row of profileRows) profileById.set(row.id, row);
-        }
+          if (!profilesRes.ok) return [];
+          return (await profilesRes.json().catch(() => [])) as Array<{ id: string; name: string; target_role: string | null; resume_data: unknown }>;
+        });
+        for (const row of profileBatches.flat()) profileById.set(row.id, row);
         const detailsById = new Map<string, { name: string; yearsExperience: number | null; skills: string[]; traits: string[] }>(
           topCandidateIds.map((id) => {
             const profile = profileById.get(id);
