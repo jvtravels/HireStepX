@@ -7,6 +7,7 @@
    the command palette pieces, EmptyState, _atoms Badge/ScoreChip) rather than local
    copies. Everything is driven by props; data wiring stays in the page. */
 
+import { useEmployerData } from "./EmployerDataContext";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, type CSSProperties, type ReactNode } from "react";
@@ -286,6 +287,7 @@ export function ActiveJobsCard({
   rowActions: (job: RequirementSummary) => ReactNode;
 }) {
   const router = useRouter();
+  const { prefetchRequirementDetail } = useEmployerData();
   const [sort, setSort] = useState<{ key: JobSortKey; dir: SortDir } | null>(null);
   const byId = new Map((pipeline ?? []).map((p) => [p.requirementId, p]));
   const ordered = sort ? sortJobs(jobs, pipeline, sort.key, sort.dir) : jobsNeedingAttentionFirst(jobs);
@@ -342,6 +344,8 @@ export function ActiveJobsCard({
                     <TableRow
                       key={j.id}
                       className="cursor-pointer"
+                      onPointerEnter={() => prefetchRequirementDetail(j.id)}
+                      onFocus={() => prefetchRequirementDetail(j.id)}
                       onClick={(e) => { if (!(e.target as HTMLElement).closest("a, button, [role='menuitem']")) router.push(`/employer/requirements/${j.id}`); }}
                     >
                       <TableCell className={`${TD} whitespace-normal`}>

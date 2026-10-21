@@ -76,7 +76,7 @@ export function useCandidateDetail(requirementId: string, matchId: string) {
   }, [load]);
 
   const refresh = useCallback(async () => {
-    const r = await fetchRequirementDetail(requirementId);
+    const r = await fetchRequirementDetail(requirementId, { fresh: true });
     if (r) setRequirement(r);
   }, [fetchRequirementDetail, requirementId]);
 

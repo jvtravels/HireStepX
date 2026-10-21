@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, useCallback, useEffect, use
 import { authHeaders } from "@/supabase";
 import { apiFetch } from "@/apiClient";
 import type { CandidateRequestDto, CreateRequestBody } from "./_candidateRequestTypes";
+import { getNetworkInfo, isSlowConnection } from "@/_browser-api-guards";
 import { captureClientEvent } from "@/posthogClient";
 import { isDashboardData, type EmployerDashboardData, type DashboardRange } from "./dashboardData";
 import type { InvoiceSnapshot } from "../../server-handlers/_unlock-tax";
@@ -268,7 +269,10 @@ interface EmployerDataContextValue {
   verifyUnlockPayment: (payload: VerifyPayload) => Promise<VerifyResult | null>;
   /** Loads the job with its whole shortlist (every page, capped at MAX_SHORTLIST_CANDIDATES);
    *  pass `{ firstPageOnly: true }` when only job fields are needed. `onFirstPage` receives the top 25 early so the screen can paint before the rest arrives. `total` is the true count. */
-  fetchRequirementDetail: (id: string, options?: { firstPageOnly?: boolean; onFirstPage?: (partial: Requirement) => void }) => Promise<Requirement | null>;
+  /** A job's shortlist. Reuses a result fetched in the last 30 s (and joins one already in flight) unless `fresh` is set. */
+  fetchRequirementDetail: (id: string, options?: { firstPageOnly?: boolean; fresh?: boolean; onFirstPage?: (partial: Requirement) => void }) => Promise<Requirement | null>;
+  /** Warms the detail cache ahead of a click; a no-op when it is already warm. */
+  prefetchRequirementDetail: (id: string) => void;
   archiveRequirement: (id: string, options?: { archiveReason?: string; archiveDisposition?: ArchiveDisposition }) => Promise<boolean>;
   /** Same as archiveRequirement but also returns the candidates "reject_remaining" changed, so the caller can offer Undo. */
   archiveRequirementResult: (id: string, options?: { archiveReason?: string; archiveDisposition?: ArchiveDisposition }) => Promise<{ ok: boolean; rejectedMatches: ArchivedMatchRecord[] }>;
@@ -326,6 +330,10 @@ const SHORTLIST_PAGE_LIMIT = 100;
 const FIRST_PAINT_LIMIT = 25;
 /** Upper bound on candidates loaded into one job page; beyond it the page says "showing N of M". */
 export const MAX_SHORTLIST_CANDIDATES = 500;
+/** How long a fetched job shortlist is reused before the next open asks the server again. */
+const DETAIL_CACHE_TTL_MS = 30_000;
+/** How long the pointer must rest on a row before its job is prefetched. */
+const PREFETCH_DWELL_MS = 150;
 const RETRY_DELAYS_MS = [300, 900];
 /** A stalled connection otherwise sits on skeletons for the browser's own ~45s timeout; cutting it sooner lets the retry (which usually lands) run. */
 const GET_ATTEMPT_TIMEOUT_MS = 10_000;
@@ -455,14 +463,22 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
     setCompanyStatusLoading(false);
   }, [applyProfile]);
 
+  /* The jobs list is requested together with the company profile instead of
+     after it. The list is scoped to the signed-in employer server-side, so for
+     a company that turns out not to be approved the answer is simply unused. */
+  const earlyRequirements = useRef<ReturnType<typeof getWithRetry> | null>(null);
+
   useEffect(() => {
+    earlyRequirements.current = getWithRetry("/api/employer-requirements");
     refreshCompanyStatus();
   }, [refreshCompanyStatus]);
 
   const refreshRequirements = useCallback(async () => {
     if (statusRef.current !== "approved") return;
     const seq = ++requirementsSeq.current;
-    const res = await getWithRetry("/api/employer-requirements");
+    const early = earlyRequirements.current;
+    earlyRequirements.current = null;
+    const res = await (early ?? getWithRetry("/api/employer-requirements"));
     // A newer refresh started while this one was in flight — let it win.
     if (seq !== requirementsSeq.current) return;
     if (res && res.ok && isRecord(res.data) && Array.isArray(res.data.requirements)) {
@@ -483,6 +499,17 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
   useEffect(() => {
     refreshRequirements();
   }, [companyStatus, refreshRequirements]);
+
+  const detailCache = useRef(new Map<string, { at: number; value: Requirement }>());
+  const detailInflight = useRef(new Map<string, Promise<Requirement | null>>());
+  const detailGeneration = useRef(0);
+
+  /** Called after anything that changes a shortlist, so the next open can't show it stale. */
+  const invalidateDetails = useCallback(() => {
+    detailGeneration.current++;
+    detailCache.current.clear();
+    detailInflight.current.clear();
+  }, []);
 
   const submitCompanyProfileResult = useCallback(async (fields: ProfileFields): Promise<EmployerApiResult<null>> => {
     const wasNew = statusRef.current === "none";
@@ -513,11 +540,12 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
   const updateRequirement = useCallback(async (id: string, r: RequirementFormValues): Promise<{ ok: true } | EmployerApiError> => {
     const res = await apiFetch<{ id: string }>(`/api/employer-requirement-detail?id=${encodeURIComponent(id)}`, r, { method: "PATCH" });
     if (res.ok && res.data) {
+      invalidateDetails();
       refreshRequirements();
       return { ok: true as const };
     }
     return toApiError(res, "Couldn't save changes. Please try again.");
-  }, [refreshRequirements]);
+  }, [refreshRequirements, invalidateDetails]);
 
   const createUnlockOrderResult = useCallback(async (request: UnlockRequest): Promise<EmployerApiResult<UnlockOrder>> => {
     captureClientEvent("employer_unlock_started", { mode: request.mode, tier: tierRef.current });
@@ -538,24 +566,21 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
   const verifyUnlockPayment = useCallback(async (payload: VerifyPayload) => {
     const res = await apiFetch<VerifyResult>("/api/employer-verify-unlock-payment", payload, { method: "POST" });
     if (res.ok && res.data) {
+      invalidateDetails();
       captureClientEvent("employer_unlock_completed", { unlocked: res.data.candidates.length, tier: tierRef.current });
       return res.data;
     }
     return null;
-  }, []);
+  }, [invalidateDetails]);
 
-  const fetchRequirementDetail = useCallback(async (id: string, options?: { firstPageOnly?: boolean; onFirstPage?: (partial: Requirement) => void }): Promise<Requirement | null> => {
+  const loadRequirementDetail = useCallback(async (id: string, onFirstPage?: (partial: Requirement) => void): Promise<Requirement | null> => {
     const base = `/api/employer-requirement-detail?id=${encodeURIComponent(id)}`;
-    if (options?.firstPageOnly) {
-      const only = await getWithRetry(base);
-      return only && only.ok && only.data ? (only.data as Requirement) : null;
-    }
     // A small first page lets the screen paint while the rest loads; every
     // request repeats the server's ranking, so the remainder is fetched in
     // parallel rather than one page after another.
     const fullFirst = getWithRetry(`${base}&page=1&limit=${SHORTLIST_PAGE_LIMIT}`);
-    const quick = options?.onFirstPage ? await getWithRetry(`${base}&page=1&limit=${FIRST_PAINT_LIMIT}`) : null;
-    if (quick && quick.ok && quick.data) options?.onFirstPage?.(quick.data as Requirement);
+    const quick = onFirstPage ? await getWithRetry(`${base}&page=1&limit=${FIRST_PAINT_LIMIT}`) : null;
+    if (quick && quick.ok && quick.data) onFirstPage?.(quick.data as Requirement);
     const first = await fullFirst;
     if (!first || !first.ok || !first.data) return quick && quick.ok ? (quick.data as Requirement) : null;
     const detail = first.data as Requirement;
@@ -577,6 +602,39 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
     return { ...detail, candidates, nextPage: next };
   }, []);
 
+  const fetchRequirementDetail = useCallback(async (id: string, options?: { firstPageOnly?: boolean; fresh?: boolean; onFirstPage?: (partial: Requirement) => void }): Promise<Requirement | null> => {
+    if (options?.firstPageOnly) {
+      const only = await getWithRetry(`/api/employer-requirement-detail?id=${encodeURIComponent(id)}`);
+      return only && only.ok && only.data ? (only.data as Requirement) : null;
+    }
+    if (!options?.fresh) {
+      const hit = detailCache.current.get(id);
+      if (hit && Date.now() - hit.at < DETAIL_CACHE_TTL_MS) return hit.value;
+      const pending = detailInflight.current.get(id);
+      if (pending) return pending;
+    }
+    const generation = detailGeneration.current;
+    const run: Promise<Requirement | null> = loadRequirementDetail(id, options?.onFirstPage).then((value) => {
+      // A change landed while this was in flight: the answer may predate it.
+      if (value && generation === detailGeneration.current) detailCache.current.set(id, { at: Date.now(), value });
+      return value;
+    }).finally(() => {
+      if (detailInflight.current.get(id) === run) detailInflight.current.delete(id);
+    });
+    detailInflight.current.set(id, run);
+    return run;
+  }, [loadRequirementDetail]);
+
+  // Only the row the pointer rests on is warmed: a sweep across a table would
+  // otherwise burn the detail endpoint's per-minute budget on rows never opened.
+  const prefetchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const prefetchRequirementDetail = useCallback((id: string) => {
+    if (prefetchTimer.current) clearTimeout(prefetchTimer.current);
+    const net = getNetworkInfo();
+    if (net?.saveData || isSlowConnection()) return;
+    prefetchTimer.current = setTimeout(() => { void fetchRequirementDetail(id); }, PREFETCH_DWELL_MS);
+  }, [fetchRequirementDetail]);
+
   const archiveRequirementResult = useCallback(async (id: string, options?: { archiveReason?: string; archiveDisposition?: ArchiveDisposition }) => {
     const res = await apiFetch<{ status: string }>(
       `/api/employer-requirement-detail?id=${encodeURIComponent(id)}`,
@@ -584,9 +642,10 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
       { method: "PATCH" },
     );
     if (!res.ok) return { ok: false, rejectedMatches: [] };
+    invalidateDetails();
     refreshRequirements();
     return { ok: true, rejectedMatches: isRecord(res.data) ? parseArchivedMatches(res.data) : [] };
-  }, [refreshRequirements]);
+  }, [refreshRequirements, invalidateDetails]);
 
   const archiveRequirement = useCallback(async (id: string, options?: { archiveReason?: string; archiveDisposition?: ArchiveDisposition }) => {
     return (await archiveRequirementResult(id, options)).ok;
@@ -599,27 +658,30 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
       { method: "PATCH" },
     );
     if (!res.ok) return null;
+    invalidateDetails();
     refreshRequirements();
     return isRecord(res.data) && typeof res.data.restored === "number" ? res.data.restored : matches.length;
-  }, [refreshRequirements]);
+  }, [refreshRequirements, invalidateDetails]);
 
   const reopenRequirement = useCallback(async (id: string) => {
     const res = await apiFetch<{ status: string }>(`/api/employer-requirement-detail?id=${encodeURIComponent(id)}`, { action: "reopen" }, { method: "PATCH" });
     if (res.ok) {
+      invalidateDetails();
       refreshRequirements();
       return true;
     }
     return false;
-  }, [refreshRequirements]);
+  }, [refreshRequirements, invalidateDetails]);
 
   const updateRequirementStage = useCallback(async (id: string, stage: RequirementStage) => {
     const res = await apiFetch<{ stage: string }>(`/api/employer-requirement-detail?id=${encodeURIComponent(id)}`, { action: "set_stage", stage }, { method: "PATCH" });
     if (res.ok) {
+      invalidateDetails();
       refreshRequirements();
       return true;
     }
     return false;
-  }, [refreshRequirements]);
+  }, [refreshRequirements, invalidateDetails]);
 
   const updateCandidateStatusResult = useCallback(async (matchId: string, payload: StatusPayload): Promise<EmployerApiResult<null>> => {
     const res = await apiFetch<{ id: string; candidateStatus: string }>(
@@ -627,11 +689,14 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
       { matchId, candidateStatus: payload.candidateStatus, note: payload.note, candidateMessage: payload.candidateMessage, interviewScheduledAt: payload.interviewScheduledAt },
       { method: "PATCH" },
     );
-    if (res.ok) return { ok: true, data: null };
+    if (res.ok) {
+      invalidateDetails();
+      return { ok: true, data: null };
+    }
     const err = toApiError(res, res.status === 403 ? SUSPENDED_MESSAGE : "Couldn't update this candidate. Please try again.");
     if (res.status === 402 && !err.code) err.code = "unlock_required";
     return { ok: false, error: err };
-  }, []);
+  }, [invalidateDetails]);
 
   const updateCandidateStatus = useCallback(async (matchId: string, payload: StatusPayload) => (await updateCandidateStatusResult(matchId, payload)).ok, [updateCandidateStatusResult]);
 
@@ -643,15 +708,21 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
 
   const createCandidateRequest = useCallback(async (matchId: string, body: CreateRequestBody): Promise<EmployerApiResult<CandidateRequestDto>> => {
     const res = await apiFetch<{ request?: CandidateRequestDto }>("/api/employer-candidate-requests", { matchId, ...body }, { method: "POST" });
-    if (res.ok && res.data?.request) return { ok: true, data: res.data.request };
+    if (res.ok && res.data?.request) {
+      invalidateDetails();
+      return { ok: true, data: res.data.request };
+    }
     return { ok: false, error: toApiError(res, res.status === 403 ? SUSPENDED_MESSAGE : "Couldn't send the request. Please try again.") };
-  }, []);
+  }, [invalidateDetails]);
 
   const cancelCandidateRequest = useCallback(async (matchId: string, requestId: string): Promise<EmployerApiResult<CandidateRequestDto>> => {
     const res = await apiFetch<{ request?: CandidateRequestDto }>("/api/employer-candidate-requests", { action: "cancel", matchId, requestId }, { method: "POST" });
-    if (res.ok && res.data?.request) return { ok: true, data: res.data.request };
+    if (res.ok && res.data?.request) {
+      invalidateDetails();
+      return { ok: true, data: res.data.request };
+    }
     return { ok: false, error: toApiError(res, "Couldn't cancel the request. Please try again.") };
-  }, []);
+  }, [invalidateDetails]);
 
   const fetchCandidateEvidence = useCallback(async (matchId: string): Promise<CandidateEvidence | null> => {
     const res = await getWithRetry(`/api/employer-candidate-evidence?matchId=${encodeURIComponent(matchId)}`);
@@ -778,6 +849,7 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
     createUnlockOrderResult,
     verifyUnlockPayment,
     fetchRequirementDetail,
+    prefetchRequirementDetail,
     archiveRequirement,
     archiveRequirementResult,
     restoreArchivedMatches,
@@ -804,7 +876,7 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
     companyStatus, companyStatusLoading, companyStatusError, companyLogoUrl, companyName, companyWebsite, companyGstin, companyBillingName,
     verificationTier, limits, suspended, deletionPending, requirements, requirementsLoading, requirementsError,
     refreshCompanyStatus, submitCompanyProfile, submitCompanyProfileResult, addRequirement, updateRequirement,
-    createUnlockOrder, createUnlockOrderResult, verifyUnlockPayment, fetchRequirementDetail, archiveRequirement, archiveRequirementResult, restoreArchivedMatches,
+    createUnlockOrder, createUnlockOrderResult, verifyUnlockPayment, fetchRequirementDetail, prefetchRequirementDetail, archiveRequirement, archiveRequirementResult, restoreArchivedMatches,
     reopenRequirement, updateRequirementStage, updateCandidateStatus, updateCandidateStatusResult,
     fetchCandidateRequests, createCandidateRequest, cancelCandidateRequest, fetchCandidateEvidence, fetchCandidateResumeUrl, fetchRequirementActivity, fetchUnlockHistory, fetchCredit, fetchDashboard, refreshRequirements, listConversations,
     fetchMessages, sendMessage, sendMessageResult, uploadMessageAttachment, flagMessage, fetchMessageAttachmentUrl,

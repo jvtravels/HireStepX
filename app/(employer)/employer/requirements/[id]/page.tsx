@@ -134,7 +134,7 @@ export default function RequirementDetailPage() {
     const id = ++latestRefresh.current;
     for (let attempt = 0; attempt < 2; attempt++) {
       const changesAtStart = localChanges.current;
-      const r = await fetchRequirementDetail(params.id);
+      const r = await fetchRequirementDetail(params.id, { fresh: true });
       if (id !== latestRefresh.current) return r != null;
       if (!r) return false;
       if (localChanges.current !== changesAtStart) continue;

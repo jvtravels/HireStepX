@@ -8,6 +8,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { SortableHead, type Sort } from "@/components/SortableHead";
 import type { RequirementSummary, RequirementStage } from "@/employer/mockData";
 import { Badge, StageCell } from "@/employer/_atoms";
+import { useEmployerData } from "@/employer/EmployerDataContext";
 import { tokens as t, fonts as f, textSize } from "@/auth/_tokens";
 import { WORK_MODE_LABEL, EMPLOYMENT_TYPE_LABEL } from "@/hiringMatchFormat";
 import { COLUMN_LABEL, budgetLabel, experienceLabel, locationText, type SortColumn } from "./jobsHelpers";
@@ -57,6 +58,7 @@ export default function JobsTable({
   rowActions: (r: RequirementSummary) => React.ReactNode;
 }) {
   const reduceMotion = useReducedMotion();
+  const { prefetchRequirementDetail } = useEmployerData();
   const openRow = (e: React.MouseEvent<HTMLElement>, href: string) => {
     if (shouldIgnoreRowClick(e)) return;
     onOpen(href);
@@ -131,6 +133,8 @@ export default function JobsTable({
                   animate={{ opacity: 1, y: 0 }}
                   transition={reduceMotion ? { duration: 0 } : { duration: 0.22, ease: [0.16, 1, 0.3, 1], delay: rowIndex * 0.03 }}
                   onClick={(e) => openRow(e, href)}
+                  onPointerEnter={() => prefetchRequirementDetail(r.id)}
+                  onFocus={() => prefetchRequirementDetail(r.id)}
                   className="cursor-pointer"
                   style={{ minHeight: 72 }}
                 >
