@@ -18,6 +18,7 @@ import AnimatedNumber from "./AnimatedNumber";
 
 /* Sections sit in the page's container; the parent draws the hairlines between them. */
 export const PANEL = "min-w-0 px-5 py-5 min-[640px]:px-7 min-[640px]:py-6";
+export const PANEL_HEAD = "mb-3 flex min-h-7 items-center justify-between gap-3";
 export const PANEL_H2 = "m-0 text-[15px] font-semibold text-hx-coal";
 
 /* ─── shared bits ─── */
@@ -273,7 +274,9 @@ export function PracticeActivityCard({ sessionsCompleted, hoursLogged, questions
   ];
   return (
     <section aria-labelledby="dh-activity-heading" className={PANEL}>
-      <h2 id="dh-activity-heading" className={`${PANEL_H2} mb-3`}>Practice activity</h2>
+      <div className={PANEL_HEAD}>
+        <h2 id="dh-activity-heading" className={PANEL_H2}>Practice activity</h2>
+      </div>
       <dl className="m-0 divide-y divide-hx-line">
         {rows.map((r) => (
           <div key={r.label} className="flex items-baseline justify-between gap-3 py-2.5 first:pt-0 last:pb-0">
@@ -292,7 +295,7 @@ export function EvidenceCapabilitiesCard({ capabilities }: { capabilities: Evide
   const verifiedCount = capabilities.filter((c) => c.verified).length;
   return (
     <section aria-labelledby="dh-evidence-heading" className={PANEL}>
-      <div className="mb-3 flex items-baseline justify-between gap-3">
+      <div className={PANEL_HEAD}>
         <h2 id="dh-evidence-heading" className={PANEL_H2}>Evidence capabilities</h2>
         <span className="text-[13px] text-hx-ink-soft">{verifiedCount} of {capabilities.length} verified</span>
       </div>
@@ -331,7 +334,7 @@ export function GettingStartedCard({ hasResume, hasTargetRole, hasFirstSession, 
 
   return (
     <section aria-labelledby="dh-getting-started-heading" className={PANEL}>
-      <div className="mb-3 flex items-baseline justify-between gap-3">
+      <div className={PANEL_HEAD}>
         <h2 id="dh-getting-started-heading" className={PANEL_H2}>Getting started</h2>
         <span className="text-[13px] text-hx-ink-soft">{doneCount} of {steps.length} done</span>
       </div>
@@ -383,7 +386,9 @@ const UNLOCK_CARDS = [
 export function UnlockTeaserGrid() {
   return (
     <section aria-labelledby="dh-unlock-heading" className={PANEL}>
-      <h2 id="dh-unlock-heading" className={`${PANEL_H2} mb-3`}>What you&apos;ll unlock</h2>
+      <div className={PANEL_HEAD}>
+        <h2 id="dh-unlock-heading" className={PANEL_H2}>What you&apos;ll unlock</h2>
+      </div>
       <ul className="m-0 list-none divide-y divide-hx-line p-0">
         {UNLOCK_CARDS.map((card) => (
           <li key={card.title} className="py-2.5 first:pt-0 last:pb-0">

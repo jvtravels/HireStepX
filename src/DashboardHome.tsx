@@ -471,7 +471,7 @@ export default function DashboardHome() {
           {sessions.sessionsLoading ? (
             <Skeleton className="mx-5 my-4 h-56 min-[640px]:mx-7" />
           ) : sessions.hasData ? (
-            <div className="mt-3 border-t border-hx-line">
+            <div className="mt-3 border-t border-hx-line min-[640px]:[&_tr>:first-child]:!pl-7 min-[640px]:[&_tr>:last-child]:!pr-7">
               <SessionsTable
                 rows={sessions.recentSessions.slice(0, 5).map((d) => toRow(d, Date.now()))}
                 sort={DEFAULT_SORT}

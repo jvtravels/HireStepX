@@ -10,7 +10,7 @@ import Link from "next/link";
 import { ArrowRightIcon, LockIcon } from "lucide-react";
 import { hoursOrDaysAgo, EMPLOYMENT_TYPE_LABEL } from "./hiringMatchFormat";
 import { useHiringActivity } from "./useHiringActivity";
-import { PANEL, PANEL_H2, Tag } from "./DashboardHomeSections";
+import { PANEL, PANEL_H2, PANEL_HEAD, Tag } from "./DashboardHomeSections";
 
 function initials(name: string): string {
   const words = name.trim().split(/\s+/).filter(Boolean);
@@ -34,7 +34,7 @@ export default function HiringActivityCard() {
 
   return (
     <section aria-labelledby="employer-interest-heading" className={PANEL}>
-      <div className="mb-3 flex items-center justify-between gap-3">
+      <div className={PANEL_HEAD}>
         <div className="flex min-w-0 items-center gap-2">
           <h2 id="employer-interest-heading" className={PANEL_H2}>Employer interest</h2>
           <Tag tone="indigo" label={`${shortlisted} ${shortlisted === 1 ? "Match" : "Matches"}`} />
