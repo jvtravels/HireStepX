@@ -55,7 +55,8 @@ export default function CandidateDetail({ requirementId, matchId }: { requiremen
   const [dialog, setDialog] = useState<"invite" | "reject" | null>(null);
   const [unlockOpen, setUnlockOpen] = useState(false);
   const access = useEmployerAccess();
-  const requests = useCandidateRequests(d.candidate?.id);
+  // The URL already names the match, so this starts alongside the job detail instead of after it.
+  const requests = useCandidateRequests(matchId);
 
   const { requirement, candidate } = d;
   const shortlistHref = `/employer/requirements/${requirementId}`;
