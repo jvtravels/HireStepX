@@ -1,38 +1,26 @@
 /* HireStepX — Full Salary Negotiation Report (production)
  *
  * Top-level composition only. Each panel lives in its own file under
- * `./panels/`. Shared chrome (PanelShell, ToneCard, EventRow, StatTile,
- * etc.) lives in `./panels/_primitives.tsx`.
+ * `./panels/`. Shared chrome lives in `./panels/_primitives.tsx`.
  *
- * Why the split (2026-05-29): the previous monolith hit 2,150 LOC with
- * 16 panel functions interleaved. The earlier audits had reasoned that
- * a split wouldn't compound (single consumer, panels not reused
- * elsewhere), and that's still true — but readability + diff-blast-
- * radius arguments won out. A change to one panel now diffs ~120 LOC
- * instead of touching the middle of a 2k-LOC file.
+ * Order follows the decision the candidate has to make, not the order the
+ * analyzer ran in: verdict, then what to do next, then the diagnosis behind
+ * it, then what it was worth, then the pattern across sessions. Groups are
+ * unnumbered and a group with nothing to show renders nothing, so the page
+ * never promises a section it can't fill. Panels inherit the flat employer
+ * treatment through `.nfr-flat` + FlatReportContext.
  *
- * Layout:
- *
- *   Part 1 — What happened in this call (diagnosis)
- *   Part 2 — What to do next (action: counter-offer email + checklist)
- *   Part 3 — What it's worth in rupees (cohort + NPV math)
- *   Part 4 — Your pattern across sessions (archetype + drills)
- *
- * Design principles preserved across the split:
- *
+ * Design principles:
  *   • Plain English. No jargon (BATNA, anchor delta, NPV, p18) unaided.
- *   • Honest about empty states. Each panel renders only when its
- *     slice of data is present; nothing fabricated.
- *   • Mobile-first reflow via `nfr-*` classes in styles.ts.
- *   • Production tokens from `./tokens`. */
+ *   • Honest about empty states. Nothing fabricated.
+ *   • Mobile-first reflow via `nfr-*` classes in styles.ts. */
 
+import { useState, type CSSProperties, type ReactNode } from "react";
 import type { Question } from "./types";
-import { t, f, radius, space } from "./tokens";
 import { computeNpvRows, type NegotiationOutcome } from "./derivations";
 
-import { HeaderChip, ReportCardShell } from "./panels/_primitives";
-import { StartHereHint, ANCHOR_PART_2, ANCHOR_PART_3, ANCHOR_PART_4 } from "./panels/StartHereHint";
-import { SectionBand } from "./panels/_primitives";
+import { HeaderChip } from "./panels/_primitives";
+import { StartHereHint, ANCHOR_ACTION, ANCHOR_WORTH, ANCHOR_PATTERN } from "./panels/StartHereHint";
 import { TLDRHero } from "./panels/TLDRHero";
 import { atCompany } from "./roleLabel";
 import { OfferTrajectory } from "./panels/OfferTrajectory";
@@ -51,6 +39,88 @@ import { ArchetypePanel } from "./panels/ArchetypePanel";
 import { DrillPlanPanel } from "./panels/DrillPlanPanel";
 import { NextRoundCTA } from "./panels/NextRoundCTA";
 
+const ANCHOR_DIAGNOSIS = "nfr-diagnosis";
+
+function Group({ id, label, sub, index, children }: {
+  id: string; label: string; sub: string; index: number; children: ReactNode;
+}) {
+  return (
+    <section
+      id={id}
+      aria-labelledby={`${id}-label`}
+      className="nfr-group nfr-rise"
+      style={{ "--i": index } as CSSProperties}
+    >
+      <h3 id={`${id}-label`} className="nfr-group-label">{label}</h3>
+      <p className="nfr-group-sub">{sub}</p>
+      {children}
+    </section>
+  );
+}
+
+function Chevron() {
+  return (
+    <svg className="nfr-disclosure-chev" width="14" height="14" viewBox="0 0 14 14" aria-hidden>
+      <path d="M5 3l4 4-4 4" stroke="currentColor" strokeWidth="1.6" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function TranscriptDisclosure({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  const copy = () => {
+    if (typeof navigator === "undefined" || !navigator.clipboard) return;
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    });
+  };
+  return (
+    <details className="nfr-disclosure nfr-rise mt-8 border-t border-hx-line" style={{ "--i": 6 } as CSSProperties}>
+      <summary>
+        <Chevron />
+        Conversation transcript
+        <span className="ml-1 text-[13px] font-normal text-hx-ink-soft">copy for your records</span>
+      </summary>
+      <div className="pb-2">
+        <div className="mb-2 flex justify-end">
+          <button
+            type="button"
+            onClick={copy}
+            aria-live="polite"
+            className="rounded-md border border-hx-line px-2.5 py-1 text-[12px] font-medium text-hx-coal transition-colors duration-150 hover:border-hx-indigo hover:text-hx-indigo focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hx-indigo"
+          >
+            {copied ? "Copied" : "Copy transcript"}
+          </button>
+        </div>
+        <pre className="m-0 max-h-[360px] max-w-full overflow-auto whitespace-pre-wrap break-words rounded-lg bg-hx-soft p-4 font-mono text-[12px] leading-relaxed text-hx-coal">
+          {text}
+        </pre>
+      </div>
+    </details>
+  );
+}
+
+function buildTranscript(outcome: NegotiationOutcome, role: string, company: string, questions: Question[], finalTotal: number | null): string {
+  const lines: string[] = [
+    `Salary negotiation: ${role}${atCompany(company)}`,
+    `Outcome: ${
+      outcome.outcome === "accepted" ? `Accepted at ₹${typeof finalTotal === "number" ? parseFloat(finalTotal.toFixed(1)) : finalTotal} LPA` :
+      outcome.outcome === "walked_away" ? "Walked away" :
+      "No agreement"
+    }`,
+    "",
+  ];
+  questions.forEach((q, i) => {
+    lines.push(`— Turn ${i + 1} —`);
+    if (q.text) lines.push(`AI: ${q.text}`);
+    const answerText = (q.answer || []).map(seg => seg.text).join(" ").trim();
+    if (answerText) lines.push(`You: ${answerText}`);
+    lines.push("");
+  });
+  return lines.join("\n");
+}
+
 interface Props {
   outcome: NegotiationOutcome;
   role: string;
@@ -59,6 +129,8 @@ interface Props {
   daysUntilInterview?: number;
   priorSessionCount?: number;
   onLaunchDrill?: (slug: string) => void;
+  /** Setup link prefilled with this session's type, role and company. */
+  practiceHref?: string;
   /** M2 PR-6 — family-level guardrail flag counts (e.g.
    *  { "pressure-repeat": 2, "stall-cascade": 1 }). Optional: when
    *  absent or empty, the CoachingSignalsPanel renders nothing. */
@@ -77,191 +149,122 @@ interface Props {
 }
 
 export function NegotiationFullReport({
-  outcome, role, company, questions, daysUntilInterview, priorSessionCount, onLaunchDrill, guardrailFlagSummary, salaryMeta,
+  outcome, role, company, questions, daysUntilInterview, priorSessionCount, onLaunchDrill, practiceHref, guardrailFlagSummary, salaryMeta,
 }: Props) {
   const offers = outcome.offers ?? [];
   const finalTotal = outcome.finalTotal ?? offers[offers.length - 1]?.total ?? null;
 
+  const hasInHand = salaryMeta?.closingTotalLpa != null
+    && (salaryMeta.monthlyTakeHomeNewRegimeInr != null || salaryMeta.monthlyTakeHomeOldRegimeInr != null);
+  const willRenderNpv = computeNpvRows(outcome).length > 0;
+  const willRenderCounterparty = !!(outcome.counterpartyFacts && outcome.counterpartyFacts.length > 0);
+  const showWorth = hasInHand || willRenderNpv || willRenderCounterparty;
+  const willRenderArchetype = !!outcome.archetype || ((priorSessionCount ?? 0) >= 1 && (priorSessionCount ?? 0) < 2);
+  const willRenderDrills = !!(outcome.drills && outcome.drills.length > 0);
+  const showPattern = willRenderArchetype || willRenderDrills;
+
+  let groupIndex = 0;
+
   return (
-    <ReportCardShell ariaLabelledBy="ir-section-negotiation">
-      <div style={{ marginBottom: space.panel }}>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-          <HeaderChip variant="accent">Salary Negotiation · Full Report</HeaderChip>
+    <section aria-labelledby="ir-section-negotiation" className="ir-flat-section scroll-mt-[72px] border-t border-hx-line py-7">
+      <header className="nfr-rise" style={{ "--i": 0 } as CSSProperties}>
+        <div className="flex flex-wrap gap-2">
+          <HeaderChip variant="accent">Salary negotiation</HeaderChip>
           {salaryMeta?.tierBucketLabel && (
-            <HeaderChip title="Compensation band the analyzer scored you against (Phase 1 of SCORE_IMPROVEMENT_PLAN).">
+            <HeaderChip title="Compensation band the analyzer scored you against.">
               Tier · {salaryMeta.tierBucketLabel}
             </HeaderChip>
           )}
           {salaryMeta?.recruiterPersonaLabel && salaryMeta.recruiterPersona !== "default" && (
-            <HeaderChip title="Indian recruiter sector archetype the analyzer scored against (Phase 3 of SCORE_IMPROVEMENT_PLAN).">
+            <HeaderChip title="Indian recruiter sector archetype the analyzer scored against.">
               {salaryMeta.recruiterPersonaLabel}
             </HeaderChip>
           )}
         </div>
-        <h2
-          id="ir-section-negotiation"
-          style={{ fontFamily: f.serif, fontSize: 28, margin: "10px 0 6px", color: t.coal, letterSpacing: -0.4 }}
-        >
-          The full breakdown of your negotiation
+        <h2 id="ir-section-negotiation" className="m-0 mt-3 text-[22px] font-semibold leading-tight tracking-[-0.02em] text-hx-coal">
+          Your negotiation, move by move
         </h2>
-        <div style={{ fontSize: 13, color: t.inkSoft, marginBottom: space.block, maxWidth: 720 }}>
-          Each panel below turns one negotiation skill into something you can act on, not a score.
-        </div>
+        <p className="m-0 mb-5 mt-1.5 max-w-[65ch] text-[13px] leading-normal text-hx-ink-soft">
+          Each section turns one negotiation skill into something you can act on, not just a score.
+        </p>
         <StartHereHint outcome={outcome} daysUntilInterview={daysUntilInterview} />
+      </header>
+
+      <div className="nfr-rise" style={{ "--i": 1 } as CSSProperties}>
+        <TLDRHero outcome={outcome} role={role} company={company} priorSessionCount={priorSessionCount} />
       </div>
 
-      <TLDRHero outcome={outcome} role={role} company={company} priorSessionCount={priorSessionCount} />
-
-      {/* PART 1 — DIAGNOSIS · indigo (analytical / cool tone) */}
-      <SectionBand
-        label="Part 1 of 4"
-        title="What happened in this call"
-        subtitle="Every moment that mattered: what you said, what you missed, what it cost."
-        accent={t.indigo}
-        bg={t.indigo100}
-      />
-
-      {offers.length > 0 && <OfferTrajectory outcome={outcome} />}
-
-      {/* Phase 1.1 — in-hand monthly under both tax regimes for the
-          closing offer. Silent unless the analyzer extracted a closing
-          offer + computed take-home. */}
-      {salaryMeta?.closingTotalLpa != null
-        && (salaryMeta.monthlyTakeHomeNewRegimeInr != null
-            || salaryMeta.monthlyTakeHomeOldRegimeInr != null)
-        && (
-        <InHandMonthlyCard salaryMeta={salaryMeta} />
-      )}
-
-      <div className="nfr-vstack-xl">
-        <PhaseLadderPanel outcome={outcome} />
-        <div className="nfr-grid-2up">
-          <ConcessionAnalysisPanel outcome={outcome} />
-          <AnchorBracketPanel outcome={outcome} />
+      <Group
+        id={ANCHOR_ACTION}
+        index={++groupIndex + 1}
+        label="What to do next"
+        sub="A draft email you can send, the questions to ask next time, and the things to prepare."
+      >
+        <div className="nfr-vstack-xl">
+          <UnaskedLeversPanel outcome={outcome} />
+          <CounterOfferLetterPanel outcome={outcome} role={role} company={company} />
         </div>
-        {/* M2 PR-6 — Coaching Signals: family-level guardrail patterns
-            the planner flagged during the session. Renders null when
-            no flags fired (honest empty state — same as every other
-            panel in this report). */}
-        <CoachingSignalsPanel flagSummary={guardrailFlagSummary} />
-        {(outcome.verbalHabits || outcome.silenceMoments) && (
+      </Group>
+
+      <Group
+        id={ANCHOR_DIAGNOSIS}
+        index={++groupIndex + 1}
+        label="What happened"
+        sub="Every moment that mattered: what you said, what you missed, what it cost."
+      >
+        <div className="nfr-vstack-xl">
+          {offers.length > 0 && <OfferTrajectory outcome={outcome} />}
+          <PhaseLadderPanel outcome={outcome} />
           <div className="nfr-grid-2up">
-            <VerbalHabitsPanel outcome={outcome} />
-            <SilenceMapPanel outcome={outcome} />
+            <ConcessionAnalysisPanel outcome={outcome} />
+            <AnchorBracketPanel outcome={outcome} />
           </div>
-        )}
-      </div>
+          <CoachingSignalsPanel flagSummary={guardrailFlagSummary} />
+          {(outcome.verbalHabits || outcome.silenceMoments) && (
+            <div className="nfr-grid-2up">
+              <VerbalHabitsPanel outcome={outcome} />
+              <SilenceMapPanel outcome={outcome} />
+            </div>
+          )}
+        </div>
+      </Group>
 
-      {/* PART 2 — ACTION */}
-      <SectionBand
-        anchorId={ANCHOR_PART_2}
-        label="Part 2 of 4"
-        title="What to do before your real round"
-        subtitle="A draft email you can send, the questions to ask next time, and the things to prepare."
-        accent={t.copper}
-        bg={t.copperTint}
-      />
-      <div className="nfr-vstack-xl">
-        <UnaskedLeversPanel outcome={outcome} />
-        <CounterOfferLetterPanel outcome={outcome} role={role} company={company} />
-      </div>
-
-      {/* PART 3 — MATH. The cohort placement panel was removed
-          2026-05-30 — it claimed "where your offer sits vs others like
-          you" but the underlying number was intra-session gap closure,
-          not a cohort percentile, and we have no cohort dataset. The
-          honest gap-closure framing now lives inline in
-          OfferTrajectory + TLDRHero. Render the band only when at
-          least one remaining child will render — prevents an empty
-          band. */}
-      {(() => {
-        const willRenderNpv = computeNpvRows(outcome).length > 0;
-        const willRenderCounterparty = !!(outcome.counterpartyFacts && outcome.counterpartyFacts.length > 0);
-        const showPart3 = willRenderNpv || willRenderCounterparty;
-        if (!showPart3) return null;
-        return (
-          <>
-            <SectionBand
-              anchorId={ANCHOR_PART_3}
-              label="Part 3 of 4"
-              title="What this offer is worth in rupees"
-              subtitle="What accepting really costs after tax, and who you were negotiating against."
-              accent={t.warning}
-              bg={t.warning100}
-            />
-            <div className="nfr-vstack-xl">
+      {showWorth && (
+        <Group
+          id={ANCHOR_WORTH}
+          index={++groupIndex + 1}
+          label="What it's worth"
+          sub="What accepting really costs after tax, and who you were negotiating against."
+        >
+          <div className="nfr-vstack-xl">
+            {hasInHand && salaryMeta && <InHandMonthlyCard salaryMeta={salaryMeta} />}
+            {(willRenderNpv || willRenderCounterparty) && (
               <div className="nfr-grid-2up">
                 {willRenderNpv && <NPVMathPanel outcome={outcome} />}
                 {willRenderCounterparty && <CounterpartyPanel outcome={outcome} />}
               </div>
-            </div>
-          </>
-        );
-      })()}
+            )}
+          </div>
+        </Group>
+      )}
 
-      {/* PART 4 — SKILL ARC. Empty state only renders for users with
-          ≥1 prior session; first-session users get the band hidden. */}
-      {(() => {
-        const willRenderArchetype = !!outcome.archetype || ((priorSessionCount ?? 0) >= 1 && (priorSessionCount ?? 0) < 2);
-        const willRenderDrills = !!(outcome.drills && outcome.drills.length > 0);
-        const showPart4 = willRenderArchetype || willRenderDrills;
-        if (!showPart4) return null;
-        return (
-          <>
-            <SectionBand
-              anchorId={ANCHOR_PART_4}
-              label="Part 4 of 4"
-              title="Your pattern across sessions"
-              subtitle="What you keep doing right (and wrong), and the drills to break the pattern."
-              accent={t.indigoDeep}
-              bg={t.indigo100}
-            />
-            <div className="nfr-vstack-xl">
-              {willRenderArchetype && <ArchetypePanel outcome={outcome} priorSessionCount={priorSessionCount} />}
-              {willRenderDrills && <DrillPlanPanel outcome={outcome} onLaunchDrill={onLaunchDrill} />}
-            </div>
-          </>
-        );
-      })()}
-
-      {/* Transcript export — preserved from legacy section */}
-      <details style={{ marginTop: 28 }}>
-        <summary style={{ cursor: "pointer", fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.coal }}>
-          Conversation transcript: copy for your records
-        </summary>
-        <pre
-          style={{
-            marginTop: 10, padding: 14, borderRadius: radius.xl,
-            background: t.cream, border: `1px solid ${t.line}`,
-            fontFamily: f.mono, fontSize: 11, lineHeight: 1.55,
-            whiteSpace: "pre-wrap", wordBreak: "break-word",
-            color: t.coal, overflow: "auto", maxWidth: "100%", maxHeight: 360,
-          }}
+      {showPattern && (
+        <Group
+          id={ANCHOR_PATTERN}
+          index={++groupIndex + 1}
+          label="Your pattern"
+          sub="What you keep doing right (and wrong), and the drills to break the pattern."
         >
-          {(() => {
-            const lines: string[] = [
-              `Salary negotiation: ${role}${atCompany(company)}`,
-              `Outcome: ${
-                outcome.outcome === "accepted" ? `Accepted at ₹${typeof finalTotal === "number" ? parseFloat(finalTotal.toFixed(1)) : finalTotal} LPA` :
-                outcome.outcome === "walked_away" ? "Walked away" :
-                "No agreement"
-              }`,
-              "",
-            ];
-            questions.forEach((q, i) => {
-              lines.push(`— Turn ${i + 1} —`);
-              if (q.text) lines.push(`AI: ${q.text}`);
-              const answerText = (q.answer || []).map(s => s.text).join(" ").trim();
-              if (answerText) lines.push(`You: ${answerText}`);
-              lines.push("");
-            });
-            return lines.join("\n");
-          })()}
-        </pre>
-      </details>
+          <div className="nfr-vstack-xl">
+            {willRenderArchetype && <ArchetypePanel outcome={outcome} priorSessionCount={priorSessionCount} />}
+            {willRenderDrills && <DrillPlanPanel outcome={outcome} onLaunchDrill={onLaunchDrill} />}
+          </div>
+        </Group>
+      )}
 
-      {/* Bottom CTA — literal last element on the page. */}
-      <NextRoundCTA outcome={outcome} role={role} company={company} />
-    </ReportCardShell>
+      <TranscriptDisclosure text={buildTranscript(outcome, role, company, questions, finalTotal)} />
+
+      <NextRoundCTA outcome={outcome} role={role} company={company} practiceHref={practiceHref} />
+    </section>
   );
 }

@@ -93,17 +93,17 @@ function KernelTacticsPanel({ m }: { m: KernelMetrics }) {
       {showCallouts && (
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {m.marketMode === "soft" && (
-            <div style={{ padding: "8px 12px", background: t.creamSoft, border: `1px solid ${t.line}`, borderRadius: radius.lg, fontFamily: f.sans, fontSize: size.sm, color: t.inkSoft }}>
+            <div style={{ padding: "8px 12px", background: t.creamSoft, borderRadius: radius.lg, fontFamily: f.sans, fontSize: size.sm, color: t.inkSoft }}>
               Simulated <strong style={{ color: t.coal }}>soft market</strong>: recruiters concede ~30% less than baseline. Cash gains here are harder-won than the % suggests.
             </div>
           )}
           {m.marketMode === "hot" && (
-            <div style={{ padding: "8px 12px", background: t.creamSoft, border: `1px solid ${t.line}`, borderRadius: radius.lg, fontFamily: f.sans, fontSize: size.sm, color: t.inkSoft }}>
+            <div style={{ padding: "8px 12px", background: t.creamSoft, borderRadius: radius.lg, fontFamily: f.sans, fontSize: size.sm, color: t.inkSoft }}>
               Simulated <strong style={{ color: t.coal }}>hot market</strong>: recruiters concede ~30% more than baseline. Match this anchoring discipline in a normal market.
             </div>
           )}
           {m.hardBandCap && (
-            <div style={{ padding: "8px 12px", background: t.creamSoft, border: `1px solid ${t.line}`, borderRadius: radius.lg, fontFamily: f.sans, fontSize: size.sm, color: t.inkSoft }}>
+            <div style={{ padding: "8px 12px", background: t.creamSoft, borderRadius: radius.lg, fontFamily: f.sans, fontSize: size.sm, color: t.inkSoft }}>
               <strong style={{ color: t.coal }}>Hard band cap.</strong> The simulated company had a fixed fitment grid (services-co pattern). The kernel redirected to joining bonus, equity, and benefits — the right play.
             </div>
           )}
@@ -163,35 +163,23 @@ export function KernelNegotiationQualitySection({ m }: { m: KernelMetrics }) {
     <SrSectionShell
       anchorId="ir-section-kernel-neg"
       headingId="ir-kernel-neg-heading"
-      num="N1"
       label="Negotiation quality"
       title="How you negotiated"
       subtitle={`How well you ran the negotiation itself — scored deterministically from the ${m.totalTurns} kernel-tracked turns (your actual lever picks and counters, not transcript regex). This is separate from your overall interview-readiness score up top: anchoring early, climbing the band, and exploring multiple levers all lift it.`}
       aside={outcomeChip}
     >
-      <div className="ir-tile-grid">
+      <div className="ir-tile-grid" style={{ gap: "20px 28px" }}>
         {tiles.map((tile) => (
-          <div
-            key={tile.label}
-            style={{
-              background: t.creamSoft,
-              border: `1px solid ${t.line}`,
-              borderRadius: radius.bar,
-              padding: "16px 18px",
-              display: "flex",
-              flexDirection: "column",
-              gap: 6,
-            }}
-          >
-            <span style={{ fontFamily: f.sans, fontSize: size.base, color: t.inkSoft }}>{tile.label}</span>
-            <div style={{ fontFamily: f.serif, fontSize: 32, color: t.coal, lineHeight: 1, letterSpacing: "-0.02em" }}>
+          <div key={tile.label} className="flex flex-col gap-1.5 border-t border-hx-line pt-3">
+            <span className="text-[13px] text-hx-ink-soft">{tile.label}</span>
+            <div className="text-[26px] font-semibold leading-none tracking-[-0.02em] tabular-nums text-hx-coal">
               {tile.value}
               {tile.sub && tile.label === "Execution score" && (
-                <span style={{ fontSize: size.lg, color: t.inkSoft, marginLeft: 2, fontFamily: f.mono }}>{tile.sub}</span>
+                <span className="ml-0.5 text-[15px] font-normal text-hx-ink-soft">{tile.sub}</span>
               )}
             </div>
-            {tile.sub && tile.label !== "Quality score" && (
-              <div style={{ fontFamily: f.mono, fontSize: size.xs, color: t.inkSoft, letterSpacing: "0.04em" }}>{tile.sub}</div>
+            {tile.sub && tile.label !== "Execution score" && (
+              <div className="text-[12px] text-hx-ink-soft">{tile.sub}</div>
             )}
           </div>
         ))}
@@ -215,7 +203,6 @@ export function KernelNegotiationQualitySection({ m }: { m: KernelMetrics }) {
           marginTop: 14,
           padding: "10px 14px",
           background: t.creamSoft,
-          border: `1px solid ${t.line}`,
           borderRadius: radius.lg,
           fontFamily: f.sans,
           fontSize: size.sm,

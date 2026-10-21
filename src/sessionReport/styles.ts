@@ -350,6 +350,68 @@ export const SESSION_REPORT_STYLES = `
     border-radius: 10px; font-size: 13px; color: #0E0C08;
   }
 
+  /* ─── Negotiation report, flat employer treatment ───
+     Scoped to .nfr-flat so the HR and behavioural reports keep their
+     chrome. Callouts lose their boxes, tone rows become hairline-divided
+     lists, and the verdict drops the copper rule and oversized type. */
+  .nfr-flat .nfr-panel { padding: 24px 0; border-top: 1px solid var(--color-hx-line); }
+  .nfr-flat .nfr-group > .nfr-panel:first-of-type,
+  .nfr-flat .nfr-group > .nfr-vstack-xl > .nfr-panel:first-child { border-top: 0; padding-top: 4px; }
+  .nfr-flat .nfr-vstack-xl { gap: 0; }
+  .nfr-flat .nfr-grid-2up { gap: 0 32px; }
+  .nfr-flat .nfr-info-tile {
+    background: var(--color-hx-soft); border: 0; border-radius: 8px;
+    padding: 12px 14px; color: var(--color-hx-ink-soft);
+  }
+  .nfr-flat .nfr-quote {
+    background: transparent; border: 0; border-radius: 0;
+    padding: 0 0 0 2px; color: var(--color-hx-coal);
+  }
+  .nfr-flat .nfr-tone-card {
+    border: 0; border-radius: 0; background: transparent;
+    border-top: 1px solid var(--color-hx-line); padding: 12px 0;
+  }
+  .nfr-flat .nfr-tone-card:first-child { border-top: 0; }
+  .nfr-flat .nfr-tldr {
+    margin-bottom: 8px; border-top: 0; border-bottom: 0; padding: 4px 0 8px;
+  }
+  .nfr-flat .nfr-tldr-eyebrow { color: var(--color-hx-ink-soft); letter-spacing: 0.08em; }
+  .nfr-flat .nfr-tldr-verdict { font-size: 22px; line-height: 1.35; letter-spacing: -0.015em; margin-bottom: 20px; }
+  .nfr-flat .nfr-tldr-evidence-value { font-size: 16px; font-variant-numeric: tabular-nums; }
+  .nfr-flat .nfr-start-here {
+    background: transparent; border: 0; border-top: 1px solid var(--color-hx-line);
+    border-bottom: 1px solid var(--color-hx-line); border-radius: 0;
+    padding: 12px 0; margin: 4px 0 20px;
+  }
+  .nfr-group { scroll-margin-top: 80px; padding-top: 32px; }
+  .nfr-group-label {
+    margin: 0 0 4px; font-size: 12px; font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--color-hx-copper);
+  }
+  .nfr-group-sub { margin: 0 0 12px; font-size: 13px; color: var(--color-hx-ink-soft); max-width: 65ch; }
+  .nfr-disclosure > summary {
+    display: flex; align-items: center; gap: 8px; cursor: pointer; list-style: none;
+    font-size: 14px; font-weight: 600; color: var(--color-hx-coal); padding: 14px 0;
+    transition: color 160ms cubic-bezier(0.25, 1, 0.5, 1);
+  }
+  .nfr-disclosure > summary::-webkit-details-marker { display: none; }
+  .nfr-disclosure > summary:hover { color: var(--color-hx-copper); }
+  .nfr-disclosure > summary:focus-visible { outline: 2px solid var(--color-hx-indigo); outline-offset: 2px; border-radius: 6px; }
+  .nfr-disclosure-chev { transition: transform 200ms cubic-bezier(0.25, 1, 0.5, 1); color: var(--color-hx-ink-soft); }
+  .nfr-disclosure[open] .nfr-disclosure-chev { transform: rotate(90deg); }
+  @keyframes nfr-rise {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: none; }
+  }
+  .nfr-flat .nfr-rise {
+    animation: nfr-rise 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation-delay: calc(var(--i, 0) * 70ms);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .nfr-flat .nfr-rise { animation: none; }
+    .nfr-disclosure-chev, .nfr-disclosure > summary { transition: none; }
+  }
+
   /* Mobile reflow for the negotiation panels — single column at <=768px,
      tighter padding at <=420px. Mirrors the production pattern used
      elsewhere in this file. */
@@ -357,6 +419,8 @@ export const SESSION_REPORT_STYLES = `
     .nfr-grid-2up { grid-template-columns: 1fr !important; gap: 14px !important; }
     .nfr-grid-3up { grid-template-columns: 1fr !important; gap: 12px !important; }
     .nfr-panel { padding: 18px 0 4px !important; }
+    .nfr-flat .nfr-panel { padding: 20px 0 !important; }
+    .nfr-flat .nfr-tldr-verdict { font-size: 20px !important; }
     .nfr-tldr { padding: 18px 0 20px !important; }
     .nfr-tldr-verdict { font-size: 24px !important; line-height: 1.3 !important; }
     .nfr-tldr-evidence { grid-template-columns: 1fr !important; gap: 0 !important; }

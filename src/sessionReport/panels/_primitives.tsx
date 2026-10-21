@@ -14,7 +14,7 @@
  *
  * No state, no side effects. Pure presentation. */
 
-import React from "react";
+import React, { createContext, useContext } from "react";
 import { t, f, radius, size } from "../tokens";
 import {
   Tooltip,
@@ -307,10 +307,27 @@ export function PlayableTime({ at }: { at: string }) {
   );
 }
 
+/* Set by the negotiation report so its legacy panels drop the numbered serif
+ * heading and render the flat employer-style heading instead. Other reports
+ * leave it false and are untouched. */
+export const FlatReportContext = createContext(false);
+
 export function SectionHeader({ index, title, subtitle, accent = t.indigo, aside }: {
   index: string; title: string; subtitle?: string; accent?: string;
   aside?: React.ReactNode;
 }) {
+  const flat = useContext(FlatReportContext);
+  if (flat) {
+    return (
+      <div className="mb-4 flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <h4 className="m-0 text-[15px] font-semibold leading-snug tracking-[-0.01em] text-hx-coal">{title}</h4>
+          {subtitle && <p className="m-0 mt-1 max-w-[65ch] text-[13px] leading-normal text-hx-ink-soft">{subtitle}</p>}
+        </div>
+        {aside && <div className="shrink-0">{aside}</div>}
+      </div>
+    );
+  }
   const headBlock = (
     <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
       <span

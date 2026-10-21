@@ -97,8 +97,6 @@ export function CounterOfferLetterPanel({
   const closing = outcome.finalTotal ?? (outcome.offers[outcome.offers.length - 1]?.total ?? null);
   const [copied, setCopied] = useState(false);
 
-  if (closing === null) return null;
-
   /* S4S5-B4 — joining bonus (if any) belongs in the acceptance letter so
      the email matches the actual deal. It is a one-time payment distinct
      from the annual CTC, so it's called out separately rather than added
@@ -109,11 +107,13 @@ export function CounterOfferLetterPanel({
   const closingLine = jb
     ? `₹${closing} LPA total CTC plus a one-time joining bonus of ₹${jb}L`
     : `₹${closing} LPA total CTC`;
+  /* No offer was ever tabled, so there is no number to accept or counter.
+   * The letter still has to exist: the verdict above promises an email draft. */
 
   let letter: string;
   let commentary: string[];
 
-  if (outcome.outcome === "accepted") {
+  if (outcome.outcome === "accepted" && closing !== null) {
     letter = `Hi <Recruiter>,
 
 Thank you for the offer for the ${role} role${atCompany(company)}. I'm happy to formally accept the package at ${closingLine}.
@@ -128,7 +128,7 @@ Best,
       "Asks for the formal letter without making it adversarial",
       "Closes with notice period, surfaces the next concrete step",
     ];
-  } else if (outcome.candidateAsk !== null) {
+  } else if (outcome.candidateAsk !== null && closing !== null) {
     letter = `Hi <Recruiter>,
 
 Thanks for the productive call. I want to keep the conversation alive, I'm genuinely interested in the ${role} role${atCompany(company)}.
@@ -147,6 +147,26 @@ Best,
       `Re-anchors with the specific number you named (₹${outcome.candidateAsk} LPA), so the recruiter can't reset the conversation`,
       "Asks 3 specific lever questions, opening 3 negotiation surfaces at once",
       "Stays collaborative: 'looking forward to closing this together' invites a counter, not a refusal",
+    ];
+  } else if (outcome.candidateAsk !== null) {
+    letter = `Hi <Recruiter>,
+
+Thanks for the conversation about the ${role} role${atCompany(company)}. We didn't get to a number on the call, so I'd like to put mine on the table: based on the market for this band, I'm targeting ₹${outcome.candidateAsk} LPA total CTC.
+
+To help us get there, could you share:
+
+  · The compensation range for this role and level
+  · Whether variable pay is a target with upside or a hard cap
+  · Whether a signing component or stock-option grant is available at this band
+
+Happy to jump on a call this week to work through it.
+
+Best,
+<Your name>`;
+    commentary = [
+      `Names your number (₹${outcome.candidateAsk} LPA) in writing, so the recruiter responds to your anchor`,
+      "Asks for their range, which is the number the call never surfaced",
+      "Opens variable pay and equity as extra levers instead of fighting on base alone",
     ];
   } else {
     letter = `Hi <Recruiter>,

@@ -84,10 +84,10 @@ export function TLDRHero({
      * offer session must point at RESTARTING the conversation, not reopening a
      * non-existent offer. */
     verdict = !counterNamed
-      ? `No deal closed, and no counter on the table — you explored ${offers.length} offer point${offers.length !== 1 ? "s" : ""} but ended with ₹0 gained. The single biggest miss was never naming a number. Part 2 has the email draft to restart the conversation.`
+      ? `No deal closed, and no counter on the table — you explored ${offers.length} offer point${offers.length !== 1 ? "s" : ""} but ended with ₹0 gained. The single biggest miss was never naming a number. What to do next has an email draft to restart the conversation.`
       : offers.length > 0
-        ? `No deal closed. You countered at ₹${candidateAsk} LPA against their ₹${opening} LPA opening, but the conversation ended with nothing locked in — you're walking away with ₹0 gained. Part 2 has the email draft to reopen it before the offer lapses.`
-        : `No deal closed. You named ₹${candidateAsk} LPA, but no offer ever came back and the conversation ended with ₹0 gained. Part 2 has the email draft to restart the conversation.`;
+        ? `No deal closed. You countered at ₹${candidateAsk} LPA against their ₹${opening} LPA opening, but the conversation ended with nothing locked in — you're walking away with ₹0 gained. The email draft under What to do next reopens it before the offer lapses.`
+        : `No deal closed. You named ₹${candidateAsk} LPA, but no offer ever came back and the conversation ended with ₹0 gained. What to do next has an email draft to restart the conversation.`;
   }
 
   type StatTone = "good" | "bad" | "warn" | "neutral";
@@ -108,7 +108,7 @@ export function TLDRHero({
     stats.push({
       label: "Where you are now",
       value: "Session 1",
-      hint: "first negotiation. Part 2 below has the email draft to start from",
+      hint: "first negotiation. The email draft under What to do next is a starting point",
       tone: "neutral",
     });
   } else if (delta !== null) {
@@ -213,8 +213,8 @@ export function TLDRHero({
           : `you closed the deal, but skipped ${skipped} stage${skipped === 1 ? "" : "s"} along the way`
         : walkedAway
           ? phaseCount === TOTAL_PHASES
-            ? "you reached every stage, then walked away. Part 2 has the next-round play"
-            : "you walked away. Part 2 has the next-round play"
+            ? "you reached every stage, then walked away. What to do next has the next-round play"
+            : "you walked away. What to do next has the next-round play"
           : phaseCount >= 4 ? "one short of the close" :
             phaseCount >= 2 ? "made it past the counter" :
             /* S23-B4: phaseCount===1 could be stage 1 (counter named) OR stage 4
@@ -222,13 +222,13 @@ export function TLDRHero({
              * S62-B1 (2026-07-24): mirror derivations.ts hasPriorOffer logic —
              * when no recruiter offer was tabled the candidate's number is an
              * opening anchor, not a counter; "you named a counter" was wrong. */
-            phaseCount === 1 && stage1Reached ? (offers.length > 0 ? "you named a counter. Part 2 below shows the next move" : "you named your opening number. Part 2 below shows the next move") :
-            phaseCount === 1 ? "you explored the conversation but didn't name a counter. Part 2 has the next move" :
+            phaseCount === 1 && stage1Reached ? (offers.length > 0 ? "you named a counter. What to do next shows the next move" : "you named your opening number. What to do next shows the next move") :
+            phaseCount === 1 ? "you explored the conversation but didn't name a counter. What to do next has the next move" :
             /* S17-B3 (2026-07-18 audit) — "past the first offer" presumes an
              * offer landed; with offers === [] none did, so name it honestly. */
             offers.length > 0
-              ? "you didn't push past the first offer. Part 2 has the email draft"
-              : "the conversation ended before any offer landed. Part 2 has the email draft",
+              ? "you didn't push past the first offer. What to do next has the email draft"
+              : "the conversation ended before any offer landed. What to do next has the email draft",
     tone: dealClosed ? "good" : walkedAway ? "warn" : phaseCount >= 4 ? "good" : phaseCount >= 2 ? "warn" : "bad",
   });
   if (delta !== null && opening !== null) {

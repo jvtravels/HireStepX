@@ -20,6 +20,7 @@ import { useState } from "react";
 import { t } from "./tokens";
 import { SESSION_REPORT_STYLES } from "./styles";
 import { NegotiationFullReport } from "./NegotiationFullReport";
+import { FlatReportContext } from "./panels/_primitives";
 import BehavioralFullReport from "./BehavioralFullReport";
 import HrFullReport from "./HrFullReport";
 import type { BehavioralFullReportData } from "./types";
@@ -356,7 +357,8 @@ function GenericReport({
               </>
             )}
             {tab === "negotiation" && data.negotiationOutcome && (
-              <>
+              <FlatReportContext.Provider value>
+                <div className="nfr-flat">
                 <NegotiationFullReport
                   outcome={data.negotiationOutcome}
                   role={data.role}
@@ -364,12 +366,14 @@ function GenericReport({
                   questions={data.questions}
                   daysUntilInterview={data.daysUntilInterview}
                   priorSessionCount={data.priorSessionCount}
+                  practiceHref={practiceHref}
                   guardrailFlagSummary={data.kernelMetrics?.guardrailFlagSummary}
                   salaryMeta={salaryNegotiationMeta}
                 />
                 {offerNetValue && <OfferEconomicsPanel offer={offerNetValue} />}
                 {data.kernelMetrics && <KernelNegotiationQualitySection m={data.kernelMetrics} />}
-              </>
+                </div>
+              </FlatReportContext.Provider>
             )}
             {tab === "answers" && (
               <PerQuestionSection questions={data.questions} />
