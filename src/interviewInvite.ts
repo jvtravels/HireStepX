@@ -2,7 +2,7 @@ import type { InterviewEvent } from "./dashboardHelpers";
 import type { JobMatch } from "./DashboardJobs";
 import { isDateOnlyInstant } from "./interviewWhen";
 import { profileFromRole } from "./roleInterviewMatrix";
-import { FOCUS_TO_TYPE, recommendFocus } from "./setupFocus";
+import { FOCUS_TO_TYPE, recommendFocus, type FocusPick } from "./setupFocus";
 
 const INVITED_STATUSES = new Set(["interview_invited", "interviewing"]);
 
@@ -31,16 +31,19 @@ export function inviteEvent(job: Pick<JobMatch, "id" | "roleTitle" | "companyNam
   };
 }
 
-export function invitePracticeHref(job: Pick<JobMatch, "id" | "roleTitle" | "companyName" | "unlocked" | "candidateStatus">): string {
-  const params = new URLSearchParams({ role: job.roleTitle, invite: job.id });
-  if (job.unlocked && job.companyName) params.set("company", job.companyName);
-  const { focus } = recommendFocus({
+export function recommendedFocusFor(job: Pick<JobMatch, "roleTitle" | "candidateStatus">): FocusPick {
+  return recommendFocus({
     role: job.roleTitle,
     stage: job.candidateStatus,
     relevant: new Set(profileFromRole(job.roleTitle).focuses),
     isComingSoon: () => false,
   });
-  params.set("focus", FOCUS_TO_TYPE[focus] ?? "behavioral");
+}
+
+export function invitePracticeHref(job: Pick<JobMatch, "id" | "roleTitle" | "companyName" | "unlocked" | "candidateStatus">): string {
+  const params = new URLSearchParams({ role: job.roleTitle, invite: job.id });
+  if (job.unlocked && job.companyName) params.set("company", job.companyName);
+  params.set("focus", FOCUS_TO_TYPE[recommendedFocusFor(job).focus] ?? "behavioral");
   return `/session/new?${params.toString()}`;
 }
 

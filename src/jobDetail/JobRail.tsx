@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { KeyValueList, KeyValueRow, Panel } from "@/employer/_panelParts";
 import type { JobMatch } from "../DashboardJobs";
 import { daysAgo } from "../hiringMatchFormat";
+import { recommendedFocusFor } from "../interviewInvite";
 import { BODY_TIGHT, H2_FLUSH, PANEL_H2, SEC } from "./styles";
 
 export function RoleDetails({ job }: { job: JobMatch }) {
@@ -38,17 +39,26 @@ export function ClosedNotice({ onBack }: { onBack: () => void }) {
   );
 }
 
-export function StrengthenMatch({ roleTitle, onPractise, onResume }: { roleTitle: string; onPractise: () => void; onResume: () => void }) {
+export function PrepareForRole({ job, onPractise }: { job: JobMatch; onPractise: () => void }) {
+  const { focus, reason } = recommendedFocusFor(job);
+  return (
+    <section aria-labelledby="job-prepare-heading" className={SEC}>
+      <h2 id="job-prepare-heading" className={H2_FLUSH}>Prepare for this role</h2>
+      <p className={`${BODY_TIGHT} font-medium text-hx-coal`}>{focus}</p>
+      <p className="m-0 mt-0.5 text-[13px] leading-5 text-hx-ink-soft">{reason}</p>
+      <Button type="button" variant="outline" className="mt-3" onClick={onPractise}>Practise {focus}</Button>
+    </section>
+  );
+}
+
+export function StrengthenMatch({ onResume }: { onResume: () => void }) {
   return (
     <section aria-labelledby="job-strengthen-heading" className={SEC}>
       <h2 id="job-strengthen-heading" className={H2_FLUSH}>Strengthen your match</h2>
       <p className={BODY_TIGHT}>
         You can't apply to this role. Employers reach out when a profile stands out, so a stronger profile helps.
       </p>
-      <div className="mt-3 flex flex-col gap-2">
-        <Button type="button" onClick={onPractise}>Practise for {roleTitle}</Button>
-        <Button type="button" variant="outline" onClick={onResume}>Update your resume</Button>
-      </div>
+      <Button type="button" variant="outline" className="mt-3" onClick={onResume}>Update your resume</Button>
     </section>
   );
 }

@@ -139,6 +139,38 @@ describe("JobDetailPage", () => {
     expect(screen.queryByText("What this employer sees")).not.toBeInTheDocument();
   });
 
+  it("suggests a focus for the role and opens setup with it preselected", async () => {
+    mockFetch([baseMatch]);
+    render(<TooltipProvider><JobDetailPage /></TooltipProvider>);
+    const section = (await screen.findByRole("heading", { name: "Prepare for this role" })).closest("section")!;
+    expect(within(section).getByText("Behavioral")).toBeInTheDocument();
+    fireEvent.click(within(section).getByRole("button", { name: "Practise Behavioral" }));
+    const href = push.mock.calls.at(-1)![0] as string;
+    expect(href).toContain("focus=behavioral");
+    expect(href).toContain("invite=match-1");
+    expect(href).toContain("company=Acme+Corp");
+  });
+
+  it("hides the prepare block on an interview invite and on a closed role", async () => {
+    mockFetch([{ ...baseMatch, candidateStatus: "interview_invited" }]);
+    const { unmount } = render(<TooltipProvider><JobDetailPage /></TooltipProvider>);
+    await screen.findByText("You're invited to interview");
+    expect(screen.queryByRole("heading", { name: "Prepare for this role" })).not.toBeInTheDocument();
+    unmount();
+    mockFetch([{ ...baseMatch, status: "closed" }]);
+    render(<TooltipProvider><JobDetailPage /></TooltipProvider>);
+    await screen.findByText("This role is closed");
+    expect(screen.queryByRole("heading", { name: "Prepare for this role" })).not.toBeInTheDocument();
+  });
+
+  it("keeps the company out of the practice link for a locked role", async () => {
+    mockFetch([{ ...baseMatch, unlocked: false, unlockedAt: null, companyName: "Confidential company" }]);
+    render(<TooltipProvider><JobDetailPage /></TooltipProvider>);
+    fireEvent.click(await screen.findByRole("button", { name: "Practise Behavioral" }));
+    expect(push.mock.calls.at(-1)![0] as string).not.toContain("company=");
+    expect(screen.getByText("Strengthen your match")).toBeInTheDocument();
+  });
+
   it("keeps the interested answer in the actions menu, not the header", async () => {
     mockFetch([baseMatch]);
     render(<TooltipProvider><JobDetailPage /></TooltipProvider>);

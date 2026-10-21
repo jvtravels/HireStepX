@@ -22,11 +22,11 @@ import { useToast } from "./Toast";
 import CandidateRequestsCard from "./CandidateRequestsCard";
 import { MatchFactorsCard } from "./MatchFactorsCard";
 import InterviewInviteCard from "./InterviewInviteCard";
-import { isInterviewInvite } from "./interviewInvite";
+import { invitePracticeHref, isInterviewInvite, stashInviteJd } from "./interviewInvite";
 import JobHeader from "./jobDetail/JobHeader";
 import JobBody from "./jobDetail/JobBody";
 import ResponseActions from "./jobDetail/ResponseActions";
-import { ClosedNotice, RoleDetails, StrengthenMatch } from "./jobDetail/JobRail";
+import { ClosedNotice, PrepareForRole, RoleDetails, StrengthenMatch } from "./jobDetail/JobRail";
 import { SEC } from "./jobDetail/styles";
 
 const SHELL = "grid overflow-hidden rounded-2xl border border-hx-line bg-white min-[900px]:grid-cols-[minmax(0,1fr)_minmax(300px,380px)]";
@@ -192,12 +192,13 @@ export default function JobDetailPage() {
             <RoleDetails job={job} />
             {closed ? (
               <ClosedNotice onBack={backToJobs} />
-            ) : !job.unlocked && (
-              <StrengthenMatch
-                roleTitle={job.roleTitle}
-                onPractise={() => router.push(`/session/new?role=${encodeURIComponent(job.roleTitle)}`)}
-                onResume={() => router.push("/resume")}
-              />
+            ) : (
+              <>
+                {!invited && (
+                  <PrepareForRole job={job} onPractise={() => { stashInviteJd(job); router.push(invitePracticeHref(job)); }} />
+                )}
+                {!job.unlocked && <StrengthenMatch onResume={() => router.push("/resume")} />}
+              </>
             )}
           </div>
         </div>
