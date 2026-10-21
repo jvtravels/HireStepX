@@ -2053,7 +2053,7 @@ export default function SessionSetup() {
             );
           })()}
           <div className="hsx-setup-cta-zone" style={{ display: "flex", flexDirection: "column", alignItems: "stretch", gap: 16, marginTop: 32, paddingTop: 24, borderTop: `1px solid ${T.line}` }}>
-            <div className="hsx-setup-cta-group" style={{ display: "flex", flexDirection: "row-reverse", alignItems: "center", justifyContent: "flex-start", gap: 20 }}>
+            <div className="hsx-setup-cta-group" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12 }}>
             {(() => {
               const needsMic = micRequired && formComplete && micStatus !== "granted" && micStatus !== "requesting";
               const isHardDisabled = !formComplete || starting || !isOnline || micStatus === "requesting";
@@ -2091,14 +2091,14 @@ export default function SessionSetup() {
                       <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
                     )}
                   </Button>
-                  <div id="hsx-cta-reason" aria-live="polite" style={{ fontFamily: F.sans, fontSize: 13, color: micStatus === "denied" && needsMic ? T.error : T.inkSoft, textAlign: "right", margin: 0, flex: 1, minWidth: 0 }}>
+                  <div id="hsx-cta-reason" aria-live="polite" style={{ fontFamily: F.sans, fontSize: 13, color: micStatus === "denied" && needsMic ? T.error : T.inkSoft, textAlign: "center", margin: 0, minWidth: 0 }}>
                     {ctaReason}
                   </div>
                 </>
               );
             })()}
             </div>
-            <div className="hsx-setup-notes" style={{ display: "flex", flexWrap: "wrap", gap: "8px 24px", minWidth: 0 }}>
+            <div className="hsx-setup-notes" style={{ display: "flex", flexWrap: "wrap", gap: "8px 24px", minWidth: 0, justifyContent: "center" }}>
             {usingCredit && (
               <div style={{ display: "flex", alignItems: "flex-start", gap: 8, fontFamily: F.sans, fontSize: 13, color: T.inkSoft, lineHeight: 1.4 }}>
                 <svg width="14" height="14" style={{ flexShrink: 0, marginTop: 2 }} viewBox="0 0 24 24" fill="none" stroke={T.inkSoft} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
