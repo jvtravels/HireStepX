@@ -113,12 +113,14 @@ export function MetaLine({ parts, className }: { parts: MetaPart[]; className?: 
   );
 }
 
-export type ChipTone = "danger" | "primary" | "neutral";
+export type ChipTone = "danger" | "primary" | "neutral" | "present" | "missing";
 
 const CHIP_TONE: Record<ChipTone, string> = {
   danger: "bg-hx-error-100 text-hx-error-ink",
   primary: "bg-hx-indigo-100 text-hx-indigo",
   neutral: "bg-hx-soft text-hx-neutral-ink",
+  present: "bg-hx-success-100 text-hx-success-ink",
+  missing: "border border-dashed border-hx-ink-soft/50 text-hx-neutral-ink",
 };
 
 export function SkillChip({ tone = "neutral", children }: { tone?: ChipTone; children: ReactNode }) {

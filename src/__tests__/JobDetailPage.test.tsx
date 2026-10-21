@@ -67,17 +67,38 @@ describe("JobDetailPage", () => {
     render(<JobDetailPage />);
     await waitFor(() => expect(screen.getByRole("heading", { name: "Backend Engineer" })).toBeInTheDocument());
     expect(screen.queryByRole("link", { name: /Back to Jobs/ })).not.toBeInTheDocument();
-    const company = screen.getByRole("complementary", { name: "Company profile" });
+    const company = screen.getByRole("group", { name: "Company" });
     expect(within(company).getByText("Acme Corp")).toBeInTheDocument();
     expect(within(company).getByRole("link", { name: /acme\.example/ })).toHaveAttribute("href", "https://acme.example");
     expect(screen.getByText("2 openings")).toBeInTheDocument();
     expect(screen.getByText("Notice period")).toBeInTheDocument();
     expect(screen.getByText("30 days")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Responsibilities" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Message employer/ })).toBeInTheDocument();
+    expect(screen.queryByText("Industry")).not.toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Role details" })).toBeInTheDocument();
     expect(screen.getByText(/Own the payments service\./)).toBeInTheDocument();
     expect(screen.getByText("Hiring by")).toBeInTheDocument();
     expect(screen.getByText("2026-09-30")).toBeInTheDocument();
+  });
+
+  it("renders responsibilities as a bulleted list and keeps one message action", async () => {
+    mockFetch([{
+      ...baseMatch,
+      responsibilities: "- Own the payments service\n- Review pull requests",
+      candidateStatus: "interview_invited", candidateResponse: "none",
+      matchFactors: {
+        factors: [{ key: "role", label: "Role", level: "strong", detail: "Matches your target role" }],
+        matchedSkills: ["Node.js"], missingSkills: ["Postgres"],
+      },
+    }]);
+    render(<JobDetailPage />);
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Backend Engineer" })).toBeInTheDocument());
+    const resp = screen.getByRole("heading", { name: "Responsibilities" }).closest("section")!;
+    expect(within(resp).getAllByRole("listitem").map((li) => li.textContent)).toEqual(["Own the payments service", "Review pull requests"]);
+    expect(screen.getByRole("heading", { name: "You're invited to interview" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Message employer/ })).not.toBeInTheDocument();
+    expect(within(screen.getByRole("region", { name: "Why you matched" })).getByText("Strong")).toBeInTheDocument();
   });
 
   it("hides company details and shows placeholders for a matched-only, sparse role", async () => {

@@ -20,6 +20,7 @@ import {
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
+import { Badge } from "@/employer/_atoms";
 import { useAuth } from "./AuthContext";
 import {
   REPORT_NOTE_MAX, REPORT_REASONS, blockEmployer, dropMatchFromCaches, normalizeResponse,
@@ -45,12 +46,7 @@ interface Props {
 export function EmployerResponseBadge({ response }: { response: EmployerResponse | null | undefined }) {
   const label = responseLabel(response);
   if (!label) return null;
-  const interested = response === "interested";
-  return (
-    <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap ${interested ? "bg-green-100 text-green-800 dark:bg-green-500/20 dark:text-green-300" : "bg-muted text-muted-foreground"}`}>
-      {label}
-    </span>
-  );
+  return <Badge tone={response === "interested" ? "success" : "neutral"}>{label}</Badge>;
 }
 
 export default function EmployerActionsMenu({ matchId, employerLabel, response, onResponseChange, onRemoved, onToast, bare }: Props) {
