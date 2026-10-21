@@ -1,4 +1,6 @@
 import { profileFromRole } from "./roleInterviewMatrix";
+import { isEnabled } from "./featureFlags";
+import type { RoundStatus } from "./focusRounds";
 
 /* Focus label → interview type key (the `focus` / `type` URL param and the
    session script key). */
@@ -15,6 +17,24 @@ export const FOCUS_TO_TYPE: Record<string, string> = {
   "Government / PSU": "government-psu",
 };
 
+/* MVP launch (2026-06): these focuses are shown but not selectable. Behavioral,
+   Campus Placement, HR Round and Salary Negotiation are live; to ship one of
+   these, remove it here. Salary Negotiation also needs its kill switch on. */
+const STATIC_COMING_SOON = new Set([
+  "Strategic",
+  "Technical Leadership",
+  "Case Study",
+  "Management",
+  "Panel Interview",
+  "Government / PSU",
+]);
+
+/* Evaluated per call, not at module load, so a PostHog flag that loads after
+   first paint takes effect on the next render. */
+export function isFocusComingSoon(focus: string): boolean {
+  return STATIC_COMING_SOON.has(focus) || (focus === "Salary Negotiation" && !isEnabled("SALARY_NEGOTIATION_MODE"));
+}
+
 export interface FocusPick {
   focus: string;
   reason: string;
@@ -28,6 +48,7 @@ const REASON = {
   hrInvited: "Most employers open with an HR screen. Rehearse it before yours.",
   behavioralLater: "Later rounds dig into situations you've handled. Have your examples ready.",
   salaryHired: "You're selected. Rehearse the offer conversation before you reply.",
+  keepGoing: "You've started this round. Two sessions at 70 or above clear it and show employers the proof.",
 };
 
 /* Only the live focuses are ever recommended. Salary Negotiation is last for
@@ -66,6 +87,8 @@ interface FocusInput {
   stage?: string | null;
   relevant: ReadonlySet<string> | null;
   isComingSoon: (focus: string) => boolean;
+  /** Round status per focus label, from the candidate's practice history. */
+  rounds?: Readonly<Record<string, RoundStatus>>;
 }
 
 export function isEarlyCareer(role: string | undefined, experienceLevel: string | undefined): boolean {
@@ -76,12 +99,15 @@ export function isEarlyCareer(role: string | undefined, experienceLevel: string 
 }
 
 /* The first focus, in order of what this candidate needs next, that is live and
-   that the role's real interview loops include. */
-export function recommendFocus({ role, experienceLevel, stage, relevant, isComingSoon }: FocusInput): FocusPick {
+   that the role's real interview loops include. A round already cleared yields
+   to one that is not, so history steers the next session. */
+export function recommendFocus({ role, experienceLevel, stage, relevant, isComingSoon, rounds }: FocusInput): FocusPick {
   const early = isEarlyCareer(role, experienceLevel);
-  const ordered = [...stagePicks(stage, early), ...(early ? EARLY_CAREER : EXPERIENCED)];
-  const pick = ordered.find((p) => !isComingSoon(p.focus) && (!relevant || relevant.has(p.focus)));
-  if (pick) return pick;
+  const staged = stagePicks(stage, early);
+  const ordered = [...staged, ...(early ? EARLY_CAREER : EXPERIENCED)];
+  const eligible = ordered.filter((p) => !isComingSoon(p.focus) && (!relevant || relevant.has(p.focus)));
+  const pick = eligible.find((p) => rounds?.[p.focus] !== "cleared") ?? eligible[0];
+  if (pick) return rounds?.[pick.focus] === "practising" && !staged.includes(pick) ? { focus: pick.focus, reason: REASON.keepGoing } : pick;
   const firstOpen = relevant ? [...relevant].find((f) => !isComingSoon(f)) : undefined;
   const focus = firstOpen ?? "Behavioral";
   return { focus, reason: [...EARLY_CAREER, ...EXPERIENCED].find((p) => p.focus === focus)?.reason ?? "" };

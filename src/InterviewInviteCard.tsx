@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { generateICS } from "./dashboardHelpers";
+import { useFocusRounds } from "./DashboardContext";
 import type { JobMatch } from "./DashboardJobs";
 import { inviteEvent, invitePracticeHref, stashInviteJd } from "./interviewInvite";
 import { formatInterviewWhen, isDateOnlyInstant, isInterviewPast } from "./interviewWhen";
@@ -22,6 +23,7 @@ function downloadIcs(job: JobMatch) {
 /* A functional status band: the one place on the page that asks the candidate to act. */
 export default function InterviewInviteCard({ job, className }: { job: JobMatch; className?: string }) {
   const router = useRouter();
+  const focusRounds = useFocusRounds();
   const iso = job.interviewScheduledAt;
   const hasTime = !!iso && !Number.isNaN(new Date(iso).getTime());
   const past = hasTime && isInterviewPast(iso);
@@ -45,7 +47,7 @@ export default function InterviewInviteCard({ job, className }: { job: JobMatch;
         <p className="m-0 mt-1 text-[14px] leading-[22px] text-hx-neutral-ink">{body}</p>
       </div>
       <div className="flex flex-wrap items-center gap-2">
-        {!past && <Button type="button" variant="ghost" onClick={() => { stashInviteJd(job); router.push(invitePracticeHref(job)); }}>Practise</Button>}
+        {!past && <Button type="button" variant="ghost" onClick={() => { stashInviteJd(job); router.push(invitePracticeHref(job, focusRounds)); }}>Practise</Button>}
         {hasTime && !past && <Button type="button" variant="outline" onClick={() => downloadIcs(job)}>Add to calendar</Button>}
         <Button type="button" onClick={messages}>{past ? "Ask for a new time" : "Open messages"}</Button>
       </div>

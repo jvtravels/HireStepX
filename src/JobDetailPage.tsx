@@ -19,6 +19,7 @@ import type { JobMatch } from "./DashboardJobs";
 import EmployerActionsMenu from "./EmployerActionsMenu";
 import { normalizeResponse, readStoredResponse, type EmployerResponse } from "./employerActions";
 import { useToast } from "./Toast";
+import { useFocusRounds } from "./DashboardContext";
 import CandidateRequestsCard from "./CandidateRequestsCard";
 import { MatchFactorsCard } from "./MatchFactorsCard";
 import InterviewInviteCard from "./InterviewInviteCard";
@@ -102,6 +103,7 @@ export default function JobDetailPage() {
     setMatches((prev) => prev && prev.map((m) => (m.id === id ? { ...m, requests: (m.requests ?? []).filter((r) => r.id !== requestId) } : m)));
   }, [id]);
   const { toast } = useToast();
+  const focusRounds = useFocusRounds();
   // Local answer wins over the list payload so the badge/menu stay truthful
   // between the optimistic update and the next refetch.
   const [localResponse, setLocalResponse] = useState<{ id: string; value: EmployerResponse | null } | null>(null);
@@ -195,7 +197,7 @@ export default function JobDetailPage() {
             ) : (
               <>
                 {!invited && (
-                  <PrepareForRole job={job} onPractise={() => { stashInviteJd(job); router.push(invitePracticeHref(job)); }} />
+                  <PrepareForRole job={job} rounds={focusRounds} onPractise={() => { stashInviteJd(job); router.push(invitePracticeHref(job, focusRounds)); }} />
                 )}
                 {!job.unlocked && <StrengthenMatch onResume={() => router.push("/resume")} />}
               </>

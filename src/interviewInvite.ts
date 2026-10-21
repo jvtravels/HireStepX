@@ -2,7 +2,8 @@ import type { InterviewEvent } from "./dashboardHelpers";
 import type { JobMatch } from "./DashboardJobs";
 import { isDateOnlyInstant } from "./interviewWhen";
 import { profileFromRole } from "./roleInterviewMatrix";
-import { FOCUS_TO_TYPE, recommendFocus, type FocusPick } from "./setupFocus";
+import { FOCUS_TO_TYPE, isFocusComingSoon, recommendFocus, type FocusPick } from "./setupFocus";
+import { roundStatusByLabel, type FocusRound } from "./focusRounds";
 
 const INVITED_STATUSES = new Set(["interview_invited", "interviewing"]);
 
@@ -31,19 +32,27 @@ export function inviteEvent(job: Pick<JobMatch, "id" | "roleTitle" | "companyNam
   };
 }
 
-export function recommendedFocusFor(job: Pick<JobMatch, "roleTitle" | "candidateStatus">): FocusPick {
+export function recommendedFocusFor(job: Pick<JobMatch, "roleTitle" | "candidateStatus">, rounds?: readonly FocusRound[]): FocusPick {
   return recommendFocus({
     role: job.roleTitle,
     stage: job.candidateStatus,
     relevant: new Set(profileFromRole(job.roleTitle).focuses),
-    isComingSoon: () => false,
+    isComingSoon: isFocusComingSoon,
+    rounds: roundStatusByLabel(rounds),
   });
 }
 
-export function invitePracticeHref(job: Pick<JobMatch, "id" | "roleTitle" | "companyName" | "unlocked" | "candidateStatus">): string {
+/* The live rounds this role's interview loop can include, with where the
+   candidate stands in each. Hidden entirely when none apply. */
+export function roundsForRole(job: Pick<JobMatch, "roleTitle">, rounds: readonly FocusRound[]): FocusRound[] {
+  const relevant = new Set<string>(profileFromRole(job.roleTitle).focuses);
+  return rounds.filter((r) => relevant.has(r.label) && !isFocusComingSoon(r.label));
+}
+
+export function invitePracticeHref(job: Pick<JobMatch, "id" | "roleTitle" | "companyName" | "unlocked" | "candidateStatus">, rounds?: readonly FocusRound[]): string {
   const params = new URLSearchParams({ role: job.roleTitle, invite: job.id });
   if (job.unlocked && job.companyName) params.set("company", job.companyName);
-  params.set("focus", FOCUS_TO_TYPE[recommendedFocusFor(job).focus] ?? "behavioral");
+  params.set("focus", FOCUS_TO_TYPE[recommendedFocusFor(job, rounds).focus] ?? "behavioral");
   return `/session/new?${params.toString()}`;
 }
 

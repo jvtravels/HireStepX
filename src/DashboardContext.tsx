@@ -19,6 +19,7 @@ import {
   computeBadges, getDailyChallenge, getPracticeReminder,
 } from "./dashboardData";
 import { clipHeadline } from "./skillCopy";
+import { computeFocusRounds, type FocusRound } from "./focusRounds";
 import { getCurriculumState, type CurriculumState } from "./curriculum";
 import type { SessionCoaching } from "./dashboardTypes";
 import type { SessionRecord } from "./supabase";
@@ -108,6 +109,8 @@ export interface SessionsContextValue {
   readinessDelta: number | null;
   practiceCoverage: PracticeCoverage;
   evidenceCapabilities: EvidenceCapability[];
+  /** Per-focus round progress (cleared / practising / not started). */
+  focusRounds: FocusRound[];
   calendarEvents: InterviewEvent[];
   /**
    * Per-section initial-load flags. Replaces the all-or-nothing
@@ -240,6 +243,13 @@ export function useDashboardSessions() {
   if (!ctx) throw new Error("useDashboardSessions must be used within DashboardProvider");
   return ctx;
 }
+
+/** Round progress without requiring the provider, for screens that also render
+ *  outside the dashboard shell (and in tests). */
+export function useFocusRounds(): FocusRound[] {
+  return useContext(SessionsContext)?.focusRounds ?? NO_ROUNDS;
+}
+const NO_ROUNDS: FocusRound[] = [];
 
 export function useDashboardSubscription() {
   const ctx = useContext(SubscriptionContext);
@@ -694,6 +704,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   );
   const practiceCoverage: PracticeCoverage = useMemo(() => computePracticeCoverage(skills), [skills]);
   const evidenceCapabilities: EvidenceCapability[] = useMemo(() => computeEvidenceCapabilities(realSessions), [realSessions]);
+  const focusRounds: FocusRound[] = useMemo(() => computeFocusRounds(realSessions), [realSessions]);
 
   const weekActivity = useMemo(() => computeWeekActivity(recentSessions), [recentSessions]);
   const currentStreak = useMemo(() => computeStreak(recentSessions), [recentSessions]);
@@ -956,10 +967,10 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
 
   const sessionsValue: SessionsContextValue = useMemo(() => ({
     recentSessions, scoreTrend, skills, skillVelocity, overallStats, hasData,
-    weekActivity, currentStreak, readinessScore, readinessDelta, practiceCoverage, evidenceCapabilities,
+    weekActivity, currentStreak, readinessScore, readinessDelta, practiceCoverage, evidenceCapabilities, focusRounds,
     calendarEvents, topGaps, refreshSessions, invalidateSessions, sessionVersion,
     sessionsLoading, sessionsLoadFailed, eventsLoading,
-  }), [recentSessions, scoreTrend, skills, skillVelocity, overallStats, hasData, weekActivity, currentStreak, readinessScore, readinessDelta, practiceCoverage, evidenceCapabilities, calendarEvents, topGaps, refreshSessions, invalidateSessions, sessionVersion, sessionsLoading, sessionsLoadFailed, eventsLoading]);
+  }), [recentSessions, scoreTrend, skills, skillVelocity, overallStats, hasData, weekActivity, currentStreak, readinessScore, readinessDelta, practiceCoverage, evidenceCapabilities, focusRounds, calendarEvents, topGaps, refreshSessions, invalidateSessions, sessionVersion, sessionsLoading, sessionsLoadFailed, eventsLoading]);
 
   const subscriptionValue: SubscriptionContextValue = useMemo(() => ({
     isFree, isStarter, atSessionLimit,

@@ -15,7 +15,6 @@ import { tokens as T, fonts as F } from "./auth/_tokens";
 import { ROLE_SUGGESTIONS } from "./onboardingData";
 import { COMPANY_SUGGESTIONS as COMPANY_SUGGESTIONS_FULL } from "../data/company-suggestions";
 import { profileFromRole, inferRoleFamily, inferSeniority, type InterviewFocus } from "./roleInterviewMatrix";
-import { isEnabled } from "./featureFlags";
 import { detectRoleCompanyFit } from "./_role-company-fit";
 import { getCompanyTier } from "../data/company-tiers";
 import { matchRoleKey } from "../data/salaries";
@@ -26,7 +25,9 @@ import { Spinner } from "@/components/ui/spinner";
 import SetupTopbarLeft from "./SetupTopbarLeft";
 import AudioDevicePicker from "./AudioDevicePicker";
 import { micConstraints } from "./audioDevices";
-import { FOCUS_TO_TYPE as focusToType, resolveFocusDefaults } from "./setupFocus";
+import { FOCUS_TO_TYPE as focusToType, isFocusComingSoon, resolveFocusDefaults } from "./setupFocus";
+import { roundStatusByLabel } from "./focusRounds";
+import { useFocusRounds } from "./DashboardContext";
 import { AUTH_STYLES } from "./auth/_styles";
 
 import { useAuth } from "./AuthContext";
@@ -268,25 +269,10 @@ const introByType: Record<string, string> = {
   "government-psu": "Welcome to your government and public sector interview practice. These interviews test your awareness of public administration, ethics, current affairs, and your motivation for public service. Let's begin — are you ready?",
 };
 
-/* MVP launch (2026-06): these focuses are shown in the picker but render as
-   "Coming soon" — visible so users see the roadmap and get interested, but
-   not yet selectable. The other five (Behavioral, Case Study, Campus
-   Placement, HR Round, Salary Negotiation) are live. To ship one of these,
-   remove it from this set — no other change needed. */
-const STATIC_COMING_SOON = new Set<InterviewFocus>([
-  "Strategic",
-  "Technical Leadership",
-  "Case Study",
-  "Management",
-  "Panel Interview",
-  "Government / PSU",
-]);
-/* Flag-gated focuses fall back to "Coming soon" when their kill switch is
-   off. Evaluated per call (not at module load) so a PostHog flag that loads
-   after first paint takes effect on the next render. */
+/* Locked focuses render as "Coming soon" in the picker; the rule lives in
+   setupFocus.ts so the job detail screen recommends from the same live set. */
 const COMING_SOON_FOCUSES = {
-  has: (f: InterviewFocus): boolean =>
-    STATIC_COMING_SOON.has(f) || (f === "Salary Negotiation" && !isEnabled("SALARY_NEGOTIATION_MODE")),
+  has: (f: InterviewFocus): boolean => isFocusComingSoon(f),
 };
 
 /* ─── MicMeter ──────────────────────────────────────────────────────────
@@ -769,7 +755,9 @@ export default function SessionSetup() {
     if (rd && rd._type === "fallback") return rd.experience?.[0]?.company || "";
     return "";
   });
+  const focusRounds = useFocusRounds();
   const { recommended: recommendedFocus, defaultFocus, reason: focusReason } = resolveFocusDefaults({
+    rounds: roundStatusByLabel(focusRounds),
     role: targetRole.trim() || user?.targetRole,
     experienceLevel: user?.experienceLevel,
     relevant: relevantFocusSet,

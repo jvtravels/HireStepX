@@ -18,6 +18,8 @@ vi.mock("../supabase", () => ({
   authHeaders: vi.fn(() => Promise.resolve({ "Content-Type": "application/json" })),
 }));
 vi.mock("../apiClient", () => ({ apiFetch: vi.fn(() => Promise.resolve({ ok: true, status: 200, data: {} })) }));
+const focusRoundsMock = vi.hoisted(() => ({ rounds: [] as unknown[] }));
+vi.mock("../DashboardContext", () => ({ useFocusRounds: () => focusRoundsMock.rounds }));
 vi.mock("../Toast", () => ({ useToast: () => ({ toast: vi.fn() }) }));
 vi.mock("../AuthContext", () => ({
   useAuth: () => ({ user: { id: "u1" } }),
@@ -149,6 +151,23 @@ describe("JobDetailPage", () => {
     expect(href).toContain("focus=behavioral");
     expect(href).toContain("invite=match-1");
     expect(href).toContain("company=Acme+Corp");
+  });
+
+  it("shows where the candidate stands in each round and steers past a cleared one", async () => {
+    const r = (key: string, label: string, status: string, best: number | null, qualifying: number) => ({ key, label, status, attempts: best ? 2 : 0, best, qualifying, clearedAt: null });
+    focusRoundsMock.rounds = [
+      r("behavioral", "Behavioral", "cleared", 88, 2),
+      r("hr-round", "HR Round", "practising", 64, 0),
+      r("campus-placement", "Campus Placement", "not_started", null, 0),
+      r("salary-negotiation", "Salary Negotiation", "not_started", null, 0),
+    ];
+    mockFetch([baseMatch]);
+    render(<TooltipProvider><JobDetailPage /></TooltipProvider>);
+    const list = await screen.findByRole("list", { name: "Your practice rounds" });
+    expect(within(list).getByText("Cleared")).toBeInTheDocument();
+    expect(within(list).getByText("Practising")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Practise HR Round" })).toBeInTheDocument();
+    focusRoundsMock.rounds = [];
   });
 
   it("hides the prepare block on an interview invite and on a closed role", async () => {

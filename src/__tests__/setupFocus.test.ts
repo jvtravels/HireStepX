@@ -57,3 +57,25 @@ describe("resolveFocusDefaults", () => {
     expect(r.reason).toMatch(/first-job/);
   });
 });
+
+describe("recommendFocus with practice history", () => {
+  const rounds = (r: Record<string, "cleared" | "practising" | "not_started">) => r;
+  const withRounds = (role: string, r: Record<string, "cleared" | "practising" | "not_started">, extra: { stage?: string | null } = {}) =>
+    recommendFocus({ role, relevant: rel(role), isComingSoon, rounds: rounds(r), ...extra });
+  it("moves past a cleared round to the next one the role needs", () => {
+    expect(withRounds("Senior Software Engineer", { Behavioral: "cleared" }).focus).toBe("HR Round");
+  });
+  it("tells a candidate who has started a round to keep going", () => {
+    const pickIt = withRounds("Senior Software Engineer", { Behavioral: "practising" });
+    expect(pickIt.focus).toBe("Behavioral");
+    expect(pickIt.reason).toMatch(/started this round/);
+  });
+  it("follows the employer's stage until that round is cleared, then moves on", () => {
+    expect(withRounds("Product Manager", { "HR Round": "practising" }, { stage: "interview_invited" }).focus).toBe("HR Round");
+    expect(withRounds("Product Manager", { "HR Round": "cleared" }, { stage: "interview_invited" }).focus).toBe("Behavioral");
+  });
+  it("falls back to the first eligible round when everything is cleared", () => {
+    const all = { Behavioral: "cleared", "HR Round": "cleared", "Salary Negotiation": "cleared", "Campus Placement": "cleared" } as const;
+    expect(withRounds("Senior Software Engineer", all).focus).toBe("Behavioral");
+  });
+});
