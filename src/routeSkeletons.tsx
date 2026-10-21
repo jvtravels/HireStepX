@@ -75,36 +75,69 @@ export function SessionsRouteSkeleton() {
 }
 
 export function ResumeRouteSkeleton() {
+  const line = (w: string, key?: number) => <div key={key} className="skeleton skeleton-text" style={{ width: w }} />;
+  const section = "flex min-w-0 flex-col gap-3 px-5 py-5 min-[640px]:px-7 min-[640px]:py-6";
   return (
-    <div style={{ display: "flex", flexWrap: "wrap", gap: 16, alignItems: "flex-start", padding: "16px 20px" }}>
-      <div style={{ flex: "1 1 640px", minWidth: 0, display: "flex", flexDirection: "column", gap: 16 }}>
-        <div className="skeleton-card">
-          <div className="skeleton skeleton-heading" style={{ width: 220 }} />
-          <div className="skeleton skeleton-text" style={{ width: "90%" }} />
-          <div className="skeleton skeleton-text" style={{ width: "70%" }} />
+    <div role="status" aria-busy="true" className="w-full overflow-hidden rounded-2xl border border-hx-line bg-white">
+      <span className="sr-only">Loading your profile</span>
+      <div className="divide-y divide-hx-line">
+        <div className={`${section} flex-row flex-wrap items-start justify-between gap-x-6`}>
+          <div className="flex min-w-0 flex-1 basis-80 flex-col gap-3">
+            <div className="skeleton skeleton-heading" style={{ width: "70%", maxWidth: 560, marginBottom: 4 }} />
+            {["96%", "92%", "88%", "60%"].map((w, i) => line(w, i))}
+          </div>
+          <div className="skeleton" style={{ height: 52, width: 280, maxWidth: "100%", borderRadius: 12 }} />
         </div>
-        <div className="skeleton-card">
-          <div className="skeleton skeleton-text" style={{ width: 140 }} />
-          <div className="skeleton skeleton-text" style={{ width: "80%" }} />
-          <div className="skeleton skeleton-text" style={{ width: "60%" }} />
+
+        <div className={`${section} flex-row items-start gap-3`}>
+          <div className="skeleton skeleton-circle" style={{ width: 16, height: 16, flexShrink: 0, marginTop: 2 }} />
+          <div className="flex min-w-0 flex-1 flex-col gap-2.5">
+            <div className="skeleton skeleton-text-sm" style={{ width: 120 }} />
+            {line("85%")}
+            {line("55%")}
+          </div>
         </div>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
+
+        <div className="grid divide-y divide-hx-line min-[900px]:grid-cols-3 min-[900px]:divide-x min-[900px]:divide-y-0">
           {[0, 1, 2].map((i) => (
-            <div key={i} className="skeleton-card" style={{ flex: "1 1 160px", minWidth: 160 }}>
-              <div className="skeleton skeleton-text-sm" style={{ width: 100 }} />
-              <div className="skeleton" style={{ height: 28, width: 60, marginTop: 8 }} />
+            <div key={i} className={section}>
+              <div className="flex items-center justify-between gap-3">
+                <div className="skeleton skeleton-text-sm" style={{ width: 110 }} />
+                <div className="skeleton" style={{ height: 20, width: 64, borderRadius: 999 }} />
+              </div>
+              <div className="skeleton" style={{ height: 28, width: 84 }} />
+              <div className="skeleton" style={{ height: 6, width: "100%", borderRadius: 999 }} />
             </div>
           ))}
         </div>
-      </div>
-      <div style={{ flex: "1 1 420px", maxWidth: 550, display: "flex", flexDirection: "column", gap: 16 }}>
-        <div className="skeleton-card">
-          <div className="skeleton skeleton-text" style={{ width: 140 }} />
-          <div className="skeleton skeleton-text" style={{ width: "80%" }} />
-        </div>
-        <div className="skeleton-card">
-          <div className="skeleton skeleton-text" style={{ width: 160 }} />
-          <div className="skeleton skeleton-text" style={{ width: "90%" }} />
+
+        <div className="grid divide-y divide-hx-line min-[900px]:grid-cols-[minmax(0,1fr)_minmax(300px,380px)] min-[900px]:divide-x min-[900px]:divide-y-0">
+          <div className="min-w-0 divide-y divide-hx-line">
+            <div className={section}>
+              <div className="skeleton skeleton-heading" style={{ width: 120 }} />
+              {["80%", "72%", "78%"].map((w, i) => line(w, i))}
+            </div>
+            <div className={section}>
+              <div className="skeleton skeleton-heading" style={{ width: 160 }} />
+              {[0, 1, 2, 3].map((i) => (
+                <div key={i} className="flex items-center gap-4">
+                  <div className="skeleton skeleton-text-sm" style={{ width: 150, flexShrink: 0 }} />
+                  <div className="skeleton" style={{ height: 6, flex: 1, borderRadius: 999 }} />
+                  <div className="skeleton skeleton-text-sm" style={{ width: 36, flexShrink: 0 }} />
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="min-w-0 divide-y divide-hx-line">
+            <div className={section}>
+              <div className="skeleton skeleton-heading" style={{ width: 130 }} />
+              {["94%", "82%", "90%"].map((w, i) => line(w, i))}
+            </div>
+            <div className={section}>
+              <div className="skeleton skeleton-heading" style={{ width: 130 }} />
+              {["88%", "70%"].map((w, i) => line(w, i))}
+            </div>
+          </div>
         </div>
       </div>
     </div>
