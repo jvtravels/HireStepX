@@ -53,6 +53,8 @@ src/                    All page/component code.
 data/                   Large static constants (roles, companies, salaries)
 tests/e2e/              Playwright tests
 supabase-schema.sql     DDL + RLS policies for every table
+docs/                   OPS.md, RUNBOOK.md, DEFERRED.md, SLOs, research (root keeps only
+                        CLAUDE.md, PRODUCT.md, SECURITY.md)
 ```
 
 ## Mental models to keep
