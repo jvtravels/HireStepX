@@ -5,8 +5,11 @@ import { Badge } from "@/employer/_atoms";
 import { InfoTip, MetaLine, type MetaPart } from "@/employer/_panelParts";
 import { CompanyAvatar } from "../CompanyAvatar";
 import type { JobMatch } from "../DashboardJobs";
-import { formatComp, formatExperience, WORK_MODE_LABEL, EMPLOYMENT_TYPE_LABEL } from "../hiringMatchFormat";
+import { formatComp, hoursOrDaysAgo, formatExperience, WORK_MODE_LABEL, EMPLOYMENT_TYPE_LABEL } from "../hiringMatchFormat";
 import { SEC } from "./styles";
+
+const INDUSTRY_ACRONYMS: Record<string, string> = { saas: "SaaS", b2b: "B2B", b2c: "B2C", d2c: "D2C", ai: "AI", ml: "ML", it: "IT", hr: "HR", ev: "EV", iot: "IoT", fmcg: "FMCG", bfsi: "BFSI" };
+const industryLabel = (v: string) => v.replace(/[A-Za-z0-9]+/g, (w) => INDUSTRY_ACRONYMS[w.toLowerCase()] ?? w);
 
 /* Who the employer is stays hidden until they've contacted the candidate
    (unlocked) — otherwise candidates could go around the platform. The server
@@ -23,9 +26,9 @@ function CompanyLine({ job }: { job: JobMatch }) {
         <div className="flex flex-wrap items-center gap-x-2 text-[12px] leading-[18px] text-hx-ink-soft">
           {job.unlocked ? (
             <>
-              {job.preferredIndustry && <span>{job.preferredIndustry}</span>}
+              {job.preferredIndustry && <span>{industryLabel(job.preferredIndustry)}</span>}
               {websiteHref && websiteHost && (
-                <a href={websiteHref} target="_blank" rel="noopener noreferrer" className="inline-flex min-w-0 items-center gap-1 break-all text-hx-indigo underline-offset-4 hover:underline">
+                <a href={websiteHref} target="_blank" rel="noopener noreferrer" className="inline-flex min-w-0 items-center gap-1 break-all text-hx-indigo underline-offset-4 hover:underline pointer-coarse:-my-[13px]">
                   <GlobeIcon size={12} aria-hidden="true" className="shrink-0" />
                   {websiteHost}
                 </a>
@@ -69,6 +72,7 @@ export default function JobHeader({ job, closed, actions }: {
     : job.unlocked
       ? { label: "Employer interested", tone: "brand" as const, tip: "This employer viewed your profile and can message you." }
       : { label: "Matched", tone: "success" as const, tip: "Your profile fits this role. The employer hasn't contacted you yet." };
+  const interestedWhen = !closed && job.unlocked && job.unlockedAt ? hoursOrDaysAgo(job.unlockedAt) : null;
   return (
     <section aria-labelledby="job-title" className={SEC}>
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
@@ -86,6 +90,7 @@ export default function JobHeader({ job, closed, actions }: {
           </Badge>
           <InfoTip compact label={`About ${status.label.toLowerCase()}`}>{status.tip}</InfoTip>
         </span>
+        {interestedWhen && <span className="text-[13px] leading-5 text-hx-ink-soft">{interestedWhen}</span>}
       </div>
       <MetaLine parts={meta} className="mt-3" />
       {!job.unlocked && job.matchReason && !hasFit && (

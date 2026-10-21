@@ -20,7 +20,7 @@ import EmployerActionsMenu from "./EmployerActionsMenu";
 import { normalizeResponse, readStoredResponse, type EmployerResponse } from "./employerActions";
 import { useToast } from "./Toast";
 import CandidateRequestsCard from "./CandidateRequestsCard";
-import { MatchFactorsCard, EmployerVisibilityCard } from "./MatchFactorsCard";
+import { MatchFactorsCard } from "./MatchFactorsCard";
 import InterviewInviteCard from "./InterviewInviteCard";
 import { isInterviewInvite } from "./interviewInvite";
 import JobHeader from "./jobDetail/JobHeader";
@@ -150,7 +150,7 @@ export default function JobDetailPage() {
   );
   const fit = hasFit && (
     <div className={SEC}>
-      <MatchFactorsCard data={job.matchFactors!} stacked={!narrow} />
+      <MatchFactorsCard data={job.matchFactors!} stacked={!narrow} onAddSkills={job.unlocked && !closed ? () => router.push("/resume") : undefined} />
     </div>
   );
   const pinActions = narrow && job.unlocked && !closed && !invited;
@@ -190,9 +190,6 @@ export default function JobDetailPage() {
             {!narrow && requests}
             {hasFit && !narrow && fit}
             <RoleDetails job={job} />
-            <div className={SEC}>
-              <EmployerVisibilityCard unlocked={job.unlocked} />
-            </div>
             {closed ? (
               <ClosedNotice onBack={backToJobs} />
             ) : !job.unlocked && (

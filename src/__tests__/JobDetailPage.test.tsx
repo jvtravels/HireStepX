@@ -1,12 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { render, screen, waitFor, within, fireEvent } from "@testing-library/react";
 import React from "react";
 import JobDetailPage from "../JobDetailPage";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
+const { push } = vi.hoisted(() => ({ push: vi.fn() }));
 let routeId = "match-1";
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
+  useRouter: () => ({ push, replace: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
   usePathname: () => "/jobs/match-1",
   useParams: () => ({ id: routeId }),
 }));
@@ -62,6 +63,7 @@ function mockFetch(recent: unknown[]) {
 describe("JobDetailPage", () => {
   beforeEach(() => {
     localStorage.clear();
+    push.mockClear();
     routeId = "match-1";
   });
 
@@ -119,6 +121,22 @@ describe("JobDetailPage", () => {
     expect(screen.queryByRole("region", { name: "Skills" })).not.toBeInTheDocument();
     expect(screen.getByText("This employer hasn't added a role description yet.")).toBeInTheDocument();
     expect(screen.queryByRole("region", { name: "Perks and benefits" })).not.toBeInTheDocument();
+  });
+
+  it("explains the dashed chips in plain sight and offers a resume update when skills are missing", async () => {
+    mockFetch([{
+      ...baseMatch,
+      matchFactors: {
+        factors: [{ key: "skills", label: "Skills", level: "gap", detail: "You list 1 of 2 skills" }],
+        matchedSkills: ["Node.js"], missingSkills: ["Postgres"],
+      },
+    }]);
+    render(<TooltipProvider><JobDetailPage /></TooltipProvider>);
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Backend Engineer" })).toBeInTheDocument());
+    expect(screen.getByText(/Ticked skills are on your resume\. Dashed ones aren't yet\./)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Update your resume" }));
+    expect(push).toHaveBeenCalledWith("/resume");
+    expect(screen.queryByText("What this employer sees")).not.toBeInTheDocument();
   });
 
   it("keeps the interested answer in the actions menu, not the header", async () => {

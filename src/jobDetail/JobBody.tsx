@@ -24,7 +24,9 @@ function RoleText({ text, bullets }: { text: string; bullets?: boolean }) {
       {lines.length > 1 ? (
         <ul id={id} className={`${LIST} ${clamp}`}>{lines.map((l, i) => <li key={i}>{l}</li>)}</ul>
       ) : (
-        <p id={id} className={`${BODY} ${clamp}`}>{text}</p>
+        <div id={id} className={`flex flex-col gap-3 ${clamp}`}>
+          {text.split(/\n\s*\n/).map((para, i) => <p key={i} className={BODY}>{para.trim()}</p>)}
+        </div>
       )}
       {long && (
         <div className="mt-1.5">
