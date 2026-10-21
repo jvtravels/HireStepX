@@ -62,6 +62,8 @@ import { CampusCgpaCalibrationNote } from "./panels/sr-CampusCgpaCalibrationNote
 import { CredibilitySection } from "./panels/sr-CredibilitySection";
 import { OfferEconomicsPanel } from "./panels/sr-OfferEconomicsPanel";
 import { ProgressTrendPanel } from "./panels/sr-ProgressTrendPanel";
+import { RoundProgressStrip } from "./panels/sr-RoundProgressStrip";
+import type { RoundProgress } from "./roundProgress";
 import type { SkillTrend } from "./progressTracking";
 import type { OfferNetValueInput } from "./derivations/offerNetValue";
 
@@ -221,6 +223,8 @@ export interface SessionReportViewProps {
   progressTrends?: SkillTrend[];
   /** Setup link prefilled with this session's type, role and company. */
   practiceHref?: string;
+  /** Progress toward clearing this session's round; absent when the trend is unreliable. */
+  roundProgress?: RoundProgress | null;
   /** Behavioral v2 report payload. When provided AND the env flag
    *  `NEXT_PUBLIC_BEHAVIORAL_REPORT_V2 === "true"` is set, the view
    *  short-circuits the existing panel stack and renders the new
@@ -301,6 +305,7 @@ function GenericReport({
   offerNetValue,
   progressTrends,
   practiceHref,
+  roundProgress,
 }: SessionReportViewProps) {
   const [tab, setTab] = useState<ReportTab>("overview");
   /* L-2 (2026-07-10, live staging, negotiation report cc0a7469): the behavioural
@@ -342,6 +347,7 @@ function GenericReport({
                   <CredibilitySection summary={credibility} onDispute={onDisputeCredibility} />
                 )}
                 {campusPlacementMeta && <CampusCgpaCalibrationNote meta={campusPlacementMeta} />}
+                <RoundProgressStrip progress={roundProgress ?? null} fixFirst={data.weakestSkill} practiceHref={practiceHref} />
                 <NextStepsSection
                   plan={data.readinessPlan}
                   practiceHref={practiceHref}
