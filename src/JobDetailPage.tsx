@@ -3,16 +3,15 @@
 /* Full-page detail view for a single employer match, opened from a row in
    the Jobs table (DashboardJobs.tsx) or the dashboard's Employer Interest
    card. Mirrors the employer console's /employer/requirements/[id] page:
-   a header card (icon tile, title, icon meta row) beside a details card,
-   with the breadcrumb (not a back link) as the way up. */
+   title with a status pill and an icon meta line, the description beside
+   the skills, and a narrow rail of key/value facts. The breadcrumb (not a
+   back link) is the way up. */
 
 import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import {
-  BriefcaseIcon, Building2Icon, CalendarIcon, ClockIcon, GlobeIcon, GraduationCapIcon,
-  HourglassIcon, IndianRupeeIcon, LockIcon, MapPinIcon, SendIcon, UsersIcon,
-} from "lucide-react";
+import { ClockIcon, GlobeIcon, IndianRupeeIcon, LockIcon, MapPinIcon, SendIcon, TrendingUpIcon } from "lucide-react";
+import { KeyValueList, KeyValueRow, MetaLine, Panel, PanelButton, SkillChip, type MetaPart } from "@/employer/_panelParts";
 import { useAuth } from "./AuthContext";
 import { authHeaders } from "./supabase";
 import { useDashboardBreadcrumb } from "./DashboardLayout";
@@ -34,14 +33,13 @@ import { isInterviewInvite } from "./interviewInvite";
 const SHELL = "grid overflow-hidden rounded-2xl border border-hx-line bg-white min-[900px]:grid-cols-[minmax(0,1fr)_minmax(280px,340px)]";
 const COL = "min-w-0 divide-y divide-hx-line";
 const SEC = "min-w-0 px-5 py-5 min-[640px]:px-7 min-[640px]:py-6";
-const H2 = "m-0 mb-2 text-[15px] font-semibold text-hx-coal";
+const H2 = "m-0 mb-1.5 text-[13px] font-semibold text-hx-coal";
 const H2_FLUSH = "m-0 text-[15px] font-semibold text-hx-coal";
-const BODY = "m-0 whitespace-pre-line text-[14px] leading-[22px] [overflow-wrap:anywhere]";
+const BODY = "m-0 max-w-[75ch] whitespace-pre-line text-[13.5px] leading-relaxed [overflow-wrap:anywhere]";
 const BODY_TIGHT = "m-0 mt-2.5 text-[14px] leading-[22px] text-hx-coal";
 const EMPTY = "m-0 text-[13px] italic text-hx-ink-soft";
 /* ~8 lines at 14px / 22px; the mask fades the cut so it reads as "more below". */
-const CLAMP = "max-h-[180px] overflow-hidden [mask-image:linear-gradient(to_bottom,black_70%,transparent)]";
-const TOGGLE_BUTTON_STYLE = { marginTop: 4, paddingInline: 0 } as const;
+const CLAMP = "max-h-[150px] overflow-hidden [mask-image:linear-gradient(to_bottom,black_70%,transparent)]";
 const ACTION_STACK = "mt-3 flex flex-col gap-2";
 
 const COLLAPSE_THRESHOLD = 600;
@@ -55,28 +53,23 @@ function CollapsibleText({ text, soft }: { text: string; soft?: boolean }) {
     <>
       <p id={id} className={`${BODY} ${soft ? "text-hx-ink-soft" : "text-hx-coal"} ${collapsed ? CLAMP : ""}`}>{text}</p>
       {long && (
-        <Button type="button" variant="link" size="sm" style={TOGGLE_BUTTON_STYLE} aria-expanded={expanded} aria-controls={id} onClick={() => setExpanded((v) => !v)}>
-          {expanded ? "Show less" : "Show more"}
-        </Button>
+        <div className="mt-1.5">
+          <PanelButton expanded={expanded} controls={id} onClick={() => setExpanded((v) => !v)}>
+            {expanded ? "View less" : "View more"}
+          </PanelButton>
+        </div>
       )}
     </>
   );
 }
 
-function Detail({ icon, label, value, muted }: { icon: React.ReactNode; label: string; value: string; muted?: boolean }) {
-  return (
-    <div className="flex min-w-0 items-start gap-2">
-      <span className="mt-0.5 shrink-0 text-hx-ink-soft">{icon}</span>
-      <div className="flex min-w-0 flex-col">
-        <span className="text-[12px] text-hx-ink-soft">{label}</span>
-        <span className={`text-[14px] font-medium [overflow-wrap:anywhere] ${muted ? "italic text-hx-ink-soft" : "text-hx-coal"}`}>{value}</span>
-      </div>
-    </div>
-  );
-}
-
 function StatusChip({ label, className }: { label: string; className: string }) {
-  return <span className={`inline-flex h-6 items-center whitespace-nowrap rounded-full px-2.5 text-[12px] font-semibold ${className}`}>{label}</span>;
+  return (
+    <span className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-[12px] font-semibold ${className}`}>
+      <span aria-hidden="true" className="size-1.5 rounded-full bg-current" />
+      {label}
+    </span>
+  );
 }
 
 /* Who the employer is stays hidden until they've contacted the candidate
@@ -224,8 +217,12 @@ export default function JobDetailPage() {
   const jobType = job.employmentType ? EMPLOYMENT_TYPE_LABEL[job.employmentType] || job.employmentType : null;
   const closed = job.status === "closed" || job.status === "failed";
   const hasBody = !!(job.description || job.responsibilities || job.niceToHave);
-  const metaItem = "inline-flex items-center gap-1.5";
-  const metaIcon = "text-hx-ink-soft";
+  const meta: MetaPart[] = [
+    { icon: MapPinIcon, text: `${job.location || "Location not specified"}${mode ? ` · ${mode}` : ""}` },
+    ...(jobType ? [{ icon: ClockIcon, text: jobType }] : []),
+    ...(exp ? [{ icon: TrendingUpIcon, text: `${exp} exp` }] : []),
+    { icon: IndianRupeeIcon, text: comp || <span className="text-hx-ink-soft">Compensation not disclosed</span> },
+  ];
 
   return (
     <div className="min-h-0 w-full flex-1 overflow-y-auto text-hx-coal">
@@ -233,107 +230,71 @@ export default function JobDetailPage() {
         <div className={SHELL}>
           <div className={COL}>
             <section aria-labelledby="job-title" className={SEC}>
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div className="flex min-w-0 flex-[1_1_280px] items-center gap-3.5">
-                  <span className="inline-flex size-11 shrink-0 items-center justify-center rounded-xl bg-hx-indigo-100 text-hx-indigo">
-                    <BriefcaseIcon size={20} aria-hidden="true" />
-                  </span>
-                  <div className="min-w-0">
-                    <h1 id="job-title" className="m-0 text-[20px] font-semibold leading-7 text-hx-coal [overflow-wrap:anywhere]">
-                      {job.roleTitle}
-                    </h1>
-                    <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[14px] font-medium text-hx-coal">
-                      <span className={metaItem}>
-                        <IndianRupeeIcon size={14} className={metaIcon} aria-hidden="true" />
-                        {comp ? comp : <span className="font-normal italic text-hx-ink-soft">Compensation not disclosed</span>}
-                      </span>
-                      <span className={metaItem}>
-                        <MapPinIcon size={14} className={metaIcon} aria-hidden="true" />
-                        {job.location || "Location not specified"}{mode ? ` · ${mode}` : ""}
-                      </span>
-                      {exp && (
-                        <span className={metaItem}>
-                          <GraduationCapIcon size={14} className={metaIcon} aria-hidden="true" /> {exp} exp
-                        </span>
-                      )}
-                      {jobType && (
-                        <span className={metaItem}>
-                          <ClockIcon size={14} className={metaIcon} aria-hidden="true" /> {jobType}
-                        </span>
-                      )}
-                    </div>
-                  </div>
+              <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+                <h1 id="job-title" className="m-0 text-[20px] font-semibold leading-tight text-hx-coal [overflow-wrap:anywhere]">
+                  {job.roleTitle}
+                </h1>
+                {closed
+                  ? <StatusChip label="Role closed" className="bg-hx-soft text-hx-neutral-ink" />
+                  : job.unlocked
+                    ? <StatusChip label="Employer interested" className="bg-hx-indigo-100 text-hx-indigo" />
+                    : <StatusChip label="Matched" className="bg-hx-success-100 text-hx-success-ink" />}
+              </div>
+              <MetaLine parts={meta} className="mt-3" />
+              {!job.unlocked && job.matchReason && (
+                <p className="m-0 mt-3 max-w-[75ch] text-[13.5px] leading-relaxed text-hx-ink-soft">{job.matchReason}</p>
+              )}
+
+              <div className="mt-5 grid min-w-0 content-start gap-x-8 gap-y-5 border-t border-hx-line pt-5 min-[1200px]:grid-cols-[minmax(0,1fr)_minmax(0,0.8fr)]">
+                <div className="flex min-w-0 flex-col gap-4">
+                  {job.description && (
+                    <section aria-label="About the role">
+                      <CollapsibleText text={job.description} soft />
+                    </section>
+                  )}
+                  {job.responsibilities && (
+                    <section aria-label="Responsibilities">
+                      <h2 className={H2}>Responsibilities</h2>
+                      <CollapsibleText text={job.responsibilities} soft />
+                    </section>
+                  )}
+                  {job.niceToHave && (
+                    <section aria-label="Nice to have">
+                      <h2 className={H2}>Nice to have</h2>
+                      <CollapsibleText text={job.niceToHave} soft />
+                    </section>
+                  )}
+                  {!hasBody && <p className={EMPTY}>This employer hasn't added a role description yet.</p>}
                 </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  {closed
-                    ? <StatusChip label="Role closed" className="bg-hx-soft text-hx-ink-soft" />
-                    : job.unlocked
-                      ? <StatusChip label="Employer interested" className="bg-hx-indigo-100 text-hx-indigo-deep" />
-                      : <StatusChip label="Matched" className="bg-hx-success-100 text-hx-success-ink" />}
+
+                <div className="flex min-w-0 flex-col gap-5 min-[1200px]:border-l min-[1200px]:border-hx-line min-[1200px]:pl-8">
+                  <section aria-label="Skills">
+                    <h2 className="m-0 mb-2.5 text-[13px] font-semibold text-hx-ink-soft">Skills</h2>
+                    {job.skills.length > 0 ? (
+                      <ul className="m-0 flex list-none flex-wrap gap-1.5 p-0">
+                        {job.skills.map((s, i) => <li key={i}><SkillChip tone="primary">{s}</SkillChip></li>)}
+                      </ul>
+                    ) : (
+                      <p className={EMPTY}>No specific skills listed for this role.</p>
+                    )}
+                  </section>
+                  <section aria-label="Perks and benefits">
+                    <h2 className="m-0 mb-2.5 text-[13px] font-semibold text-hx-ink-soft">Perks &amp; benefits</h2>
+                    {job.perksAndBenefits.length > 0 ? (
+                      <ul className="m-0 flex list-none flex-wrap gap-1.5 p-0">
+                        {job.perksAndBenefits.map((p, i) => <li key={i}><SkillChip tone="neutral">{p}</SkillChip></li>)}
+                      </ul>
+                    ) : (
+                      <p className={EMPTY}>No perks or benefits listed.</p>
+                    )}
+                  </section>
                 </div>
               </div>
-              {!job.unlocked && job.matchReason && (
-                <p className="m-0 mt-4 text-[14px] leading-[21px] text-hx-ink-soft">{job.matchReason}</p>
-              )}
             </section>
 
             <div className={`${SEC} flex flex-col gap-6`}>
               {job.matchFactors && job.matchFactors.factors.length > 0 && <MatchFactorsCard data={job.matchFactors} />}
               <EmployerVisibilityCard unlocked={job.unlocked} />
-            </div>
-
-            <div className={`${SEC} flex flex-col gap-6`}>
-              <section aria-label="Skills">
-                <h2 className={H2}>Skills</h2>
-                {job.skills.length > 0 ? (
-                  <div className="flex flex-wrap gap-1.5">
-                    {job.skills.map((s, i) => (
-                      <span key={i} className="rounded-full border border-hx-line bg-white px-2.5 py-1 text-[12px] text-hx-coal">{s}</span>
-                    ))}
-                  </div>
-                ) : (
-                  <p className={EMPTY}>No specific skills listed for this role.</p>
-                )}
-              </section>
-
-              {job.description && (
-                <section aria-label="About the role">
-                  <h2 className={H2}>About the role</h2>
-                  <CollapsibleText text={job.description} />
-                </section>
-              )}
-              {job.responsibilities && (
-                <section aria-label="Responsibilities">
-                  <h2 className={H2}>Responsibilities</h2>
-                  <CollapsibleText text={job.responsibilities} />
-                </section>
-              )}
-              {job.niceToHave && (
-                <section aria-label="Nice to have">
-                  <h2 className={H2}>Nice to have</h2>
-                  <CollapsibleText text={job.niceToHave} soft />
-                </section>
-              )}
-              {!hasBody && <p className={EMPTY}>This employer hasn't added a role description yet.</p>}
-            </div>
-
-            <section aria-label="Perks and benefits" className={SEC}>
-              <h2 className={H2}>Perks &amp; benefits</h2>
-              {job.perksAndBenefits.length > 0 ? (
-                <div className="flex flex-wrap gap-1.5">
-                  {job.perksAndBenefits.map((p, i) => (
-                    <span key={i} className="rounded-full border border-hx-line px-2.5 py-1 text-[12px] text-hx-ink-soft">{p}</span>
-                  ))}
-                </div>
-              ) : (
-                <p className={EMPTY}>No perks or benefits listed.</p>
-              )}
-            </section>
-
-            <div className="px-5 py-3 text-[12px] text-hx-ink-soft min-[640px]:px-7">
-              {job.unlocked && job.unlockedAt
-                ? `Employer showed interest ${daysAgo(job.unlockedAt)} · matched ${daysAgo(job.matchedAt)}`
-                : `Matched ${daysAgo(job.matchedAt)}`}
             </div>
           </div>
 
@@ -364,35 +325,16 @@ export default function JobDetailPage() {
               }}
               onError={(msg) => toast(msg, "error")}
             />
-            <section aria-labelledby="job-details-heading" className={SEC}>
-              <h2 id="job-details-heading" className={H2_FLUSH}>Role details</h2>
-              <div className="mt-4 grid grid-cols-2 gap-3.5">
-                <Detail
-                  icon={<UsersIcon size={14} aria-hidden="true" />}
-                  label="Openings"
-                  value={job.openPositions != null ? `${job.openPositions} opening${job.openPositions === 1 ? "" : "s"}` : "Not specified"}
-                  muted={job.openPositions == null}
-                />
-                <Detail
-                  icon={<HourglassIcon size={14} aria-hidden="true" />}
-                  label="Notice period"
-                  value={job.noticePeriodPref || "Not specified"}
-                  muted={!job.noticePeriodPref}
-                />
-                <Detail
-                  icon={<Building2Icon size={14} aria-hidden="true" />}
-                  label="Industry"
-                  value={job.preferredIndustry || "Any industry"}
-                  muted={!job.preferredIndustry}
-                />
-                <Detail
-                  icon={<CalendarIcon size={14} aria-hidden="true" />}
-                  label="Timeline"
-                  value={job.dueDate ? `Hiring by ${job.dueDate}` : "Open-ended timeline"}
-                  muted={!job.dueDate}
-                />
-              </div>
-            </section>
+            <Panel id="job-details-heading" title="Role details">
+              <KeyValueList>
+                <KeyValueRow label="Matched">{daysAgo(job.matchedAt)}</KeyValueRow>
+                {job.unlocked && job.unlockedAt && <KeyValueRow label="Employer interest">{daysAgo(job.unlockedAt)}</KeyValueRow>}
+                {job.openPositions != null && <KeyValueRow label="Openings">{`${job.openPositions} opening${job.openPositions === 1 ? "" : "s"}`}</KeyValueRow>}
+                {job.noticePeriodPref && <KeyValueRow label="Notice period">{job.noticePeriodPref}</KeyValueRow>}
+                {job.preferredIndustry && <KeyValueRow label="Industry">{job.preferredIndustry}</KeyValueRow>}
+                {job.dueDate && <KeyValueRow label="Timeline">{`Hiring by ${job.dueDate}`}</KeyValueRow>}
+              </KeyValueList>
+            </Panel>
             {!closed && isInterviewInvite(job) && <InterviewInviteCard job={job} className={SEC} />}
             {closed ? (
               <section aria-labelledby="job-closed-heading" className={SEC}>
