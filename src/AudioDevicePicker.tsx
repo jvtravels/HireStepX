@@ -10,10 +10,10 @@ const SELECT: React.CSSProperties = {
   border: `1px solid ${T.line}`, background: T.white, color: T.coal,
   fontFamily: F.sans, fontSize: 13,
 };
-const WRAP: React.CSSProperties = { display: "flex", flexDirection: "column", gap: 10, marginTop: 12 };
+const WRAP: React.CSSProperties = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 10, marginTop: 12 };
 const TEST_BTN: React.CSSProperties = { height: 36, padding: "0 12px", borderRadius: 8, border: `1px solid ${T.line}`, background: T.white, color: T.coal, fontFamily: F.sans, fontSize: 13, cursor: "pointer" };
 const ROW: React.CSSProperties = { display: "flex", alignItems: "center", gap: 12 };
-const LABEL: React.CSSProperties = { width: 72, flexShrink: 0, fontFamily: F.sans, fontSize: 13, color: T.inkSoft };
+const LABEL: React.CSSProperties = { width: 64, flexShrink: 0, fontFamily: F.sans, fontSize: 13, color: T.inkSoft };
 
 /* Shown only once the mic is granted (device labels are empty before that) and
    only when there is an actual choice to make. */

@@ -1596,7 +1596,7 @@ export default function SessionSetup() {
         @media (max-width: 860px) { .ob-permissions-grid { grid-template-columns: 1fr !important; } }
         .ob-s2-role-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
         .ob-s2-focus-grid { display: grid; grid-template-columns: repeat(var(--focus-cols, 3), 1fr); gap: 10px; }
-        .ob-permissions-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+        .ob-permissions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: stretch; }
         .ob-s2-session-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
 
         /* ─── Responsive layout ─────────────────────────────────────────
