@@ -111,10 +111,8 @@ export function ReadinessHeadline({
         display: "flex",
         alignItems: "center",
         gap: 14,
-        padding: "12px 16px",
-        borderRadius: radius.bar,
-        background: t.creamSoft,
-        border: `1px solid ${t.line}`,
+        padding: "14px 0",
+        borderBottom: `1px solid ${t.line}`,
         marginBottom: 20,
         flexWrap: "wrap",
       }}

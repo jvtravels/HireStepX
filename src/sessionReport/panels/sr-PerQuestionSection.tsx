@@ -30,9 +30,6 @@ export function PerQuestionSection({ questions }: { questions: Question[] }) {
       id="ir-section-questions"
       aria-labelledby="ir-questions-heading"
       style={{
-        border: `1px solid ${t.line}`,
-        borderRadius: radius.bar,
-        overflow: "hidden",
         scrollMarginTop: 72,
       }}
     >
@@ -41,7 +38,7 @@ export function PerQuestionSection({ questions }: { questions: Question[] }) {
           display: "flex",
           justifyContent: "space-between",
           alignItems: "baseline",
-          padding: "14px 18px",
+          padding: "14px 0",
         }}
       >
         <h2 id="ir-questions-heading" style={{ fontFamily: f.sans, fontSize: size.xl, fontWeight: 600, color: t.coal, margin: 0, letterSpacing: "-0.01em" }}>
@@ -73,9 +70,10 @@ export function PerQuestionSection({ questions }: { questions: Question[] }) {
                 aria-controls={panelId}
                 onClick={() => setOpenIdx(open ? null : idx)}
                 style={{
-                  width: "100%",
+                  width: "calc(100% + 24px)",
+                  margin: "0 -12px",
                   height: "auto",
-                  padding: "14px 18px",
+                  padding: "14px 12px",
                   display: "flex",
                   alignItems: "center",
                   gap: 12,

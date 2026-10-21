@@ -729,7 +729,7 @@ export const SESSION_REPORT_STYLES = `
   .ir-coach-notes-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 14px;
+    column-gap: 40px;
   }
   .ir-coach-notes-grid > :last-child:nth-child(odd) { grid-column: 1 / -1; }
   .ir-coach-note-card {

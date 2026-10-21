@@ -101,7 +101,7 @@ export function QuestionDetail({ q }: { q: Question }) {
         { label: "Quantified", value: `${q.metrics.quantificationCount}`, tone: q.metrics.quantificationCount === 0 ? t.warning : t.coal },
       ];
   return (
-    <div className="ir-panel-in" style={{ padding: "0 18px 18px" }}>
+    <div className="ir-panel-in" style={{ padding: "0 0 18px" }}>
       <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
         <TabsList variant="line" aria-label={`Question ${q.index} answer views`} className="mb-4">
           <TabsTrigger value="answer">Your answer</TabsTrigger>

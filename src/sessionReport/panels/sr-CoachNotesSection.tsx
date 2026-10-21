@@ -6,7 +6,6 @@ import type { ReactNode } from "react";
 import { t, f, size } from "../tokens";
 import type { BlindSpot, CrossSessionInsight, StoryReuseFinding } from "../types";
 import { SrSectionShell } from "./_primitives";
-import { Card, CardContent } from "@/components/ui/card";
 
 type NoteKind = "strength" | "gap" | "regression" | "improvement" | "persistent" | "story-reuse" | "blind-spot";
 
@@ -23,8 +22,8 @@ const NOTE_META: Record<NoteKind, { eyebrow: string; dot: string }> = {
 function NoteCard({ kind, title, body, extra }: { kind: NoteKind; title: string; body: string; extra?: ReactNode }) {
   const meta = NOTE_META[kind];
   return (
-    <Card className="gap-0 py-0 shadow-none" style={{ borderColor: t.line, background: t.creamSoft }}>
-      <CardContent className="px-4 py-3.5">
+    <div style={{ borderTop: `1px solid ${t.line}`, padding: "16px 0 18px" }}>
+      <div>
         <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
           <span aria-hidden style={{ width: 6, height: 6, borderRadius: "50%", background: meta.dot, flexShrink: 0 }} />
           <span style={{ fontFamily: f.sans, fontSize: size.sm, fontWeight: 600, color: t.inkSoft }}>
@@ -34,8 +33,8 @@ function NoteCard({ kind, title, body, extra }: { kind: NoteKind; title: string;
         <h3 style={{ fontFamily: f.sans, fontSize: size.md, fontWeight: 600, color: t.coal, lineHeight: 1.35, margin: "0 0 6px" }}>{title}</h3>
         <p style={{ fontFamily: f.sans, fontSize: size.base, color: t.inkSoft, lineHeight: 1.55, margin: 0 }}>{body}</p>
         {extra}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
 
