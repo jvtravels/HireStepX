@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import React from "react";
 import JobDetailPage from "../JobDetailPage";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 let routeId = "match-1";
 vi.mock("next/navigation", () => ({
@@ -64,7 +65,7 @@ describe("JobDetailPage", () => {
 
   it("renders the full role details and company card for a contacted match", async () => {
     mockFetch([baseMatch]);
-    render(<JobDetailPage />);
+    render(<TooltipProvider><JobDetailPage /></TooltipProvider>);
     await waitFor(() => expect(screen.getByRole("heading", { name: "Backend Engineer" })).toBeInTheDocument());
     expect(screen.queryByRole("link", { name: /Back to Jobs/ })).not.toBeInTheDocument();
     const company = screen.getByRole("group", { name: "Company" });
@@ -92,7 +93,7 @@ describe("JobDetailPage", () => {
         matchedSkills: ["Node.js"], missingSkills: ["Postgres"],
       },
     }]);
-    render(<JobDetailPage />);
+    render(<TooltipProvider><JobDetailPage /></TooltipProvider>);
     await waitFor(() => expect(screen.getByRole("heading", { name: "Backend Engineer" })).toBeInTheDocument());
     const resp = screen.getByRole("heading", { name: "Responsibilities" }).closest("section")!;
     expect(within(resp).getAllByRole("listitem").map((li) => li.textContent)).toEqual(["Own the payments service", "Review pull requests"]);
@@ -108,9 +109,9 @@ describe("JobDetailPage", () => {
       skills: [], noticePeriodPref: null, openPositions: null, description: null, responsibilities: null,
       niceToHave: null, perksAndBenefits: [], dueDate: null, status: "closed",
     }]);
-    render(<JobDetailPage />);
+    render(<TooltipProvider><JobDetailPage /></TooltipProvider>);
     await waitFor(() => expect(screen.getByText("Role closed")).toBeInTheDocument());
-    expect(screen.getByText(/Company details are shared once this employer shows interest/)).toBeInTheDocument();
+    expect(screen.getByText("Company hidden")).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /acme\.example/ })).not.toBeInTheDocument();
     expect(screen.getByText("Compensation not disclosed")).toBeInTheDocument();
     expect(screen.queryByRole("region", { name: "Skills" })).not.toBeInTheDocument();
@@ -121,7 +122,7 @@ describe("JobDetailPage", () => {
   it("shows a not-found screen when the id is not in the list", async () => {
     routeId = "missing";
     mockFetch([baseMatch]);
-    render(<JobDetailPage />);
+    render(<TooltipProvider><JobDetailPage /></TooltipProvider>);
     await waitFor(() => expect(screen.getByText("Job not found")).toBeInTheDocument());
     expect(screen.getByRole("button", { name: "Back to Jobs" })).toBeInTheDocument();
   });

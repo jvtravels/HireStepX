@@ -18,17 +18,19 @@ export function Panel({
   action,
   children,
   className,
+  headingClassName,
 }: {
   id: string;
   title: string;
   action?: ReactNode;
   children: ReactNode;
   className?: string;
+  headingClassName?: string;
 }) {
   return (
     <section aria-labelledby={id} className={cn("min-w-0 px-7 py-6", className)}>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-        <h2 id={id} className="m-0 text-[15px] font-semibold text-hx-coal">
+        <h2 id={id} className={cn("m-0 text-[15px] font-semibold text-hx-coal", headingClassName)}>
           {title}
         </h2>
         {action}
@@ -68,10 +70,13 @@ export function KeyValueList({ children, className }: { children: ReactNode; cla
   return <dl className={cn("m-0 flex flex-col gap-3", className)}>{children}</dl>;
 }
 
-export function KeyValueRow({ label, children }: { label: string; children: ReactNode }) {
+export function KeyValueRow({ label, tip, children }: { label: string; tip?: ReactNode; children: ReactNode }) {
   return (
     <div className="grid grid-cols-[7.5rem_minmax(0,1fr)] items-baseline gap-x-4 text-[13px]">
-      <dt className="text-[12px] text-hx-ink-soft">{label}</dt>
+      <dt className="text-[12px] text-hx-ink-soft">
+        {label}
+        {tip && <InfoTip label={`About ${label.toLowerCase()}`}>{tip}</InfoTip>}
+      </dt>
       <dd className="m-0 min-w-0 font-medium text-hx-coal [overflow-wrap:anywhere]">{children}</dd>
     </div>
   );

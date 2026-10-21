@@ -3,7 +3,7 @@
 import { ClockIcon, GlobeIcon, IndianRupeeIcon, MapPinIcon, SendIcon, TrendingUpIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/employer/_atoms";
-import { MetaLine, type MetaPart } from "@/employer/_panelParts";
+import { InfoTip, MetaLine, type MetaPart } from "@/employer/_panelParts";
 import { CompanyAvatar } from "../CompanyAvatar";
 import type { JobMatch } from "../DashboardJobs";
 import { formatComp, formatExperience, WORK_MODE_LABEL, EMPLOYMENT_TYPE_LABEL } from "../hiringMatchFormat";
@@ -33,7 +33,10 @@ function CompanyLine({ job }: { job: JobMatch }) {
               )}
             </>
           ) : (
-            <span>Company details are shared once this employer shows interest.</span>
+            <>
+              <span>Company hidden</span>
+              <InfoTip label="Why the company is hidden">Company details are shared once this employer shows interest.</InfoTip>
+            </>
           )}
         </div>
       </div>
@@ -57,13 +60,18 @@ export default function JobHeader({ job, closed, showMessage, onMessage, actions
     { icon: MapPinIcon, text: `${job.location || "Location not specified"}${mode ? ` · ${mode}` : ""}` },
     ...(jobType ? [{ icon: ClockIcon, text: jobType }] : []),
     ...(exp ? [{ icon: TrendingUpIcon, text: `${exp} exp` }] : []),
-    { icon: IndianRupeeIcon, text: comp || <span className="text-hx-ink-soft">Compensation not disclosed</span> },
+    {
+      icon: IndianRupeeIcon,
+      text: comp
+        ? <>{comp}{comp.includes("LPA") && <InfoTip label="What LPA means">LPA is lakhs per annum: the yearly salary, in lakhs of rupees.</InfoTip>}</>
+        : <span className="text-hx-ink-soft">Compensation not disclosed</span>,
+    },
   ];
   const status = closed
-    ? { label: "Role closed", tone: "neutral" as const }
+    ? { label: "Role closed", tone: "neutral" as const, tip: "The employer has closed this role. Your profile stays visible to other employers." }
     : job.unlocked
-      ? { label: "Employer interested", tone: "brand" as const }
-      : { label: "Matched", tone: "success" as const };
+      ? { label: "Employer interested", tone: "brand" as const, tip: "This employer viewed your profile and can message you." }
+      : { label: "Matched", tone: "success" as const, tip: "Your profile fits this role. The employer hasn't contacted you yet." };
   return (
     <section aria-labelledby="job-title" className={SEC}>
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
@@ -85,6 +93,7 @@ export default function JobHeader({ job, closed, showMessage, onMessage, actions
           <span aria-hidden="true" className="size-1.5 rounded-full bg-current" />
           {status.label}
         </Badge>
+        <InfoTip label={`About ${status.label.toLowerCase()}`}>{status.tip}</InfoTip>
       </div>
       <MetaLine parts={meta} className="mt-3" />
       {!job.unlocked && job.matchReason && !hasFit && (

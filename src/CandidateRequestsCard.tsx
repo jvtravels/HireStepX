@@ -208,7 +208,7 @@ export default function CandidateRequestsCard({ matchId, requests, unlocked, onR
   if (requests.length === 0) return null;
   return (
     <section aria-labelledby="job-requests-heading" style={style} className={className}>
-      <h2 id="job-requests-heading" className="m-0 text-[15px] font-semibold text-hx-coal">
+      <h2 id="job-requests-heading" className="m-0 text-[16px] font-semibold leading-6 text-hx-coal">
         Requests from this employer
       </h2>
       <p className="mt-1 mb-1.5 text-[13px] leading-normal text-hx-ink-soft">

@@ -2,7 +2,7 @@
 
 import { CheckIcon, EyeOffIcon } from "lucide-react";
 import { Badge, type BadgeTone } from "@/employer/_atoms";
-import { SkillChip } from "@/employer/_panelParts";
+import { InfoTip, SkillChip } from "@/employer/_panelParts";
 
 export type MatchFactorLevel = "strong" | "partial" | "gap";
 export interface MatchFactor {
@@ -23,7 +23,7 @@ const LEVEL: Record<MatchFactorLevel, { label: string; tone: BadgeTone }> = {
   gap: { label: "Gap", tone: "neutral" },
 };
 
-const H2 = "m-0 mb-3 text-[15px] font-semibold leading-6 text-hx-coal";
+const H2 = "m-0 mb-3 text-[16px] font-semibold leading-6 text-hx-coal";
 const H3 = "m-0 mb-2 text-[12px] font-semibold text-hx-ink-soft";
 const HINT = "m-0 mt-2.5 text-[12px] leading-[18px] text-hx-ink-soft";
 
@@ -35,13 +35,19 @@ export function MatchFactorsCard({ data }: { data: MatchFactors }) {
   const hasSkills = data.matchedSkills.length > 0 || data.missingSkills.length > 0;
   return (
     <section aria-label="Why you matched">
-      <h2 className={H2}>Why you matched</h2>
+      <h2 className={`${H2} flex items-center gap-0.5`}>
+        Why you matched
+        <InfoTip label="What the levels mean">
+          Strong: you meet what the employer asked for. Partial: you meet some of it. Gap: not on your profile yet.
+        </InfoTip>
+      </h2>
       <ul className="m-0 grid list-none gap-x-10 gap-y-2.5 p-0 min-[640px]:grid-cols-2">
         {data.factors.map((x) => (
-          <li key={x.key} title={x.detail} className="flex items-center justify-between gap-3 text-[14px] leading-6 text-hx-coal">
-            <span className="min-w-0">
+          <li key={x.key} className="flex items-center justify-between gap-3 text-[14px] leading-6 text-hx-coal">
+            <span className="flex min-w-0 items-center gap-0.5">
               {x.label}
               <span className="sr-only">: {x.detail}</span>
+              <InfoTip label={`Why ${x.label.toLowerCase()} is ${LEVEL[x.level].label.toLowerCase()}`}>{x.detail}</InfoTip>
             </span>
             <Badge tone={LEVEL[x.level].tone} className="shrink-0">{LEVEL[x.level].label}</Badge>
           </li>
@@ -49,7 +55,12 @@ export function MatchFactorsCard({ data }: { data: MatchFactors }) {
       </ul>
       {hasSkills && (
         <>
-          <h3 className={`${H3} mt-5`}>Skills they asked for</h3>
+          <h3 className={`${H3} mt-5 flex items-center gap-0.5`}>
+            Skills they asked for
+            {data.missingSkills.length > 0 && (
+              <InfoTip label="About dashed skills">Ticked skills are on your resume. Dashed skills aren't yet.</InfoTip>
+            )}
+          </h3>
           <ul aria-label="Skills they asked for" className="m-0 flex list-none flex-wrap gap-1.5 p-0">
             {data.matchedSkills.map((s) => (
               <li key={`y-${s}`}>
@@ -71,7 +82,6 @@ export function MatchFactorsCard({ data }: { data: MatchFactors }) {
           </ul>
         </>
       )}
-      {data.missingSkills.length > 0 && <p className={HINT}>Dashed skills aren't on your resume yet.</p>}
     </section>
   );
 }
