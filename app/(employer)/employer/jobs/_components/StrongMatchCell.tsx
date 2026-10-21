@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef } from "react";
-import { ChevronRightIcon } from "lucide-react";
+import { ChevronRightIcon, UserIcon } from "lucide-react";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import type { RequirementSummary } from "@/employer/mockData";
 import { tokens as t, fonts as f, textSize } from "@/auth/_tokens";
@@ -87,7 +87,7 @@ export default function StrongMatchCell({ aiScreening }: { aiScreening: Requirem
                 marginLeft: i === 0 ? 0 : -9,
               }}
             >
-              {candidate.initials}
+              {candidate.name.startsWith("Candidate #") ? <UserIcon size={14} aria-hidden="true" /> : candidate.initials}
             </span>
           ))}
           {aiScreening.strongMatchExtra > 0 && (
