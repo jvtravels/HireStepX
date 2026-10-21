@@ -25,8 +25,7 @@ import {
 } from "../src/_reverse-interview";
 import {
   GROUNDING_DIRECTIVE,
-  FAIRNESS_DIRECTIVE,
-  TRUNCATED_ANSWER_DIRECTIVE,
+  FAIRNESS_DIRECTIVE, TRUNCATED_ANSWER_DIRECTIVE,
   LENGTH_TARGETS_DIRECTIVE,
   SELF_CHECK_DIRECTIVE,
   getRubricWeight,
@@ -560,7 +559,7 @@ export default async function handler(req: Request): Promise<Response> {
     // Static prompt fragments live in _evaluate-session-prompts.ts so they
     // can be unit-tested for coverage and stay in the cacheable prefix.
     const groundingDirective = GROUNDING_DIRECTIVE;
-    const fairnessDirective = FAIRNESS_DIRECTIVE;
+    const fairnessDirective = `${FAIRNESS_DIRECTIVE}\n\n${TRUNCATED_ANSWER_DIRECTIVE}`;
     const lengthTargetsDirective = LENGTH_TARGETS_DIRECTIVE;
     const selfCheckDirective = SELF_CHECK_DIRECTIVE;
     const rubricWeight = getRubricWeight(meta?.type);
@@ -726,8 +725,6 @@ BGV / DOCUMENT-GAP FIELD: Campus/fresher sessions have no background-verificatio
 ${groundingDirective}
 
 ${fairnessDirective}
-
-${TRUNCATED_ANSWER_DIRECTIVE}
 
 ${lengthTargetsDirective}
 
