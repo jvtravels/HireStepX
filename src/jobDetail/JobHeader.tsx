@@ -6,6 +6,7 @@ import { InfoTip, MetaLine, type MetaPart } from "@/employer/_panelParts";
 import { CompanyAvatar } from "../CompanyAvatar";
 import type { JobMatch } from "../DashboardJobs";
 import { formatComp, hoursOrDaysAgo, formatExperience, WORK_MODE_LABEL, EMPLOYMENT_TYPE_LABEL } from "../hiringMatchFormat";
+import { jobStatusBadge } from "../jobTimeline";
 import { SEC } from "./styles";
 
 const INDUSTRY_ACRONYMS: Record<string, string> = { saas: "SaaS", b2b: "B2B", b2c: "B2C", d2c: "D2C", ai: "AI", ml: "ML", it: "IT", hr: "HR", ev: "EV", iot: "IoT", fmcg: "FMCG", bfsi: "BFSI" };
@@ -67,12 +68,8 @@ export default function JobHeader({ job, closed, actions }: {
         : <span className="text-hx-ink-soft">Compensation not disclosed</span>,
     },
   ];
-  const status = closed
-    ? { label: "Role closed", tone: "neutral" as const, tip: "The employer has closed this role. Your profile stays visible to other employers." }
-    : job.unlocked
-      ? { label: "Employer interested", tone: "brand" as const, tip: "This employer viewed your profile and can message you." }
-      : { label: "Matched", tone: "success" as const, tip: "Your profile fits this role. The employer hasn't contacted you yet." };
-  const interestedWhen = !closed && job.unlocked && job.unlockedAt ? hoursOrDaysAgo(job.unlockedAt) : null;
+  const status = jobStatusBadge(job, closed);
+  const interestedWhen = status.label === "Employer interested" && job.unlockedAt ? hoursOrDaysAgo(job.unlockedAt) : null;
   return (
     <section aria-labelledby="job-title" className={SEC}>
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">

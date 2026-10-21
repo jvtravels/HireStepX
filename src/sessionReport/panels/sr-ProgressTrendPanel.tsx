@@ -6,6 +6,7 @@
 
 import { SrSectionShell } from "./_primitives";
 import type { SkillTrend } from "../progressTracking";
+import { GOOD_MIN, SCORE_BAND_LABEL, STRONG_MIN, scoreBandKey } from "../../scoreBands";
 
 type Shown = "up" | "down" | "flat" | "new";
 
@@ -27,9 +28,8 @@ function plainFor(skill: string) {
 }
 
 export function band(score: number): { label: string; weak: boolean } {
-  if (score >= 75) return { label: "Strong", weak: false };
-  if (score >= 55) return { label: "Okay", weak: false };
-  return { label: "Needs work", weak: true };
+  const key = scoreBandKey(score);
+  return { label: SCORE_BAND_LABEL[key], weak: key === "needsWork" };
 }
 
 function Sparkline({ values, dotClass, width = 64, height = 22 }: { values: number[]; dotClass: string; width?: number; height?: number }) {
@@ -111,7 +111,7 @@ export function ProgressTrendPanel({ trends }: { trends: SkillTrend[] }) {
               <TrendRow key={tr.skill} trend={tr} />
             ))}
           </ul>
-          <p className="ir-trend-legend">75 and above is strong, 55 to 74 is okay, below 55 needs work.</p>
+          <p className="ir-trend-legend">{STRONG_MIN} and above is strong, {GOOD_MIN} to {STRONG_MIN - 1} is good, below {GOOD_MIN} needs work.</p>
           {weakest && weakestPlain && (
             <p className="ir-trend-weakest">
               <strong>Lowest right now: {weakest.skill} ({weakest.latestScore.toFixed(0)}).</strong> {weakestPlain.ifLow}

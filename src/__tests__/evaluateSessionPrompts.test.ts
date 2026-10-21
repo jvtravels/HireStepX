@@ -4,6 +4,7 @@ import {
   FAIRNESS_DIRECTIVE,
   LENGTH_TARGETS_DIRECTIVE,
   SELF_CHECK_DIRECTIVE,
+  TRUNCATED_ANSWER_DIRECTIVE,
   VOICE_DICTION_DIRECTIVE,
   TYPE_RUBRIC_WEIGHTS,
   SUPPORTED_INTERVIEW_TYPES,
@@ -132,5 +133,12 @@ describe("getRubricWeight", () => {
     expect(getRubricWeight(null)).toBe("");
     expect(getRubricWeight(undefined)).toBe("");
     expect(getRubricWeight("")).toBe("");
+  });
+});
+
+describe("TRUNCATED_ANSWER_DIRECTIVE", () => {
+  it("attributes clipped endings to the recording, not the candidate", () => {
+    expect(TRUNCATED_ANSWER_DIRECTIVE).toMatch(/cut-off/);
+    expect(TRUNCATED_ANSWER_DIRECTIVE).toMatch(/NOT as the candidate/);
   });
 });

@@ -43,13 +43,16 @@ export function buildJobTimeline(job: JobMatch, opts: { closed: boolean; invited
   if (job.unlocked) {
     dated.push({ key: "unlocked", label: "Employer unlocked your contact details", at: job.unlockedAt, state: "done" });
   }
+  const response = normalizeResponse(job.candidateResponse);
+  const responseStep: TimelineStep | null = response
+    ? { key: "response", label: response === "interested" ? "You told the employer you're interested" : "You told the employer you're not interested", at: job.candidateRespondedAt, state: "done" }
+    : null;
+  // A timestamped answer sorts into the story; an undated one (older rows) trails it.
+  if (responseStep?.at) dated.push(responseStep);
   dated.sort(byTime);
 
   const steps = [...dated];
-  const response = normalizeResponse(job.candidateResponse);
-  if (response) {
-    steps.push({ key: "response", label: response === "interested" ? "You told the employer you're interested" : "You told the employer you're not interested", state: "done" });
-  }
+  if (responseStep && !responseStep.at) steps.push(responseStep);
   const stage = job.candidateStatus ? STAGE_LABEL[job.candidateStatus] : undefined;
   if (stage) steps.push({ key: "stage", label: stage, state: "done" });
   if (job.interviewScheduledAt) {
@@ -72,4 +75,24 @@ export function buildJobTimeline(job: JobMatch, opts: { closed: boolean; invited
     steps.push({ key: "reply", label: "Tell the employer if you're interested", state: "action" });
   }
   return steps;
+}
+
+export interface JobStatusBadge {
+  label: string;
+  tone: "neutral" | "brand" | "success";
+  tip: string;
+}
+
+/* The header badge reports the furthest point of the story the timeline tells,
+   so the two never disagree. Rejections are never shown (see STAGE_LABEL). */
+export function jobStatusBadge(job: JobMatch, closed: boolean): JobStatusBadge {
+  if (closed) return { label: "Role closed", tone: "neutral", tip: "The employer has closed this role. Your profile stays visible to other employers." };
+  if (job.candidateStatus === "hired") return { label: "Hired", tone: "success", tip: "The employer marked you as hired for this role." };
+  if (job.interviewScheduledAt || job.candidateStatus === "interviewing") {
+    return { label: "Interview stage", tone: "brand", tip: "You are in the interview stage for this role." };
+  }
+  if (job.candidateStatus === "interview_invited") return { label: "Interview invited", tone: "brand", tip: "The employer invited you to interview for this role." };
+  if (normalizeResponse(job.candidateResponse) === "declined") return { label: "You declined", tone: "neutral", tip: "You told the employer you're not interested. You can change your answer below." };
+  if (job.unlocked) return { label: "Employer interested", tone: "brand", tip: "This employer viewed your profile and can message you." };
+  return { label: "Matched", tone: "success", tip: "Your profile fits this role. The employer hasn't contacted you yet." };
 }

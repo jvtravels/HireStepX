@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildJobTimeline } from "../jobTimeline";
+import { buildJobTimeline, jobStatusBadge } from "../jobTimeline";
 import { answeredRequests, fitStanding } from "../../server-handlers/_job-feedback";
 import type { JobMatch } from "../DashboardJobs";
 import type { CandidateRequestRow } from "../../server-handlers/_candidate-request-helpers";
@@ -81,4 +81,35 @@ describe("answeredRequests", () => {
     expect(out.map((r) => r.id)).toEqual(["c", "b"]);
     expect(out[0].outcome).toBe("declined");
   });
+});
+
+describe("response step ordering", () => {
+  it("sorts a timestamped response into the story", () => {
+    const steps = buildJobTimeline(job({
+      unlocked: true,
+      unlockedAt: "2026-10-02T10:00:00Z",
+      candidateResponse: "interested",
+      candidateRespondedAt: "2026-10-03T10:00:00Z",
+      candidateStatus: "interview_invited",
+    }), open);
+    expect(steps.map((s) => s.key)).toEqual(["matched", "unlocked", "response", "stage"]);
+  });
+
+  it("trails an undated response after the dated steps", () => {
+    const steps = buildJobTimeline(job({ unlocked: true, unlockedAt: "2026-10-02T10:00:00Z", candidateResponse: "interested" }), open);
+    expect(steps.map((s) => s.key).slice(0, 3)).toEqual(["matched", "unlocked", "response"]);
+  });
+});
+
+describe("jobStatusBadge", () => {
+  it("defaults to Matched", () => expect(jobStatusBadge(job(), false).label).toBe("Matched"));
+  it("shows Employer interested once unlocked", () => expect(jobStatusBadge(job({ unlocked: true }), false).label).toBe("Employer interested"));
+  it("shows You declined after a decline", () => {
+    expect(jobStatusBadge(job({ unlocked: true, candidateResponse: "declined" }), false).label).toBe("You declined");
+  });
+  it("prefers the interview stage over earlier steps", () => {
+    expect(jobStatusBadge(job({ unlocked: true, candidateStatus: "interview_invited" }), false).label).toBe("Interview invited");
+    expect(jobStatusBadge(job({ interviewScheduledAt: "2026-11-01T10:00:00Z" }), false).label).toBe("Interview stage");
+  });
+  it("shows Role closed above everything", () => expect(jobStatusBadge(job({ candidateStatus: "hired" }), true).label).toBe("Role closed"));
 });

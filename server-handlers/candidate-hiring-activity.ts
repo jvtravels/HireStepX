@@ -47,6 +47,7 @@ interface MatchRow {
   requirement_id: string | null;
   candidate_status: string | null;
   candidate_response: string | null;
+  candidate_responded_at: string | null;
   interview_scheduled_at: string | null;
   profile_viewed_at: string | null;
   unlocked: boolean;
@@ -121,7 +122,7 @@ export default async function handler(req: Request): Promise<Response> {
       ),
       fetch(
         `${SUPABASE_URL}/rest/v1/requirement_matches?candidate_user_id=eq.${encodeURIComponent(auth.userId)}` +
-          `&select=id,requirement_id,unlocked,unlocked_at,match_score,created_at,candidate_status,candidate_response,interview_scheduled_at,profile_viewed_at,` +
+          `&select=id,requirement_id,unlocked,unlocked_at,match_score,created_at,candidate_status,candidate_response,candidate_responded_at,interview_scheduled_at,profile_viewed_at,` +
           `employer_requirements(title,location,locations,status,work_mode,salary_type,budget_min,budget_max,experience_min,experience_max,skills,` +
           `notice_period_pref,open_positions,description,responsibilities,nice_to_have,perks_and_benefits,preferred_industry,due_date,employment_type,` +
           `department,duration_weeks,hours_per_week,availability,preferred_domain,portfolio_required,created_at,` +
@@ -253,6 +254,7 @@ export default async function handler(req: Request): Promise<Response> {
         requirementId: m.requirement_id,
         candidateStatus: m.candidate_status,
         candidateResponse: m.candidate_response,
+        candidateRespondedAt: m.candidate_responded_at,
         interviewScheduledAt: m.interview_scheduled_at,
         // Full ISO timestamp — callers that only need day-granularity (daysAgo)
         // still work fine off the full string; the dashboard teaser's

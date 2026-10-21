@@ -90,6 +90,8 @@ export interface JobMatch {
   candidateStatus?: string | null;
   /** The candidate's own answer to this employer. */
   candidateResponse?: string | null;
+  /** When the candidate gave that answer, ISO. */
+  candidateRespondedAt?: string | null;
   /** Interview time the employer proposed, ISO. */
   interviewScheduledAt?: string | null;
   /** Pending employer requests (evidence, documents, clarifications). */

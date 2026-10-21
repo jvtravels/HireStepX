@@ -301,7 +301,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
               <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c.accent} strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/></svg>
             )}
             <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 700, letterSpacing: "0.01em", color: c.accent }}>
-              {!tierKnown ? "Loading plan…" : isStarter ? "Starter Plan" : "Free Plan"}
+              {!tierKnown ? "Loading plan…" : isStarter ? "Sprint Pack" : "Free Plan"}
             </span>
             {/* Renewal / end date — ember if cancelling, muted stone otherwise */}
             {tierKnown && isStarter && user?.subscriptionEnd && (

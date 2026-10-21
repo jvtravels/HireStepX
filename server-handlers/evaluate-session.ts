@@ -26,6 +26,7 @@ import {
 import {
   GROUNDING_DIRECTIVE,
   FAIRNESS_DIRECTIVE,
+  TRUNCATED_ANSWER_DIRECTIVE,
   LENGTH_TARGETS_DIRECTIVE,
   SELF_CHECK_DIRECTIVE,
   getRubricWeight,
@@ -725,6 +726,8 @@ BGV / DOCUMENT-GAP FIELD: Campus/fresher sessions have no background-verificatio
 ${groundingDirective}
 
 ${fairnessDirective}
+
+${TRUNCATED_ANSWER_DIRECTIVE}
 
 ${lengthTargetsDirective}
 

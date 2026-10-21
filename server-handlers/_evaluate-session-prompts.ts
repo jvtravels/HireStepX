@@ -14,6 +14,9 @@ export const GROUNDING_DIRECTIVE =
 export const FAIRNESS_DIRECTIVE =
   "FAIRNESS: Do NOT penalize for accent, non-elite college background, or gender-linked communication style. Score on substance — what they said, the structure, the evidence — not how it sounded. If a candidate uses 'we' frequently as a collectivist framing, probe for the 'I' but don't auto-deduct.";
 
+export const TRUNCATED_ANSWER_DIRECTIVE =
+  "TRANSCRIPT CUT-OFFS: The transcript comes from speech-to-text and the recording can end early. If an answer (especially the final one) stops mid-word or mid-sentence, treat it as a likely recording or transcription cut-off, NOT as the candidate giving up or rambling. Never criticise the delivery of a clipped ending, never quote the clipped fragment as a weakness, and do not lower a score for the missing part. Score only what was actually said; if the clipped answer limits how much you can judge, say the recording ended early.";
+
 export const LENGTH_TARGETS_DIRECTIVE =
   "ANSWER-LENGTH TARGETS (per type, calibrate lengthVerdict.targetRange): behavioral STAR 120-240 words, technical/system-design 180-360 words, case-study 200-400 words, HR/intro questions 80-180 words, salary-negotiation 60-180 words (concise + numeric), campus-placement 90-200 words. Penalize too-brief; don't punish slightly-long if substance is high.";
 
