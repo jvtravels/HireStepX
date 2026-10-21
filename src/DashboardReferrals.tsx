@@ -50,6 +50,7 @@ interface ReferralInvite {
   createdAt: string;
 }
 
+const SEC = "min-w-0 px-5 py-5 min-[640px]:px-7 min-[640px]:py-6";
 const SECTION_HEADING_STYLE = { fontFamily: f.sans, fontSize: 16, fontWeight: 600, color: t.coal, margin: 0 } as const;
 
 function IconTile({ children, tone = "neutral" }: { children: ReactNode; tone?: "neutral" | "brand" }) {
@@ -156,9 +157,6 @@ export default function DashboardReferrals() {
   const shareBtn = { display: "inline-flex", alignItems: "center", gap: 8 } as const;
   const safeStats: ReferralStats = stats ?? { total: invites.length, redeemed: invites.filter((i) => i.status !== "pending").length, rewarded: invites.filter((i) => i.status === "rewarded").length };
 
-  const sectionStyle = { minWidth: 0 } as const;
-  const divided = { ...sectionStyle, paddingTop: 20, borderTop: `1px solid ${t.line}` } as const;
-
   return (
     <CandidatePagePanel>
       <CandidatePageHeader
@@ -167,107 +165,105 @@ export default function DashboardReferrals() {
         subtitle="Invite friends to HireStepX. They get a free practice session when they join, and you get one after their first practice session (at least 3 answers)."
       />
 
-      <div style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: 20 }}>
-        <div style={{ display: "flex", alignItems: "flex-start", gap: 32, flexWrap: "wrap" }}>
-          <div style={{ flex: "3 1 min(520px, 100%)", minWidth: 0, display: "flex", flexDirection: "column", gap: 20 }}>
-            <section aria-labelledby="referral-link-heading" style={sectionStyle}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-                <IconTile tone="brand"><GiftIcon size={15} aria-hidden="true" /></IconTile>
-                <h2 id="referral-link-heading" style={SECTION_HEADING_STYLE}>Your referral link</h2>
+      <div className="grid min-h-0 flex-1 content-start divide-y divide-hx-line overflow-y-auto min-[1000px]:grid-cols-[minmax(0,1fr)_minmax(280px,340px)] min-[1000px]:divide-x min-[1000px]:divide-y-0">
+        <div className="min-w-0 divide-y divide-hx-line">
+          <section aria-labelledby="referral-link-heading" className={SEC}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+              <IconTile tone="brand"><GiftIcon size={15} aria-hidden="true" /></IconTile>
+              <h2 id="referral-link-heading" style={SECTION_HEADING_STYLE}>Your referral link</h2>
+            </div>
+            {failed && !code ? (
+              <div role="alert" style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", color: t.inkSoft, fontSize: 14 }}>
+                <AlertCircleIcon size={16} color={t.error} aria-hidden="true" />
+                <span>We couldn&apos;t load your referral link. This is usually temporary.</span>
+                <Button variant="outline" size="sm" onClick={() => { setLoaded(false); setFailed(false); load({ cancelled: false }); }}>Try again</Button>
               </div>
-              {failed && !code ? (
-                <div role="alert" style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", color: t.inkSoft, fontSize: 14 }}>
-                  <AlertCircleIcon size={16} color={t.error} aria-hidden="true" />
-                  <span>We couldn&apos;t load your referral link. This is usually temporary.</span>
-                  <Button variant="outline" size="sm" onClick={() => { setLoaded(false); setFailed(false); load({ cancelled: false }); }}>Try again</Button>
+            ) : (
+              <>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  <input
+                    id="referral-link"
+                    aria-labelledby="referral-link-heading"
+                    readOnly
+                    value={link}
+                    onFocus={(e) => e.currentTarget.select()}
+                    style={{ flex: "1 1 240px", minWidth: 0, height: 40, padding: "0 12px", borderRadius: 10, border: `1px solid ${t.line}`, background: t.creamSoft, color: t.coal, fontFamily: f.sans, fontSize: 16 }}
+                  />
+                  <Button type="button" onClick={onCopy} disabled={!code} style={shareBtn}>
+                    {copied ? <CheckIcon size={15} aria-hidden="true" /> : <CopyIcon size={15} aria-hidden="true" />}
+                    {copied ? "Link copied" : "Copy link"}
+                  </Button>
                 </div>
-              ) : (
-                <>
-                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                    <input
-                      id="referral-link"
-                      aria-labelledby="referral-link-heading"
-                      readOnly
-                      value={link}
-                      onFocus={(e) => e.currentTarget.select()}
-                      style={{ flex: "1 1 240px", minWidth: 0, height: 40, padding: "0 12px", borderRadius: 10, border: `1px solid ${t.line}`, background: t.creamSoft, color: t.coal, fontFamily: f.sans, fontSize: 16 }}
-                    />
-                    <Button type="button" onClick={onCopy} disabled={!code} style={shareBtn}>
-                      {copied ? <CheckIcon size={15} aria-hidden="true" /> : <CopyIcon size={15} aria-hidden="true" />}
-                      {copied ? "Link copied" : "Copy link"}
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12 }}>
+                  <Button type="button" variant="outline" size="sm" disabled={!code} onClick={() => open(whatsAppShareUrl(link), "whatsapp")} style={shareBtn}>
+                    <MessageCircleIcon size={14} aria-hidden="true" /> WhatsApp
+                  </Button>
+                  <Button type="button" variant="outline" size="sm" disabled={!code} onClick={() => open(linkedInShareUrl(link), "linkedin")} style={shareBtn}>
+                    <Share2Icon size={14} aria-hidden="true" /> LinkedIn
+                  </Button>
+                  <Button type="button" variant="outline" size="sm" disabled={!code} onClick={() => open(mailtoShareUrl(link), "email")} style={shareBtn}>
+                    <MailIcon size={14} aria-hidden="true" /> Email
+                  </Button>
+                  {canNativeShare && (
+                    <Button type="button" variant="outline" size="sm" disabled={!code} onClick={onNativeShare} style={shareBtn}>
+                      <Share2Icon size={14} aria-hidden="true" /> More
                     </Button>
-                  </div>
-                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12 }}>
-                    <Button type="button" variant="outline" size="sm" disabled={!code} onClick={() => open(whatsAppShareUrl(link), "whatsapp")} style={shareBtn}>
-                      <MessageCircleIcon size={14} aria-hidden="true" /> WhatsApp
-                    </Button>
-                    <Button type="button" variant="outline" size="sm" disabled={!code} onClick={() => open(linkedInShareUrl(link), "linkedin")} style={shareBtn}>
-                      <Share2Icon size={14} aria-hidden="true" /> LinkedIn
-                    </Button>
-                    <Button type="button" variant="outline" size="sm" disabled={!code} onClick={() => open(mailtoShareUrl(link), "email")} style={shareBtn}>
-                      <MailIcon size={14} aria-hidden="true" /> Email
-                    </Button>
-                    {canNativeShare && (
-                      <Button type="button" variant="outline" size="sm" disabled={!code} onClick={onNativeShare} style={shareBtn}>
-                        <Share2Icon size={14} aria-hidden="true" /> More
-                      </Button>
-                    )}
-                  </div>
-                </>
-              )}
-            </section>
+                  )}
+                </div>
+              </>
+            )}
+          </section>
 
-            <section aria-labelledby="referral-invites-heading" style={divided}>
-              <h2 id="referral-invites-heading" style={SECTION_HEADING_STYLE}>Your invites</h2>
-              {invites.length === 0 ? (
-                <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft, margin: "8px 0 0", lineHeight: 1.55 }}>
-                  No one has joined with your link yet. Share it above and they will show up here. Your free session unlocks after their first practice session with at least 3 answers.
-                </p>
-              ) : (
-                <ul style={{ listStyle: "none", margin: "12px 0 0", padding: 0, display: "flex", flexDirection: "column" }}>
-                  {invites.map((inv, i) => (
-                    <li key={inv.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 0", borderTop: i === 0 ? "none" : `1px solid ${t.line}`, minWidth: 0 }}>
-                      <div aria-hidden="true" style={{ width: 36, height: 36, borderRadius: 999, background: t.indigo100, color: t.indigo, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 600, fontSize: 14, flexShrink: 0 }}>
-                        {(inv.name[0] || "?").toUpperCase()}
-                      </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontFamily: f.sans, fontSize: 14, fontWeight: 600, color: t.coal, overflowWrap: "anywhere" }}>{inv.name}</div>
-                        <div style={{ fontFamily: f.sans, fontSize: 12, color: t.inkFaint, overflowWrap: "anywhere" }}>
-                          {inv.email ? `${inv.email} · ` : ""}{daysAgo(inv.createdAt)}
-                        </div>
-                      </div>
-                      <StatusChip status={inv.status} />
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </section>
-          </div>
-
-          <div style={{ flex: "1 1 260px", minWidth: 260, maxWidth: 340, display: "flex", flexDirection: "column", gap: 20 }}>
-            <section aria-labelledby="referral-impact-heading" style={{ ...sectionStyle, display: "flex", flexDirection: "column", gap: 14 }}>
-              <h2 id="referral-impact-heading" style={SECTION_HEADING_STYLE}>Your impact</h2>
-              <StatRow icon={<UsersIcon size={15} aria-hidden="true" />} label="Friends invited" value={safeStats.total} />
-              <StatRow icon={<UserCheckIcon size={15} aria-hidden="true" />} label="Friends joined" value={safeStats.redeemed} />
-              <StatRow icon={<TicketIcon size={15} aria-hidden="true" />} label="Free sessions earned" value={freeSessionsEarned(safeStats)} />
-            </section>
-
-            <section aria-labelledby="referral-how-heading" style={divided}>
-              <h2 id="referral-how-heading" style={SECTION_HEADING_STYLE}>How it works</h2>
-              <ol style={{ listStyle: "none", margin: "14px 0 0", padding: 0, display: "flex", flexDirection: "column", gap: 14 }}>
-                {STEPS.map((s, i) => (
-                  <li key={s.title} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
-                    <IconTile tone="brand"><span style={{ fontFamily: f.sans, fontSize: 12, fontWeight: 700 }}>{i + 1}</span></IconTile>
-                    <div style={{ minWidth: 0 }}>
-                      <div style={{ fontFamily: f.sans, fontSize: 14, fontWeight: 600, color: t.coal }}>{s.title}</div>
-                      <div style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, marginTop: 2, lineHeight: 1.5 }}>{s.body}</div>
+          <section aria-labelledby="referral-invites-heading" className={SEC}>
+            <h2 id="referral-invites-heading" style={SECTION_HEADING_STYLE}>Your invites</h2>
+            {invites.length === 0 ? (
+              <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft, margin: "8px 0 0", lineHeight: 1.55 }}>
+                No one has joined with your link yet. Share it above and they will show up here. Your free session unlocks after their first practice session with at least 3 answers.
+              </p>
+            ) : (
+              <ul style={{ listStyle: "none", margin: "12px 0 0", padding: 0, display: "flex", flexDirection: "column" }}>
+                {invites.map((inv, i) => (
+                  <li key={inv.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 0", borderTop: i === 0 ? "none" : `1px solid ${t.line}`, minWidth: 0 }}>
+                    <div aria-hidden="true" style={{ width: 36, height: 36, borderRadius: 999, background: t.indigo100, color: t.indigo, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 600, fontSize: 14, flexShrink: 0 }}>
+                      {(inv.name[0] || "?").toUpperCase()}
                     </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontFamily: f.sans, fontSize: 14, fontWeight: 600, color: t.coal, overflowWrap: "anywhere" }}>{inv.name}</div>
+                      <div style={{ fontFamily: f.sans, fontSize: 12, color: t.inkFaint, overflowWrap: "anywhere" }}>
+                        {inv.email ? `${inv.email} · ` : ""}{daysAgo(inv.createdAt)}
+                      </div>
+                    </div>
+                    <StatusChip status={inv.status} />
                   </li>
                 ))}
-              </ol>
-              <p style={{ fontFamily: f.sans, fontSize: 12, color: t.inkFaint, margin: "14px 0 0", lineHeight: 1.55 }}>{referralTermsText()}</p>
-            </section>
-          </div>
+              </ul>
+            )}
+          </section>
+        </div>
+
+        <div className="min-w-0 divide-y divide-hx-line">
+          <section aria-labelledby="referral-impact-heading" className={`${SEC} flex flex-col gap-3.5`}>
+            <h2 id="referral-impact-heading" style={SECTION_HEADING_STYLE}>Your impact</h2>
+            <StatRow icon={<UsersIcon size={15} aria-hidden="true" />} label="Friends invited" value={safeStats.total} />
+            <StatRow icon={<UserCheckIcon size={15} aria-hidden="true" />} label="Friends joined" value={safeStats.redeemed} />
+            <StatRow icon={<TicketIcon size={15} aria-hidden="true" />} label="Free sessions earned" value={freeSessionsEarned(safeStats)} />
+          </section>
+
+          <section aria-labelledby="referral-how-heading" className={SEC}>
+            <h2 id="referral-how-heading" style={SECTION_HEADING_STYLE}>How it works</h2>
+            <ol style={{ listStyle: "none", margin: "14px 0 0", padding: 0, display: "flex", flexDirection: "column", gap: 14 }}>
+              {STEPS.map((s, i) => (
+                <li key={s.title} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+                  <IconTile tone="brand"><span style={{ fontFamily: f.sans, fontSize: 12, fontWeight: 700 }}>{i + 1}</span></IconTile>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontFamily: f.sans, fontSize: 14, fontWeight: 600, color: t.coal }}>{s.title}</div>
+                    <div style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, marginTop: 2, lineHeight: 1.5 }}>{s.body}</div>
+                  </div>
+                </li>
+              ))}
+            </ol>
+            <p style={{ fontFamily: f.sans, fontSize: 12, color: t.inkFaint, margin: "14px 0 0", lineHeight: 1.55 }}>{referralTermsText()}</p>
+          </section>
         </div>
       </div>
     </CandidatePagePanel>

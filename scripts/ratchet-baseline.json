@@ -147,7 +147,7 @@
     "src/DashboardHomeSections.tsx": 1,
     "src/DashboardJobs.tsx": 53,
     "src/DashboardLayout.tsx": 24,
-    "src/DashboardReferrals.tsx": 29,
+    "src/DashboardReferrals.tsx": 24,
     "src/DashboardSettings.tsx": 1,
     "src/EmployerVisibilityCard.tsx": 21,
     "src/ErrorBoundary.tsx": 14,
