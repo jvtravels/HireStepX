@@ -1768,8 +1768,7 @@ export default function SessionSetup() {
                   </div>
                 </div>
               )}
-              {/* Hero — left-aligned so the title shares an axis with the form. */}
-              <div style={{ marginBottom: 28, display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 14px" }} className="fade-up-1 hsx-setup-hero">
+              <div style={{ marginBottom: 28, display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "center", textAlign: "center", gap: "8px 14px" }} className="fade-up-1 hsx-setup-hero">
                 <h1 className="hsx-setup-hero-h1" style={{ fontFamily: F.sans, fontSize: "clamp(1.5rem, 3vw, 2rem)", fontWeight: 600, color: T.coal, letterSpacing: "-0.02em", lineHeight: 1.1, margin: 0 }}>
                   Let&apos;s get you{" "}
                   <em style={{ fontStyle: "normal", fontWeight: 600, color: T.indigo }}>ready</em>
