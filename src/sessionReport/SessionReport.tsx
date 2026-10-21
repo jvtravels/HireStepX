@@ -42,11 +42,9 @@ import type { OfferNetValueInput } from "./derivations/offerNetValue";
 import { getInterviewerName } from "../InterviewComponents";
 import { t, f } from "./tokens";
 import { Button } from "@/components/ui/button";
-import LoadingScreen from "../_LoadingScreen";
 import { CopyEmailLink } from "../_CopyEmailLink";
-import ReportProgress from "./ReportProgress";
+import { SessionReportEvaluating } from "./SessionReportEvaluating";
 import { useEvalStage } from "../useEvalStage";
-import { evalStageMessage } from "../_eval-progress";
 
 /* ─── Helpers — small pure functions for transcript shaping + role-
    family inference + duration parsing. Kept local so the entry stays
@@ -104,51 +102,8 @@ function parseDurationSec(s: string | undefined): number {
 /* ─── Loading + error UIs — cream surface to match the report ──────── */
 
 export function LoadingShell({ onBack, backLabel, sessionId }: { onBack: () => void; backLabel: string; sessionId?: string }) {
-  // Phase-walking copy mirrors the legacy ProgressiveLoadingState — gives
-  // the user something to read while the LLM crunches. Plain rotation;
-  // we don't need state-machine choreography here.
-  const phases = [
-    "Reading your transcript…",
-    "Scoring your delivery…",
-    "Looking for patterns worth practising…",
-    "Drafting coach notes…",
-  ];
-  const [idx, setIdx] = useState(0);
   const stage = useEvalStage(sessionId);
-  useEffect(() => {
-    const id = window.setInterval(() => setIdx((i) => (i + 1) % phases.length), 2400);
-    return () => window.clearInterval(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-  return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        width: "100%",
-        fontFamily: f.sans,
-        color: t.coal,
-      }}
-    >
-      <Button
-        type="button"
-        variant="ghost"
-        onClick={onBack}
-        style={{
-          fontFamily: f.sans,
-          fontSize: 14,
-          color: t.coal,
-          gap: 8,
-          marginBottom: 16,
-          alignSelf: "flex-start",
-        }}
-      >
-        ← {backLabel}
-      </Button>
-      <LoadingScreen fullScreen={false} title="Coaching your report" message={stage ? evalStageMessage(stage) : phases[idx]} footer="Usually 20–40 seconds. Can take up to 90 when our AI provider is busy." />
-      {stage && <ReportProgress stage={stage} />}
-    </div>
-  );
+  return <SessionReportEvaluating stage={stage} onBack={onBack} backLabel={backLabel} />;
 }
 
 /* Preliminary scores the interview engine computed and persisted on the

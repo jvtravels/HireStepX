@@ -1,8 +1,7 @@
 import { SCORE_BAND_LABEL, SCORE_BAND_TIP, scoreBandKey } from "./scoreBands";
 import React, { memo } from "react";
-import { c, font, shadow, gradient } from "./tokens";
+import { c, font, shadow } from "./tokens";
 import { tokens as T } from "./auth/_tokens";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
@@ -78,54 +77,6 @@ export const SectionTitle = memo(function SectionTitle({ children, icon, action 
     </div>
   );
 });
-
-/* ─── Loading Skeleton ─── */
-
-export function LoadingSkeleton() {
-  const Bone = ({ w, h, r, mb }: { w: string; h: number; r?: number; mb?: number }) => (
-    <Skeleton style={{ width: w, height: h, borderRadius: r ?? 8, marginBottom: mb ?? 0 }} />
-  );
-  return (
-    <div style={{ minHeight: "100vh", background: c.obsidian, fontFamily: font.ui }}>
-      <div style={{ position: "fixed", top: 0, left: 0, right: 0, height: 300, background: gradient.meshBg, pointerEvents: "none", zIndex: 0 }} />
-      <div style={{ position: "relative", zIndex: 1, maxWidth: 860, margin: "0 auto", padding: "32px 24px 80px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 32 }}>
-          <div>
-            <Bone w="60px" h={14} mb={16} />
-            <Bone w="320px" h={28} mb={10} />
-            <Bone w="200px" h={14} />
-          </div>
-          <div style={{ textAlign: "center" }}>
-            <Bone w="72px" h={72} r={36} />
-          </div>
-        </div>
-        <div style={{ display: "flex", gap: 8, marginBottom: 24 }}>
-          <Bone w="80px" h={32} />
-          <Bone w="100px" h={32} />
-        </div>
-        <div style={{ background: c.graphite, borderRadius: 16, border: `1px solid ${c.border}`, padding: "28px 32px", marginBottom: 16 }}>
-          <Bone w="200px" h={18} mb={20} />
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
-            {[0,1,2,3].map(i => <Bone key={i} w="100%" h={120} r={12} />)}
-          </div>
-        </div>
-        <div style={{ background: c.graphite, borderRadius: 16, border: `1px solid ${c.border}`, padding: "28px 32px", marginBottom: 16 }}>
-          <Bone w="180px" h={18} mb={20} />
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-            <Bone w="100%" h={260} r={14} />
-            <Bone w="100%" h={260} r={14} />
-          </div>
-        </div>
-        <div style={{ background: c.graphite, borderRadius: 16, border: `1px solid ${c.border}`, padding: "28px 32px" }}>
-          <Bone w="160px" h={18} mb={20} />
-          <Bone w="100%" h={140} r={14} mb={16} />
-          <Bone w="100%" h={140} r={14} />
-        </div>
-      </div>
-      {/* skeletonShimmer keyframe lives in src/index.css (canonical). */}
-    </div>
-  );
-}
 
 /* ─── Not Found State ─── */
 

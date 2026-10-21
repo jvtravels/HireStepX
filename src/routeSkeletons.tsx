@@ -8,7 +8,11 @@
    Deliberately dependency-free (no imports from the screens themselves): the
    whole point of `dynamic()` on those pages is keeping the heavy component's
    module out of the route's critical-path bundle, so this file must not pull
-   any of those modules back in via a shared import. */
+   any of those modules back in via a shared import. The one exception is
+   SessionReportSkeleton, which only depends on the report frame and the
+   shimmer primitive. */
+
+import { SessionReportSkeleton } from "./sessionReport/SessionReportSkeleton";
 
 export function DashboardRouteSkeleton() {
   return (
@@ -417,6 +421,7 @@ const ROUTE_SKELETONS: ReadonlyArray<[prefix: string, render: () => React.ReactN
 export function routeSkeletonFor(pathname: string | null | undefined): React.ReactNode | null {
   if (!pathname) return null;
   if (pathname.startsWith("/jobs/")) return <JobDetailRouteSkeleton />;
+  if (pathname.startsWith("/session/")) return <SessionReportSkeleton />;
   const match = ROUTE_SKELETONS.find(([prefix]) => pathname === prefix || pathname.startsWith(`${prefix}/`));
   return match ? match[1]() : null;
 }
