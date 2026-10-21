@@ -17,7 +17,7 @@ import { useDashboardBreadcrumb } from "./DashboardLayout";
 import { JobDetailRouteSkeleton } from "./routeSkeletons";
 import type { JobMatch } from "./DashboardJobs";
 import EmployerActionsMenu from "./EmployerActionsMenu";
-import { normalizeResponse, readStoredResponse, submitResponse, type EmployerResponse } from "./employerActions";
+import { normalizeResponse, readStoredResponse, type EmployerResponse } from "./employerActions";
 import { useToast } from "./Toast";
 import CandidateRequestsCard from "./CandidateRequestsCard";
 import { MatchFactorsCard, EmployerVisibilityCard } from "./MatchFactorsCard";
@@ -148,12 +148,10 @@ export default function JobDetailPage() {
       onError={(msg) => toast(msg, "error")}
     />
   );
+  const pinActions = narrow && job.unlocked && !closed && !invited;
   const actions = (
     <ResponseActions
-      fill={narrow}
-      response={response}
-      canRespond={!closed}
-      onRespond={(next) => next !== response && submitResponse({ matchId: job.id, next, previous: response, onChange: (value) => setLocalResponse({ id: job.id, value }), onToast: (msg, kind) => toast(msg, kind) })}
+      fill={pinActions}
       showMessage={job.unlocked && !closed && !invited}
       onMessage={() => router.push(`/messages?matchId=${job.id}`)}
       menu={
@@ -177,7 +175,7 @@ export default function JobDetailPage() {
         <div className={SHELL}>
           <div className={COL}>
             {invited && <InterviewInviteCard job={job} className={SEC} />}
-            <JobHeader job={job} closed={closed} actions={narrow ? null : actions} />
+            <JobHeader job={job} closed={closed} actions={pinActions ? null : actions} />
             {narrow && requests}
             {hasFit && (
               <div className={SEC}>
@@ -204,7 +202,7 @@ export default function JobDetailPage() {
             )}
           </div>
         </div>
-        {narrow && (
+        {pinActions && (
           <div className="sticky bottom-2 z-10 mt-3 rounded-2xl border border-hx-line bg-white p-2">{actions}</div>
         )}
       </div>

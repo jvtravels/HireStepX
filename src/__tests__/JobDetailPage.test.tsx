@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor, within, fireEvent } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import React from "react";
 import JobDetailPage from "../JobDetailPage";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -121,24 +121,13 @@ describe("JobDetailPage", () => {
     expect(screen.queryByRole("region", { name: "Perks and benefits" })).not.toBeInTheDocument();
   });
 
-  it("puts Interested / Not interested in the header and updates optimistically", async () => {
-    global.fetch = vi.fn((url: string) =>
-      Promise.resolve({ ok: true, json: async () => (String(url).includes("candidate-hiring-activity") ? { recent: [baseMatch] } : { ok: true }) }),
-    ) as unknown as typeof fetch;
+  it("keeps the interested answer in the actions menu, not the header", async () => {
+    mockFetch([baseMatch]);
     render(<TooltipProvider><JobDetailPage /></TooltipProvider>);
-    const group = await screen.findByRole("group", { name: "Your response" });
-    const interested = within(group).getByRole("button", { name: "Interested" });
-    expect(interested).toHaveAttribute("aria-pressed", "false");
-    fireEvent.click(interested);
-    await waitFor(() => expect(within(group).getByRole("button", { name: "Interested" })).toHaveAttribute("aria-pressed", "true"));
-    expect(within(group).getByRole("button", { name: "Not interested" })).toHaveAttribute("aria-pressed", "false");
-  });
-
-  it("hides the response buttons once the role is closed", async () => {
-    mockFetch([{ ...baseMatch, status: "closed" }]);
-    render(<TooltipProvider><JobDetailPage /></TooltipProvider>);
-    await waitFor(() => expect(screen.getByText("Role closed")).toBeInTheDocument());
+    expect(await screen.findByRole("button", { name: "Message employer" })).toBeInTheDocument();
     expect(screen.queryByRole("group", { name: "Your response" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Interested" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Not interested" })).not.toBeInTheDocument();
   });
 
   it("shows a not-found screen when the id is not in the list", async () => {
