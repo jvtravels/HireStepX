@@ -756,7 +756,7 @@ export default function SessionSetup() {
     return "";
   });
   const focusRounds = useFocusRounds();
-  const { recommended: recommendedFocus, defaultFocus, reason: focusReason } = resolveFocusDefaults({
+  const { defaultFocus } = resolveFocusDefaults({
     rounds: roundStatusByLabel(focusRounds),
     role: targetRole.trim() || user?.targetRole,
     experienceLevel: user?.experienceLevel,
@@ -1531,7 +1531,6 @@ export default function SessionSetup() {
         @keyframes countdownPop { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         @keyframes countdownFade { 0% { opacity: 1; transform: scale(1); } 80% { opacity: 1; } 100% { opacity: 0.6; transform: scale(0.95); } }
         @keyframes hsxAccentIn { 0% { opacity: 0; transform: translateY(6px); } 60% { opacity: 1; } 100% { opacity: 1; transform: translateY(0); } }
-        @keyframes hsxBadgePulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(49,46,129,0.35); } 50% { box-shadow: 0 0 0 6px rgba(49,46,129,0); } }
         .ob-card { background: ${T.white}; border: 1px solid ${T.line}; }
         /* Uses canonical 'pulse' from index.css (1.6s ease-in-out). */
         .ob-mic-pulse { animation: pulse 1.6s ease-in-out infinite; }
@@ -1540,10 +1539,6 @@ export default function SessionSetup() {
            Hero "ready" italic-copper word slides in 100ms after the
            rest of the headline so the eye lands on it. Small, tasteful. */
         .hsx-setup-hero-h1 em { animation: hsxAccentIn 600ms 120ms cubic-bezier(.2,.7,.2,1) both; }
-        /* "For you" recommendation badge — single soft pulse on first
-           render so a returning user's eye finds the suggestion. */
-        .hsx-recommend-badge { animation: hsxBadgePulse 1.6s ease-out 1; }
-
         /* ─── Completed-zone dim ─────────────────────────────────────────
            Once the user has met the form requirements (role + focus + mic
            granted), Focus and Permissions sections fade to 88% opacity
@@ -1595,7 +1590,6 @@ export default function SessionSetup() {
             scroll-behavior: auto !important;
           }
           .ob-mic-pulse { animation: none !important; }
-          .hsx-recommend-badge { animation: none !important; }
         }
         .ob-focus-card:focus-visible, .hsx-setup-cta:focus-visible, .hsx-permission-actions button:focus-visible { outline: 2px solid ${T.indigo}; outline-offset: 2px; }
         @media (max-width: 1024px), (pointer: coarse) { .hsx-permission-actions button { min-height: 44px; min-width: 44px; } }
@@ -1839,7 +1833,7 @@ export default function SessionSetup() {
                     </h2>
                     <div style={{ fontFamily: F.sans, fontSize: 12, color: T.inkSoft, marginTop: 4 }}>
                       {targetRole.trim()
-                        ? `${relevantFocusSet ? `Matched to "${targetRole.trim()}" interviews. ` : ""}${focusReason ? `Suggested: ${recommendedFocus}. ${focusReason}` : "Choose one area to focus on."}`
+                        ? `${relevantFocusSet ? `Matched to "${targetRole.trim()}" interviews. ` : ""}Choose one area to focus on.`
                         : "Enter a role to see relevant focuses."}
                     </div>
                   </div>
@@ -1910,7 +1904,6 @@ export default function SessionSetup() {
                   >
                     {available.map((opt) => {
                       const sel = interviewFocus[0] === opt.value;
-                      const isRecommended = opt.value === recommendedFocus && available.length > 1;
                       return (
                         <button key={opt.value} className="ob-focus-card"
                           onClick={() => { setFocusPicked(true); setInterviewFocus([opt.value]); }}
@@ -1928,9 +1921,6 @@ export default function SessionSetup() {
                             display: "flex", alignItems: "center", gap: 10, color: T.coal,
                             position: "relative", fontFamily: F.sans,
                           }}>
-                          {isRecommended && (
-                            <span className="hsx-recommend-badge" style={{ position: "absolute", top: -8, right: 10, fontFamily: F.sans, fontSize: 11, fontWeight: 600, color: T.cream, background: T.indigo, padding: "2px 8px", borderRadius: 4, letterSpacing: "0.04em", textTransform: "uppercase" }}>For you</span>
-                          )}
                           <span style={{ width: 32, height: 32, borderRadius: 6, background: T.indigo100, color: T.coal, display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                             {opt.icon}
                           </span>
