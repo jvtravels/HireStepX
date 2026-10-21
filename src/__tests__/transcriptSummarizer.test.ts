@@ -100,7 +100,7 @@ describe("summarizeTranscriptIfLong", () => {
         levelMismatch: null,
         domainPivot: true,
         hasAny: true,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+         
       } as any,
     });
     expect(r.transcript[0].text).toContain("gap=6mo");

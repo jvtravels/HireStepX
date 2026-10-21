@@ -10,7 +10,7 @@ import "./setup-next-navigation";
 
 const mockUpdateUser = vi.fn();
 const mockLogout = vi.fn();
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- test: mock user object with partial typing
+ 
 let mockUser: any = {
   id: "user-123",
   name: "Jay Vyas",
@@ -34,7 +34,7 @@ vi.mock("../AuthContext", () => ({
     updateUser: mockUpdateUser,
     logout: mockLogout,
   }),
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- test: mock component with minimal props
+   
   AuthProvider: ({ children }: any) => children,
 }));
 
@@ -70,7 +70,7 @@ vi.mock("../dashboardHelpers", () => ({
 }));
 
 const mockFetch = vi.fn(() =>
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- test: partial mock of Response
+   
   Promise.resolve({ ok: false, status: 500, json: () => Promise.resolve({}), text: () => Promise.resolve("") } as any),
 );
 vi.stubGlobal("fetch", mockFetch);

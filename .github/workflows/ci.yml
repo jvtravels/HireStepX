@@ -31,7 +31,7 @@ jobs:
         # Cap includes the new codebase-health warnings introduced in
         # eslint.config.js (max-lines, no-restricted-syntax on `as unknown
         # as X`). Ratchet downward as we fix each hit.
-        run: npx eslint . --max-warnings 119
+        run: npx eslint . --max-warnings 98
       - name: Debt ratchet (file size, type escapes, raw colors, inline styles)
         run: node scripts/ratchet.mjs
 

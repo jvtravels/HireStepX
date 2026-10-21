@@ -502,7 +502,7 @@ describe("sessionReportToInterviewResult — fold is grounded end-to-end", () =>
     const ctx = {
       report: negReport({
         perQuestion: [
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+           
           { idx: 0, question: "What is your ask?", answerText: "I want ₹65 LPA.", score: 80, verdict: "strong", explanation: "", starPresence: { S: true, T: true, A: true, R: true, L: false } } as any,
         ],
       }),
