@@ -41,10 +41,10 @@ export function MatchFactorsCard({ data, stacked }: { data: MatchFactors; stacke
           Strong: you meet what the employer asked for. Partial: you meet some of it. Gap: not on your profile yet.
         </InfoTip>
       </h2>
-      <ul className={`m-0 grid list-none gap-x-10 gap-y-2.5 p-0 ${stacked ? "" : "min-[640px]:grid-cols-2"}`}>
+      <ul className={`m-0 grid list-none gap-x-12 gap-y-2.5 p-0 ${stacked ? "" : "min-[640px]:grid-cols-2"}`}>
         {data.factors.map((x) => (
-          <li key={x.key} className="flex items-center justify-between gap-3 text-[14px] leading-6 text-hx-coal">
-            <span className="flex min-w-0 items-center gap-0.5">
+          <li key={x.key} className="flex items-center gap-3 text-[14px] leading-6 text-hx-coal">
+            <span className="flex w-[7.5rem] shrink-0 items-center gap-0.5">
               {x.label}
               <span className="sr-only">: {x.detail}</span>
               <InfoTip compact label={`Why ${x.label.toLowerCase()} is ${LEVEL[x.level].label.toLowerCase()}`}>{x.detail}</InfoTip>
