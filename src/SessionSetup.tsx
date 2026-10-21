@@ -1734,8 +1734,8 @@ export default function SessionSetup() {
       </div>
 
       {/* ─── Content ─── */}
-      <div className="hsx-setup-content" style={{ flex: 1, display: "flex", alignItems: "flex-start", justifyContent: "center", overflow: "auto", background: T.creamSoft }}>
-        <main id="hsx-setup-form" tabIndex={-1} className="hsx-setup-card" style={{ width: "100%", boxSizing: "border-box", padding: "clamp(20px, 4vw, 40px)", background: T.white, border: `1px solid ${T.line}`, borderRadius: 16, boxShadow: "0 1px 2px oklch(0.2 0 0 / 0.04), 0 8px 24px oklch(0.2 0 0 / 0.04)", animation: "fadeUp 0.3s ease", outline: "none" }}>
+      <div className="hsx-setup-content" style={{ flex: 1, display: "flex", alignItems: "flex-start", justifyContent: "center", overflow: "auto", background: T.white }}>
+        <main id="hsx-setup-form" tabIndex={-1} className="hsx-setup-card" style={{ width: "100%", maxWidth: 1080, margin: "0 auto", boxSizing: "border-box", padding: "clamp(20px, 4vw, 40px)", background: T.white, animation: "fadeUp 0.3s ease", outline: "none" }}>
 
           <div>
               {/* Drill mode banner — shown when the user arrived from a
