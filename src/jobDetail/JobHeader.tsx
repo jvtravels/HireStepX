@@ -35,7 +35,7 @@ function CompanyLine({ job }: { job: JobMatch }) {
           ) : (
             <>
               <span>Company hidden</span>
-              <InfoTip label="Why the company is hidden">Company details are shared once this employer shows interest.</InfoTip>
+              <InfoTip compact label="Why the company is hidden">Company details are shared once this employer shows interest.</InfoTip>
             </>
           )}
         </div>
@@ -63,7 +63,7 @@ export default function JobHeader({ job, closed, showMessage, onMessage, actions
     {
       icon: IndianRupeeIcon,
       text: comp
-        ? <>{comp}{comp.includes("LPA") && <InfoTip label="What LPA means">LPA is lakhs per annum: the yearly salary, in lakhs of rupees.</InfoTip>}</>
+        ? <>{comp}{comp.includes("LPA") && <InfoTip compact label="What LPA means">LPA is lakhs per annum: the yearly salary, in lakhs of rupees.</InfoTip>}</>
         : <span className="text-hx-ink-soft">Compensation not disclosed</span>,
     },
   ];
@@ -89,11 +89,13 @@ export default function JobHeader({ job, closed, showMessage, onMessage, actions
         <h1 id="job-title" className="m-0 text-[20px] font-semibold leading-tight text-hx-coal [overflow-wrap:anywhere]">
           {job.roleTitle}
         </h1>
-        <Badge tone={status.tone}>
-          <span aria-hidden="true" className="size-1.5 rounded-full bg-current" />
-          {status.label}
-        </Badge>
-        <InfoTip label={`About ${status.label.toLowerCase()}`}>{status.tip}</InfoTip>
+        <span className="inline-flex items-center gap-0.5">
+          <Badge tone={status.tone}>
+            <span aria-hidden="true" className="size-1.5 rounded-full bg-current" />
+            {status.label}
+          </Badge>
+          <InfoTip compact label={`About ${status.label.toLowerCase()}`}>{status.tip}</InfoTip>
+        </span>
       </div>
       <MetaLine parts={meta} className="mt-3" />
       {!job.unlocked && job.matchReason && !hasFit && (

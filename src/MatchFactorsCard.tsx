@@ -37,7 +37,7 @@ export function MatchFactorsCard({ data }: { data: MatchFactors }) {
     <section aria-label="Why you matched">
       <h2 className={`${H2} flex items-center gap-0.5`}>
         Why you matched
-        <InfoTip label="What the levels mean">
+        <InfoTip compact label="What the levels mean">
           Strong: you meet what the employer asked for. Partial: you meet some of it. Gap: not on your profile yet.
         </InfoTip>
       </h2>
@@ -47,7 +47,7 @@ export function MatchFactorsCard({ data }: { data: MatchFactors }) {
             <span className="flex min-w-0 items-center gap-0.5">
               {x.label}
               <span className="sr-only">: {x.detail}</span>
-              <InfoTip label={`Why ${x.label.toLowerCase()} is ${LEVEL[x.level].label.toLowerCase()}`}>{x.detail}</InfoTip>
+              <InfoTip compact label={`Why ${x.label.toLowerCase()} is ${LEVEL[x.level].label.toLowerCase()}`}>{x.detail}</InfoTip>
             </span>
             <Badge tone={LEVEL[x.level].tone} className="shrink-0">{LEVEL[x.level].label}</Badge>
           </li>
@@ -58,7 +58,7 @@ export function MatchFactorsCard({ data }: { data: MatchFactors }) {
           <h3 className={`${H3} mt-5 flex items-center gap-0.5`}>
             Skills they asked for
             {data.missingSkills.length > 0 && (
-              <InfoTip label="About dashed skills">Ticked skills are on your resume. Dashed skills aren't yet.</InfoTip>
+              <InfoTip compact label="About dashed skills">Ticked skills are on your resume. Dashed skills aren't yet.</InfoTip>
             )}
           </h3>
           <ul aria-label="Skills they asked for" className="m-0 flex list-none flex-wrap gap-1.5 p-0">

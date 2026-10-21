@@ -75,7 +75,7 @@ export function KeyValueRow({ label, tip, children }: { label: string; tip?: Rea
     <div className="grid grid-cols-[7.5rem_minmax(0,1fr)] items-baseline gap-x-4 text-[13px]">
       <dt className="text-[12px] text-hx-ink-soft">
         {label}
-        {tip && <InfoTip label={`About ${label.toLowerCase()}`}>{tip}</InfoTip>}
+        {tip && <InfoTip compact label={`About ${label.toLowerCase()}`}>{tip}</InfoTip>}
       </dt>
       <dd className="m-0 min-w-0 font-medium text-hx-coal [overflow-wrap:anywhere]">{children}</dd>
     </div>
@@ -184,14 +184,14 @@ export function MeterRow({ label, value, tone = "indigo" }: { label: string; val
 }
 
 /** A real button, so keyboard and touch users get the same explanation as hover. */
-export function InfoTip({ label, children }: { label: string; children: ReactNode }) {
+export function InfoTip({ label, compact, children }: { label: string; compact?: boolean; children: ReactNode }) {
   return (
     <Tooltip>
       <TooltipTrigger asChild>
         <button
           type="button"
           aria-label={label}
-          className="inline-flex cursor-pointer items-center justify-center rounded-md border-0 bg-transparent p-1 text-hx-ink-soft focus-visible:outline-2 focus-visible:outline-offset-2 pointer-coarse:size-11"
+          className={cn("inline-flex cursor-pointer items-center justify-center rounded-md border-0 bg-transparent p-1 text-hx-ink-soft focus-visible:outline-2 focus-visible:outline-offset-2 pointer-coarse:size-11", compact && "pointer-coarse:-m-3.5")}
         >
           <InfoIcon size={12} aria-hidden="true" />
         </button>
