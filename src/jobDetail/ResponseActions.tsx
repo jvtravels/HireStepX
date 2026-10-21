@@ -36,7 +36,7 @@ export default function ResponseActions({ response, canRespond, onRespond, showM
               variant="outline"
               aria-pressed={response === c.value}
               onClick={() => onRespond(c.value)}
-              className={`${fill ? "flex-1" : ""} ${response === c.value ? PICKED[c.value] : ""}`}
+              className={`${fill ? "min-w-0 flex-1 px-2" : ""} ${response === c.value ? PICKED[c.value] : ""}`}
             >
               {response === c.value && c.value === "interested" && <CheckIcon size={13} aria-hidden="true" />}
               {c.label}
@@ -45,8 +45,9 @@ export default function ResponseActions({ response, canRespond, onRespond, showM
         </div>
       )}
       {showMessage && (
-        <Button size="sm" onClick={onMessage} className="flex items-center gap-1.5">
-          <SendIcon size={13} aria-hidden="true" /> {fill ? "Message" : "Message employer"}
+        <Button size="sm" onClick={onMessage} className="flex shrink-0 items-center gap-1.5">
+          {!fill && <SendIcon size={13} aria-hidden="true" />}
+          {fill ? "Message" : "Message employer"}
         </Button>
       )}
       {menu}
