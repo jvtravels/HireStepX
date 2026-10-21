@@ -21,7 +21,8 @@ const LEVEL: Record<MatchFactorLevel, { label: string; className: string }> = {
   gap: { label: "Gap", className: "bg-hx-soft text-hx-neutral-ink" },
 };
 
-const H2 = "m-0 mb-2.5 text-[13px] font-semibold text-hx-coal";
+const H2 = "m-0 mb-2.5 text-[15px] font-semibold leading-6 text-hx-coal";
+const H3 = "m-0 mb-2 text-[12px] font-semibold text-hx-ink-soft";
 const HINT = "m-0 mt-2.5 text-[12px] leading-[18px] text-hx-ink-soft";
 const CHIP = "inline-flex max-w-full items-center gap-1 rounded-md px-2 py-1 text-[12px] leading-none font-medium [overflow-wrap:anywhere]";
 
@@ -40,27 +41,31 @@ export function MatchFactorsCard({ data }: { data: MatchFactors }) {
           <li key={x.key} className="flex items-start gap-2.5 text-[13px] leading-[20px] text-hx-ink-soft">
             <LevelChip className={LEVEL[x.level].className}>{LEVEL[x.level].label}</LevelChip>
             <span className="min-w-0">
-              <span className="font-semibold text-hx-coal">{x.label}</span> {x.detail}
+              <span className="block text-[13px] font-semibold text-hx-coal">{x.label}</span>
+              {x.detail}
             </span>
           </li>
         ))}
       </ul>
       {hasSkills && (
-        <ul aria-label="Skills they asked for" className="m-0 mt-3.5 flex list-none flex-wrap gap-1.5 p-0">
-          {data.matchedSkills.map((s) => (
-            <li key={`y-${s}`} className={`${CHIP} bg-hx-success-100 text-hx-success-ink`}>
-              <CheckIcon size={12} aria-hidden="true" className="shrink-0" />
-              {s}
-              <span className="sr-only"> (on your resume)</span>
-            </li>
-          ))}
-          {data.missingSkills.map((s) => (
-            <li key={`n-${s}`} className={`${CHIP} border border-dashed border-hx-ink-soft/50 text-hx-neutral-ink`}>
-              {s}
-              <span className="sr-only"> (not on your resume yet)</span>
-            </li>
-          ))}
-        </ul>
+        <>
+          <h3 className={`${H3} mt-4`}>Skills they asked for</h3>
+          <ul aria-label="Skills they asked for" className="m-0 flex list-none flex-wrap gap-1.5 p-0">
+            {data.matchedSkills.map((s) => (
+              <li key={`y-${s}`} className={`${CHIP} bg-hx-success-100 text-hx-success-ink`}>
+                <CheckIcon size={12} aria-hidden="true" className="shrink-0" />
+                {s}
+                <span className="sr-only"> (on your resume)</span>
+              </li>
+            ))}
+            {data.missingSkills.map((s) => (
+              <li key={`n-${s}`} className={`${CHIP} border border-dashed border-hx-ink-soft/50 text-hx-neutral-ink`}>
+                {s}
+                <span className="sr-only"> (not on your resume yet)</span>
+              </li>
+            ))}
+          </ul>
+        </>
       )}
       {data.missingSkills.length > 0 && (
         <p className={HINT}>Dashed skills are not on your resume yet. Practising them in a mock interview adds verified evidence employers can see.</p>

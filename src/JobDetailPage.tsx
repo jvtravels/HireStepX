@@ -33,10 +33,10 @@ import { isInterviewInvite } from "./interviewInvite";
 const SHELL = "grid overflow-hidden rounded-2xl border border-hx-line bg-white min-[900px]:grid-cols-[minmax(0,1fr)_minmax(280px,340px)]";
 const COL = "min-w-0 divide-y divide-hx-line";
 const SEC = "min-w-0 px-5 py-5 min-[640px]:px-7 min-[640px]:py-6";
-const H2 = "m-0 mb-1.5 text-[13px] font-semibold text-hx-coal";
+const H2 = "m-0 mb-2.5 text-[15px] font-semibold leading-6 text-hx-coal";
 const H2_FLUSH = "m-0 text-[15px] font-semibold text-hx-coal";
-const BODY = "m-0 max-w-[75ch] whitespace-pre-line text-[13.5px] leading-relaxed [overflow-wrap:anywhere]";
-const BODY_TIGHT = "m-0 mt-2.5 text-[14px] leading-[22px] text-hx-coal";
+const BODY = "m-0 max-w-[75ch] whitespace-pre-line text-[14px] leading-[24px] text-hx-neutral-ink [overflow-wrap:anywhere]";
+const BODY_TIGHT = "m-0 mt-2 text-[14px] leading-[22px] text-hx-neutral-ink";
 const EMPTY = "m-0 text-[13px] italic text-hx-ink-soft";
 /* ~8 lines at 14px / 22px; the mask fades the cut so it reads as "more below". */
 const CLAMP = "max-h-[150px] overflow-hidden [mask-image:linear-gradient(to_bottom,black_70%,transparent)]";
@@ -44,14 +44,14 @@ const ACTION_STACK = "mt-3 flex flex-col gap-2";
 
 const COLLAPSE_THRESHOLD = 600;
 
-function CollapsibleText({ text, soft }: { text: string; soft?: boolean }) {
+function CollapsibleText({ text }: { text: string }) {
   const [expanded, setExpanded] = useState(false);
   const id = useId();
   const long = text.length > COLLAPSE_THRESHOLD;
   const collapsed = long && !expanded;
   return (
     <>
-      <p id={id} className={`${BODY} ${soft ? "text-hx-ink-soft" : "text-hx-coal"} ${collapsed ? CLAMP : ""}`}>{text}</p>
+      <p id={id} className={`${BODY} ${collapsed ? CLAMP : ""}`}>{text}</p>
       {long && (
         <div className="mt-1.5">
           <PanelButton expanded={expanded} controls={id} onClick={() => setExpanded((v) => !v)}>
@@ -246,39 +246,40 @@ export default function JobDetailPage() {
                     ? <StatusChip label="Employer interested" className="bg-hx-indigo-100 text-hx-indigo" />
                     : <StatusChip label="Matched" className="bg-hx-success-100 text-hx-success-ink" />}
               </div>
-              <MetaLine parts={meta} className="mt-3" />
+              <MetaLine parts={meta} className="mt-3.5" />
               {!job.unlocked && job.matchReason && !hasFit && (
-                <p className="m-0 mt-3 max-w-[75ch] text-[13.5px] leading-relaxed text-hx-ink-soft">{job.matchReason}</p>
+                <p className="m-0 mt-2 max-w-[75ch] text-[14px] leading-[22px] text-hx-ink-soft">{job.matchReason}</p>
               )}
 
               <div className="mt-5 grid min-w-0 content-start gap-x-8 gap-y-5 border-t border-hx-line pt-5 min-[1200px]:grid-cols-[minmax(0,1fr)_minmax(0,0.8fr)]">
-                <div className="flex min-w-0 flex-col gap-4">
+                <div className="flex min-w-0 flex-col gap-6">
                   {job.description && (
-                    <section aria-label="About the role">
-                      <CollapsibleText text={job.description} soft />
+                    <section aria-labelledby="job-about-heading">
+                      <h2 id="job-about-heading" className={H2}>About the role</h2>
+                      <CollapsibleText text={job.description} />
                     </section>
                   )}
                   {job.responsibilities && (
-                    <section aria-label="Responsibilities">
-                      <h2 className={H2}>Responsibilities</h2>
-                      <CollapsibleText text={job.responsibilities} soft />
+                    <section aria-labelledby="job-resp-heading">
+                      <h2 id="job-resp-heading" className={H2}>Responsibilities</h2>
+                      <CollapsibleText text={job.responsibilities} />
                     </section>
                   )}
                   {job.niceToHave && (
-                    <section aria-label="Nice to have">
-                      <h2 className={H2}>Nice to have</h2>
-                      <CollapsibleText text={job.niceToHave} soft />
+                    <section aria-labelledby="job-nice-heading">
+                      <h2 id="job-nice-heading" className={H2}>Nice to have</h2>
+                      <CollapsibleText text={job.niceToHave} />
                     </section>
                   )}
                   {!hasBody && <p className={EMPTY}>This employer hasn't added a role description yet.</p>}
                 </div>
 
-                <div className="flex min-w-0 flex-col gap-5 max-[1199px]:order-first min-[1200px]:border-l min-[1200px]:border-hx-line min-[1200px]:pl-8">
+                <div className="flex min-w-0 flex-col gap-6 max-[1199px]:order-first min-[1200px]:border-l min-[1200px]:border-hx-line min-[1200px]:pl-8">
                   {hasFit ? (
                     <MatchFactorsCard data={job.matchFactors!} />
                   ) : job.skills.length > 0 ? (
                     <section aria-label="Skills">
-                      <h2 className="m-0 mb-2.5 text-[13px] font-semibold text-hx-coal">Skills</h2>
+                      <h2 className={H2}>Skills</h2>
                       <ul className="m-0 flex list-none flex-wrap gap-1.5 p-0">
                         {job.skills.map((s, i) => <li key={i}><SkillChip tone="primary">{s}</SkillChip></li>)}
                       </ul>
@@ -286,7 +287,7 @@ export default function JobDetailPage() {
                   ) : null}
                   {job.perksAndBenefits.length > 0 && (
                     <section aria-label="Perks and benefits">
-                      <h2 className="m-0 mb-2.5 text-[13px] font-semibold text-hx-coal">Perks &amp; benefits</h2>
+                      <h2 className={H2}>Perks &amp; benefits</h2>
                       <ul className="m-0 flex list-none flex-wrap gap-1.5 p-0">
                         {job.perksAndBenefits.map((p, i) => <li key={i}><SkillChip tone="neutral">{p}</SkillChip></li>)}
                       </ul>
