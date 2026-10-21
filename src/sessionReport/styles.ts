@@ -141,9 +141,7 @@ export const SESSION_REPORT_STYLES = `
     display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px;
   }
   .nfr-panel {
-    background: #FFFFFF; border: 1px solid #ECECEF;
-    border-radius: 14px; padding: 22px;
-    box-shadow: 0 1px 0 rgba(20,17,10,.03), 0 1px 2px rgba(20,17,10,.04);
+    border-top: 1px solid #ECECEF; padding: 22px 0 6px;
   }
   /* ─── TL;DR (2026-05-26 editorial rework) ───
      Prior implementation: dark gradient card with a 4-up grid of
@@ -358,7 +356,7 @@ export const SESSION_REPORT_STYLES = `
   @media (max-width: 768px) {
     .nfr-grid-2up { grid-template-columns: 1fr !important; gap: 14px !important; }
     .nfr-grid-3up { grid-template-columns: 1fr !important; gap: 12px !important; }
-    .nfr-panel { padding: 18px !important; border-radius: 12px !important; }
+    .nfr-panel { padding: 18px 0 4px !important; }
     .nfr-tldr { padding: 18px 0 20px !important; }
     .nfr-tldr-verdict { font-size: 24px !important; line-height: 1.3 !important; }
     .nfr-tldr-evidence { grid-template-columns: 1fr !important; gap: 0 !important; }
