@@ -30,7 +30,7 @@ const HINT = "m-0 mt-2.5 text-[12px] leading-[18px] text-hx-ink-soft";
 /* Each row is one line (label + level). The sentence behind the level stays
    available to screen readers and on hover, so the header's facts aren't
    restated here. */
-export function MatchFactorsCard({ data }: { data: MatchFactors }) {
+export function MatchFactorsCard({ data, stacked }: { data: MatchFactors; stacked?: boolean }) {
   if (data.factors.length === 0) return null;
   const hasSkills = data.matchedSkills.length > 0 || data.missingSkills.length > 0;
   return (
@@ -41,7 +41,7 @@ export function MatchFactorsCard({ data }: { data: MatchFactors }) {
           Strong: you meet what the employer asked for. Partial: you meet some of it. Gap: not on your profile yet.
         </InfoTip>
       </h2>
-      <ul className="m-0 grid list-none gap-x-10 gap-y-2.5 p-0 min-[640px]:grid-cols-2">
+      <ul className={`m-0 grid list-none gap-x-10 gap-y-2.5 p-0 ${stacked ? "" : "min-[640px]:grid-cols-2"}`}>
         {data.factors.map((x) => (
           <li key={x.key} className="flex items-center justify-between gap-3 text-[14px] leading-6 text-hx-coal">
             <span className="flex min-w-0 items-center gap-0.5">

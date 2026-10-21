@@ -29,7 +29,7 @@ import ResponseActions from "./jobDetail/ResponseActions";
 import { ClosedNotice, RoleDetails, StrengthenMatch } from "./jobDetail/JobRail";
 import { SEC } from "./jobDetail/styles";
 
-const SHELL = "grid overflow-hidden rounded-2xl border border-hx-line bg-white min-[900px]:grid-cols-[minmax(0,1fr)_minmax(280px,340px)]";
+const SHELL = "grid overflow-hidden rounded-2xl border border-hx-line bg-white min-[900px]:grid-cols-[minmax(0,1fr)_minmax(300px,380px)]";
 const COL = "min-w-0 divide-y divide-hx-line";
 
 const NARROW = "(max-width: 899px)";
@@ -148,6 +148,11 @@ export default function JobDetailPage() {
       onError={(msg) => toast(msg, "error")}
     />
   );
+  const fit = hasFit && (
+    <div className={SEC}>
+      <MatchFactorsCard data={job.matchFactors!} stacked={!narrow} />
+    </div>
+  );
   const pinActions = narrow && job.unlocked && !closed && !invited;
   const actions = (
     <ResponseActions
@@ -177,16 +182,13 @@ export default function JobDetailPage() {
             {invited && <InterviewInviteCard job={job} className={SEC} />}
             <JobHeader job={job} closed={closed} actions={pinActions ? null : actions} />
             {narrow && requests}
-            {hasFit && (
-              <div className={SEC}>
-                <MatchFactorsCard data={job.matchFactors!} />
-              </div>
-            )}
+            {hasFit && narrow && fit}
             <JobBody job={job} showSkills={!hasFit} />
           </div>
 
           <div className={`${COL} border-t border-hx-line min-[900px]:border-l min-[900px]:border-t-0`}>
             {!narrow && requests}
+            {hasFit && !narrow && fit}
             <RoleDetails job={job} />
             <div className={SEC}>
               <EmployerVisibilityCard unlocked={job.unlocked} />
