@@ -31,7 +31,6 @@ interface ProfileRow {
   subscription_tier: string;
   subscription_end: string;
   target_role: string | null;
-  session_credits: number | null;
 }
 
 interface SessionRow {
@@ -128,7 +127,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     `?subscription_tier=eq.free` +
     `&subscription_end=gte.${encodeURIComponent(windowStart)}` +
     `&subscription_end=lte.${encodeURIComponent(windowEnd)}` +
-    `&select=id,name,email,subscription_tier,subscription_end,target_role,session_credits` +
+    `&select=id,name,email,subscription_tier,subscription_end,target_role` +
     `&limit=100`,
     { headers: dbHeaders, signal: AbortSignal.timeout(10_000) },
   );
