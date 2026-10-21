@@ -155,10 +155,8 @@ function Card({
   return (
     <div
       style={{
-        background: t.white,
-        border: `1px solid ${t.line}`,
-        borderRadius: 12,
-        padding: 20,
+        borderTop: `1px solid ${t.line}`,
+        padding: "20px 0 0",
         display: "flex",
         flexDirection: "column",
         gap: 14,
@@ -212,10 +210,8 @@ function StarMatrix({ rows }: { rows: BehavioralStarRow[] }) {
   return (
     <div
       style={{
-        background: t.white,
-        border: `1px solid ${t.line}`,
-        borderRadius: 12,
-        padding: 20,
+        borderTop: `1px solid ${t.line}`,
+        padding: "20px 0 0",
       }}
     >
       <div
@@ -506,10 +502,8 @@ function TranscriptRow({ row }: { row: BehavioralTranscriptRow }) {
   return (
     <div
       style={{
-        background: t.white,
-        border: `1px solid ${t.line}`,
-        borderRadius: 10,
-        padding: "12px 16px",
+        borderTop: `1px solid ${t.line}`,
+        padding: "12px 0",
         display: "flex",
         alignItems: "center",
         gap: 14,
@@ -612,10 +606,7 @@ export default function BehavioralFullReport({
         <div
           className="bfr-hero"
           style={{
-            background: t.white,
-            border: `1px solid ${t.line}`,
-            borderRadius: 16,
-            padding: 24,
+            paddingBottom: 24,
             display: "grid",
             gridTemplateColumns: "150px 1fr 360px",
             gap: 28,
@@ -712,10 +703,8 @@ export default function BehavioralFullReport({
         ) : (
           <div
             style={{
-              background: t.white,
-              border: `1px solid ${t.line}`,
-              borderRadius: 12,
-              padding: "14px 20px",
+              borderTop: `1px solid ${t.line}`,
+              padding: "14px 0 0",
               fontSize: 13,
               color: t.inkSoft,
             }}
@@ -902,7 +891,7 @@ export default function BehavioralFullReport({
                     style={{
                       margin: 0,
                       padding: "10px 14px",
-                      borderLeft: `3px solid ${t.copper}`,
+                      borderRadius: 8,
                       background: t.copper100,
                       fontStyle: "italic",
                       fontSize: 14,
@@ -932,10 +921,8 @@ export default function BehavioralFullReport({
         {/* AI accountability strip */}
         <div
           style={{
-            background: t.creamSoft,
-            border: `1px solid ${t.line}`,
-            borderRadius: 10,
-            padding: "12px 18px",
+            borderTop: `1px solid ${t.line}`,
+            padding: "14px 0 0",
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",

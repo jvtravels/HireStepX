@@ -31,7 +31,6 @@ const COAL = t.coal;
 const INK_SOFT = t.inkSoft;
 const LINE = t.line;
 const LINE_STRONG = t.lineStrong;
-const CREAM = t.cream;
 const CREAM_SOFT = t.creamSoft;
 const ERROR = t.error;
 const ERROR_SOFT = t.error100;
@@ -52,10 +51,8 @@ function Panel({ children, style }: { children: React.ReactNode; style?: React.C
     <div
       className="hrfr-panel"
       style={{
-        background: t.white,
-        border: `1px solid ${LINE}`,
-        borderRadius: 14,
-        padding: 24,
+        borderTop: `1px solid ${LINE}`,
+        padding: "22px 0 6px",
         ...style,
       }}
     >
@@ -307,10 +304,8 @@ function ProbeReviewPanel({ questions }: { questions: Question[] }) {
             <div
               key={q.index}
               style={{
-                border: `1px solid ${LINE}`,
-                borderRadius: 12,
-                padding: 18,
-                background: CREAM,
+                borderTop: `1px solid ${LINE}`,
+                padding: "16px 0 0",
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14, flexWrap: "wrap" }}>
@@ -423,10 +418,8 @@ function SectorNormStrip({
     <div
       style={{
         marginTop: 16,
-        background: CREAM_SOFT,
-        border: `1px solid ${LINE}`,
-        borderRadius: 12,
-        padding: 16,
+        borderTop: `1px solid ${LINE}`,
+        padding: "14px 0 0",
       }}
     >
       <div
@@ -485,10 +478,8 @@ function NoticePanel({ hrReport }: { hrReport: HrReportData }) {
         {noticeDays !== null && (
           <div
             style={{
-              background: CREAM_SOFT,
-              border: `1px solid ${LINE}`,
-              borderRadius: 12,
-              padding: 18,
+              borderTop: `1px solid ${LINE}`,
+              padding: "14px 0 0",
             }}
           >
             <div
@@ -676,8 +667,6 @@ function CounterOfferPanel({ risk }: { risk: HrReportData["counterOfferRisk"] })
       <div
         style={{
           background: CREAM_SOFT,
-          border: `1px solid ${LINE}`,
-          borderLeft: `4px solid ${COPPER}`,
           borderRadius: 12,
           padding: 22,
         }}
@@ -833,7 +822,7 @@ const HR_RESPONSIVE_CSS = `
   .hrfr-panel { min-width: 0; overflow-wrap: anywhere; }
   .hrfr-dim > *, .hrfr-probe > * { min-width: 0; }
   @media (max-width: 640px) {
-    .hrfr-panel { padding: 16px !important; }
+    .hrfr-panel { padding: 18px 0 4px !important; }
     .hrfr-dim { grid-template-columns: 1fr auto auto !important; row-gap: 6px !important; column-gap: 10px !important; }
     .hrfr-dim > :first-child { grid-column: 1 / -1; }
     .hrfr-probe { grid-template-columns: 1fr !important; gap: 4px !important; }
