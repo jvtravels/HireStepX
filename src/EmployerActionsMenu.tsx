@@ -41,6 +41,8 @@ interface Props {
   onToast: (message: string, kind?: "error") => void;
   /** Borderless trigger, for toolbars where neighbouring icon buttons have no container. */
   bare?: boolean;
+  /** Trigger size classes; defaults to a 44px touch target. */
+  triggerClassName?: string;
 }
 
 export function EmployerResponseBadge({ response }: { response: EmployerResponse | null | undefined }) {
@@ -49,7 +51,7 @@ export function EmployerResponseBadge({ response }: { response: EmployerResponse
   return <Badge tone={response === "interested" ? "success" : "neutral"}>{label}</Badge>;
 }
 
-export default function EmployerActionsMenu({ matchId, employerLabel, response, onResponseChange, onRemoved, onToast, bare }: Props) {
+export default function EmployerActionsMenu({ matchId, employerLabel, response, onResponseChange, onRemoved, onToast, bare, triggerClassName }: Props) {
   const { user } = useAuth();
   const noteId = useId();
   const errorId = useId();
@@ -122,7 +124,7 @@ export default function EmployerActionsMenu({ matchId, employerLabel, response, 
             variant={bare ? "ghost" : "outline"}
             size="icon"
             aria-label={`Actions for ${employerLabel}`}
-            className="size-11 shrink-0"
+            className={`${triggerClassName ?? "size-11"} shrink-0`}
           >
             <MoreHorizontalIcon size={18} aria-hidden="true" />
           </Button>

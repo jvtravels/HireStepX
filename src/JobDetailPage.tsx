@@ -138,6 +138,7 @@ export default function JobDetailPage() {
               actions={
                 <EmployerActionsMenu
                   bare
+                  triggerClassName="size-9"
                   matchId={job.id}
                   employerLabel={job.companyName}
                   response={response}
