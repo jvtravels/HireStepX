@@ -41,6 +41,8 @@ export interface CandidateResumeDetail {
   phone: string | null;
   noticePeriod: string | null;
   currentCtc: string | null;
+  /** What the candidate chose to share; only present once unlocked. */
+  expectedCtc?: string | null;
 }
 
 export interface MatchBreakdown {

@@ -10,6 +10,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "./AuthContext";
+import { carryHiringFacts } from "./hiringFacts";
 import { useDashboardCore } from "./DashboardContext";
 import {
   extractResumeTextWithMeta,
@@ -90,7 +91,7 @@ export function useResumeUpload(): ResumeUploadState {
               setProfile(result.profile);
               setAnalysisSource("ai");
               setErrorMsg("");
-              updateUser({ resumeData: { _type: "ai", ...result.profile } });
+              updateUser({ resumeData: carryHiringFacts({ _type: "ai", ...result.profile }, user?.resumeData) });
             } else {
               setErrorMsg("AI analysis returned no results. Try re-uploading your resume.");
             }
@@ -118,7 +119,7 @@ export function useResumeUpload(): ResumeUploadState {
           .then(result => {
             if (result?.profile) {
               setProfile(result.profile);
-              updateUser({ resumeData: { _type: "ai", ...result.profile } });
+              updateUser({ resumeData: carryHiringFacts({ _type: "ai", ...result.profile }, user?.resumeData) });
             }
             setPhase("done");
           })
@@ -206,7 +207,7 @@ export function useResumeUpload(): ResumeUploadState {
       setProfile(result.profile);
       setAnalysisSource("ai");
       setTruncated(clientTruncated || !!result.truncated);
-      updateUser({ resumeData: { _type: "ai", ...result.profile } });
+      updateUser({ resumeData: carryHiringFacts({ _type: "ai", ...result.profile }, user?.resumeData) });
       setPhase("done");
     } else {
       const isTimeout = analyzeError?.toLowerCase().includes("timeout");

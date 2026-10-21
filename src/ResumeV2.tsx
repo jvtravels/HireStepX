@@ -17,6 +17,7 @@ import { useAuth } from "./AuthContext";
 import { useDashboardSessions, useDashboardUIActions } from "./DashboardContext";
 import { practiceCoverageStatus } from "./practiceCoverageStatus";
 import { useResumeUpload, type ResumePhase } from "./useResumeUpload";
+import HiringDetailsCard from "./HiringDetailsCard";
 import { PortfolioLinksSection, type PortfolioLinksSectionProps } from "./settingsSections";
 import LoadingScreen from "./_LoadingScreen";
 import { SkeletonReveal } from "./SkeletonReveal";
@@ -632,6 +633,10 @@ export default function ResumeV2Screen() {
                 </section>
               )}
 
+              <section className={SEC}>
+                <SectionHead icon={<BriefcaseIcon size={16} className={ICON} aria-hidden="true" />} title="Hiring details" />
+                <HiringDetailsCard showToast={showToast} />
+              </section>
               <PortfolioSection portfolioLinks={user?.portfolioLinks} authUpdateUser={authUpdateUser} showToast={showToast} />
             </div>
 

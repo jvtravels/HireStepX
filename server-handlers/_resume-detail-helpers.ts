@@ -61,6 +61,8 @@ export interface ResumeDetail {
   // Self-reported on the resume text, not verified — render with that caveat.
   noticePeriod: string | null;
   currentCtc: string | null;
+  // Only ever entered by the candidate, and shown after an unlock.
+  expectedCtc: string | null;
 }
 
 function escapeRegExp(s: string): string {
@@ -270,6 +272,7 @@ export function extractResumeDetail(resumeData: unknown): ResumeDetail {
     phone: null,
     noticePeriod: null,
     currentCtc: null,
+    expectedCtc: null,
   };
   if (!resumeData || typeof resumeData !== "object") return empty;
   const r = resumeData as Record<string, unknown>;
@@ -304,6 +307,7 @@ export function extractResumeDetail(resumeData: unknown): ResumeDetail {
       skillsDetailed: extractSkillsDetailed(r.skillsDetailed),
       noticePeriod: asString(r.noticePeriod),
       currentCtc: asString(r.currentCtc),
+      expectedCtc: asString(r.expectedCtc),
     };
   }
 

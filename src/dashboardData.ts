@@ -1076,9 +1076,9 @@ export interface ResumeProfile {
   /** Notice period as stated on the resume (e.g. "30 days", "Immediate joiner").
    *  Null if not stated. Used for HR-round calibration. */
   noticePeriod?: string | null;
-  /** Current CTC as stated on the resume (e.g. "₹18 LPA"). Null if not stated.
-   *  Used for salary-negotiation pre-fill. */
+  /** Current CTC as stated on the resume (e.g. "₹18 LPA"); salary-negotiation pre-fill. */
   currentCtc?: string | null;
+  expectedCtc?: string | null;
   /** Explicit promotion signals extracted from the resume
    *  (e.g. "Promoted to Senior PM in 18 months at Flipkart").
    *  Prime STAR story material; used as behavioral probe anchors. */

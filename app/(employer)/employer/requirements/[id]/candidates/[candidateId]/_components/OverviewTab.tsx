@@ -178,6 +178,7 @@ function ProfilePanel({ candidate, onOpenResume }: { candidate: Candidate; onOpe
   if (latestRole) facts.push({ label: "Latest role", value: latest?.period ? `${latestRole} (${latest.period})` : latestRole });
   if (r.noticePeriod) facts.push({ label: "Notice period", value: r.noticePeriod, selfReported: true });
   if (r.currentCtc) facts.push({ label: "Current CTC", value: r.currentCtc, selfReported: true });
+  if (r.expectedCtc) facts.push({ label: "Expected CTC", value: r.expectedCtc, selfReported: true });
   if (r.primaryDomain) {
     const primaryYears = r.domainYears?.find((d) => d.domain.toLowerCase() === r.primaryDomain?.toLowerCase())?.years;
     facts.push({ label: "Domain", value: primaryYears ? `${r.primaryDomain} (${formatYears(primaryYears)})` : r.primaryDomain });
