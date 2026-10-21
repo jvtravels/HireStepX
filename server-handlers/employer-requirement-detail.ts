@@ -43,6 +43,7 @@ import { later } from "./_employer-dashboard-helpers";
 import { runMatching, logRequirementActivity } from "./employer-requirements";
 import {
   loadBlockedCandidateIds,
+  withHandlerTiming,
   fetchKeyset,
   loadGradedSessions,
   keepSessionsForRole,
@@ -174,6 +175,7 @@ export default async function handler(req: Request): Promise<Response> {
     return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405, headers });
   }
 
+  const startedAt = Date.now();
   try {
     type MatchRow = {
       id: string; candidate_user_id: string; match_score: number; roster_score: number; unlocked: boolean; unlocked_at: string | null;
@@ -469,7 +471,7 @@ export default async function handler(req: Request): Promise<Response> {
         // never reports fewer matched than it has actual candidates.
         totalMatched: Math.max(requirement.matched_pool_size ?? 0, paged.total),
       }),
-      { status: 200, headers },
+      { status: 200, headers: withHandlerTiming(headers, startedAt) },
     );
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);

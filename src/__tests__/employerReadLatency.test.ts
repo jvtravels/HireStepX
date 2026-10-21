@@ -142,6 +142,24 @@ describe("employer read latency (virtual clock, 80 ms per database call)", () =>
     record("list GET, 45 requirements, 300 candidates", r);
   });
 
+  it("both GET handlers append handler;dur to the preamble's Server-Timing header", async () => {
+    withAuthAndRateLimit.mockResolvedValue({ auth: { userId: EMPLOYER }, headers: { "Server-Timing": "pre;dur=5" } });
+    install({ requirements: 2, candidates: 5, withResume: true });
+    const settle = async (run: () => Promise<Response>) => {
+      let res: Response | null = null;
+      const p = run().then((r) => { res = r; });
+      for (let i = 0; i < 200 && !res; i++) await vi.advanceTimersByTimeAsync(LATENCY_MS);
+      await p;
+      return res as unknown as Response;
+    };
+    const detail = await settle(() => detailHandler(new Request("https://x.test/api/employer-requirement-detail?id=req-000")));
+    const list = await settle(() => listHandler(new Request("https://x.test/api/employer-requirements")));
+    for (const res of [detail, list]) {
+      expect(res.status).toBe(200);
+      expect(res.headers.get("Server-Timing")).toMatch(/^pre;dur=5, handler;dur=\d+$/);
+    }
+  });
+
   it("prints the table", () => {
     const out = process.env.LATENCY_REPORT;
     if (out) writeFileSync(out, results.map((x) => `${x.scenario} | ${x.trips} | ${x.calls} | ${x.trips * LATENCY_MS} ms`).join("\n") + "\n");

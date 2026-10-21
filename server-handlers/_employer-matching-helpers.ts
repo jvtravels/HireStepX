@@ -74,6 +74,14 @@ export function chunk<T>(items: T[], size: number): T[][] {
   return out;
 }
 
+/** Adds the handler's own run time to the Server-Timing header the auth
+ *  preamble started, so DevTools and the client timing event can split a slow
+ *  request into "before the handler" and "the handler's reads". */
+export function withHandlerTiming(headers: Record<string, string>, startedAtMs: number): Record<string, string> {
+  const entry = `handler;dur=${Math.max(0, Date.now() - startedAtMs)}`;
+  return { ...headers, "Server-Timing": headers["Server-Timing"] ? `${headers["Server-Timing"]}, ${entry}` : entry };
+}
+
 /** Most database reads one request keeps in flight at once. */
 export const READ_CONCURRENCY = 6;
 

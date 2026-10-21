@@ -345,6 +345,21 @@ function reportFetchFailure(url: string, status: number | null) {
   void import("../errorReporter").then((m) => m.reportHandledError(`Employer fetch failed: ${path} ${status ?? "network"}`)).catch(() => {});
 }
 
+/** Only the heavy shortlist reads are timed; one in ten loads is sampled to keep event volume low. */
+const TIMED_PATHS = new Set(["/api/employer-requirements", "/api/employer-requirement-detail", "/api/employer-candidate-evidence"]);
+const TIMING_SAMPLE_RATE = 0.1;
+
+function reportFetchTiming(url: string, startedAt: number, serverTiming: string | null) {
+  const path = url.split("?")[0];
+  if (!TIMED_PATHS.has(path) || Math.random() >= TIMING_SAMPLE_RATE) return;
+  const handlerMs = Number(serverTiming?.match(/handler;dur=([\d.]+)/)?.[1]);
+  captureClientEvent("employer_api_timing", {
+    path,
+    total_ms: Math.round(performance.now() - startedAt),
+    handler_ms: Number.isFinite(handlerMs) ? Math.round(handlerMs) : null,
+  });
+}
+
 /** GET with exponential backoff. Only transient failures retry (network error,
  *  5xx); a 4xx is a real answer and returns immediately. 429 is not retried:
  *  the limiter's window outlasts our backoff, so retrying only spends the
@@ -357,8 +372,10 @@ export async function getWithRetry(url: string): Promise<{ ok: boolean; status: 
     const timer = setTimeout(() => controller.abort(), GET_ATTEMPT_TIMEOUT_MS);
     try {
       const headers = await authHeaders();
+      const startedAt = performance.now();
       const res = await fetch(url, { headers, signal: controller.signal });
       const data: unknown = await res.json().catch(() => null);
+      if (res.ok) reportFetchTiming(url, startedAt, res.headers.get("server-timing"));
       if (res.status < 500 || last) {
         if (res.status >= 500) reportFetchFailure(url, res.status);
         return { ok: res.ok, status: res.status, data };

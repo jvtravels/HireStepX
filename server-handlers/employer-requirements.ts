@@ -50,6 +50,7 @@ import {
   SCAN_RESERVE_MS,
   chunk,
   mapConcurrent,
+  withHandlerTiming,
   inList,
   fetchKeyset,
   fetchKeysetRotated,
@@ -244,6 +245,7 @@ export default async function handler(req: Request): Promise<Response> {
 const REQUIREMENTS_LIST_LIMIT = 500;
 
 async function handleGet(userId: string, headers: Record<string, string>): Promise<Response> {
+  const startedAt = Date.now();
   try {
     const res = await fetch(
       `${SUPABASE_URL}/rest/v1/employer_requirements?employer_id=eq.${encodeURIComponent(userId)}&select=id,title,location,notice_period_pref,status,stage,department,archive_reason,archive_disposition,experience_min,experience_max,due_date,budget_min,budget_max,locations,open_positions,work_mode,skills,employment_type,salary_type,duration_weeks,hours_per_week,min_readiness_band,min_star_completeness,matched_pool_size,created_at&order=created_at.desc&limit=${REQUIREMENTS_LIST_LIMIT}`,
@@ -344,7 +346,7 @@ async function handleGet(userId: string, headers: Record<string, string>): Promi
 
     const requirements = buildRequirementsListResponse(rows, countsByRequirement, aiScreeningByRequirement);
 
-    return new Response(JSON.stringify({ requirements, total, truncated: total > rows.length }), { status: 200, headers });
+    return new Response(JSON.stringify({ requirements, total, truncated: total > rows.length }), { status: 200, headers: withHandlerTiming(headers, startedAt) });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     slog.error("employer-requirements GET threw", { code: "employer_requirements_get_unexpected_error", error: msg.slice(0, 200), userId });
