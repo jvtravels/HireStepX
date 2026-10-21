@@ -27,6 +27,7 @@ import { focusPracticeHref, invitePracticeHref, isInterviewInvite, stashInviteJd
 import JobHeader from "./jobDetail/JobHeader";
 import JobBody from "./jobDetail/JobBody";
 import ResponseActions from "./jobDetail/ResponseActions";
+import JobProgress from "./jobDetail/JobProgress";
 import { ClosedNotice, PrepareForRole, RoleDetails, StrengthenMatch } from "./jobDetail/JobRail";
 import { SEC } from "./jobDetail/styles";
 
@@ -137,7 +138,9 @@ export default function JobDetailPage() {
   const hasFit = !!job.matchFactors && job.matchFactors.factors.length > 0;
   const invited = !closed && isInterviewInvite(job);
 
+  const openRequests = () => document.getElementById("job-requests")?.scrollIntoView({ behavior: "smooth", block: "center" });
   const requests = (
+    <div id="job-requests" className="scroll-mt-4">
     <CandidateRequestsCard
       matchId={job.id}
       requests={job.requests ?? []}
@@ -150,6 +153,7 @@ export default function JobDetailPage() {
       }}
       onError={(msg) => toast(msg, "error")}
     />
+    </div>
   );
   const fit = hasFit && (
     <div className={SEC}>
@@ -184,6 +188,7 @@ export default function JobDetailPage() {
           <div className={COL}>
             {invited && <InterviewInviteCard job={job} className={SEC} />}
             <JobHeader job={job} closed={closed} actions={pinActions ? null : actions} />
+            <JobProgress job={job} closed={closed} invited={invited} onOpenRequests={openRequests} />
             {narrow && requests}
             {hasFit && narrow && fit}
             <JobBody job={job} showSkills={!hasFit} />

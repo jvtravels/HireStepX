@@ -17,6 +17,7 @@ import { describeMatch, describeMatchFactors } from "./_requirement-match-helper
 import { asBoundedSalaryType } from "./_employer-requirements-helpers";
 import { isSuspended } from "./_employer-trust";
 import { maskLockedPostingText, requestHeadline, type CandidateRequestRow } from "./_candidate-request-helpers";
+import { answeredRequests, fitStanding, type FitStanding } from "./_job-feedback";
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
@@ -47,6 +48,7 @@ interface MatchRow {
   candidate_status: string | null;
   candidate_response: string | null;
   interview_scheduled_at: string | null;
+  profile_viewed_at: string | null;
   unlocked: boolean;
   unlocked_at: string | null;
   match_score: number;
@@ -119,7 +121,7 @@ export default async function handler(req: Request): Promise<Response> {
       ),
       fetch(
         `${SUPABASE_URL}/rest/v1/requirement_matches?candidate_user_id=eq.${encodeURIComponent(auth.userId)}` +
-          `&select=id,requirement_id,unlocked,unlocked_at,match_score,created_at,candidate_status,candidate_response,interview_scheduled_at,` +
+          `&select=id,requirement_id,unlocked,unlocked_at,match_score,created_at,candidate_status,candidate_response,interview_scheduled_at,profile_viewed_at,` +
           `employer_requirements(title,location,locations,status,work_mode,salary_type,budget_min,budget_max,experience_min,experience_max,skills,` +
           `notice_period_pref,open_positions,description,responsibilities,nice_to_have,perks_and_benefits,preferred_industry,due_date,employment_type,` +
           `department,duration_weeks,hours_per_week,availability,preferred_domain,portfolio_required,created_at,` +
@@ -168,16 +170,33 @@ export default async function handler(req: Request): Promise<Response> {
 
     // Optional: the table arrives with migration 0040, so any failure just means "no requests".
     const pendingByMatch = new Map<string, CandidateRequestRow[]>();
+    const answeredByMatch = new Map<string, CandidateRequestRow[]>();
     if (limited.length > 0) {
       const reqRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/candidate_requests?candidate_user_id=eq.${encodeURIComponent(auth.userId)}&status=eq.pending` +
+        `${SUPABASE_URL}/rest/v1/candidate_requests?candidate_user_id=eq.${encodeURIComponent(auth.userId)}` +
           `&select=id,match_id,kind,topic,fields,note,status,response_note,created_at,resolved_at&order=created_at.desc&limit=200`,
         { headers: serviceHeaders(), signal: AbortSignal.timeout(4000) },
       ).catch(() => null);
       if (reqRes && reqRes.ok) {
         for (const r of (await reqRes.json().catch(() => [])) as CandidateRequestRow[]) {
-          pendingByMatch.set(r.match_id, [...(pendingByMatch.get(r.match_id) ?? []), r]);
+          const bucket = r.status === "pending" ? pendingByMatch : answeredByMatch;
+          bucket.set(r.match_id, [...(bucket.get(r.match_id) ?? []), r]);
         }
+      }
+    }
+
+    // Where this fit sits among everyone matched to the role. Only for the one
+    // role the detail page asked for, and only the aggregate leaves the server.
+    let standing: FitStanding | null = null;
+    const focused = full && wantedId ? limited.find((m) => m.id === wantedId && m.requirement_id) : undefined;
+    if (focused?.requirement_id) {
+      const poolRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/requirement_matches?requirement_id=eq.${encodeURIComponent(focused.requirement_id)}&select=match_score&limit=1000`,
+        { headers: serviceHeaders(), signal: AbortSignal.timeout(3000) },
+      ).catch(() => null);
+      if (poolRes && poolRes.ok) {
+        const rows = (await poolRes.json().catch(() => [])) as Array<{ match_score: number | null }>;
+        standing = fitStanding(focused.match_score ?? 0, rows.map((r) => r.match_score ?? 0));
       }
     }
 
@@ -241,6 +260,9 @@ export default async function handler(req: Request): Promise<Response> {
         // a date-only slice throws away.
         matchedAt: m.created_at,
         unlockedAt: m.unlocked_at,
+        profileViewedAt: m.profile_viewed_at ?? null,
+        fitStanding: m.id === focused?.id ? standing : null,
+        answeredRequests: answeredRequests(answeredByMatch.get(m.id) ?? [], requestHeadline),
         requests: (pendingByMatch.get(m.id) ?? []).map((r) => ({
           id: r.id,
           kind: r.kind,

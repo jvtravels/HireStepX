@@ -94,6 +94,20 @@ export interface JobMatch {
   interviewScheduledAt?: string | null;
   /** Pending employer requests (evidence, documents, clarifications). */
   requests?: JobRequest[];
+  /** When an employer first opened this candidate's evidence, ISO. */
+  profileViewedAt?: string | null;
+  /** Requests the candidate already answered, newest first. */
+  answeredRequests?: AnsweredJobRequest[];
+  /** Detail page only: how this fit compares with others matched to the role. */
+  fitStanding?: { pool: number; beatenPct: number } | null;
+}
+
+export interface AnsweredJobRequest {
+  id: string;
+  kind: JobRequest["kind"];
+  headline: string;
+  outcome: "fulfilled" | "declined";
+  at: string;
 }
 
 export interface JobRequest {
