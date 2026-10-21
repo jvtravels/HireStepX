@@ -866,8 +866,8 @@ export const PlanUsageSection = memo(function PlanUsageSection(props: PlanUsageS
     <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
       {/* Plan status + usage, and extra-session credits — one card, two
           panels, since both describe the same subscription. */}
-      <div style={{ display: "flex", flexWrap: "wrap", border: `1px solid ${c.border}`, borderRadius: 14, overflow: "hidden" }}>
-        <div style={{ flex: "1 1 320px", minWidth: 0, background: c.graphite, padding: "24px 28px" }}>
+      <div style={{ display: "flex", flexWrap: "wrap", rowGap: 24 }}>
+        <div style={{ flex: "1 1 320px", minWidth: 0, padding: "0 28px 0 0" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 6, flexWrap: "wrap" }}>
             <span style={{ fontFamily: font.ui, fontSize: 22, fontWeight: 700, color: c.ink }}>{tierLabel}</span>
             {isPaid && <PlanStatusChip label={statusLabel} tone={statusTone} />}
@@ -894,9 +894,9 @@ export const PlanUsageSection = memo(function PlanUsageSection(props: PlanUsageS
           )}
         </div>
 
-        <div className="max-[640px]:!flex-[1_1_100%] max-[640px]:!border-l-0 min-[641px]:!border-t-0" style={{
-          flex: "0 1 300px", minWidth: 240, background: c.creamSoft, borderLeft: `1px solid ${c.border}`, borderTop: `1px solid ${c.border}`,
-          padding: "24px 28px", display: "flex", flexDirection: "column", justifyContent: "center", gap: 10,
+        <div className="max-[640px]:!flex-[1_1_100%] max-[640px]:!border-l-0 max-[640px]:!pl-0 max-[640px]:!pt-5 min-[641px]:!border-t-0" style={{
+          flex: "0 1 300px", minWidth: 240, borderLeft: `1px solid ${c.border}`, borderTop: `1px solid ${c.border}`,
+          padding: "0 0 0 28px", display: "flex", flexDirection: "column", justifyContent: "center", gap: 10,
         }}>
           <div style={{ fontFamily: font.ui, fontSize: 16, fontWeight: 700, color: c.ink }}>{creditBalance} Extra Session{creditBalance === 1 ? "" : "s"}</div>
           <div style={{ fontFamily: font.ui, fontSize: 12, color: c.inkSoft }}>Available anytime · Never expire</div>
@@ -975,7 +975,7 @@ export const PlanUsageSection = memo(function PlanUsageSection(props: PlanUsageS
                       <TableCell style={{ padding: "12px 20px" }}>
                         <div style={{ fontFamily: font.ui, fontSize: 13, color: c.ink, fontWeight: 500 }}>{purchaseTitle}</div>
                         {subLine && <div style={{ fontFamily: font.ui, fontSize: 12, color: c.inkSoft, marginTop: 2 }}>{subLine}</div>}
-                        <div className="min-[641px]:hidden" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8, marginTop: 6, fontFamily: font.ui, fontSize: 12, color: c.inkSoft }}>
+                        <div className="flex min-[641px]:hidden" style={{ flexWrap: "wrap", alignItems: "center", gap: 8, marginTop: 6, fontFamily: font.ui, fontSize: 12, color: c.inkSoft }}>
                           <span>{dateLabel}</span>
                           <span style={{ fontFamily: font.mono, fontWeight: 600, color: c.ink }}>{amountDisplay}</span>
                           <span style={{

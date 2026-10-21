@@ -17,14 +17,13 @@ const TITLE_BLOCK: CSSProperties = { minWidth: 0 };
 const TITLE_BLOCK_FIXED: CSSProperties = { minWidth: 0, flexShrink: 0 };
 const TITLE: CSSProperties = {
   fontFamily: f.sans,
-  fontSize: 28,
-  lineHeight: "32px",
-  fontWeight: 700,
+  fontSize: 20,
+  lineHeight: "28px",
+  fontWeight: 600,
   color: t.coal,
   margin: 0,
-  letterSpacing: "-0.01em",
 };
-const SUBTITLE: CSSProperties = { fontFamily: f.sans, fontSize: 14, color: t.inkFaint, margin: "2px 0 0" };
+const SUBTITLE: CSSProperties = { fontFamily: f.sans, fontSize: 14, color: t.inkSoft, margin: "4px 0 0" };
 const ACTIONS: CSSProperties = {
   display: "flex",
   alignItems: "center",
@@ -39,7 +38,7 @@ const PANEL: CSSProperties = {
   flexDirection: "column",
   flex: 1,
   minHeight: 0,
-  borderRadius: 12,
+  borderRadius: 16,
   border: `1px solid ${t.line}`,
   overflow: "hidden",
   fontFamily: f.sans,
