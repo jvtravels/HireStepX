@@ -20,6 +20,10 @@ export default tseslint.config(
       // noise since the eslint config targets browser + Next code paths.
       "loadtest/**",
       "coverage/**",
+      // Agent git worktrees are full repo copies; linting them multiplies every finding.
+      ".claude/**",
+      ".agents/**",
+      "qa-*.cjs",
       // typescript-eslint's parser stack-overflows on the giant
       // template-literal payloads in LEVER_GUIDANCE (multi-KB strings
       // across ~50 entries in a Record<NegotiationLever, string>).
