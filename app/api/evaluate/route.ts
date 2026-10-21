@@ -1,7 +1,8 @@
-export const runtime = 'edge';
-// Matches the 38-40s totalBudgetMs in server-handlers/evaluate.ts (2026-10-04)
-// so the platform's own execution ceiling can't kill a Gemini-fallback call
-// before it finishes — see that file for the full timeout history.
+// Node, not edge: the Edge runtime must send response headers within 25s, but
+// this handler's LLM chain budgets 38-40s (server-handlers/evaluate.ts), so
+// slow Gemini fallbacks were killed with a 504 "did not return an initial
+// response" (2026-10-21 logs). Node honours maxDuration for the full body.
+export const runtime = 'nodejs';
 export const maxDuration = 55;
 import handler from "../../../server-handlers/evaluate";
 
