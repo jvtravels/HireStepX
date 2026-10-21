@@ -17,6 +17,8 @@ import { EmployerDataProvider, useEmployerData } from "../employer/EmployerDataC
 const LATENCY_MS = 80;
 let log: string[] = [];
 
+let totalMatched = 1;
+
 function install() {
   log = [];
   vi.stubGlobal("fetch", vi.fn(async (input: string) => {
@@ -26,7 +28,7 @@ function install() {
     const body = url.startsWith("/api/employer-profile")
       ? { status: "approved", companyName: "Acme", verificationTier: "basic" }
       : url.startsWith("/api/employer-requirements")
-        ? { requirements: [{ id: "req-1", title: "Dev" }], total: 1 }
+        ? { requirements: [{ id: "req-1", title: "Dev", aiScreening: { evaluated: totalMatched, totalMatched } }], total: 1 }
         : url.startsWith("/api/employer-requirement-detail")
           ? { id: "req-1", title: "Dev", candidates: [{ id: "m1", unlocked: false }], total: 1, nextPage: null }
           : {};
@@ -39,7 +41,7 @@ function Probe() { ctx = useEmployerData(); return <span data-loaded={String(!ct
 
 const results: string[] = [];
 
-beforeEach(() => { vi.useFakeTimers(); install(); ctx = null; });
+beforeEach(() => { vi.useFakeTimers(); totalMatched = 1; install(); ctx = null; });
 afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); });
 
 async function settle(ms: number) { await act(async () => { await vi.advanceTimersByTimeAsync(ms); }); }
@@ -124,6 +126,29 @@ describe("employer client load (virtual clock, 80 ms per call)", () => {
     await settle(2_000);
     await open();
     expect(detailCalls()).toBe(1);
+  });
+
+  it("skips the small first-paint page when the list says the shortlist fits one full page", async () => {
+    totalMatched = 40;
+    render(<EmployerDataProvider><Probe /></EmployerDataProvider>);
+    await settle(LATENCY_MS * 3);
+    log.length = 0;
+    const open = ctx!.fetchRequirementDetail("req-1", { onFirstPage: () => {} });
+    await settle(LATENCY_MS * 3);
+    await open;
+    results.push(`open job, 40 matches | detail calls: ${detailCalls()}`);
+    expect(detailCalls()).toBe(1);
+  });
+
+  it("keeps the small first-paint page for a shortlist bigger than one page", async () => {
+    totalMatched = 300;
+    render(<EmployerDataProvider><Probe /></EmployerDataProvider>);
+    await settle(LATENCY_MS * 3);
+    log.length = 0;
+    const open = ctx!.fetchRequirementDetail("req-1", { onFirstPage: () => {} });
+    await settle(LATENCY_MS * 3);
+    await open;
+    expect(detailCalls()).toBeGreaterThanOrEqual(2);
   });
 
   it("prints the table", () => {

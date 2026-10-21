@@ -448,6 +448,8 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
   // Read by long-lived callbacks so they never close over a stale status/tier.
   const statusRef = useRef<CompanyStatus>("none");
   const tierRef = useRef<EmployerTier>("basic");
+  const requirementsRef = useRef<RequirementSummary[]>([]);
+  requirementsRef.current = requirements;
   const requirementsSeq = useRef(0);
 
   const applyProfile = useCallback((data: Record<string, unknown>, fallback?: { companyName: string; website: string }) => {
@@ -596,7 +598,11 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
     // request repeats the server's ranking, so the remainder is fetched in
     // parallel rather than one page after another.
     const fullFirst = getWithRetry(`${base}&page=1&limit=${SHORTLIST_PAGE_LIMIT}`);
-    const quick = onFirstPage ? await getWithRetry(`${base}&page=1&limit=${FIRST_PAINT_LIMIT}`) : null;
+    // Both requests repeat the server's ranking, so the small page only pays
+    // for itself when the shortlist is bigger than one full page.
+    const knownPool = requirementsRef.current.find((r) => r.id === id)?.aiScreening?.totalMatched;
+    const needsQuickPage = knownPool === undefined || knownPool > SHORTLIST_PAGE_LIMIT;
+    const quick = onFirstPage && needsQuickPage ? await getWithRetry(`${base}&page=1&limit=${FIRST_PAINT_LIMIT}`) : null;
     if (quick && quick.ok && quick.data) onFirstPage?.(quick.data as Requirement);
     const first = await fullFirst;
     if (!first || !first.ok || !first.data) return quick && quick.ok ? (quick.data as Requirement) : null;
