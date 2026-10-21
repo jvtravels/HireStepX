@@ -26,7 +26,7 @@ import { Spinner } from "@/components/ui/spinner";
 import SetupTopbarLeft from "./SetupTopbarLeft";
 import AudioDevicePicker from "./AudioDevicePicker";
 import { micConstraints } from "./audioDevices";
-import { getRecommendedFocus, resolveFocusDefaults } from "./setupFocus";
+import { FOCUS_TO_TYPE as focusToType, resolveFocusDefaults } from "./setupFocus";
 import { AUTH_STYLES } from "./auth/_styles";
 
 import { useAuth } from "./AuthContext";
@@ -266,20 +266,6 @@ const introByType: Record<string, string> = {
   "hr-round": "Welcome to your HR round practice. We'll focus on culture fit, motivation, salary expectations, and behavioral questions that HR teams typically ask. Ready?",
   "management": "Welcome to your management interview. We'll explore your people leadership, project management, and stakeholder communication skills. Let's begin.",
   "government-psu": "Welcome to your government and public sector interview practice. These interviews test your awareness of public administration, ethics, current affairs, and your motivation for public service. Let's begin — are you ready?",
-};
-
-/* Focus type → interview type mapping */
-const focusToType: Record<string, string> = {
-  "Behavioral": "behavioral",
-  "Strategic": "strategic",
-  "Technical Leadership": "technical",
-  "Case Study": "case-study",
-  "Salary Negotiation": "salary-negotiation",
-  "Panel Interview": "panel",
-  "Campus Placement": "campus-placement",
-  "HR Round": "hr-round",
-  "Management": "management",
-  "Government / PSU": "government-psu",
 };
 
 /* MVP launch (2026-06): these focuses are shown in the picker but render as
@@ -783,7 +769,7 @@ export default function SessionSetup() {
     if (rd && rd._type === "fallback") return rd.experience?.[0]?.company || "";
     return "";
   });
-  const { recommended: recommendedFocus, defaultFocus } = resolveFocusDefaults({
+  const { recommended: recommendedFocus, defaultFocus, reason: focusReason } = resolveFocusDefaults({
     role: targetRole.trim() || user?.targetRole,
     experienceLevel: user?.experienceLevel,
     relevant: relevantFocusSet,
@@ -830,13 +816,7 @@ export default function SessionSetup() {
       !COMING_SOON_FOCUSES.has(current as InterviewFocus) &&
       relevantFocusSet.has(current as InterviewFocus)
     ) return;
-    const recommended = getRecommendedFocus(targetRole, user?.experienceLevel);
-    const fallback =
-      !COMING_SOON_FOCUSES.has(recommended as InterviewFocus) &&
-      relevantFocusSet.has(recommended as InterviewFocus)
-        ? recommended
-        : roleProfile.focuses.find((f) => !COMING_SOON_FOCUSES.has(f)) || "Behavioral";
-    setInterviewFocus([fallback]);
+    setInterviewFocus([defaultFocus]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [relevantFocusSet]);
   /* Session length is no longer a knob — but we vary it by focus so the
@@ -1870,13 +1850,9 @@ export default function SessionSetup() {
                       <span style={{ color: T.error, fontSize: 12 }}>*</span>
                     </h2>
                     <div style={{ fontFamily: F.sans, fontSize: 12, color: T.inkSoft, marginTop: 4 }}>
-                      {relevantFocusSet && targetRole.trim()
-                        ? `Matched to "${targetRole.trim()}" interviews.${recommendedFocus && recommendedFocus !== "Behavioral" && !COMING_SOON_FOCUSES.has(recommendedFocus as InterviewFocus) && relevantFocusSet.has(recommendedFocus as InterviewFocus) ? " Recommended pick highlighted." : ""}`
-                        : recommendedFocus && recommendedFocus !== "Behavioral" && !COMING_SOON_FOCUSES.has(recommendedFocus as InterviewFocus) && targetRole.trim()
-                          ? "Choose one area to focus on. The recommended pick for your role is highlighted."
-                          : targetRole.trim()
-                            ? "Choose one area to focus on."
-                            : "Enter a role to see relevant focuses."}
+                      {targetRole.trim()
+                        ? `${relevantFocusSet ? `Matched to "${targetRole.trim()}" interviews. ` : ""}${focusReason ? `Suggested: ${recommendedFocus}. ${focusReason}` : "Choose one area to focus on."}`
+                        : "Enter a role to see relevant focuses."}
                     </div>
                   </div>
                     {(() => {
@@ -1946,7 +1922,7 @@ export default function SessionSetup() {
                   >
                     {available.map((opt) => {
                       const sel = interviewFocus[0] === opt.value;
-                      const isRecommended = opt.value === recommendedFocus && recommendedFocus !== "Behavioral";
+                      const isRecommended = opt.value === recommendedFocus && available.length > 1;
                       return (
                         <button key={opt.value} className="ob-focus-card"
                           onClick={() => { setFocusPicked(true); setInterviewFocus([opt.value]); }}

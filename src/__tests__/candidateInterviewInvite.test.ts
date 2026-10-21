@@ -29,9 +29,15 @@ describe("inviteEvent", () => {
 });
 
 describe("invitePracticeHref", () => {
+  it("opens an HR round for a first invite, behavioral for later rounds, campus for freshers", () => {
+    const base = { id: "m1", companyName: "Acme", unlocked: false };
+    expect(invitePracticeHref({ ...base, roleTitle: "Product Manager", candidateStatus: "interview_invited" })).toContain("focus=hr-round");
+    expect(invitePracticeHref({ ...base, roleTitle: "Product Manager", candidateStatus: "interviewing" })).toContain("focus=behavioral");
+    expect(invitePracticeHref({ ...base, roleTitle: "Software Engineer Intern", candidateStatus: "interview_invited" })).toContain("focus=campus-placement");
+  });
   it("includes the company only once revealed", () => {
-    expect(invitePracticeHref({ id: "m1", roleTitle: "SDE II", companyName: "Acme", unlocked: true })).toBe("/session/new?role=SDE+II&invite=m1&company=Acme");
-    expect(invitePracticeHref({ id: "m1", roleTitle: "SDE II", companyName: "Confidential company", unlocked: false })).toBe("/session/new?role=SDE+II&invite=m1");
+    expect(invitePracticeHref({ id: "m1", roleTitle: "SDE II", companyName: "Acme", unlocked: true })).toBe("/session/new?role=SDE+II&invite=m1&company=Acme&focus=behavioral");
+    expect(invitePracticeHref({ id: "m1", roleTitle: "SDE II", companyName: "Confidential company", unlocked: false })).toBe("/session/new?role=SDE+II&invite=m1&focus=behavioral");
   });
 });
 
