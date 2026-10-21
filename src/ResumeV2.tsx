@@ -1,10 +1,11 @@
 "use client";
 
 /* HireStepX 2.0 — Resume screen.
-   Sidebar shell, top bar, resume summary, strengths, quality/ATS/coverage
-   metric cards, a score breakdown, an improvements checklist, experience
-   history, focus areas, an ATS readiness detail card, skills &
-   achievements, and the "Practice next" interview-coverage card — all
+   One flat divided container (same shell as the dashboard and the employer
+   screens): resume summary, strengths, quality/ATS/coverage
+   metric strip, a score breakdown, an improvements checklist, experience
+   history, focus areas, an ATS readiness detail, skills &
+   achievements, and the "Practice next" interview-coverage list — all
    wired to the real resume pipeline via useResumeUpload() (extraction,
    SHA-256 hashing, AI analysis with regex-parser fallback, and removal),
    computeATSScore() (src/resumeAts.ts), and computeAllFitness()
@@ -12,19 +13,17 @@
    dashboard's data is still loading or no resume has been uploaded yet. */
 
 import { useMemo } from "react";
-import { tokens as T, fonts as F, textSize as S } from "./auth/_tokens";
 import { useAuth } from "./AuthContext";
 import { useDashboardSessions, useDashboardUIActions } from "./DashboardContext";
 import { practiceCoverageStatus } from "./practiceCoverageStatus";
 import { useResumeUpload, type ResumePhase } from "./useResumeUpload";
-import { PortfolioLinksSection } from "./settingsSections";
+import { PortfolioLinksSection, type PortfolioLinksSectionProps } from "./settingsSections";
 import LoadingScreen from "./_LoadingScreen";
 import { SkeletonReveal } from "./SkeletonReveal";
 import { Skeleton } from "@/components/ui/skeleton";
 import { computeATSScore, isMostlyEnglishScript } from "./resumeAts";
 import { computeAllFitness, type InterviewType, type FitnessBand } from "./resumeFitness";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import {
   FileTextIcon,
@@ -52,14 +51,13 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 
-const font = { ui: F.sans, mono: F.mono };
 
 type MetricTone = "good" | "warning" | "error";
 
-const metricColor: Record<MetricTone, { chipBg: string; chipText: string; bar: string; chipBorder: string }> = {
-  good: { chipBg: T.success100, chipText: T.successInk, bar: T.success, chipBorder: T.successLine },
-  warning: { chipBg: T.warning100, chipText: T.warningInk, bar: T.warning, chipBorder: T.warningLine },
-  error: { chipBg: T.error100, chipText: T.errorInk, bar: T.error, chipBorder: T.errorLine },
+const TONE: Record<MetricTone, { chip: string; bar: string; text: string }> = {
+  good: { chip: "bg-hx-success-100 text-hx-success-ink", bar: "bg-hx-success", text: "text-hx-success-ink" },
+  warning: { chip: "bg-hx-warning-100 text-hx-warning-ink", bar: "bg-hx-warning", text: "text-hx-warning-ink" },
+  error: { chip: "bg-hx-error-100 text-hx-error-ink", bar: "bg-hx-error", text: "text-hx-error-ink" },
 };
 
 const SKILLS_COLLAPSE_THRESHOLD = 12;
@@ -103,56 +101,50 @@ const DEPTH_LABEL: Record<string, string> = {
   exposure: "Exposure",
 };
 
-/* ── Presentational building blocks ── */
+/* ── Flat-container building blocks (same shell as the dashboard) ── */
 
-function SectionCard({
-  children,
-  style,
-  padding = 20,
-}: {
-  children: React.ReactNode;
-  style?: React.CSSProperties;
-  padding?: number | string;
-}) {
+const SHELL = "divide-y divide-hx-line overflow-hidden rounded-2xl border border-hx-line bg-white";
+const SEC = "min-w-0 px-5 py-5 min-[640px]:px-7 min-[640px]:py-6";
+const BAND = "flex items-start gap-3 px-5 py-3 min-[640px]:px-7";
+const HEAD = "mb-3 flex min-h-7 items-center justify-between gap-3";
+const H2 = "m-0 flex items-center gap-2 text-[15px] font-semibold text-hx-coal";
+const BODY = "m-0 text-[14px] leading-[22px] text-hx-neutral-ink";
+const ICON = "shrink-0 text-hx-ink-soft";
+
+function SectionHead({ icon, title, aside }: { icon: React.ReactNode; title: string; aside?: React.ReactNode }) {
   return (
-    <div
-      style={{
-        background: T.white,
-        border: `1px solid ${T.line}`,
-        borderRadius: 12,
-        padding,
-        display: "flex",
-        flexDirection: "column",
-        gap: 16,
-        width: "100%",
-        ...style,
-      }}
-    >
-      {children}
+    <div className={HEAD}>
+      <h2 className={H2}>
+        {icon}
+        {title}
+      </h2>
+      {aside}
     </div>
   );
 }
 
-function Divider() {
-  return <div style={{ height: 1, background: T.line }} aria-hidden="true" />;
+function Chip({ tone, children }: { tone: MetricTone; children: React.ReactNode }) {
+  return (
+    <span className={`inline-flex h-5 shrink-0 items-center whitespace-nowrap rounded-full px-2 text-[11px] font-semibold ${TONE[tone].chip}`}>
+      {children}
+    </span>
+  );
 }
 
 function ProgressBar({
   value,
   max,
-  color,
-  trackColor = T.line,
-  height = 6,
+  barClass,
   label,
+  thick = false,
 }: {
   value: number;
   max: number;
-  color: string;
-  trackColor?: string;
-  height?: number;
+  barClass: string;
   label: string;
+  thick?: boolean;
 }) {
-  const pct = max > 0 ? (value / max) * 100 : 0;
+  const pct = max > 0 ? Math.min(100, (value / max) * 100) : 0;
   return (
     <div
       role="progressbar"
@@ -160,9 +152,48 @@ function ProgressBar({
       aria-valuemin={0}
       aria-valuemax={max}
       aria-label={label}
-      style={{ height, borderRadius: height / 2, background: trackColor, overflow: "hidden" }}
+      className={`overflow-hidden rounded-full bg-hx-soft ${thick ? "h-2" : "h-1.5"}`}
     >
-      <div style={{ height, borderRadius: height / 2, width: `${pct}%`, background: color }} />
+      <div className={`h-full rounded-full ${barClass}`} style={{ width: `${pct}%` }} />
+    </div>
+  );
+}
+
+function MetricCell({
+  icon,
+  label,
+  chip,
+  tone,
+  value,
+  unit,
+  barValue,
+  barMax,
+  barLabel,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  chip: string;
+  tone: MetricTone;
+  value: React.ReactNode;
+  unit: string;
+  barValue: number;
+  barMax: number;
+  barLabel: string;
+}) {
+  return (
+    <div className="min-w-0 px-5 py-5 min-[640px]:px-7">
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <p className="m-0 flex items-center gap-2 text-[13px] font-medium text-hx-ink-soft">
+          {icon}
+          {label}
+        </p>
+        <Chip tone={tone}>{chip}</Chip>
+      </div>
+      <p className="m-0 mb-2 flex items-baseline gap-1">
+        <span className="text-[24px] font-semibold leading-8 text-hx-coal">{value}</span>
+        <span className="text-[13px] text-hx-ink-soft">{unit}</span>
+      </p>
+      <ProgressBar value={barValue} max={barMax} barClass={TONE[tone].bar} label={barLabel} />
     </div>
   );
 }
@@ -175,36 +206,40 @@ function SkeletonBlock({ w, h = 12 }: { w: number | string; h?: number }) {
 
 function ResumeSkeleton() {
   return (
-    <div style={{ display: "flex", flexWrap: "wrap", gap: 16, alignItems: "flex-start" }} role="status" aria-label="Loading resume">
-      <div style={{ flex: "1 1 640px", minWidth: 0, display: "flex", flexDirection: "column", gap: 16 }}>
-        <SectionCard>
+    <div role="status" aria-label="Loading resume" className="mb-16 text-hx-coal">
+      <div className={SHELL}>
+        <div className={`${SEC} flex flex-col gap-3`}>
           <SkeletonBlock w={220} h={24} />
           <SkeletonBlock w="90%" />
           <SkeletonBlock w="70%" />
-        </SectionCard>
-        <SectionCard>
-          <SkeletonBlock w={140} h={18} />
-          <SkeletonBlock w="80%" />
-          <SkeletonBlock w="60%" />
-        </SectionCard>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
+        </div>
+        <div className="grid grid-cols-1 divide-y divide-hx-line min-[700px]:grid-cols-3 min-[700px]:divide-x min-[700px]:divide-y-0">
           {[0, 1, 2].map((i) => (
-            <SectionCard key={i} style={{ flex: "1 1 160px", minWidth: 160 }}>
+            <div key={i} className="flex flex-col gap-3 px-5 py-5 min-[640px]:px-7">
               <SkeletonBlock w={100} />
               <SkeletonBlock w={60} h={28} />
-            </SectionCard>
+            </div>
           ))}
         </div>
-      </div>
-      <div style={{ flex: "1 1 420px", maxWidth: 550, display: "flex", flexDirection: "column", gap: 16 }}>
-        <SectionCard>
-          <SkeletonBlock w={140} h={18} />
-          <SkeletonBlock w="80%" />
-        </SectionCard>
-        <SectionCard>
-          <SkeletonBlock w={160} h={18} />
-          <SkeletonBlock w="90%" />
-        </SectionCard>
+        <div className="grid divide-y divide-hx-line min-[1100px]:grid-cols-[minmax(0,1fr)_minmax(300px,380px)] min-[1100px]:divide-x min-[1100px]:divide-y-0">
+          <div className="divide-y divide-hx-line">
+            {[0, 1].map((i) => (
+              <div key={i} className={`${SEC} flex flex-col gap-3`}>
+                <SkeletonBlock w={140} h={18} />
+                <SkeletonBlock w="80%" />
+                <SkeletonBlock w="60%" />
+              </div>
+            ))}
+          </div>
+          <div className="divide-y divide-hx-line">
+            {[0, 1].map((i) => (
+              <div key={i} className={`${SEC} flex flex-col gap-3`}>
+                <SkeletonBlock w={160} h={18} />
+                <SkeletonBlock w="90%" />
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -222,24 +257,29 @@ function ResumeAnalyzingCard({ phase }: { phase: ResumePhase }) {
 
 function ResumeEmptyState({ onUpload, errorMsg }: { onUpload: () => void; errorMsg: string }) {
   return (
-    <div style={{ display: "flex", justifyContent: "center", padding: "clamp(24px, 8vw, 80px) 16px" }}>
-      <SectionCard style={{ maxWidth: 460, alignItems: "center", textAlign: "center" }}>
-        <div style={{ width: 56, height: 56, borderRadius: 14, background: T.indigo100, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <FileUpIcon size={24} color={T.indigo} aria-hidden="true" />
-        </div>
-        <h2 style={{ fontFamily: font.ui, fontSize: S.xl, fontWeight: 700, color: T.coal, margin: 0 }}>Upload your resume</h2>
-        <p style={{ fontFamily: font.ui, fontSize: S.md, lineHeight: "22px", color: T.inkFaint, margin: 0 }}>
-          Add your resume to get an AI-scored summary, ATS readiness check, and questions matched to your experience.
-        </p>
-        {errorMsg && (
-          <p style={{ fontFamily: font.ui, fontSize: S.sm, color: T.error, margin: 0 }}>{errorMsg}</p>
-        )}
-        <Button onClick={onUpload} size="lg" className="gap-2 h-11">
-          <UploadIcon size={16} aria-hidden="true" />
-          Upload resume
-        </Button>
-      </SectionCard>
+    <div className={`${SEC} flex flex-col items-center gap-3 py-10 text-center min-[640px]:py-14`}>
+      <span className="inline-flex size-12 items-center justify-center rounded-xl bg-hx-indigo-100">
+        <FileUpIcon size={22} className="text-hx-indigo" aria-hidden="true" />
+      </span>
+      <h1 className="m-0 text-[20px] font-semibold leading-7 text-hx-coal">Upload your resume</h1>
+      <p className={`${BODY} max-w-[420px] text-hx-ink-soft`}>
+        Add your resume to get an AI-scored summary, ATS readiness check, and questions matched to your experience.
+      </p>
+      {errorMsg && <p className="m-0 text-[13px] text-hx-error">{errorMsg}</p>}
+      <Button onClick={onUpload} size="lg" className="mt-1 h-11 gap-2">
+        <UploadIcon size={16} aria-hidden="true" />
+        Upload resume
+      </Button>
     </div>
+  );
+}
+
+function PortfolioSection(props: PortfolioLinksSectionProps) {
+  return (
+    <section className={SEC}>
+      <SectionHead icon={<LinkIcon size={16} className={ICON} aria-hidden="true" />} title="Portfolio & Work Samples" />
+      <PortfolioLinksSection {...props} />
+    </section>
   );
 }
 
@@ -307,15 +347,11 @@ export default function ResumeV2Screen() {
       body = <ResumeAnalyzingCard phase={phase} />;
     } else {
       body = (
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
-          <ResumeEmptyState onUpload={triggerUpload} errorMsg={errorMsg} />
-          <SectionCard style={{ maxWidth: 460, width: "100%" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <LinkIcon size={16} color={T.coal} aria-hidden="true" />
-              <h2 style={{ fontFamily: font.ui, fontSize: S.lg, fontWeight: 700, color: T.coal, margin: 0 }}>Portfolio & Work Samples</h2>
-            </div>
-            <PortfolioLinksSection portfolioLinks={user?.portfolioLinks} authUpdateUser={authUpdateUser} showToast={showToast} />
-          </SectionCard>
+        <div className="mb-16 text-hx-coal">
+          <div className={SHELL}>
+            <ResumeEmptyState onUpload={triggerUpload} errorMsg={errorMsg} />
+            <PortfolioSection portfolioLinks={user?.portfolioLinks} authUpdateUser={authUpdateUser} showToast={showToast} />
+          </div>
         </div>
       );
     }
@@ -331,7 +367,6 @@ export default function ResumeV2Screen() {
     const coveredCount = practiceCoverage.practicedCount;
     const coverageTotal = practiceCoverage.totalAreas;
     const coverageTone: MetricTone = coverageStatus.status === "not_started" ? "error" : coverageStatus.status === "in_progress" ? "warning" : "good";
-    const coverageChip = coverageStatus.label;
     const fitTone: MetricTone = strongFitCount === coverageRows.length ? "good" : "warning";
 
     const scoreBreakdownRows = SCORE_BREAKDOWN_META.map((meta) => {
@@ -344,96 +379,91 @@ export default function ResumeV2Screen() {
       : profile.topSkills.map((s) => ({ name: s, depth: "primary" as const, yearsUsed: undefined, recent: undefined }));
 
     const experiences = profile.experiences ?? [];
+    const busy = phase === "extracting" || phase === "analyzing";
 
     body = (
-      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-        {(phase === "extracting" || phase === "analyzing") && (
-          <div role="status" style={{ display: "flex", alignItems: "center", gap: 10, background: T.creamSoft, border: `1px solid ${T.line}`, borderRadius: 10, padding: "12px 16px" }}>
-            <SparklesIcon size={16} color={T.inkSoft} aria-hidden="true" style={{ flexShrink: 0 }} />
-            <p style={{ fontFamily: font.ui, fontSize: S.sm, color: T.inkSoft, margin: 0 }}>
-              {phase === "extracting" ? "Reading your new resume…" : "Analyzing your new resume — this page will update shortly."}
-            </p>
-          </div>
-        )}
-        {errorMsg && (
-          <div role="alert" style={{ display: "flex", alignItems: "flex-start", gap: 10, background: T.error100, border: `1px solid ${T.errorLine}`, borderRadius: 10, padding: "12px 16px" }}>
-            <AlertCircleIcon size={16} color={T.errorInk} aria-hidden="true" style={{ flexShrink: 0, marginTop: 2 }} />
-            <p style={{ fontFamily: font.ui, fontSize: S.sm, color: T.errorInk, margin: 0 }}>{errorMsg}</p>
-          </div>
-        )}
-        {analysisSource === "fallback" && phase !== "extracting" && phase !== "analyzing" && (
-          <div role="status" style={{ display: "flex", alignItems: "flex-start", gap: 10, background: T.warning100, border: `1px solid ${T.warningLine}`, borderRadius: 10, padding: "12px 16px" }}>
-            <AlertCircleIcon size={16} color={T.warningInk} aria-hidden="true" style={{ flexShrink: 0, marginTop: 2 }} />
-            <div style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1, minWidth: 0 }}>
-              <p style={{ fontFamily: font.ui, fontSize: S.sm, fontWeight: 600, color: T.warningInk, margin: 0 }}>
-                Basic parse — not AI-reviewed
+      <div className="mb-16 text-hx-coal">
+        <div className={SHELL}>
+          {busy && (
+            <div role="status" className={`${BAND} items-center bg-hx-soft`}>
+              <SparklesIcon size={16} className={ICON} aria-hidden="true" />
+              <p className="m-0 text-[13px] text-hx-ink-soft">
+                {phase === "extracting" ? "Reading your new resume…" : "Analyzing your new resume. This page will update shortly."}
               </p>
-              <p style={{ fontFamily: font.ui, fontSize: S.sm, color: T.warningInk, margin: 0, lineHeight: 1.5 }}>
-                {errorMsg ? "The summary below comes from a simpler keyword scan" : "Our AI couldn't read this resume (often a scanned PDF or unusual formatting), so the summary below comes from a simpler keyword scan"}.
-                {" "}Scores and skill coverage may be less accurate than an AI-parsed resume.
-              </p>
-              <Button
-                type="button"
-                variant="link"
-                size="sm"
-                onClick={triggerUpload}
-                style={{ fontFamily: font.ui, color: T.warningInk, height: "auto", padding: 0, alignSelf: "flex-start", textDecoration: "underline" }}
-              >
-                Try a different file
-              </Button>
             </div>
-          </div>
-        )}
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 16, alignItems: "flex-start" }}>
-        <div style={{ flex: "1 1 640px", minWidth: 0, display: "flex", flexDirection: "column", gap: 16 }}>
-          {/* Resume summary */}
-          <SectionCard>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <h1 style={{ fontFamily: font.ui, fontSize: S["2xl"], fontWeight: 700, color: T.coal, margin: 0 }}>
+          )}
+          {errorMsg && (
+            <div role="alert" className={`${BAND} bg-hx-error-100`}>
+              <AlertCircleIcon size={16} className="mt-0.5 shrink-0 text-hx-error-ink" aria-hidden="true" />
+              <p className="m-0 text-[13px] text-hx-error-ink">{errorMsg}</p>
+            </div>
+          )}
+          {analysisSource === "fallback" && !busy && (
+            <div role="status" className={`${BAND} bg-hx-warning-100`}>
+              <AlertCircleIcon size={16} className="mt-0.5 shrink-0 text-hx-warning-ink" aria-hidden="true" />
+              <div className="flex min-w-0 flex-1 flex-col gap-1">
+                <p className="m-0 text-[13px] font-semibold text-hx-warning-ink">Basic parse, not AI-reviewed</p>
+                <p className="m-0 text-[13px] leading-[19px] text-hx-warning-ink">
+                  {errorMsg ? "The summary below comes from a simpler keyword scan" : "Our AI couldn't read this resume (often a scanned PDF or unusual formatting), so the summary below comes from a simpler keyword scan"}.
+                  {" "}Scores and skill coverage may be less accurate than an AI-parsed resume.
+                </p>
+                <Button
+                  type="button"
+                  variant="link"
+                  size="sm"
+                  onClick={triggerUpload}
+                  className="h-auto self-start p-0 text-[13px] text-hx-warning-ink underline"
+                >
+                  Try a different file
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Title + resume file */}
+          <header className={SEC}>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex min-w-0 flex-wrap items-center gap-2">
+                <h1 className="m-0 min-w-0 text-[20px] font-semibold leading-7 text-hx-coal">
                   {profile.headline || "Your resume overview"}
                 </h1>
                 {typeof profile.yearsExperience === "number" && (
-                  <Badge style={{ background: T.indigo100, color: T.indigoDeep, borderRadius: 16, fontFamily: font.ui, fontWeight: 500, fontSize: S.md, padding: "2px 10px" }}>
+                  <span className="inline-flex h-5 items-center rounded-full bg-hx-indigo-100 px-2 text-[11px] font-semibold text-hx-indigo-deep">
                     {profile.yearsExperience}+ Years
-                  </Badge>
+                  </span>
                 )}
-                {analysisSource === "fallback" && (
-                  <Badge style={{ background: T.warning100, color: T.warningInk, borderRadius: 16, fontFamily: font.ui, fontWeight: 500, fontSize: S.sm, padding: "2px 10px" }}>
-                    Basic profile
-                  </Badge>
-                )}
+                {analysisSource === "fallback" && <Chip tone="warning">Basic profile</Chip>}
               </div>
-              <div style={{ display: "flex", flexWrap: "wrap", alignItems: "stretch", border: `1px solid ${T.line}`, borderRadius: 10, overflow: "hidden", background: T.creamSoft }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 12px", minWidth: 0 }}>
-                  <div style={{ width: 28, height: 28, borderRadius: 4, background: T.indigo, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                    <FileTextIcon size={14} color={T.white} aria-hidden="true" />
-                  </div>
-                  <div style={{ minWidth: 0 }}>
-                    <p title={fileName || "resume"} style={{ fontFamily: font.ui, fontSize: S.base, fontWeight: 500, color: T.coal, margin: 0, maxWidth: 160, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{fileName || "resume"}</p>
-                    <p style={{ fontFamily: font.ui, fontSize: S.sm, color: T.inkFaint, margin: 0 }}>Resume file</p>
+              <div className="flex flex-wrap items-stretch overflow-hidden rounded-lg border border-hx-line bg-hx-soft">
+                <div className="flex min-w-0 items-center gap-2 px-3 py-1.5">
+                  <span className="inline-flex size-7 shrink-0 items-center justify-center rounded bg-hx-indigo">
+                    <FileTextIcon size={14} className="text-white" aria-hidden="true" />
+                  </span>
+                  <div className="min-w-0">
+                    <p title={fileName || "resume"} className="m-0 max-w-[160px] truncate text-[13px] font-medium text-hx-coal">{fileName || "resume"}</p>
+                    <p className="m-0 text-[12px] text-hx-ink-soft">Resume file</p>
                   </div>
                 </div>
-                <div aria-hidden="true" style={{ width: 1, alignSelf: "stretch", background: T.line }} />
+                <div aria-hidden="true" className="w-px self-stretch bg-hx-line" />
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={triggerUpload}
-                  disabled={phase === "extracting" || phase === "analyzing"}
-                  style={{ fontFamily: font.ui, fontSize: S.base, fontWeight: 500, gap: 6, minHeight: 44, borderRadius: 8 }}
+                  disabled={busy}
+                  className="min-h-11 gap-1.5 rounded-none text-[13px] font-medium"
                 >
                   <UploadIcon size={14} aria-hidden="true" />
                   Replace
                 </Button>
-                <div aria-hidden="true" style={{ width: 1, alignSelf: "stretch", background: T.line }} />
+                <div aria-hidden="true" className="w-px self-stretch bg-hx-line" />
                 {confirmDelete ? (
-                  <div role="group" aria-label="Confirm delete resume" aria-live="polite" style={{ display: "flex", alignItems: "center", gap: 4, padding: "0 6px" }}>
+                  <div role="group" aria-label="Confirm delete resume" aria-live="polite" className="flex items-center gap-1 px-1.5">
                     <Button
                       variant="destructive"
                       size="sm"
                       aria-label="Confirm delete resume"
                       onClick={() => { handleRemove(); setConfirmDelete(false); }}
-                      style={{ fontFamily: font.ui, fontSize: S.sm, fontWeight: 500, minHeight: 44, minWidth: 44, padding: "0 12px" }}
+                      className="min-h-11 min-w-11 px-3"
                     >
                       <CheckIcon size={14} aria-hidden="true" />
                     </Button>
@@ -442,7 +472,7 @@ export default function ResumeV2Screen() {
                       size="sm"
                       aria-label="Cancel delete"
                       onClick={() => setConfirmDelete(false)}
-                      style={{ fontFamily: font.ui, fontSize: S.sm, fontWeight: 500, minHeight: 44, minWidth: 44, padding: "0 12px" }}
+                      className="min-h-11 min-w-11 px-3"
                     >
                       <XIcon size={14} aria-hidden="true" />
                     </Button>
@@ -454,430 +484,315 @@ export default function ResumeV2Screen() {
                     aria-label="Delete resume"
                     title="Remove resume"
                     onClick={() => setConfirmDelete(true)}
-                    style={{ minHeight: 44, minWidth: 44, borderRadius: 8 }}
+                    className="min-h-11 min-w-11 rounded-none"
                   >
-                    <Trash2Icon size={14} color={T.error} aria-hidden="true" />
+                    <Trash2Icon size={14} className="text-hx-error" aria-hidden="true" />
                   </Button>
                 )}
               </div>
             </div>
-            {profile.summary && (
-              <p style={{ fontFamily: font.ui, fontSize: S.md, lineHeight: "24px", color: T.inkFaint, margin: 0 }}>{profile.summary}</p>
-            )}
+            {profile.summary && <p className={`${BODY} mt-3 max-w-[75ch]`}>{profile.summary}</p>}
             {truncated && (
-              <p style={{ fontFamily: font.ui, fontSize: S.sm, color: T.warningInk, margin: 0 }}>
+              <p className="m-0 mt-2 text-[13px] text-hx-warning-ink">
                 Your resume is long, so we analysed a shortened version that keeps the start of every section. Content past that point was not scored.
               </p>
             )}
-            {profile.careerTrajectory && (
-              <div style={{ background: T.indigo100, borderRadius: 10, padding: "12px 16px 16px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
-                  <div style={{ width: 16, height: 16, borderRadius: 8, background: T.indigo, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <TargetIcon size={10} color={T.white} aria-hidden="true" />
-                  </div>
-                  <p style={{ fontFamily: font.ui, fontSize: S.base, fontWeight: 600, color: T.indigoDeep, margin: 0 }}>Career objective</p>
-                </div>
-                <p style={{ fontFamily: font.ui, fontSize: S.md, lineHeight: "22px", color: T.inkFaint, margin: 0 }}>{profile.careerTrajectory}</p>
-              </div>
-            )}
-          </SectionCard>
+          </header>
 
-          {/* Strengths */}
-          {profile.interviewStrengths.length > 0 && (
-            <SectionCard padding={16}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <ShieldCheckIcon size={16} color={T.coal} aria-hidden="true" />
-                <h2 style={{ fontFamily: font.ui, fontSize: S.lg, fontWeight: 700, color: T.coal, margin: 0 }}>Strengths</h2>
+          {profile.careerTrajectory && (
+            <div className={`${BAND} bg-hx-soft py-4`}>
+              <TargetIcon size={16} className="mt-0.5 shrink-0 text-hx-indigo" aria-hidden="true" />
+              <div className="min-w-0">
+                <p className="m-0 text-[13px] font-semibold text-hx-indigo-deep">Career objective</p>
+                <p className={`${BODY} mt-1 max-w-[75ch]`}>{profile.careerTrajectory}</p>
               </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {profile.interviewStrengths.map((text, i) => {
-                  const Icon = STRENGTH_ICONS[i % STRENGTH_ICONS.length];
-                  return (
-                    <div key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
-                      <Icon size={18} color={T.inkFaintWeak} aria-hidden="true" style={{ flexShrink: 0, marginTop: 1 }} />
-                      <p style={{ fontFamily: font.ui, fontSize: S.md, lineHeight: "21px", color: T.inkFaint, margin: 0, flex: 1 }}>{text}</p>
-                    </div>
-                  );
-                })}
-              </div>
-            </SectionCard>
+            </div>
           )}
 
-          {/* Metric cards — three independent stat cards in one row. */}
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 16 }}>
-            <SectionCard style={{ flex: "1 1 220px", minWidth: 220 }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <BarChart3Icon size={18} color={T.coal} aria-hidden="true" />
-                  <p style={{ fontFamily: font.ui, fontSize: S.base, fontWeight: 600, color: T.coal, margin: 0 }}>Resume quality</p>
-                </div>
-                <Badge style={{ background: metricColor[qualityTone].chipBg, color: metricColor[qualityTone].chipText, borderRadius: 999, fontFamily: font.ui, fontWeight: 600, fontSize: S.xs, padding: "2px 8px" }}>
-                  {scoreChipLabel(qualityTone)}
-                </Badge>
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
-                  <span style={{ fontFamily: font.ui, fontSize: S["3xl"], fontWeight: 700, color: T.coal }}>{qualityScore}</span>
-                  <span style={{ fontFamily: font.ui, fontSize: S.md, color: T.inkFaint }}>/ 100</span>
-                </div>
-                <ProgressBar value={qualityScore} max={100} color={metricColor[qualityTone].bar} label={`Resume quality: ${qualityScore} out of 100`} />
-              </div>
-            </SectionCard>
-            <SectionCard style={{ flex: "1 1 220px", minWidth: 220 }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <FilterIcon size={15} color={T.inkFaint} aria-hidden="true" />
-                  <p style={{ fontFamily: font.ui, fontSize: S.sm, fontWeight: 500, color: T.inkFaint, margin: 0 }}>ATS readiness</p>
-                </div>
-                <Badge style={{ background: metricColor[atsTone].chipBg, color: metricColor[atsTone].chipText, borderRadius: 999, fontFamily: font.ui, fontWeight: 600, fontSize: S.xs, padding: "2px 8px" }}>
-                  {atsResult ? scoreChipLabel(atsTone) : "Unavailable"}
-                </Badge>
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
-                  <span style={{ fontFamily: font.ui, fontSize: S["3xl"], fontWeight: 700, color: T.coal }}>{atsResult?.score ?? "–"}</span>
-                  <span style={{ fontFamily: font.ui, fontSize: S.md, color: T.inkFaint }}>/ 100</span>
-                </div>
-                <ProgressBar value={atsResult?.score ?? 0} max={100} color={metricColor[atsTone].bar} label={`ATS readiness: ${atsResult?.score ?? 0} out of 100`} />
-              </div>
-            </SectionCard>
-            <SectionCard style={{ flex: "1 1 220px", minWidth: 220 }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <MicIcon size={15} color={T.inkFaint} aria-hidden="true" />
-                  <p style={{ fontFamily: font.ui, fontSize: S.sm, fontWeight: 500, color: T.inkFaint, margin: 0 }}>Practice coverage</p>
-                </div>
-                <Badge style={{ background: metricColor[coverageTone].chipBg, color: metricColor[coverageTone].chipText, borderRadius: 999, fontFamily: font.ui, fontWeight: 600, fontSize: S.xs, padding: "2px 8px" }}>
-                  {coverageChip}
-                </Badge>
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
-                  <span style={{ fontFamily: font.ui, fontSize: S["3xl"], fontWeight: 700, color: T.coal }}>{coveredCount}</span>
-                  <span style={{ fontFamily: font.ui, fontSize: S.md, color: T.inkFaint }}>/ {coverageTotal}</span>
-                </div>
-                <ProgressBar value={coveredCount} max={coverageTotal} color={metricColor[coverageTone].bar} label={`Practice coverage: ${coveredCount} out of ${coverageTotal}`} />
-              </div>
-            </SectionCard>
+          {/* Score strip */}
+          <div className="grid grid-cols-1 divide-y divide-hx-line min-[700px]:grid-cols-3 min-[700px]:divide-x min-[700px]:divide-y-0">
+            <MetricCell
+              icon={<BarChart3Icon size={15} className={ICON} aria-hidden="true" />}
+              label="Resume quality"
+              chip={scoreChipLabel(qualityTone)}
+              tone={qualityTone}
+              value={qualityScore}
+              unit="/ 100"
+              barValue={qualityScore}
+              barMax={100}
+              barLabel={`Resume quality: ${qualityScore} out of 100`}
+            />
+            <MetricCell
+              icon={<FilterIcon size={15} className={ICON} aria-hidden="true" />}
+              label="ATS readiness"
+              chip={atsResult ? scoreChipLabel(atsTone) : "Unavailable"}
+              tone={atsTone}
+              value={atsResult?.score ?? "–"}
+              unit="/ 100"
+              barValue={atsResult?.score ?? 0}
+              barMax={100}
+              barLabel={`ATS readiness: ${atsResult?.score ?? 0} out of 100`}
+            />
+            <MetricCell
+              icon={<MicIcon size={15} className={ICON} aria-hidden="true" />}
+              label="Practice coverage"
+              chip={coverageStatus.label}
+              tone={coverageTone}
+              value={coveredCount}
+              unit={`/ ${coverageTotal}`}
+              barValue={coveredCount}
+              barMax={coverageTotal}
+              barLabel={`Practice coverage: ${coveredCount} out of ${coverageTotal}`}
+            />
           </div>
 
-          {/* Score breakdown */}
-          {profile.scoreBreakdown && (
-            <SectionCard>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <BarChart3Icon size={16} color={T.coal} aria-hidden="true" />
-                <h2 style={{ fontFamily: font.ui, fontSize: S.lg, fontWeight: 700, color: T.coal, margin: 0 }}>Score Breakdown</h2>
-              </div>
-              <div style={{ display: "flex", flexDirection: "column" }}>
-                {scoreBreakdownRows.map((row) => (
-                  <div key={row.label} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 0" }}>
-                    <p title={row.label} style={{ fontFamily: font.ui, fontSize: S.base, color: T.inkFaint, margin: 0, flex: "0 1 180px", minWidth: 100, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{row.label}</p>
-                    <div style={{ flex: 1 }}>
-                      <ProgressBar value={row.value} max={row.max} color={metricColor[row.tone].bar} trackColor={T.creamSoft} label={`${row.label}: ${row.value} out of ${row.max}`} />
-                    </div>
-                    <div style={{ display: "flex", alignItems: "baseline", gap: 2, width: 48, flexShrink: 0, justifyContent: "flex-end" }}>
-                      <span style={{ fontFamily: font.ui, fontSize: S.base, fontWeight: 600, color: T.coal }}>{row.value}</span>
-                      <span style={{ fontFamily: font.ui, fontSize: S.xs, color: T.inkFaint }}>/{row.max}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </SectionCard>
-          )}
-
-          {/* Improvements */}
-          {profile.improvements && profile.improvements.length > 0 && (
-            <SectionCard>
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <div style={{ width: 36, height: 36, borderRadius: 10, background: T.creamSoft, border: `1px solid ${T.line}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <SparklesIcon size={16} color={T.coal} aria-hidden="true" />
-                </div>
-                <div>
-                  <h2 style={{ fontFamily: font.ui, fontSize: S.lg, fontWeight: 700, color: T.coal, margin: 0 }}>Resume improvements ({profile.improvements.length})</h2>
-                </div>
-              </div>
-              <Divider />
-              <div>
-                {profile.improvements.map((text, i) => (
-                  <div key={i}>
-                    <div style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "14px 0" }}>
-                      <div style={{ width: 24, height: 24, borderRadius: 12, background: T.creamSoft, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1 }}>
-                        <span style={{ fontFamily: font.ui, fontSize: S.xs, fontWeight: 700, color: T.inkFaint }}>{i + 1}</span>
-                      </div>
-                      <p style={{ fontFamily: font.ui, fontSize: S.md, lineHeight: "22px", color: T.inkFaint, margin: 0, flex: 1 }}>{text}</p>
-                    </div>
-                    {i < profile.improvements!.length - 1 && <div style={{ height: 1, background: T.creamSoft }} />}
-                  </div>
-                ))}
-              </div>
-            </SectionCard>
-          )}
-
-          {/* Experience */}
-          {experiences.length > 0 && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 16, width: "100%" }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <BriefcaseIcon size={16} color={T.coal} aria-hidden="true" />
-                  <h2 style={{ fontFamily: font.ui, fontSize: S.xl, fontWeight: 700, color: T.coal, margin: 0 }}>Experience</h2>
-                </div>
-                <p style={{ fontFamily: font.ui, fontSize: S.md, color: T.inkFaint, margin: 0 }}>
-                  {experiences.length} role{experiences.length === 1 ? "" : "s"}
-                  {typeof profile.yearsExperience === "number" ? ` · ${profile.yearsExperience}+ years` : ""}
-                </p>
-              </div>
-              {experiences.map((job, i) => (
-                <SectionCard key={`${job.title}-${i}`} style={{ gap: 8 }}>
-                  <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", flexWrap: "wrap", gap: 4 }}>
-                    <h3 style={{ fontFamily: font.ui, fontSize: S.lg, fontWeight: 600, color: T.coal, margin: 0, flex: "1 1 240px", minWidth: 0, overflowWrap: "break-word" }}>
-                      {job.title}{job.company ? ` · ${job.company}` : ""}
-                    </h3>
-                    <p style={{ fontFamily: font.ui, fontSize: S.base, fontWeight: 500, color: T.inkFaint, margin: 0, whiteSpace: "nowrap", flexShrink: 0 }}>
-                      {job.start || job.end ? `${job.start || "Earlier"} - ${job.end || "Present"}` : ""}
-                    </p>
-                  </div>
-                  {(job.scope || (job.topProjects && job.topProjects.length > 0)) && (
-                    <p style={{ fontFamily: font.ui, fontSize: S.md, lineHeight: "24px", color: T.inkFaint, margin: 0 }}>
-                      {job.scope || job.topProjects.join("; ")}
-                    </p>
-                  )}
-                </SectionCard>
-              ))}
-            </div>
-          )}
-
-          {/* Portfolio & work samples — anchors the left column so its
-              height tracks the right column's (Focus Areas / Practice
-              Focus / ATS / Skills / Practice next) instead of leaving a
-              column-height gap under Experience. */}
-          <SectionCard>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <LinkIcon size={16} color={T.coal} aria-hidden="true" />
-              <h2 style={{ fontFamily: font.ui, fontSize: S.xl, fontWeight: 700, color: T.coal, margin: 0 }}>Portfolio & Work Samples</h2>
-            </div>
-            <PortfolioLinksSection
-              portfolioLinks={user?.portfolioLinks}
-              authUpdateUser={authUpdateUser}
-              showToast={showToast}
-            />
-          </SectionCard>
-        </div>
-
-        <div style={{ flex: "1 1 420px", maxWidth: 550, display: "flex", flexDirection: "column", gap: 16 }}>
-          {/* Focus areas */}
-          {profile.interviewGaps.length > 0 && (
-            <SectionCard padding={16}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <TargetIcon size={16} color={T.coal} aria-hidden="true" />
-                <h2 style={{ fontFamily: font.ui, fontSize: S.lg, fontWeight: 700, color: T.coal, margin: 0 }}>Focus Areas</h2>
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {profile.interviewGaps.map((text, i) => {
-                  const Icon = FOCUS_ICONS[i % FOCUS_ICONS.length];
-                  return (
-                    <div key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
-                      <Icon size={18} color={T.inkFaintWeak} aria-hidden="true" style={{ flexShrink: 0, marginTop: 1 }} />
-                      <p style={{ fontFamily: font.ui, fontSize: S.md, lineHeight: "21px", color: T.inkFaint, margin: 0, flex: 1 }}>{text}</p>
-                    </div>
-                  );
-                })}
-              </div>
-            </SectionCard>
-          )}
-
-          {/* Practice focus — same recommendation shown once at onboarding,
-              recomputed here so it's not a one-time-only screen. */}
-          <SectionCard padding={16}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <CompassIcon size={16} color={T.coal} aria-hidden="true" />
-              <h2 style={{ fontFamily: font.ui, fontSize: S.lg, fontWeight: 700, color: T.coal, margin: 0 }}>Practice Focus</h2>
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {practiceFocusItems.map((text, i) => (
-                <div key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
-                  <CheckIcon size={16} color={T.indigo} aria-hidden="true" style={{ flexShrink: 0, marginTop: 2 }} />
-                  <p style={{ fontFamily: font.ui, fontSize: S.md, lineHeight: "21px", color: T.inkFaint, margin: 0, flex: 1 }}>{text}</p>
-                </div>
-              ))}
-            </div>
-          </SectionCard>
-
-          {/* ATS readiness */}
-          <SectionCard padding={0} style={{ gap: 0, overflow: "hidden" }}>
-            <div style={{ display: "flex", flexDirection: "column", gap: 14, padding: "18px 20px" }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <div style={{ width: 40, height: 40, borderRadius: 12, background: T.creamSoft, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <ShieldCheckIcon size={16} color={T.coal} aria-hidden="true" />
-                  </div>
-                  <div>
-                    <h2 style={{ fontFamily: font.ui, fontSize: S.lg, fontWeight: 700, color: T.coal, margin: 0 }}>ATS Readiness</h2>
-                    <p style={{ fontFamily: font.ui, fontSize: S.sm, color: T.inkFaint, margin: 0 }}>Score snapshot</p>
-                  </div>
-                </div>
-                {atsResult && (
-                  <div style={{ display: "flex", alignItems: "center", gap: 4, background: metricColor[atsTone].chipBg, border: `1px solid ${metricColor[atsTone].chipBorder}`, borderRadius: 999, padding: "6px 12px" }}>
-                    <span style={{ fontFamily: font.ui, fontSize: S.xl, fontWeight: 700, color: metricColor[atsTone].chipText }}>{atsResult.score}</span>
-                    <span style={{ fontFamily: font.ui, fontSize: S.sm, fontWeight: 500, color: metricColor[atsTone].chipText }}>/ 100</span>
-                  </div>
-                )}
-              </div>
-              {atsResult ? (
-                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                  <ProgressBar value={atsResult.score} max={100} color={metricColor[atsTone].bar} trackColor={T.creamSoft} height={8} label={`ATS readiness score: ${atsResult.score} out of 100`} />
-                  <p style={{ fontFamily: font.ui, fontSize: S.sm, color: T.inkFaint, margin: 0 }}>{atsResult.label}</p>
-                </div>
-              ) : (
-                <p style={{ fontFamily: font.ui, fontSize: S.sm, color: T.inkFaint, margin: 0 }}>
-                  {(resumeText || user?.resumeText) && !isMostlyEnglishScript(resumeText || user?.resumeText || "")
-                    ? "ATS readiness is only scored for English resumes. Interviews run in English, so an English version works best."
-                    : "Re-upload your resume to see an ATS readiness score."}
-                </p>
+          <div className="grid divide-y divide-hx-line min-[1100px]:grid-cols-[minmax(0,1fr)_minmax(300px,380px)] min-[1100px]:divide-x min-[1100px]:divide-y-0">
+            {/* Left column */}
+            <div className="min-w-0 divide-y divide-hx-line">
+              {profile.interviewStrengths.length > 0 && (
+                <section className={SEC}>
+                  <SectionHead icon={<ShieldCheckIcon size={16} className={ICON} aria-hidden="true" />} title="Strengths" />
+                  <ul className="m-0 flex list-none flex-col gap-2.5 p-0">
+                    {profile.interviewStrengths.map((text, i) => {
+                      const Icon = STRENGTH_ICONS[i % STRENGTH_ICONS.length];
+                      return (
+                        <li key={i} className="flex items-start gap-2.5">
+                          <Icon size={16} className="mt-[3px] shrink-0 text-hx-ink-soft" aria-hidden="true" />
+                          <p className={`${BODY} flex-1`}>{text}</p>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </section>
               )}
-            </div>
-            {atsResult && (
-              <>
-                <Divider />
-                <div style={{ display: "flex", flexDirection: "column", gap: 16, padding: "16px 20px 20px" }}>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                      <p style={{ fontFamily: font.ui, fontSize: S.base, fontWeight: 700, color: T.coal, margin: 0 }}>Found ({atsResult.found.length})</p>
-                    </div>
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: "12px" }}>
-                      {atsResult.found.map((item) => (
-                        <div key={item} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                          <div style={{ width: 18, height: 18, borderRadius: 9, background: T.success100, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                            <CheckIcon size={10} color={T.successInk} aria-hidden="true" />
-                          </div>
-                          <p style={{ fontFamily: font.ui, fontSize: S.base, color: T.inkFaint, margin: 0 }}>{item}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  {atsResult.suggestions.length > 0 && (
-                    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                      {atsResult.suggestions.map((s, i) => (
-                        <div key={i} style={{ background: T.white, border: `1px solid ${T.warningLine}`, borderRadius: 8, padding: "10px 14px", display: "flex", alignItems: "center", gap: 10 }}>
-                          <LightbulbIcon size={14} color={T.warningInk} aria-hidden="true" style={{ flexShrink: 0 }} />
-                          <p style={{ fontFamily: font.ui, fontSize: S.base, color: T.coal, margin: 0, flex: 1 }}>{s}</p>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  {atsResult.missing.length > 0 && (
-                    <div style={{ display: "flex", alignItems: "flex-start", gap: 10, background: T.white, border: `1px solid ${T.errorLine}`, borderRadius: 8, padding: "10px 14px" }}>
-                      <AlertCircleIcon size={14} color={T.errorInk} aria-hidden="true" style={{ flexShrink: 0, marginTop: 2 }} />
-                      <p style={{ fontFamily: font.ui, fontSize: S.base, color: T.coal, margin: 0, flex: 1 }}>
-                        Needs attention: {atsResult.missing.join(", ")}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </>
-            )}
-          </SectionCard>
 
-          {/* Skills & achievements */}
-          {(coreSkills.length > 0 || profile.keyAchievements.length > 0) && (
-            <SectionCard padding="20px 24px">
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <ToolboxIcon size={16} color={T.coal} aria-hidden="true" />
-                    <h2 style={{ fontFamily: font.ui, fontSize: S.lg, fontWeight: 700, color: T.coal, margin: 0 }}>Skills & Achievements</h2>
-                  </div>
-                  <div style={{ background: T.creamSoft, border: `1px solid ${T.line}`, borderRadius: 999, padding: "3px 8px" }}>
-                    <span style={{ fontFamily: font.ui, fontSize: S.sm, fontWeight: 500, color: T.inkFaint }}>{coreSkills.length} skills · {profile.keyAchievements.length} achievements</span>
-                  </div>
-                </div>
-              </div>
-              <Divider />
-              {coreSkills.length > 0 && (
-                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                  <p style={{ fontFamily: font.ui, fontSize: S.xs, fontWeight: 700, color: T.inkFaint, margin: 0 }}>Skills</p>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
-                    {(skillsExpanded ? coreSkills : coreSkills.slice(0, SKILLS_COLLAPSE_THRESHOLD)).map((skill) => (
-                      <div key={skill.name} style={{ display: "flex", alignItems: "center", gap: 8, background: T.white, border: `1px solid ${T.line}`, borderRadius: 999, padding: "6px 10px" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                          <span style={{ fontFamily: font.ui, fontSize: S.sm, fontWeight: 500, color: T.inkFaint }}>{skill.name}</span>
-                          {skill.yearsUsed != null && <span style={{ fontFamily: font.ui, fontSize: S.xs, color: T.inkFaint }}>{skill.yearsUsed}Y</span>}
+              {profile.scoreBreakdown && (
+                <section className={SEC}>
+                  <SectionHead icon={<BarChart3Icon size={16} className={ICON} aria-hidden="true" />} title="Score Breakdown" />
+                  <div className="flex flex-col">
+                    {scoreBreakdownRows.map((row) => (
+                      <div key={row.label} className="flex items-center gap-3 py-2">
+                        <p title={row.label} className="m-0 min-w-[100px] flex-[0_1_180px] truncate text-[13px] text-hx-neutral-ink">{row.label}</p>
+                        <div className="flex-1">
+                          <ProgressBar value={row.value} max={row.max} barClass={TONE[row.tone].bar} label={`${row.label}: ${row.value} out of ${row.max}`} />
                         </div>
-                        <div style={{ background: T.indigo100, borderRadius: 999, padding: "3px 6px" }}>
-                          <span style={{ fontFamily: font.ui, fontSize: S.xs, fontWeight: 700, color: T.indigoDeep, letterSpacing: "0.4px", textTransform: "uppercase" }}>{DEPTH_LABEL[skill.depth] ?? skill.depth}</span>
-                        </div>
+                        <p className="m-0 flex w-12 shrink-0 items-baseline justify-end gap-0.5">
+                          <span className="text-[13px] font-semibold text-hx-coal">{row.value}</span>
+                          <span className="text-[11px] text-hx-ink-soft">/{row.max}</span>
+                        </p>
                       </div>
                     ))}
-                    {coreSkills.length > SKILLS_COLLAPSE_THRESHOLD && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setSkillsExpanded((v) => !v)}
-                        style={{ fontFamily: font.ui, fontSize: S.sm, fontWeight: 600, color: T.indigo, background: "none", minHeight: 44, padding: "6px 8px" }}
-                      >
-                        {skillsExpanded ? "Show less" : `+${coreSkills.length - SKILLS_COLLAPSE_THRESHOLD} more`}
-                      </Button>
+                  </div>
+                </section>
+              )}
+
+              {profile.improvements && profile.improvements.length > 0 && (
+                <section className={SEC}>
+                  <SectionHead icon={<SparklesIcon size={16} className={ICON} aria-hidden="true" />} title={`Resume improvements (${profile.improvements.length})`} />
+                  <ol className="m-0 list-none divide-y divide-hx-line p-0">
+                    {profile.improvements.map((text, i) => (
+                      <li key={i} className="flex items-start gap-3 py-3 first:pt-0 last:pb-0">
+                        <span className="mt-0.5 inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-hx-soft text-[11px] font-semibold text-hx-ink-soft">{i + 1}</span>
+                        <p className={`${BODY} flex-1`}>{text}</p>
+                      </li>
+                    ))}
+                  </ol>
+                </section>
+              )}
+
+              {experiences.length > 0 && (
+                <section className={SEC}>
+                  <SectionHead
+                    icon={<BriefcaseIcon size={16} className={ICON} aria-hidden="true" />}
+                    title="Experience"
+                    aside={
+                      <p className="m-0 text-[13px] text-hx-ink-soft">
+                        {experiences.length} role{experiences.length === 1 ? "" : "s"}
+                        {typeof profile.yearsExperience === "number" ? ` · ${profile.yearsExperience}+ years` : ""}
+                      </p>
+                    }
+                  />
+                  <div className="divide-y divide-hx-line">
+                    {experiences.map((job, i) => (
+                      <div key={`${job.title}-${i}`} className="py-3.5 first:pt-0 last:pb-0">
+                        <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                          <h3 className="m-0 min-w-0 flex-[1_1_240px] break-words text-[14px] font-semibold text-hx-coal">
+                            {job.title}{job.company ? ` · ${job.company}` : ""}
+                          </h3>
+                          <p className="m-0 shrink-0 whitespace-nowrap text-[13px] text-hx-ink-soft">
+                            {job.start || job.end ? `${job.start || "Earlier"} - ${job.end || "Present"}` : ""}
+                          </p>
+                        </div>
+                        {(job.scope || (job.topProjects && job.topProjects.length > 0)) && (
+                          <p className={`${BODY} mt-1`}>{job.scope || job.topProjects.join("; ")}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              <PortfolioSection portfolioLinks={user?.portfolioLinks} authUpdateUser={authUpdateUser} showToast={showToast} />
+            </div>
+
+            {/* Right rail */}
+            <div className="min-w-0 divide-y divide-hx-line">
+              {profile.interviewGaps.length > 0 && (
+                <section className={SEC}>
+                  <SectionHead icon={<TargetIcon size={16} className={ICON} aria-hidden="true" />} title="Focus Areas" />
+                  <ul className="m-0 flex list-none flex-col gap-2.5 p-0">
+                    {profile.interviewGaps.map((text, i) => {
+                      const Icon = FOCUS_ICONS[i % FOCUS_ICONS.length];
+                      return (
+                        <li key={i} className="flex items-start gap-2.5">
+                          <Icon size={16} className="mt-[3px] shrink-0 text-hx-ink-soft" aria-hidden="true" />
+                          <p className={`${BODY} flex-1`}>{text}</p>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </section>
+              )}
+
+              <section className={SEC}>
+                <SectionHead icon={<CompassIcon size={16} className={ICON} aria-hidden="true" />} title="Practice Focus" />
+                <ul className="m-0 flex list-none flex-col gap-2.5 p-0">
+                  {practiceFocusItems.map((text, i) => (
+                    <li key={i} className="flex items-start gap-2.5">
+                      <CheckIcon size={16} className="mt-[3px] shrink-0 text-hx-indigo" aria-hidden="true" />
+                      <p className={`${BODY} flex-1`}>{text}</p>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+
+              <section className={SEC}>
+                <SectionHead
+                  icon={<ShieldCheckIcon size={16} className={ICON} aria-hidden="true" />}
+                  title="ATS Readiness"
+                  aside={atsResult ? <Chip tone={atsTone}>{atsResult.score} / 100</Chip> : undefined}
+                />
+                {atsResult ? (
+                  <div className="flex flex-col gap-4">
+                    <div className="flex flex-col gap-1.5">
+                      <ProgressBar value={atsResult.score} max={100} barClass={TONE[atsTone].bar} thick label={`ATS readiness score: ${atsResult.score} out of 100`} />
+                      <p className="m-0 text-[13px] text-hx-ink-soft">{atsResult.label}</p>
+                    </div>
+                    <div>
+                      <p className="m-0 mb-2 text-[13px] font-semibold text-hx-coal">Found ({atsResult.found.length})</p>
+                      <ul className="m-0 grid list-none grid-cols-[repeat(auto-fit,minmax(120px,1fr))] gap-x-3 gap-y-2 p-0">
+                        {atsResult.found.map((item) => (
+                          <li key={item} className="flex items-center gap-2">
+                            <span className="inline-flex size-[18px] shrink-0 items-center justify-center rounded-full bg-hx-success-100">
+                              <CheckIcon size={10} className="text-hx-success-ink" aria-hidden="true" />
+                            </span>
+                            <span className="text-[13px] text-hx-neutral-ink">{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    {atsResult.suggestions.length > 0 && (
+                      <ul className="m-0 flex list-none flex-col gap-2 p-0">
+                        {atsResult.suggestions.map((s, i) => (
+                          <li key={i} className="flex items-start gap-2.5">
+                            <LightbulbIcon size={14} className="mt-[3px] shrink-0 text-hx-warning-ink" aria-hidden="true" />
+                            <p className="m-0 flex-1 text-[13px] leading-5 text-hx-coal">{s}</p>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    {atsResult.missing.length > 0 && (
+                      <p className="m-0 flex items-start gap-2.5 text-[13px] leading-5 text-hx-error-ink">
+                        <AlertCircleIcon size={14} className="mt-[3px] shrink-0" aria-hidden="true" />
+                        <span>Needs attention: {atsResult.missing.join(", ")}</span>
+                      </p>
                     )}
                   </div>
-                </div>
-              )}
-              {profile.keyAchievements.length > 0 && (
-                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                  <p style={{ fontFamily: font.ui, fontSize: S.xs, fontWeight: 700, color: T.inkFaint, margin: 0 }}>Key Achievements</p>
-                  <div style={{ display: "flex", flexDirection: "column" }}>
-                    {profile.keyAchievements.map((text, i) => (
-                      <div key={i}>
-                        <div style={{ display: "flex", gap: 10, alignItems: "flex-start", padding: "12px 0" }}>
-                          <div style={{ width: 20, height: 20, borderRadius: 10, border: `1px solid ${T.line}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1 }}>
-                            <span style={{ fontFamily: font.ui, fontSize: S.xs, fontWeight: 700, color: T.inkFaint }}>{i + 1}</span>
-                          </div>
-                          <p style={{ fontFamily: font.ui, fontSize: S.md, lineHeight: "22px", color: T.inkFaint, margin: 0, flex: 1 }}>{text}</p>
-                        </div>
-                        {i < profile.keyAchievements.length - 1 && <Divider />}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </SectionCard>
-          )}
+                ) : (
+                  <p className="m-0 text-[13px] text-hx-ink-soft">
+                    {(resumeText || user?.resumeText) && !isMostlyEnglishScript(resumeText || user?.resumeText || "")
+                      ? "ATS readiness is only scored for English resumes. Interviews run in English, so an English version works best."
+                      : "Re-upload your resume to see an ATS readiness score."}
+                  </p>
+                )}
+              </section>
 
-          {/* Practice next */}
-          {coverageRows.length > 0 && (
-            <SectionCard>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <MicIcon size={16} color={T.coal} aria-hidden="true" />
-                    <h2 style={{ fontFamily: font.ui, fontSize: S.lg, fontWeight: 700, color: T.coal, margin: 0 }}>Resume fit by round</h2>
-                  </div>
-                  <p style={{ fontFamily: font.ui, fontSize: S.base, color: T.inkFaint, margin: "2px 0 0" }}>How well your resume supports each interview type</p>
-                </div>
-                <Badge style={{ background: metricColor[fitTone].chipBg, color: metricColor[fitTone].chipText, borderRadius: 999, fontFamily: font.ui, fontWeight: 600, fontSize: S.sm, padding: "4px 10px" }}>
-                  {strongFitCount} of {coverageRows.length} strong
-                </Badge>
-              </div>
-              <Divider />
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                <p style={{ fontFamily: font.ui, fontSize: S.sm, fontWeight: 600, color: T.inkFaint, margin: 0 }}>Coverage tracks</p>
-                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                  {coverageRows.map((track) => {
-                    const tone: MetricTone = track.band === "good" || track.band === "excellent" ? "good" : track.band === "fair" ? "warning" : "error";
-                    return (
-                      <div key={track.type} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <div style={{ width: 8, height: 8, borderRadius: 4, background: metricColor[tone].bar, flexShrink: 0 }} />
-                        <p style={{ fontFamily: font.ui, fontSize: S.base, color: T.inkFaint, margin: 0, flex: 1 }}>{track.label}</p>
-                        <Badge style={{ background: metricColor[tone].chipBg, color: metricColor[tone].chipText, borderRadius: 999, fontFamily: font.ui, fontWeight: 600, fontSize: S.sm, padding: "4px 8px" }}>
-                          {track.score}
-                        </Badge>
+              {(coreSkills.length > 0 || profile.keyAchievements.length > 0) && (
+                <section className={SEC}>
+                  <SectionHead
+                    icon={<ToolboxIcon size={16} className={ICON} aria-hidden="true" />}
+                    title="Skills & Achievements"
+                    aside={<span className="text-[12px] text-hx-ink-soft">{coreSkills.length} skills · {profile.keyAchievements.length} achievements</span>}
+                  />
+                  {coreSkills.length > 0 && (
+                    <div className="mb-4 flex flex-col gap-2">
+                      <p className="m-0 text-[12px] font-semibold text-hx-ink-soft">Skills</p>
+                      <div className="flex flex-wrap items-center gap-2">
+                        {(skillsExpanded ? coreSkills : coreSkills.slice(0, SKILLS_COLLAPSE_THRESHOLD)).map((skill) => (
+                          <span key={skill.name} className="inline-flex items-center gap-2 rounded-full border border-hx-line bg-white px-2.5 py-1.5">
+                            <span className="text-[12px] font-medium text-hx-neutral-ink">
+                              {skill.name}
+                              {skill.yearsUsed != null && <span className="ml-1 text-[11px] text-hx-ink-soft">{skill.yearsUsed}Y</span>}
+                            </span>
+                            <span className="rounded-full bg-hx-indigo-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.4px] text-hx-indigo-deep">
+                              {DEPTH_LABEL[skill.depth] ?? skill.depth}
+                            </span>
+                          </span>
+                        ))}
+                        {coreSkills.length > SKILLS_COLLAPSE_THRESHOLD && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setSkillsExpanded((v) => !v)}
+                            className="min-h-11 bg-transparent px-2 text-[12px] font-semibold text-hx-indigo"
+                          >
+                            {skillsExpanded ? "Show less" : `+${coreSkills.length - SKILLS_COLLAPSE_THRESHOLD} more`}
+                          </Button>
+                        )}
                       </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </SectionCard>
-          )}
-        </div>
+                    </div>
+                  )}
+                  {profile.keyAchievements.length > 0 && (
+                    <div className="flex flex-col gap-2">
+                      <p className="m-0 text-[12px] font-semibold text-hx-ink-soft">Key Achievements</p>
+                      <ol className="m-0 list-none divide-y divide-hx-line p-0">
+                        {profile.keyAchievements.map((text, i) => (
+                          <li key={i} className="flex items-start gap-2.5 py-2.5 first:pt-0 last:pb-0">
+                            <span className="mt-0.5 inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-hx-soft text-[11px] font-semibold text-hx-ink-soft">{i + 1}</span>
+                            <p className={`${BODY} flex-1`}>{text}</p>
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
+                  )}
+                </section>
+              )}
+
+              {coverageRows.length > 0 && (
+                <section className={SEC}>
+                  <SectionHead
+                    icon={<MicIcon size={16} className={ICON} aria-hidden="true" />}
+                    title="Resume fit by round"
+                    aside={<Chip tone={fitTone}>{strongFitCount} of {coverageRows.length} strong</Chip>}
+                  />
+                  <p className="m-0 mb-3 text-[13px] text-hx-ink-soft">How well your resume supports each interview type</p>
+                  <ul className="m-0 flex list-none flex-col gap-2 p-0">
+                    {coverageRows.map((track) => {
+                      const tone: MetricTone = track.band === "good" || track.band === "excellent" ? "good" : track.band === "fair" ? "warning" : "error";
+                      return (
+                        <li key={track.type} className="flex items-center gap-2.5">
+                          <span aria-hidden="true" className={`size-2 shrink-0 rounded-full ${TONE[tone].bar}`} />
+                          <p className="m-0 flex-1 text-[13px] text-hx-neutral-ink">{track.label}</p>
+                          <Chip tone={tone}>{track.score}</Chip>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </section>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -885,7 +800,7 @@ export default function ResumeV2Screen() {
 
   return (
     <TooltipProvider>
-      <div style={{ display: "flex", flexDirection: "column", width: "100%", fontFamily: font.ui }}>
+      <div className="flex w-full flex-col">
         <SkeletonReveal loading={authLoading} skeleton={<ResumeSkeleton />}>
           {body}
         </SkeletonReveal>
