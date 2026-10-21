@@ -1,27 +1,16 @@
 "use client";
 
-/* Dashboard "Employer Interest" card — the candidate-facing half of the
-   employer talent-roster feature. A 4-up grid of the most recent matches
-   (role, company, employment type, relative time) behind an indigo "N
-   Matches" pill, driven by the real shortlisted/recent counts. Fetches
+/* Dashboard "Employer Interest" section — the candidate-facing half of the
+   employer talent-roster feature. A flat list of the most recent matches
+   (role, company, employment type, relative time) behind a "N Matches" pill,
+   driven by the real shortlisted/recent counts. Fetches
    /api/candidate-hiring-activity. */
 
-import { useRouter } from "next/navigation";
-import { tokens as t, fonts as f, textSize } from "./auth/_tokens";
-import { dur, ease } from "./_motion";
+import Link from "next/link";
+import { ArrowRightIcon, LockIcon } from "lucide-react";
 import { hoursOrDaysAgo, EMPLOYMENT_TYPE_LABEL } from "./hiringMatchFormat";
 import { useHiringActivity } from "./useHiringActivity";
-import { Button } from "@/components/ui/button";
-import { LockIcon } from "lucide-react";
-
-// Cycles through 4 existing status tokens so every badge is sourced from
-// the design system rather than a one-off hex literal.
-const BADGE_COLORS = [
-  { bg: t.indigo100, fg: t.indigoDeep },
-  { bg: t.success100, fg: t.success },
-  { bg: t.copper100, fg: t.copperDark },
-  { bg: t.error100, fg: t.error },
-];
+import { PANEL, PANEL_H2, Tag } from "./DashboardHomeSections";
 
 function initials(name: string): string {
   const words = name.trim().split(/\s+/).filter(Boolean);
@@ -36,7 +25,6 @@ function employmentLabel(type: string | null): string | null {
 }
 
 export default function HiringActivityCard() {
-  const router = useRouter();
   const data = useHiringActivity();
 
   const shortlisted = data?.shortlistedCount ?? 0;
@@ -45,81 +33,44 @@ export default function HiringActivityCard() {
   const matches = (data.recent || []).slice(0, 4);
 
   return (
-    <section
-      aria-labelledby="employer-interest-heading"
-      style={{ padding: "20px", background: t.cream, border: `1px solid ${t.line}`, borderRadius: 12 }}
-    >
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 16 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={t.coal} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="2" y="7" width="20" height="14" rx="2" />
-            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
-          </svg>
-          <h2 id="employer-interest-heading" style={{ fontFamily: f.sans, fontSize: textSize.lg, fontWeight: 700, color: t.coal, margin: 0 }}>
-            Employer Interest
-          </h2>
-          <span style={{
-            fontFamily: f.sans, fontSize: textSize.sm, fontWeight: 600, color: t.indigo,
-            background: t.indigo100, padding: "3px 10px", borderRadius: 999,
-          }}>
-            {shortlisted} {shortlisted === 1 ? "Match" : "Matches"}
-          </span>
+    <section aria-labelledby="employer-interest-heading" className={PANEL}>
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-2">
+          <h2 id="employer-interest-heading" className={PANEL_H2}>Employer interest</h2>
+          <Tag tone="indigo" label={`${shortlisted} ${shortlisted === 1 ? "Match" : "Matches"}`} />
         </div>
-        <Button
-          type="button"
-          variant="ghost"
-          onClick={() => router.push("/jobs")}
-          className="hover:bg-transparent hover:underline underline-offset-4"
-          style={{
-            fontFamily: f.sans, fontSize: textSize.sm, fontWeight: 600, color: t.indigo,
-            background: "none", border: "none", padding: 0, height: "auto", cursor: "pointer",
-          }}
+        <Link
+          href="/jobs"
+          className="inline-flex min-h-6 items-center gap-1 whitespace-nowrap rounded-sm py-1 text-[13px] font-semibold text-hx-indigo no-underline focus-visible:outline-2 focus-visible:outline-offset-2"
         >
-          View All →
-        </Button>
+          View all
+          <ArrowRightIcon size={14} aria-hidden="true" />
+        </Link>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
-        {matches.map((m, i) => {
-          const color = BADGE_COLORS[i % BADGE_COLORS.length];
+      <ul className="m-0 list-none divide-y divide-hx-line p-0">
+        {matches.map((m) => {
           const empLabel = employmentLabel(m.employmentType);
           return (
-            <div
-              key={m.id}
-              role="button"
-              tabIndex={0}
-              aria-label={`View details for ${m.roleTitle} at ${m.companyName}`}
-              onClick={() => router.push(`/jobs/${encodeURIComponent(m.id)}`)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  router.push(`/jobs/${encodeURIComponent(m.id)}`);
-                }
-              }}
-              style={{ padding: "14px", borderRadius: 10, background: t.cream, border: `1px solid ${t.line}`, cursor: "pointer", transition: `background ${dur.instant} ${ease.snap}` }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = t.creamSoft; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = t.cream; }}
-            >
-              <div style={{
-                width: 32, height: 32, borderRadius: 8, background: color.bg, color: color.fg,
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontFamily: f.sans, fontSize: textSize.sm, fontWeight: 700, marginBottom: 10,
-              }}>
-                {m.unlocked === false ? <LockIcon size={14} aria-hidden="true" /> : initials(m.companyName)}
-              </div>
-              <div style={{ fontFamily: f.sans, fontSize: textSize.base, fontWeight: 700, color: t.coal, marginBottom: 4 }}>
-                {m.roleTitle}
-              </div>
-              <div style={{ fontFamily: f.sans, fontSize: textSize.sm, color: t.inkSoft, marginBottom: 8 }}>
-                {m.companyName}{empLabel ? ` · ${empLabel}` : ""}
-              </div>
-              <div style={{ fontFamily: f.sans, fontSize: textSize.sm, color: t.inkFaint }}>
-                {hoursOrDaysAgo(m.matchedAt)}
-              </div>
-            </div>
+            <li key={m.id}>
+              <Link
+                href={`/jobs/${encodeURIComponent(m.id)}`}
+                aria-label={`View details for ${m.roleTitle} at ${m.companyName}`}
+                className="flex items-center gap-3 rounded-md py-2.5 text-hx-coal no-underline transition-colors hover:bg-hx-soft focus-visible:outline-2 focus-visible:outline-offset-2"
+              >
+                <span aria-hidden="true" className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg bg-hx-indigo-100 text-[12px] font-bold text-hx-indigo-deep">
+                  {m.unlocked === false ? <LockIcon size={14} /> : initials(m.companyName)}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[13px] font-semibold">{m.roleTitle}</span>
+                  <span className="block truncate text-[12px] text-hx-ink-soft">{m.companyName}{empLabel ? ` · ${empLabel}` : ""}</span>
+                </span>
+                <span className="shrink-0 text-[12px] text-hx-ink-soft">{hoursOrDaysAgo(m.matchedAt)}</span>
+              </Link>
+            </li>
           );
         })}
-      </div>
+      </ul>
     </section>
   );
 }

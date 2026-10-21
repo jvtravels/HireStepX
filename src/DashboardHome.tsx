@@ -1,11 +1,10 @@
 "use client";
-/* ─── DashboardHome — "Candidates Dashboard" Figma port.
-   Flat black/white/gray surface, single-column layout. Real data only —
-   every stat is backed by the sessions/account contexts or computed in
-   dashboardData.ts; no demo-mode mock sections. Two states: a candidate
+/* ─── DashboardHome — same flat system as the employer dashboard: one white
+   container, hairline-separated sections, no cards inside it. Real data
+   only — every stat is backed by the sessions/account contexts or computed
+   in dashboardData.ts; no demo-mode mock sections. Two states: a candidate
    with practice history (core.hasData) and a brand-new candidate (the
-   "Getting Started" / "What You'll Unlock" variant), matching the two
-   Figma screens exactly.
+   "Getting Started" / "What You'll Unlock" variant).
 
    ResumeFreshnessStrip and OutcomePrompt are pre-existing, shipped
    features (not part of the Figma) kept intact and surfaced right under
@@ -13,14 +12,16 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { ArrowRightIcon, CheckIcon, ClockIcon, XIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "./AuthContext";
 import { useDashboardSessions, useDashboardSubscription, useDashboardUIActions } from "./DashboardContext";
 import { pickNextMove } from "./nextMove";
 import { useDocTitle } from "./useDocTitle";
 import { captureClientEvent } from "./posthogClient";
-import { tokens as T, fonts as F } from "./auth/_tokens";
 import { computeReadinessGap } from "./dashboardData";
 import { isAiResume } from "./resumeParser";
 import { hasVisitedAnalytics } from "./dashboardHelpers";
@@ -34,6 +35,7 @@ import {
   RESUME_FRESHNESS_DISMISS_KEY,
 } from "./resumeFreshness";
 import {
+  PANEL,
   DashboardHeader,
   StatCardsRow,
   NextMoveCard,
@@ -51,44 +53,8 @@ type StartSurface =
   | "next-move-primary"  // Your Next Move / Your First Step primary CTA
   | "recent-empty";      // "Start Your First Session" empty-state CTA
 
-/* ─── Tokens (derived from auth/_tokens — single source of truth).
- * Audit rule: no hex/rgba literals in this file. Only the subset still
- * needed by the preserved ResumeFreshnessStrip / OutcomePrompt. */
-const t = {
-  white:        T.white,
-  coal:         T.coal,
-  inkSoft:      T.inkSoft,
-  inkMid:       T.inkFaint,
-  indigo:       T.indigo,
-  indigo100:    T.indigo100,
-  success:      T.success,
-  success100:   T.success100,
-  error:        T.error,
-  error100:     T.error100,
-  line:         T.line,
-  lineStrong:   T.lineStrong,
-} as const;
-
-const f = { sans: F.sans } as const;
-
-const ico = (path: React.ReactNode, size = 16) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
-       stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-    {path}
-  </svg>
-);
-const Icons = {
-  clock: ico(<><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>),
-  check: ico(<path d="M20 6 9 17l-5-5" />, 14),
-};
-
-function OutlineCta({ children, onClick, size = "md" }: {
-  children: React.ReactNode; onClick?: () => void; size?: "sm" | "md";
-}) {
-  return (
-    <Button type="button" variant="outline" size={size === "sm" ? "default" : "lg"} onClick={onClick}>{children}</Button>
-  );
-}
+/* Secondary bands share the container's flat look: a tinted strip, no box. */
+const BAND = "flex items-center gap-3 bg-hx-soft px-5 py-3 min-[640px]:px-7";
 
 /* ResumeFreshnessStrip — nudges returning users whose resume is stale.
    Shows at 30 days, dismissable, reappears at 60. Real timestamp only:
@@ -117,29 +83,25 @@ function ResumeFreshnessStrip({ parsedAt, onRefresh }: {
   };
 
   return (
-    <div role="status" style={{
-      display: "flex", alignItems: "center", gap: 12,
-      padding: "14px 16px",
-      background: "oklch(0.359 0.135 278.697 / 0.12)", border: `1px solid oklch(0.359 0.135 278.697 / 0.25)`, borderRadius: 10,
-    }}>
-      <span style={{ color: t.indigo, flexShrink: 0, display: "inline-flex" }} aria-hidden>{Icons.clock}</span>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <p style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.coal, margin: 0, lineHeight: 1.3 }}>
-          Your resume is {fresh.days} days old.
-        </p>
-        <p style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, margin: "2px 0 0", lineHeight: 1.45 }}>
+    <div role="status" className={BAND}>
+      <ClockIcon size={16} aria-hidden="true" className="shrink-0 text-hx-indigo" />
+      <div className="min-w-0 flex-1">
+        <p className="m-0 text-[13px] font-semibold leading-snug text-hx-coal">Your resume is {fresh.days} days old.</p>
+        <p className="m-0 mt-0.5 text-[12px] leading-normal text-hx-ink-soft">
           Targets and panels drift. Refresh to keep practice aligned with your latest work.
         </p>
       </div>
-      <OutlineCta size="sm" onClick={onRefresh}>Refresh</OutlineCta>
+      <Button type="button" variant="outline" size="sm" onClick={onRefresh}>Refresh</Button>
       <Button
         type="button"
         variant="ghost"
         size="icon"
         onClick={dismiss}
         aria-label="Dismiss resume freshness reminder"
-        style={{ flexShrink: 0, minWidth: 44, minHeight: 44, color: t.inkMid, fontFamily: f.sans, fontSize: 16 }}
-      >×</Button>
+        className="shrink-0 text-hx-ink-soft pointer-coarse:size-11"
+      >
+        <XIcon size={16} aria-hidden="true" />
+      </Button>
     </div>
   );
 }
@@ -199,31 +161,18 @@ function OutcomePrompt({ firstSessionDate, isCampus }: { firstSessionDate: strin
 
   if (status === "error") {
     return (
-      <div style={{
-        padding: "14px 16px", background: t.error100,
-        border: `1px solid ${t.error}`, borderRadius: 10,
-        display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10,
-      }}>
-        <p style={{ fontFamily: f.sans, fontSize: 13, color: t.coal, margin: 0, lineHeight: 1.4 }}>
-          Couldn&apos;t save your result. Please try again.
-        </p>
-        <Button
-          type="button" variant="ghost" size="sm" onClick={() => setStatus("open")}
-          style={{ fontFamily: f.sans, fontSize: 12, color: t.indigo, flexShrink: 0 }}
-        >Retry</Button>
+      <div role="alert" className={`${BAND} justify-between`}>
+        <p className="m-0 text-[13px] leading-snug text-hx-error-ink">Couldn&apos;t save your result. Please try again.</p>
+        <Button type="button" variant="outline" size="sm" onClick={() => setStatus("open")}>Retry</Button>
       </div>
     );
   }
 
   if (status === "done") {
     return (
-      <div style={{
-        padding: "14px 16px", background: t.success100,
-        border: `1px solid ${t.success}`, borderRadius: 10,
-        display: "flex", alignItems: "center", gap: 10,
-      }}>
-        <span style={{ color: t.success, display: "inline-flex" }} aria-hidden>{Icons.check}</span>
-        <p style={{ fontFamily: f.sans, fontSize: 13, color: t.coal, margin: 0, lineHeight: 1.4 }}>
+      <div role="status" className={BAND}>
+        <CheckIcon size={16} aria-hidden="true" className="shrink-0 text-hx-success-ink" />
+        <p className="m-0 text-[13px] leading-snug text-hx-coal">
           Thank you for sharing. Your result helps improve HireStepX for everyone.
         </p>
       </div>
@@ -231,87 +180,72 @@ function OutcomePrompt({ firstSessionDate, isCampus }: { firstSessionDate: strin
   }
 
   if (status === "open") {
+    const options = isCampus
+      ? [
+          { label: "Applied to placement drives",    value: applied,     set: setApplied },
+          { label: "Cleared aptitude / tech round",  value: interviewed, set: setInterviewed },
+          { label: "Got an offer letter",            value: offer,       set: setOffer },
+          { label: "Joined the company",             value: accepted,    set: setAccepted },
+        ]
+      : [
+          { label: "Applied for a role", value: applied,     set: setApplied },
+          { label: "Got an interview",   value: interviewed, set: setInterviewed },
+          { label: "Received an offer",  value: offer,       set: setOffer },
+          { label: "Accepted the offer", value: accepted,    set: setAccepted },
+        ];
     return (
-      <div style={{
-        padding: "14px 16px",
-        background: t.indigo100, border: `1px solid ${t.indigo}`, borderRadius: 10,
-      }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-          <p style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.coal, margin: 0 }}>
+      <section aria-label="Share your job search result" className="bg-hx-soft px-5 py-4 min-[640px]:px-7">
+        <div className="mb-2.5 flex items-center justify-between">
+          <p className="m-0 text-[14px] font-semibold text-hx-coal">
             {isCampus ? "How did your campus placement go?" : "How did your job search go?"}
           </p>
           <Button
             type="button" variant="ghost" size="icon" onClick={dismiss} aria-label="Dismiss outcome prompt"
-            style={{ color: t.inkMid, fontSize: 16, minWidth: 44, minHeight: 44 }}
-          >×</Button>
+            className="text-hx-ink-soft pointer-coarse:size-11"
+          >
+            <XIcon size={16} aria-hidden="true" />
+          </Button>
         </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          {(
-            isCampus
-              ? [
-                  { label: "Applied to placement drives",    value: applied,     set: setApplied },
-                  { label: "Cleared aptitude / tech round",  value: interviewed, set: setInterviewed },
-                  { label: "Got an offer letter",            value: offer,       set: setOffer },
-                  { label: "Joined the company",             value: accepted,    set: setAccepted },
-                ]
-              : [
-                  { label: "Applied for a role", value: applied,     set: setApplied },
-                  { label: "Got an interview",   value: interviewed, set: setInterviewed },
-                  { label: "Received an offer",  value: offer,       set: setOffer },
-                  { label: "Accepted the offer", value: accepted,    set: setAccepted },
-                ]
-          ).map(({ label, value, set }) => (
-            <label key={label} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer",
-              fontFamily: f.sans, fontSize: 12, color: t.coal, lineHeight: 1.4 }}>
-              <input type="checkbox" checked={value} onChange={e => set(e.target.checked)}
-                style={{ accentColor: t.indigo, width: 14, height: 14, flexShrink: 0 }} />
+        <div className="grid grid-cols-1 gap-x-6 gap-y-1.5 min-[640px]:grid-cols-2">
+          {options.map(({ label, value, set }) => (
+            <label key={label} className="flex cursor-pointer items-center gap-2 text-[13px] leading-snug text-hx-coal">
+              <input type="checkbox" checked={value} onChange={e => set(e.target.checked)} className="size-3.5 shrink-0 accent-hx-indigo" />
               {label}
             </label>
           ))}
         </div>
         {(offer || accepted) && (
-          <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 6 }}>
-            <input
+          <div className="mt-3 flex max-w-[520px] flex-col gap-2">
+            <Input
               type="text" placeholder="Company (optional)" value={company} maxLength={120}
               onChange={e => setCompany(e.target.value)}
               aria-label="Company name"
-              style={{ fontFamily: f.sans, fontSize: 12, padding: "6px 10px",
-                border: `1px solid ${t.lineStrong}`, borderRadius: 6, background: t.white,
-                color: t.coal, width: "100%", boxSizing: "border-box" }}
+              className="bg-white"
             />
-            <input
+            <Input
               type="text" placeholder="Role landed (optional)" value={roleLanded} maxLength={120}
               onChange={e => setRoleLanded(e.target.value)}
               aria-label="Role landed"
-              style={{ fontFamily: f.sans, fontSize: 12, padding: "6px 10px",
-                border: `1px solid ${t.lineStrong}`, borderRadius: 6, background: t.white,
-                color: t.coal, width: "100%", boxSizing: "border-box" }}
+              className="bg-white"
             />
-            <textarea
+            <Textarea
               placeholder="Short testimonial (optional)"
               value={testimonial} maxLength={500}
               onChange={e => setTestimonial(e.target.value)}
               aria-label="Testimonial"
               rows={2}
-              style={{ fontFamily: f.sans, fontSize: 12, padding: "6px 10px",
-                border: `1px solid ${t.lineStrong}`, borderRadius: 6, background: t.white,
-                color: t.coal, width: "100%", resize: "vertical", boxSizing: "border-box" }}
+              className="resize-y bg-white"
             />
-            <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer",
-              fontFamily: f.sans, fontSize: 12, color: t.inkSoft }}>
-              <input type="checkbox" checked={mayShare} onChange={e => setMayShare(e.target.checked)}
-                style={{ accentColor: t.indigo, width: 14, height: 14, flexShrink: 0 }} />
+            <label className="flex cursor-pointer items-center gap-2 text-[13px] text-hx-ink-soft">
+              <input type="checkbox" checked={mayShare} onChange={e => setMayShare(e.target.checked)} className="size-3.5 shrink-0 accent-hx-indigo" />
               OK to share anonymously on the site
             </label>
           </div>
         )}
-        <Button
-          type="button" onClick={submit} disabled={busy}
-          className="mt-3 w-full"
-        >
+        <Button type="button" onClick={submit} disabled={busy} className="mt-3">
           {busy ? "Saving…" : "Share result"}
         </Button>
-      </div>
+      </section>
     );
   }
 
@@ -452,64 +386,18 @@ export default function DashboardHome() {
   ]);
 
   return (
-    <div
-      style={{
-        minHeight: "100%", flexShrink: 0, fontFamily: f.sans, color: t.coal,
-        background: t.white, border: `1px solid ${t.line}`, borderRadius: 16,
-        display: "flex", flexDirection: "column", gap: 16, padding: 16,
-        margin: "0 0 64px",
-      }}
-    >
-      <DashboardHeader
-        displayName={displayName}
-        hasData={sessions.hasData}
-        targetRole={user?.targetRole || ""}
-        seniorityLevel={seniorityLevel}
-        readinessGap={readinessGap}
-      />
+    <div className="mb-16 min-h-full shrink-0 text-hx-coal">
+      <div className="mx-stagger divide-y divide-hx-line overflow-hidden rounded-2xl border border-hx-line bg-white">
+        <DashboardHeader
+          displayName={displayName}
+          hasData={sessions.hasData}
+          targetRole={user?.targetRole || ""}
+          seniorityLevel={seniorityLevel}
+          readinessGap={readinessGap}
+        />
 
-      <ResumeFreshnessStrip parsedAt={resumeData?.parsedAt} onRefresh={goToResume} />
+        <ResumeFreshnessStrip parsedAt={resumeData?.parsedAt} onRefresh={goToResume} />
 
-      <StatCardsRow
-        loading={sessions.sessionsLoading}
-        hasData={sessions.hasData}
-        readinessScore={sessions.readinessScore}
-        readinessDelta={sessions.readinessDelta}
-        resumeScore={resumeScore}
-        improvementsCount={improvementsCount}
-        practiceCoverage={sessions.practiceCoverage}
-        totalSessions={sessions.overallStats.sessionsCompleted}
-        onViewResume={goToResume}
-        onViewJobs={goToJobs}
-      />
-
-      {sessions.sessionsLoading ? (
-        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", gap: 16 }}>
-          <Skeleton style={{ flex: "3 1 420px", minWidth: 280, height: 220, borderRadius: 12 }} />
-          <Skeleton style={{ flex: "2 1 280px", minWidth: 260, height: 220, borderRadius: 12 }} />
-        </div>
-      ) : sessions.hasData ? (
-        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", gap: 16 }}>
-          <div style={{ flex: "3 1 420px", minWidth: 280 }}>
-            <NextMoveCard
-              isFirstTimer={!sessions.hasData}
-              ctaLabel={nextMoveCtaLabel}
-              onStart={nextMoveOnStart}
-              sessionMinutes={nextMove.sessionMinutes}
-              sessionQuestionCount={nextMove.sessionQuestionCount}
-              chips={nextMove.chips}
-              headline={nextMove.headline}
-            />
-          </div>
-          <div style={{ flex: "2 1 280px", minWidth: 260 }}>
-            <PracticeActivityCard
-              sessionsCompleted={sessions.overallStats.sessionsCompleted}
-              hoursLogged={sessions.overallStats.hoursLogged}
-              questionsAnswered={sessions.overallStats.questionsAnswered}
-            />
-          </div>
-        </div>
-      ) : (
         <NextMoveCard
           isFirstTimer={!sessions.hasData}
           ctaLabel={nextMoveCtaLabel}
@@ -519,71 +407,86 @@ export default function DashboardHome() {
           chips={nextMove.chips}
           headline={nextMove.headline}
         />
-      )}
 
-      {/* Secondary survey: sits below the primary next-move CTA at every width. */}
-      <OutcomePrompt
-        firstSessionDate={user?.practiceTimestamps?.[0]}
-        isCampus={sessions.recentSessions.some((s) => s.focus === "campus-placement")}
-      />
+        <StatCardsRow
+          loading={sessions.sessionsLoading}
+          hasData={sessions.hasData}
+          readinessScore={sessions.readinessScore}
+          readinessDelta={sessions.readinessDelta}
+          resumeScore={resumeScore}
+          improvementsCount={improvementsCount}
+          practiceCoverage={sessions.practiceCoverage}
+          totalSessions={sessions.overallStats.sessionsCompleted}
+          onViewResume={goToResume}
+          onViewJobs={goToJobs}
+        />
 
-      {sessions.sessionsLoading ? (
-        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", gap: 16 }}>
-          <Skeleton style={{ flex: "3 1 420px", minWidth: 280, height: 180, borderRadius: 12 }} />
-          <Skeleton style={{ flex: "2 1 280px", minWidth: 260, height: 180, borderRadius: 12 }} />
-        </div>
-      ) : sessions.hasData ? (
-        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", gap: 16 }}>
-          <div style={{ flex: "3 1 420px", minWidth: 280 }}>
-            <HiringActivityCard />
-          </div>
-          <div style={{ flex: "2 1 280px", minWidth: 260 }}>
-            <EvidenceCapabilitiesCard capabilities={sessions.evidenceCapabilities} />
-          </div>
-        </div>
-      ) : (
-        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", gap: 16 }}>
-          <div style={{ flex: "2 1 320px", minWidth: 280 }}>
-            <GettingStartedCard
-              hasResume={hasResume}
-              hasTargetRole={!!user?.targetRole}
-              hasFirstSession={sessions.hasData}
-              hasVisitedAnalytics={visitedAnalytics}
-            />
-          </div>
-          <div style={{ flex: "3 1 380px", minWidth: 280 }}>
-            <UnlockTeaserGrid />
-          </div>
-        </div>
-      )}
+        {/* Secondary survey: sits below the primary next-move CTA at every width. */}
+        <OutcomePrompt
+          firstSessionDate={user?.practiceTimestamps?.[0]}
+          isCampus={sessions.recentSessions.some((s) => s.focus === "campus-placement")}
+        />
 
-      <section aria-labelledby="dh-recent-heading">
-        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 4 }}>
-          <h2 id="dh-recent-heading" style={{ fontFamily: f.sans, fontSize: 22, fontWeight: 700, color: t.coal, margin: 0 }}>
-            Recent Sessions
-          </h2>
-          {sessions.hasData && (
-            <Button variant="link" size="sm" onClick={goToSessions}>View all →</Button>
-          )}
-        </div>
         {sessions.sessionsLoading ? (
-          <Skeleton style={{ width: "100%", height: 280, borderRadius: 12 }} />
-        ) : sessions.hasData ? (
-          <div style={{ border: `1px solid ${t.line}`, borderRadius: 12 }}>
-            <SessionsTable
-              rows={sessions.recentSessions.slice(0, 5).map((d) => toRow(d, Date.now()))}
-              sort={DEFAULT_SORT}
-              onSortChange={() => {}}
-              onClearFilters={() => {}}
-              onOpenSession={(id) => openSession(id, "recent-sessions-table")}
-              sortable={false}
-              hideFooter
-            />
+          <div className={`${PANEL} flex flex-col gap-3`} aria-hidden="true">
+            <Skeleton className="h-5 w-40" />
+            <Skeleton className="h-24 w-full" />
           </div>
         ) : (
-          <NoSessionsEmptyState onStart={goToInterview("recent-empty")} />
+          <div className="grid grid-cols-1 divide-y divide-hx-line min-[900px]:grid-flow-col min-[900px]:auto-cols-fr min-[900px]:divide-x min-[900px]:divide-y-0">
+            {sessions.hasData ? (
+              <>
+                <PracticeActivityCard
+                  sessionsCompleted={sessions.overallStats.sessionsCompleted}
+                  hoursLogged={sessions.overallStats.hoursLogged}
+                  questionsAnswered={sessions.overallStats.questionsAnswered}
+                />
+                <HiringActivityCard />
+                <EvidenceCapabilitiesCard capabilities={sessions.evidenceCapabilities} />
+              </>
+            ) : (
+              <>
+                <GettingStartedCard
+                  hasResume={hasResume}
+                  hasTargetRole={!!user?.targetRole}
+                  hasFirstSession={sessions.hasData}
+                  hasVisitedAnalytics={visitedAnalytics}
+                />
+                <UnlockTeaserGrid />
+              </>
+            )}
+          </div>
         )}
-      </section>
+
+        <section aria-labelledby="dh-recent-heading">
+          <div className="flex items-baseline justify-between gap-3 px-5 pt-5 min-[640px]:px-7 min-[640px]:pt-6">
+            <h2 id="dh-recent-heading" className="m-0 text-[15px] font-semibold text-hx-coal">Recent sessions</h2>
+            {sessions.hasData && (
+              <Button variant="link" size="sm" onClick={goToSessions} className="text-hx-indigo">
+                View all
+                <ArrowRightIcon size={14} aria-hidden="true" />
+              </Button>
+            )}
+          </div>
+          {sessions.sessionsLoading ? (
+            <Skeleton className="mx-5 my-4 h-56 min-[640px]:mx-7" />
+          ) : sessions.hasData ? (
+            <div className="mt-3 border-t border-hx-line">
+              <SessionsTable
+                rows={sessions.recentSessions.slice(0, 5).map((d) => toRow(d, Date.now()))}
+                sort={DEFAULT_SORT}
+                onSortChange={() => {}}
+                onClearFilters={() => {}}
+                onOpenSession={(id) => openSession(id, "recent-sessions-table")}
+                sortable={false}
+                hideFooter
+              />
+            </div>
+          ) : (
+            <NoSessionsEmptyState onStart={goToInterview("recent-empty")} />
+          )}
+        </section>
+      </div>
     </div>
   );
 }
