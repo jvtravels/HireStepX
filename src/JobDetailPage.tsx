@@ -13,11 +13,10 @@ import {
   BriefcaseIcon, Building2Icon, CalendarIcon, ClockIcon, GlobeIcon, GraduationCapIcon,
   HourglassIcon, IndianRupeeIcon, LockIcon, MapPinIcon, SendIcon, UsersIcon,
 } from "lucide-react";
-import { useMaxWidth } from "./hooks/useMaxWidth";
 import { useAuth } from "./AuthContext";
 import { authHeaders } from "./supabase";
 import { useDashboardBreadcrumb } from "./DashboardLayout";
-import { tokens as t, fonts as f, textSize } from "./auth/_tokens";
+import { tokens as t, fonts as f } from "./auth/_tokens";
 import { daysAgo, formatComp, formatExperience, WORK_MODE_LABEL, EMPLOYMENT_TYPE_LABEL } from "./hiringMatchFormat";
 import { JobDetailRouteSkeleton } from "./routeSkeletons";
 import { CompanyAvatar } from "./CompanyAvatar";
@@ -30,26 +29,20 @@ import { MatchFactorsCard, EmployerVisibilityCard } from "./MatchFactorsCard";
 import InterviewInviteCard from "./InterviewInviteCard";
 import { isInterviewInvite } from "./interviewInvite";
 
-/* Same surface as the employer console's cards (white, 1px line, 16px
-   radius, 24px padding, flat) so the two detail screens read as one product. */
-const PANEL_STYLE = { background: t.white, border: `1px solid ${t.line}`, borderRadius: 16, padding: 24, minWidth: 0 } as const;
-const SECTION_HEADING_STYLE = { fontFamily: f.sans, fontSize: 16, fontWeight: 600, color: t.coal, margin: "0 0 8px" } as const;
-const HEADING_FLUSH_STYLE = { fontFamily: f.sans, fontSize: 16, fontWeight: 600, color: t.coal, margin: 0 } as const;
-const ACTION_STACK_STYLE = { display: "flex", flexDirection: "column", gap: 8, marginTop: 12 } as const;
-const ACTION_TOP_STYLE = { marginTop: 12 } as const;
-const BODY_TEXT_STYLE = { fontFamily: f.sans, fontSize: 14, color: t.coal, margin: 0, lineHeight: 1.6, whiteSpace: "pre-line", overflowWrap: "anywhere" } as const;
-const BODY_TIGHT_STYLE = { ...BODY_TEXT_STYLE, marginTop: 10 } as const;
-const BODY_SOFT_STYLE = { ...BODY_TEXT_STYLE, color: t.inkSoft } as const;
-/* ~8 lines at 14px / 1.6; the mask fades the cut so it reads as "more below". */
-const CLAMP_EXTRA_STYLE = {
-  maxHeight: 180, overflow: "hidden",
-  WebkitMaskImage: "linear-gradient(to bottom, black 70%, transparent)",
-  maskImage: "linear-gradient(to bottom, black 70%, transparent)",
-} as const;
-const BODY_CLAMPED_STYLE = { ...BODY_TEXT_STYLE, ...CLAMP_EXTRA_STYLE } as const;
-const BODY_SOFT_CLAMPED_STYLE = { ...BODY_SOFT_STYLE, ...CLAMP_EXTRA_STYLE } as const;
+/* One flat divided shell (same as the dashboard and employer screens): the
+   role on the left, the company and actions in a divided right rail. */
+const SHELL = "grid overflow-hidden rounded-2xl border border-hx-line bg-white min-[900px]:grid-cols-[minmax(0,1fr)_minmax(280px,340px)]";
+const COL = "min-w-0 divide-y divide-hx-line";
+const SEC = "min-w-0 px-5 py-5 min-[640px]:px-7 min-[640px]:py-6";
+const H2 = "m-0 mb-2 text-[15px] font-semibold text-hx-coal";
+const H2_FLUSH = "m-0 text-[15px] font-semibold text-hx-coal";
+const BODY = "m-0 whitespace-pre-line text-[14px] leading-[22px] [overflow-wrap:anywhere]";
+const BODY_TIGHT = "m-0 mt-2.5 text-[14px] leading-[22px] text-hx-coal";
+const EMPTY = "m-0 text-[13px] italic text-hx-ink-soft";
+/* ~8 lines at 14px / 22px; the mask fades the cut so it reads as "more below". */
+const CLAMP = "max-h-[180px] overflow-hidden [mask-image:linear-gradient(to_bottom,black_70%,transparent)]";
 const TOGGLE_BUTTON_STYLE = { marginTop: 4, paddingInline: 0 } as const;
-const EMPTY_TEXT_STYLE = { fontFamily: f.sans, fontSize: 13, color: t.inkFaint, fontStyle: "italic", margin: 0 } as const;
+const ACTION_STACK = "mt-3 flex flex-col gap-2";
 
 const COLLAPSE_THRESHOLD = 600;
 
@@ -58,12 +51,9 @@ function CollapsibleText({ text, soft }: { text: string; soft?: boolean }) {
   const id = useId();
   const long = text.length > COLLAPSE_THRESHOLD;
   const collapsed = long && !expanded;
-  const style = collapsed
-    ? (soft ? BODY_SOFT_CLAMPED_STYLE : BODY_CLAMPED_STYLE)
-    : (soft ? BODY_SOFT_STYLE : BODY_TEXT_STYLE);
   return (
     <>
-      <p id={id} style={style}>{text}</p>
+      <p id={id} className={`${BODY} ${soft ? "text-hx-ink-soft" : "text-hx-coal"} ${collapsed ? CLAMP : ""}`}>{text}</p>
       {long && (
         <Button type="button" variant="link" size="sm" style={TOGGLE_BUTTON_STYLE} aria-expanded={expanded} aria-controls={id} onClick={() => setExpanded((v) => !v)}>
           {expanded ? "Show less" : "Show more"}
@@ -73,32 +63,20 @@ function CollapsibleText({ text, soft }: { text: string; soft?: boolean }) {
   );
 }
 
-function IconTile({ children }: { children: React.ReactNode }) {
-  return (
-    <div style={{ width: 28, height: 28, borderRadius: 8, background: t.creamSoft, color: t.inkFaint, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-      {children}
-    </div>
-  );
-}
-
 function Detail({ icon, label, value, muted }: { icon: React.ReactNode; label: string; value: string; muted?: boolean }) {
   return (
-    <div style={{ display: "flex", alignItems: "flex-start", gap: 8, minWidth: 0 }}>
-      <IconTile>{icon}</IconTile>
-      <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
-        <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkFaint }}>{label}</span>
-        <span style={{ fontFamily: f.sans, fontSize: 14, fontWeight: 500, color: muted ? t.inkFaint : t.coal, fontStyle: muted ? "italic" : "normal", overflowWrap: "anywhere" }}>{value}</span>
+    <div className="flex min-w-0 items-start gap-2">
+      <span className="mt-0.5 shrink-0 text-hx-ink-soft">{icon}</span>
+      <div className="flex min-w-0 flex-col">
+        <span className="text-[12px] text-hx-ink-soft">{label}</span>
+        <span className={`text-[14px] font-medium [overflow-wrap:anywhere] ${muted ? "italic text-hx-ink-soft" : "text-hx-coal"}`}>{value}</span>
       </div>
     </div>
   );
 }
 
-function StatusChip({ label, color, background }: { label: string; color: string; background: string }) {
-  return (
-    <span style={{ fontFamily: f.sans, fontSize: textSize.xs, fontWeight: 600, color, background, padding: "4px 10px", borderRadius: 999 }}>
-      {label}
-    </span>
-  );
+function StatusChip({ label, className }: { label: string; className: string }) {
+  return <span className={`inline-flex h-6 items-center whitespace-nowrap rounded-full px-2.5 text-[12px] font-semibold ${className}`}>{label}</span>;
 }
 
 /* Who the employer is stays hidden until they've contacted the candidate
@@ -114,19 +92,14 @@ function CompanyCard({ job, onMessage, actions, response }: {
   const websiteHost = job.companyWebsite ? job.companyWebsite.replace(/^https?:\/\//i, "").replace(/\/$/, "") : null;
   const websiteHref = job.companyWebsite && /^https?:\/\//i.test(job.companyWebsite) ? job.companyWebsite : job.companyWebsite ? `https://${job.companyWebsite}` : null;
   return (
-    <aside
-      aria-label="Company profile"
-      style={{ ...PANEL_STYLE, display: "flex", flexDirection: "column", gap: 14 }}
-    >
-      <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
-        <CompanyAvatar job={job} size={48} />
-        <div style={{ minWidth: 0 }}>
-          <div style={{ fontFamily: f.sans, fontSize: 16, fontWeight: 700, color: t.coal, wordBreak: "break-word" }}>{job.companyName}</div>
-          {job.preferredIndustry && (
-            <div style={{ fontFamily: f.sans, fontSize: 12, color: t.inkFaint, marginTop: 2 }}>{job.preferredIndustry}</div>
-          )}
+    <aside aria-label="Company profile" className={`${SEC} flex flex-col gap-3.5`}>
+      <div className="flex min-w-0 items-center gap-3">
+        <CompanyAvatar job={job} size={44} />
+        <div className="min-w-0">
+          <div className="break-words text-[15px] font-semibold text-hx-coal">{job.companyName}</div>
+          {job.preferredIndustry && <div className="mt-0.5 text-[12px] text-hx-ink-soft">{job.preferredIndustry}</div>}
         </div>
-        <div style={{ marginLeft: "auto", flexShrink: 0 }}>{actions}</div>
+        <div className="ml-auto shrink-0">{actions}</div>
       </div>
       {response && <div><EmployerResponseBadge response={response} /></div>}
       {job.unlocked ? (
@@ -136,24 +109,23 @@ function CompanyCard({ job, onMessage, actions, response }: {
               href={websiteHref}
               target="_blank"
               rel="noopener noreferrer"
-              className="hover:underline underline-offset-4"
-              style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: f.sans, fontSize: 13, color: t.indigo, minWidth: 0, wordBreak: "break-all" }}
+              className="flex min-w-0 items-center gap-1.5 break-all text-[13px] text-hx-indigo underline-offset-4 hover:underline"
             >
-              <GlobeIcon size={14} aria-hidden="true" style={{ flexShrink: 0 }} />
+              <GlobeIcon size={14} aria-hidden="true" className="shrink-0" />
               {websiteHost}
             </a>
           )}
-          <p style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, margin: 0, lineHeight: 1.5 }}>
+          <p className="m-0 text-[12px] leading-[18px] text-hx-ink-soft">
             This employer has viewed your profile and can reach you directly.
           </p>
-          <Button variant="outline" size="sm" onClick={onMessage} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <Button variant="outline" size="sm" onClick={onMessage} className="flex items-center gap-1.5">
             <SendIcon size={13} aria-hidden="true" /> Message employer
           </Button>
         </>
       ) : (
-        <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
-          <LockIcon size={14} color={t.inkFaint} aria-hidden="true" style={{ marginTop: 2, flexShrink: 0 }} />
-          <p style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, margin: 0, lineHeight: 1.5 }}>
+        <div className="flex items-start gap-2">
+          <LockIcon size={14} aria-hidden="true" className="mt-0.5 shrink-0 text-hx-ink-soft" />
+          <p className="m-0 text-[12px] leading-[18px] text-hx-ink-soft">
             Company details are shared once this employer shows interest. You can't apply to this role; they'll reach out if you're a fit.
           </p>
         </div>
@@ -165,7 +137,7 @@ function CompanyCard({ job, onMessage, actions, response }: {
 function StateScreen({ title, message, children }: { title: string; message: string; children: React.ReactNode }) {
   return (
     <div style={{ maxWidth: 560, margin: "80px auto 0", textAlign: "center", padding: "0 16px", fontFamily: f.sans }}>
-      <h1 style={{ fontSize: 28, color: t.coal, margin: "0 0 12px", fontWeight: 600 }}>{title}</h1>
+      <h1 style={{ fontSize: 20, lineHeight: "28px", color: t.coal, margin: "0 0 12px", fontWeight: 600 }}>{title}</h1>
       <p style={{ fontSize: 14, color: t.inkSoft, margin: "0 0 24px", lineHeight: 1.55 }}>{message}</p>
       <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>{children}</div>
     </div>
@@ -217,7 +189,6 @@ export default function JobDetailPage() {
   const dropRequest = useCallback((requestId: string) => {
     setMatches((prev) => prev && prev.map((m) => (m.id === id ? { ...m, requests: (m.requests ?? []).filter((r) => r.id !== requestId) } : m)));
   }, [id]);
-  const stacked = useMaxWidth(820);
   const { toast } = useToast();
   // Local answer wins over the list payload so the badge/menu stay truthful
   // between the optimistic update and the next refetch.
@@ -253,196 +224,199 @@ export default function JobDetailPage() {
   const jobType = job.employmentType ? EMPLOYMENT_TYPE_LABEL[job.employmentType] || job.employmentType : null;
   const closed = job.status === "closed" || job.status === "failed";
   const hasBody = !!(job.description || job.responsibilities || job.niceToHave);
-  const metaItem: React.CSSProperties = { display: "inline-flex", alignItems: "center", gap: 6 };
+  const metaItem = "inline-flex items-center gap-1.5";
+  const metaIcon = "text-hx-ink-soft";
 
   return (
-    <div style={{ flex: 1, minHeight: 0, overflowY: "auto", width: "100%", fontFamily: f.sans }}>
-      <div style={{ display: "flex", alignItems: "flex-start", gap: 16, flexWrap: "wrap" }}>
-        <section aria-labelledby="job-title" style={{ ...PANEL_STYLE, flex: "3 1 min(560px, 100%)" }}>
-          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 0, flex: "1 1 280px" }}>
-              <div style={{ width: 48, height: 48, borderRadius: 12, background: t.indigo100, color: t.indigo, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <BriefcaseIcon size={22} aria-hidden="true" />
-              </div>
-              <div style={{ minWidth: 0 }}>
-                <h1 id="job-title" style={{ overflowWrap: "anywhere", fontFamily: f.sans, fontSize: "clamp(22px, 6vw, 28px)", fontWeight: 700, letterSpacing: "-0.02em", lineHeight: 1.2, color: t.coal, margin: 0 }}>
-                  {job.roleTitle}
-                </h1>
-                <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", columnGap: 12, rowGap: 4, marginTop: 8, fontFamily: f.sans, fontSize: 14, fontWeight: 500, color: t.coal }}>
-                  <span style={metaItem}>
-                    <IndianRupeeIcon size={14} color={t.inkFaint} aria-hidden="true" />
-                    {comp ? comp : <span style={{ color: t.inkFaint, fontStyle: "italic", fontWeight: 400 }}>Compensation not disclosed</span>}
+    <div className="min-h-0 w-full flex-1 overflow-y-auto text-hx-coal">
+      <div className="mb-16">
+        <div className={SHELL}>
+          <div className={COL}>
+            <section aria-labelledby="job-title" className={SEC}>
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div className="flex min-w-0 flex-[1_1_280px] items-center gap-3.5">
+                  <span className="inline-flex size-11 shrink-0 items-center justify-center rounded-xl bg-hx-indigo-100 text-hx-indigo">
+                    <BriefcaseIcon size={20} aria-hidden="true" />
                   </span>
-                  <span style={metaItem}>
-                    <MapPinIcon size={14} color={t.inkFaint} aria-hidden="true" />
-                    {job.location || "Location not specified"}{mode ? ` · ${mode}` : ""}
-                  </span>
-                  {exp && (
-                    <span style={metaItem}>
-                      <GraduationCapIcon size={14} color={t.inkFaint} aria-hidden="true" /> {exp} exp
-                    </span>
-                  )}
-                  {jobType && (
-                    <span style={metaItem}>
-                      <ClockIcon size={14} color={t.inkFaint} aria-hidden="true" /> {jobType}
-                    </span>
-                  )}
+                  <div className="min-w-0">
+                    <h1 id="job-title" className="m-0 text-[20px] font-semibold leading-7 text-hx-coal [overflow-wrap:anywhere]">
+                      {job.roleTitle}
+                    </h1>
+                    <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[14px] font-medium text-hx-coal">
+                      <span className={metaItem}>
+                        <IndianRupeeIcon size={14} className={metaIcon} aria-hidden="true" />
+                        {comp ? comp : <span className="font-normal italic text-hx-ink-soft">Compensation not disclosed</span>}
+                      </span>
+                      <span className={metaItem}>
+                        <MapPinIcon size={14} className={metaIcon} aria-hidden="true" />
+                        {job.location || "Location not specified"}{mode ? ` · ${mode}` : ""}
+                      </span>
+                      {exp && (
+                        <span className={metaItem}>
+                          <GraduationCapIcon size={14} className={metaIcon} aria-hidden="true" /> {exp} exp
+                        </span>
+                      )}
+                      {jobType && (
+                        <span className={metaItem}>
+                          <ClockIcon size={14} className={metaIcon} aria-hidden="true" /> {jobType}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  {closed
+                    ? <StatusChip label="Role closed" className="bg-hx-soft text-hx-ink-soft" />
+                    : job.unlocked
+                      ? <StatusChip label="Employer interested" className="bg-hx-indigo-100 text-hx-indigo-deep" />
+                      : <StatusChip label="Matched" className="bg-hx-success-100 text-hx-success-ink" />}
                 </div>
               </div>
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-              {closed
-                ? <StatusChip label="Role closed" color={t.inkSoft} background={t.creamSoft} />
-                : job.unlocked
-                  ? <StatusChip label="Employer interested" color={t.indigoDeep} background={t.indigo100} />
-                  : <StatusChip label="Matched" color={t.successInk} background={t.success100} />}
-            </div>
-          </div>
-
-          {!job.unlocked && job.matchReason && (
-            <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft, margin: "16px 0 0", lineHeight: 1.5 }}>{job.matchReason}</p>
-          )}
-
-          <div style={{ marginTop: 20, paddingTop: 20, borderTop: `1px solid ${t.line}`, display: "flex", flexDirection: "column", gap: 20 }}>
-            {job.matchFactors && job.matchFactors.factors.length > 0 && <MatchFactorsCard data={job.matchFactors} />}
-            <EmployerVisibilityCard unlocked={job.unlocked} />
-            <section aria-label="Skills">
-              <h2 style={SECTION_HEADING_STYLE}>Skills</h2>
-              {job.skills.length > 0 ? (
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                  {job.skills.map((s, i) => (
-                    <span key={i} style={{ fontFamily: f.sans, fontSize: 12, color: t.coal, background: t.cream, border: `1px solid ${t.line}`, padding: "4px 10px", borderRadius: 999 }}>
-                      {s}
-                    </span>
-                  ))}
-                </div>
-              ) : (
-                <p style={EMPTY_TEXT_STYLE}>No specific skills listed for this role.</p>
+              {!job.unlocked && job.matchReason && (
+                <p className="m-0 mt-4 text-[14px] leading-[21px] text-hx-ink-soft">{job.matchReason}</p>
               )}
             </section>
 
-            {job.description && (
-              <section aria-label="About the role">
-                <h2 style={SECTION_HEADING_STYLE}>About the role</h2>
-                <CollapsibleText text={job.description} />
-              </section>
-            )}
-            {job.responsibilities && (
-              <section aria-label="Responsibilities">
-                <h2 style={SECTION_HEADING_STYLE}>Responsibilities</h2>
-                <CollapsibleText text={job.responsibilities} />
-              </section>
-            )}
-            {job.niceToHave && (
-              <section aria-label="Nice to have">
-                <h2 style={SECTION_HEADING_STYLE}>Nice to have</h2>
-                <CollapsibleText text={job.niceToHave} soft />
-              </section>
-            )}
-            {!hasBody && <p style={EMPTY_TEXT_STYLE}>This employer hasn't added a role description yet.</p>}
+            <div className={`${SEC} flex flex-col gap-6`}>
+              {job.matchFactors && job.matchFactors.factors.length > 0 && <MatchFactorsCard data={job.matchFactors} />}
+              <EmployerVisibilityCard unlocked={job.unlocked} />
+            </div>
 
-            <section aria-label="Perks and benefits">
-              <h2 style={SECTION_HEADING_STYLE}>Perks &amp; benefits</h2>
+            <div className={`${SEC} flex flex-col gap-6`}>
+              <section aria-label="Skills">
+                <h2 className={H2}>Skills</h2>
+                {job.skills.length > 0 ? (
+                  <div className="flex flex-wrap gap-1.5">
+                    {job.skills.map((s, i) => (
+                      <span key={i} className="rounded-full border border-hx-line bg-white px-2.5 py-1 text-[12px] text-hx-coal">{s}</span>
+                    ))}
+                  </div>
+                ) : (
+                  <p className={EMPTY}>No specific skills listed for this role.</p>
+                )}
+              </section>
+
+              {job.description && (
+                <section aria-label="About the role">
+                  <h2 className={H2}>About the role</h2>
+                  <CollapsibleText text={job.description} />
+                </section>
+              )}
+              {job.responsibilities && (
+                <section aria-label="Responsibilities">
+                  <h2 className={H2}>Responsibilities</h2>
+                  <CollapsibleText text={job.responsibilities} />
+                </section>
+              )}
+              {job.niceToHave && (
+                <section aria-label="Nice to have">
+                  <h2 className={H2}>Nice to have</h2>
+                  <CollapsibleText text={job.niceToHave} soft />
+                </section>
+              )}
+              {!hasBody && <p className={EMPTY}>This employer hasn't added a role description yet.</p>}
+            </div>
+
+            <section aria-label="Perks and benefits" className={SEC}>
+              <h2 className={H2}>Perks &amp; benefits</h2>
               {job.perksAndBenefits.length > 0 ? (
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                <div className="flex flex-wrap gap-1.5">
                   {job.perksAndBenefits.map((p, i) => (
-                    <span key={i} style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, border: `1px solid ${t.line}`, padding: "4px 10px", borderRadius: 999 }}>
-                      {p}
-                    </span>
+                    <span key={i} className="rounded-full border border-hx-line px-2.5 py-1 text-[12px] text-hx-ink-soft">{p}</span>
                   ))}
                 </div>
               ) : (
-                <p style={EMPTY_TEXT_STYLE}>No perks or benefits listed.</p>
+                <p className={EMPTY}>No perks or benefits listed.</p>
               )}
             </section>
-          </div>
 
-          <div style={{ fontFamily: f.sans, fontSize: 12, color: t.inkFaint, marginTop: 20, paddingTop: 14, borderTop: `1px solid ${t.line}` }}>
-            {job.unlocked && job.unlockedAt
-              ? `Employer showed interest ${daysAgo(job.unlockedAt)} · matched ${daysAgo(job.matchedAt)}`
-              : `Matched ${daysAgo(job.matchedAt)}`}
-          </div>
-        </section>
-
-        <div style={{ flex: "1 1 260px", minWidth: 260, maxWidth: stacked ? "none" : 340, display: "flex", flexDirection: "column", gap: 16 }}>
-          <CompanyCard
-            job={job}
-            onMessage={() => router.push(`/messages?matchId=${job.id}`)}
-            response={response}
-            actions={
-              <EmployerActionsMenu
-                matchId={job.id}
-                employerLabel={job.companyName}
-                response={response}
-                onResponseChange={(value) => setLocalResponse({ id: job.id, value })}
-                onRemoved={backToJobs}
-                onToast={(msg, kind) => toast(msg, kind)}
-              />
-            }
-          />
-          <CandidateRequestsCard
-            matchId={job.id}
-            requests={job.requests ?? []}
-            unlocked={job.unlocked}
-            style={PANEL_STYLE}
-            onResolved={(requestId, resolution) => {
-              dropRequest(requestId);
-              toast(resolution === "fulfilled" ? "Sent to the employer" : "Request declined", "success");
-            }}
-            onError={(msg) => toast(msg, "error")}
-          />
-          <section aria-labelledby="job-details-heading" style={PANEL_STYLE}>
-            <h2 id="job-details-heading" style={HEADING_FLUSH_STYLE}>Role details</h2>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginTop: 16 }}>
-              <Detail
-                icon={<UsersIcon size={14} aria-hidden="true" />}
-                label="Openings"
-                value={job.openPositions != null ? `${job.openPositions} opening${job.openPositions === 1 ? "" : "s"}` : "Not specified"}
-                muted={job.openPositions == null}
-              />
-              <Detail
-                icon={<HourglassIcon size={14} aria-hidden="true" />}
-                label="Notice period"
-                value={job.noticePeriodPref || "Not specified"}
-                muted={!job.noticePeriodPref}
-              />
-              <Detail
-                icon={<Building2Icon size={14} aria-hidden="true" />}
-                label="Industry"
-                value={job.preferredIndustry || "Any industry"}
-                muted={!job.preferredIndustry}
-              />
-              <Detail
-                icon={<CalendarIcon size={14} aria-hidden="true" />}
-                label="Timeline"
-                value={job.dueDate ? `Hiring by ${job.dueDate}` : "Open-ended timeline"}
-                muted={!job.dueDate}
-              />
+            <div className="px-5 py-3 text-[12px] text-hx-ink-soft min-[640px]:px-7">
+              {job.unlocked && job.unlockedAt
+                ? `Employer showed interest ${daysAgo(job.unlockedAt)} · matched ${daysAgo(job.matchedAt)}`
+                : `Matched ${daysAgo(job.matchedAt)}`}
             </div>
-          </section>
-          {!closed && isInterviewInvite(job) && <InterviewInviteCard job={job} />}
-          {closed ? (
-            <section aria-labelledby="job-closed-heading" style={PANEL_STYLE}>
-              <h2 id="job-closed-heading" style={HEADING_FLUSH_STYLE}>This role is closed</h2>
-              <p style={BODY_TIGHT_STYLE}>
-                The employer is no longer hiring for this role. Your profile stays visible to other employers.
-              </p>
-              <Button type="button" variant="outline" style={ACTION_TOP_STYLE} onClick={backToJobs}>See other matches</Button>
-            </section>
-          ) : !job.unlocked && (
-            <section aria-labelledby="job-strengthen-heading" style={PANEL_STYLE}>
-              <h2 id="job-strengthen-heading" style={HEADING_FLUSH_STYLE}>Strengthen your match</h2>
-              <p style={BODY_TIGHT_STYLE}>
-                You can't apply to this role. Employers reach out when a profile stands out, so a stronger profile helps.
-              </p>
-              <div style={ACTION_STACK_STYLE}>
-                <Button type="button" onClick={() => router.push(`/session/new?role=${encodeURIComponent(job.roleTitle)}`)}>
-                  Practise for {job.roleTitle}
-                </Button>
-                <Button type="button" variant="outline" onClick={() => router.push("/resume")}>Update your resume</Button>
+          </div>
+
+          <div className={`${COL} border-t border-hx-line min-[900px]:border-l min-[900px]:border-t-0`}>
+            <CompanyCard
+              job={job}
+              onMessage={() => router.push(`/messages?matchId=${job.id}`)}
+              response={response}
+              actions={
+                <EmployerActionsMenu
+                  matchId={job.id}
+                  employerLabel={job.companyName}
+                  response={response}
+                  onResponseChange={(value) => setLocalResponse({ id: job.id, value })}
+                  onRemoved={backToJobs}
+                  onToast={(msg, kind) => toast(msg, kind)}
+                />
+              }
+            />
+            <CandidateRequestsCard
+              matchId={job.id}
+              requests={job.requests ?? []}
+              unlocked={job.unlocked}
+              className={SEC}
+              onResolved={(requestId, resolution) => {
+                dropRequest(requestId);
+                toast(resolution === "fulfilled" ? "Sent to the employer" : "Request declined", "success");
+              }}
+              onError={(msg) => toast(msg, "error")}
+            />
+            <section aria-labelledby="job-details-heading" className={SEC}>
+              <h2 id="job-details-heading" className={H2_FLUSH}>Role details</h2>
+              <div className="mt-4 grid grid-cols-2 gap-3.5">
+                <Detail
+                  icon={<UsersIcon size={14} aria-hidden="true" />}
+                  label="Openings"
+                  value={job.openPositions != null ? `${job.openPositions} opening${job.openPositions === 1 ? "" : "s"}` : "Not specified"}
+                  muted={job.openPositions == null}
+                />
+                <Detail
+                  icon={<HourglassIcon size={14} aria-hidden="true" />}
+                  label="Notice period"
+                  value={job.noticePeriodPref || "Not specified"}
+                  muted={!job.noticePeriodPref}
+                />
+                <Detail
+                  icon={<Building2Icon size={14} aria-hidden="true" />}
+                  label="Industry"
+                  value={job.preferredIndustry || "Any industry"}
+                  muted={!job.preferredIndustry}
+                />
+                <Detail
+                  icon={<CalendarIcon size={14} aria-hidden="true" />}
+                  label="Timeline"
+                  value={job.dueDate ? `Hiring by ${job.dueDate}` : "Open-ended timeline"}
+                  muted={!job.dueDate}
+                />
               </div>
             </section>
-          )}
+            {!closed && isInterviewInvite(job) && <InterviewInviteCard job={job} className={SEC} />}
+            {closed ? (
+              <section aria-labelledby="job-closed-heading" className={SEC}>
+                <h2 id="job-closed-heading" className={H2_FLUSH}>This role is closed</h2>
+                <p className={BODY_TIGHT}>
+                  The employer is no longer hiring for this role. Your profile stays visible to other employers.
+                </p>
+                <Button type="button" variant="outline" className="mt-3" onClick={backToJobs}>See other matches</Button>
+              </section>
+            ) : !job.unlocked && (
+              <section aria-labelledby="job-strengthen-heading" className={SEC}>
+                <h2 id="job-strengthen-heading" className={H2_FLUSH}>Strengthen your match</h2>
+                <p className={BODY_TIGHT}>
+                  You can't apply to this role. Employers reach out when a profile stands out, so a stronger profile helps.
+                </p>
+                <div className={ACTION_STACK}>
+                  <Button type="button" onClick={() => router.push(`/session/new?role=${encodeURIComponent(job.roleTitle)}`)}>
+                    Practise for {job.roleTitle}
+                  </Button>
+                  <Button type="button" variant="outline" onClick={() => router.push("/resume")}>Update your resume</Button>
+                </div>
+              </section>
+            )}
+          </div>
         </div>
       </div>
     </div>

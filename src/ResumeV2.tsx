@@ -434,7 +434,7 @@ export default function ResumeV2Screen() {
                 )}
                 {analysisSource === "fallback" && <Chip tone="warning">Basic profile</Chip>}
               </div>
-              <div className="flex flex-wrap items-stretch overflow-hidden rounded-lg border border-hx-line bg-hx-soft">
+              <div className="flex flex-wrap items-stretch overflow-hidden rounded-lg border border-hx-line bg-white">
                 <div className="flex min-w-0 items-center gap-2 px-3 py-1.5">
                   <span className="inline-flex size-7 shrink-0 items-center justify-center rounded bg-hx-indigo">
                     <FileTextIcon size={14} className="text-white" aria-hidden="true" />
@@ -500,7 +500,7 @@ export default function ResumeV2Screen() {
           </header>
 
           {profile.careerTrajectory && (
-            <div className={`${BAND} bg-hx-soft py-4`}>
+            <div className={`${BAND} py-5`}>
               <TargetIcon size={16} className="mt-0.5 shrink-0 text-hx-indigo" aria-hidden="true" />
               <div className="min-w-0">
                 <p className="m-0 text-[13px] font-semibold text-hx-indigo-deep">Career objective</p>

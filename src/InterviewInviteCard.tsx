@@ -8,8 +8,7 @@ import type { JobMatch } from "./DashboardJobs";
 import { inviteEvent, invitePracticeHref, stashInviteJd } from "./interviewInvite";
 import { formatInterviewWhen, isDateOnlyInstant, isInterviewPast } from "./interviewWhen";
 
-const CARD_STYLE = { background: t.white, border: `1px solid ${t.line}`, borderRadius: 16, padding: 24, minWidth: 0 } as const;
-const HEADING_STYLE = { fontFamily: f.sans, fontSize: 16, fontWeight: 600, color: t.coal, margin: 0 } as const;
+const HEADING_STYLE = { fontFamily: f.sans, fontSize: 15, fontWeight: 600, color: t.coal, margin: 0 } as const;
 const BODY_STYLE = { fontFamily: f.sans, fontSize: 14, color: t.coal, margin: "10px 0 0", lineHeight: 1.6 } as const;
 const ACTIONS_STYLE = { display: "flex", flexDirection: "column", gap: 8, marginTop: 12 } as const;
 
@@ -25,7 +24,7 @@ function downloadIcs(job: JobMatch) {
   URL.revokeObjectURL(url);
 }
 
-export default function InterviewInviteCard({ job }: { job: JobMatch }) {
+export default function InterviewInviteCard({ job, className }: { job: JobMatch; className?: string }) {
   const router = useRouter();
   const iso = job.interviewScheduledAt;
   const hasTime = !!iso && !Number.isNaN(new Date(iso).getTime());
@@ -41,7 +40,7 @@ export default function InterviewInviteCard({ job }: { job: JobMatch }) {
         : `${job.companyName} suggested ${when}. Reply in messages to confirm or propose another time.`;
   }
   return (
-    <section aria-labelledby="job-invite-heading" style={CARD_STYLE}>
+    <section aria-labelledby="job-invite-heading" className={className}>
       <h2 id="job-invite-heading" style={HEADING_STYLE}>{past ? "Interview date has passed" : "You're invited to interview"}</h2>
       <p style={BODY_STYLE}>{body}</p>
       <div style={ACTIONS_STYLE}>

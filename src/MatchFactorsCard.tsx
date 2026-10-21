@@ -20,7 +20,7 @@ const LEVEL_STYLE: Record<MatchFactorLevel, { label: string; color: string; back
   gap: { label: "Gap", color: t.inkSoft, background: t.creamSoft },
 };
 
-const HEADING = { fontFamily: f.sans, fontSize: 16, fontWeight: 600, color: t.coal, margin: "0 0 8px" } as const;
+const HEADING = { fontFamily: f.sans, fontSize: 15, fontWeight: 600, color: t.coal, margin: "0 0 8px" } as const;
 const LIST = { listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 8 } as const;
 const ROW = { display: "flex", alignItems: "center", gap: 10, fontFamily: f.sans, fontSize: 14, color: t.inkSoft, lineHeight: 1.4 } as const;
 const CHIP_BASE = { fontFamily: f.sans, fontSize: 12, fontWeight: 600, padding: "2px 8px", borderRadius: 999, flexShrink: 0, minWidth: 54, textAlign: "center" } as const;

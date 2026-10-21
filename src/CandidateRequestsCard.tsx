@@ -196,18 +196,19 @@ function RequestRow({ matchId, request, unlocked, onResolved, onError }: {
   );
 }
 
-export default function CandidateRequestsCard({ matchId, requests, unlocked, onResolved, onError, style }: {
+export default function CandidateRequestsCard({ matchId, requests, unlocked, onResolved, onError, style, className }: {
   matchId: string;
   requests: JobRequest[];
   unlocked: boolean;
   onResolved: (id: string, resolution: "fulfilled" | "declined") => void;
   onError: (message: string) => void;
   style?: React.CSSProperties;
+  className?: string;
 }) {
   if (requests.length === 0) return null;
   return (
-    <section aria-labelledby="job-requests-heading" style={style}>
-      <h2 id="job-requests-heading" className="m-0 text-[16px] font-semibold text-hx-coal">
+    <section aria-labelledby="job-requests-heading" style={style} className={className}>
+      <h2 id="job-requests-heading" className="m-0 text-[15px] font-semibold text-hx-coal">
         Requests from this employer
       </h2>
       <p className="mt-1 mb-1.5 text-[13px] leading-normal text-hx-ink-soft">
