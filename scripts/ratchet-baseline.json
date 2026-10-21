@@ -217,7 +217,7 @@
     "src/readinessIndex/ReadinessIndex.tsx": 29,
     "src/readinessIndex/sections.tsx": 294,
     "src/readinessIndex/ui.tsx": 46,
-    "src/routeSkeletons.tsx": 175,
+    "src/routeSkeletons.tsx": 168,
     "src/sessionReport/BehavioralFullReport.tsx": 97,
     "src/sessionReport/HrFullReport.tsx": 76,
     "src/sessionReport/NegotiationFullReport.tsx": 7,

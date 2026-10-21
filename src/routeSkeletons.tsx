@@ -241,43 +241,31 @@ export function MessageThreadRouteSkeleton() {
 
 export function AnalyticsRouteSkeleton() {
   return (
-    <div style={{ padding: "16px 20px" }}>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14, marginBottom: 16 }}>
-        <div className="skeleton-card" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: 160 }}>
-          <div className="skeleton skeleton-circle" style={{ width: 90, height: 90 }} />
-        </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          <div className="skeleton-card" style={{ minHeight: 70 }}>
-            <div className="skeleton skeleton-text-sm" style={{ width: "50%" }} />
-            <div className="skeleton" style={{ height: 20, width: "35%", marginTop: 8 }} />
-          </div>
-          <div className="skeleton-card" style={{ minHeight: 70 }}>
-            <div className="skeleton skeleton-text-sm" style={{ width: "50%" }} />
-            <div className="skeleton" style={{ height: 20, width: "35%", marginTop: 8 }} />
-          </div>
-        </div>
-        <div className="skeleton-card" style={{ minHeight: 160 }}>
-          <div className="skeleton skeleton-text" style={{ width: "60%" }} />
-          <div className="skeleton skeleton-text" style={{ width: "80%" }} />
+    <div role="status" aria-busy="true" style={{ background: "white", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 16, overflow: "hidden", width: "100%" }}>
+      <span className="sr-only">Loading analytics</span>
+      <div style={{ padding: "16px 20px", borderBottom: "1px solid rgba(0,0,0,0.06)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+        <div className="skeleton skeleton-heading" style={{ width: 120 }} />
+        <div className="skeleton" style={{ height: 32, width: 220, borderRadius: 8 }} />
+      </div>
+      <div style={{ padding: "14px 20px", borderBottom: "1px solid rgba(0,0,0,0.06)", display: "flex", alignItems: "center", gap: 16 }}>
+        <div className="skeleton" style={{ height: 24, width: 56 }} />
+        <div className="skeleton skeleton-text-sm" style={{ width: 260, maxWidth: "60%" }} />
+      </div>
+      <div style={{ padding: 20, display: "flex", alignItems: "center", gap: 32, flexWrap: "wrap", borderBottom: "1px solid rgba(0,0,0,0.06)" }}>
+        <div className="skeleton skeleton-circle" style={{ width: 120, height: 120, flexShrink: 0 }} />
+        <div style={{ flex: "1 1 280px", display: "flex", flexDirection: "column", gap: 10 }}>
+          <div className="skeleton skeleton-text" style={{ width: "50%" }} />
+          <div className="skeleton skeleton-text-sm" style={{ width: "80%" }} />
+          <div className="skeleton skeleton-text-sm" style={{ width: "65%" }} />
         </div>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 16 }}>
-        {[0, 1, 2, 3].map((i) => (
-          <div key={i} className="skeleton-card">
-            <div className="skeleton skeleton-text-sm" style={{ width: "50%" }} />
-            <div className="skeleton" style={{ height: 24, width: "40%", marginTop: 8 }} />
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))" }}>
+        {[0, 1, 2, 3, 4].map((i) => (
+          <div key={i} style={{ padding: "16px 20px", borderLeft: i === 0 ? "none" : "1px solid rgba(0,0,0,0.06)" }}>
+            <div className="skeleton skeleton-text-sm" style={{ width: "55%" }} />
+            <div className="skeleton" style={{ height: 24, width: "35%", marginTop: 10 }} />
           </div>
         ))}
-      </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-        <div className="skeleton-card" style={{ minHeight: 220 }}>
-          <div className="skeleton skeleton-text" style={{ width: "30%" }} />
-          <div className="skeleton" style={{ height: 170, width: "100%", marginTop: 12 }} />
-        </div>
-        <div className="skeleton-card" style={{ minHeight: 220 }}>
-          <div className="skeleton skeleton-text" style={{ width: "40%" }} />
-          <div className="skeleton" style={{ height: 170, width: "100%", marginTop: 12 }} />
-        </div>
       </div>
     </div>
   );
