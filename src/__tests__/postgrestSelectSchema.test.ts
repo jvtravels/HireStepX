@@ -103,7 +103,6 @@ const KNOWN_DRIFT = new Set([
   "google-calendar-poll.ts: google_calendar_sync.watch_channel_id",
   "google-calendar-poll.ts: google_calendar_sync.watch_resource_id",
   "pause-subscription.ts: profiles.paused_days_remaining",
-  "send-winback-emails.ts: profiles.session_credits",
 ]);
 
 describe("PostgREST select strings match supabase-schema.sql", () => {
