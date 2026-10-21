@@ -1,5 +1,6 @@
 "use client";
-import { tokens as t, fonts as f } from "./auth/_tokens";
+
+import { CheckIcon } from "lucide-react";
 
 export type MatchFactorLevel = "strong" | "partial" | "gap";
 export interface MatchFactor {
@@ -14,82 +15,78 @@ export interface MatchFactors {
   missingSkills: string[];
 }
 
-const LEVEL_STYLE: Record<MatchFactorLevel, { label: string; color: string; background: string }> = {
-  strong: { label: "Strong", color: t.successInk, background: t.success100 },
-  partial: { label: "Partial", color: t.warningInk, background: t.warning100 },
-  gap: { label: "Gap", color: t.inkSoft, background: t.creamSoft },
+const LEVEL: Record<MatchFactorLevel, { label: string; className: string }> = {
+  strong: { label: "Strong", className: "bg-hx-success-100 text-hx-success-ink" },
+  partial: { label: "Partial", className: "bg-hx-warning-100 text-hx-warning-ink" },
+  gap: { label: "Gap", className: "bg-hx-soft text-hx-neutral-ink" },
 };
 
-const HEADING = { fontFamily: f.sans, fontSize: 15, fontWeight: 600, color: t.coal, margin: "0 0 8px" } as const;
-const LIST = { listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 8 } as const;
-const ROW = { display: "flex", alignItems: "center", gap: 10, fontFamily: f.sans, fontSize: 14, color: t.inkSoft, lineHeight: 1.4 } as const;
-const CHIP_BASE = { fontFamily: f.sans, fontSize: 12, fontWeight: 600, padding: "2px 8px", borderRadius: 999, flexShrink: 0, minWidth: 54, textAlign: "center" } as const;
-const chip = (color: string, background: string) => ({ ...CHIP_BASE, color, background });
-const FACTOR_LABEL = { fontWeight: 600, color: t.coal } as const;
-const SKILLS = { display: "flex", flexWrap: "wrap", gap: 6, marginTop: 12 } as const;
-const SKILL_BASE = { fontFamily: f.sans, fontSize: 12, padding: "4px 10px", borderRadius: 999 } as const;
-const SKILL_YES = { ...SKILL_BASE, color: t.successInk, background: t.success100 } as const;
-const SKILL_NO = { ...SKILL_BASE, color: t.inkSoft, background: t.cream, border: `1px dashed ${t.line}` } as const;
-const HINT = { fontFamily: f.sans, fontSize: 12, color: t.inkFaint, margin: "8px 0 0", lineHeight: 1.5 } as const;
+const H2 = "m-0 mb-2.5 text-[13px] font-semibold text-hx-coal";
+const HINT = "m-0 mt-2.5 text-[12px] leading-[18px] text-hx-ink-soft";
+const CHIP = "inline-flex max-w-full items-center gap-1 rounded-md px-2 py-1 text-[12px] leading-none font-medium [overflow-wrap:anywhere]";
+
+function LevelChip({ className, children }: { className: string; children: React.ReactNode }) {
+  return <span className={`inline-flex min-w-[3.75rem] shrink-0 justify-center rounded-full px-2 py-0.5 text-[12px] font-semibold ${className}`}>{children}</span>;
+}
 
 export function MatchFactorsCard({ data }: { data: MatchFactors }) {
   if (data.factors.length === 0) return null;
+  const hasSkills = data.matchedSkills.length > 0 || data.missingSkills.length > 0;
   return (
     <section aria-label="Why you matched">
-      <h2 style={HEADING}>Why you matched</h2>
-      <ul style={LIST}>
-        {data.factors.map((x) => {
-          const s = LEVEL_STYLE[x.level];
-          return (
-            <li key={x.key} style={ROW}>
-              <span style={chip(s.color, s.background)}>{s.label}</span>
-              <span>
-                <span style={FACTOR_LABEL}>{x.label}</span> {x.detail}
-              </span>
-            </li>
-          );
-        })}
+      <h2 className={H2}>Why you matched</h2>
+      <ul className="m-0 flex list-none flex-col gap-2 p-0">
+        {data.factors.map((x) => (
+          <li key={x.key} className="flex items-start gap-2.5 text-[13px] leading-[20px] text-hx-ink-soft">
+            <LevelChip className={LEVEL[x.level].className}>{LEVEL[x.level].label}</LevelChip>
+            <span className="min-w-0">
+              <span className="font-semibold text-hx-coal">{x.label}</span> {x.detail}
+            </span>
+          </li>
+        ))}
       </ul>
-      {(data.matchedSkills.length > 0 || data.missingSkills.length > 0) && (
-        <div style={SKILLS} aria-label="Skill overlap">
+      {hasSkills && (
+        <ul aria-label="Skills they asked for" className="m-0 mt-3.5 flex list-none flex-wrap gap-1.5 p-0">
           {data.matchedSkills.map((s) => (
-            <span key={`y-${s}`} style={SKILL_YES}>{s}</span>
+            <li key={`y-${s}`} className={`${CHIP} bg-hx-success-100 text-hx-success-ink`}>
+              <CheckIcon size={12} aria-hidden="true" className="shrink-0" />
+              {s}
+              <span className="sr-only"> (on your resume)</span>
+            </li>
           ))}
           {data.missingSkills.map((s) => (
-            <span key={`n-${s}`} style={SKILL_NO} title="Not on your resume yet">{s}</span>
+            <li key={`n-${s}`} className={`${CHIP} border border-dashed border-hx-ink-soft/50 text-hx-neutral-ink`}>
+              {s}
+              <span className="sr-only"> (not on your resume yet)</span>
+            </li>
           ))}
-        </div>
+        </ul>
       )}
       {data.missingSkills.length > 0 && (
-        <p style={HINT}>Dashed skills are not on your resume yet. Practising them in a mock interview adds verified evidence employers can see.</p>
+        <p className={HINT}>Dashed skills are not on your resume yet. Practising them in a mock interview adds verified evidence employers can see.</p>
       )}
     </section>
   );
 }
 
 export function EmployerVisibilityCard({ unlocked }: { unlocked: boolean }) {
+  const rows = [
+    { visible: true, text: "Your practice scores, skills and interview summary for this role" },
+    { visible: unlocked, text: unlocked ? "Your name and contact details, since they showed interest" : "Your name and contact details, until they unlock your profile" },
+    { visible: unlocked, text: unlocked ? "Your answers and the notes on them" : "Your spoken answers, which are never shared before an unlock" },
+  ];
   return (
     <section aria-label="What the employer sees">
-      <h2 style={HEADING}>What this employer sees</h2>
-      <ul style={LIST}>
-        <li style={ROW}>
-          <span style={chip(t.successInk, t.success100)}>Visible</span>
-          <span>Your practice scores, skills and interview summary for this role</span>
-        </li>
-        <li style={ROW}>
-          <span style={chip(unlocked ? t.successInk : t.inkSoft, unlocked ? t.success100 : t.creamSoft)}>
-            {unlocked ? "Visible" : "Hidden"}
-          </span>
-          <span>{unlocked ? "Your name and contact details, since they showed interest" : "Your name and contact details, until they unlock your profile"}</span>
-        </li>
-        <li style={ROW}>
-          <span style={chip(unlocked ? t.successInk : t.inkSoft, unlocked ? t.success100 : t.creamSoft)}>
-            {unlocked ? "Visible" : "Hidden"}
-          </span>
-          <span>{unlocked ? "Your answers and the notes on them" : "Your spoken answers, which are never shared before an unlock"}</span>
-        </li>
+      <h2 className={H2}>What this employer sees</h2>
+      <ul className="m-0 flex list-none flex-col gap-2 p-0">
+        {rows.map((r) => (
+          <li key={r.text} className="flex items-start gap-2.5 text-[13px] leading-[20px] text-hx-ink-soft">
+            <LevelChip className={r.visible ? LEVEL.strong.className : LEVEL.gap.className}>{r.visible ? "Visible" : "Hidden"}</LevelChip>
+            <span className="min-w-0">{r.text}</span>
+          </li>
+        ))}
       </ul>
-      <p style={HINT}>You can switch employer visibility off at any time in Settings.</p>
+      <p className={HINT}>You can switch employer visibility off at any time in Settings.</p>
     </section>
   );
 }

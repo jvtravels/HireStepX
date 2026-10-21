@@ -76,7 +76,8 @@ describe("JobDetailPage", () => {
     expect(screen.getByRole("heading", { name: "Responsibilities" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Role details" })).toBeInTheDocument();
     expect(screen.getByText(/Own the payments service\./)).toBeInTheDocument();
-    expect(screen.getByText(/Hiring by 2026-09-30/)).toBeInTheDocument();
+    expect(screen.getByText("Hiring by")).toBeInTheDocument();
+    expect(screen.getByText("2026-09-30")).toBeInTheDocument();
   });
 
   it("hides company details and shows placeholders for a matched-only, sparse role", async () => {
@@ -91,9 +92,9 @@ describe("JobDetailPage", () => {
     expect(screen.getByText(/Company details are shared once this employer shows interest/)).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /acme\.example/ })).not.toBeInTheDocument();
     expect(screen.getByText("Compensation not disclosed")).toBeInTheDocument();
-    expect(screen.getByText("No specific skills listed for this role.")).toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Skills" })).not.toBeInTheDocument();
     expect(screen.getByText("This employer hasn't added a role description yet.")).toBeInTheDocument();
-    expect(screen.getByText("No perks or benefits listed.")).toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Perks and benefits" })).not.toBeInTheDocument();
   });
 
   it("shows a not-found screen when the id is not in the list", async () => {

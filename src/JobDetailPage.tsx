@@ -156,12 +156,15 @@ export default function JobDetailPage() {
     if (!cacheKey) return;
     try {
       const headers = await authHeaders();
-      const res = await fetch("/api/candidate-hiring-activity?full=1", { headers });
+      const res = await fetch(`/api/candidate-hiring-activity?full=1&match=${encodeURIComponent(id ?? "")}`, { headers });
       const json = await res.json().catch(() => null);
       if (signal.cancelled) return;
       if (res.ok && json) {
         setMatches((json.recent as JobMatch[]) ?? []);
-        try { localStorage.setItem(cacheKey, JSON.stringify(json)); } catch { /* expected: localStorage may be unavailable */ }
+        // The Jobs list shares this cache and hides closed, locked roles; the one
+        // we asked for by id must not leak into it.
+        const shared = { ...json, recent: ((json.recent as JobMatch[]) ?? []).filter((m) => m.unlocked || (m.status !== "closed" && m.status !== "failed")) };
+        try { localStorage.setItem(cacheKey, JSON.stringify(shared)); } catch { /* expected: localStorage may be unavailable */ }
         setFetchError(false);
       } else {
         setFetchError(true);
@@ -170,7 +173,7 @@ export default function JobDetailPage() {
       if (!signal.cancelled) setFetchError(true);
     }
     if (!signal.cancelled) setFetched(true);
-  }, [cacheKey]);
+  }, [cacheKey, id]);
 
   useEffect(() => {
     const signal = { cancelled: false };
@@ -217,6 +220,9 @@ export default function JobDetailPage() {
   const jobType = job.employmentType ? EMPLOYMENT_TYPE_LABEL[job.employmentType] || job.employmentType : null;
   const closed = job.status === "closed" || job.status === "failed";
   const hasBody = !!(job.description || job.responsibilities || job.niceToHave);
+  const hasFit = !!job.matchFactors && job.matchFactors.factors.length > 0;
+  const matchedLabel = daysAgo(job.matchedAt);
+  const interestLabel = job.unlocked && job.unlockedAt ? daysAgo(job.unlockedAt) : null;
   const meta: MetaPart[] = [
     { icon: MapPinIcon, text: `${job.location || "Location not specified"}${mode ? ` · ${mode}` : ""}` },
     ...(jobType ? [{ icon: ClockIcon, text: jobType }] : []),
@@ -241,7 +247,7 @@ export default function JobDetailPage() {
                     : <StatusChip label="Matched" className="bg-hx-success-100 text-hx-success-ink" />}
               </div>
               <MetaLine parts={meta} className="mt-3" />
-              {!job.unlocked && job.matchReason && (
+              {!job.unlocked && job.matchReason && !hasFit && (
                 <p className="m-0 mt-3 max-w-[75ch] text-[13.5px] leading-relaxed text-hx-ink-soft">{job.matchReason}</p>
               )}
 
@@ -267,33 +273,30 @@ export default function JobDetailPage() {
                   {!hasBody && <p className={EMPTY}>This employer hasn't added a role description yet.</p>}
                 </div>
 
-                <div className="flex min-w-0 flex-col gap-5 min-[1200px]:border-l min-[1200px]:border-hx-line min-[1200px]:pl-8">
-                  <section aria-label="Skills">
-                    <h2 className="m-0 mb-2.5 text-[13px] font-semibold text-hx-ink-soft">Skills</h2>
-                    {job.skills.length > 0 ? (
+                <div className="flex min-w-0 flex-col gap-5 max-[1199px]:order-first min-[1200px]:border-l min-[1200px]:border-hx-line min-[1200px]:pl-8">
+                  {hasFit ? (
+                    <MatchFactorsCard data={job.matchFactors!} />
+                  ) : job.skills.length > 0 ? (
+                    <section aria-label="Skills">
+                      <h2 className="m-0 mb-2.5 text-[13px] font-semibold text-hx-coal">Skills</h2>
                       <ul className="m-0 flex list-none flex-wrap gap-1.5 p-0">
                         {job.skills.map((s, i) => <li key={i}><SkillChip tone="primary">{s}</SkillChip></li>)}
                       </ul>
-                    ) : (
-                      <p className={EMPTY}>No specific skills listed for this role.</p>
-                    )}
-                  </section>
-                  <section aria-label="Perks and benefits">
-                    <h2 className="m-0 mb-2.5 text-[13px] font-semibold text-hx-ink-soft">Perks &amp; benefits</h2>
-                    {job.perksAndBenefits.length > 0 ? (
+                    </section>
+                  ) : null}
+                  {job.perksAndBenefits.length > 0 && (
+                    <section aria-label="Perks and benefits">
+                      <h2 className="m-0 mb-2.5 text-[13px] font-semibold text-hx-coal">Perks &amp; benefits</h2>
                       <ul className="m-0 flex list-none flex-wrap gap-1.5 p-0">
                         {job.perksAndBenefits.map((p, i) => <li key={i}><SkillChip tone="neutral">{p}</SkillChip></li>)}
                       </ul>
-                    ) : (
-                      <p className={EMPTY}>No perks or benefits listed.</p>
-                    )}
-                  </section>
+                    </section>
+                  )}
                 </div>
               </div>
             </section>
 
-            <div className={`${SEC} flex flex-col gap-6`}>
-              {job.matchFactors && job.matchFactors.factors.length > 0 && <MatchFactorsCard data={job.matchFactors} />}
+            <div className={SEC}>
               <EmployerVisibilityCard unlocked={job.unlocked} />
             </div>
           </div>
@@ -325,14 +328,21 @@ export default function JobDetailPage() {
               }}
               onError={(msg) => toast(msg, "error")}
             />
-            <Panel id="job-details-heading" title="Role details">
+            <Panel id="job-details-heading" title="Role details" className="px-5 py-5 min-[640px]:px-7 min-[640px]:py-6">
               <KeyValueList>
-                <KeyValueRow label="Matched">{daysAgo(job.matchedAt)}</KeyValueRow>
-                {job.unlocked && job.unlockedAt && <KeyValueRow label="Employer interest">{daysAgo(job.unlockedAt)}</KeyValueRow>}
+                {job.postedAt && <KeyValueRow label="Posted">{daysAgo(job.postedAt)}</KeyValueRow>}
+                <KeyValueRow label="Matched">{matchedLabel}</KeyValueRow>
+                {interestLabel && interestLabel !== matchedLabel && <KeyValueRow label="Employer interest">{interestLabel}</KeyValueRow>}
                 {job.openPositions != null && <KeyValueRow label="Openings">{`${job.openPositions} opening${job.openPositions === 1 ? "" : "s"}`}</KeyValueRow>}
+                {job.department && <KeyValueRow label="Department">{job.department}</KeyValueRow>}
+                {job.durationWeeks != null && <KeyValueRow label="Duration">{`${job.durationWeeks} week${job.durationWeeks === 1 ? "" : "s"}`}</KeyValueRow>}
+                {job.hoursPerWeek != null && <KeyValueRow label="Hours per week">{`${job.hoursPerWeek} hours`}</KeyValueRow>}
                 {job.noticePeriodPref && <KeyValueRow label="Notice period">{job.noticePeriodPref}</KeyValueRow>}
+                {job.availability && job.availability !== "Any" && <KeyValueRow label="Availability">{job.availability}</KeyValueRow>}
                 {job.preferredIndustry && <KeyValueRow label="Industry">{job.preferredIndustry}</KeyValueRow>}
-                {job.dueDate && <KeyValueRow label="Timeline">{`Hiring by ${job.dueDate}`}</KeyValueRow>}
+                {job.preferredDomain && <KeyValueRow label="Domain">{job.preferredDomain}</KeyValueRow>}
+                {job.portfolioPreferred && <KeyValueRow label="Portfolio / GitHub">Preferred</KeyValueRow>}
+                {job.dueDate && <KeyValueRow label="Hiring by">{job.dueDate}</KeyValueRow>}
               </KeyValueList>
             </Panel>
             {!closed && isInterviewInvite(job) && <InterviewInviteCard job={job} className={SEC} />}

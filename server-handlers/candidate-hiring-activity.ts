@@ -22,6 +22,7 @@ declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const LOGO_BUCKET = "employer-logos";
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function serviceHeaders(): Record<string, string> {
   return { apikey: SUPABASE_SERVICE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_KEY}` };
@@ -71,6 +72,13 @@ interface MatchRow {
     preferred_industry: string | null;
     due_date: string | null;
     employment_type: string | null;
+    department: string | null;
+    duration_weeks: number | null;
+    hours_per_week: number | null;
+    availability: string | null;
+    preferred_domain: string | null;
+    portfolio_required: boolean | null;
+    created_at: string | null;
     employers: { company_name: string; logo_path: string | null; website: string | null; suspended_at?: string | null } | null;
   } | null;
 }
@@ -114,6 +122,7 @@ export default async function handler(req: Request): Promise<Response> {
           `&select=id,requirement_id,unlocked,unlocked_at,match_score,created_at,candidate_status,candidate_response,interview_scheduled_at,` +
           `employer_requirements(title,location,locations,status,work_mode,salary_type,budget_min,budget_max,experience_min,experience_max,skills,` +
           `notice_period_pref,open_positions,description,responsibilities,nice_to_have,perks_and_benefits,preferred_industry,due_date,employment_type,` +
+          `department,duration_weeks,hours_per_week,availability,preferred_domain,portfolio_required,created_at,` +
           `employers(company_name,logo_path,website,suspended_at))` +
           `&order=created_at.desc`,
         { headers: serviceHeaders() },
@@ -148,7 +157,14 @@ export default async function handler(req: Request): Promise<Response> {
     // set — cap only what's returned as `recent`.
     const url = new URL(req.url);
     const full = url.searchParams.get("full") === "1";
-    const limited = full ? activeMatches : activeMatches.slice(0, 4);
+    // A deep link (email, notification) can point at a role that has since closed;
+    // `match` lets the detail page ask for that one row so it can say "closed"
+    // instead of "not found". Counts and the list view stay unchanged.
+    const wantedId = url.searchParams.get("match");
+    const wantedClosed = full && wantedId && UUID_RE.test(wantedId)
+      ? matches.find((m) => m.id === wantedId && !m.unlocked && isClosed(m))
+      : undefined;
+    const limited = full ? (wantedClosed ? [...activeMatches, wantedClosed] : activeMatches) : activeMatches.slice(0, 4);
 
     // Optional: the table arrives with migration 0040, so any failure just means "no requests".
     const pendingByMatch = new Map<string, CandidateRequestRow[]>();
@@ -194,6 +210,13 @@ export default async function handler(req: Request): Promise<Response> {
         niceToHave: mask(req?.nice_to_have) || null,
         perksAndBenefits: (req?.perks_and_benefits || []).map((x) => mask(x) ?? ""),
         preferredIndustry: req?.preferred_industry || null,
+        department: mask(req?.department) || null,
+        durationWeeks: req?.duration_weeks ?? null,
+        hoursPerWeek: req?.hours_per_week ?? null,
+        availability: req?.availability || null,
+        preferredDomain: mask(req?.preferred_domain) || null,
+        portfolioPreferred: !!req?.portfolio_required,
+        postedAt: req?.created_at || null,
         dueDate: req?.due_date || null,
         status: req?.status || null,
         employmentType: req?.employment_type || null,

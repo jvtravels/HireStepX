@@ -46,7 +46,7 @@ export default function InterviewInviteCard({ job, className }: { job: JobMatch;
       <div style={ACTIONS_STYLE}>
         {!past && <Button type="button" onClick={() => { stashInviteJd(job); router.push(invitePracticeHref(job)); }}>Practise for this interview</Button>}
         {hasTime && !past && <Button type="button" variant="outline" onClick={() => downloadIcs(job)}>Add to calendar</Button>}
-        <Button type="button" variant={past ? "default" : "outline"} onClick={() => router.push(`/messages?matchId=${encodeURIComponent(job.id)}`)}>Open messages</Button>
+        <Button type="button" variant="outline" onClick={() => router.push(`/messages?matchId=${encodeURIComponent(job.id)}`)}>{past ? "Ask for a new time" : "Open messages"}</Button>
       </div>
     </section>
   );

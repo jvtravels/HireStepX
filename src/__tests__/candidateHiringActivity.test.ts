@@ -169,4 +169,38 @@ describe("candidate-hiring-activity handler", () => {
     const matchesUrl = String(fetchMock.mock.calls[1][0]);
     expect(matchesUrl).toContain("suspended_at");
   });
+  it("returns a closed, locked match only when asked for by id, and exposes the extra posting fields", async () => {
+    const ID = "925b9862-2837-4a1f-bf2d-b80a2304b5b1";
+    const mk = (id: string, status: string) => ({
+      id, unlocked: false, unlocked_at: null, match_score: 80, created_at: "2026-07-01T00:00:00Z",
+      employer_requirements: {
+        title: "Intern", location: "Pune", status, skills: [], department: "Design at Acme", duration_weeks: 12, hours_per_week: 20,
+        availability: "Immediate", preferred_domain: "Fintech", portfolio_required: true, created_at: "2026-06-01T00:00:00Z",
+        employers: { company_name: "Acme" },
+      },
+    });
+    const run = async (qs: string) => {
+      const fetchMock = vi.fn()
+        .mockResolvedValueOnce({ ok: true, json: async () => [{ target_role: null, resume_data: null }] })
+        .mockResolvedValueOnce({ ok: true, json: async () => [mk(ID, "closed"), mk("live", "ready")] });
+      fetchMock.mockResolvedValue({ ok: true, json: async () => [] });
+      global.fetch = fetchMock as unknown as typeof fetch;
+      return (await handler(new Request(`https://x.test/api/candidate-hiring-activity?full=1${qs}`))).json();
+    };
+
+    const plain = await run("");
+    expect(plain.recent.map((r: { id: string }) => r.id)).toEqual(["live"]);
+
+    const asked = await run(`&match=${ID}`);
+    expect(asked.shortlistedCount).toBe(1);
+    expect(asked.recent.map((r: { id: string }) => r.id)).toEqual(["live", ID]);
+    expect(asked.recent[1]).toMatchObject({
+      status: "closed", durationWeeks: 12, hoursPerWeek: 20, availability: "Immediate", preferredDomain: "Fintech",
+      portfolioPreferred: true, postedAt: "2026-06-01T00:00:00Z",
+    });
+    expect(asked.recent[1].department).not.toMatch(/Acme/);
+
+    const bogus = await run("&match=not-a-uuid");
+    expect(bogus.recent.map((r: { id: string }) => r.id)).toEqual(["live"]);
+  });
 });

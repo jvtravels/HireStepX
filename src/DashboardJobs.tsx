@@ -69,6 +69,13 @@ export interface JobMatch {
   niceToHave: string | null;
   perksAndBenefits: string[];
   preferredIndustry: string | null;
+  department?: string | null;
+  durationWeeks?: number | null;
+  hoursPerWeek?: number | null;
+  availability?: string | null;
+  preferredDomain?: string | null;
+  portfolioPreferred?: boolean;
+  postedAt?: string | null;
   dueDate: string | null;
   status: string | null;
   employmentType: string | null;
