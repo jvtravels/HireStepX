@@ -43,6 +43,7 @@ import { captureServerEvent } from "./_posthog";
 import { emailShell, title as emailTitle, para, button, escapeHtml } from "./_email-theme";
 import { isSuppressed, marketingEmailParts, preferenceDepsFromEnv } from "./_unsubscribe";
 import { loadEmployerMatchAccess, loadAuthIdentity, contactReleasable, DENIED_STATUS } from "./_entitlements";
+import { after } from "next/server";
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
@@ -119,6 +120,16 @@ async function sendProfileViewedEmail(opts: { candidateUserId: string }): Promis
   }
 }
 
+/** Schedules work to finish after the response is sent. Outside a request
+ *  scope (unit tests, scripts) there is nothing to defer to, so it runs inline. */
+async function afterResponse(task: () => Promise<void>): Promise<void> {
+  try {
+    after(() => task().catch(() => {}));
+  } catch {
+    await task().catch(() => {});
+  }
+}
+
 export default async function handler(req: Request): Promise<Response> {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: corsHeaders(req, { allowGet: true }) });
@@ -189,7 +200,10 @@ export default async function handler(req: Request): Promise<Response> {
       unlocked,
     }, req);
 
-    if (await claimProfileView(SUPABASE_URL, serviceHeaders(), matchId, new Date().toISOString())) {
+    // The first-view claim, in-app notification and email run after the
+    // response: the employer should not wait on them (they cost seconds live).
+    await afterResponse(async () => {
+      if (!(await claimProfileView(SUPABASE_URL, serviceHeaders(), matchId, new Date().toISOString()))) return;
       await Promise.all([
         notify({
           userId: candidateUserId,
@@ -201,7 +215,7 @@ export default async function handler(req: Request): Promise<Response> {
         // A free, locked view must not be a way to put mail in a candidate's inbox.
         unlocked ? sendProfileViewedEmail({ candidateUserId }) : Promise.resolve(),
       ]);
-    }
+    });
 
     /* limit=50, not 1: the most recent session overall is frequently a
        salary-negotiation practice run, which latestSessionByUser() skips.

@@ -82,26 +82,27 @@ export function useCandidateDetail(requirementId: string, matchId: string) {
 
   const candidate = requirement?.candidates.find((c) => c.id === matchId);
   const candidateId = candidate?.id;
-  const unlockedFlag = candidate?.unlocked;
+  // Only a true flip (unlock) refetches; the flag arriving as false once the
+  // job loads must not repeat a request that is already in flight.
+  const unlockedNow = candidate?.unlocked === true;
 
-  // Keyed on id + unlocked (not the candidate object, which is re-derived on
-  // every optimistic patch): re-fetching on unlock reveals the quotes.
+  // Starts from the URL's match id, alongside the job detail rather than after
+  // it; the endpoint checks ownership itself. Re-fetching on unlock reveals the quotes.
   useEffect(() => {
-    if (!candidateId) return;
     let active = true;
     setEvidenceLoading(true);
     setEvidenceFailed(false);
-    fetchCandidateEvidence(candidateId).then((e) => {
+    fetchCandidateEvidence(matchId).then((e) => {
       if (!active) return;
       setEvidence(e);
-      setEvidenceId(candidateId);
+      setEvidenceId(matchId);
       setEvidenceFailed(e === null);
       setEvidenceLoading(false);
     });
     return () => {
       active = false;
     };
-  }, [candidateId, unlockedFlag, evidenceNonce, fetchCandidateEvidence]);
+  }, [matchId, unlockedNow, evidenceNonce, fetchCandidateEvidence]);
 
   const reloadEvidence = useCallback(() => setEvidenceNonce((n) => n + 1), []);
   const clearNotice = useCallback(() => patchScope({ notice: null }), [patchScope]);
