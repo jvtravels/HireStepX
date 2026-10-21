@@ -110,7 +110,7 @@ function RoundsPanel({ rounds }: { rounds: NonNullable<CandidateEvidence["rounds
           </KeyValueRow>
         ))}
       </KeyValueList>
-      <p className="m-0 mt-3.5 text-[12px] text-hx-ink-soft">Only sessions graded by HireStepX on the server count. Candidates cannot edit or self-report a score.</p>
+      <p className="m-0 mt-3.5 text-[12px] text-hx-ink-soft">Only sessions graded by HireStepX on the server count.</p>
     </Panel>
   );
 }
