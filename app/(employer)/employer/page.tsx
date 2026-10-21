@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { EmployerHeaderAction } from "@/employer/EmployerShell";
-import { useEmployerData } from "@/employer/EmployerDataContext";
+import { useEmployerData, DEFAULT_DASHBOARD_RANGE } from "@/employer/EmployerDataContext";
 import { useAuth } from "@/AuthContext";
 import { emailDomain, isFreeMailDomain } from "../../../server-handlers/_employer-trust";
 import { tierLadder } from "@/employer/_accountHelpers";
@@ -209,7 +209,7 @@ function EmployerDashboard() {
     requirements, requirementsLoading, requirementsError, refreshRequirements,
     companyName, fetchDashboard, fetchUnlockHistory, limits, suspended,
   } = useEmployerData();
-  const [range, setRange] = useState<DashboardRange>(30);
+  const [range, setRange] = useState<DashboardRange>(DEFAULT_DASHBOARD_RANGE);
   const [dashboard, setDashboard] = useState<EmployerDashboardData | null>(null);
   const [dashboardState, setDashboardState] = useState<"loading" | "ready" | "failed">("loading");
   const [dashboardNonce, setDashboardNonce] = useState(0);

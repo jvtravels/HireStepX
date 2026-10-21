@@ -10,6 +10,8 @@ import { isDashboardData, type EmployerDashboardData, type DashboardRange } from
 import type { InvoiceSnapshot } from "../../server-handlers/_unlock-tax";
 import { RequirementSummary, Requirement, Candidate, RequirementStage, RequirementFormValues, CandidateStatus, ArchiveDisposition } from "./mockData";
 
+export const DEFAULT_DASHBOARD_RANGE: DashboardRange = 30;
+
 /* Real backend layer for the employer console — see server-handlers/
    employer-profile.ts, employer-requirements.ts,
    employer-requirement-detail.ts, employer-create-unlock-order.ts,
@@ -486,9 +488,16 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
      after it. The list is scoped to the signed-in employer server-side, so for
      a company that turns out not to be approved the answer is simply unused. */
   const earlyRequirements = useRef<ReturnType<typeof getWithRetry> | null>(null);
+  /* Same idea for the dashboard's default range, only when the page opens on
+     the dashboard itself: it mounts after the profile answers, so without this
+     its request starts a full profile round trip late. */
+  const earlyDashboard = useRef<ReturnType<typeof getWithRetry> | null>(null);
 
   useEffect(() => {
     earlyRequirements.current = getWithRetry("/api/employer-requirements");
+    if (window.location.pathname.replace(/\/$/, "") === "/employer") {
+      earlyDashboard.current = getWithRetry(`/api/employer-dashboard?range=${DEFAULT_DASHBOARD_RANGE}`);
+    }
     refreshCompanyStatus();
   }, [refreshCompanyStatus]);
 
@@ -779,7 +788,9 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
   }, []);
 
   const fetchDashboard = useCallback(async (range: DashboardRange): Promise<EmployerDashboardData | null> => {
-    const res = await getWithRetry(`/api/employer-dashboard?range=${range}`);
+    const early = range === DEFAULT_DASHBOARD_RANGE ? earlyDashboard.current : null;
+    if (early) earlyDashboard.current = null;
+    const res = await (early ?? getWithRetry(`/api/employer-dashboard?range=${range}`));
     if (!res || !res.ok || !isDashboardData(res.data)) return null;
     return res.data;
   }, []);

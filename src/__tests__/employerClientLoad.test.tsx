@@ -151,6 +151,43 @@ describe("employer client load (virtual clock, 80 ms per call)", () => {
     expect(detailCalls()).toBeGreaterThanOrEqual(2);
   });
 
+  describe("dashboard request", () => {
+    const dashboardCalls = () => log.filter((u) => u.startsWith("/api/employer-dashboard")).length;
+    afterEach(() => window.history.pushState({}, "", "/"));
+    const load = async (range: 7 | 30 | 90) => {
+      const p = ctx!.fetchDashboard(range);
+      await settle(LATENCY_MS * 2);
+      return p;
+    };
+
+    it("starts with the profile on /employer and is reused by the page's own fetch", async () => {
+      window.history.pushState({}, "", "/employer");
+      render(<EmployerDataProvider><Probe /></EmployerDataProvider>);
+      await settle(1);
+      expect(dashboardCalls()).toBe(1);
+      await settle(LATENCY_MS * 3);
+      await load(30);
+      expect(dashboardCalls()).toBe(1);
+      await load(30);
+      expect(dashboardCalls()).toBe(2);
+    });
+
+    it("does not reuse the early request for another range", async () => {
+      window.history.pushState({}, "", "/employer");
+      render(<EmployerDataProvider><Probe /></EmployerDataProvider>);
+      await settle(LATENCY_MS * 3);
+      await load(7);
+      expect(dashboardCalls()).toBe(2);
+    });
+
+    it("is not requested on other employer pages", async () => {
+      window.history.pushState({}, "", "/employer/jobs");
+      render(<EmployerDataProvider><Probe /></EmployerDataProvider>);
+      await settle(LATENCY_MS * 3);
+      expect(dashboardCalls()).toBe(0);
+    });
+  });
+
   it("prints the table", () => {
     const out = process.env.LATENCY_REPORT_CLIENT;
     if (out) writeFileSync(out, results.join("\n") + "\n");
