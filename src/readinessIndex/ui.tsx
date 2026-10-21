@@ -21,6 +21,10 @@ export const SHEET = `
   .rix-ghost:hover { background: ${t.indigoMist}; border-color: ${t.indigo}; }
   .rix-seg:hover  { background: ${t.creamSoft}; }
   .rix-focus:focus-visible { outline: 2px solid ${t.indigo}; outline-offset: 2px; border-radius: 10px; }
+  .rix-stack > * { padding: 24px 0; }
+  .rix-stack > * + * { border-top: 1px solid ${t.line}; }
+  .rix-div-x > * + * { border-left: 1px solid ${t.line}; }
+  .rix-div-y > * + * { border-top: 1px solid ${t.line}; }
   @media (max-width: 640px) { .rix-tap { min-height: 44px; } }
   @media (prefers-reduced-motion: reduce) { .rix-btn { transition-duration: 0.01ms !important; } }
 `;
@@ -84,9 +88,9 @@ export function Title({ children, as: As = "h3", size = 20 }: { children: React.
   );
 }
 
-export function Card({ children, pad = 22, style, className, as: As = "div", id }: { children: React.ReactNode; pad?: number; style?: React.CSSProperties; className?: string; as?: "div" | "section" | "article"; id?: string }) {
+export function Card({ children, style, className, as: As = "div", id }: { children: React.ReactNode; style?: React.CSSProperties; className?: string; as?: "div" | "section" | "article"; id?: string }) {
   return (
-    <As id={id} className={className} style={{ background: t.white, border: `1px solid ${t.line}`, borderRadius: 16, padding: pad, ...style }}>
+    <As id={id} className={className} style={style}>
       {children}
     </As>
   );

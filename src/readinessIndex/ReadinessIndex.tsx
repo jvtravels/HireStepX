@@ -54,39 +54,36 @@ function SegControl({ range, onChange }: { range: RangeKey; onChange: (r: RangeK
    range scrubber. The "always know your number" anchor. Sticks to the top
    of the page's own scroll container — same plain-flow convention Resume
    and Sessions use, no dependency on DashboardLayout's internal spacing. */
-function StickyHeader({ d, range, onRange, showControls }: { d: Fixture; range: RangeKey; onRange: (r: RangeKey) => void; showControls: boolean }) {
+function StickyHeader({ d }: { d: Fixture }) {
   const band = BAND_META[d.band];
   return (
     <header style={{ position: "sticky", top: 0, zIndex: 10, background: t.white, borderBottom: `1px solid ${t.line}` }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, padding: "20px 22px 16px", flexWrap: "wrap" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 0 }}>
-          <span style={{ display: "inline-flex", alignItems: "baseline", gap: 7 }}>
-            <span style={{ fontFamily: f.sans, fontSize: 30, fontWeight: 700, lineHeight: 1, color: t.coal }}>{d.ri}</span>
-            <span style={{ fontFamily: f.mono, fontSize: 11, color: t.inkSoft }}>RI</span>
-          </span>
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 7, padding: "4px 11px", borderRadius: 999, background: band.bg, color: band.fg, fontFamily: f.sans, fontSize: 12, fontWeight: 600 }}>
-            <span aria-hidden="true" style={{ width: 7, height: 7, borderRadius: 999, background: band.fg }} />{band.label}
-          </span>
-          <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft }}>
-            {d.target.role}{d.target.hasCompany ? ` · ${d.target.company}` : ""} · bar <strong style={{ color: t.coal }}>{d.threshold}</strong>
-            {d.ri < d.threshold && <> · <span style={{ color: t.copper, fontWeight: 600 }}>need {d.threshold - d.ri} more</span></>}
-          </span>
-        </div>
-        {showControls && <SegControl range={range} onChange={onRange} />}
+      <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "12px 20px", flexWrap: "wrap" }}>
+        <span style={{ display: "inline-flex", alignItems: "baseline", gap: 7 }}>
+          <span style={{ fontFamily: f.sans, fontSize: 24, fontWeight: 600, lineHeight: 1, color: t.coal }}>{d.ri}</span>
+          <span style={{ fontFamily: f.mono, fontSize: 11, color: t.inkSoft }}>RI</span>
+        </span>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 7, padding: "4px 11px", borderRadius: 999, background: band.bg, color: band.fg, fontFamily: f.sans, fontSize: 12, fontWeight: 600 }}>
+          <span aria-hidden="true" style={{ width: 7, height: 7, borderRadius: 999, background: band.fg }} />{band.label}
+        </span>
+        <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft }}>
+          {d.target.role}{d.target.hasCompany ? ` · ${d.target.company}` : ""} · bar <strong style={{ color: t.coal }}>{d.threshold}</strong>
+          {d.ri < d.threshold && <> · <span style={{ color: t.copper, fontWeight: 600 }}>need {d.threshold - d.ri} more</span></>}
+        </span>
       </div>
     </header>
   );
 }
 
-function Stack({ children, gap = 18 }: { children: React.ReactNode; gap?: number }) {
-  return <div style={{ display: "flex", flexDirection: "column", gap }}>{children}</div>;
+function Stack({ children }: { children: React.ReactNode }) {
+  return <div className="rix-stack">{children}</div>;
 }
 
 /* Two-up row for the wide desktop layout — pairs adjacent full-width
    sections side by side to cut vertical height. Collapses to a single
    column on narrow (mobile) so nothing is squeezed. Top-aligned, so a
    shorter card simply leaves space below rather than stretching. */
-function Row({ narrow, children, gap = 18 }: { narrow: boolean; children: React.ReactNode; gap?: number }) {
+function Row({ narrow, children, gap = 32 }: { narrow: boolean; children: React.ReactNode; gap?: number }) {
   // minmax(0, 1fr) rather than bare 1fr: a 1fr track is implicitly
   // minmax(auto, 1fr), so a child with a wide min-content (a long skill row,
   // an unbreakable label) blows the track past the container and clips on the
@@ -162,13 +159,16 @@ function DesktopShell({ d }: { d: Fixture }) {
   const [activePillar, setActivePillar] = React.useState<Pillar["key"] | null>(null);
   const onPillar = (k: Pillar["key"]) => setActivePillar((cur) => (cur === k ? null : k));
   return (
-    <div style={{ display: "flex", flexDirection: "column", width: "100%", color: t.coal }}>
+    <CandidatePagePanel>
       <style dangerouslySetInnerHTML={{ __html: SHEET }} />
-      <StickyHeader d={d} range={range} onRange={setRange} showControls />
-      <div style={{ padding: "22px 0 64px" }}>
-        <AnalyticsBody d={d} narrow={false} range={range} activePillar={activePillar} onPillar={onPillar} />
+      <CandidatePageHeader title="Analytics" actions={<SegControl range={range} onChange={setRange} />} />
+      <div style={{ flex: 1, minHeight: 0, overflowY: "auto", color: t.coal }}>
+        <StickyHeader d={d} />
+        <div style={{ padding: "0 28px 48px" }}>
+          <AnalyticsBody d={d} narrow={false} range={range} activePillar={activePillar} onPillar={onPillar} />
+        </div>
       </div>
-    </div>
+    </CandidatePagePanel>
   );
 }
 
@@ -177,14 +177,17 @@ function MobileShell({ d }: { d: Fixture }) {
   const [activePillar, setActivePillar] = React.useState<Pillar["key"] | null>(null);
   const onPillar = (k: Pillar["key"]) => setActivePillar((cur) => (cur === k ? null : k));
   return (
-    <div style={{ display: "flex", flexDirection: "column", width: "100%", color: t.coal }}>
+    <CandidatePagePanel>
       <style dangerouslySetInnerHTML={{ __html: SHEET }} />
-      <StickyHeader d={d} range={range} onRange={setRange} showControls={false} />
-      <div style={{ padding: "14px 0 48px" }}>
-        <div style={{ marginBottom: 16 }}><SegControl range={range} onChange={setRange} /></div>
-        <AnalyticsBody d={d} narrow range={range} activePillar={activePillar} onPillar={onPillar} />
+      <CandidatePageHeader title="Analytics" />
+      <div style={{ flex: 1, minHeight: 0, overflowY: "auto", color: t.coal }}>
+        <StickyHeader d={d} />
+        <div style={{ padding: "14px 16px 40px" }}>
+          <div style={{ marginBottom: 4 }}><SegControl range={range} onChange={setRange} /></div>
+          <AnalyticsBody d={d} narrow range={range} activePillar={activePillar} onPillar={onPillar} />
+        </div>
       </div>
-    </div>
+    </CandidatePagePanel>
   );
 }
 

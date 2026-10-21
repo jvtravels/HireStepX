@@ -52,10 +52,10 @@ export function HeroRow({ d, narrow, range }: { d: Fixture; narrow: boolean; ran
   const winStart = rangeStartIndex(d.trajectoryStamps, range, nowMs);
   const rangeDelta = d.trajectory.length ? d.ri - d.trajectory[Math.min(winStart, d.trajectory.length - 1)] : 0;
   return (
-    <Card as="section" pad={narrow ? 18 : 26} id="zone-readiness">
-      <h1 style={{ position: "absolute", width: 1, height: 1, padding: 0, margin: -1, overflow: "hidden", clip: "rect(0 0 0 0)", whiteSpace: "nowrap", border: 0 }}>
+    <Card as="section" id="zone-readiness">
+      <h2 style={{ position: "absolute", width: 1, height: 1, padding: 0, margin: -1, overflow: "hidden", clip: "rect(0 0 0 0)", whiteSpace: "nowrap", border: 0 }}>
         Readiness Index for {d.target.role}{d.target.hasCompany ? ` at ${d.target.company}` : ""}, {d.target.round}
-      </h1>
+      </h2>
       <div style={{ display: "flex", flexDirection: narrow ? "column" : "row", gap: narrow ? 18 : 30, alignItems: narrow ? "stretch" : "center" }}>
         <div style={{ display: "flex", justifyContent: "center" }}>
           <RiGauge ri={d.ri} threshold={d.threshold} band={d.band} cohort={d.cohort.ri} size={narrow ? 190 : 220} />
@@ -187,11 +187,10 @@ const PILLAR_HINT: Record<Pillar["key"], string> = {
 
 function PillarCard({ p, lever, active, onOpen, range, stamps, nowMs }: { p: Pillar; lever: boolean; active: boolean; onOpen: () => void; range: RangeKey; stamps: number[]; nowMs: number }) {
   return (
-    <Card as="article" pad={18}
+    <Card as="article"
       style={{
-        display: "flex", flexDirection: "column", gap: 8, minHeight: 196,
-        border: active ? `1px solid ${t.indigo}` : lever ? `1px solid ${COPPER_LINE}` : `1px solid ${t.line}`,
-        boxShadow: active ? `0 0 0 3px ${t.indigo100}` : "none",
+        display: "flex", flexDirection: "column", gap: 8, minHeight: 196, padding: "16px 18px",
+        background: active ? t.indigo100 : "transparent",
       }}>
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
         <div>
@@ -228,7 +227,7 @@ export function PillarGrid({ d, narrow, activeKey, onOpen, range }: { d: Fixture
         <Eyebrow as="h2" tone="indigo"><span id="rix-pillars">The five pillars · weighted into RI</span></Eyebrow>
         <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft }}>open any pillar for its drivers and the one fix</span>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: narrow ? "minmax(0, 1fr)" : "repeat(5, minmax(0, 1fr))", gap: 14 }}>
+      <div className={narrow ? "rix-div-y" : "rix-div-x"} style={{ display: "grid", gridTemplateColumns: narrow ? "minmax(0, 1fr)" : "repeat(5, minmax(0, 1fr))", border: `1px solid ${t.line}`, borderRadius: 12, overflow: "hidden" }}>
         {d.pillars.map((p) => (
           <PillarCard key={p.key} p={p} lever={p.key === leverKey} active={p.key === activeKey} onOpen={() => onOpen(p.key)} range={range} stamps={d.trajectoryStamps} nowMs={d.meta.generatedAtMs} />
         ))}
@@ -242,7 +241,7 @@ export function PillarGrid({ d, narrow, activeKey, onOpen, range }: { d: Fixture
    hold/fix narration. The inline drill target for the pillar grid. */
 export function PillarEvidence({ p }: { p: Pillar }) {
   return (
-    <Card as="section" pad={22} style={{ border: `1px solid ${t.indigo}`, boxShadow: `0 0 0 3px ${t.indigo100}` }}>
+    <Card as="section" style={{ background: t.indigo100, borderRadius: 12, padding: 22 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16, marginBottom: 16, flexWrap: "wrap" }}>
         <div>
           <Eyebrow as="h2" tone="indigo">Pillar evidence</Eyebrow>
@@ -931,12 +930,12 @@ export function Coaching({ d, narrow }: { d: Fixture; narrow: boolean }) {
   const co = d.coaching;
   return (
     <div style={{ display: "grid", gridTemplateColumns: narrow ? "minmax(0, 1fr)" : "minmax(0, 1fr) minmax(0, 1fr)", gap: 16 }}>
-      <Card as="section" style={{ background: t.success100, border: `1px solid ${SUCCESS_LINE}` }}>
+      <Card as="section" style={{ background: t.success100, border: `1px solid ${SUCCESS_LINE}`, borderRadius: 12, padding: 20 }}>
         <Eyebrow as="h2" tone="ink"><span style={{ color: t.success }}>Your edge</span></Eyebrow>
         <Title as="h3" size={20}>{co.strength.headline}</Title>
         <p style={{ margin: "10px 0 0", fontFamily: f.sans, fontSize: 14, color: t.coal, lineHeight: 1.55 }}>{co.strength.meaning}</p>
       </Card>
-      <Card as="section" style={{ background: t.copperSoft, border: `1px solid ${COPPER_LINE}` }}>
+      <Card as="section" style={{ background: t.copperSoft, border: `1px solid ${COPPER_LINE}`, borderRadius: 12, padding: 20 }}>
         <Eyebrow as="h2" tone="ink"><span style={{ color: t.copper }}>Your one gap</span></Eyebrow>
         <Title as="h3" size={20}>{co.gap.headline}</Title>
         <p style={{ margin: "10px 0 0", fontFamily: f.sans, fontSize: 14, color: t.coal, lineHeight: 1.55 }}>{co.gap.meaning}</p>
