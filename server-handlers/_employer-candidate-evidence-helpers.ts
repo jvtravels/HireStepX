@@ -9,6 +9,7 @@
 
 import { scrubFreeText } from "./_employer-matching-helpers";
 import { computeEvidenceCapabilities, type EvidenceCapability } from "../src/evidenceCapabilities";
+import { computeFocusRounds, type FocusRound } from "../src/focusRounds";
 export type { EvidenceCapability } from "../src/evidenceCapabilities";
 
 export interface EvidenceSkill {
@@ -389,6 +390,16 @@ export function computeVerifiedCapabilitiesForCandidate(
       skill_scores: typeof r.score === "number" && r.score >= SKILL_SCORE_PLAUSIBILITY_FLOOR ? (r.skill_scores ?? null) : null,
     })),
   );
+}
+
+/* Per-focus rounds from the same sessions and bar as the verified skills. Only
+   rounds the candidate has actually attempted are sent: "not started" says
+   nothing about them and would read as a gap. */
+export function computeRoundsForCandidate(rows: SessionRow[], candidateUserId: string): FocusRound[] {
+  const own = rows.filter((r) => r.user_id === candidateUserId);
+  return computeFocusRounds(
+    own.map((r) => ({ date: r.created_at, score: typeof r.score === "number" ? r.score : 0, type: r.type, focus: r.focus })),
+  ).filter((r) => r.attempts > 0);
 }
 
 export type AnswerVerdict = "strong" | "complete" | "partial" | "weak" | "skipped";

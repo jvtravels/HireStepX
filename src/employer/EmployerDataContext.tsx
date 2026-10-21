@@ -76,6 +76,16 @@ export interface UnlockOrder {
  *  reads. "Verified" means 2+ practice sessions scored 70+ on it; this is
  *  never computed independently on the employer side, so it can't drift
  *  from what the candidate's own dashboard shows them. */
+export interface EvidenceRound {
+  key: string;
+  label: string;
+  status: "practising" | "cleared";
+  attempts: number;
+  best: number | null;
+  qualifying: number;
+  clearedAt: string | null;
+}
+
 export interface VerifiedCapability {
   key: string;
   label: string;
@@ -102,6 +112,8 @@ export interface CandidateEvidence {
   sessionDate: string | null;
   roleFit?: { status: "matched" | "mismatch" | "none"; practicedFor: string | null; practicedAt: string | null };
   verifiedCapabilities: VerifiedCapability[];
+  /** Interview rounds (focuses) the candidate has practised; cleared = 2+ sessions at 70+. */
+  rounds?: EvidenceRound[];
   sessionTrend?: Array<{ date: string; score: number; focus: string | null; type?: string | null }>;
   questions?: EvidenceQuestion[];
   delivery?: EvidenceDelivery | null;

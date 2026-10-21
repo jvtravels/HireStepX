@@ -12,6 +12,7 @@ import {
   selectSessionsForRole,
   claimProfileView,
   computeVerifiedCapabilitiesForCandidate,
+  computeRoundsForCandidate,
   scrubLockedQuestions,
   scrubLockedQuotes,
   toThirdPerson,
@@ -440,5 +441,33 @@ describe("extractReadinessBand", () => {
   it("ignores reports it cannot read", () => {
     expect(extractReadinessBand(null)).toBeNull();
     expect(extractReadinessBand({ readiness: { targetBand: "hire" } })).toBeNull();
+  });
+});
+
+describe("computeRoundsForCandidate", () => {
+  const row = (o: Partial<SessionRow>): SessionRow => ({ user_id: "u1", created_at: "2026-01-01T00:00:00Z", report_json: {}, score: 75, type: "behavioral", ...o });
+
+  it("sends only rounds the candidate has attempted", () => {
+    expect(computeRoundsForCandidate([], "u1")).toEqual([]);
+    const rounds = computeRoundsForCandidate([row({ score: 60 })], "u1");
+    expect(rounds).toHaveLength(1);
+    expect(rounds[0]).toMatchObject({ key: "behavioral", status: "practising", best: 60, qualifying: 0 });
+  });
+
+  it("clears a round on two sessions at 70+ and keeps focus rounds apart from behavioral", () => {
+    const rounds = computeRoundsForCandidate(
+      [
+        row({ created_at: "2026-01-01T00:00:00Z", focus: "hr-round" }),
+        row({ created_at: "2026-02-01T00:00:00Z", focus: "hr-round", score: 88 }),
+        row({ created_at: "2026-02-02T00:00:00Z" }),
+      ],
+      "u1",
+    );
+    expect(rounds.find((r) => r.key === "hr-round")).toMatchObject({ status: "cleared", clearedAt: "2026-02-01T00:00:00Z" });
+    expect(rounds.find((r) => r.key === "behavioral")?.status).toBe("practising");
+  });
+
+  it("ignores other users' sessions", () => {
+    expect(computeRoundsForCandidate([row({ user_id: "u2" })], "u1")).toEqual([]);
   });
 });

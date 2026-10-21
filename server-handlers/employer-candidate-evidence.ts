@@ -35,6 +35,7 @@ import {
   latestSessionByUser,
   selectSessionsForRole,
   computeVerifiedCapabilitiesForCandidate,
+  computeRoundsForCandidate,
   claimProfileView,
   type SessionRow,
 } from "./_employer-candidate-evidence-helpers";
@@ -273,6 +274,7 @@ export default async function handler(req: Request): Promise<Response> {
         questions: latest ? scrubQuestions(extractQuestionBreakdown(latest.report_json, releasable)) : [],
         delivery: latest ? extractDeliveryMetrics(latest.report_json) : null,
         verifiedCapabilities: computeVerifiedCapabilitiesForCandidate(sessionRows, candidateUserId),
+        rounds: computeRoundsForCandidate(sessionRows, candidateUserId),
       }),
       { status: 200, headers },
     );

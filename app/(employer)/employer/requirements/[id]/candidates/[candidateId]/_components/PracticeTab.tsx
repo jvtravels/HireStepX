@@ -90,6 +90,30 @@ function VerifiedPanel({ capabilities }: { capabilities: NonNullable<CandidateEv
   );
 }
 
+function RoundsPanel({ rounds }: { rounds: NonNullable<CandidateEvidence["rounds"]> }) {
+  const cleared = rounds.filter((r) => r.status === "cleared").length;
+  return (
+    <Panel
+      id="rounds-heading"
+      title="Interview rounds"
+      action={<InfoTip label="What cleared means">A round is cleared after 2 or more graded sessions of that interview type scoring 70 or more.</InfoTip>}
+    >
+      <p className="m-0 mb-3.5 text-[13px] text-hx-ink-soft">{cleared} of {rounds.length} practised round{rounds.length === 1 ? "" : "s"} cleared.</p>
+      <KeyValueList>
+        {rounds.map((r) => (
+          <KeyValueRow key={r.key} label={r.label}>
+            {r.status === "cleared" ? (
+              <Badge tone="success">Cleared{r.clearedAt ? ` · ${formatSessionDate(r.clearedAt)}` : ""}</Badge>
+            ) : (
+              <Badge tone="neutral">{r.qualifying} of 2 at 70+</Badge>
+            )}
+          </KeyValueRow>
+        ))}
+      </KeyValueList>
+    </Panel>
+  );
+}
+
 function HistoryPanel({ trend, sessions }: { trend: NonNullable<CandidateEvidence["sessionTrend"]>; sessions: number }) {
   const first = trend[0].score;
   const last = trend[trend.length - 1].score;
@@ -141,6 +165,7 @@ export function PracticeTab({
   const quotes = evidence?.quotes ?? [];
   const questions = evidence?.questions ?? [];
   const verified = employerCapabilities(evidence?.verifiedCapabilities ?? []);
+  const rounds = evidence?.rounds ?? [];
   const sessions = candidate.sessionsCompleted || trend.length;
   const deliveryRows = describeDelivery(evidence?.delivery).length;
   const hasReadiness = !!(evidence?.readiness || evidence?.starCompleteness);
@@ -181,6 +206,7 @@ export function PracticeTab({
             },
             deliveryRows > 0 && { key: "delivery", weight: 2 + deliveryRows * 1.5, node: <DeliveryPanel delivery={evidence?.delivery} /> },
             verified.length > 0 && { key: "verified", weight: 2 + verified.length, node: <VerifiedPanel capabilities={verified} /> },
+            rounds.length > 0 && { key: "rounds", weight: 2 + rounds.length, node: <RoundsPanel rounds={rounds} /> },
             trend.length > 0 && { key: "history", weight: 6 + trend.length * 1.5, node: <HistoryPanel trend={trend} sessions={sessions} /> },
             quotes.length > 0 && {
               key: "quotes",
