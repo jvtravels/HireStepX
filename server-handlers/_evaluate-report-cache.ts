@@ -3,6 +3,7 @@
  * type so this file stays free of the large SessionReport interface. */
 
 import { hashStable } from "./_shared";
+import { fulfilPracticeRequests } from "./_practice-request-fulfil";
 
 declare const process: { env: Record<string, string | undefined> };
 
@@ -128,6 +129,8 @@ export async function saveCachedReport<T extends { overallScore: number }>(
     if (!res.ok) {
       const body = await res.text().catch(() => "");
       console.error(`[evaluate-session] cache write HTTP ${res.status}: ${body.slice(0, 200)}`);
+    } else {
+      await fulfilPracticeRequests(userId, sessionId);
     }
   } catch (err) {
     console.error(`[evaluate-session] cache write failed: ${err instanceof Error ? err.message : String(err)}`);

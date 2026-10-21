@@ -4,6 +4,7 @@
    by both consoles. */
 
 import { asContactRequestFields, joinFieldLabels, type ContactRequestField } from "./_employer-contact-request-helpers";
+import { roundKeyForTopic } from "../src/focusRounds";
 import { detectContactInfoFlag, redactContactInfo } from "./_messages-helpers";
 import {
   REQUEST_KINDS,
@@ -81,7 +82,7 @@ export function requestHeadline(r: { kind: RequestKind; topic: string | null; fi
   switch (r.kind) {
     case "contact": return `Contact details: ${joinFieldLabels((r.fields ?? []).filter((f): f is ContactRequestField => asContactRequestFields([f]) !== null))}`;
     case "document": return r.topic ?? "A document or link";
-    case "practice": return `Practice answer: ${r.topic ?? "a skill"}`;
+    case "practice": return roundKeyForTopic(r.topic) ? `Practise a ${r.topic} interview` : `Practice answer: ${r.topic ?? "a skill"}`;
     case "clarification": return r.topic ? `Question about ${r.topic}` : "A question about your profile";
   }
 }

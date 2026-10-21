@@ -66,3 +66,10 @@ export function computeFocusRounds(sessions: readonly RoundSessionInput[]): Focu
 export function roundStatusByLabel(rounds: readonly FocusRound[] | undefined): Record<string, RoundStatus> {
   return Object.fromEntries((rounds ?? []).map((r) => [r.label, r.status]));
 }
+
+/* Employer "practice" requests name a round by its focus label. Anything else
+   is a free-text skill the candidate answers by hand. */
+export function roundKeyForTopic(topic: string | null | undefined): RoundKey | null {
+  const t = (topic ?? "").trim().toLowerCase();
+  return ROUNDS.find((r) => r.label.toLowerCase() === t)?.key ?? null;
+}

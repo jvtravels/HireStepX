@@ -23,7 +23,7 @@ import { useFocusRounds } from "./DashboardContext";
 import CandidateRequestsCard from "./CandidateRequestsCard";
 import { MatchFactorsCard } from "./MatchFactorsCard";
 import InterviewInviteCard from "./InterviewInviteCard";
-import { invitePracticeHref, isInterviewInvite, stashInviteJd } from "./interviewInvite";
+import { focusPracticeHref, invitePracticeHref, isInterviewInvite, stashInviteJd } from "./interviewInvite";
 import JobHeader from "./jobDetail/JobHeader";
 import JobBody from "./jobDetail/JobBody";
 import ResponseActions from "./jobDetail/ResponseActions";
@@ -142,6 +142,7 @@ export default function JobDetailPage() {
       matchId={job.id}
       requests={job.requests ?? []}
       unlocked={job.unlocked}
+      practice={closed ? undefined : { hrefFor: (label) => focusPracticeHref(job, label), onStart: () => stashInviteJd(job) }}
       className={SEC}
       onResolved={(requestId, resolution) => {
         dropRequest(requestId);

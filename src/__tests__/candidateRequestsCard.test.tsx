@@ -86,3 +86,38 @@ describe("CandidateRequestsCard contact request", () => {
     expect(updateUser).not.toHaveBeenCalled();
   });
 });
+
+describe("CandidateRequestsCard round practice request", () => {
+  const roundRequest = {
+    id: "r2", kind: "practice" as const, topic: "HR Round", headline: "Practise a HR Round interview",
+    fields: null, note: null, createdAt: new Date().toISOString(),
+  };
+
+  it("offers a one-tap practice link instead of a reply box, and sends nothing by hand", () => {
+    const onStart = vi.fn();
+    render(
+      <CandidateRequestsCard
+        matchId="m1" requests={[roundRequest]} unlocked={false} onResolved={vi.fn()} onError={vi.fn()}
+        practice={{ hrefFor: (label) => `/session/new?focus=${label}`, onStart }}
+      />,
+    );
+    const link = screen.getByRole("link", { name: "Practise HR Round" });
+    expect(link.getAttribute("href")).toBe("/session/new?focus=HR Round");
+    fireEvent.click(link);
+    expect(onStart).toHaveBeenCalled();
+    expect(screen.queryByRole("button", { name: "Send reply" })).toBeNull();
+    expect(screen.queryByRole("textbox")).toBeNull();
+    expect(screen.getByRole("button", { name: "Decline" })).toBeTruthy();
+  });
+
+  it("keeps the reply box for free-text practice topics", () => {
+    render(
+      <CandidateRequestsCard
+        matchId="m1" requests={[{ ...roundRequest, topic: "System design" }]} unlocked={false} onResolved={vi.fn()} onError={vi.fn()}
+        practice={{ hrefFor: () => "/x", onStart: vi.fn() }}
+      />,
+    );
+    expect(screen.getByRole("button", { name: "Send reply" })).toBeTruthy();
+    expect(screen.queryByRole("link", { name: /Practise/ })).toBeNull();
+  });
+});

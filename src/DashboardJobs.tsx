@@ -100,6 +100,8 @@ export interface JobRequest {
   id: string;
   kind: "contact" | "document" | "practice" | "clarification";
   headline: string;
+  /** For practice requests: the round (focus label) or skill asked for. */
+  topic?: string | null;
   /** Contact-detail requests: which of phone / email / linkedin / portfolio were asked for. */
   fields?: string[] | null;
   note: string | null;

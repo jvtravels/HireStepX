@@ -44,6 +44,8 @@ describe("wording", () => {
   it("builds headlines per kind", () => {
     expect(requestHeadline({ kind: "contact", topic: null, fields: ["phone", "email"] })).toBe("Contact details: phone number and email address");
     expect(requestHeadline({ kind: "document", topic: "Certificate", fields: null })).toBe("Certificate");
+    expect(requestHeadline({ kind: "practice", topic: "HR Round", fields: null })).toBe("Practise a HR Round interview");
+    expect(requestHeadline({ kind: "practice", topic: "System design", fields: null })).toBe("Practice answer: System design");
     expect(requestHeadline({ kind: "practice", topic: "SQL", fields: null })).toBe("Practice answer: SQL");
     expect(requestHeadline({ kind: "clarification", topic: null, fields: null })).toBe("A question about your profile");
   });

@@ -56,6 +56,14 @@ export function invitePracticeHref(job: Pick<JobMatch, "id" | "roleTitle" | "com
   return `/session/new?${params.toString()}`;
 }
 
+/** Practice link for one specific round, used when an employer asks for it. */
+export function focusPracticeHref(job: Pick<JobMatch, "id" | "roleTitle" | "companyName" | "unlocked">, focusLabel: string): string {
+  const params = new URLSearchParams({ role: job.roleTitle, invite: job.id });
+  if (job.unlocked && job.companyName) params.set("company", job.companyName);
+  params.set("focus", FOCUS_TO_TYPE[focusLabel] ?? "behavioral");
+  return `/session/new?${params.toString()}`;
+}
+
 const JD_MAX_CHARS = 1200;
 const JD_KEY_PREFIX = "hsx-invite-jd:";
 

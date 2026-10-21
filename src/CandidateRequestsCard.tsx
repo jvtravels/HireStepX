@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "./AuthContext";
 import { daysAgo } from "./hiringMatchFormat";
 import { REQUEST_REPLY_MAX, resolveCandidateRequest } from "./employerActions";
+import { ROUNDS, roundKeyForTopic } from "./focusRounds";
 import type { JobRequest } from "./DashboardJobs";
 
 const PLACEHOLDER: Record<JobRequest["kind"], string> = {
@@ -98,10 +99,23 @@ function ContactForm({ values, errors, onChange, inputs, includesEmail }: {
   );
 }
 
-function RequestRow({ matchId, request, unlocked, onResolved, onError }: {
+/** The round label when a practice request names one of the four focuses. */
+export function roundLabelForRequest(request: Pick<JobRequest, "kind" | "topic">): string | null {
+  if (request.kind !== "practice") return null;
+  const key = roundKeyForTopic(request.topic);
+  return ROUNDS.find((r) => r.key === key)?.label ?? null;
+}
+
+export interface PracticeLaunch {
+  hrefFor: (focusLabel: string) => string;
+  onStart: () => void;
+}
+
+function RequestRow({ matchId, request, unlocked, practice, onResolved, onError }: {
   matchId: string;
   request: JobRequest;
   unlocked: boolean;
+  practice?: PracticeLaunch;
   onResolved: (id: string, resolution: "fulfilled" | "declined") => void;
   onError: (message: string) => void;
 }) {
@@ -109,6 +123,7 @@ function RequestRow({ matchId, request, unlocked, onResolved, onError }: {
   const [reply, setReply] = useState("");
   const [busy, setBusy] = useState<"fulfilled" | "declined" | null>(null);
   const isContact = request.kind === "contact";
+  const roundLabel = practice ? roundLabelForRequest(request) : null;
   const needsReply = request.kind === "clarification";
   const contactInputs = isContact ? contactInputsFor(request.fields) : [];
   const [contact, setContact] = useState<ContactValues>(() => ({
@@ -167,6 +182,10 @@ function RequestRow({ matchId, request, unlocked, onResolved, onError }: {
           inputs={contactInputs}
           includesEmail={!request.fields || request.fields.includes("email")}
         />
+      ) : roundLabel && practice ? (
+        <p className="m-0 mt-2 text-[13px] leading-normal text-hx-ink-soft">
+          Complete a {roundLabel} practice session and your result is sent to this employer automatically. Nothing else to do.
+        </p>
       ) : (
         <>
           <Textarea
@@ -185,9 +204,15 @@ function RequestRow({ matchId, request, unlocked, onResolved, onError }: {
         </>
       )}
       <div className="mt-3 flex flex-wrap gap-2">
-        <Button type="button" size="sm" disabled={busy !== null || (needsReply && !reply.trim())} onClick={() => void submit("fulfilled")}>
-          {busy === "fulfilled" ? "Saving…" : isContact ? "Share details" : "Send reply"}
-        </Button>
+        {roundLabel && practice ? (
+          <Button asChild size="sm">
+            <a href={practice.hrefFor(roundLabel)} onClick={practice.onStart}>Practise {roundLabel}</a>
+          </Button>
+        ) : (
+          <Button type="button" size="sm" disabled={busy !== null || (needsReply && !reply.trim())} onClick={() => void submit("fulfilled")}>
+            {busy === "fulfilled" ? "Saving…" : isContact ? "Share details" : "Send reply"}
+          </Button>
+        )}
         <Button type="button" size="sm" variant="outline" disabled={busy !== null} onClick={() => void submit("declined")}>
           {busy === "declined" ? "Saving…" : "Decline"}
         </Button>
@@ -196,10 +221,11 @@ function RequestRow({ matchId, request, unlocked, onResolved, onError }: {
   );
 }
 
-export default function CandidateRequestsCard({ matchId, requests, unlocked, onResolved, onError, style, className }: {
+export default function CandidateRequestsCard({ matchId, requests, unlocked, practice, onResolved, onError, style, className }: {
   matchId: string;
   requests: JobRequest[];
   unlocked: boolean;
+  practice?: PracticeLaunch;
   onResolved: (id: string, resolution: "fulfilled" | "declined") => void;
   onError: (message: string) => void;
   style?: React.CSSProperties;
@@ -216,7 +242,7 @@ export default function CandidateRequestsCard({ matchId, requests, unlocked, onR
       </p>
       <ul className="m-0 p-0">
         {requests.map((r) => (
-          <RequestRow key={r.id} matchId={matchId} request={r} unlocked={unlocked} onResolved={onResolved} onError={onError} />
+          <RequestRow key={r.id} matchId={matchId} request={r} unlocked={unlocked} practice={practice} onResolved={onResolved} onError={onError} />
         ))}
       </ul>
     </section>

@@ -19,6 +19,8 @@ import {
   type RequestKind,
 } from "@/employer/_candidateRequestTypes";
 import { useToast } from "@/Toast";
+import { ROUNDS, roundKeyForTopic } from "@/focusRounds";
+import { isFocusComingSoon } from "@/setupFocus";
 import type { CandidateRequestsState } from "./useCandidateRequests";
 
 const CONTACT_OPTIONS = [
@@ -38,6 +40,9 @@ function missingContact(candidate: Candidate): ContactKey[] {
   };
   return CONTACT_OPTIONS.filter((o) => !have[o.key]).map((o) => o.key);
 }
+
+const PRACTICE_ROUNDS = ROUNDS.map((r) => r.label).filter((l) => !isFocusComingSoon(l));
+const isRoundTopic = (t: string) => roundKeyForTopic(t) !== null;
 
 export interface RequestPreset {
   kind: RequestKind;
@@ -211,13 +216,38 @@ export function RequestPopover({
         )}
 
         {kind === "practice" && (
-          <Input
-            value={topic}
-            onChange={(e) => setTopic(e.target.value.slice(0, REQUEST_TOPIC_MAX))}
-            aria-label="Skill or question to practise"
-            placeholder="Skill or question, e.g. System design"
-            readOnly={!!preset?.topic}
-          />
+          <div className="grid gap-2">
+            {!preset?.topic && (
+              <div role="group" aria-label="Interview round" className="flex flex-wrap gap-1.5">
+                {PRACTICE_ROUNDS.map((r) => (
+                  <button
+                    key={r}
+                    type="button"
+                    aria-pressed={topic === r}
+                    onClick={() => setTopic(topic === r ? "" : r)}
+                    className={cn(
+                      "cursor-pointer rounded-full border px-2.5 py-1 text-[12px] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 pointer-coarse:min-h-11",
+                      topic === r ? "border-hx-coal bg-hx-coal text-white" : "border-hx-line bg-white text-hx-coal hover:bg-hx-soft",
+                    )}
+                  >
+                    {r}
+                  </button>
+                ))}
+              </div>
+            )}
+            <Input
+              value={topic}
+              onChange={(e) => setTopic(e.target.value.slice(0, REQUEST_TOPIC_MAX))}
+              aria-label="Skill or question to practise"
+              placeholder="Or name a skill, e.g. System design"
+              readOnly={!!preset?.topic}
+            />
+            {isRoundTopic(topic) && (
+              <p className="m-0 text-[12px] leading-snug text-hx-ink-soft">
+                Their result for this round comes to you automatically once they finish the session.
+              </p>
+            )}
+          </div>
         )}
 
         {kind !== "contact" && (
