@@ -104,7 +104,7 @@ npm test                 # vitest — full unit + integration
 npm run test:coverage    # enforces the coverage gate in vitest.config.ts
 npm run test:e2e         # Playwright (boots dev server automatically)
 npx tsc --noEmit         # type check — tsconfig has noUnusedLocals on
-npx eslint .             # lint — warnings capped in CI at 200
+npx eslint .             # lint — warnings capped in CI at 98 (`--max-warnings 98`; ratchet down, never up)
 ```
 
 ## Writing server handlers — the established pattern
@@ -137,7 +137,7 @@ canonical example.
 ## Coverage gate
 
 `vitest.config.ts` enforces a global gate (lines ≥47%, statements
-≥45%, functions ≥39%, branches ≥41%) plus a stricter per-folder gate
+≥46%, functions ≥40%, branches ≥42%) plus a stricter per-folder gate
 for `server-handlers/**` (lines ≥59%, statements ≥58%, functions
 ≥67%, branches ≥54%) since that tree is pure server-side logic with no
 JSX. The global numbers stay moderate because ~60% of the codebase is
@@ -200,6 +200,7 @@ batch lifts the measured numbers.
 - **Transient-vs-permanent auth** — `verifyAuth` in `_shared.ts` retries
   once on 5xx / network errors before rejecting; only 401/403 rejects
   immediately. Don't add a try/catch wrapper that re-collapses these.
+- **Handler column drift** — `src/__tests__/postgrestSelectSchema.test.ts` checks every static PostgREST `select=` against `supabase-schema.sql`. Ship the migration before (or with) code that selects a new column; the `KNOWN_DRIFT` allowlist must only shrink.
 - **LLM prompt caching** — Groq automatically caches prompts ≥1024
   tokens by their longest shared prefix. When editing
   `evaluate-session.ts` or similar, keep static rules/schema *before*
@@ -236,7 +237,7 @@ batch lifts the measured numbers.
 git push origin main    # Vercel auto-deploys from main
 ```
 
-Preview deploys happen per PR. `/api/uptime-check` is the health probe.
+Preview deploys happen per PR. `/api/health` is the health probe (`/api/uptime-check` is the external uptime monitor's endpoint).
 
 **Deploy directly to production (2026-08-20 policy change, explicit
 maintainer request).** Push/merge to `main` and let Vercel's auto-deploy
@@ -344,7 +345,7 @@ been audited + fixed. Removed 12 that overlapped or were premature.
 | 26 | Accessibility (WCAG 2.1 AA — skip-link, route announce, aria) | done ✅ |
 | 27 | SEO · Testing/QA · CI/CD · SRE · Analytics · Payments (partial) | done ✅ |
 
-**Summary:** 27 done ✅ · 0 pending · 27 total (full audit complete 2026-07-16, overall score C+)
+**Summary:** full audit completed 2026-07-16 (overall score C+); the per-row statuses above are a point-in-time snapshot, so re-audit before relying on them.
 **Removed (redundant/premature):** Head of Engineering, Senior Engineer, EdTech Expert,
 Product Hunt Reviewer, Customer Support, Growth/Acquisition (→ CMO), Privacy/Data
 Governance (→ Legal), CISO (→ Security), CLO (→ Legal), Angel/VC investors, COO.
