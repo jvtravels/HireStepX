@@ -5,7 +5,6 @@
 
 import { t, f, radius, size } from "../tokens";
 import type { InterviewResultData } from "../types";
-import { anchorAtLabel } from "../derivations";
 import { SrSectionShell } from "./_primitives";
 
 type KernelMetrics = NonNullable<InterviewResultData["kernelMetrics"]>;
@@ -51,7 +50,7 @@ function KernelTacticsPanel({ m }: { m: KernelMetrics }) {
     <div style={{ marginTop: 22, display: "grid", gap: 22 }}>
       {(used.length > 0 || missed.length > 0) && (
         <div>
-          <h3 style={{ fontFamily: f.sans, fontSize: size.base, fontWeight: 600, color: t.coal, margin: "0 0 8px", letterSpacing: 0.2, textTransform: "uppercase" }}>
+          <h3 style={{ fontFamily: f.sans, fontSize: size.base, fontWeight: 600, color: t.coal, margin: "0 0 8px", letterSpacing: 0 }}>
             Tactics
           </h3>
           {used.length > 0 && (
@@ -79,7 +78,7 @@ function KernelTacticsPanel({ m }: { m: KernelMetrics }) {
       )}
       {asked.length > 0 && (
         <div>
-          <h3 style={{ fontFamily: f.sans, fontSize: size.base, fontWeight: 600, color: t.coal, margin: "0 0 8px", letterSpacing: 0.2, textTransform: "uppercase" }}>
+          <h3 style={{ fontFamily: f.sans, fontSize: size.base, fontWeight: 600, color: t.coal, margin: "0 0 8px", letterSpacing: 0 }}>
             Questions you raised
           </h3>
           <p style={{ fontFamily: f.sans, fontSize: size.sm, color: t.inkSoft, margin: "0 0 6px" }}>
@@ -133,7 +132,6 @@ export function KernelNegotiationQualitySection({ m }: { m: KernelMetrics }) {
     : m.outcome === "walked-away" ? t.badInk
     : m.outcome === "stalemate" ? t.warnInk
     : t.inkSoft;
-  const anchorLabel = anchorAtLabel(m.anchorTurn, m.candidateAskLpa);
   const traversalPct = m.bandTraversal == null ? null : Math.round(m.bandTraversal * 100);
   const ctc = m.candidateCurrentCtcLpa ?? null;
   const finalOffer = m.finalOfferLpa ?? null;
@@ -145,8 +143,6 @@ export function KernelNegotiationQualitySection({ m }: { m: KernelMetrics }) {
     : null;
   const tiles: Array<{ label: string; value: string; sub?: string }> = [
     { label: "Execution score", value: `${m.score}`, sub: "/100" },
-    { label: "Outcome", value: outcomeLabel },
-    { label: "Anchored at", value: anchorLabel },
     { label: "LPA gained", value: `₹${m.lpaGained}`, sub: `LPA · ${m.lpaPerTurn}/turn` },
     { label: "Band traversal", value: traversalPct == null ? "—" : `${traversalPct}%`, sub: traversalPct == null ? "no spread" : "of ceiling" },
     { label: "Lever diversity", value: `${m.leverDiversity}`, sub: `lever${m.leverDiversity === 1 ? "" : "s"} explored` },
@@ -165,7 +161,7 @@ export function KernelNegotiationQualitySection({ m }: { m: KernelMetrics }) {
       headingId="ir-kernel-neg-heading"
       label="Negotiation quality"
       title="How you negotiated"
-      subtitle={`How well you ran the negotiation itself — scored deterministically from the ${m.totalTurns} kernel-tracked turns (your actual lever picks and counters, not transcript regex). This is separate from your overall interview-readiness score up top: anchoring early, climbing the band, and exploring multiple levers all lift it.`}
+      subtitle={`Scored from the ${m.totalTurns} turns the simulator tracked, separate from your overall score.`}
       aside={outcomeChip}
     >
       <div className="ir-tile-grid" style={{ gap: "20px 28px" }}>

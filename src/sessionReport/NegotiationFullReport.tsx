@@ -41,8 +41,8 @@ import { NextRoundCTA } from "./panels/NextRoundCTA";
 
 const ANCHOR_DIAGNOSIS = "nfr-diagnosis";
 
-function Group({ id, label, sub, index, children }: {
-  id: string; label: string; sub: string; index: number; children: ReactNode;
+function Group({ id, label, index, children }: {
+  id: string; label: string; index: number; children: ReactNode;
 }) {
   return (
     <section
@@ -52,7 +52,6 @@ function Group({ id, label, sub, index, children }: {
       style={{ "--i": index } as CSSProperties}
     >
       <h3 id={`${id}-label`} className="nfr-group-label">{label}</h3>
-      <p className="nfr-group-sub">{sub}</p>
       {children}
     </section>
   );
@@ -184,9 +183,7 @@ export function NegotiationFullReport({
         <h2 id="ir-section-negotiation" className="m-0 mt-3 text-[22px] font-semibold leading-tight tracking-[-0.02em] text-hx-coal">
           Your negotiation, move by move
         </h2>
-        <p className="m-0 mb-5 mt-1.5 max-w-[65ch] text-[13px] leading-normal text-hx-ink-soft">
-          Each section turns one negotiation skill into something you can act on, not just a score.
-        </p>
+        <div className="mb-5" />
         <StartHereHint outcome={outcome} daysUntilInterview={daysUntilInterview} />
       </header>
 
@@ -198,7 +195,6 @@ export function NegotiationFullReport({
         id={ANCHOR_ACTION}
         index={++groupIndex + 1}
         label="What to do next"
-        sub="A draft email you can send, the questions to ask next time, and the things to prepare."
       >
         <div className="nfr-vstack-xl">
           <UnaskedLeversPanel outcome={outcome} />
@@ -210,10 +206,9 @@ export function NegotiationFullReport({
         id={ANCHOR_DIAGNOSIS}
         index={++groupIndex + 1}
         label="What happened"
-        sub="Every moment that mattered: what you said, what you missed, what it cost."
       >
         <div className="nfr-vstack-xl">
-          {offers.length > 0 && <OfferTrajectory outcome={outcome} />}
+          {offers.length > 1 && <OfferTrajectory outcome={outcome} />}
           <PhaseLadderPanel outcome={outcome} />
           <div className="nfr-grid-2up">
             <ConcessionAnalysisPanel outcome={outcome} />
@@ -234,7 +229,6 @@ export function NegotiationFullReport({
           id={ANCHOR_WORTH}
           index={++groupIndex + 1}
           label="What it's worth"
-          sub="What accepting really costs after tax, and who you were negotiating against."
         >
           <div className="nfr-vstack-xl">
             {hasInHand && salaryMeta && <InHandMonthlyCard salaryMeta={salaryMeta} />}
@@ -253,7 +247,6 @@ export function NegotiationFullReport({
           id={ANCHOR_PATTERN}
           index={++groupIndex + 1}
           label="Your pattern"
-          sub="What you keep doing right (and wrong), and the drills to break the pattern."
         >
           <div className="nfr-vstack-xl">
             {willRenderArchetype && <ArchetypePanel outcome={outcome} priorSessionCount={priorSessionCount} />}
