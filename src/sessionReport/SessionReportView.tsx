@@ -347,7 +347,7 @@ function GenericReport({
                   <CredibilitySection summary={credibility} onDispute={onDisputeCredibility} />
                 )}
                 {campusPlacementMeta && <CampusCgpaCalibrationNote meta={campusPlacementMeta} />}
-                <RoundProgressStrip progress={roundProgress ?? null} fixFirst={data.weakestSkill} practiceHref={practiceHref} />
+                <RoundProgressStrip progress={roundProgress ?? null} fixFirst={data.weakestSkill} />
                 <NextStepsSection
                   plan={data.readinessPlan}
                   practiceHref={practiceHref}

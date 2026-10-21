@@ -30,6 +30,12 @@ describe("buildRoundProgress", () => {
     expect(roundProgressDetail(p)).toBe("This session scored 55, so it does not count yet. 1 of 2 sessions at 70+ so far.");
   });
 
+  it("explains a below-bar session in a round cleared earlier", () => {
+    const p = buildRoundProgress(sess("s2"), pts([75, 80, 64]))!;
+    expect(p.cleared).toBe(true);
+    expect(roundProgressDetail(p)).toBe("This session scored 64, below 70, but the round was cleared earlier: 2 of 2 sessions at 70+ so far.");
+  });
+
   it("pluralises when two are needed and labels the round by focus", () => {
     const p = buildRoundProgress({ id: "s0", type: "behavioral", focus: "hr-round" }, pts([60]))!;
     expect(p.label).toBe("HR Round");

@@ -56,7 +56,8 @@ export function roundProgressHeadline(p: RoundProgress): string {
 export function roundProgressDetail(p: RoundProgress): string {
   const counted = `${Math.min(p.qualifying, p.required)} of ${p.required} sessions at ${p.threshold}+`;
   const scope = p.window >= 10 ? "in your latest 10" : "so far";
-  if (p.cleared) return `${counted} ${scope}.`;
+  if (p.cleared && p.viewedQualifies) return `${counted} ${scope}.`;
+  if (p.cleared) return `This session scored ${p.viewedScore}, below ${p.threshold}, but the round was cleared earlier: ${counted} ${scope}.`;
   const result = p.viewedQualifies
     ? "This session counts."
     : `This session scored ${p.viewedScore}, so it does not count yet.`;
