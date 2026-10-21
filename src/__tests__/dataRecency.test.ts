@@ -51,7 +51,7 @@ describe("data recency guard", () => {
   it("salaries.ts WARNs if >6 months stale", () => {
     const age = monthsSince(SALARY_CAL_DATE);
     if (age > WARN_MONTHS) {
-      // eslint-disable-next-line no-console
+       
       console.warn(
         `[recency] salaries.ts CALIBRATION_DATE is ${age} months old. ` +
         `Schedule a refresh sprint within ${FAIL_MONTHS - age} months to avoid CI failure.`
