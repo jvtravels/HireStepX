@@ -208,7 +208,7 @@ export interface InterviewResultData {
   verdict: Verdict;
   scoreDelta: number;
   recentScores?: number[];
-  readiness?: { pct: number; etaWeeks: number };
+  readiness?: { pct: number; etaWeeks: number; confirmed?: boolean };
   daysUntilInterview?: number;
   company: string;
   role: string;
@@ -542,7 +542,6 @@ export interface BehavioralAccountability {
   depthProbes: number;
   vagueAccepted: number;
   ownershipProbes: number;
-  deflected: number;
 }
 
 export interface BehavioralTranscriptRow {
@@ -559,7 +558,6 @@ export interface BehavioralPersona {
 }
 
 export interface BehavioralSessionMeta {
-  number: number;       // session 04 → 4
   dateISO: string;      // "2026-06-02"
   durationMin: number;  // 28
   substantiveAnswers: number;

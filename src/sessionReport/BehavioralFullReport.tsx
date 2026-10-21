@@ -23,6 +23,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { t, f } from "./tokens";
 import { Button } from "@/components/ui/button";
 import type {
@@ -549,8 +550,10 @@ const BFR_RESPONSIVE_CSS = `
 
 export default function BehavioralFullReport({
   data,
+  practiceHref,
 }: {
   data: BehavioralFullReportData;
+  practiceHref?: string;
 }) {
   // Score-driven hero accent — copper on low scores, emerald on high,
   // default indigo otherwise. Paired with a label so it's never color-
@@ -596,7 +599,7 @@ export default function BehavioralFullReport({
           {data.persona.tier ? <> at a <strong>{data.persona.tier}</strong></> : null} · {data.persona.role}, {data.persona.lpaBand} band
         </span>
         <span style={{ opacity: 0.85, fontSize: 12 }}>
-          Session {String(data.sessionMeta.number).padStart(2, "0")} · {data.sessionMeta.dateISO} ·{" "}
+          {data.sessionMeta.dateISO} ·{" "}
           {data.sessionMeta.durationMin}&nbsp;min · {data.sessionMeta.substantiveAnswers} substantive answers
         </span>
       </div>
@@ -946,10 +949,6 @@ export default function BehavioralFullReport({
               Ownership probes{" "}
               <strong style={{ color: t.coal }}>{data.aiAccountability.ownershipProbes}</strong>
             </span>
-            <span>
-              Deflected{" "}
-              <strong style={{ color: t.success }}>{data.aiAccountability.deflected}</strong>
-            </span>
           </span>
         </div>
 
@@ -995,8 +994,8 @@ export default function BehavioralFullReport({
         }}
       >
         <div style={{ fontSize: 13, color: t.inkSoft }}>{data.ctaSubcopy}</div>
-        <Button type="button" size="lg">
-          {data.ctaPrimaryLabel}
+        <Button asChild size="lg">
+          <Link href={practiceHref ?? "/session/new"}>{data.ctaPrimaryLabel}</Link>
         </Button>
       </div>
     </div>

@@ -96,7 +96,7 @@ export function ReadinessHeadline({
   level,
   company,
 }: {
-  readiness: { pct: number; etaWeeks: number };
+  readiness: { pct: number; etaWeeks: number; confirmed?: boolean };
   daysUntil?: number;
   role: string;
   level: string;
@@ -104,7 +104,8 @@ export function ReadinessHeadline({
 }) {
   const color =
     readiness.pct >= 80 ? t.success : readiness.pct >= 60 ? t.warning : t.error;
-  const status = readiness.pct >= 80 ? "Interview-ready" : readiness.pct >= 60 ? "Getting close" : "Needs prep";
+  const ready = readiness.pct >= 80 && !!readiness.confirmed;
+  const status = ready ? "Interview-ready" : readiness.pct >= 80 ? "Strong result" : readiness.pct >= 60 ? "Getting close" : "Needs prep";
   return (
     <div
       style={{
@@ -123,8 +124,10 @@ export function ReadinessHeadline({
       <span style={{ height: 22, width: 1, background: t.line }} aria-hidden="true" />
       <p style={{ fontFamily: f.sans, fontSize: size.base, color: t.coal, margin: 0, flex: 1, minWidth: 240, lineHeight: 1.45 }}>
         For <strong style={{ color: t.coal, fontWeight: 600 }}>{formatRoleWithLevel(level, role)}</strong>{company ? <> at <strong>{company}</strong></> : null}.
-        {readiness.pct >= 80 ? (
+        {ready ? (
           <> You&apos;re interview-ready. Focus on consistency.</>
+        ) : readiness.pct >= 80 ? (
+          <> A strong session. Repeat it once more to show it is consistent.</>
         ) : (
           <> About {readiness.etaWeeks} {readiness.etaWeeks === 1 ? "week" : "weeks"} of focused prep to close the gap.</>
         )}

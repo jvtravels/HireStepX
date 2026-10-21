@@ -21,7 +21,7 @@ function makeData(overrides: Partial<BehavioralFullReportData> = {}): Behavioral
       role: "Senior PM",
       lpaBand: "₹38 LPA",
     },
-    sessionMeta: { number: 4, dateISO: "2026-06-02", durationMin: 28, substantiveAnswers: 6 },
+    sessionMeta: { dateISO: "2026-06-02", durationMin: 28, substantiveAnswers: 6 },
     oneHabit: {
       headline: "Name the counterparty's view first.",
       rationale: "Bar-Raiser expects that frame inside the first 15 seconds.",
@@ -87,7 +87,7 @@ function makeData(overrides: Partial<BehavioralFullReportData> = {}): Behavioral
       statusLabel: "2 floating claims",
       statusTone: "gap",
     },
-    aiAccountability: { depthProbes: 3, vagueAccepted: 1, ownershipProbes: 2, deflected: 0 },
+    aiAccountability: { depthProbes: 3, vagueAccepted: 1, ownershipProbes: 2 },
     transcript: [
       { questionId: "Q1", topic: "Failure", pills: [{ label: "✓ ownership", tone: "ok" }] },
     ],
@@ -117,6 +117,17 @@ describe("BehavioralFullReport", () => {
     expect(screen.getByText("Transcript replay")).toBeInTheDocument();
     expect(screen.getByText("Start next session")).toBeInTheDocument();
     expect(screen.getByText(/▲ 8 vs last session/)).toBeInTheDocument();
+  });
+
+  it("primary CTA is a link to the practice setup, and no invented Deflected metric shows", () => {
+    render(<BehavioralFullReport data={makeData()} practiceHref="/session/new?type=behavioral&role=PM" />);
+    expect(screen.getByRole("link", { name: "Start next session" })).toHaveAttribute("href", "/session/new?type=behavioral&role=PM");
+    expect(screen.queryByText(/Deflected/)).toBeNull();
+  });
+
+  it("primary CTA falls back to the generic setup link", () => {
+    render(<BehavioralFullReport data={makeData()} />);
+    expect(screen.getByRole("link", { name: "Start next session" })).toHaveAttribute("href", "/session/new");
   });
 
   it("edge: score < 40 → renders softened CTA copy", () => {
@@ -163,7 +174,7 @@ describe("BehavioralFullReport", () => {
       <BehavioralFullReport
         data={makeData({
           starBreakdown: [],
-          sessionMeta: { number: 1, dateISO: "2026-06-02", durationMin: 8, substantiveAnswers: 2 },
+          sessionMeta: { dateISO: "2026-06-02", durationMin: 8, substantiveAnswers: 2 },
         })}
       />,
     );

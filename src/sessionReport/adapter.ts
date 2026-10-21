@@ -444,6 +444,8 @@ export function sessionReportToInterviewResult(
     readiness: report.readiness
       ? {
           pct: clamp(grounded.overallScore, 0, 100),
+          // One strong session is not readiness: the previous session has to clear 70 too.
+          confirmed: (groundedRecentScores?.length ?? 0) >= 2 && (groundedRecentScores?.[groundedRecentScores.length - 2] ?? 0) >= 70,
           /* R-9 (2026-07-10, live staging) — the hero's "~N weeks" ETA and the
            * readinessPlan's "~S sessions" are two views of the
            * SAME plan and must agree. Deriving weeks from hours (÷3) while the
@@ -1839,7 +1841,6 @@ export interface BehavioralFullReportContext {
   /** Cohort percentile (0..100) for this candidate's track. */
   percentile?: number | null;
   /** Number-this-session — defaults to recentScores.length. */
-  sessionNumber?: number;
   /** Persona overrides — typically derived from session.type. */
   personaVoice?: string;
   /** LPA band label, e.g. "₹38 LPA". */
@@ -1928,7 +1929,7 @@ export function toBehavioralFullReportData(
   ctx: BehavioralFullReportContext,
   behavioralMeta: BehavioralMeta | null | undefined,
 ): BehavioralFullReportData {
-  const { report, session, recentScores, percentile, sessionNumber } = ctx;
+  const { report, session, recentScores, percentile } = ctx;
   const meta: BehavioralMeta = behavioralMeta ?? {
     starBreakdown: [],
   };
@@ -2156,7 +2157,6 @@ export function toBehavioralFullReportData(
     depthProbes: probing?.aiProbedDepth ?? 0,
     vagueAccepted: probing?.aiAcceptedVague ?? 0,
     ownershipProbes: probing?.aiProbedOwnership ?? 0,
-    deflected: 0,
   };
 
   const transcript: BehavioralTranscriptRow[] = star.map((row, idx) => {
@@ -2194,7 +2194,6 @@ export function toBehavioralFullReportData(
     track: report.calibration?.companyLabel || "your track",
     persona,
     sessionMeta: {
-      number: sessionNumber ?? (recentScores?.length ?? 1),
       dateISO: session.date ?? new Date().toISOString().slice(0, 10),
       durationMin: Math.max(
         1,

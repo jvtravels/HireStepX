@@ -252,7 +252,7 @@ export default function SessionReportView(props: SessionReportViewProps) {
     typeof process !== "undefined" &&
     process.env.NEXT_PUBLIC_BEHAVIORAL_REPORT_V2 === "true";
   if (behavioralV2Enabled && behavioralFullReportData) {
-    return <BehavioralFullReport data={behavioralFullReportData} />;
+    return <BehavioralFullReport data={behavioralFullReportData} practiceHref={props.practiceHref} />;
   }
   // HR-round dispatch: the FocusBannerStrip is embedded inside HrFullReport's
   // ReconcileStrip so it is not rendered twice.
