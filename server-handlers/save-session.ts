@@ -30,6 +30,7 @@ import { groundNoCounterSkillScores, groundGapClosureSkillScores } from "../src/
 import { computeStreakReward } from "./_streak-reward";
 import { grantSessionCredits } from "./_session-credits";
 import { computePracticeTimestamps } from "./_save-session-helpers";
+import { fetchSessionOwner, isServerGraded, withoutGradedFields } from "./_session-score-lock";
 import { notify } from "./_notify";
 import { payReferrerForReferral, REFERRAL_PAYOUT_MIN_QUESTIONS, REFERRAL_REWARD_WINDOW_MS } from "./_referral-reward-helpers";
 import { notifyReferrerPaid } from "./_referral-emails";
@@ -591,24 +592,19 @@ export default async function handler(req: Request): Promise<Response> {
   // service role which bypasses RLS. Check that any pre-existing row with this
   // ID belongs to the authenticated user before merging. A crafted ID that matches
   // another user's session would otherwise silently overwrite their data.
-  {
-    const ownerRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/sessions?id=eq.${encodeURIComponent(sessionRow.id)}&select=user_id`,
-      { headers: { apikey: SUPABASE_SERVICE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_KEY}` } },
-    );
-    if (!ownerRes.ok) {
-      return new Response(JSON.stringify({ error: "Service unavailable" }), { status: 503, headers });
-    }
-    const ownerRows = await ownerRes.json().catch(() => []);
-    if (Array.isArray(ownerRows) && ownerRows[0] && ownerRows[0].user_id !== auth.userId) {
-      return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers });
-    }
+  const owner = await fetchSessionOwner(sessionRow.id, SUPABASE_URL, SUPABASE_SERVICE_KEY);
+  if (!owner.ok) {
+    return new Response(JSON.stringify({ error: "Service unavailable" }), { status: 503, headers });
   }
+  if (owner.row && owner.row.user_id !== auth.userId) {
+    return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers });
+  }
+  const alreadyGraded = isServerGraded(owner.row);
 
   // 1. Insert the session row. Column-stripping retry for environments where
   //    jd_analysis / job_description haven't been migrated yet.
   const strippedSession: string[] = [];
-  const row: Record<string, unknown> = { ...sessionRow };
+  const row: Record<string, unknown> = withoutGradedFields({ ...sessionRow }, alreadyGraded);
   let sessionOk = false;
   for (let attempt = 0; attempt < 6; attempt++) {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/sessions?on_conflict=id`, {

@@ -19,6 +19,7 @@
 export const config = { runtime: "edge" };
 
 import { withAuthAndRateLimit } from "./_shared";
+import { fetchSessionOwner, isServerGraded } from "./_session-score-lock";
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || "";
@@ -73,20 +74,20 @@ export default async function handler(req: Request): Promise<Response> {
   // patch of an existing session, never a create, so a missing row is a
   // no-op rather than an error (the original save may have failed too, or
   // the user already deleted the session).
-  const ownerRes = await fetch(
-    `${SUPABASE_URL}/rest/v1/sessions?id=eq.${encodeURIComponent(id)}&select=user_id`,
-    { headers: { apikey: SUPABASE_SERVICE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_KEY}` } },
-  );
-  if (!ownerRes.ok) {
+  const owner = await fetchSessionOwner(id, SUPABASE_URL, SUPABASE_SERVICE_KEY);
+  if (!owner.ok) {
     return new Response(JSON.stringify({ error: "Service unavailable" }), { status: 503, headers });
   }
-  const ownerRows = await ownerRes.json().catch(() => []);
-  const ownerRow = Array.isArray(ownerRows) ? ownerRows[0] : null;
+  const ownerRow = owner.row;
   if (!ownerRow) {
     return new Response(JSON.stringify({ ok: true, found: false }), { status: 200, headers });
   }
   if (ownerRow.user_id !== auth.userId) {
     return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers });
+  }
+  // A graded session's score is the server's; answering 200 stops the client's retry queue.
+  if (isServerGraded(ownerRow)) {
+    return new Response(JSON.stringify({ ok: true, found: true, locked: true }), { status: 200, headers });
   }
 
   const patch: Record<string, unknown> = { score };
