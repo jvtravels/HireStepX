@@ -113,3 +113,24 @@ export function dropMatchFromCaches(userId: string | undefined, matchId: string)
     } catch { /* expected: cache is best-effort */ }
   }
 }
+
+/* Optimistic: apply the answer, then roll back to the exact previous one if the server refuses. */
+export async function submitResponse(args: {
+  matchId: string;
+  next: EmployerResponse;
+  previous: EmployerResponse | null;
+  onChange: (value: EmployerResponse | null) => void;
+  onToast: (message: string, kind?: "error") => void;
+}): Promise<void> {
+  const { matchId, next, previous, onChange, onToast } = args;
+  onChange(next);
+  storeResponse(matchId, next);
+  const result = await respondToEmployer(matchId, next);
+  if (result.ok) {
+    onToast(next === "interested" ? "Told the employer you're interested." : "Told the employer you're not interested.");
+  } else {
+    onChange(previous);
+    storeResponse(matchId, previous);
+    onToast(`Couldn't save your response — ${result.error}`, "error");
+  }
+}

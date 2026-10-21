@@ -1,7 +1,6 @@
 "use client";
 
-import { ClockIcon, GlobeIcon, IndianRupeeIcon, MapPinIcon, SendIcon, TrendingUpIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ClockIcon, GlobeIcon, IndianRupeeIcon, MapPinIcon, TrendingUpIcon } from "lucide-react";
 import { Badge } from "@/employer/_atoms";
 import { InfoTip, MetaLine, type MetaPart } from "@/employer/_panelParts";
 import { CompanyAvatar } from "../CompanyAvatar";
@@ -44,11 +43,9 @@ function CompanyLine({ job }: { job: JobMatch }) {
   );
 }
 
-export default function JobHeader({ job, closed, showMessage, onMessage, actions }: {
+export default function JobHeader({ job, closed, actions }: {
   job: JobMatch;
   closed: boolean;
-  showMessage: boolean;
-  onMessage: () => void;
   actions: React.ReactNode;
 }) {
   const comp = formatComp(job.budgetMin, job.budgetMax, job.salaryType);
@@ -76,14 +73,7 @@ export default function JobHeader({ job, closed, showMessage, onMessage, actions
     <section aria-labelledby="job-title" className={SEC}>
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
         <CompanyLine job={job} />
-        <div className="flex shrink-0 items-center gap-2">
-          {showMessage && (
-            <Button size="sm" onClick={onMessage} className="flex items-center gap-1.5">
-              <SendIcon size={13} aria-hidden="true" /> Message employer
-            </Button>
-          )}
-          {actions}
-        </div>
+        {actions}
       </div>
       <div className="mt-5 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
         <h1 id="job-title" className="m-0 text-[20px] font-semibold leading-tight text-hx-coal [overflow-wrap:anywhere]">

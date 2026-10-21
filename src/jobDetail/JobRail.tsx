@@ -3,19 +3,16 @@
 import { Button } from "@/components/ui/button";
 import { KeyValueList, KeyValueRow, Panel } from "@/employer/_panelParts";
 import type { JobMatch } from "../DashboardJobs";
-import { EmployerResponseBadge } from "../EmployerActionsMenu";
-import type { EmployerResponse } from "../employerActions";
 import { daysAgo } from "../hiringMatchFormat";
 import { BODY_TIGHT, H2_FLUSH, PANEL_H2, SEC } from "./styles";
 
-export function RoleDetails({ job, response }: { job: JobMatch; response: EmployerResponse | null }) {
+export function RoleDetails({ job }: { job: JobMatch }) {
   const postedLabel = job.postedAt ? daysAgo(job.postedAt) : null;
   const matchedLabel = daysAgo(job.matchedAt);
   const interestLabel = job.unlocked && job.unlockedAt ? daysAgo(job.unlockedAt) : null;
   return (
     <Panel id="job-details-heading" title="Role details" className={SEC} headingClassName={PANEL_H2}>
       <KeyValueList>
-        {response && <KeyValueRow label="Your response" tip="Your answer to this employer. You can change it from the actions menu."><EmployerResponseBadge response={response} /></KeyValueRow>}
         {postedLabel && <KeyValueRow label="Posted">{postedLabel}</KeyValueRow>}
         {matchedLabel !== postedLabel && <KeyValueRow label="Matched">{matchedLabel}</KeyValueRow>}
         {interestLabel && interestLabel !== matchedLabel && <KeyValueRow label="Employer interest">{interestLabel}</KeyValueRow>}

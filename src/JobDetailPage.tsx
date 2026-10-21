@@ -7,7 +7,7 @@
    and a narrow rail of facts and actions. The breadcrumb (not a back link)
    is the way up. */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
@@ -17,7 +17,7 @@ import { useDashboardBreadcrumb } from "./DashboardLayout";
 import { JobDetailRouteSkeleton } from "./routeSkeletons";
 import type { JobMatch } from "./DashboardJobs";
 import EmployerActionsMenu from "./EmployerActionsMenu";
-import { normalizeResponse, readStoredResponse, type EmployerResponse } from "./employerActions";
+import { normalizeResponse, readStoredResponse, submitResponse, type EmployerResponse } from "./employerActions";
 import { useToast } from "./Toast";
 import CandidateRequestsCard from "./CandidateRequestsCard";
 import { MatchFactorsCard, EmployerVisibilityCard } from "./MatchFactorsCard";
@@ -25,11 +25,21 @@ import InterviewInviteCard from "./InterviewInviteCard";
 import { isInterviewInvite } from "./interviewInvite";
 import JobHeader from "./jobDetail/JobHeader";
 import JobBody from "./jobDetail/JobBody";
+import ResponseActions from "./jobDetail/ResponseActions";
 import { ClosedNotice, RoleDetails, StrengthenMatch } from "./jobDetail/JobRail";
 import { SEC } from "./jobDetail/styles";
 
 const SHELL = "grid overflow-hidden rounded-2xl border border-hx-line bg-white min-[900px]:grid-cols-[minmax(0,1fr)_minmax(280px,340px)]";
 const COL = "min-w-0 divide-y divide-hx-line";
+
+const NARROW = "(max-width: 899px)";
+const subscribeNarrow = (cb: () => void) => {
+  if (typeof window.matchMedia !== "function") return () => {};
+  const mq = window.matchMedia(NARROW);
+  mq.addEventListener("change", cb);
+  return () => mq.removeEventListener("change", cb);
+};
+const readNarrow = () => typeof window.matchMedia === "function" && window.matchMedia(NARROW).matches;
 
 function StateScreen({ title, message, children }: { title: string; message: string; children: React.ReactNode }) {
   return (
@@ -101,6 +111,7 @@ export default function JobDetailPage() {
 
   useDashboardBreadcrumb(job ? [{ label: job.roleTitle }] : null);
 
+  const narrow = useSyncExternalStore(subscribeNarrow, readNarrow, () => false);
   const backToJobs = () => router.push("/jobs");
 
   if (!job) {
@@ -124,30 +135,50 @@ export default function JobDetailPage() {
   const hasFit = !!job.matchFactors && job.matchFactors.factors.length > 0;
   const invited = !closed && isInterviewInvite(job);
 
+  const requests = (
+    <CandidateRequestsCard
+      matchId={job.id}
+      requests={job.requests ?? []}
+      unlocked={job.unlocked}
+      className={SEC}
+      onResolved={(requestId, resolution) => {
+        dropRequest(requestId);
+        toast(resolution === "fulfilled" ? "Sent to the employer" : "Request declined", "success");
+      }}
+      onError={(msg) => toast(msg, "error")}
+    />
+  );
+  const actions = (
+    <ResponseActions
+      fill={narrow}
+      response={response}
+      canRespond={!closed}
+      onRespond={(next) => next !== response && submitResponse({ matchId: job.id, next, previous: response, onChange: (value) => setLocalResponse({ id: job.id, value }), onToast: (msg, kind) => toast(msg, kind) })}
+      showMessage={job.unlocked && !closed && !invited}
+      onMessage={() => router.push(`/messages?matchId=${job.id}`)}
+      menu={
+        <EmployerActionsMenu
+          bare
+          triggerClassName="size-9"
+          matchId={job.id}
+          employerLabel={job.companyName}
+          response={response}
+          onResponseChange={(value) => setLocalResponse({ id: job.id, value })}
+          onRemoved={backToJobs}
+          onToast={(msg, kind) => toast(msg, kind)}
+        />
+      }
+    />
+  );
+
   return (
     <div className="min-h-0 w-full flex-1 overflow-y-auto text-hx-coal">
       <div className="mb-16">
         <div className={SHELL}>
           <div className={COL}>
             {invited && <InterviewInviteCard job={job} className={SEC} />}
-            <JobHeader
-              job={job}
-              closed={closed}
-              showMessage={job.unlocked && !closed && !invited}
-              onMessage={() => router.push(`/messages?matchId=${job.id}`)}
-              actions={
-                <EmployerActionsMenu
-                  bare
-                  triggerClassName="size-9"
-                  matchId={job.id}
-                  employerLabel={job.companyName}
-                  response={response}
-                  onResponseChange={(value) => setLocalResponse({ id: job.id, value })}
-                  onRemoved={backToJobs}
-                  onToast={(msg, kind) => toast(msg, kind)}
-                />
-              }
-            />
+            <JobHeader job={job} closed={closed} actions={narrow ? null : actions} />
+            {narrow && requests}
             {hasFit && (
               <div className={SEC}>
                 <MatchFactorsCard data={job.matchFactors!} />
@@ -157,18 +188,8 @@ export default function JobDetailPage() {
           </div>
 
           <div className={`${COL} border-t border-hx-line min-[900px]:border-l min-[900px]:border-t-0`}>
-            <CandidateRequestsCard
-              matchId={job.id}
-              requests={job.requests ?? []}
-              unlocked={job.unlocked}
-              className={SEC}
-              onResolved={(requestId, resolution) => {
-                dropRequest(requestId);
-                toast(resolution === "fulfilled" ? "Sent to the employer" : "Request declined", "success");
-              }}
-              onError={(msg) => toast(msg, "error")}
-            />
-            <RoleDetails job={job} response={response} />
+            {!narrow && requests}
+            <RoleDetails job={job} />
             <div className={SEC}>
               <EmployerVisibilityCard unlocked={job.unlocked} />
             </div>
@@ -183,6 +204,9 @@ export default function JobDetailPage() {
             )}
           </div>
         </div>
+        {narrow && (
+          <div className="sticky bottom-2 z-10 mt-3 rounded-2xl border border-hx-line bg-white p-2">{actions}</div>
+        )}
       </div>
     </div>
   );

@@ -24,7 +24,7 @@ import { Badge } from "@/employer/_atoms";
 import { useAuth } from "./AuthContext";
 import {
   REPORT_NOTE_MAX, REPORT_REASONS, blockEmployer, dropMatchFromCaches, normalizeResponse,
-  reportEmployer, respondToEmployer, responseLabel, storeResponse,
+  reportEmployer, responseLabel, storeResponse, submitResponse,
   type EmployerReportReason, type EmployerResponse,
 } from "./employerActions";
 
@@ -72,18 +72,7 @@ export default function EmployerActionsMenu({ matchId, employerLabel, response, 
   const onRespond = async (value: string) => {
     const next = normalizeResponse(value);
     if (!next || next === responseRef.current) return;
-    const previous = responseRef.current;
-    // Optimistic; roll back to the exact previous answer if the server refuses.
-    onResponseChange(next);
-    storeResponse(matchId, next);
-    const result = await respondToEmployer(matchId, next);
-    if (result.ok) {
-      onToast(next === "interested" ? "Told the employer you're interested." : "Told the employer you're not interested.");
-    } else {
-      onResponseChange(previous);
-      storeResponse(matchId, previous);
-      onToast(`Couldn't save your response — ${result.error}`, "error");
-    }
+    await submitResponse({ matchId, next, previous: responseRef.current, onChange: onResponseChange, onToast });
   };
 
   const finishRemoval = (message: string) => {
