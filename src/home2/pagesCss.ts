@@ -841,11 +841,6 @@ export const pagesCss = `
 }
 
 /* candidates: journey sections */
-.cl-logos { padding: 8px 0 64px; text-align: center; }
-.cl-logos ul { list-style: none; margin: 22px 0 0; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 14px 36px; }
-.cl-logos li { display: flex; align-items: center; gap: 9px; font-size: 15px; font-weight: 500; color: var(--ink-2); }
-.cl-logos svg { color: var(--ink-3); }
-.cl-logos p { margin: 22px 0 0; font-size: 12px; color: var(--ink-3); }
 .cb { position: relative; display: block; height: 8px; border-radius: 999px; background: var(--line); }
 .cb b { display: block; height: 100%; border-radius: 999px; background: var(--btn); }
 .cb.low b { background: var(--accent); }
@@ -925,9 +920,7 @@ export const pagesCss = `
 .pf-ev li.no svg, .pf-ev li.no em { color: var(--ink-3); }
 .pf-lock { display: flex; align-items: center; gap: 8px; margin: 16px 0 0; font-size: 13px; color: var(--ink-3); }
 @container (max-width: 900px) {
-  .cl-logos { padding-bottom: 40px; }
-  .cl-logos ul { gap: 14px 22px; }
-  .rd-card.hx-stage { padding: 12px; }
+      .rd-card.hx-stage { padding: 12px; }
   .rd-in { padding: 18px; }
   .rd-dims li { grid-template-columns: 1fr 36px; }
   .rd-dims li .cb { grid-column: 1 / -1; grid-row: 2; }

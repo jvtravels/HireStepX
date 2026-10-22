@@ -4,7 +4,6 @@ import { Activity, AudioWaveform, BriefcaseBusiness, Code, Eye, FileText, Gradua
 import { CandFaq } from "./Extra";
 import { Arrow, Close, Dim, Shell, Win } from "./Pages";
 import { delay, reduced, useReveal } from "./motion";
-import { BRAND_PATHS } from "./brandPaths";
 
 /* ── Hero: answer, see the gap, fix it ── */
 
@@ -421,20 +420,6 @@ const Bar = ({ v, floor }: { v: number; floor?: number }) => (
   <i className={`cb${floor !== undefined && v < floor ? " low" : ""}`}><b style={{ width: `${v}%` }} />{floor !== undefined ? <u style={{ left: `${floor}%` }} /> : null}</i>
 );
 
-const BRANDS: [string, string][] = [["google", "Google"], ["amazon", "Amazon"], ["microsoft", "Microsoft"], ["flipkart", "Flipkart"], ["swiggy", "Swiggy"], ["zomato", "Zomato"], ["paytm", "Paytm"], ["phonepe", "PhonePe"], ["razorpay", "Razorpay"], ["infosys", "Infosys"], ["tcs", "TCS"], ["atlassian", "Atlassian"]];
-
-function LogoStrip() {
-  return (
-    <section className="cl-logos" aria-label="Companies you can practise for">
-      <div className="hx-wrap">
-        <span className="hx-kicker">Practise for roles at</span>
-        <ul>{BRANDS.map(([f, n]) => <li key={f}><svg viewBox="0 0 24 24" width={26} height={26} fill="currentColor" role="img" aria-label={n}><path d={BRAND_PATHS[f]} /></svg><span>{n}</span></li>)}</ul>
-        <p>Company logos belong to their owners. HireStepX is not affiliated with or endorsed by them.</p>
-      </div>
-    </section>
-  );
-}
-
 type RoundKind = { id: string; label: string; Icon: LucideIcon; blurb: string; gate: string; dims: [string, number][]; probe: string };
 const KINDS: RoundKind[] = [
   { id: "hr", label: "HR round", Icon: Users, blurb: "Scored on eight things HR actually grades. Clear 60 on every one, because a single zero can sink the offer.", gate: "Pass mark 60 on all 8", dims: [["Logistics clarity", 90], ["Comp transparency", 85], ["Switch rationale", 75], ["Compliance readiness", 90], ["Commitment signal", 80], ["Policy literacy", 65], ["Self-awareness", 80], ["Motivation specificity", 70]], probe: "What about our roadmap caught your eye, compared to other SaaS platforms?" },
@@ -591,7 +576,6 @@ export function CandidatesPage() {
   return (
     <Shell active="talent">
       <CandHero />
-      <LogoStrip />
       <Rounds />
       <RewriteStory />
       <Readiness />
